@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Star } from "lucide-react";
+import { SortableList } from "@/components/admin/SortableList";
+import { persistSortOrder } from "@/lib/sort-order";
 
 export const Route = createFileRoute("/admin/testimonials")({ component: Page });
 
