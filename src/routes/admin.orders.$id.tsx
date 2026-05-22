@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, Clock } from "lucide-react";
 
-const STATUSES = ["new", "in_progress", "quoted", "confirmed", "paid", "completed", "cancelled"];
+const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
 export const Route = createFileRoute("/admin/orders/$id")({
   component: OrderDetail,
@@ -40,7 +40,7 @@ function OrderDetail() {
 
   const updateStatus = useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+      const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", id);
       if (error) throw error;
       await supabase.from("order_timeline").insert({ order_id: id, event: "status_changed", payload: { to: status } });
     },

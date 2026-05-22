@@ -23,7 +23,15 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
+import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -95,14 +103,55 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMarketingRoute = AdminMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCalendarRoute = AdminCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminOrdersRoute,
+} as any)
+const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
+  id: '/catalog/$type',
+  path: '/catalog/$type',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRoute
@@ -117,6 +166,13 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
+  '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/orders/$id': typeof AdminOrdersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,10 +190,18 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin': typeof AdminIndexRoute
+  '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/orders/$id': typeof AdminOrdersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRoute
@@ -152,11 +216,19 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
+  '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/orders/$id': typeof AdminOrdersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/blog'
     | '/contacts'
     | '/equipment'
@@ -171,6 +243,13 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/zones'
+    | '/admin/audit'
+    | '/admin/calendar'
+    | '/admin/marketing'
+    | '/admin/orders'
+    | '/admin/'
+    | '/admin/catalog/$type'
+    | '/admin/orders/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,9 +267,17 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/zones'
+    | '/admin/audit'
+    | '/admin/calendar'
+    | '/admin/marketing'
+    | '/admin/orders'
+    | '/admin'
+    | '/admin/catalog/$type'
+    | '/admin/orders/$id'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/blog'
     | '/contacts'
     | '/equipment'
@@ -205,10 +292,18 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/zones'
+    | '/admin/audit'
+    | '/admin/calendar'
+    | '/admin/marketing'
+    | '/admin/orders'
+    | '/admin/'
+    | '/admin/catalog/$type'
+    | '/admin/orders/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   BlogRoute: typeof BlogRoute
   ContactsRoute: typeof ContactsRoute
   EquipmentRoute: typeof EquipmentRoute
@@ -325,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -332,11 +434,93 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketing': {
+      id: '/admin/marketing'
+      path: '/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AdminMarketingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/calendar': {
+      id: '/admin/calendar'
+      path: '/calendar'
+      fullPath: '/admin/calendar'
+      preLoaderRoute: typeof AdminCalendarRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/orders/$id': {
+      id: '/admin/orders/$id'
+      path: '/$id'
+      fullPath: '/admin/orders/$id'
+      preLoaderRoute: typeof AdminOrdersIdRouteImport
+      parentRoute: typeof AdminOrdersRoute
+    }
+    '/admin/catalog/$type': {
+      id: '/admin/catalog/$type'
+      path: '/catalog/$type'
+      fullPath: '/admin/catalog/$type'
+      preLoaderRoute: typeof AdminCatalogTypeRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminOrdersRouteChildren {
+  AdminOrdersIdRoute: typeof AdminOrdersIdRoute
+}
+
+const AdminOrdersRouteChildren: AdminOrdersRouteChildren = {
+  AdminOrdersIdRoute: AdminOrdersIdRoute,
+}
+
+const AdminOrdersRouteWithChildren = AdminOrdersRoute._addFileChildren(
+  AdminOrdersRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminCalendarRoute: typeof AdminCalendarRoute
+  AdminMarketingRoute: typeof AdminMarketingRoute
+  AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminCatalogTypeRoute: typeof AdminCatalogTypeRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
+  AdminCalendarRoute: AdminCalendarRoute,
+  AdminMarketingRoute: AdminMarketingRoute,
+  AdminOrdersRoute: AdminOrdersRouteWithChildren,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminCatalogTypeRoute: AdminCatalogTypeRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   BlogRoute: BlogRoute,
   ContactsRoute: ContactsRoute,
   EquipmentRoute: EquipmentRoute,

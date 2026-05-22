@@ -8,8 +8,8 @@ import { downloadCsv, toCsv } from "@/lib/csv";
 import { Download, Search } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
-  new: "Новый", in_progress: "В работе", quoted: "Смета", confirmed: "Подтверждён",
-  paid: "Оплачен", completed: "Завершён", cancelled: "Отменён",
+  new: "Новый", consultation: "Консультация", estimate: "Смета", contract: "Договор",
+  in_progress: "В работе", paid: "Оплачен", completed: "Завершён", cancelled: "Отменён",
 };
 
 export const Route = createFileRoute("/admin/orders")({
@@ -24,7 +24,7 @@ function AdminOrders() {
     queryKey: ["admin-orders", q, status],
     queryFn: async () => {
       let query = supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(500);
-      if (status) query = query.eq("status", status);
+      if (status) query = query.eq("status", status as any);
       if (q) query = query.or(`client_name.ilike.%${q}%,client_phone.ilike.%${q}%,client_email.ilike.%${q}%`);
       const { data, error } = await query;
       if (error) throw error;
