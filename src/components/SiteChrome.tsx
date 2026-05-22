@@ -43,6 +43,7 @@ export function SiteHeader() {
               <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{count}</span>
             )}
           </Link>
+          {isAuthenticated ? (
             <>
               <Link to="/profile"><Button variant="ghost" size="sm"><User className="h-4 w-4 mr-1" />Кабинет</Button></Link>
               <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>Выйти</Button>
