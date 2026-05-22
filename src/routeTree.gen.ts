@@ -39,6 +39,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
+import { Route as AdminCasesRouteImport } from './routes/admin.cases'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
@@ -196,6 +197,11 @@ const AdminMarketingRoute = AdminMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCasesRoute = AdminCasesRouteImport.update({
+  id: '/cases',
+  path: '/cases',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCalendarRoute = AdminCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -251,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/users': typeof AdminUsersRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/users': typeof AdminUsersRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/users': typeof AdminUsersRoute
@@ -367,6 +376,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/blog'
     | '/admin/calendar'
+    | '/admin/cases'
     | '/admin/marketing'
     | '/admin/orders'
     | '/admin/users'
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/blog'
     | '/admin/calendar'
+    | '/admin/cases'
     | '/admin/marketing'
     | '/admin/orders'
     | '/admin/users'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/blog'
     | '/admin/calendar'
+    | '/admin/cases'
     | '/admin/marketing'
     | '/admin/orders'
     | '/admin/users'
@@ -692,6 +704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMarketingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/cases': {
+      id: '/admin/cases'
+      path: '/cases'
+      fullPath: '/admin/cases'
+      preLoaderRoute: typeof AdminCasesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/calendar': {
       id: '/admin/calendar'
       path: '/calendar'
@@ -765,6 +784,7 @@ interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
+  AdminCasesRoute: typeof AdminCasesRoute
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
   AdminUsersRoute: typeof AdminUsersRoute
@@ -776,6 +796,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminCalendarRoute: AdminCalendarRoute,
+  AdminCasesRoute: AdminCasesRoute,
   AdminMarketingRoute: AdminMarketingRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
   AdminUsersRoute: AdminUsersRoute,

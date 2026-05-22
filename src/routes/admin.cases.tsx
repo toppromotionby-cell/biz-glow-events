@@ -104,11 +104,11 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
 
   const save = async () => {
     setSaving(true);
-    let metrics: unknown = {};
-    try { metrics = JSON.parse(metricsInput || "{}"); }
+    let metrics: Record<string, unknown> = {};
+    try { metrics = JSON.parse(metricsInput || "{}") as Record<string, unknown>; }
     catch { setSaving(false); return toast.error("Метрики: невалидный JSON"); }
 
-    const services_used = servicesInput.split(",").map(s => s.trim()).filter(Boolean);
+    const services_used = servicesInput.split(",").map((s: string) => s.trim()).filter(Boolean);
     const { error } = await supabase.from("cases").update({
       title: form.title, slug: form.slug, client: form.client, event_type: form.event_type,
       event_date: form.event_date || null, location: form.location,
