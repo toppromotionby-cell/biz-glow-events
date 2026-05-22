@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User } from "lucide-react";
+import { Sparkles, User, ShoppingCart } from "lucide-react";
+import { useCart } from "@/lib/cart";
 
 const NAV = [
   { to: "/zones", label: "Зоны" },
