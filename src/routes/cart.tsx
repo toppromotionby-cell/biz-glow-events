@@ -7,7 +7,7 @@ import { useCart, removeFromCart, updateQty, clearCart } from "@/lib/cart";
 import { submitOrder } from "@/lib/orders.functions";
 import { readUtm } from "@/lib/utm";
 import { PromoCodeInput } from "@/components/PromoCodeInput";
-import { redeemPromo, type PromoValidation } from "@/lib/promo.functions";
+import { type PromoValidation } from "@/lib/promo.functions";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
