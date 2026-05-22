@@ -27,7 +27,7 @@ function CasesAdmin() {
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["admin-cases"],
-    queryFn: async () => (await supabase.from("cases").select("*").order("event_date", { ascending: false, nullsFirst: false })).data ?? [],
+    queryFn: async () => (await supabase.from("cases").select("*").order("sort_order", { ascending: true }).order("event_date", { ascending: false, nullsFirst: false })).data ?? [],
   });
 
   const create = useMutation({
