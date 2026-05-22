@@ -237,6 +237,10 @@ function PreviewDialog({ item, onClose, onEdit }: { item: any | null; onClose: (
 function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; onSaved: () => void; onDelete: () => void }) {
   const [form, setForm] = useState({ ...item });
   const [saving, setSaving] = useState(false);
+  const [moveTarget, setMoveTarget] = useState<Table | "">("");
+  const [moving, setMoving] = useState(false);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const save = async () => {
     setSaving(true);
@@ -253,14 +257,58 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
     onSaved();
   };
 
+  const moveTo = async (target: Table) => {
+    if (target === table) return;
+    setMoving(true);
+    try {
+      // Build payload with shared columns only (no id/created_at/updated_at).
+      const payload: any = {
+        title: form.title, slug: form.slug, category: form.category,
+        short_description: form.short_description, description: form.description,
+        requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
+        published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
+        pricing: form.pricing ?? {}, features: form.features ?? [], faq: form.faq ?? [],
+      };
+      // Handle slug uniqueness in target table
+      const { data: existing } = await supabase.from(target).select("id").eq("slug", payload.slug).maybeSingle();
+      if (existing) payload.slug = `${payload.slug}-${Date.now().toString(36).slice(-4)}`;
+
+      const { error: insErr } = await supabase.from(target).insert(payload);
+      if (insErr) throw insErr;
+      const { error: delErr } = await supabase.from(table).delete().eq("id", item.id);
+      if (delErr) throw delErr;
+
+      toast.success(`Перемещено в «${LABELS[target]}»`);
+      qc.invalidateQueries({ queryKey: ["catalog", table] });
+      qc.invalidateQueries({ queryKey: ["catalog", target] });
+      navigate({ to: "/admin/catalog/$type", params: { type: target } });
+    } catch (e: any) {
+      toast.error(e.message ?? "Не удалось переместить");
+    } finally {
+      setMoving(false);
+      setMoveTarget("");
+    }
+  };
+
+  const otherTables = TABLES.filter((t) => t !== table);
+
   return (
     <div className="glass rounded-xl p-6 space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
           <span className="text-sm">{form.published ? "Опубликовано" : "Черновик"}</span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+            <Select value={moveTarget} onValueChange={(v) => { setMoveTarget(v as Table); moveTo(v as Table); }} disabled={moving}>
+              <SelectTrigger className="h-9 w-[200px]"><SelectValue placeholder={moving ? "Перемещение..." : "Переместить в..."} /></SelectTrigger>
+              <SelectContent>
+                {otherTables.map((t) => <SelectItem key={t} value={t}>{LABELS[t]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <Button variant="outline" size="sm" onClick={onDelete}><Trash2 className="h-4 w-4 mr-1" />Удалить</Button>
           <Button size="sm" onClick={save} disabled={saving} className="bg-gradient-primary glow-primary"><Save className="h-4 w-4 mr-1" />{saving ? "..." : "Сохранить"}</Button>
         </div>
