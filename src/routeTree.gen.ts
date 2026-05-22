@@ -31,6 +31,7 @@ import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
@@ -167,6 +168,11 @@ const CartRoute = CartRouteImport.update({
   path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalculatorRoute = CalculatorRouteImport.update({
+  id: '/calculator',
+  path: '/calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
   '/compare': typeof CompareRoute
@@ -346,6 +353,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/blog': typeof BlogRouteWithChildren
+  '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
   '/compare': typeof CompareRoute
@@ -396,6 +404,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
   '/compare': typeof CompareRoute
@@ -447,6 +456,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/blog'
+    | '/calculator'
     | '/cart'
     | '/cases'
     | '/compare'
@@ -495,6 +505,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/blog'
+    | '/calculator'
     | '/cart'
     | '/cases'
     | '/compare'
@@ -544,6 +555,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/blog'
+    | '/calculator'
     | '/cart'
     | '/cases'
     | '/compare'
@@ -594,6 +606,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  CalculatorRoute: typeof CalculatorRoute
   CartRoute: typeof CartRoute
   CasesRoute: typeof CasesRouteWithChildren
   CompareRoute: typeof CompareRoute
@@ -772,6 +785,13 @@ declare module '@tanstack/react-router' {
       path: '/cart'
       fullPath: '/cart'
       preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calculator': {
+      id: '/calculator'
+      path: '/calculator'
+      fullPath: '/calculator'
+      preLoaderRoute: typeof CalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -1081,6 +1101,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  CalculatorRoute: CalculatorRoute,
   CartRoute: CartRoute,
   CasesRoute: CasesRouteWithChildren,
   CompareRoute: CompareRoute,
