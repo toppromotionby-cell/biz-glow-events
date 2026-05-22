@@ -1,10 +1,10 @@
 // Админка: список подписчиков рассылки + удаление.
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listSubscribers, deleteSubscriber } from "@/lib/newsletter.functions";
 import { Button } from "@/components/ui/button";
-import { Trash2, Download, Mail } from "lucide-react";
+import { Trash2, Download, Mail, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/newsletter")({ component: Page });
@@ -44,9 +44,14 @@ function Page() {
           </h1>
           <p className="text-sm text-muted-foreground">{data.length} записей</p>
         </div>
-        <Button onClick={exportCsv} variant="outline" disabled={!data.length}>
-          <Download className="h-4 w-4 mr-2" />Экспорт CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="default">
+            <Link to="/admin/newsletter/campaigns"><Megaphone className="h-4 w-4 mr-2" />Кампании</Link>
+          </Button>
+          <Button onClick={exportCsv} variant="outline" disabled={!data.length}>
+            <Download className="h-4 w-4 mr-2" />Экспорт CSV
+          </Button>
+        </div>
       </header>
 
       <div className="glass rounded-xl overflow-hidden">
