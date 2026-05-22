@@ -45,8 +45,9 @@ function CartPage() {
           client_email: String(fd.get("client_email") ?? "").trim(),
           client_company: String(fd.get("client_company") ?? "").trim() || null,
           event_date: String(fd.get("event_date") ?? "") || null,
-          notes: [String(fd.get("notes") ?? "").trim(), promo ? `Промокод: ${promo.code} (−${promo.discount_amount} BYN)` : ""].filter(Boolean).join(" | ") || null,
+          notes: String(fd.get("notes") ?? "").trim() || null,
           source: "cart",
+          promo_code: promo?.code ?? null,
           utm_source: utm.utm_source ?? null,
           utm_medium: utm.utm_medium ?? null,
           utm_campaign: utm.utm_campaign ?? null,
@@ -64,7 +65,6 @@ function CartPage() {
           })),
         },
       });
-      if (promo) { try { await redeem({ data: { code: promo.code } }); } catch { /* non-blocking */ } }
       clearCart();
       setDone({ id: res.id });
       toast.success("Заявка отправлена");
