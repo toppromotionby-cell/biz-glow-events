@@ -97,7 +97,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen flex flex-col bg-background bg-radial-glow">
         <SiteHeader />
-        <main className="flex-1"><Outlet /></main>
+        <main id="main" className="flex-1"><Outlet /></main>
         <SiteFooter />
         <CookieConsent />
         <ScriptInjector />
