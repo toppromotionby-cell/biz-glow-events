@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Pencil, X, ArrowRightLeft } from "lucide-react";
+import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
@@ -193,10 +194,10 @@ function PreviewDialog({ item, onClose, onEdit }: { item: any | null; onClose: (
               </section>
             )}
 
-            {item.pricing && Object.keys(item.pricing).length > 0 && (
+            {getTiers(item.pricing).length > 0 && (
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Цены</h3>
-                <pre className="text-xs bg-muted/40 rounded-lg p-3 overflow-x-auto">{JSON.stringify(item.pricing, null, 2)}</pre>
+                <PriceTableView pricing={item.pricing} />
               </section>
             )}
 
@@ -314,13 +315,21 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="grid sm:grid-cols-3 gap-3">
         <div><Label>Заголовок</Label><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
         <div><Label>Slug</Label><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
         <div><Label>Категория</Label><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
-        <div><Label>Цена «от» (BYN)</Label>
-          <Input type="number" value={form.pricing?.from ?? ""} onChange={(e) => setForm({ ...form, pricing: { ...(form.pricing ?? {}), from: Number(e.target.value) } })} />
-        </div>
+      </div>
+
+      <PriceTableEditor
+        value={form.pricing ?? {}}
+        onChange={(next) => setForm({ ...form, pricing: next })}
+      />
+      <div className="text-xs text-muted-foreground -mt-1">
+        Цена «от» автоматически: {(() => {
+          const m = minPriceFromTiers(getTiers(form.pricing));
+          return m !== null ? new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(m) : "по запросу";
+        })()}
       </div>
 
       <div><Label>Краткое описание</Label><Textarea rows={2} value={form.short_description ?? ""} onChange={(e) => setForm({ ...form, short_description: e.target.value })} /></div>
