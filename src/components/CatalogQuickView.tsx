@@ -101,7 +101,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
           </header>
 
           <div className="glass rounded-xl p-4">
-            <div className="text-xs text-muted-foreground">Стоимость</div>
+            <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
             <PriceGate>
               <div className="text-xl font-display font-bold">
                 {from !== null ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}` : "По запросу"}
