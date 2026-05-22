@@ -143,9 +143,13 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
                 <Link to="/contacts" onClick={onClose} className="mt-3 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
                   Заказать{activeTier?.label ? ` «${activeTier.label}»` : ""}
                 </Link>
-                <AddToCartButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
-                <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
-                <CompareButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
+                {type !== "services" && (
+                  <>
+                    <AddToCartButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
+                    <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
+                    <CompareButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
+                  </>
+                )}
               </>
             )}
           </div>
@@ -213,11 +217,6 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
         </section>
       )}
 
-      <div className="mt-8 text-center">
-        <Link to={`${basePath}/${item.slug}`} onClick={onClose} className="text-sm text-primary hover:underline">
-          Открыть на отдельной странице →
-        </Link>
-      </div>
     </div>
   );
 }

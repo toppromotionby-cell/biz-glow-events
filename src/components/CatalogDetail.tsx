@@ -148,7 +148,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               <div className="mt-2 text-center text-xs text-muted-foreground">
                 Добавление в корзину и сравнение станут доступны после выбора позиции
               </div>
-            ) : (
+            ) : entityType !== "services" ? (
               <>
                 <AddToCartButton
                   entity_type={entityType}
@@ -176,7 +176,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 />
                 <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в корзину →</Link>
               </>
-            )}
+            ) : null}
           </div>
 
 
