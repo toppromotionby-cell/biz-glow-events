@@ -19,7 +19,20 @@ export const Route = createFileRoute("/blog")({
       { name: "description", content: "Кейсы, тренды и аналитика event-рынка Беларуси: оборудование, организация мероприятий, продакшн." },
       { property: "og:title", content: "Блог event-hub.by" },
       { property: "og:description", content: "Кейсы, тренды и аналитика event-рынка Беларуси." },
+      { property: "og:url", content: "https://event-hub.by/blog" },
     ],
+    links: [{ rel: "canonical", href: "https://event-hub.by/blog" }],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        name: "Блог event-hub.by",
+        description: "Кейсы, тренды и аналитика event-рынка Беларуси.",
+        url: "https://event-hub.by/blog",
+        publisher: { "@type": "Organization", name: "event-hub.by" },
+      }),
+    }],
   }),
   component: BlogIndex,
 });

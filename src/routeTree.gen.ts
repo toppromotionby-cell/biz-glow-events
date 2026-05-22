@@ -24,6 +24,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as IndustriesRouteImport } from './routes/industries'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
@@ -134,6 +135,11 @@ const OfferRoute = OfferRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndustriesRoute = IndustriesRouteImport.update({
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/industries': typeof IndustriesRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/partners': typeof PartnersRoute
@@ -383,6 +390,7 @@ export interface FileRoutesByTo {
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/industries': typeof IndustriesRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/partners': typeof PartnersRoute
@@ -437,6 +445,7 @@ export interface FileRoutesById {
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/industries': typeof IndustriesRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/partners': typeof PartnersRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/equipment'
     | '/faq'
     | '/industries'
+    | '/llms.txt'
     | '/login'
     | '/offer'
     | '/partners'
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/equipment'
     | '/faq'
     | '/industries'
+    | '/llms.txt'
     | '/login'
     | '/offer'
     | '/partners'
@@ -597,6 +608,7 @@ export interface FileRouteTypes {
     | '/equipment'
     | '/faq'
     | '/industries'
+    | '/llms.txt'
     | '/login'
     | '/offer'
     | '/partners'
@@ -651,6 +663,7 @@ export interface RootRouteChildren {
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
   IndustriesRoute: typeof IndustriesRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
   OfferRoute: typeof OfferRoute
   PartnersRoute: typeof PartnersRoute
@@ -773,6 +786,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/industries': {
@@ -1172,6 +1192,7 @@ const rootRouteChildren: RootRouteChildren = {
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
   IndustriesRoute: IndustriesRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
   OfferRoute: OfferRoute,
   PartnersRoute: PartnersRoute,
