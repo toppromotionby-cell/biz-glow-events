@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
@@ -66,6 +67,12 @@ function RegisterPage() {
       <div className="glass-strong rounded-2xl p-8">
         <h1 className="text-3xl font-display font-bold mb-2">Регистрация</h1>
         <p className="text-sm text-muted-foreground mb-6">Получите доступ к ценам и каталогу</p>
+        <GoogleButton label="Зарегистрироваться через Google" />
+        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="h-px flex-1 bg-border" />
+          или вручную
+          <div className="h-px flex-1 bg-border" />
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Field label="ФИО *" error={errors.full_name?.message}>
             <Input {...register("full_name")} autoComplete="name" />

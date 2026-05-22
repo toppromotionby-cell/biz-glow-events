@@ -1,114 +1,53 @@
-## Что предлагаю проверить и оптимизировать
+# План: волны 3–6
 
-Ниже — приоритизированный план. Каждый блок можно запускать отдельно или последовательно.
+Выполняю все четыре оставшихся блока последовательно, чтобы не ломать UX и БД одновременно.
 
----
+## Волна 3 — UX оформления заказа
 
-### 1. SEO и метаданные (высокий приоритет, быстрые победы)
+Файлы: `src/routes/cart.tsx`, `src/components/cart/RequisitesModal.tsx` (новый), `src/routes/order.success.$id.tsx` (новый), `src/lib/orders.functions.ts`.
 
-**Проблемы, найденные при беглом аудите:**
-- В `src/routes/__root.tsx` зашит `og:image` со ссылкой на превью‑скриншот Lovable (`pub-…r2.dev/id-preview-...`). По правилам TanStack `meta` мержится по `property`, но листовые роуты не переопределяют его — в итоге **во всех соцсетях шарится временный превью‑скрин**, а не брендовая обложка.
-- `canonical` объявлен и в `__root.tsx` (через `links`), и в `index.tsx` — TanStack **конкатенирует `links` без дедупа** → дублирующиеся canonical (баг для SEO).
-- У большинства листовых страниц (`services.$slug`, `equipment.$slug`, `production.$slug`, `cases.$slug`, `blog.$slug`, `zones.$slug`) нужно проверить наличие динамических `head()` с `title/description/og:*/canonical` из `loaderData`.
-- `sitemap.xml` использует `supabaseAdmin` напрямую в route loader — корректно, но нужно убедиться, что туда попадают только `published=true` записи всех каталогов и актуальные `updated_at`/`lastmod`.
-- `robots.txt` валиден, но дополнительно стоит закрыть `/login`, `/register`, `/reset-password`, `/profile`, `/cart`, `/wishlist`, `/compare` от индексации.
+- Перевести форму корзины и модалку реквизитов на `react-hook-form` + `zod` (валидация email, телефона, УНП, длины полей, обязательность по типу клиента).
+- Тип клиента: «физлицо» / «юрлицо / ИП». Для физлица реквизиты компании необязательны, скрыты. Для юрлица — обязательны: название, УНП, юр. адрес, ФИО ответственного, должность, основание (Устав / Доверенность № … от …).
+- Черновик корзины и формы в `localStorage` (ключ `cart_draft_v1`), очистка после успешной отправки.
+- Серверная функция `submitOrder` принимает расширенный payload (requisites JSON в `orders.notes` или в `order_items.meta`, без миграции — храним в `notes` как JSON-строку с маркером).
+- После успеха — редирект на `/order/success/$id` с номером заказа, контактами менеджера, кнопкой «Скачать КП» (заглушка).
+- Тосты ошибок/успеха через существующий `sonner`.
 
-**Что сделаю:**
-1. Заменить `og:image` в `__root.tsx` на постоянное брендовое изображение (1200×630, сгенерирую через imagegen) либо убрать ситово, оставив на листьях.
-2. Убрать `canonical` из `__root.tsx`, оставить только в листьях (`index.tsx` уже ок).
-3. Пройтись по всем `*.$slug.tsx` — добавить `head({ params, loaderData })` с уникальными title/description, og:url, canonical, og:image = главное фото записи, JSON‑LD (`Article` для блога, `Product` для каталога, `Event` для кейсов, `BreadcrumbList`).
-4. Добавить `<meta name="robots" content="noindex">` в служебные роуты (login/register/cart/wishlist/compare/profile/reset‑password/admin).
-5. Проверить `sitemap.xml`: подтянуть `services`, `tech_equipment`, `zones`, `production_items`, `cases`, `blog_posts` (только `published`), включить `<lastmod>`.
+## Волна 4 — Админка/CRM
 
----
+Файлы: `src/routes/admin.orders.tsx`, `src/lib/admin-orders.functions.ts` (новый, серверные fn с `requireSupabaseAuth` + проверкой роли admin/manager).
 
-### 2. Производительность и Core Web Vitals
+- Серверная пагинация (`range`) + сортировка, размер страницы 25/50/100.
+- URL-фильтры (TanStack Router `search`): статус, диапазон дат, источник, UTM, менеджер, поиск (debounce 300мс).
+- Inline-смена статуса (Select в строке) с оптимистичным апдейтом и записью в `order_timeline`.
+- Назначение менеджера: выпадающий список из `user_roles` где role=manager/admin.
+- Realtime подписка на `orders` — точечный invalidate React Query при INSERT/UPDATE + toast.
+- Двойной клик по строке открывает существующий модал с детализацией (уже сделано, дорабатываем layout: вкладки «Заказ / Клиент / Реквизиты / Таймлайн / Вложения»).
 
-**Что планирую:**
-1. **Preload LCP‑изображения** на главной (`head().links` → `rel=preload as=image`).
-2. Перевести крупные изображения каталога/кейсов на WebP/AVIF через `?format=webp` (vite-imagetools) или использовать Cloudflare Image Resizing для R2.
-3. Добавить `loading="lazy"` и явные `width/height` всем `<img>` ниже первого экрана (фикс CLS).
-4. Шрифты: `font-display: swap`, preconnect к шрифтовым CDN.
-5. Запустить `browser--performance_profile` после изменений, при необходимости — `browser--start_profiling` на главной и админке заказов.
-6. Проверить, что admin‑бандлы код‑сплитятся (роуты в `src/routes/admin.*.tsx` грузятся только по входу в админку).
-7. `admin.orders.tsx` тянет `select("*").limit(500)` без пагинации — добавить пагинацию/виртуализацию таблицы (react‑window) для будущего роста.
+## Волна 5 — Производительность
 
----
+- `vite-imagetools` для статических ассетов, импорт `?format=webp&as=picture` для hero.
+- `<link rel="preload" as="image">` LCP-изображения в `head()` `index.tsx`.
+- `font-display: swap` в Google Fonts URL.
+- `loading="lazy"` + явные `width/height` для всех каталожных карточек.
+- Code-split тяжёлой админки (она уже route-split, но проверить динамические импорты модалов).
+- `React.memo`/`useMemo` для тяжёлых таблиц.
 
-### 3. Безопасность и RLS
+## Волна 6 — Google OAuth + og:image
 
-**Что нашёл и что проверю/исправлю:**
-1. `orders.user_id` **nullable** — это нужно, чтобы гости могли оформлять заказ через `createServerFn` (используется `supabaseAdmin`). Убедиться, что:
-   - `submitOrder` всегда выставляет либо `user_id = auth.uid()`, либо `null` (гость) и **не принимает `user_id` из клиента**.
-   - Telegram‑нотификации и notes с реквизитами не утекают другим клиентам — текущая RLS `auth.uid() = user_id` это закрывает, но проверю, что нет публичных селектов через сервер.
-2. Все `*.functions.ts`, которые используют `supabaseAdmin`, должны строго фильтровать `published=true` и **проектировать только безопасные колонки** (без `notes`, `client_phone`, `client_email`, UTM в публичных запросах). Пройдусь по списку: `catalog`, `cases`, `testimonials`, `search`, `promo`, `orders`, `leads`, `users`.
-3. `src/lib/admin-route-guard.ts` — корректно валидирует роль через `supabaseAdmin`. Проверю, что **все** серверные роуты под `/admin/*` (контракты, инвойсы, КП) вызывают этот guard. Сейчас `admin.orders.$id.{quote,invoice,contract}.tsx` импортируют `supabaseAdmin` — убедиться, что они защищены guard'ом, иначе любой может скачать чужие документы по UUID.
-4. Включить **Leaked Password Protection (HIBP)** через `configure_auth`.
-5. Добавить **Google OAuth** (через Lovable broker + `configure_social_auth`) — пользователи смогут логиниться без пароля.
-6. Запустить `supabase--linter` и `security--run_security_scan`, починить критические/высокие.
-7. Storage `media` бакет приватный — проверить, что публичные изображения каталога раздаются из `catalog-media` (public), а не подписанными ссылками.
-8. Rate limiting и input‑валидация (zod) на `submitOrder`, `createLead`, `newsletter.subscribe` — убедиться, что есть min/max и regex для email/phone.
+- `supabase--configure_social_auth` providers=["google"], дописать кнопку «Войти через Google» в `/login` и `/register` через `lovable.auth.signInWithOAuth("google", …)`.
+- Сгенерировать брендовый `og:image` 1200×630 (premium) под доменом event-hub.by, положить в `src/assets/og-default.jpg`.
+- Подключить как дефолтный `og:image`/`twitter:image` в `head()` ключевых статических страниц (`index`, `about`, `services`, `contact`), на динамических — оставить картинку контента.
 
----
+## Технические заметки
 
-### 4. UX оформления заказа (cart + reqs dialog)
+- Никаких изменений схемы БД (реквизиты пишем в `notes` JSON-строкой, чтобы не менять контракт `orders`). Если позже захотите отдельную таблицу `order_requisites` — отдельная миграция.
+- Все новые серверные функции — `createServerFn` + `requireSupabaseAuth`, без edge functions.
+- Обязательно дописать `attachSupabaseAuth` в `src/start.ts`, если не подключён.
 
-**Текущее состояние:** двухшаговый чекаут (контактные данные → модалка реквизитов) уже сделан. План:
-1. **Сделать модалку реквизитов опциональной**: чекбокс «Оформляю как юр. лицо / нужны документы» — физлица не должны заполнять УНП/банк.
-2. **Сохранение черновика**: запоминать введённые контакты в `localStorage`, чтобы пользователь не терял данные при обновлении страницы.
-3. **Валидация** через `react-hook-form + zod`: маска телефона (BY), email regex, обязательные поля подсвечиваются.
-4. **Подтверждение и далее**: после успешной отправки — отдельная страница `/order/success/$id` с номером заказа, кнопками «Скачать КП в PDF», «Открыть в Telegram», «Вернуться к каталогу». Сейчас просто toast.
-5. **Email‑подтверждение клиенту** (через существующий email queue) + дублирование уведомления менеджеру.
-6. **Мобильная адаптация** корзины и модалки — проверить на 375px (особенно `DateField` и таблица позиций).
-7. Кнопка «Очистить корзину» с confirm‑диалогом.
-8. Промокод: текущий `PromoCodeInput` — добавить анимацию применения и явный показ суммы скидки.
+## Порядок выполнения
 
----
-
-### 5. Админка / CRM
-
-1. **Пагинация и серверная фильтрация** в `admin.orders.tsx` (сейчас limit 500, всё на клиенте).
-2. **Inline‑смена статуса** прямо в таблице (dropdown в колонке статуса) с записью в `order_timeline`.
-3. **Bulk‑действия**: выделение чекбоксами + массовая смена статуса/экспорт/удаление.
-4. **Колонка «Менеджер»** + назначение ответственного (`manager_id` уже есть в схеме, но не используется в UI).
-5. **Финансы**: возможность вводить оплату (частичную) прямо из модалки → запись в timeline.
-6. **Дашборд** на `/admin` с графиком заказов по дням, конверсиями по UTM (есть `marketing_logs`).
-7. **Поиск с дебаунсом** (сейчас перезапрос на каждый keystroke).
-8. **Сохранение фильтров в URL** через `validateSearch` — менеджер может шарить ссылку на отфильтрованный список.
-9. **Notifications**: realtime подписка на новые orders → toast в админке («Новый заказ #1234»).
-
----
-
-### Технический раздел
-
-```text
-Файлы под изменения (черновой список)
-├ src/routes/__root.tsx                  → og:image, убрать canonical
-├ src/routes/{services,equipment,production,cases,blog,zones}.$slug.tsx
-│                                          → head() с динамикой + JSON-LD
-├ src/routes/{login,register,cart,wishlist,compare,profile,reset-password}.tsx
-│                                          → meta robots=noindex
-├ src/routes/sitemap[.]xml.tsx           → lastmod + все каталоги
-├ src/routes/admin.orders.tsx            → пагинация, URL-фильтры, inline-статус, realtime
-├ src/routes/cart.tsx                    → форма (rhf+zod), localStorage draft, success page
-├ src/routes/order.success.$id.tsx       → новый роут
-├ src/lib/orders.functions.ts            → серверная валидация zod, безопасная проекция
-├ src/lib/{catalog,cases,testimonials,search,promo,leads,users}.functions.ts
-│                                          → ревизия публичных селектов
-├ src/components/admin/OrderStatusInline.tsx (new)
-├ supabase/migrations/<новые>            → индексы (orders.created_at, orders.status, order_items.order_id),
-│                                          триггер touch_updated_at для orders
-└ configure_auth                         → HIBP on; configure_social_auth → google
-```
-
-**Порядок исполнения (предлагаемые волны):**
-1. Безопасность (RLS ревизия, admin guard, HIBP, scanner) — критично, без даунтайма.
-2. SEO — быстрые победы, влияет на трафик.
-3. UX корзины (rhf+zod, success page, email клиенту).
-4. Админка/CRM (пагинация, URL‑фильтры, inline‑статус, realtime).
-5. Производительность (preload LCP, форматы изображений, lazy, профилирование).
-
-**Что хочу подтвердить перед стартом:**
-- Делать всё одной волной или начнём с одной (рекомендую №1 безопасность → №2 SEO)?
-- Подключать ли Google OAuth?
-- Генерировать ли брендовый `og:image` (1200×630) через imagegen?
+1. Волна 3 (UX) — самое заметное для пользователя.
+2. Волна 6 (OAuth + og) — быстрый win, не зависит от остального.
+3. Волна 4 (Админка) — отдельный серверный модуль.
+4. Волна 5 (Performance) — финальная полировка и замеры.

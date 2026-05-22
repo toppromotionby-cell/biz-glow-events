@@ -58,6 +58,7 @@ import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAvailabilityRouteImport } from './routes/admin.availability'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminNewsletterIndexRouteImport } from './routes/admin.newsletter.index'
+import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminNewsletterCampaignsRouteImport } from './routes/admin.newsletter.campaigns'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
@@ -312,6 +313,11 @@ const AdminNewsletterIndexRoute = AdminNewsletterIndexRouteImport.update({
   path: '/newsletter/',
   getParentRoute: () => AdminRoute,
 } as any)
+const OrderSuccessIdRoute = OrderSuccessIdRouteImport.update({
+  id: '/order/success/$id',
+  path: '/order/success/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -408,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter/': typeof AdminNewsletterIndexRoute
   '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -466,6 +473,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter': typeof AdminNewsletterIndexRoute
   '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -526,6 +534,7 @@ export interface FileRoutesById {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter/': typeof AdminNewsletterIndexRoute
   '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -587,6 +596,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/order/success/$id'
     | '/admin/newsletter/'
     | '/admin/newsletter/campaigns/$id'
     | '/admin/orders/$id/contract'
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/order/success/$id'
     | '/admin/newsletter'
     | '/admin/newsletter/campaigns/$id'
     | '/admin/orders/$id/contract'
@@ -704,6 +715,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/order/success/$id'
     | '/admin/newsletter/'
     | '/admin/newsletter/campaigns/$id'
     | '/admin/orders/$id/contract'
@@ -742,6 +754,7 @@ export interface RootRouteChildren {
   TestimonialsRoute: typeof TestimonialsRoute
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
+  OrderSuccessIdRoute: typeof OrderSuccessIdRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -1090,6 +1103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNewsletterIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/order/success/$id': {
+      id: '/order/success/$id'
+      path: '/order/success/$id'
+      fullPath: '/order/success/$id'
+      preLoaderRoute: typeof OrderSuccessIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/orders/$id': {
       id: '/admin/orders/$id'
       path: '/$id'
@@ -1337,6 +1357,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestimonialsRoute: TestimonialsRoute,
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
+  OrderSuccessIdRoute: OrderSuccessIdRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport

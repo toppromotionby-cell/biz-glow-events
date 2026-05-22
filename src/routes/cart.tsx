@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Trash2, Minus, Plus, ShoppingCart } from "lucide-react";
@@ -10,6 +10,8 @@ import { PromoCodeInput } from "@/components/PromoCodeInput";
 import { DateField } from "@/components/DateField";
 import { type PromoValidation } from "@/lib/promo.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+
+const DRAFT_KEY = "cart_contact_draft_v1";
 
 
 export const Route = createFileRoute("/cart")({
@@ -28,8 +30,10 @@ const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN",
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
+  const navigate = useNavigate();
+  const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState<{ id: string } | null>(null);
+  const [clientType, setClientType] = useState<"individual" | "company">("individual");
   const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
   const [reqOpen, setReqOpen] = useState(false);
   const [contactDraft, setContactDraft] = useState<null | {
@@ -43,10 +47,28 @@ function CartPage() {
   const discount = promo?.discount_amount ?? 0;
   const finalTotal = Math.max(0, total - discount);
 
+  // Загрузка/сохранение черновика контактных данных
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setDraft(JSON.parse(raw));
+    } catch {}
+  }, []);
+  function saveDraft(fd: FormData) {
+    const obj: Record<string, string> = {};
+    ["client_name", "client_phone", "client_email", "client_company", "event_date", "notes"].forEach(k => {
+      const v = String(fd.get(k) ?? "").trim();
+      if (v) obj[k] = v;
+    });
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(obj)); } catch {}
+  }
+
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (items.length === 0) return;
     const fd = new FormData(e.currentTarget);
+    saveDraft(fd);
     setContactDraft({
       client_name: String(fd.get("client_name") ?? "").trim(),
       client_phone: String(fd.get("client_phone") ?? "").trim(),
@@ -96,8 +118,9 @@ function CartPage() {
       });
       clearCart();
       setReqOpen(false);
-      setDone({ id: res.id });
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       toast.success("Заказ оформлен");
+      navigate({ to: "/order/success/$id", params: { id: res.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Ошибка отправки");
     } finally {
@@ -106,17 +129,6 @@ function CartPage() {
   }
 
 
-  if (done) {
-    return (
-      <div className="container mx-auto px-4 py-16 max-w-2xl">
-        <div className="glass rounded-2xl p-8 text-center">
-          <h1 className="text-3xl font-display font-bold gradient-text">Заказ принят</h1>
-          <p className="mt-3 text-muted-foreground">Номер: <span className="font-mono">{done.id.slice(0, 8)}</span>. Мы свяжемся в течение рабочего дня.</p>
-          <Link to="/" className="mt-6 inline-flex rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">На главную</Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
@@ -209,16 +221,29 @@ function CartPage() {
           </section>
 
           <aside className="lg:col-span-2">
-            <form onSubmit={onSubmit} className="glass rounded-xl p-5 space-y-3">
+            <form ref={formRef} onSubmit={onSubmit} className="glass rounded-xl p-5 space-y-3">
               <h2 className="font-display font-semibold">Контактные данные</h2>
-              <Field label="Имя *" name="client_name" required />
-              <Field label="Телефон *" name="client_phone" type="tel" required />
-              <Field label="Email *" name="client_email" type="email" required />
-              <Field label="Компания" name="client_company" />
+              <div className="flex gap-2 p-1 rounded-md bg-background/40 border border-border">
+                {(["individual", "company"] as const).map(t => (
+                  <button
+                    key={t} type="button"
+                    onClick={() => setClientType(t)}
+                    className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition ${clientType === t ? "bg-gradient-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {t === "individual" ? "Физлицо" : "Юрлицо / ИП"}
+                  </button>
+                ))}
+              </div>
+              <Field label="Имя *" name="client_name" required defaultValue={draft.client_name} />
+              <Field label="Телефон *" name="client_phone" type="tel" required defaultValue={draft.client_phone} />
+              <Field label="Email *" name="client_email" type="email" required defaultValue={draft.client_email} />
+              {clientType === "company" && (
+                <Field label="Компания *" name="client_company" required defaultValue={draft.client_company} />
+              )}
               <DateField label="Дата мероприятия" name="event_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
               <label className="block text-sm">
                 <span className="text-muted-foreground">Комментарий</span>
-                <textarea name="notes" rows={3} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
+                <textarea name="notes" rows={3} defaultValue={draft.notes ?? ""} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
               </label>
               <label className="flex items-start gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" required defaultChecked className="mt-0.5" />
@@ -228,8 +253,11 @@ function CartPage() {
                 type="submit" disabled={loading}
                 className="w-full rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60"
               >
-                {loading ? "Отправляем..." : `Отправить заказ • ${fmt.format(finalTotal)}`}
+                {loading ? "Отправляем..." : clientType === "company" ? `Далее: реквизиты • ${fmt.format(finalTotal)}` : `Отправить заказ • ${fmt.format(finalTotal)}`}
               </button>
+              {clientType === "individual" && (
+                <p className="text-[11px] text-muted-foreground text-center">Реквизиты компании при необходимости запросит менеджер.</p>
+              )}
             </form>
           </aside>
         </div>
@@ -239,19 +267,24 @@ function CartPage() {
         open={reqOpen}
         onOpenChange={setReqOpen}
         loading={loading}
+        required={clientType === "company"}
         onConfirm={finalSubmit}
+        onSkip={clientType === "individual" ? () => finalSubmit({
+          company_legal_name: null, company_unp: null, company_address: null,
+          company_bank: null, contact_person_name: null, contact_person_position: null, acting_basis: null,
+        }) : undefined}
       />
     </div>
   );
 }
 
 
-function Field({ label, name, type = "text", required }: { label: string; name: string; type?: string; required?: boolean }) {
+function Field({ label, name, type = "text", required, defaultValue }: { label: string; name: string; type?: string; required?: boolean; defaultValue?: string }) {
   return (
     <label className="block text-sm">
       <span className="text-muted-foreground">{label}</span>
       <input
-        name={name} type={type} required={required}
+        name={name} type={type} required={required} defaultValue={defaultValue}
         className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2 outline-none focus:border-primary"
       />
     </label>
@@ -262,11 +295,14 @@ function RequisitesDialog({
   open,
   onOpenChange,
   loading,
+  required,
   onConfirm,
+  onSkip,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   loading: boolean;
+  required?: boolean;
   onConfirm: (req: {
     company_legal_name: string | null;
     company_unp: string | null;
@@ -276,6 +312,7 @@ function RequisitesDialog({
     contact_person_position: string | null;
     acting_basis: string | null;
   }) => void;
+  onSkip?: () => void;
 }) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
