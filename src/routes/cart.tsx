@@ -9,6 +9,8 @@ import { readUtm } from "@/lib/utm";
 import { PromoCodeInput } from "@/components/PromoCodeInput";
 import { DateField } from "@/components/DateField";
 import { type PromoValidation } from "@/lib/promo.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -29,26 +31,52 @@ function CartPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<{ id: string } | null>(null);
   const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
+  const [reqOpen, setReqOpen] = useState(false);
+  const [contactDraft, setContactDraft] = useState<null | {
+    client_name: string;
+    client_phone: string;
+    client_email: string;
+    client_company: string | null;
+    event_date: string | null;
+    notes: string | null;
+  }>(null);
   const discount = promo?.discount_amount ?? 0;
   const finalTotal = Math.max(0, total - discount);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (items.length === 0) return;
     const fd = new FormData(e.currentTarget);
+    setContactDraft({
+      client_name: String(fd.get("client_name") ?? "").trim(),
+      client_phone: String(fd.get("client_phone") ?? "").trim(),
+      client_email: String(fd.get("client_email") ?? "").trim(),
+      client_company: String(fd.get("client_company") ?? "").trim() || null,
+      event_date: String(fd.get("event_date") ?? "") || null,
+      notes: String(fd.get("notes") ?? "").trim() || null,
+    });
+    setReqOpen(true);
+  }
+
+  async function finalSubmit(req: {
+    company_legal_name: string | null;
+    company_unp: string | null;
+    company_address: string | null;
+    company_bank: string | null;
+    contact_person_name: string | null;
+    contact_person_position: string | null;
+    acting_basis: string | null;
+  }) {
+    if (!contactDraft) return;
     const utm = readUtm() ?? {};
     setLoading(true);
     try {
       const res = await submit({
         data: {
-          client_name: String(fd.get("client_name") ?? "").trim(),
-          client_phone: String(fd.get("client_phone") ?? "").trim(),
-          client_email: String(fd.get("client_email") ?? "").trim(),
-          client_company: String(fd.get("client_company") ?? "").trim() || null,
-          event_date: String(fd.get("event_date") ?? "") || null,
-          notes: String(fd.get("notes") ?? "").trim() || null,
+          ...contactDraft,
           source: "cart",
           promo_code: promo?.code ?? null,
+          ...req,
           utm_source: utm.utm_source ?? null,
           utm_medium: utm.utm_medium ?? null,
           utm_campaign: utm.utm_campaign ?? null,
@@ -67,6 +95,7 @@ function CartPage() {
         },
       });
       clearCart();
+      setReqOpen(false);
       setDone({ id: res.id });
       toast.success("Заказ оформлен");
     } catch (err) {
@@ -75,6 +104,7 @@ function CartPage() {
       setLoading(false);
     }
   }
+
 
   if (done) {
     return (
@@ -204,9 +234,17 @@ function CartPage() {
           </aside>
         </div>
       )}
+
+      <RequisitesDialog
+        open={reqOpen}
+        onOpenChange={setReqOpen}
+        loading={loading}
+        onConfirm={finalSubmit}
+      />
     </div>
   );
 }
+
 
 function Field({ label, name, type = "text", required }: { label: string; name: string; type?: string; required?: boolean }) {
   return (
@@ -216,6 +254,130 @@ function Field({ label, name, type = "text", required }: { label: string; name: 
         name={name} type={type} required={required}
         className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2 outline-none focus:border-primary"
       />
+    </label>
+  );
+}
+
+function RequisitesDialog({
+  open,
+  onOpenChange,
+  loading,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  loading: boolean;
+  onConfirm: (req: {
+    company_legal_name: string | null;
+    company_unp: string | null;
+    company_address: string | null;
+    company_bank: string | null;
+    contact_person_name: string | null;
+    contact_person_position: string | null;
+    acting_basis: string | null;
+  }) => void;
+}) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const get = (k: string) => {
+      const v = String(fd.get(k) ?? "").trim();
+      return v ? v : null;
+    };
+    onConfirm({
+      company_legal_name: get("company_legal_name"),
+      company_unp: get("company_unp"),
+      company_address: get("company_address"),
+      company_bank: get("company_bank"),
+      contact_person_name: get("contact_person_name"),
+      contact_person_position: get("contact_person_position"),
+      acting_basis: get("acting_basis"),
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!loading) onOpenChange(v); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Реквизиты для подготовки документов</DialogTitle>
+          <DialogDescription>
+            Заполните реквизиты компании и данные ответственного лица. Это нужно, чтобы мы могли подготовить договор и счёт. Поля можно пропустить, если оплата от физлица — менеджер уточнит детали при звонке.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Компания</h3>
+            <ReqField label="Юридическое название" name="company_legal_name" placeholder="ООО «Ромашка»" maxLength={240} />
+            <div className="grid sm:grid-cols-2 gap-3">
+              <ReqField label="УНП / ИНН" name="company_unp" placeholder="123456789" maxLength={40} />
+              <ReqField label="Юридический адрес" name="company_address" placeholder="г. Минск, ул. ..." maxLength={300} />
+            </div>
+            <ReqField label="Банковские реквизиты" name="company_bank" placeholder="Р/с, БИК, наименование банка" maxLength={300} textarea />
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Ответственное лицо</h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <ReqField label="ФИО" name="contact_person_name" placeholder="Иванов Иван Иванович" maxLength={160} />
+              <ReqField label="Должность" name="contact_person_position" placeholder="Директор" maxLength={160} />
+            </div>
+            <ReqField label="Действует на основании" name="acting_basis" placeholder="Устава / доверенности № … от …" maxLength={200} />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-60"
+            >
+              Отмена
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60"
+            >
+              {loading ? "Отправляем..." : "Подтвердить и отправить"}
+            </button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReqField({
+  label,
+  name,
+  placeholder,
+  maxLength,
+  textarea,
+}: {
+  label: string;
+  name: string;
+  placeholder?: string;
+  maxLength?: number;
+  textarea?: boolean;
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      {textarea ? (
+        <textarea
+          name={name}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          rows={2}
+          className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2 outline-none focus:border-primary"
+        />
+      ) : (
+        <input
+          name={name}
+          type="text"
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2 outline-none focus:border-primary"
+        />
+      )}
     </label>
   );
 }
