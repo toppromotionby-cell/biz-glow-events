@@ -137,7 +137,8 @@ function CatalogInner({ table }: { table: Table }) {
   );
 }
 
-function PreviewDialog({ item, onClose, onEdit }: { item: any | null; onClose: () => void; onEdit: (it: any) => void }) {
+type PreviewDialogProps = { item: any | null; onClose: () => void; onEdit: (it: any) => void };
+function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
   const open = !!item;
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
