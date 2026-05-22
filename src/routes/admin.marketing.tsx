@@ -17,8 +17,11 @@ function MarketingPage() {
     <div className="space-y-5">
       <header>
         <h1 className="text-3xl font-display font-bold gradient-text">Маркетинг</h1>
-        <p className="text-sm text-muted-foreground">Управление кампаниями и UTM-источниками. Полная панель — Этап 3.</p>
+        <p className="text-sm text-muted-foreground">Кампании, UTM-источники и аналитика трафика.</p>
       </header>
+
+      <UtmBuilder />
+
       <div className="glass rounded-xl overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-muted-foreground text-xs uppercase">
