@@ -17,14 +17,17 @@ export function SiteHeader() {
   const { isAuthenticated } = useAuth();
   return (
     <header className="sticky top-0 z-40 glass-strong border-b border-border/50">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">
+        Перейти к содержимому
+      </a>
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-2 font-display font-bold text-lg">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary glow-primary">
+        <Link to="/" aria-label="event-hub.by — на главную" className="flex items-center gap-2 font-display font-bold text-lg">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary glow-primary" aria-hidden="true">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </span>
           <span className="gradient-text">event-hub.by</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm">
+        <nav aria-label="Основная навигация" className="hidden md:flex items-center gap-6 text-sm">
           {NAV.map(n => (
             <Link key={n.to} to={n.to} className="text-muted-foreground hover:text-foreground transition" activeProps={{ className: "text-foreground" }}>
               {n.label}
