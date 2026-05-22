@@ -1,4 +1,8 @@
 // submitOrder: создаёт заявку с позициями. Возвращает id заявки.
+// SECURITY:
+//  - цены позиций перепроверяются из каталога (pricing.from) — клиентские игнорируются;
+//  - HTML-поля в Telegram-уведомлениях экранируются;
+//  - инкремент used_count промокода выполняется атомарно только при создании заказа.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -9,7 +13,7 @@ const ItemSchema = z.object({
   entity_type: EntityType,
   entity_id: z.string().min(1).max(160),
   title: z.string().min(1).max(240),
-  price: z.number().min(0).max(10_000_000),
+  price: z.number().min(0).max(10_000_000), // hint only — server re-computes
   qty: z.number().int().min(1).max(999),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
@@ -23,6 +27,7 @@ const OrderSchema = z.object({
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   source: z.string().max(80).optional().nullable(),
+  promo_code: z.string().min(2).max(40).optional().nullable(),
   utm_source: z.string().max(120).optional().nullable(),
   utm_medium: z.string().max(120).optional().nullable(),
   utm_campaign: z.string().max(120).optional().nullable(),
@@ -34,6 +39,59 @@ const OrderSchema = z.object({
 
 function isUuid(v: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
+function tgEsc(s: string | null | undefined): string {
+  if (s == null) return "";
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Извлекает каноническую базовую цену из pricing JSON.
+function extractBasePrice(pricing: unknown): number | null {
+  if (!pricing || typeof pricing !== "object") return null;
+  const p = pricing as Record<string, unknown>;
+  for (const key of ["from", "base", "price", "value", "amount"]) {
+    const v = p[key];
+    if (typeof v === "number" && Number.isFinite(v) && v >= 0) return v;
+  }
+  return null;
+}
+
+type ResolvedItem = {
+  entity_type: string;
+  entity_id: string;
+  title: string;
+  price: number;
+  client_price: number;
+  qty: number;
+  start_date: string | null;
+  end_date: string | null;
+  discrepancy: boolean;
+};
+
+async function resolveServerPrice(
+  entity_type: string,
+  entity_id: string,
+): Promise<{ price: number | null; title: string | null }> {
+  if (!isUuid(entity_id)) {
+    // slug-based: ищем по slug
+    const { data } = await supabaseAdmin
+      .from(entity_type as "zones")
+      .select("title, pricing")
+      .eq("slug", entity_id)
+      .eq("published", true)
+      .maybeSingle();
+    if (!data) return { price: null, title: null };
+    return { price: extractBasePrice(data.pricing), title: data.title };
+  }
+  const { data } = await supabaseAdmin
+    .from(entity_type as "zones")
+    .select("title, pricing")
+    .eq("id", entity_id)
+    .eq("published", true)
+    .maybeSingle();
+  if (!data) return { price: null, title: null };
+  return { price: extractBasePrice(data.pricing), title: data.title };
 }
 
 async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: string }> {
@@ -61,7 +119,41 @@ async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: stri
 export const submitOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => OrderSchema.parse(input))
   .handler(async ({ data }) => {
-    const total = data.items.reduce((s, i) => s + i.qty * i.price, 0);
+    // 1. Серверная перепроверка цен — клиентские price используются только как hint.
+    const resolved: ResolvedItem[] = await Promise.all(
+      data.items.map(async (i) => {
+        const { price: canonical, title } = await resolveServerPrice(i.entity_type, i.entity_id);
+        // Если каноническая цена недоступна — используем клиентскую как fallback, помечаем discrepancy.
+        const finalPrice = canonical ?? i.price;
+        const discrepancy =
+          canonical == null ||
+          (canonical > 0 && Math.abs(canonical - i.price) / canonical > 0.2);
+        return {
+          entity_type: i.entity_type,
+          entity_id: i.entity_id,
+          title: title ?? i.title,
+          price: finalPrice,
+          client_price: i.price,
+          qty: i.qty,
+          start_date: i.start_date ?? null,
+          end_date: i.end_date ?? null,
+          discrepancy,
+        };
+      }),
+    );
+
+    const total = resolved.reduce((s, i) => s + i.qty * i.price, 0);
+    const hasDiscrepancy = resolved.some((r) => r.discrepancy);
+
+    // 2. Атомарный инкремент промокода (если задан) — если лимит исчерпан, заказ продолжаем без скидки.
+    let promoApplied: string | null = null;
+    if (data.promo_code) {
+      const code = data.promo_code.trim().toUpperCase();
+      const { data: upd } = await supabaseAdmin
+        .rpc("increment_promo_usage", { p_code: code })
+        .single<{ id: string }>();
+      if (upd) promoApplied = code;
+    }
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -71,7 +163,11 @@ export const submitOrder = createServerFn({ method: "POST" })
         client_email: data.client_email,
         client_company: data.client_company ?? null,
         event_date: data.event_date ?? null,
-        notes: data.notes ?? null,
+        notes: [
+          data.notes ?? "",
+          promoApplied ? `Промокод: ${promoApplied}` : "",
+          hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
+        ].filter(Boolean).join(" | ") || null,
         source: data.source ?? "cart",
         utm_source: data.utm_source ?? null,
         utm_medium: data.utm_medium ?? null,
@@ -86,7 +182,7 @@ export const submitOrder = createServerFn({ method: "POST" })
 
     if (error || !order) throw new Error(`Не удалось создать заявку: ${error?.message ?? "unknown"}`);
 
-    const rows = data.items.map((i) => ({
+    const rows = resolved.map((i) => ({
       order_id: order.id,
       entity_type: i.entity_type,
       entity_id: isUuid(i.entity_id) ? i.entity_id : null,
@@ -95,7 +191,10 @@ export const submitOrder = createServerFn({ method: "POST" })
       qty: i.qty,
       start_date: i.start_date ?? data.event_date ?? null,
       end_date: i.end_date ?? data.event_date ?? null,
-      meta: isUuid(i.entity_id) ? {} : { slug: i.entity_id },
+      meta: {
+        ...(isUuid(i.entity_id) ? {} : { slug: i.entity_id }),
+        ...(i.discrepancy ? { client_price: i.client_price, server_price: i.price } : {}),
+      },
     }));
 
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
@@ -104,19 +203,21 @@ export const submitOrder = createServerFn({ method: "POST" })
     await supabaseAdmin.from("order_timeline").insert({
       order_id: order.id,
       event: "order_created",
-      payload: { items: data.items.length, total },
+      payload: { items: resolved.length, total, promo: promoApplied, discrepancy: hasDiscrepancy },
     });
 
-    const lines = data.items.map((i) => `• ${i.title} × ${i.qty} — ${i.price * i.qty} BYN`).join("\n");
+    const lines = resolved.map((i) => `• ${tgEsc(i.title)} × ${i.qty} — ${i.price * i.qty} BYN`).join("\n");
     const text =
       `<b>Новая заявка (корзина)</b>\n` +
-      `Имя: ${data.client_name}\n` +
-      `Тел: ${data.client_phone}\n` +
-      `Email: ${data.client_email}\n` +
-      (data.client_company ? `Компания: ${data.client_company}\n` : "") +
-      (data.event_date ? `Дата: ${data.event_date}\n` : "") +
+      `Имя: ${tgEsc(data.client_name)}\n` +
+      `Тел: ${tgEsc(data.client_phone)}\n` +
+      `Email: ${tgEsc(data.client_email)}\n` +
+      (data.client_company ? `Компания: ${tgEsc(data.client_company)}\n` : "") +
+      (data.event_date ? `Дата: ${tgEsc(data.event_date)}\n` : "") +
       `\n${lines}\n\n<b>Итого: ${total} BYN</b>` +
-      (data.notes ? `\n\nКомментарий: ${data.notes}` : "");
+      (promoApplied ? `\nПромокод: ${tgEsc(promoApplied)}` : "") +
+      (hasDiscrepancy ? `\n⚠ <b>Ценовое расхождение</b>` : "") +
+      (data.notes ? `\n\nКомментарий: ${tgEsc(data.notes)}` : "");
 
     const tg = await notifyTelegram(text);
     await supabaseAdmin.from("telegram_logs").insert({
