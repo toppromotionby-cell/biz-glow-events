@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Trash2, Minus, Plus, ShoppingCart } from "lucide-react";
@@ -10,6 +10,8 @@ import { PromoCodeInput } from "@/components/PromoCodeInput";
 import { DateField } from "@/components/DateField";
 import { type PromoValidation } from "@/lib/promo.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+
+const DRAFT_KEY = "cart_contact_draft_v1";
 
 
 export const Route = createFileRoute("/cart")({
@@ -28,8 +30,10 @@ const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN",
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
+  const navigate = useNavigate();
+  const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState<{ id: string } | null>(null);
+  const [clientType, setClientType] = useState<"individual" | "company">("individual");
   const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
   const [reqOpen, setReqOpen] = useState(false);
   const [contactDraft, setContactDraft] = useState<null | {
