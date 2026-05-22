@@ -178,6 +178,78 @@ export type Database = {
         }
         Relationships: []
       }
+      cases: {
+        Row: {
+          client: string | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          event_date: string | null
+          event_type: string | null
+          featured: boolean
+          guests_count: number | null
+          id: string
+          location: string | null
+          metrics: Json | null
+          photo_urls: string[] | null
+          published: boolean
+          seo_description: string | null
+          seo_title: string | null
+          services_used: string[] | null
+          slug: string
+          summary: string | null
+          title: string
+          updated_at: string
+          video_urls: string[] | null
+        }
+        Insert: {
+          client?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          event_date?: string | null
+          event_type?: string | null
+          featured?: boolean
+          guests_count?: number | null
+          id?: string
+          location?: string | null
+          metrics?: Json | null
+          photo_urls?: string[] | null
+          published?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          services_used?: string[] | null
+          slug: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Update: {
+          client?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          event_date?: string | null
+          event_type?: string | null
+          featured?: boolean
+          guests_count?: number | null
+          id?: string
+          location?: string | null
+          metrics?: Json | null
+          photo_urls?: string[] | null
+          published?: boolean
+          seo_description?: string | null
+          seo_title?: string | null
+          services_used?: string[] | null
+          slug?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Relationships: []
+      }
       marketing_logs: {
         Row: {
           campaign_id: string | null
