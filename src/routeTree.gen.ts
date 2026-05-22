@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ZonesRouteImport } from './routes/zones'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as TestimonialsRouteImport } from './routes/testimonials'
+import { Route as TermsRentalRouteImport } from './routes/terms-rental'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -65,6 +66,11 @@ const WishlistRoute = WishlistRouteImport.update({
 const TestimonialsRoute = TestimonialsRouteImport.update({
   id: '/testimonials',
   path: '/testimonials',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRentalRoute = TermsRentalRouteImport.update({
+  id: '/terms-rental',
+  path: '/terms-rental',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
@@ -418,6 +427,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/services'
     | '/sitemap.xml'
+    | '/terms-rental'
     | '/testimonials'
     | '/wishlist'
     | '/zones'
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/services'
     | '/sitemap.xml'
+    | '/terms-rental'
     | '/testimonials'
     | '/wishlist'
     | '/zones'
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/services'
     | '/sitemap.xml'
+    | '/terms-rental'
     | '/testimonials'
     | '/wishlist'
     | '/zones'
@@ -550,6 +562,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRentalRoute: typeof TermsRentalRoute
   TestimonialsRoute: typeof TestimonialsRoute
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/testimonials'
       fullPath: '/testimonials'
       preLoaderRoute: typeof TestimonialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-rental': {
+      id: '/terms-rental'
+      path: '/terms-rental'
+      fullPath: '/terms-rental'
+      preLoaderRoute: typeof TermsRentalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -995,6 +1015,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   ServicesRoute: ServicesRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRentalRoute: TermsRentalRoute,
   TestimonialsRoute: TestimonialsRoute,
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
@@ -1002,3 +1023,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
