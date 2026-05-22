@@ -144,11 +144,21 @@ export function PriceTableEditor({
   );
 }
 
-export function PriceTableView({ pricing }: { pricing: unknown }) {
+export function PriceTableView({
+  pricing,
+  selectable = false,
+  selectedIndex = null,
+  onSelect,
+}: {
+  pricing: unknown;
+  selectable?: boolean;
+  selectedIndex?: number | null;
+  onSelect?: (i: number, tier: PriceTier) => void;
+}) {
   const tiers = getTiers(pricing);
   if (tiers.length === 0) return null;
   return (
-    <div className="overflow-x-auto rounded-lg border border-border/40">
+    <div className="overflow-hidden rounded-lg border border-border/40">
       <table className="w-full text-sm">
         <tbody>
           {tiers.map((t, i) => {
@@ -156,8 +166,34 @@ export function PriceTableView({ pricing }: { pricing: unknown }) {
             const hasPrice = Number.isFinite(price) && price > 0;
             const unit = (t.unit ?? "").trim();
             const showCurrency = !unit || /byn/i.test(unit);
+            const isSelected = selectable && selectedIndex === i;
+            const rowClass = selectable
+              ? `cursor-pointer transition ${isSelected ? "bg-primary/15 ring-1 ring-primary/50" : "hover:bg-muted/40"}`
+              : "";
+            const handle = () => selectable && onSelect?.(i, t);
             return (
-              <tr key={i} className="border-t border-border/30 first:border-t-0">
+              <tr
+                key={i}
+                className={`border-t border-border/30 first:border-t-0 ${rowClass}`}
+                onClick={handle}
+                onKeyDown={(e) => {
+                  if (selectable && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    handle();
+                  }
+                }}
+                role={selectable ? "button" : undefined}
+                tabIndex={selectable ? 0 : undefined}
+                aria-pressed={selectable ? isSelected : undefined}
+              >
+                {selectable && (
+                  <td className="pl-3 pr-1 py-2 w-6 align-middle">
+                    <span
+                      aria-hidden
+                      className={`inline-block h-3.5 w-3.5 rounded-full border ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/50"}`}
+                    />
+                  </td>
+                )}
                 <td className="px-3 py-2">
                   <div className="font-medium">{t.label || "—"}</div>
                   {t.note && <div className="text-xs text-muted-foreground mt-0.5">{t.note}</div>}
@@ -187,3 +223,4 @@ export function PriceTableView({ pricing }: { pricing: unknown }) {
     </div>
   );
 }
+
