@@ -18,7 +18,7 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
 
 type Row = { slug: string; updated_at: string };
 
-async function fetchSlugs(table: "zones" | "tech_equipment" | "services" | "production_items"): Promise<Row[]> {
+async function fetchSlugs(table: "zones" | "tech_equipment" | "services" | "production_items" | "blog_posts"): Promise<Row[]> {
   const { data } = await supabaseAdmin
     .from(table)
     .select("slug, updated_at")
