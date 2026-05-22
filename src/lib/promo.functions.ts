@@ -28,7 +28,10 @@ export const validatePromo = createServerFn({ method: "POST" })
       .select("*")
       .eq("code", code)
       .maybeSingle();
-    if (error) return { valid: false, reason: error.message };
+    if (error) {
+      console.error("[validatePromo] DB error:", error);
+      return { valid: false, reason: "Не удалось проверить промокод" };
+    }
     if (!row) return { valid: false, reason: "Промокод не найден" };
     if (!row.active) return { valid: false, reason: "Промокод неактивен" };
     const now = Date.now();
