@@ -8,6 +8,7 @@ import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
 import { RelatedItems } from "@/components/RelatedItems";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
+import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { trackView } from "@/lib/recent";
 
 function priceFrom(pricing: unknown): number | null {
@@ -117,6 +118,8 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               </ul>
             </div>
           )}
+
+          <AvailabilityCalendar entityType={entityType} itemId={item.id} />
         </aside>
       </div>
 
