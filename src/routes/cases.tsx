@@ -38,7 +38,7 @@ function CasesPage() {
             <li key={c.id} className="glass rounded-2xl overflow-hidden group hover:glow-primary transition">
               <Link to="/cases/$slug" params={{ slug: c.slug }} className="block">
                 <div className="aspect-[16/10] bg-surface overflow-hidden">
-                  {c.cover_url && <img src={c.cover_url} alt={c.title} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />}
+                  {c.cover_url && <img src={c.cover_url} alt={c.title} loading="lazy" decoding="async" width={640} height={400} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />}
                 </div>
                 <div className="p-5">
                   {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
