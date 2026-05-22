@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Download, Mail, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/newsletter")({ component: Page });
+export const Route = createFileRoute("/admin/newsletter/")({ component: Page });
 
 function Page() {
   const qc = useQueryClient();
