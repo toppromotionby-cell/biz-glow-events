@@ -75,7 +75,8 @@ export const submitLead = createServerFn({ method: "POST" })
       .single();
 
     if (error || !order) {
-      throw new Error(`Не удалось создать заявку: ${error?.message ?? "unknown"}`);
+      console.error("[submitLead] DB error:", error);
+      throw new Error("Не удалось создать заявку. Попробуйте ещё раз.");
     }
 
     await supabaseAdmin.from("order_timeline").insert({

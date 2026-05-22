@@ -80,7 +80,12 @@ function Page() {
 
       <div className="glass rounded-xl p-5">
         <h2 className="font-semibold mb-3">Превью письма</h2>
-        <div className="border rounded p-4 bg-white text-black max-h-[500px] overflow-auto" dangerouslySetInnerHTML={{ __html: campaign.html_content }} />
+        <iframe
+          sandbox=""
+          srcDoc={campaign.html_content}
+          title="Email preview"
+          className="w-full h-[500px] border rounded bg-white"
+        />
       </div>
 
       {recipients.length > 0 && (

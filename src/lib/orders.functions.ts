@@ -197,7 +197,10 @@ export const submitOrder = createServerFn({ method: "POST" })
       .select("id")
       .single();
 
-    if (error || !order) throw new Error(`Не удалось создать заявку: ${error?.message ?? "unknown"}`);
+    if (error || !order) {
+      console.error("[submitOrder] DB error:", error);
+      throw new Error("Не удалось создать заявку. Попробуйте ещё раз.");
+    }
 
     const rows = resolved.map((i) => ({
       order_id: order.id,
@@ -215,7 +218,10 @@ export const submitOrder = createServerFn({ method: "POST" })
     }));
 
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
-    if (itemsErr) throw new Error(`Не удалось сохранить позиции: ${itemsErr.message}`);
+    if (itemsErr) {
+      console.error("[submitOrder] items insert error:", itemsErr);
+      throw new Error("Не удалось сохранить позиции заявки.");
+    }
 
     await supabaseAdmin.from("order_timeline").insert({
       order_id: order.id,

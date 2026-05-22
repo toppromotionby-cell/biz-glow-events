@@ -28,7 +28,10 @@ export const subscribeNewsletter = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("newsletter_subscribers")
       .insert({ email, source: data.source ?? "footer" });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[subscribeNewsletter] DB error:", error);
+      throw new Error("Не удалось подписаться. Попробуйте ещё раз.");
+    }
     return { ok: true };
   });
 
