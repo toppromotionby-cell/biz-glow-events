@@ -29,6 +29,10 @@ function ContactsPage() {
           <div className="font-medium">Минск, Беларусь</div>
         </div>
       </div>
+      <div className="mt-12">
+        <h2 className="text-2xl font-display font-semibold mb-4">Оставьте заявку</h2>
+        <LeadForm source="contacts" />
+      </div>
     </div>
   );
 }
