@@ -31,26 +31,52 @@ function CartPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<{ id: string } | null>(null);
   const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
+  const [reqOpen, setReqOpen] = useState(false);
+  const [contactDraft, setContactDraft] = useState<null | {
+    client_name: string;
+    client_phone: string;
+    client_email: string;
+    client_company: string | null;
+    event_date: string | null;
+    notes: string | null;
+  }>(null);
   const discount = promo?.discount_amount ?? 0;
   const finalTotal = Math.max(0, total - discount);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (items.length === 0) return;
     const fd = new FormData(e.currentTarget);
+    setContactDraft({
+      client_name: String(fd.get("client_name") ?? "").trim(),
+      client_phone: String(fd.get("client_phone") ?? "").trim(),
+      client_email: String(fd.get("client_email") ?? "").trim(),
+      client_company: String(fd.get("client_company") ?? "").trim() || null,
+      event_date: String(fd.get("event_date") ?? "") || null,
+      notes: String(fd.get("notes") ?? "").trim() || null,
+    });
+    setReqOpen(true);
+  }
+
+  async function finalSubmit(req: {
+    company_legal_name: string | null;
+    company_unp: string | null;
+    company_address: string | null;
+    company_bank: string | null;
+    contact_person_name: string | null;
+    contact_person_position: string | null;
+    acting_basis: string | null;
+  }) {
+    if (!contactDraft) return;
     const utm = readUtm() ?? {};
     setLoading(true);
     try {
       const res = await submit({
         data: {
-          client_name: String(fd.get("client_name") ?? "").trim(),
-          client_phone: String(fd.get("client_phone") ?? "").trim(),
-          client_email: String(fd.get("client_email") ?? "").trim(),
-          client_company: String(fd.get("client_company") ?? "").trim() || null,
-          event_date: String(fd.get("event_date") ?? "") || null,
-          notes: String(fd.get("notes") ?? "").trim() || null,
+          ...contactDraft,
           source: "cart",
           promo_code: promo?.code ?? null,
+          ...req,
           utm_source: utm.utm_source ?? null,
           utm_medium: utm.utm_medium ?? null,
           utm_campaign: utm.utm_campaign ?? null,
@@ -69,6 +95,7 @@ function CartPage() {
         },
       });
       clearCart();
+      setReqOpen(false);
       setDone({ id: res.id });
       toast.success("Заказ оформлен");
     } catch (err) {
@@ -77,6 +104,7 @@ function CartPage() {
       setLoading(false);
     }
   }
+
 
   if (done) {
     return (
