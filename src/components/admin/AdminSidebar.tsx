@@ -2,7 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { LayoutDashboard, ShoppingCart, Calendar, Package, Wrench, Sparkles, Hammer, FileText, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
   { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart },
   { to: "/admin/calendar", label: "Календарь", icon: Calendar },
@@ -12,7 +12,7 @@ const NAV = [
   { to: "/admin/catalog/production_items", label: "Производство", icon: Hammer },
   { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
   { to: "/admin/audit", label: "Аудит", icon: FileText },
-] as const;
+];
 
 export function AdminSidebar() {
   const loc = useLocation();
