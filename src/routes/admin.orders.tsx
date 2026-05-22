@@ -35,6 +35,7 @@ export const Route = createFileRoute("/admin/orders")({
 });
 
 function AdminOrders() {
+  const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("");
   const [sortBy, setSortBy] = useState<"created_at" | "total" | "event_date">("created_at");
@@ -51,6 +52,37 @@ function AdminOrders() {
       return data;
     },
   });
+
+  // Realtime: обновляем список при любых изменениях в orders
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-orders-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, newStatus }: { id: string; newStatus: string }) => {
+      const { error } = await supabase.from("orders").update({ status: newStatus as any }).eq("id", id);
+      if (error) throw error;
+      const { data: u } = await supabase.auth.getUser();
+      await supabase.from("order_timeline").insert({
+        order_id: id, event: `status_changed:${newStatus}`,
+        actor_id: u.user?.id ?? null, payload: { status: newStatus },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Статус обновлён");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Не удалось изменить статус"),
+  });
+
 
   const sorted = useMemo(() => {
     const arr = [...orders];
