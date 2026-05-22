@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { UtmBuilder } from "@/components/admin/UtmBuilder";
 
 export const Route = createFileRoute("/admin/marketing")({
   component: MarketingPage,
