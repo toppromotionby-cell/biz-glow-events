@@ -1,5 +1,5 @@
 // Универсальный CRUD каталогов: zones | tech_equipment | services | production_items.
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { createFileRoute, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,8 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Pencil, X } from "lucide-react";
+import { Plus, Trash2, Save, Pencil, X, ArrowRightLeft } from "lucide-react";
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
