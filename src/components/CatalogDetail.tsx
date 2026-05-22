@@ -95,7 +95,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           </header>
 
           <div className="glass rounded-xl p-5">
-            <div className="text-xs text-muted-foreground">Стоимость</div>
+            <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
             <PriceGate>
               <div className="text-2xl font-display font-bold">
                 {from !== null ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}` : "По запросу"}
