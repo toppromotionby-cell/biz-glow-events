@@ -1,10 +1,10 @@
 // Админка: список подписчиков рассылки + удаление.
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listSubscribers, deleteSubscriber } from "@/lib/newsletter.functions";
 import { Button } from "@/components/ui/button";
-import { Trash2, Download, Mail } from "lucide-react";
+import { Trash2, Download, Mail, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/newsletter")({ component: Page });

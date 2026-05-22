@@ -64,6 +64,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
+import { Route as AdminNewsletterCampaignsIdRouteImport } from './routes/admin.newsletter.campaigns.$id'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -342,6 +343,12 @@ const AdminOrdersIdContractRoute = AdminOrdersIdContractRouteImport.update({
   path: '/contract',
   getParentRoute: () => AdminOrdersIdRoute,
 } as any)
+const AdminNewsletterCampaignsIdRoute =
+  AdminNewsletterCampaignsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AdminNewsletterCampaignsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -393,8 +400,9 @@ export interface FileRoutesByFullPath {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
-  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRoute
+  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -449,8 +457,9 @@ export interface FileRoutesByTo {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
-  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRoute
+  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -507,8 +516,9 @@ export interface FileRoutesById {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
-  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRoute
+  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -568,6 +578,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/admin/newsletter/campaigns/$id'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -624,6 +635,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/admin/newsletter/campaigns/$id'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -681,6 +693,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/admin/newsletter/campaigns/$id'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -1107,15 +1120,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdContractRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/newsletter/campaigns/$id': {
+      id: '/admin/newsletter/campaigns/$id'
+      path: '/$id'
+      fullPath: '/admin/newsletter/campaigns/$id'
+      preLoaderRoute: typeof AdminNewsletterCampaignsIdRouteImport
+      parentRoute: typeof AdminNewsletterCampaignsRoute
+    }
   }
 }
 
+interface AdminNewsletterCampaignsRouteChildren {
+  AdminNewsletterCampaignsIdRoute: typeof AdminNewsletterCampaignsIdRoute
+}
+
+const AdminNewsletterCampaignsRouteChildren: AdminNewsletterCampaignsRouteChildren =
+  {
+    AdminNewsletterCampaignsIdRoute: AdminNewsletterCampaignsIdRoute,
+  }
+
+const AdminNewsletterCampaignsRouteWithChildren =
+  AdminNewsletterCampaignsRoute._addFileChildren(
+    AdminNewsletterCampaignsRouteChildren,
+  )
+
 interface AdminNewsletterRouteChildren {
-  AdminNewsletterCampaignsRoute: typeof AdminNewsletterCampaignsRoute
+  AdminNewsletterCampaignsRoute: typeof AdminNewsletterCampaignsRouteWithChildren
 }
 
 const AdminNewsletterRouteChildren: AdminNewsletterRouteChildren = {
-  AdminNewsletterCampaignsRoute: AdminNewsletterCampaignsRoute,
+  AdminNewsletterCampaignsRoute: AdminNewsletterCampaignsRouteWithChildren,
 }
 
 const AdminNewsletterRouteWithChildren = AdminNewsletterRoute._addFileChildren(
