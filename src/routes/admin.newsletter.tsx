@@ -44,9 +44,14 @@ function Page() {
           </h1>
           <p className="text-sm text-muted-foreground">{data.length} записей</p>
         </div>
-        <Button onClick={exportCsv} variant="outline" disabled={!data.length}>
-          <Download className="h-4 w-4 mr-2" />Экспорт CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="default">
+            <Link to="/admin/newsletter/campaigns"><Megaphone className="h-4 w-4 mr-2" />Кампании</Link>
+          </Button>
+          <Button onClick={exportCsv} variant="outline" disabled={!data.length}>
+            <Download className="h-4 w-4 mr-2" />Экспорт CSV
+          </Button>
+        </div>
       </header>
 
       <div className="glass rounded-xl overflow-hidden">
