@@ -50,7 +50,7 @@ function extract(html, pageUrl) {
   while ((m = photoRe.exec(html))) {
     photoSet.add("https://event-tech.by/" + m[0]);
   }
-  const photos = [...photoSet].slice(0, 6);
+  const photos = [...photoSet].slice(0, 5);
 
   // youtube videos
   const videoSet = new Set();
