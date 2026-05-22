@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { LeadForm } from "@/components/LeadForm";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({ meta: [{ title: "Контакты — event-hub.by" }, { name: "description", content: "Свяжитесь с event-hub.by — Минск, Беларусь. Телефон, email." }] }),
