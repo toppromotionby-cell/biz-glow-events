@@ -136,7 +136,7 @@ function HomePage() {
             </Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featured.map((f) => (
+            {featured.map((f, idx) => (
               <a
                 key={f.id}
                 href={`${f.basePath}/${f.slug}`}
@@ -144,7 +144,14 @@ function HomePage() {
               >
                 <div className="aspect-[16/10] overflow-hidden bg-gradient-primary/10">
                   {f.photo_urls?.[0] ? (
-                    <img src={f.photo_urls[0]} alt={f.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                    <img
+                      src={f.photo_urls[0]} alt={f.title}
+                      width={640} height={400}
+                      loading={idx === 0 ? "eager" : "lazy"}
+                      fetchPriority={idx === 0 ? "high" : "auto"}
+                      decoding="async"
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
                   ) : null}
                 </div>
                 <div className="p-4">
@@ -154,6 +161,7 @@ function HomePage() {
               </a>
             ))}
           </div>
+
         </Toggleable>
       )}
 
