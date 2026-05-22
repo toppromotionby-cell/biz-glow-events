@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
+import ogDefault from "@/assets/og-default.jpg";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
@@ -60,8 +61,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "event-hub.by — Event-технологии и продакшн в Минске" },
       { property: "og:description", content: "Интерактивные зоны, оборудование, услуги и производство для мероприятий в Беларуси. VR/AR, LED, фотозоны, BTL, промо." },
       { name: "twitter:description", content: "Интерактивные зоны, оборудование, услуги и производство для мероприятий в Беларуси. VR/AR, LED, фотозоны, BTL, промо." },
-      // og:image / twitter:image задаются на листовых роутах (динамически из контента).
-      // Не задаём на root — иначе превью затирает любые попытки листьев показать свою картинку.
+      // Дефолтный og:image. Динамические листовые роуты переопределяют его картинкой контента.
+      { property: "og:image", content: `https://event-hub.by${ogDefault}` },
+      { name: "twitter:image", content: `https://event-hub.by${ogDefault}` },
+      { property: "og:image:width", content: "1216" },
+      { property: "og:image:height", content: "640" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
