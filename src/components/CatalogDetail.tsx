@@ -17,10 +17,11 @@ function asArray<T = unknown>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
 
-export function CatalogDetail({ item, backHref, backLabel }: {
+export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   item: CatalogRow;
   backHref: string;
   backLabel: string;
+  entityType: CatalogType;
 }) {
   const photos = item.photo_urls ?? [];
   const [active, setActive] = useState(0);
