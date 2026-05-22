@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, User, ShoppingCart, Heart } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { SearchTrigger } from "@/components/SearchTrigger";
 
 const NAV = [
   { to: "/zones", label: "Зоны" },
@@ -41,6 +42,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <SearchTrigger />
           <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
             <Heart className="h-4 w-4" aria-hidden="true" />
             {wishCount > 0 && (
