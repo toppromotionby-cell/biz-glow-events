@@ -1,16 +1,94 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+type Post = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  cover_url: string | null;
+  tags: string[] | null;
+  published_at: string | null;
+};
 
 export const Route = createFileRoute("/blog")({
   head: () => ({
     meta: [
       { title: "Блог о event-индустрии — event-hub.by" },
-      { name: "description", content: "Кейсы, тренды и аналитика event-рынка Беларуси." },
+      { name: "description", content: "Кейсы, тренды и аналитика event-рынка Беларуси: оборудование, организация мероприятий, продакшн." },
+      { property: "og:title", content: "Блог event-hub.by" },
+      { property: "og:description", content: "Кейсы, тренды и аналитика event-рынка Беларуси." },
     ],
   }),
-  component: () => (
-    <div className="container mx-auto px-4 py-16 max-w-3xl">
-      <h1 className="text-4xl font-display font-bold gradient-text">Блог</h1>
-      <p className="mt-4 text-muted-foreground">Скоро здесь появятся кейсы, обзоры оборудования и тренды event-индустрии.</p>
-    </div>
-  ),
+  component: BlogIndex,
 });
+
+function BlogIndex() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("blog_posts")
+        .select("id, slug, title, excerpt, cover_url, tags, published_at")
+        .eq("published", true)
+        .order("published_at", { ascending: false, nullsFirst: false });
+      setPosts((data ?? []) as Post[]);
+      setLoading(false);
+    })();
+  }, []);
+
+  return (
+    <div className="container mx-auto px-4 py-16 max-w-5xl">
+      <header className="mb-10">
+        <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Блог</h1>
+        <p className="mt-3 text-muted-foreground max-w-2xl">Кейсы, разбор оборудования и тренды белорусской event-индустрии.</p>
+      </header>
+
+      {loading ? (
+        <div className="text-muted-foreground">Загрузка...</div>
+      ) : posts.length === 0 ? (
+        <div className="glass rounded-xl p-10 text-center text-muted-foreground">
+          Скоро здесь появятся первые публикации.
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {posts.map((p) => (
+            <Link
+              key={p.id}
+              to="/blog/$slug"
+              params={{ slug: p.slug }}
+              className="group glass rounded-xl overflow-hidden hover:border-primary/40 transition"
+            >
+              {p.cover_url ? (
+                <div className="aspect-[16/10] overflow-hidden">
+                  <img src={p.cover_url} alt={p.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                </div>
+              ) : (
+                <div className="aspect-[16/10] bg-gradient-primary/20" />
+              )}
+              <div className="p-5">
+                {p.published_at && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
+                  </div>
+                )}
+                <h2 className="font-display font-semibold leading-tight group-hover:text-primary transition">{p.title}</h2>
+                {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{p.excerpt}</p>}
+                {p.tags && p.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {p.tags.slice(0, 3).map((t) => (
+                      <span key={t} className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-border/50 text-muted-foreground">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
