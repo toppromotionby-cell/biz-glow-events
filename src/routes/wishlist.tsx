@@ -88,11 +88,11 @@ function WishlistPage() {
                     <button
                       onClick={() => {
                         addToCart({ id: i.id, entity_type: i.entity_type, slug: i.slug, title: i.title, price: i.price, image: i.image, qty: 1 });
-                        toast.success(`«${i.title}» добавлено в заявку`);
+                        toast.success(`«${i.title}» добавлено в корзину`);
                       }}
                       className="flex-1 rounded-md bg-gradient-primary px-3 py-2 text-xs font-medium text-primary-foreground glow-primary"
                     >
-                      В заявку
+                      В корзину
                     </button>
                     <button
                       onClick={() => removeFromWishlist(i.id, i.entity_type)}
