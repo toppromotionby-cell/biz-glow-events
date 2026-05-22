@@ -65,6 +65,15 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
   const from = priceFrom(item.pricing);
   const [active, setActive] = useState(0);
   const cover = photos[active];
+  const tiers = getTiers(item.pricing);
+  const hasTiers = tiers.length > 0;
+  const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
+  const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
+  const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
+  const effectivePrice = tierPrice ?? from ?? 0;
+  const effectiveTitle = activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title;
+  const effectiveId = activeTier ? `${item.id}::${selectedTier}` : item.id;
+  const needsSelection = hasTiers && selectedTier === null;
 
   return (
     <div className="p-6 md:p-8">
