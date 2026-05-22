@@ -37,7 +37,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link to="/cart" aria-label={`Заявка${count ? `, ${count} позиций` : ""}`} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+          <Link to="/cart" aria-label={count > 0 ? `Заявка, ${count} позиций` : "Заявка"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
             <ShoppingCart className="h-4 w-4" aria-hidden="true" />
             {count > 0 && (
               <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{count}</span>
