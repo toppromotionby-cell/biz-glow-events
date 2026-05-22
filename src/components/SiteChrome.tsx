@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,6 +113,11 @@ export function SiteFooter() {
             <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
             <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
           </ul>
+          <div className="mt-5">
+            <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
+            <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
+            <NewsletterSignup />
+          </div>
         </div>
       </div>
       <div className="border-t border-border/50 py-4 text-center text-xs text-muted-foreground">
