@@ -217,11 +217,6 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
         </section>
       )}
 
-      <div className="mt-8 text-center">
-        <Link to={`${basePath}/${item.slug}`} onClick={onClose} className="text-sm text-primary hover:underline">
-          Открыть на отдельной странице →
-        </Link>
-      </div>
     </div>
   );
 }
