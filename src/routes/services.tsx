@@ -33,7 +33,7 @@ function ServicesPage() {
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Услуги</h1>
         <p className="mt-4 text-muted-foreground">От креатива и продакшна до промо и трансляций.</p>
       </header>
-      <CatalogGrid items={items} category="services" basePath="/services" />
+      <CatalogGrid items={items} category="services" basePath="/services" entityType="services" />
     </div>
   );
 }
