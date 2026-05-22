@@ -9,6 +9,7 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { RelatedItems } from "@/components/RelatedItems";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
+import { CompareButton } from "@/components/CompareButton";
 import { trackView } from "@/lib/recent";
 
 function priceFrom(pricing: unknown): number | null {
@@ -100,6 +101,14 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               image={item.photo_urls?.[0] ?? null}
             />
             <WishlistButton
+              entity_type={entityType}
+              id={item.id}
+              slug={item.slug}
+              title={item.title}
+              price={from ?? 0}
+              image={item.photo_urls?.[0] ?? null}
+            />
+            <CompareButton
               entity_type={entityType}
               id={item.id}
               slug={item.slug}

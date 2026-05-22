@@ -2,9 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Heart } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Heart, Scale } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { useCompare } from "@/lib/compare";
 import { SearchTrigger } from "@/components/SearchTrigger";
 
 const NAV = [
