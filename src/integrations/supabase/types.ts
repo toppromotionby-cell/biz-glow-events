@@ -892,6 +892,33 @@ export type Database = {
           },
         ]
       }
+      text_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          original_text: string
+          override_text: string
+          path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          original_text: string
+          override_text: string
+          path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          original_text?: string
+          override_text?: string
+          path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
