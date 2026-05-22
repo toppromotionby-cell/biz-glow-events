@@ -33,7 +33,7 @@ function WishlistPage() {
       id: i.id, entity_type: i.entity_type, slug: i.slug,
       title: i.title, price: i.price, image: i.image, qty: 1,
     }));
-    toast.success(`Добавлено в заявку: ${items.length}`);
+    toast.success(`Добавлено в корзину: ${items.length}`);
   }
 
   return (
@@ -48,7 +48,7 @@ function WishlistPage() {
         {count > 0 && (
           <div className="flex gap-2">
             <button onClick={moveAllToCart} className="rounded-md bg-gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground glow-primary">
-              Перенести всё в заявку
+              Перенести всё в корзину
             </button>
             <button onClick={clearWishlist} className="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground">
               Очистить
