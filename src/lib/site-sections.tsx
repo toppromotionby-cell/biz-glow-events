@@ -1,11 +1,8 @@
 // Глобальная система переключателей секций сайта.
 // Админ может включать/выключать любые блоки. Отключённый блок скрыт
 // для обычных посетителей, а админам показан полупрозрачным с бейджем.
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useRoles } from "@/hooks/use-roles";
-import { cn } from "@/lib/utils";
-import { EyeOff } from "lucide-react";
 
 // Реестр всех управляемых секций. Добавляйте сюда новые ключи —
 // они автоматически появятся в админ-панели.
@@ -123,30 +120,6 @@ export function Toggleable({
   as?: "div" | "section" | "span" | "li";
 }) {
   const enabled = useSectionEnabled(sectionKey);
-  const { has } = useRoles();
-  const isAdmin = has("admin");
-  const label = useMemo(
-    () => SECTION_REGISTRY.find((s) => s.key === sectionKey)?.label ?? sectionKey,
-    [sectionKey],
-  );
-
-  if (!enabled && !isAdmin) return null;
-
-  if (enabled) {
-    return <Tag className={className}>{children}</Tag>;
-  }
-
-  // Админ видит выключенный блок с пометкой.
-  return (
-    <Tag
-      className={cn("relative opacity-40 pointer-events-none select-none", className)}
-      data-admin-hidden
-      aria-label={`Скрыто: ${label}`}
-    >
-      <div className="pointer-events-auto absolute top-2 right-2 z-30 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-destructive-foreground shadow-lg">
-        <EyeOff className="h-3 w-3" /> Скрыто для посетителей
-      </div>
-      {children}
-    </Tag>
-  );
+  if (!enabled) return null;
+  return <Tag className={className}>{children}</Tag>;
 }
