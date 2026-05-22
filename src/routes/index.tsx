@@ -196,7 +196,7 @@ function HomePage() {
             {cases.map((c) => (
               <Link key={c.id} to="/cases/$slug" params={{ slug: c.slug }} className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition">
                 <div className="aspect-[16/10] bg-gradient-primary/10 overflow-hidden">
-                  {c.cover_url && <img src={c.cover_url} alt={c.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
+                  {c.cover_url && <img src={c.cover_url} alt={c.title} width={640} height={400} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
                 </div>
                 <div className="p-4">
                   {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
