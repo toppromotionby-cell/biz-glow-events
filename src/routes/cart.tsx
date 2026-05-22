@@ -305,14 +305,11 @@ function RequisitesDialog({
   open,
   onOpenChange,
   loading,
-  required,
   onConfirm,
-  onSkip,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   loading: boolean;
-  required?: boolean;
   onConfirm: (req: {
     company_legal_name: string | null;
     company_unp: string | null;
@@ -322,7 +319,6 @@ function RequisitesDialog({
     contact_person_position: string | null;
     acting_basis: string | null;
   }) => void;
-  onSkip?: () => void;
 }) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
