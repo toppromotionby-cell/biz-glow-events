@@ -95,13 +95,14 @@ function CartPage() {
       </header>
 
       {items.length === 0 ? (
-        <div className="glass rounded-xl p-8 text-center">
+        <div className="glass rounded-xl p-8 text-center space-y-4">
+          <ShoppingCart className="h-10 w-10 mx-auto text-muted-foreground" aria-hidden="true" />
           <p className="text-muted-foreground">Перейдите в каталог и нажмите «В заявку».</p>
           <div className="mt-4 flex justify-center gap-3 flex-wrap">
-            <Link to="/zones" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Зоны</Link>
-            <Link to="/equipment" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Оборудование</Link>
-            <Link to="/services" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Услуги</Link>
-            <Link to="/production" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Производство</Link>
+            <Link to="/zones" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Зоны</Link>
+            <Link to="/equipment" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Оборудование</Link>
+            <Link to="/services" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Услуги</Link>
+            <Link to="/production" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Производство</Link>
           </div>
         </div>
       ) : (
