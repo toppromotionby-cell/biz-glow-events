@@ -27,7 +27,7 @@ export const Route = createFileRoute("/services")({
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Услуги</h1>
         <p className="mt-4 text-muted-foreground">От креатива и продакшна до промо и трансляций.</p>
       </header>
-      <CatalogGrid items={SERVICES} category="services" />
+      <CatalogGrid items={SERVICES} category="services" basePath="/services" />
     </div>
   ),
 });
