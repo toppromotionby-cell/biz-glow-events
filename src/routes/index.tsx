@@ -3,6 +3,7 @@ import { Sparkles, Zap, Shield, Award, ArrowRight, Cpu, Lightbulb, Music, Packag
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { GuestEstimator } from "@/components/GuestEstimator";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -158,6 +159,9 @@ function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* GUEST ESTIMATOR */}
+      <GuestEstimator />
 
       {/* BLOG TEASER */}
       {posts.length > 0 && (
