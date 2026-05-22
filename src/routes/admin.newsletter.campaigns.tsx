@@ -3,13 +3,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { listCampaigns, saveCampaign, deleteCampaign } from "@/lib/campaigns.functions";
+import { listCampaigns, saveCampaign, deleteCampaign, startCampaign } from "@/lib/campaigns.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Megaphone, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Megaphone, Plus, Trash2, ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/newsletter/campaigns")({ component: Page });
@@ -26,6 +26,7 @@ function Page() {
   const list = useServerFn(listCampaigns);
   const save = useServerFn(saveCampaign);
   const del = useServerFn(deleteCampaign);
+  const start = useServerFn(startCampaign);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-campaigns"],
@@ -57,6 +58,15 @@ function Page() {
   const remove = useMutation({
     mutationFn: (id: string) => del({ data: { id } }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-campaigns"] }); toast.success("Удалена"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const launch = useMutation({
+    mutationFn: (id: string) => start({ data: { id } }),
+    onSuccess: (r: any) => {
+      toast.success(`Запущена отправка: ${r.total} получателей${r.suppressed ? `, ${r.suppressed} в чёрном списке` : ""}`);
+      qc.invalidateQueries({ queryKey: ["admin-campaigns"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -151,9 +161,18 @@ function Page() {
                   <td className="p-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString("ru-RU")}</td>
                   <td className="p-3">
                     {c.status === "draft" && (
-                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить черновик?")) remove.mutate(c.id); }}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          onClick={() => { if (confirm(`Отправить кампанию «${c.subject}»? Получатели вычисляются в момент запуска.`)) launch.mutate(c.id); }}
+                          disabled={launch.isPending}
+                        >
+                          <Send className="h-4 w-4 mr-1" />Отправить
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить черновик?")) remove.mutate(c.id); }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </td>
                 </tr>
