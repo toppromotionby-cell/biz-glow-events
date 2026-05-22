@@ -690,6 +690,65 @@ export type Database = {
           },
         ]
       }
+      testimonials: {
+        Row: {
+          case_id: string | null
+          client_company: string | null
+          client_name: string
+          client_photo_url: string | null
+          client_role: string | null
+          created_at: string
+          event_date: string | null
+          featured: boolean
+          id: string
+          published: boolean
+          rating: number
+          sort_order: number
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          case_id?: string | null
+          client_company?: string | null
+          client_name: string
+          client_photo_url?: string | null
+          client_role?: string | null
+          created_at?: string
+          event_date?: string | null
+          featured?: boolean
+          id?: string
+          published?: boolean
+          rating?: number
+          sort_order?: number
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string | null
+          client_company?: string | null
+          client_name?: string
+          client_photo_url?: string | null
+          client_role?: string | null
+          created_at?: string
+          event_date?: string | null
+          featured?: boolean
+          id?: string
+          published?: boolean
+          rating?: number
+          sort_order?: number
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ZonesRouteImport } from './routes/zones'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as TestimonialsRouteImport } from './routes/testimonials'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -37,6 +38,7 @@ import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
@@ -55,6 +57,11 @@ const ZonesRoute = ZonesRouteImport.update({
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestimonialsRoute = TestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -187,6 +194,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTestimonialsRoute = AdminTestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -252,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/testimonials': typeof TestimonialsRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -260,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
@@ -290,6 +304,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/testimonials': typeof TestimonialsRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -298,6 +313,7 @@ export interface FileRoutesByTo {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
@@ -330,6 +346,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/testimonials': typeof TestimonialsRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -338,6 +355,7 @@ export interface FileRoutesById {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
@@ -371,6 +389,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/services'
     | '/sitemap.xml'
+    | '/testimonials'
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
@@ -379,6 +398,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/admin/testimonials'
     | '/admin/users'
     | '/blog/$slug'
     | '/cases/$slug'
@@ -409,6 +429,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/services'
     | '/sitemap.xml'
+    | '/testimonials'
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
@@ -417,6 +438,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/admin/testimonials'
     | '/admin/users'
     | '/blog/$slug'
     | '/cases/$slug'
@@ -448,6 +470,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/services'
     | '/sitemap.xml'
+    | '/testimonials'
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
@@ -456,6 +479,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/admin/testimonials'
     | '/admin/users'
     | '/blog/$slug'
     | '/cases/$slug'
@@ -488,6 +512,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ServicesRoute: typeof ServicesRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TestimonialsRoute: typeof TestimonialsRoute
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
 }
@@ -506,6 +531,13 @@ declare module '@tanstack/react-router' {
       path: '/wishlist'
       fullPath: '/wishlist'
       preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/testimonials': {
+      id: '/testimonials'
+      path: '/testimonials'
+      fullPath: '/testimonials'
+      preLoaderRoute: typeof TestimonialsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -690,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/testimonials': {
+      id: '/admin/testimonials'
+      path: '/testimonials'
+      fullPath: '/admin/testimonials'
+      preLoaderRoute: typeof AdminTestimonialsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -787,6 +826,7 @@ interface AdminRouteChildren {
   AdminCasesRoute: typeof AdminCasesRoute
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
+  AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCatalogTypeRoute: typeof AdminCatalogTypeRoute
@@ -799,6 +839,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCasesRoute: AdminCasesRoute,
   AdminMarketingRoute: AdminMarketingRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
+  AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCatalogTypeRoute: AdminCatalogTypeRoute,
@@ -891,6 +932,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   ServicesRoute: ServicesRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TestimonialsRoute: TestimonialsRoute,
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
 }

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { GuestEstimator } from "@/components/GuestEstimator";
+import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -202,6 +203,9 @@ function HomePage() {
 
       {/* GUEST ESTIMATOR */}
       <GuestEstimator />
+
+      {/* TESTIMONIALS */}
+      <TestimonialsTeaser />
 
       {/* BLOG TEASER */}
       {posts.length > 0 && (
