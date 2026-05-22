@@ -30,6 +30,7 @@ import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
@@ -156,6 +157,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -259,6 +265,7 @@ const AdminOrdersIdQuoteRoute = AdminOrdersIdQuoteRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
@@ -345,6 +353,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/admin'
     | '/blog'
     | '/cart'
@@ -433,6 +443,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/blog'
     | '/cart'
     | '/cases'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/admin'
     | '/blog'
     | '/cart'
@@ -519,6 +531,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   CartRoute: typeof CartRoute
@@ -689,6 +702,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -956,6 +976,7 @@ const ZonesRouteWithChildren = ZonesRoute._addFileChildren(ZonesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   CartRoute: CartRoute,
