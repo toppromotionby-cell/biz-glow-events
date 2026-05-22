@@ -97,7 +97,7 @@ function CartPage() {
       {items.length === 0 ? (
         <div className="glass rounded-xl p-8 text-center space-y-4">
           <ShoppingCart className="h-10 w-10 mx-auto text-muted-foreground" aria-hidden="true" />
-          <p className="text-muted-foreground">Перейдите в каталог и нажмите «В заявку».</p>
+          <p className="text-muted-foreground">Перейдите в каталог и нажмите «В корзину».</p>
           <div className="mt-4 flex justify-center gap-3 flex-wrap">
             <Link to="/zones" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Зоны</Link>
             <Link to="/equipment" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Оборудование</Link>
