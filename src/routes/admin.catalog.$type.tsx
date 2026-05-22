@@ -78,8 +78,6 @@ function CatalogInner({ table }: { table: Table }) {
       </header>
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <div className="glass rounded-xl p-3 max-h-[70vh] overflow-y-auto space-y-1">
-          {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
         <div className="glass rounded-xl p-3 max-h-[70vh] overflow-y-auto">
           {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
           <SortableList
