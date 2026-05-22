@@ -58,6 +58,7 @@ import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAvailabilityRouteImport } from './routes/admin.availability'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as AdminNewsletterCampaignsRouteImport } from './routes/admin.newsletter.campaigns'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
@@ -309,6 +310,12 @@ const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminOrdersRoute,
 } as any)
+const AdminNewsletterCampaignsRoute =
+  AdminNewsletterCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AdminNewsletterRoute,
+  } as any)
 const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   id: '/catalog/$type',
   path: '/catalog/$type',
@@ -372,7 +379,7 @@ export interface FileRoutesByFullPath {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
-  '/admin/newsletter': typeof AdminNewsletterRoute
+  '/admin/newsletter': typeof AdminNewsletterRouteWithChildren
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
@@ -427,7 +435,7 @@ export interface FileRoutesByTo {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
-  '/admin/newsletter': typeof AdminNewsletterRoute
+  '/admin/newsletter': typeof AdminNewsletterRouteWithChildren
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
@@ -441,6 +449,7 @@ export interface FileRoutesByTo {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
@@ -484,7 +493,7 @@ export interface FileRoutesById {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/marketing': typeof AdminMarketingRoute
-  '/admin/newsletter': typeof AdminNewsletterRoute
+  '/admin/newsletter': typeof AdminNewsletterRouteWithChildren
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
@@ -498,6 +507,7 @@ export interface FileRoutesById {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
+    | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
@@ -611,6 +622,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin'
     | '/admin/catalog/$type'
+    | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
@@ -667,6 +679,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
+    | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
@@ -1052,6 +1065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdRouteImport
       parentRoute: typeof AdminOrdersRoute
     }
+    '/admin/newsletter/campaigns': {
+      id: '/admin/newsletter/campaigns'
+      path: '/campaigns'
+      fullPath: '/admin/newsletter/campaigns'
+      preLoaderRoute: typeof AdminNewsletterCampaignsRouteImport
+      parentRoute: typeof AdminNewsletterRoute
+    }
     '/admin/catalog/$type': {
       id: '/admin/catalog/$type'
       path: '/catalog/$type'
@@ -1090,6 +1110,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminNewsletterRouteChildren {
+  AdminNewsletterCampaignsRoute: typeof AdminNewsletterCampaignsRoute
+}
+
+const AdminNewsletterRouteChildren: AdminNewsletterRouteChildren = {
+  AdminNewsletterCampaignsRoute: AdminNewsletterCampaignsRoute,
+}
+
+const AdminNewsletterRouteWithChildren = AdminNewsletterRoute._addFileChildren(
+  AdminNewsletterRouteChildren,
+)
+
 interface AdminOrdersIdRouteChildren {
   AdminOrdersIdContractRoute: typeof AdminOrdersIdContractRoute
   AdminOrdersIdInvoiceRoute: typeof AdminOrdersIdInvoiceRoute
@@ -1125,7 +1157,7 @@ interface AdminRouteChildren {
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminCasesRoute: typeof AdminCasesRoute
   AdminMarketingRoute: typeof AdminMarketingRoute
-  AdminNewsletterRoute: typeof AdminNewsletterRoute
+  AdminNewsletterRoute: typeof AdminNewsletterRouteWithChildren
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
   AdminPromoRoute: typeof AdminPromoRoute
   AdminSectionsRoute: typeof AdminSectionsRoute
@@ -1142,7 +1174,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCalendarRoute: AdminCalendarRoute,
   AdminCasesRoute: AdminCasesRoute,
   AdminMarketingRoute: AdminMarketingRoute,
-  AdminNewsletterRoute: AdminNewsletterRoute,
+  AdminNewsletterRoute: AdminNewsletterRouteWithChildren,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
   AdminPromoRoute: AdminPromoRoute,
   AdminSectionsRoute: AdminSectionsRoute,
