@@ -51,6 +51,7 @@ import { Route as AdminSectionsRouteImport } from './routes/admin.sections'
 import { Route as AdminPromoRouteImport } from './routes/admin.promo'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
+import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
@@ -276,6 +277,11 @@ const AdminMarketingRoute = AdminMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCatalogRoute = AdminCatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCasesRoute = AdminCasesRouteImport.update({
   id: '/cases',
   path: '/cases',
@@ -318,9 +324,9 @@ const AdminNewsletterCampaignsRoute =
     getParentRoute: () => AdminRoute,
   } as any)
 const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
-  id: '/catalog/$type',
-  path: '/catalog/$type',
-  getParentRoute: () => AdminRoute,
+  id: '/$type',
+  path: '/$type',
+  getParentRoute: () => AdminCatalogRoute,
 } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
+  '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
@@ -442,6 +449,7 @@ export interface FileRoutesByTo {
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
+  '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
@@ -501,6 +509,7 @@ export interface FileRoutesById {
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
+  '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
@@ -561,6 +570,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/calendar'
     | '/admin/cases'
+    | '/admin/catalog'
     | '/admin/marketing'
     | '/admin/orders'
     | '/admin/promo'
@@ -618,6 +628,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/calendar'
     | '/admin/cases'
+    | '/admin/catalog'
     | '/admin/marketing'
     | '/admin/orders'
     | '/admin/promo'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/admin/calendar'
     | '/admin/cases'
+    | '/admin/catalog'
     | '/admin/marketing'
     | '/admin/orders'
     | '/admin/promo'
@@ -1029,6 +1041,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMarketingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/catalog': {
+      id: '/admin/catalog'
+      path: '/catalog'
+      fullPath: '/admin/catalog'
+      preLoaderRoute: typeof AdminCatalogRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/cases': {
       id: '/admin/cases'
       path: '/cases'
@@ -1087,10 +1106,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/catalog/$type': {
       id: '/admin/catalog/$type'
-      path: '/catalog/$type'
+      path: '/$type'
       fullPath: '/admin/catalog/$type'
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminCatalogRoute
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -1129,6 +1148,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminCatalogRouteChildren {
+  AdminCatalogTypeRoute: typeof AdminCatalogTypeRoute
+}
+
+const AdminCatalogRouteChildren: AdminCatalogRouteChildren = {
+  AdminCatalogTypeRoute: AdminCatalogTypeRoute,
+}
+
+const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
+  AdminCatalogRouteChildren,
+)
 
 interface AdminOrdersIdRouteChildren {
   AdminOrdersIdContractRoute: typeof AdminOrdersIdContractRoute
@@ -1178,6 +1209,7 @@ interface AdminRouteChildren {
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminCasesRoute: typeof AdminCasesRoute
+  AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
   AdminPromoRoute: typeof AdminPromoRoute
@@ -1185,7 +1217,6 @@ interface AdminRouteChildren {
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
-  AdminCatalogTypeRoute: typeof AdminCatalogTypeRoute
   AdminNewsletterCampaignsRoute: typeof AdminNewsletterCampaignsRouteWithChildren
   AdminNewsletterIndexRoute: typeof AdminNewsletterIndexRoute
 }
@@ -1196,6 +1227,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBlogRoute: AdminBlogRoute,
   AdminCalendarRoute: AdminCalendarRoute,
   AdminCasesRoute: AdminCasesRoute,
+  AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminMarketingRoute: AdminMarketingRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
   AdminPromoRoute: AdminPromoRoute,
@@ -1203,7 +1235,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
-  AdminCatalogTypeRoute: AdminCatalogTypeRoute,
   AdminNewsletterCampaignsRoute: AdminNewsletterCampaignsRouteWithChildren,
   AdminNewsletterIndexRoute: AdminNewsletterIndexRoute,
 }
