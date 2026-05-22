@@ -156,34 +156,45 @@ function AdminBlogPage() {
         </div>
       )}
 
-      <div className="glass rounded-xl divide-y divide-border/40">
+      <div className="glass rounded-xl">
         {posts.length === 0 && <div className="p-6 text-sm text-muted-foreground text-center">Пока нет записей</div>}
-        {posts.map((p) => (
-          <div key={p.id} className="p-4 flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium truncate">{p.title}</span>
-                {p.published ? (
-                  <span className="text-[10px] uppercase px-2 py-0.5 rounded-full border border-emerald-500/40 text-emerald-500">опубликовано</span>
-                ) : (
-                  <span className="text-[10px] uppercase px-2 py-0.5 rounded-full border border-border/50 text-muted-foreground">черновик</span>
-                )}
+        <SortableList
+          items={posts}
+          onReorder={async (ids) => {
+            try {
+              await persistSortOrder("blog_posts", ids);
+              setPosts((prev) => ids.map((id) => prev.find((p) => p.id === id)!).filter(Boolean));
+            } catch (e) { toast.error((e as Error).message); throw e; }
+          }}
+          className="divide-y divide-border/40"
+          renderItem={(p, handle) => (
+            <div className="p-4 flex items-center justify-between gap-3">
+              {handle}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium truncate">{p.title}</span>
+                  {p.published ? (
+                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full border border-emerald-500/40 text-emerald-500">опубликовано</span>
+                  ) : (
+                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full border border-border/50 text-muted-foreground">черновик</span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">/{p.slug}</div>
               </div>
-              <div className="text-xs text-muted-foreground truncate">/{p.slug}</div>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {p.published && (
-                <Button asChild variant="ghost" size="icon" aria-label="Открыть на сайте">
-                  <Link to="/blog/$slug" params={{ slug: p.slug }} target="_blank"><ExternalLink className="h-4 w-4" /></Link>
+              <div className="flex items-center gap-1 shrink-0">
+                {p.published && (
+                  <Button asChild variant="ghost" size="icon" aria-label="Открыть на сайте">
+                    <Link to="/blog/$slug" params={{ slug: p.slug }} target="_blank"><ExternalLink className="h-4 w-4" /></Link>
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>Изменить</Button>
+                <Button variant="ghost" size="icon" onClick={() => remove(p.id)} aria-label="Удалить">
+                  <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>Изменить</Button>
-              <Button variant="ghost" size="icon" onClick={() => remove(p.id)} aria-label="Удалить">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              </div>
             </div>
-          </div>
-        ))}
+          )}
+        />
       </div>
     </div>
   );
