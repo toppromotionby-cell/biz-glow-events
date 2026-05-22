@@ -32,11 +32,18 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   entityType: CatalogType;
 }) {
   const photos = item.photo_urls ?? [];
+  const videos = item.video_urls ?? [];
   const [active, setActive] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const cover = photos[active];
   const from = priceFrom(item.pricing);
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
+
+  const openLightbox = useCallback((i: number) => setLightbox(i), []);
+  const closeLightbox = useCallback(() => setLightbox(null), []);
+  const prev = useCallback(() => setLightbox((i) => (i === null ? null : (i - 1 + photos.length) % photos.length)), [photos.length]);
+  const next = useCallback(() => setLightbox((i) => (i === null ? null : (i + 1) % photos.length)), [photos.length]);
 
   useEffect(() => {
     trackView({
@@ -57,7 +64,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         <div className="lg:col-span-3 space-y-3">
           {cover ? (
             <MediaShield className="rounded-2xl overflow-hidden aspect-[16/10] glass">
-              <img src={cover} alt={item.title} className="h-full w-full object-cover" loading="eager" />
+              <button type="button" onClick={() => openLightbox(active)} className="block h-full w-full cursor-zoom-in" aria-label="Открыть фото">
+                <img src={cover} alt={item.title} className="h-full w-full object-cover" loading="eager" />
+              </button>
             </MediaShield>
           ) : (
             <div className="rounded-2xl aspect-[16/10] glass flex items-center justify-center text-muted-foreground">
@@ -66,8 +75,8 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           )}
           {photos.length > 1 && (
             <div className="grid grid-cols-5 gap-2">
-              {photos.slice(0, 5).map((p, i) => (
-                <button key={p} onClick={() => setActive(i)}
+              {photos.slice(0, 10).map((p, i) => (
+                <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
                   aria-label={`Фото ${i + 1}`}
                   className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
                   <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -76,6 +85,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             </div>
           )}
         </div>
+
 
         <aside className="lg:col-span-2 space-y-5">
           <header>
