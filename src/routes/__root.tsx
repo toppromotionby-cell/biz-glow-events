@@ -7,6 +7,7 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { ScriptInjector } from "@/components/ScriptInjector";
 import { captureUtmFromLocation } from "@/lib/utm";
+import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 
 function NotFoundComponent() {
   return (
@@ -104,14 +105,16 @@ function RootComponent() {
   useEffect(() => { captureUtmFromLocation(); }, []);
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen flex flex-col bg-background bg-radial-glow">
-        <SiteHeader />
-        <main id="main" className="flex-1"><Outlet /></main>
-        <SiteFooter />
-        <CookieConsent />
-        <ScriptInjector />
-        <Toaster theme="dark" />
-      </div>
+      <SiteSectionsProvider>
+        <div className="min-h-screen flex flex-col bg-background bg-radial-glow">
+          <SiteHeader />
+          <main id="main" className="flex-1"><Outlet /></main>
+          <SiteFooter />
+          <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
+          <ScriptInjector />
+          <Toaster theme="dark" />
+        </div>
+      </SiteSectionsProvider>
     </QueryClientProvider>
   );
 }
