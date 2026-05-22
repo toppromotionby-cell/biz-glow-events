@@ -25,7 +25,6 @@ const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN",
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
-  const redeem = useServerFn(redeemPromo);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<{ id: string } | null>(null);
   const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
