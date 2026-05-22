@@ -25,6 +25,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as BlogRouteImport } from './routes/blog'
@@ -128,6 +129,11 @@ const EquipmentRoute = EquipmentRouteImport.update({
 const ContactsRoute = ContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CasesRoute = CasesRouteImport.update({
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
+  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
+  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -341,6 +349,7 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
+  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -385,6 +394,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/cart'
     | '/cases'
+    | '/compare'
     | '/contacts'
     | '/equipment'
     | '/faq'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/cart'
     | '/cases'
+    | '/compare'
     | '/contacts'
     | '/equipment'
     | '/faq'
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/cart'
     | '/cases'
+    | '/compare'
     | '/contacts'
     | '/equipment'
     | '/faq'
@@ -511,6 +523,7 @@ export interface RootRouteChildren {
   BlogRoute: typeof BlogRouteWithChildren
   CartRoute: typeof CartRoute
   CasesRoute: typeof CasesRouteWithChildren
+  CompareRoute: typeof CompareRoute
   ContactsRoute: typeof ContactsRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/contacts'
       fullPath: '/contacts'
       preLoaderRoute: typeof ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cases': {
@@ -940,6 +960,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRoute: BlogRouteWithChildren,
   CartRoute: CartRoute,
   CasesRoute: CasesRouteWithChildren,
+  CompareRoute: CompareRoute,
   ContactsRoute: ContactsRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
