@@ -9,6 +9,9 @@ export type CatalogType = "zones" | "tech_equipment" | "services" | "production_
 
 const TYPES = ["zones", "tech_equipment", "services", "production_items"] as const;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Json = any;
+
 export type CatalogRow = {
   id: string;
   slug: string;
@@ -17,9 +20,9 @@ export type CatalogRow = {
   description: string | null;
   photo_urls: string[] | null;
   video_urls: string[] | null;
-  pricing: Record<string, unknown> | null;
-  features: unknown[] | null;
-  faq: unknown[] | null;
+  pricing: Json;
+  features: Json;
+  faq: Json;
   requirements: string | null;
   seo_title: string | null;
   seo_description: string | null;
