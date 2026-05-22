@@ -100,8 +100,9 @@ function CartPage() {
       });
       clearCart();
       setReqOpen(false);
-      setDone({ id: res.id });
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       toast.success("Заказ оформлен");
+      navigate({ to: "/order/success/$id", params: { id: res.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Ошибка отправки");
     } finally {
@@ -110,17 +111,6 @@ function CartPage() {
   }
 
 
-  if (done) {
-    return (
-      <div className="container mx-auto px-4 py-16 max-w-2xl">
-        <div className="glass rounded-2xl p-8 text-center">
-          <h1 className="text-3xl font-display font-bold gradient-text">Заказ принят</h1>
-          <p className="mt-3 text-muted-foreground">Номер: <span className="font-mono">{done.id.slice(0, 8)}</span>. Мы свяжемся в течение рабочего дня.</p>
-          <Link to="/" className="mt-6 inline-flex rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">На главную</Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
