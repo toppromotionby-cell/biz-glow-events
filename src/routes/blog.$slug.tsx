@@ -1,28 +1,54 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
-type Post = {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string | null;
-  body: string | null;
-  cover_url: string | null;
-  tags: string[] | null;
-  published_at: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-};
+import { getBlogPostBySlug } from "@/lib/blog.functions";
 
 export const Route = createFileRoute("/blog/$slug")({
-  component: BlogPostPage,
-  head: ({ params }) => ({
-    meta: [
-      { title: `${params.slug} — блог event-hub.by` },
+  loader: async ({ params }) => {
+    const { post } = await getBlogPostBySlug({ data: { slug: params.slug } });
+    if (!post) throw notFound();
+    return { post };
+  },
+  head: ({ params, loaderData }) => {
+    const post = loaderData?.post;
+    const title = post ? `${post.seo_title ?? post.title} — event-hub.by` : `Запись — event-hub.by`;
+    const desc = post?.seo_description ?? post?.excerpt ?? "Статья блога event-hub.by об event-индустрии Беларуси.";
+    const url = `https://event-hub.by/blog/${params.slug}`;
+    const image = post?.cover_url ?? undefined;
+    const meta: Array<Record<string, string>> = [
+      { title },
+      { name: "description", content: desc },
       { name: "robots", content: "index,follow" },
-    ],
-  }),
+      { property: "og:type", content: "article" },
+      { property: "og:title", content: post?.title ?? title },
+      { property: "og:description", content: desc },
+      { property: "og:url", content: url },
+      { name: "twitter:title", content: post?.title ?? title },
+      { name: "twitter:description", content: desc },
+    ];
+    if (image) {
+      meta.push({ property: "og:image", content: image });
+      meta.push({ name: "twitter:image", content: image });
+    }
+    return {
+      meta,
+      links: [{ rel: "canonical", href: url }],
+      scripts: post
+        ? [{
+            type: "application/ld+json",
+            children: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BlogPosting",
+              headline: post.title,
+              description: post.excerpt ?? post.seo_description ?? undefined,
+              image: post.cover_url ?? undefined,
+              datePublished: post.published_at ?? undefined,
+              author: { "@type": "Organization", name: "event-hub.by" },
+              mainEntityOfPage: url,
+            }),
+          }]
+        : [],
+    };
+  },
+  component: BlogPostPage,
   notFoundComponent: () => (
     <div className="container mx-auto px-4 py-20 text-center">
       <h1 className="text-3xl font-display font-bold">Запись не найдена</h1>
@@ -37,39 +63,7 @@ export const Route = createFileRoute("/blog/$slug")({
 });
 
 function BlogPostPage() {
-  const { slug } = Route.useParams();
-  const [post, setPost] = useState<Post | null>(null);
-  const [state, setState] = useState<"loading" | "ok" | "404">("loading");
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .eq("slug", slug)
-        .eq("published", true)
-        .maybeSingle();
-      if (!data) { setState("404"); return; }
-      setPost(data as Post);
-      setState("ok");
-      if (data.seo_title || data.title) document.title = (data.seo_title ?? data.title) + " — event-hub.by";
-    })();
-  }, [slug]);
-
-  if (state === "loading") return <div className="container mx-auto px-4 py-16 text-muted-foreground">Загрузка...</div>;
-  if (state === "404" || !post) {
-    throw notFound();
-  }
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
-    description: post.excerpt ?? post.seo_description ?? undefined,
-    image: post.cover_url ?? undefined,
-    datePublished: post.published_at ?? undefined,
-    author: { "@type": "Organization", name: "event-hub.by" },
-  };
+  const { post } = Route.useLoaderData();
 
   return (
     <article className="container mx-auto px-4 py-12 max-w-3xl">
@@ -85,7 +79,7 @@ function BlogPostPage() {
         {post.excerpt && <p className="mt-4 text-lg text-muted-foreground">{post.excerpt}</p>}
         {post.tags && post.tags.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {post.tags.map((t) => (
+            {post.tags.map((t: string) => (
               <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-border/50 text-muted-foreground">#{t}</span>
             ))}
           </div>
@@ -103,8 +97,6 @@ function BlogPostPage() {
           {post.body}
         </div>
       )}
-
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </article>
   );
 }
