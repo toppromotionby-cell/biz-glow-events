@@ -1,73 +1,62 @@
 
-# event-hub.by — план реализации
+# План: Массовая email-рассылка для пиара портала
 
-Спецификация огромная (по объёму это 3–5 полноценных проектов: публичный сайт + каталоги + auth + CRM + календарь + маркетинг + Telegram + PDF + compliance). За один проход качественно всё не уместить — получится «каркас без мяса». Предлагаю реалистичный поэтапный план, начиная с прочного фундамента.
+Реализуем функцию массовых рассылок через встроенную инфраструктуру Lovable Emails (z.event-hub.by). Подходит для небольших объёмов (до нескольких сотен получателей за кампанию) — каждое письмо ставится в очередь индивидуально, очередь сама регулирует темп (~120 писем/мин по умолчанию).
 
-## Важные расхождения со стеком
+## Что появится в админке
 
-Шаблон Lovable — **TanStack Start** (не React Router DOM, не Vite-SPA). Адаптирую без потери функциональности:
+Новая вкладка/раздел **«Кампании»** в `/admin/newsletter`:
 
-- Роутинг: TanStack Router (file-based в `src/routes/`) вместо React Router DOM v6
-- SEO/мета: встроенный `head()` API в роутах вместо `react-helmet-async`
-- Backend: **TanStack server functions + Lovable Cloud (Supabase под капотом)**. Edge Functions использую только там, где действительно нужно (webhook от внешних сервисов). Telegram и PDF реализую через server functions — проще, быстрее, дешевле.
-- Бэкенд называется «Lovable Cloud» в коммуникации с пользователем
+1. **Список кампаний** — таблица: тема, статус (черновик/отправляется/завершена), кол-во получателей, отправлено/ошибок, дата.
+2. **Создание кампании**:
+   - Тема письма
+   - Контент: HTML-редактор (textarea с подсветкой) + плейсхолдер `{{name}}` для имени
+   - Выбор получателей:
+     - Подтверждённые подписчики (`newsletter_subscribers` где `confirmed_at IS NOT NULL`)
+     - Все подписчики
+     - Ручной список email (textarea, по одному на строку)
+   - Кнопки: **Сохранить черновик**, **Превью**, **Отправить**
+3. **Детали кампании** — прогресс отправки, журнал ошибок.
 
-Остальное (Supabase БД, Auth, Storage, RLS, Zustand, React Query, shadcn, framer-motion, FullCalendar, react-dropzone, hCaptcha, pdf-lib) — без изменений.
+## База данных
 
-## Этап 1 (этот заход) — Фундамент
+Новые таблицы (миграция):
 
-**Design system + публичная часть + auth + база данных + защита медиа**
+- `email_campaigns` — id, subject, html_content, recipient_filter (jsonb), status (`draft|sending|completed|failed`), total_recipients, sent_count, failed_count, created_by, started_at, completed_at
+- `email_campaign_recipients` — id, campaign_id, email, name, status (`pending|sent|failed|suppressed`), error, sent_at
 
-1. Включить Lovable Cloud
-2. Design system в `src/styles.css`: dark tech-lux, фиолетовое свечение `#7C3AED → #A855F7`, glass, glow, shimmer, prefers-reduced-motion
-3. Структура роутов: `/`, `/zones`, `/equipment`, `/services`, `/production`, `/blog`, `/contacts`, `/login`, `/register`, `/profile`, `/privacy`, `/offer`
-4. Главная: hero с анимированным градиентом, преимущества, CTA, отзывы, footer, partners
-5. Schema БД (миграция): `profiles`, `zones`, `tech_equipment`, `services`, `production_items`, `orders`, `order_items`, `order_timeline`, `availability`, `audit_log`, `telegram_logs`, `campaigns`, `marketing_logs` + RLS политики + storage bucket `media`
-6. User roles: enum `app_role` (`admin`, `manager`, `content_editor`, `marketer`), таблица `user_roles`, функция `has_role()`
-7. Auth flow: `/register` (RHF + Zod, валидация телефона `^(\+7|375)\d{9,10}$`, пароль ≥8+символ, чекбокс согласия на ПД, email confirm), `/login`, `/profile` с историей заявок
-8. Защищённые роуты через `_authenticated` layout
-9. `PriceGate` компонент: цены только для авторизованных, JSON-LD `aggregateOffer` для SEO, `data-nosnippet` на контейнерах
-10. `MediaShield` компонент: оверлей, блок contextmenu/dragstart, `controlsList="nodownload"`, signed URLs (15 мин)
-11. `UniversalMediaUploader`: react-dropzone, Zod-валидация, ≤5 фото / ≤5 видео, MIME/размер чек, загрузка в Storage
-12. SEO базис: `head()` метаданные на всех роутах, `sitemap.xml`, `robots.txt`, JSON-LD `LocalBusiness` + `Organization` в `__root.tsx`
-13. Cookie consent баннер
-14. Каталоги — публичные страницы списка для всех 4 сущностей с моковыми данными для демонстрации (CRUD-админка — следующий этап)
+RLS: только админы.
 
-## Этап 2 (следующий заход) — Админка и CRM
+## Логика отправки
 
-- `/admin` layout с защитой по роли
-- CRUD интерфейсы для всех каталогов (zones, equipment, services, production)
-- CRM: таблица заказов, фильтры, экспорт CSV, карточка заказа, таймлайн
-- Канбан-доска (статусы new → paid)
-- FullCalendar (month/week/day, drag&drop, dark-override)
-- Управление пользователями и ролями
+1. **Server function** `start_campaign(campaign_id)`:
+   - Загружает получателей по фильтру → вставляет в `email_campaign_recipients` со статусом `pending`
+   - Меняет статус кампании на `sending`
+   - Запускает фоновую обработку (пакетная постановка в очередь)
+2. **Server function** `process_campaign_batch(campaign_id)`:
+   - Берёт 50 pending получателей
+   - Проверяет `suppressed_emails` → помечает `suppressed`
+   - Для каждого вызывает `enqueue_email('transactional_emails', ...)` с шаблоном `marketing-broadcast`
+   - Обновляет статус строки
+   - Если остались pending — рекурсивно вызывает следующий батч
+3. **Email-шаблон** `marketing-broadcast.tsx` в `src/lib/email-templates/`:
+   - Принимает `subject`, `htmlContent`, `name`
+   - Бренд-стилизация портала event-hub.by
+   - Регистрация в `registry.ts`
 
-## Этап 3 — Маркетинг и интеграции
+Идемпотентность: `idempotencyKey = campaign-${campaign_id}-${recipient_id}`.
 
-- UTM-парсер (захват в leads/orders)
-- ScriptInjector (GTM, Метрика, Ads, Direct)
-- Marketing Dashboard (CPL/ROI, бюджеты, цели)
-- Telegram-уведомления (server function + retry + telegram_logs)
-- TelegramSettings UI (BOT_TOKEN в Secrets, тестовая отправка)
+## Важные замечания
 
-## Этап 4 — Enterprise модули
+- **DNS для z.event-hub.by ещё не верифицирован.** Кампании можно создавать и сохранять как черновики прямо сейчас, но реальная отправка пойдёт только после подтверждения DNS. Прогресс можно отслеживать в Cloud → Emails.
+- **Юридические риски**: массовая рассылка без явного согласия может ухудшить deliverability транзакционных писем (восстановление пароля). Шаблон автоматически содержит ссылку отписки (Lovable добавляет её в футер).
+- **Объёмы**: для рассылок > 1000 писем за раз лучше отдельный сервис (Resend/Brevo) на другом поддомене.
 
-- GuestEstimator (диапазон цен без регистрации)
-- Availability checker (блок при пересечении дат, фон в календаре)
-- hCaptcha на чувствительных эндпоинтах
-- audit_log триггеры для изменений цен/статусов
-- PDF-генерация (server function + pdf-lib, счёт/договор/акт)
-- i18n заготовка (RU + EN + BY)
-- Блог/Новости с CMS
+## Технические детали
 
-## Этап 5 — Production polish
+- Route: `src/routes/admin.newsletter.campaigns.tsx` + `src/routes/admin.newsletter.campaigns.$id.tsx`
+- Server functions: `src/lib/campaigns.functions.ts` с `requireSupabaseAuth` + проверкой роли admin
+- Шаблон: `src/lib/email-templates/marketing-broadcast.tsx`
+- Миграция: новые таблицы с RLS (только admin)
 
-- Core Web Vitals оптимизация (LCP <2s, CLS <0.05, INP <150ms)
-- Реальный медиа-контент через imagegen
-- Финальный SEO-аудит и rich snippets
-- Тестирование RLS политик
-- Деплой-чеклист
-
----
-
-После одобрения сразу приступаю к Этапу 1. Если хочешь — могу сместить акценты (например, начать с админки вместо публички, или включить Telegram уже сейчас).
+Подтвердить — начну реализацию?
