@@ -27,6 +27,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
+import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
@@ -126,6 +127,11 @@ const ZonesSlugRoute = ZonesSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ZonesRoute,
 } as any)
+const ServicesSlugRoute = ServicesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ServicesRoute,
+} as any)
 const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -181,7 +187,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
@@ -208,7 +215,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
@@ -237,7 +245,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/orders'
     | '/equipment/$slug'
+    | '/services/$slug'
     | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/orders'
     | '/equipment/$slug'
+    | '/services/$slug'
     | '/zones/$slug'
     | '/admin'
     | '/admin/catalog/$type'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/marketing'
     | '/admin/orders'
     | '/equipment/$slug'
+    | '/services/$slug'
     | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
@@ -351,7 +363,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
-  ServicesRoute: typeof ServicesRoute
+  ServicesRoute: typeof ServicesRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ZonesRoute: typeof ZonesRouteWithChildren
 }
@@ -484,6 +496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ZonesSlugRouteImport
       parentRoute: typeof ZonesRoute
     }
+    '/services/$slug': {
+      id: '/services/$slug'
+      path: '/$slug'
+      fullPath: '/services/$slug'
+      preLoaderRoute: typeof ServicesSlugRouteImport
+      parentRoute: typeof ServicesRoute
+    }
     '/equipment/$slug': {
       id: '/equipment/$slug'
       path: '/$slug'
@@ -599,6 +618,18 @@ const EquipmentRouteWithChildren = EquipmentRoute._addFileChildren(
   EquipmentRouteChildren,
 )
 
+interface ServicesRouteChildren {
+  ServicesSlugRoute: typeof ServicesSlugRoute
+}
+
+const ServicesRouteChildren: ServicesRouteChildren = {
+  ServicesSlugRoute: ServicesSlugRoute,
+}
+
+const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
+  ServicesRouteChildren,
+)
+
 interface ZonesRouteChildren {
   ZonesSlugRoute: typeof ZonesSlugRoute
 }
@@ -623,7 +654,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
-  ServicesRoute: ServicesRoute,
+  ServicesRoute: ServicesRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ZonesRoute: ZonesRouteWithChildren,
 }
