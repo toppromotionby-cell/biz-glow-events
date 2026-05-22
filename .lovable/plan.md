@@ -1,53 +1,56 @@
-# План: волны 3–6
+# Drag-and-drop по админке
 
-Выполняю все четыре оставшихся блока последовательно, чтобы не ломать UX и БД одновременно.
+Добавляем перетаскивание мышью (зажал → перенёс) во всех ключевых разделах админки. Используем библиотеку `@dnd-kit` (де-факто стандарт, доступен, лёгкий, без конфликтов с shadcn).
 
-## Волна 3 — UX оформления заказа
+## 1. Подготовка БД
 
-Файлы: `src/routes/cart.tsx`, `src/components/cart/RequisitesModal.tsx` (новый), `src/routes/order.success.$id.tsx` (новый), `src/lib/orders.functions.ts`.
+Добавляем колонку `sort_order INTEGER NOT NULL DEFAULT 0` туда, где её нет:
+- `blog_posts`, `cases`, `zones`, `tech_equipment`, `services`, `production_items`, `site_sections`
+- (`testimonials` уже имеет `sort_order`)
 
-- Перевести форму корзины и модалку реквизитов на `react-hook-form` + `zod` (валидация email, телефона, УНП, длины полей, обязательность по типу клиента).
-- Тип клиента: «физлицо» / «юрлицо / ИП». Для физлица реквизиты компании необязательны, скрыты. Для юрлица — обязательны: название, УНП, юр. адрес, ФИО ответственного, должность, основание (Устав / Доверенность № … от …).
-- Черновик корзины и формы в `localStorage` (ключ `cart_draft_v1`), очистка после успешной отправки.
-- Серверная функция `submitOrder` принимает расширенный payload (requisites JSON в `orders.notes` или в `order_items.meta`, без миграции — храним в `notes` как JSON-строку с маркером).
-- После успеха — редирект на `/order/success/$id` с номером заказа, контактами менеджера, кнопкой «Скачать КП» (заглушка).
-- Тосты ошибок/успеха через существующий `sonner`.
+Заполняем начальными значениями по текущему `created_at DESC`, чтобы порядок не «прыгнул». Добавляем индексы по `sort_order`.
 
-## Волна 4 — Админка/CRM
+Публичные списки начнут сортироваться по `sort_order ASC, created_at DESC` — поменяю запросы в `src/lib/*.functions.ts` и публичных роутах (`/blog`, `/cases`, `/zones`, `/equipment`, `/services`, `/production`).
 
-Файлы: `src/routes/admin.orders.tsx`, `src/lib/admin-orders.functions.ts` (новый, серверные fn с `requireSupabaseAuth` + проверкой роли admin/manager).
+## 2. Универсальный компонент сортировки
 
-- Серверная пагинация (`range`) + сортировка, размер страницы 25/50/100.
-- URL-фильтры (TanStack Router `search`): статус, диапазон дат, источник, UTM, менеджер, поиск (debounce 300мс).
-- Inline-смена статуса (Select в строке) с оптимистичным апдейтом и записью в `order_timeline`.
-- Назначение менеджера: выпадающий список из `user_roles` где role=manager/admin.
-- Realtime подписка на `orders` — точечный invalidate React Query при INSERT/UPDATE + toast.
-- Двойной клик по строке открывает существующий модал с детализацией (уже сделано, дорабатываем layout: вкладки «Заказ / Клиент / Реквизиты / Таймлайн / Вложения»).
+Новый `src/components/admin/SortableList.tsx` на базе `@dnd-kit/core` + `@dnd-kit/sortable`:
+- слева у каждой строки маленькая «ручка» (иконка `GripVertical`), за неё тянем — клики по остальной строке не перехватываются
+- после drop пересчитываем `sort_order` пакетно одним `upsert`, оптимистично обновляем UI, при ошибке откатываем + toast
+- работает с любым массивом `{ id, ... }` через render-prop
 
-## Волна 5 — Производительность
+## 3. Применение к спискам админки
 
-- `vite-imagetools` для статических ассетов, импорт `?format=webp&as=picture` для hero.
-- `<link rel="preload" as="image">` LCP-изображения в `head()` `index.tsx`.
-- `font-display: swap` в Google Fonts URL.
-- `loading="lazy"` + явные `width/height` для всех каталожных карточек.
-- Code-split тяжёлой админки (она уже route-split, но проверить динамические импорты модалов).
-- `React.memo`/`useMemo` для тяжёлых таблиц.
+Подключаю `SortableList` в:
+- `admin.testimonials.tsx` — уже есть `sort_order`, просто заменяем UI
+- `admin.blog.tsx`, `admin.cases.tsx`
+- `admin.catalog.$type.tsx` (одной правкой покрывает зоны / оборудование / услуги / производство)
+- `admin.sections.tsx` (секции главной)
 
-## Волна 6 — Google OAuth + og:image
+## 4. Виджеты дашборда `/admin`
 
-- `supabase--configure_social_auth` providers=["google"], дописать кнопку «Войти через Google» в `/login` и `/register` через `lovable.auth.signInWithOAuth("google", …)`.
-- Сгенерировать брендовый `og:image` 1200×630 (premium) под доменом event-hub.by, положить в `src/assets/og-default.jpg`.
-- Подключить как дефолтный `og:image`/`twitter:image` в `head()` ключевых статических страниц (`index`, `about`, `services`, `contact`), на динамических — оставить картинку контента.
+В `admin.index.tsx` обернуть карточки статистики в `SortableList`. Порядок сохраняется per-user в `localStorage` (ключ `admin:dashboard:order:v1`) — для одной таблицы предпочтений делать миграцию избыточно.
 
-## Технические заметки
+## 5. Таблицы: ресайз и порядок колонок
 
-- Никаких изменений схемы БД (реквизиты пишем в `notes` JSON-строкой, чтобы не менять контракт `orders`). Если позже захотите отдельную таблицу `order_requisites` — отдельная миграция.
-- Все новые серверные функции — `createServerFn` + `requireSupabaseAuth`, без edge functions.
-- Обязательно дописать `attachSupabaseAuth` в `src/start.ts`, если не подключён.
+Новый хук `useTableLayout(tableKey, defaultColumns)`:
+- ширины и порядок колонок хранятся в `localStorage` per-user
+- ресайз: тянем за правый край `<th>` (cursor `col-resize`), минимум 60px
+- порядок: тянем за заголовок (`@dnd-kit/sortable` по горизонтали)
+- кнопка «Сбросить раскладку» в правом верхнем углу таблицы
 
-## Порядок выполнения
+Применяю в самой нагруженной таблице — `admin.orders.tsx`. Если ок — расширим на остальные таблицы в следующей итерации (чтобы не раздувать один заход).
 
-1. Волна 3 (UX) — самое заметное для пользователя.
-2. Волна 6 (OAuth + og) — быстрый win, не зависит от остального.
-3. Волна 4 (Админка) — отдельный серверный модуль.
-4. Волна 5 (Performance) — финальная полировка и замеры.
+## Технические детали
+
+- `bun add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities`
+- DnD-сенсоры: `PointerSensor` с `activationConstraint: { distance: 6 }` — клики/двойные клики по строкам в `admin.orders` продолжат работать
+- запись `sort_order` батчем: `supabase.from(table).upsert(items.map((it, i) => ({ id: it.id, sort_order: i })))`
+- realtime в `admin.orders` уже подписан — после `upsert` сам перерисуется
+- сохраняем существующие inline-редакторы (статус, оплата) — DnD-ручка отдельная зона
+
+## Что НЕ входит в этот заход
+
+- DnD внутри редакторов контента (медиа-галереи, FAQ-блоки) — можно отдельной задачей
+- Drag-n-drop колонок во всех остальных таблицах кроме `orders` (расширим после теста)
+- Серверное сохранение раскладки таблиц (пока только localStorage)

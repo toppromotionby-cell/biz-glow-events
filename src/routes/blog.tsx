@@ -47,6 +47,7 @@ function BlogIndex() {
         .from("blog_posts")
         .select("id, slug, title, excerpt, cover_url, tags, published_at")
         .eq("published", true)
+        .order("sort_order", { ascending: true })
         .order("published_at", { ascending: false, nullsFirst: false });
       setPosts((data ?? []) as Post[]);
       setLoading(false);

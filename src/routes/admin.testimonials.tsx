@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Star } from "lucide-react";
+import { SortableList } from "@/components/admin/SortableList";
+import { persistSortOrder } from "@/lib/sort-order";
 
 export const Route = createFileRoute("/admin/testimonials")({ component: Page });
 
@@ -57,24 +59,34 @@ function Page() {
       </header>
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <div className="glass rounded-xl p-3 max-h-[75vh] overflow-y-auto space-y-1">
+        <div className="glass rounded-xl p-3 max-h-[75vh] overflow-y-auto">
           {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
-          {items.map((it: Row) => (
-            <button
-              key={it.id}
-              onClick={() => setSelected(it)}
-              className={`w-full text-left p-3 rounded-lg text-sm transition ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
-            >
-              <div className="font-medium truncate flex items-center gap-1.5">
-                {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
-                <span className="truncate">{it.client_name}</span>
+          <SortableList
+            items={items as Row[]}
+            onReorder={async (ids) => {
+              try { await persistSortOrder("testimonials", ids); qc.invalidateQueries({ queryKey: ["admin-testimonials"] }); }
+              catch (e) { toast.error((e as Error).message); throw e; }
+            }}
+            className="space-y-1"
+            renderItem={(it, handle) => (
+              <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
+                {handle}
+                <button
+                  onClick={() => setSelected(it)}
+                  className="flex-1 text-left p-3 text-sm min-w-0"
+                >
+                  <div className="font-medium truncate flex items-center gap-1.5">
+                    {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
+                    <span className="truncate">{it.client_name}</span>
+                  </div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    <span>{"★".repeat(it.rating)}</span>
+                    {it.published ? <span className="text-success">● опубликовано</span> : <span>○ черновик</span>}
+                  </div>
+                </button>
               </div>
-              <div className="text-xs opacity-70 flex items-center gap-2">
-                <span>{"★".repeat(it.rating)}</span>
-                {it.published ? <span className="text-success">● опубликовано</span> : <span>○ черновик</span>}
-              </div>
-            </button>
-          ))}
+            )}
+          />
         </div>
 
         {selected ? (
