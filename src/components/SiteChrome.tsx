@@ -15,6 +15,7 @@ const NAV = [
   { to: "/services", label: "Услуги" },
   { to: "/production", label: "Производство" },
   { to: "/cases", label: "Кейсы" },
+  { to: "/industries", label: "Индустрии" },
   { to: "/testimonials", label: "Отзывы" },
   { to: "/blog", label: "Блог" },
   { to: "/about", label: "О нас" },
