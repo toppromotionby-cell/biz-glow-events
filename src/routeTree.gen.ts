@@ -26,6 +26,7 @@ import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
+import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CasesRouteImport } from './routes/cases'
@@ -139,6 +140,11 @@ const FaqRoute = FaqRouteImport.update({
 const EquipmentRoute = EquipmentRouteImport.update({
   id: '/equipment',
   path: '/equipment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeliveryRoute = DeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactsRoute = ContactsRouteImport.update({
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/cases': typeof CasesRouteWithChildren
   '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
+  '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByTo {
   '/cases': typeof CasesRouteWithChildren
   '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
+  '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -392,6 +400,7 @@ export interface FileRoutesById {
   '/cases': typeof CasesRouteWithChildren
   '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
+  '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
@@ -442,6 +451,7 @@ export interface FileRouteTypes {
     | '/cases'
     | '/compare'
     | '/contacts'
+    | '/delivery'
     | '/equipment'
     | '/faq'
     | '/login'
@@ -489,6 +499,7 @@ export interface FileRouteTypes {
     | '/cases'
     | '/compare'
     | '/contacts'
+    | '/delivery'
     | '/equipment'
     | '/faq'
     | '/login'
@@ -537,6 +548,7 @@ export interface FileRouteTypes {
     | '/cases'
     | '/compare'
     | '/contacts'
+    | '/delivery'
     | '/equipment'
     | '/faq'
     | '/login'
@@ -586,6 +598,7 @@ export interface RootRouteChildren {
   CasesRoute: typeof CasesRouteWithChildren
   CompareRoute: typeof CompareRoute
   ContactsRoute: typeof ContactsRoute
+  DeliveryRoute: typeof DeliveryRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
@@ -724,6 +737,13 @@ declare module '@tanstack/react-router' {
       path: '/equipment'
       fullPath: '/equipment'
       preLoaderRoute: typeof EquipmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delivery': {
+      id: '/delivery'
+      path: '/delivery'
+      fullPath: '/delivery'
+      preLoaderRoute: typeof DeliveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contacts': {
@@ -1065,6 +1085,7 @@ const rootRouteChildren: RootRouteChildren = {
   CasesRoute: CasesRouteWithChildren,
   CompareRoute: CompareRoute,
   ContactsRoute: ContactsRoute,
+  DeliveryRoute: DeliveryRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
