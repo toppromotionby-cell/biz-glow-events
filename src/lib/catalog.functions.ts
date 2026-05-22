@@ -61,6 +61,7 @@ export const listCatalog = createServerFn({ method: "GET" })
       .from(data.type)
       .select(SELECT)
       .eq("published", true)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const authed = await isAuthed();
