@@ -192,10 +192,17 @@ function AdminOrders() {
                       {o.source ?? "—"}
                       {o.utm_source && <div className="text-[10px]">{o.utm_source}{o.utm_campaign ? ` / ${o.utm_campaign}` : ""}</div>}
                     </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs border ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}>
-                        {STATUS_LABEL[o.status] ?? o.status}
-                      </span>
+                    <td className="p-3" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <select
+                        value={o.status}
+                        disabled={updateStatus.isPending}
+                        onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value })}
+                        className={`px-2 py-1 rounded-full text-xs border bg-transparent outline-none cursor-pointer ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}
+                      >
+                        {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                          <option key={k} value={k} className="bg-background text-foreground">{v}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
                     <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(o.paid)}</td>
