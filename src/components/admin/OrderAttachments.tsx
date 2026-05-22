@@ -71,18 +71,18 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
   };
 
   const generatePdf = async (kind: "invoice" | "contract") => {
-    const url = `/admin/orders/${orderId}/${kind}`;
-    const win = window.open(url, "_blank");
-    if (!win) toast.error("Браузер заблокировал окно");
-    else toast.info(`${KIND_LABEL[kind]}: используйте «Сохранить как PDF» через печать (Ctrl+P)`);
+    try {
+      await openAuthedDocument(`/admin/orders/${orderId}/${kind}`);
+      toast.info(`${KIND_LABEL[kind]}: используйте «Сохранить как PDF» через печать (Ctrl+P)`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const attachGenerated = async (kind: "invoice" | "contract") => {
     setUploading(true);
     try {
-      const res = await fetch(`/admin/orders/${orderId}/${kind}`);
-      if (!res.ok) throw new Error("Не удалось получить документ");
-      const html = await res.text();
+      const html = await fetchAuthedDocument(`/admin/orders/${orderId}/${kind}`);
       const blob = new Blob([html], { type: "text/html" });
       const file = new File([blob], `${KIND_LABEL[kind].toLowerCase()}-${orderId.slice(0, 8)}.html`, { type: "text/html" });
       await handleUpload(file, kind);
