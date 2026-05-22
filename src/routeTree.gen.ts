@@ -24,6 +24,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -33,6 +34,7 @@ import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
+import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
@@ -119,6 +121,11 @@ const ContactsRoute = ContactsRouteImport.update({
   path: '/contacts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CasesRoute = CasesRouteImport.update({
+  id: '/cases',
+  path: '/cases',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CartRoute = CartRouteImport.update({
   id: '/cart',
   path: '/cart',
@@ -163,6 +170,11 @@ const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => EquipmentRoute,
+} as any)
+const CasesSlugRoute = CasesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CasesRoute,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
@@ -220,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
+  '/cases': typeof CasesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -242,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/cases/$slug': typeof CasesSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -255,6 +269,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
+  '/cases': typeof CasesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -277,6 +292,7 @@ export interface FileRoutesByTo {
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/cases/$slug': typeof CasesSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -292,6 +308,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
+  '/cases': typeof CasesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -314,6 +331,7 @@ export interface FileRoutesById {
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/cases/$slug': typeof CasesSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -330,6 +348,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blog'
     | '/cart'
+    | '/cases'
     | '/contacts'
     | '/equipment'
     | '/faq'
@@ -352,6 +371,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/users'
     | '/blog/$slug'
+    | '/cases/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -365,6 +385,7 @@ export interface FileRouteTypes {
     | '/'
     | '/blog'
     | '/cart'
+    | '/cases'
     | '/contacts'
     | '/equipment'
     | '/faq'
@@ -387,6 +408,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/users'
     | '/blog/$slug'
+    | '/cases/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -401,6 +423,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blog'
     | '/cart'
+    | '/cases'
     | '/contacts'
     | '/equipment'
     | '/faq'
@@ -423,6 +446,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/users'
     | '/blog/$slug'
+    | '/cases/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -438,6 +462,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   CartRoute: typeof CartRoute
+  CasesRoute: typeof CasesRouteWithChildren
   ContactsRoute: typeof ContactsRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
@@ -562,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cases': {
+      id: '/cases'
+      path: '/cases'
+      fullPath: '/cases'
+      preLoaderRoute: typeof CasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cart': {
       id: '/cart'
       path: '/cart'
@@ -624,6 +656,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/equipment/$slug'
       preLoaderRoute: typeof EquipmentSlugRouteImport
       parentRoute: typeof EquipmentRoute
+    }
+    '/cases/$slug': {
+      id: '/cases/$slug'
+      path: '/$slug'
+      fullPath: '/cases/$slug'
+      preLoaderRoute: typeof CasesSlugRouteImport
+      parentRoute: typeof CasesRoute
     }
     '/blog/$slug': {
       id: '/blog/$slug'
@@ -756,6 +795,16 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface CasesRouteChildren {
+  CasesSlugRoute: typeof CasesSlugRoute
+}
+
+const CasesRouteChildren: CasesRouteChildren = {
+  CasesSlugRoute: CasesSlugRoute,
+}
+
+const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
+
 interface EquipmentRouteChildren {
   EquipmentSlugRoute: typeof EquipmentSlugRoute
 }
@@ -807,6 +856,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   CartRoute: CartRoute,
+  CasesRoute: CasesRouteWithChildren,
   ContactsRoute: ContactsRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
