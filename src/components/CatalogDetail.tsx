@@ -147,6 +147,11 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           </div>
         </section>
       )}
+
+      <Suspense fallback={null}>
+        <RelatedItems type={entityType} currentId={item.id} category={item.category} />
+      </Suspense>
+      <RecentlyViewed excludeId={item.id} />
     </div>
   );
 }
