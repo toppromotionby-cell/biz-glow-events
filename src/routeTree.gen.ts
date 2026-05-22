@@ -26,6 +26,10 @@ import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
+import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
+import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
+import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
@@ -119,6 +123,26 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const ZonesSlugRoute = ZonesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ZonesRoute,
+} as any)
+const ServicesSlugRoute = ServicesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ServicesRoute,
+} as any)
+const ProductionSlugRoute = ProductionSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ProductionRoute,
+} as any)
+const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => EquipmentRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -160,22 +184,26 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRoute
   '/contacts': typeof ContactsRoute
-  '/equipment': typeof EquipmentRoute
+  '/equipment': typeof EquipmentRouteWithChildren
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/privacy': typeof PrivacyRoute
-  '/production': typeof ProductionRoute
+  '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/zones': typeof ZonesRoute
+  '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/equipment/$slug': typeof EquipmentSlugRoute
+  '/production/$slug': typeof ProductionSlugRoute
+  '/services/$slug': typeof ServicesSlugRoute
+  '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -185,22 +213,26 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/blog': typeof BlogRoute
   '/contacts': typeof ContactsRoute
-  '/equipment': typeof EquipmentRoute
+  '/equipment': typeof EquipmentRouteWithChildren
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/privacy': typeof PrivacyRoute
-  '/production': typeof ProductionRoute
+  '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/zones': typeof ZonesRoute
+  '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/equipment/$slug': typeof EquipmentSlugRoute
+  '/production/$slug': typeof ProductionSlugRoute
+  '/services/$slug': typeof ServicesSlugRoute
+  '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -212,22 +244,26 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRoute
   '/contacts': typeof ContactsRoute
-  '/equipment': typeof EquipmentRoute
+  '/equipment': typeof EquipmentRouteWithChildren
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/privacy': typeof PrivacyRoute
-  '/production': typeof ProductionRoute
+  '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/zones': typeof ZonesRoute
+  '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/equipment/$slug': typeof EquipmentSlugRoute
+  '/production/$slug': typeof ProductionSlugRoute
+  '/services/$slug': typeof ServicesSlugRoute
+  '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -256,6 +292,10 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/equipment/$slug'
+    | '/production/$slug'
+    | '/services/$slug'
+    | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
@@ -281,6 +321,10 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/equipment/$slug'
+    | '/production/$slug'
+    | '/services/$slug'
+    | '/zones/$slug'
     | '/admin'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
@@ -307,6 +351,10 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/equipment/$slug'
+    | '/production/$slug'
+    | '/services/$slug'
+    | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
@@ -318,18 +366,18 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   BlogRoute: typeof BlogRoute
   ContactsRoute: typeof ContactsRoute
-  EquipmentRoute: typeof EquipmentRoute
+  EquipmentRoute: typeof EquipmentRouteWithChildren
   LoginRoute: typeof LoginRoute
   OfferRoute: typeof OfferRoute
   PrivacyRoute: typeof PrivacyRoute
-  ProductionRoute: typeof ProductionRoute
+  ProductionRoute: typeof ProductionRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
-  ServicesRoute: typeof ServicesRoute
+  ServicesRoute: typeof ServicesRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  ZonesRoute: typeof ZonesRoute
+  ZonesRoute: typeof ZonesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -453,6 +501,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/zones/$slug': {
+      id: '/zones/$slug'
+      path: '/$slug'
+      fullPath: '/zones/$slug'
+      preLoaderRoute: typeof ZonesSlugRouteImport
+      parentRoute: typeof ZonesRoute
+    }
+    '/services/$slug': {
+      id: '/services/$slug'
+      path: '/$slug'
+      fullPath: '/services/$slug'
+      preLoaderRoute: typeof ServicesSlugRouteImport
+      parentRoute: typeof ServicesRoute
+    }
+    '/production/$slug': {
+      id: '/production/$slug'
+      path: '/$slug'
+      fullPath: '/production/$slug'
+      preLoaderRoute: typeof ProductionSlugRouteImport
+      parentRoute: typeof ProductionRoute
+    }
+    '/equipment/$slug': {
+      id: '/equipment/$slug'
+      path: '/$slug'
+      fullPath: '/equipment/$slug'
+      preLoaderRoute: typeof EquipmentSlugRouteImport
+      parentRoute: typeof EquipmentRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -549,23 +625,69 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface EquipmentRouteChildren {
+  EquipmentSlugRoute: typeof EquipmentSlugRoute
+}
+
+const EquipmentRouteChildren: EquipmentRouteChildren = {
+  EquipmentSlugRoute: EquipmentSlugRoute,
+}
+
+const EquipmentRouteWithChildren = EquipmentRoute._addFileChildren(
+  EquipmentRouteChildren,
+)
+
+interface ProductionRouteChildren {
+  ProductionSlugRoute: typeof ProductionSlugRoute
+}
+
+const ProductionRouteChildren: ProductionRouteChildren = {
+  ProductionSlugRoute: ProductionSlugRoute,
+}
+
+const ProductionRouteWithChildren = ProductionRoute._addFileChildren(
+  ProductionRouteChildren,
+)
+
+interface ServicesRouteChildren {
+  ServicesSlugRoute: typeof ServicesSlugRoute
+}
+
+const ServicesRouteChildren: ServicesRouteChildren = {
+  ServicesSlugRoute: ServicesSlugRoute,
+}
+
+const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
+  ServicesRouteChildren,
+)
+
+interface ZonesRouteChildren {
+  ZonesSlugRoute: typeof ZonesSlugRoute
+}
+
+const ZonesRouteChildren: ZonesRouteChildren = {
+  ZonesSlugRoute: ZonesSlugRoute,
+}
+
+const ZonesRouteWithChildren = ZonesRoute._addFileChildren(ZonesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   BlogRoute: BlogRoute,
   ContactsRoute: ContactsRoute,
-  EquipmentRoute: EquipmentRoute,
+  EquipmentRoute: EquipmentRouteWithChildren,
   LoginRoute: LoginRoute,
   OfferRoute: OfferRoute,
   PrivacyRoute: PrivacyRoute,
-  ProductionRoute: ProductionRoute,
+  ProductionRoute: ProductionRouteWithChildren,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
-  ServicesRoute: ServicesRoute,
+  ServicesRoute: ServicesRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  ZonesRoute: ZonesRoute,
+  ZonesRoute: ZonesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

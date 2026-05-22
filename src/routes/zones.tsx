@@ -29,7 +29,7 @@ export const Route = createFileRoute("/zones")({
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Интерактивные зоны</h1>
         <p className="mt-4 text-muted-foreground">VR-арены, фотозоны 360°, AR-зеркала и тематические лаунжи под ключ.</p>
       </header>
-      <CatalogGrid items={ZONES} category="zones" />
+      <CatalogGrid items={ZONES} category="zones" basePath="/zones" />
     </div>
   ),
 });
