@@ -63,24 +63,34 @@ function CasesAdmin() {
       </header>
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <div className="glass rounded-xl p-3 max-h-[75vh] overflow-y-auto space-y-1">
+        <div className="glass rounded-xl p-3 max-h-[75vh] overflow-y-auto">
           {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
-          {items.map((it: CaseRow) => (
-            <button
-              key={it.id}
-              onClick={() => setSelected(it)}
-              className={`w-full text-left p-3 rounded-lg text-sm transition ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
-            >
-              <div className="font-medium truncate flex items-center gap-1.5">
-                {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
-                <span className="truncate">{it.title}</span>
+          <SortableList
+            items={items as CaseRow[]}
+            onReorder={async (ids) => {
+              try { await persistSortOrder("cases", ids); qc.invalidateQueries({ queryKey: ["admin-cases"] }); }
+              catch (e) { toast.error((e as Error).message); throw e; }
+            }}
+            className="space-y-1"
+            renderItem={(it, handle) => (
+              <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
+                {handle}
+                <button
+                  onClick={() => setSelected(it)}
+                  className="flex-1 text-left p-3 text-sm min-w-0"
+                >
+                  <div className="font-medium truncate flex items-center gap-1.5">
+                    {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
+                    <span className="truncate">{it.title}</span>
+                  </div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    <span>{it.event_date ?? "—"}</span>
+                    {it.published ? <span className="text-success">● опубликовано</span> : <span>○ черновик</span>}
+                  </div>
+                </button>
               </div>
-              <div className="text-xs opacity-70 flex items-center gap-2">
-                <span>{it.event_date ?? "—"}</span>
-                {it.published ? <span className="text-success">● опубликовано</span> : <span>○ черновик</span>}
-              </div>
-            </button>
-          ))}
+            )}
+          />
         </div>
 
         <div>
