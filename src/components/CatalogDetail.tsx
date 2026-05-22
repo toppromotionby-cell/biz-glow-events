@@ -1,6 +1,6 @@
-// Universal catalog detail view: gallery, description, features, FAQ, JSON-LD.
+// Universal catalog detail view: gallery, lightbox, video, description, FAQ, JSON-LD.
 import { Link } from "@tanstack/react-router";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { PriceGate } from "@/components/PriceGate";
@@ -10,7 +10,9 @@ import { RelatedItems } from "@/components/RelatedItems";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { CompareButton } from "@/components/CompareButton";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { trackView } from "@/lib/recent";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
