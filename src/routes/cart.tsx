@@ -381,5 +381,3 @@ function ReqField({
     </label>
   );
 }
-
-}
