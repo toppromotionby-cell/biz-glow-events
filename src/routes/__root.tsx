@@ -106,16 +106,14 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <SiteSectionsProvider>
-        <TextOverridesProvider>
-          <div className="min-h-screen flex flex-col bg-background bg-radial-glow">
-            <SiteHeader />
-            <main id="main" className="flex-1"><Outlet /></main>
-            <SiteFooter />
-            <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
-            <ScriptInjector />
-            <Toaster theme="dark" />
-          </div>
-        </TextOverridesProvider>
+        <div className="min-h-screen flex flex-col bg-background bg-radial-glow">
+          <SiteHeader />
+          <main id="main" className="flex-1"><Outlet /></main>
+          <SiteFooter />
+          <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
+          <ScriptInjector />
+          <Toaster theme="dark" />
+        </div>
       </SiteSectionsProvider>
     </QueryClientProvider>
   );
