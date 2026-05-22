@@ -13,12 +13,21 @@ export const subscribeNewsletter = createServerFn({ method: "POST" })
   .inputValidator((input) => EmailSchema.parse(input))
   .handler(async ({ data }) => {
     const email = data.email.trim().toLowerCase();
+    // SECURITY: не перезаписываем unsubscribed_at — это бы re-subscribe'нуло
+    // отписавшихся (GDPR). Если запись существует и unsubscribed_at != null —
+    // отвечаем ok без действий (anti-enumeration).
+    const { data: existing } = await supabaseAdmin
+      .from("newsletter_subscribers")
+      .select("id, unsubscribed_at")
+      .eq("email", email)
+      .maybeSingle();
+    if (existing) {
+      // Уже подписан или явно отписан — никаких изменений.
+      return { ok: true };
+    }
     const { error } = await supabaseAdmin
       .from("newsletter_subscribers")
-      .upsert(
-        { email, source: data.source ?? "footer", unsubscribed_at: null },
-        { onConflict: "email" },
-      );
+      .insert({ email, source: data.source ?? "footer" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
