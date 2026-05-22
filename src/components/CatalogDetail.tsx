@@ -5,6 +5,7 @@ import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { WishlistButton } from "@/components/WishlistButton";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
@@ -76,6 +77,14 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               Заказать
             </Link>
             <AddToCartButton
+              entity_type={entityType}
+              id={item.id}
+              slug={item.slug}
+              title={item.title}
+              price={from ?? 0}
+              image={item.photo_urls?.[0] ?? null}
+            />
+            <WishlistButton
               entity_type={entityType}
               id={item.id}
               slug={item.slug}
