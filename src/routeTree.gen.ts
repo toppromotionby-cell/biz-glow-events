@@ -32,6 +32,7 @@ import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
+import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -148,6 +149,11 @@ const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   path: '/catalog/$type',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminOrdersIdQuoteRoute = AdminOrdersIdQuoteRouteImport.update({
+  id: '/quote',
+  path: '/quote',
+  getParentRoute: () => AdminOrdersIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -172,7 +178,8 @@ export interface FileRoutesByFullPath {
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
-  '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -196,7 +203,8 @@ export interface FileRoutesByTo {
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
-  '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -222,7 +230,8 @@ export interface FileRoutesById {
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
-  '/admin/orders/$id': typeof AdminOrdersIdRoute
+  '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/orders/$id/quote'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/orders/$id/quote'
   id:
     | '__root__'
     | '/'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/orders/$id/quote'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -483,15 +495,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/orders/$id/quote': {
+      id: '/admin/orders/$id/quote'
+      path: '/quote'
+      fullPath: '/admin/orders/$id/quote'
+      preLoaderRoute: typeof AdminOrdersIdQuoteRouteImport
+      parentRoute: typeof AdminOrdersIdRoute
+    }
   }
 }
 
+interface AdminOrdersIdRouteChildren {
+  AdminOrdersIdQuoteRoute: typeof AdminOrdersIdQuoteRoute
+}
+
+const AdminOrdersIdRouteChildren: AdminOrdersIdRouteChildren = {
+  AdminOrdersIdQuoteRoute: AdminOrdersIdQuoteRoute,
+}
+
+const AdminOrdersIdRouteWithChildren = AdminOrdersIdRoute._addFileChildren(
+  AdminOrdersIdRouteChildren,
+)
+
 interface AdminOrdersRouteChildren {
-  AdminOrdersIdRoute: typeof AdminOrdersIdRoute
+  AdminOrdersIdRoute: typeof AdminOrdersIdRouteWithChildren
 }
 
 const AdminOrdersRouteChildren: AdminOrdersRouteChildren = {
-  AdminOrdersIdRoute: AdminOrdersIdRoute,
+  AdminOrdersIdRoute: AdminOrdersIdRouteWithChildren,
 }
 
 const AdminOrdersRouteWithChildren = AdminOrdersRoute._addFileChildren(
