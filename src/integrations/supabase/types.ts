@@ -14,16 +14,665 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_hash: string | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      availability: {
+        Row: {
+          created_at: string
+          end_date: string
+          entity_type: string
+          id: string
+          item_id: string
+          order_id: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["availability_status"]
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          entity_type: string
+          id?: string
+          item_id: string
+          order_id?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["availability_status"]
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          entity_type?: string
+          id?: string
+          item_id?: string
+          order_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["availability_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "availability_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          active: boolean
+          budget: number | null
+          created_at: string
+          end_date: string | null
+          goal_conversions: number | null
+          id: string
+          name: string
+          source: string | null
+          start_date: string | null
+        }
+        Insert: {
+          active?: boolean
+          budget?: number | null
+          created_at?: string
+          end_date?: string | null
+          goal_conversions?: number | null
+          id?: string
+          name: string
+          source?: string | null
+          start_date?: string | null
+        }
+        Update: {
+          active?: boolean
+          budget?: number | null
+          created_at?: string
+          end_date?: string | null
+          goal_conversions?: number | null
+          id?: string
+          name?: string
+          source?: string | null
+          start_date?: string | null
+        }
+        Relationships: []
+      }
+      marketing_logs: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          event: string
+          id: string
+          payload: Json | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          payload?: Json | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          meta: Json | null
+          order_id: string
+          price: number
+          qty: number
+          start_date: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          meta?: Json | null
+          order_id: string
+          price?: number
+          qty?: number
+          start_date?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          meta?: Json | null
+          order_id?: string
+          price?: number
+          qty?: number
+          start_date?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_timeline: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event: string
+          id: string
+          order_id: string
+          payload: Json | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          order_id: string
+          payload?: Json | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          order_id?: string
+          payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_timeline_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          client_company: string | null
+          client_email: string
+          client_name: string
+          client_phone: string
+          created_at: string
+          event_date: string | null
+          id: string
+          manager_id: string | null
+          notes: string | null
+          paid: number | null
+          source: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          total: number | null
+          updated_at: string
+          user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          client_company?: string | null
+          client_email: string
+          client_name: string
+          client_phone: string
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          manager_id?: string | null
+          notes?: string | null
+          paid?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total?: number | null
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          client_company?: string | null
+          client_email?: string
+          client_name?: string
+          client_phone?: string
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          manager_id?: string | null
+          notes?: string | null
+          paid?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total?: number | null
+          updated_at?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
+      production_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          faq: Json | null
+          features: Json | null
+          id: string
+          photo_urls: string[] | null
+          pricing: Json | null
+          published: boolean
+          requirements: string | null
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          title: string
+          updated_at: string
+          video_urls: string[] | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company: string | null
+          consent_pd: boolean
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          consent_pd?: boolean
+          created_at?: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          consent_pd?: boolean
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          faq: Json | null
+          features: Json | null
+          id: string
+          photo_urls: string[] | null
+          pricing: Json | null
+          published: boolean
+          requirements: string | null
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          title: string
+          updated_at: string
+          video_urls: string[] | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Relationships: []
+      }
+      tech_equipment: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          faq: Json | null
+          features: Json | null
+          id: string
+          photo_urls: string[] | null
+          pricing: Json | null
+          published: boolean
+          requirements: string | null
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          title: string
+          updated_at: string
+          video_urls: string[] | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Relationships: []
+      }
+      telegram_logs: {
+        Row: {
+          created_at: string
+          error: string | null
+          http_code: number | null
+          id: string
+          order_id: string | null
+          payload: Json | null
+          retried_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          http_code?: number | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          retried_at?: string | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          http_code?: number | null
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          retried_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      zones: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          faq: Json | null
+          features: Json | null
+          id: string
+          photo_urls: string[] | null
+          pricing: Json | null
+          published: boolean
+          requirements: string | null
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          title: string
+          updated_at: string
+          video_urls: string[] | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "content_editor" | "marketer"
+      availability_status: "available" | "booked" | "maintenance"
+      order_status:
+        | "new"
+        | "consultation"
+        | "estimate"
+        | "contract"
+        | "in_progress"
+        | "completed"
+        | "paid"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +799,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "content_editor", "marketer"],
+      availability_status: ["available", "booked", "maintenance"],
+      order_status: [
+        "new",
+        "consultation",
+        "estimate",
+        "contract",
+        "in_progress",
+        "completed",
+        "paid",
+        "cancelled",
+      ],
+    },
   },
 } as const
