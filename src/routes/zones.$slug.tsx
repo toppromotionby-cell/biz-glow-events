@@ -44,5 +44,5 @@ function Page() {
   const { slug } = Route.useParams();
   const { data: item } = useSuspenseQuery(itemQuery(slug));
   if (!item) return null;
-  return <CatalogDetail item={item} backHref={BACK.href} backLabel={BACK.label} />;
+  return <CatalogDetail item={item} backHref={BACK.href} backLabel={BACK.label} entityType="zones" />;
 }
