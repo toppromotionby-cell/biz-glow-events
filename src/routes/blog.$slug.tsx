@@ -88,7 +88,7 @@ function BlogPostPage() {
 
       {post.cover_url && (
         <div className="rounded-2xl overflow-hidden mb-8 glass">
-          <img src={post.cover_url} alt={post.title} className="w-full h-auto" />
+          <img src={post.cover_url} alt={post.title} loading="eager" decoding="async" fetchPriority="high" width={1280} height={720} className="w-full h-auto" />
         </div>
       )}
 
