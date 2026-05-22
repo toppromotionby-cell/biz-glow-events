@@ -100,6 +100,7 @@ function RootComponent() {
         <main className="flex-1"><Outlet /></main>
         <SiteFooter />
         <CookieConsent />
+        <ScriptInjector />
         <Toaster theme="dark" />
       </div>
     </QueryClientProvider>
