@@ -100,6 +100,7 @@ export function SiteFooter() {
           <h4 className="font-medium mb-3">Информация</h4>
           <ul className="space-y-2 text-muted-foreground">
             <li><Link to="/partners" className="hover:text-foreground">Агентствам</Link></li>
+            <li><Link to="/calculator" className="hover:text-foreground">Калькулятор сметы</Link></li>
             <li><Link to="/delivery" className="hover:text-foreground">Доставка и оплата</Link></li>
             <li><Link to="/faq" className="hover:text-foreground">Частые вопросы</Link></li>
             <li><Link to="/terms-rental" className="hover:text-foreground">Условия аренды</Link></li>
