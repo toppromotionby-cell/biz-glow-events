@@ -234,7 +234,7 @@ function HomePage() {
                 className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition"
               >
                 <div className="aspect-[16/10] bg-gradient-primary/10 overflow-hidden">
-                  {p.cover_url && <img src={p.cover_url} alt={p.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
+                  {p.cover_url && <img src={p.cover_url} alt={p.title} width={640} height={400} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
                 </div>
                 <div className="p-4">
                   {p.published_at && (
