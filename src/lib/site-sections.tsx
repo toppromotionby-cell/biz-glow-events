@@ -125,13 +125,12 @@ export function Toggleable({
   const enabled = useSectionEnabled(sectionKey);
   const { has } = useRoles();
   const isAdmin = has("admin");
-
-  if (!enabled && !isAdmin) return null;
-
   const label = useMemo(
     () => SECTION_REGISTRY.find((s) => s.key === sectionKey)?.label ?? sectionKey,
     [sectionKey],
   );
+
+  if (!enabled && !isAdmin) return null;
 
   if (enabled) {
     return <Tag className={className}>{children}</Tag>;
