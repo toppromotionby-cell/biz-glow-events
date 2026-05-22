@@ -13,6 +13,7 @@ import { CompareButton } from "@/components/CompareButton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { trackView } from "@/lib/recent";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PriceTableView, getTiers } from "@/components/PriceTable";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
