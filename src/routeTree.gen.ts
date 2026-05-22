@@ -44,6 +44,7 @@ import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
+import { Route as AdminAvailabilityRouteImport } from './routes/admin.availability'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
@@ -224,6 +225,11 @@ const AdminBlogRoute = AdminBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAvailabilityRoute = AdminAvailabilityRouteImport.update({
+  id: '/availability',
+  path: '/availability',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/cases': typeof AdminCasesRoute
@@ -393,6 +402,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
+    | '/admin/availability'
     | '/admin/blog'
     | '/admin/calendar'
     | '/admin/cases'
@@ -433,6 +443,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
+    | '/admin/availability'
     | '/admin/blog'
     | '/admin/calendar'
     | '/admin/cases'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
+    | '/admin/availability'
     | '/admin/blog'
     | '/admin/calendar'
     | '/admin/cases'
@@ -764,6 +776,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlogRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/availability': {
+      id: '/admin/availability'
+      path: '/availability'
+      fullPath: '/admin/availability'
+      preLoaderRoute: typeof AdminAvailabilityRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/audit': {
       id: '/admin/audit'
       path: '/audit'
@@ -821,6 +840,7 @@ const AdminOrdersRouteWithChildren = AdminOrdersRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminAvailabilityRoute: typeof AdminAvailabilityRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminCasesRoute: typeof AdminCasesRoute
@@ -834,6 +854,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
+  AdminAvailabilityRoute: AdminAvailabilityRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminCalendarRoute: AdminCalendarRoute,
   AdminCasesRoute: AdminCasesRoute,
