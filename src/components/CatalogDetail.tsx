@@ -1,11 +1,14 @@
 // Universal catalog detail view: gallery, description, features, FAQ, JSON-LD.
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
+import { RelatedItems } from "@/components/RelatedItems";
+import { RecentlyViewed } from "@/components/RecentlyViewed";
+import { trackView } from "@/lib/recent";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
