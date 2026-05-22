@@ -30,7 +30,9 @@ const SELECT = "id,slug,title,client,event_type,event_date,location,guests_count
 export const listCases = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ featuredOnly: z.boolean().optional(), limit: z.number().int().min(1).max(50).optional() }).parse(i ?? {}))
   .handler(async ({ data }) => {
-    let q = supabaseAdmin.from("cases").select(SELECT).eq("published", true).order("event_date", { ascending: false, nullsFirst: false });
+    let q = supabaseAdmin.from("cases").select(SELECT).eq("published", true)
+      .order("sort_order", { ascending: true })
+      .order("event_date", { ascending: false, nullsFirst: false });
     if (data.featuredOnly) q = q.eq("featured", true);
     if (data.limit) q = q.limit(data.limit);
     const { data: rows, error } = await q;
