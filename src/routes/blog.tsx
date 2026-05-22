@@ -77,7 +77,7 @@ function BlogIndex() {
             >
               {p.cover_url ? (
                 <div className="aspect-[16/10] overflow-hidden">
-                  <img src={p.cover_url} alt={p.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                  <img src={p.cover_url} alt={p.title} loading="lazy" decoding="async" width={640} height={400} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                 </div>
               ) : (
                 <div className="aspect-[16/10] bg-gradient-primary/20" />
