@@ -40,6 +40,15 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const from = priceFrom(item.pricing);
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
+  const tiers = getTiers(item.pricing);
+  const hasTiers = tiers.length > 0;
+  const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
+  const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
+  const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
+  const effectivePrice = tierPrice ?? from ?? 0;
+  const effectiveTitle = activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title;
+  const effectiveId = activeTier ? `${item.id}::${selectedTier}` : item.id;
+  const needsSelection = hasTiers && selectedTier === null;
 
   const openLightbox = useCallback((i: number) => setLightbox(i), []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
