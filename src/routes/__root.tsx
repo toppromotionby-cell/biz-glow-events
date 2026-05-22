@@ -8,7 +8,6 @@ import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { ScriptInjector } from "@/components/ScriptInjector";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
-import { TextOverridesProvider } from "@/lib/text-overrides";
 
 function NotFoundComponent() {
   return (
