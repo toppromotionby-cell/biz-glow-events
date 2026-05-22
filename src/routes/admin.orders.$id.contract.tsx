@@ -1,6 +1,7 @@
 // Server route: /admin/orders/$id/contract — HTML договора оказания услуг с print CSS (A4).
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireStaff } from "@/lib/admin-route-guard";
 
 function esc(s: unknown): string {
   return String(s ?? "")
