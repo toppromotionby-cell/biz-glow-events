@@ -69,18 +69,26 @@ function CartPage() {
     if (items.length === 0) return;
     const fd = new FormData(e.currentTarget);
     saveDraft(fd);
-    setContactDraft({
+    const contact = {
       client_name: String(fd.get("client_name") ?? "").trim(),
       client_phone: String(fd.get("client_phone") ?? "").trim(),
       client_email: String(fd.get("client_email") ?? "").trim(),
       client_company: String(fd.get("client_company") ?? "").trim() || null,
       event_date: String(fd.get("event_date") ?? "") || null,
       notes: String(fd.get("notes") ?? "").trim() || null,
-    });
-    setReqOpen(true);
+    };
+    setContactDraft(contact);
+    if (clientType === "company") {
+      setReqOpen(true);
+    } else {
+      void finalSubmitWith(contact, {
+        company_legal_name: null, company_unp: null, company_address: null,
+        company_bank: null, contact_person_name: null, contact_person_position: null, acting_basis: null,
+      });
+    }
   }
 
-  async function finalSubmit(req: {
+  type Req = {
     company_legal_name: string | null;
     company_unp: string | null;
     company_address: string | null;
@@ -88,14 +96,15 @@ function CartPage() {
     contact_person_name: string | null;
     contact_person_position: string | null;
     acting_basis: string | null;
-  }) {
-    if (!contactDraft) return;
+  };
+
+  async function finalSubmitWith(contact: NonNullable<typeof contactDraft>, req: Req) {
     const utm = readUtm() ?? {};
     setLoading(true);
     try {
       const res = await submit({
         data: {
-          ...contactDraft,
+          ...contact,
           source: "cart",
           promo_code: promo?.code ?? null,
           ...req,
@@ -126,6 +135,11 @@ function CartPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function finalSubmit(req: Req) {
+    if (!contactDraft) return;
+    await finalSubmitWith(contactDraft, req);
   }
 
 
@@ -267,13 +281,9 @@ function CartPage() {
         open={reqOpen}
         onOpenChange={setReqOpen}
         loading={loading}
-        required={clientType === "company"}
         onConfirm={finalSubmit}
-        onSkip={clientType === "individual" ? () => finalSubmit({
-          company_legal_name: null, company_unp: null, company_address: null,
-          company_bank: null, contact_person_name: null, contact_person_position: null, acting_basis: null,
-        }) : undefined}
       />
+
     </div>
   );
 }
@@ -295,14 +305,11 @@ function RequisitesDialog({
   open,
   onOpenChange,
   loading,
-  required,
   onConfirm,
-  onSkip,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   loading: boolean;
-  required?: boolean;
   onConfirm: (req: {
     company_legal_name: string | null;
     company_unp: string | null;
@@ -312,7 +319,6 @@ function RequisitesDialog({
     contact_person_position: string | null;
     acting_basis: string | null;
   }) => void;
-  onSkip?: () => void;
 }) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

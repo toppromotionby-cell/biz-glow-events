@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { Download, Search, ExternalLink, Clock, Paperclip } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { toast } from "sonner";
 
 const STATUS_LABEL: Record<string, string> = {
   new: "Новый", consultation: "Консультация", estimate: "Смета", contract: "Договор",
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/admin/orders")({
 });
 
 function AdminOrders() {
+  const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("");
   const [sortBy, setSortBy] = useState<"created_at" | "total" | "event_date">("created_at");
@@ -50,6 +52,37 @@ function AdminOrders() {
       return data;
     },
   });
+
+  // Realtime: обновляем список при любых изменениях в orders
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-orders-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, newStatus }: { id: string; newStatus: string }) => {
+      const { error } = await supabase.from("orders").update({ status: newStatus as any }).eq("id", id);
+      if (error) throw error;
+      const { data: u } = await supabase.auth.getUser();
+      await supabase.from("order_timeline").insert({
+        order_id: id, event: `status_changed:${newStatus}`,
+        actor_id: u.user?.id ?? null, payload: { status: newStatus },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Статус обновлён");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Не удалось изменить статус"),
+  });
+
 
   const sorted = useMemo(() => {
     const arr = [...orders];
@@ -159,10 +192,17 @@ function AdminOrders() {
                       {o.source ?? "—"}
                       {o.utm_source && <div className="text-[10px]">{o.utm_source}{o.utm_campaign ? ` / ${o.utm_campaign}` : ""}</div>}
                     </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs border ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}>
-                        {STATUS_LABEL[o.status] ?? o.status}
-                      </span>
+                    <td className="p-3" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <select
+                        value={o.status}
+                        disabled={updateStatus.isPending}
+                        onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value })}
+                        className={`px-2 py-1 rounded-full text-xs border bg-transparent outline-none cursor-pointer ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}
+                      >
+                        {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                          <option key={k} value={k} className="bg-background text-foreground">{v}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
                     <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(o.paid)}</td>
