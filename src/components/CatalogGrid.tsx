@@ -1,24 +1,29 @@
+import { Link } from "@tanstack/react-router";
 import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import type { CatalogItem } from "@/lib/catalog-mock";
 
-export function CatalogGrid({ items, category }: { items: CatalogItem[]; category: string }) {
+export function CatalogGrid({ items, category, basePath }: { items: CatalogItem[]; category: string; basePath: string }) {
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {items.map((it) => (
         <article key={it.slug} className="glass rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col">
-          <MediaShield>
-            <div className="aspect-[4/3] overflow-hidden bg-surface">
-              <img
-                src={it.image}
-                alt={it.title}
-                loading="lazy"
-                className="h-full w-full object-cover group-hover:scale-105 transition duration-700"
-              />
-            </div>
-          </MediaShield>
+          <Link to={`${basePath}/${it.slug}`} aria-label={it.title}>
+            <MediaShield>
+              <div className="aspect-[4/3] overflow-hidden bg-surface">
+                <img
+                  src={it.image}
+                  alt={it.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover group-hover:scale-105 transition duration-700"
+                />
+              </div>
+            </MediaShield>
+          </Link>
           <div className="p-5 flex-1 flex flex-col">
-            <h3 className="font-display font-semibold text-lg">{it.title}</h3>
+            <h3 className="font-display font-semibold text-lg">
+              <Link to={`${basePath}/${it.slug}`} className="hover:text-primary transition">{it.title}</Link>
+            </h3>
             <p className="text-sm text-muted-foreground mt-2 flex-1">{it.description}</p>
             <div className="flex flex-wrap gap-1.5 mt-3">
               {it.tags.map((t) => (
@@ -42,3 +47,4 @@ export function CatalogGrid({ items, category }: { items: CatalogItem[]; categor
     </div>
   );
 }
+
