@@ -31,9 +31,11 @@ import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
+import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
@@ -149,6 +151,11 @@ const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => EquipmentRoute,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -162,6 +169,11 @@ const AdminMarketingRoute = AdminMarketingRouteImport.update({
 const AdminCalendarRoute = AdminCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBlogRoute = AdminBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
@@ -188,7 +200,7 @@ const AdminOrdersIdQuoteRoute = AdminOrdersIdQuoteRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
@@ -204,9 +216,11 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -218,7 +232,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
@@ -234,9 +248,11 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -250,7 +266,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/cart': typeof CartRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
@@ -266,9 +282,11 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -299,9 +317,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/zones'
     | '/admin/audit'
+    | '/admin/blog'
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/blog/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -329,9 +349,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/zones'
     | '/admin/audit'
+    | '/admin/blog'
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/blog/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -360,9 +382,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/zones'
     | '/admin/audit'
+    | '/admin/blog'
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/blog/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -376,7 +400,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  BlogRoute: typeof BlogRoute
+  BlogRoute: typeof BlogRouteWithChildren
   CartRoute: typeof CartRoute
   ContactsRoute: typeof ContactsRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
@@ -549,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EquipmentSlugRouteImport
       parentRoute: typeof EquipmentRoute
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -568,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/admin/calendar'
       preLoaderRoute: typeof AdminCalendarRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blog': {
+      id: '/admin/blog'
+      path: '/blog'
+      fullPath: '/admin/blog'
+      preLoaderRoute: typeof AdminBlogRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/audit': {
@@ -627,6 +665,7 @@ const AdminOrdersRouteWithChildren = AdminOrdersRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminBlogRoute: typeof AdminBlogRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
@@ -636,6 +675,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
+  AdminBlogRoute: AdminBlogRoute,
   AdminCalendarRoute: AdminCalendarRoute,
   AdminMarketingRoute: AdminMarketingRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
@@ -644,6 +684,16 @@ const AdminRouteChildren: AdminRouteChildren = {
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface EquipmentRouteChildren {
   EquipmentSlugRoute: typeof EquipmentSlugRoute
@@ -694,7 +744,7 @@ const ZonesRouteWithChildren = ZonesRoute._addFileChildren(ZonesRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  BlogRoute: BlogRoute,
+  BlogRoute: BlogRouteWithChildren,
   CartRoute: CartRoute,
   ContactsRoute: ContactsRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
