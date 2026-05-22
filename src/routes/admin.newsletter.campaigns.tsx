@@ -161,9 +161,18 @@ function Page() {
                   <td className="p-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString("ru-RU")}</td>
                   <td className="p-3">
                     {c.status === "draft" && (
-                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить черновик?")) remove.mutate(c.id); }}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          onClick={() => { if (confirm(`Отправить кампанию «${c.subject}»? Получатели вычисляются в момент запуска.`)) launch.mutate(c.id); }}
+                          disabled={launch.isPending}
+                        >
+                          <Send className="h-4 w-4 mr-1" />Отправить
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить черновик?")) remove.mutate(c.id); }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </td>
                 </tr>
