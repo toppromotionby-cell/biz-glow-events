@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User } from "lucide-react";
+import { Sparkles, User, ShoppingCart } from "lucide-react";
+import { useCart } from "@/lib/cart";
 
 const NAV = [
   { to: "/zones", label: "Зоны" },
@@ -15,6 +16,7 @@ const NAV = [
 
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
+  const { count } = useCart();
   return (
     <header className="sticky top-0 z-40 glass-strong border-b border-border/50">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">
@@ -35,6 +37,12 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <Link to="/cart" aria-label={`Заявка${count ? `, ${count} позиций` : ""}`} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+            <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+            {count > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{count}</span>
+            )}
+          </Link>
           {isAuthenticated ? (
             <>
               <Link to="/profile"><Button variant="ghost" size="sm"><User className="h-4 w-4 mr-1" />Кабинет</Button></Link>

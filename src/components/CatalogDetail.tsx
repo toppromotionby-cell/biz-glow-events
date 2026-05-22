@@ -1,9 +1,10 @@
 // Universal catalog detail view: gallery, description, features, FAQ, JSON-LD.
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import type { CatalogRow } from "@/lib/catalog.functions";
+import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { PriceGate } from "@/components/PriceGate";
+import { AddToCartButton } from "@/components/AddToCartButton";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
@@ -16,10 +17,11 @@ function asArray<T = unknown>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
 
-export function CatalogDetail({ item, backHref, backLabel }: {
+export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   item: CatalogRow;
   backHref: string;
   backLabel: string;
+  entityType: CatalogType;
 }) {
   const photos = item.photo_urls ?? [];
   const [active, setActive] = useState(0);
@@ -73,6 +75,15 @@ export function CatalogDetail({ item, backHref, backLabel }: {
             <Link to="/contacts" className="mt-4 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
               Заказать
             </Link>
+            <AddToCartButton
+              entity_type={entityType}
+              id={item.id}
+              slug={item.slug}
+              title={item.title}
+              price={from ?? 0}
+              image={item.photo_urls?.[0] ?? null}
+            />
+            <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в заявку →</Link>
           </div>
 
           {features.length > 0 && (
