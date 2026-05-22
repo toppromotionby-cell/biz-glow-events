@@ -33,6 +33,7 @@ import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
@@ -162,6 +163,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => BlogRoute,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
@@ -331,6 +340,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/admin/users'
     | '/blog/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/admin/users'
     | '/blog/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
@@ -398,6 +409,7 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/marketing'
     | '/admin/orders'
+    | '/admin/users'
     | '/blog/$slug'
     | '/equipment/$slug'
     | '/production/$slug'
@@ -600,6 +612,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -689,6 +708,7 @@ interface AdminRouteChildren {
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminMarketingRoute: typeof AdminMarketingRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCatalogTypeRoute: typeof AdminCatalogTypeRoute
 }
@@ -699,6 +719,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCalendarRoute: AdminCalendarRoute,
   AdminMarketingRoute: AdminMarketingRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCatalogTypeRoute: AdminCatalogTypeRoute,
 }
