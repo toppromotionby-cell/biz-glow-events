@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { submitLead } from "@/lib/leads.functions";
 import { readUtm } from "@/lib/utm";
+import { DateField } from "@/components/DateField";
 
 export function LeadForm({ source = "contacts" }: { source?: string }) {
   const submit = useServerFn(submitLead);
@@ -57,7 +58,7 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
         <Field label="Телефон *" name="client_phone" required type="tel" />
         <Field label="Email *" name="client_email" required type="email" />
         <Field label="Компания" name="client_company" />
-        <Field label="Дата мероприятия" name="event_date" type="date" />
+        <DateField label="Дата мероприятия" name="event_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
       </div>
       <label className="block text-sm">
         <span className="text-muted-foreground">Сообщение</span>

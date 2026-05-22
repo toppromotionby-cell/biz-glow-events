@@ -7,6 +7,7 @@ import { useCart, removeFromCart, updateQty, clearCart } from "@/lib/cart";
 import { submitOrder } from "@/lib/orders.functions";
 import { readUtm } from "@/lib/utm";
 import { PromoCodeInput } from "@/components/PromoCodeInput";
+import { DateField } from "@/components/DateField";
 import { type PromoValidation } from "@/lib/promo.functions";
 
 export const Route = createFileRoute("/cart")({
@@ -184,7 +185,7 @@ function CartPage() {
               <Field label="Телефон *" name="client_phone" type="tel" required />
               <Field label="Email *" name="client_email" type="email" required />
               <Field label="Компания" name="client_company" />
-              <Field label="Дата мероприятия" name="event_date" type="date" />
+              <DateField label="Дата мероприятия" name="event_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
               <label className="block text-sm">
                 <span className="text-muted-foreground">Комментарий</span>
                 <textarea name="notes" rows={3} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
