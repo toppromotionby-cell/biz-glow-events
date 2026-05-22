@@ -83,6 +83,25 @@ function AdminOrders() {
     onError: (e: any) => toast.error(e?.message ?? "Не удалось изменить статус"),
   });
 
+  const updatePaid = useMutation({
+    mutationFn: async ({ id, newPaid, prevPaid }: { id: string; newPaid: number; prevPaid: number }) => {
+      const { error } = await supabase.from("orders").update({ paid: newPaid }).eq("id", id);
+      if (error) throw error;
+      const { data: u } = await supabase.auth.getUser();
+      await supabase.from("order_timeline").insert({
+        order_id: id, event: "paid_changed",
+        actor_id: u.user?.id ?? null, payload: { from: prevPaid, to: newPaid },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Оплата обновлена");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Не удалось обновить оплату"),
+  });
+
 
   const sorted = useMemo(() => {
     const arr = [...orders];
