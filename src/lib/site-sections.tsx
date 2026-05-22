@@ -10,6 +10,7 @@ import { EyeOff } from "lucide-react";
 // Реестр всех управляемых секций. Добавляйте сюда новые ключи —
 // они автоматически появятся в админ-панели.
 export const SECTION_REGISTRY = [
+  // Главная
   { key: "home.hero", label: "Главная: Hero-блок", group: "Главная" },
   { key: "home.directions", label: "Главная: Направления", group: "Главная" },
   { key: "home.featured", label: "Главная: Из каталога", group: "Главная" },
@@ -19,14 +20,40 @@ export const SECTION_REGISTRY = [
   { key: "home.testimonials", label: "Главная: Отзывы", group: "Главная" },
   { key: "home.blog", label: "Главная: Блог", group: "Главная" },
   { key: "home.cta", label: "Главная: CTA-блок", group: "Главная" },
+
+  // Шапка
+  { key: "header.root", label: "Шапка: Вся шапка", group: "Шапка" },
+  { key: "header.brand", label: "Шапка: Логотип/название", group: "Шапка" },
+  { key: "header.nav", label: "Шапка: Навигация (целиком)", group: "Шапка" },
+  { key: "header.nav.zones", label: "Шапка: Пункт «Зоны»", group: "Шапка" },
+  { key: "header.nav.equipment", label: "Шапка: Пункт «Оборудование»", group: "Шапка" },
+  { key: "header.nav.services", label: "Шапка: Пункт «Услуги»", group: "Шапка" },
+  { key: "header.nav.production", label: "Шапка: Пункт «Производство»", group: "Шапка" },
+  { key: "header.nav.cases", label: "Шапка: Пункт «Кейсы»", group: "Шапка" },
+  { key: "header.nav.industries", label: "Шапка: Пункт «Индустрии»", group: "Шапка" },
+  { key: "header.nav.testimonials", label: "Шапка: Пункт «Отзывы»", group: "Шапка" },
+  { key: "header.nav.blog", label: "Шапка: Пункт «Блог»", group: "Шапка" },
+  { key: "header.nav.about", label: "Шапка: Пункт «О нас»", group: "Шапка" },
+  { key: "header.nav.contacts", label: "Шапка: Пункт «Контакты»", group: "Шапка" },
   { key: "header.search", label: "Шапка: Поиск", group: "Шапка" },
   { key: "header.wishlist", label: "Шапка: Избранное", group: "Шапка" },
   { key: "header.compare", label: "Шапка: Сравнение", group: "Шапка" },
   { key: "header.cart", label: "Шапка: Корзина", group: "Шапка" },
+  { key: "header.account", label: "Шапка: Кабинет (для авторизованных)", group: "Шапка" },
+  { key: "header.logout", label: "Шапка: Кнопка «Выйти»", group: "Шапка" },
+  { key: "header.login", label: "Шапка: Кнопка «Войти»", group: "Шапка" },
   { key: "header.register", label: "Шапка: Кнопка регистрации", group: "Шапка" },
-  { key: "footer.newsletter", label: "Подвал: Рассылка", group: "Подвал" },
+
+  // Подвал
+  { key: "footer.root", label: "Подвал: Весь подвал", group: "Подвал" },
+  { key: "footer.brand", label: "Подвал: Брендовый блок", group: "Подвал" },
+  { key: "footer.catalog", label: "Подвал: Блок «Каталог»", group: "Подвал" },
   { key: "footer.info", label: "Подвал: Блок «Информация»", group: "Подвал" },
   { key: "footer.contacts", label: "Подвал: Контакты", group: "Подвал" },
+  { key: "footer.newsletter", label: "Подвал: Рассылка", group: "Подвал" },
+  { key: "footer.copyright", label: "Подвал: Копирайт", group: "Подвал" },
+
+  // Глобально
   { key: "global.cookies", label: "Глобально: Cookie-баннер", group: "Глобально" },
 ] as const;
 
