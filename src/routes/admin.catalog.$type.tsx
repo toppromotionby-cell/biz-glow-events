@@ -194,10 +194,10 @@ function PreviewDialog({ item, onClose, onEdit }: { item: any | null; onClose: (
               </section>
             )}
 
-            {item.pricing && Object.keys(item.pricing).length > 0 && (
+            {getTiers(item.pricing).length > 0 && (
               <section className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Цены</h3>
-                <pre className="text-xs bg-muted/40 rounded-lg p-3 overflow-x-auto">{JSON.stringify(item.pricing, null, 2)}</pre>
+                <PriceTableView pricing={item.pricing} />
               </section>
             )}
 
