@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Download, Paperclip } from "lucide-react";
 import { toast } from "sonner";
+import { openAuthedDocument, fetchAuthedDocument } from "@/lib/authed-fetch";
 
 const BUCKET = "order-attachments";
 const KIND_LABEL: Record<string, string> = { invoice: "Счёт", contract: "Договор", custom: "Файл" };
