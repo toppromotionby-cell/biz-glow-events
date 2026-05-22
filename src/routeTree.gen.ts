@@ -21,6 +21,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductionRouteImport } from './routes/production'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -111,6 +112,11 @@ const ProductionRoute = ProductionRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfferRoute = OfferRouteImport.update({
@@ -282,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
+  '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
+  '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
+  '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/login'
     | '/offer'
+    | '/partners'
     | '/privacy'
     | '/production'
     | '/profile'
@@ -463,6 +473,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/login'
     | '/offer'
+    | '/partners'
     | '/privacy'
     | '/production'
     | '/profile'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/login'
     | '/offer'
+    | '/partners'
     | '/privacy'
     | '/production'
     | '/profile'
@@ -554,6 +566,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   OfferRoute: typeof OfferRoute
+  PartnersRoute: typeof PartnersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProductionRoute: typeof ProductionRouteWithChildren
   ProfileRoute: typeof ProfileRoute
@@ -652,6 +665,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offer': {
@@ -1007,6 +1027,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   OfferRoute: OfferRoute,
+  PartnersRoute: PartnersRoute,
   PrivacyRoute: PrivacyRoute,
   ProductionRoute: ProductionRouteWithChildren,
   ProfileRoute: ProfileRoute,
