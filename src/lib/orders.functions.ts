@@ -224,17 +224,7 @@ export const submitOrder = createServerFn({ method: "POST" })
     });
 
     const lines = resolved.map((i) => `• ${tgEsc(i.title)} × ${i.qty} — ${i.price * i.qty} BYN`).join("\n");
-    const text =
-      `<b>Новая заявка (корзина)</b>\n` +
-      `Имя: ${tgEsc(data.client_name)}\n` +
-      `Тел: ${tgEsc(data.client_phone)}\n` +
-      `Email: ${tgEsc(data.client_email)}\n` +
-      (data.client_company ? `Компания: ${tgEsc(data.client_company)}\n` : "") +
-      (data.event_date ? `Дата: ${tgEsc(data.event_date)}\n` : "") +
-      `\n${lines}\n\n<b>Итого: ${total} BYN</b>` +
-      (promoApplied ? `\nПромокод: ${tgEsc(promoApplied)}` : "") +
-      (hasDiscrepancy ? `\n⚠ <b>Ценовое расхождение</b>` : "") +
-      (data.notes ? `\n\nКомментарий: ${tgEsc(data.notes)}` : "");
+
 
     const tgRequisites = requisitesBlock
       ? `\n\n<b>Реквизиты:</b>\n${tgEsc(requisitesBlock)}`
