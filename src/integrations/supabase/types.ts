@@ -711,6 +711,27 @@ export type Database = {
         }
         Relationships: []
       }
+      site_sections: {
+        Row: {
+          enabled: boolean
+          key: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          key: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          key?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tech_equipment: {
         Row: {
           category: string | null

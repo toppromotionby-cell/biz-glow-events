@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { GuestEstimator } from "@/components/GuestEstimator";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
+import { Toggleable } from "@/lib/site-sections";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -84,7 +85,7 @@ function HomePage() {
   return (
     <div>
       {/* HERO */}
-      <section className="relative overflow-hidden">
+      <Toggleable sectionKey="home.hero" as="section" className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-80" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,oklch(0.55_0.24_295/0.25),transparent_60%)] animate-gradient" />
         <div className="container mx-auto px-4 py-24 md:py-36 relative">
@@ -107,10 +108,10 @@ function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </Toggleable>
 
       {/* DIRECTIONS */}
-      <section className="container mx-auto px-4 py-20">
+      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 py-20">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
@@ -123,11 +124,11 @@ function HomePage() {
             </Link>
           ))}
         </div>
-      </section>
+      </Toggleable>
 
       {/* FEATURED CATALOG */}
       {featured.length > 0 && (
-        <section className="container mx-auto px-4 py-16 border-t border-border/40">
+        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
           <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Из нашего каталога</h2>
             <Link to="/equipment" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
@@ -153,11 +154,11 @@ function HomePage() {
               </a>
             ))}
           </div>
-        </section>
+        </Toggleable>
       )}
 
       {/* VALUES */}
-      <section className="container mx-auto px-4 py-20 border-t border-border/40">
+      <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 py-20 border-t border-border/40">
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
             <div key={v.title} className="text-center">
@@ -169,11 +170,11 @@ function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </Toggleable>
 
       {/* CASES */}
       {cases.length > 0 && (
-        <section className="container mx-auto px-4 py-16 border-t border-border/40">
+        <Toggleable sectionKey="home.cases" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
           <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
             <div>
               <h2 className="text-3xl md:text-4xl font-display font-bold">Наши кейсы</h2>
@@ -198,18 +199,18 @@ function HomePage() {
               </Link>
             ))}
           </div>
-        </section>
+        </Toggleable>
       )}
 
       {/* GUEST ESTIMATOR */}
-      <GuestEstimator />
+      <Toggleable sectionKey="home.estimator"><GuestEstimator /></Toggleable>
 
       {/* TESTIMONIALS */}
-      <TestimonialsTeaser />
+      <Toggleable sectionKey="home.testimonials"><TestimonialsTeaser /></Toggleable>
 
       {/* BLOG TEASER */}
       {posts.length > 0 && (
-        <section className="container mx-auto px-4 py-16 border-t border-border/40">
+        <Toggleable sectionKey="home.blog" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
           <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Из блога</h2>
             <Link to="/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
@@ -239,11 +240,11 @@ function HomePage() {
               </Link>
             ))}
           </div>
-        </section>
+        </Toggleable>
       )}
 
       {/* CTA */}
-      <section className="container mx-auto px-4 py-20">
+      <Toggleable sectionKey="home.cta" as="section" className="container mx-auto px-4 py-20">
         <div className="glass-strong rounded-3xl p-10 md:p-16 text-center bg-gradient-to-br from-primary/10 to-transparent">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Готовы обсудить ваше мероприятие?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
@@ -253,7 +254,7 @@ function HomePage() {
             Начать сотрудничество <ArrowRight className="ml-2 h-4 w-4" />
           </Button></Link>
         </div>
-      </section>
+      </Toggleable>
     </div>
   );
 }

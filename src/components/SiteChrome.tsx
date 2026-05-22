@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useCompare } from "@/lib/compare";
 import { SearchTrigger } from "@/components/SearchTrigger";
+import { Toggleable } from "@/lib/site-sections";
 
 const NAV = [
   { to: "/zones", label: "Зоны" },
@@ -47,25 +48,31 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <SearchTrigger />
-          <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-            <Heart className="h-4 w-4" aria-hidden="true" />
-            {wishCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
-            )}
-          </Link>
-          <Link to="/compare" aria-label={cmpCount > 0 ? `Сравнение, ${cmpCount} позиций` : "Сравнение"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-            <Scale className="h-4 w-4" aria-hidden="true" />
-            {cmpCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{cmpCount}</span>
-            )}
-          </Link>
-          <Link to="/cart" aria-label={count > 0 ? `Заявка, ${count} позиций` : "Заявка"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-            <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-            {count > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{count}</span>
-            )}
-          </Link>
+          <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
+          <Toggleable sectionKey="header.wishlist" as="span">
+            <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+              <Heart className="h-4 w-4" aria-hidden="true" />
+              {wishCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
+              )}
+            </Link>
+          </Toggleable>
+          <Toggleable sectionKey="header.compare" as="span">
+            <Link to="/compare" aria-label={cmpCount > 0 ? `Сравнение, ${cmpCount} позиций` : "Сравнение"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+              <Scale className="h-4 w-4" aria-hidden="true" />
+              {cmpCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{cmpCount}</span>
+              )}
+            </Link>
+          </Toggleable>
+          <Toggleable sectionKey="header.cart" as="span">
+            <Link to="/cart" aria-label={count > 0 ? `Заявка, ${count} позиций` : "Заявка"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+              <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+              {count > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{count}</span>
+              )}
+            </Link>
+          </Toggleable>
           {isAuthenticated ? (
             <>
               <Link to="/profile"><Button variant="ghost" size="sm"><User className="h-4 w-4 mr-1" />Кабинет</Button></Link>
@@ -74,7 +81,9 @@ export function SiteHeader() {
           ) : (
             <>
               <Link to="/login"><Button variant="ghost" size="sm">Войти</Button></Link>
-              <Link to="/register"><Button size="sm" className="bg-gradient-primary glow-primary">Регистрация</Button></Link>
+              <Toggleable sectionKey="header.register" as="span">
+                <Link to="/register"><Button size="sm" className="bg-gradient-primary glow-primary">Регистрация</Button></Link>
+              </Toggleable>
             </>
           )}
         </div>
@@ -97,7 +106,7 @@ export function SiteFooter() {
             {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
           </ul>
         </div>
-        <div>
+        <Toggleable sectionKey="footer.info" as="div">
           <h4 className="font-medium mb-3">Информация</h4>
           <ul className="space-y-2 text-muted-foreground">
             <li><Link to="/partners" className="hover:text-foreground">Агентствам</Link></li>
@@ -108,20 +117,20 @@ export function SiteFooter() {
             <li><Link to="/privacy" className="hover:text-foreground">Политика конфиденциальности</Link></li>
             <li><Link to="/offer" className="hover:text-foreground">Публичная оферта</Link></li>
           </ul>
-        </div>
-        <div>
+        </Toggleable>
+        <Toggleable sectionKey="footer.contacts" as="div">
           <h4 className="font-medium mb-3">Контакты</h4>
           <ul className="space-y-2 text-muted-foreground">
             <li>Минск, Беларусь</li>
             <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
             <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
           </ul>
-          <div className="mt-5">
+          <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
             <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
             <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
             <NewsletterSignup />
-          </div>
-        </div>
+          </Toggleable>
+        </Toggleable>
       </div>
       <div className="border-t border-border/50 py-4 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} event-hub.by. Все права защищены.
