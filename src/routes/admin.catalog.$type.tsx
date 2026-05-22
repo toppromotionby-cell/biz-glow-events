@@ -42,7 +42,9 @@ function CatalogInner({ table }: { table: Table }) {
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["catalog", table],
-    queryFn: async () => (await supabase.from(table).select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from(table).select("*")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })).data ?? [],
   });
 
   const create = useMutation({
