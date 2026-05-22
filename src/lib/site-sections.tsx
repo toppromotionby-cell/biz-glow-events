@@ -1,11 +1,8 @@
 // Глобальная система переключателей секций сайта.
 // Админ может включать/выключать любые блоки. Отключённый блок скрыт
 // для обычных посетителей, а админам показан полупрозрачным с бейджем.
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useRoles } from "@/hooks/use-roles";
-import { cn } from "@/lib/utils";
-import { EyeOff } from "lucide-react";
 
 // Реестр всех управляемых секций. Добавляйте сюда новые ключи —
 // они автоматически появятся в админ-панели.
