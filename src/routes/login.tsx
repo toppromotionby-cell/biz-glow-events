@@ -33,11 +33,28 @@ function LoginPage() {
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword(data);
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    const { data: signIn, error } = await supabase.auth.signInWithPassword(data);
+    if (error) { setLoading(false); toast.error(error.message); return; }
     toast.success("Добро пожаловать!");
-    navigate({ to: "/profile" });
+
+    // Если есть ?redirect=... — туда. Иначе проверяем роль: персонал → /admin, остальные → /profile.
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    let target = "/profile";
+    if (redirect && redirect.startsWith("/")) {
+      target = redirect;
+    } else if (signIn.user) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", signIn.user.id);
+      const staffRoles = ["admin", "manager", "marketer", "content_editor"];
+      if ((roles ?? []).some((r: any) => staffRoles.includes(r.role))) {
+        target = "/admin";
+      }
+    }
+    setLoading(false);
+    navigate({ to: target });
   };
 
   return (
