@@ -76,7 +76,6 @@ function SortableRow({ id, children }: { id: string; children: (handle: ReactNod
   const handle = (
     <button
       type="button"
-      ref={setNodeRef as any}
       {...attributes}
       {...listeners}
       aria-label="Перетащить"
@@ -87,7 +86,7 @@ function SortableRow({ id, children }: { id: string; children: (handle: ReactNod
     </button>
   );
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={setNodeRef} style={style}>
       {children(handle)}
     </div>
   );
