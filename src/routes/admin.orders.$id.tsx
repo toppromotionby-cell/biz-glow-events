@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, Clock } from "lucide-react";
+import { OrderAttachments } from "@/components/admin/OrderAttachments";
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
@@ -106,6 +107,8 @@ function OrderDetail() {
           </div>
         )}
       </div>
+
+      <OrderAttachments orderId={order.id} />
 
       <div className="glass rounded-xl p-5">
         <h3 className="font-semibold mb-3">Внутренние заметки</h3>

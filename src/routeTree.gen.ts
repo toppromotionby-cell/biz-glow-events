@@ -58,6 +58,8 @@ import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
+import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
+import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -304,6 +306,16 @@ const AdminOrdersIdQuoteRoute = AdminOrdersIdQuoteRouteImport.update({
   path: '/quote',
   getParentRoute: () => AdminOrdersIdRoute,
 } as any)
+const AdminOrdersIdInvoiceRoute = AdminOrdersIdInvoiceRouteImport.update({
+  id: '/invoice',
+  path: '/invoice',
+  getParentRoute: () => AdminOrdersIdRoute,
+} as any)
+const AdminOrdersIdContractRoute = AdminOrdersIdContractRouteImport.update({
+  id: '/contract',
+  path: '/contract',
+  getParentRoute: () => AdminOrdersIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -354,6 +366,8 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
+  '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
 }
 export interface FileRoutesByTo {
@@ -404,6 +418,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
+  '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
 }
 export interface FileRoutesById {
@@ -456,6 +472,8 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
+  '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
 }
 export interface FileRouteTypes {
@@ -509,6 +527,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/orders/$id/contract'
+    | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -559,6 +579,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/orders/$id/contract'
+    | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
   id:
     | '__root__'
@@ -610,6 +632,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/orders/$id/contract'
+    | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
   fileRoutesById: FileRoutesById
 }
@@ -989,14 +1013,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdQuoteRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/orders/$id/invoice': {
+      id: '/admin/orders/$id/invoice'
+      path: '/invoice'
+      fullPath: '/admin/orders/$id/invoice'
+      preLoaderRoute: typeof AdminOrdersIdInvoiceRouteImport
+      parentRoute: typeof AdminOrdersIdRoute
+    }
+    '/admin/orders/$id/contract': {
+      id: '/admin/orders/$id/contract'
+      path: '/contract'
+      fullPath: '/admin/orders/$id/contract'
+      preLoaderRoute: typeof AdminOrdersIdContractRouteImport
+      parentRoute: typeof AdminOrdersIdRoute
+    }
   }
 }
 
 interface AdminOrdersIdRouteChildren {
+  AdminOrdersIdContractRoute: typeof AdminOrdersIdContractRoute
+  AdminOrdersIdInvoiceRoute: typeof AdminOrdersIdInvoiceRoute
   AdminOrdersIdQuoteRoute: typeof AdminOrdersIdQuoteRoute
 }
 
 const AdminOrdersIdRouteChildren: AdminOrdersIdRouteChildren = {
+  AdminOrdersIdContractRoute: AdminOrdersIdContractRoute,
+  AdminOrdersIdInvoiceRoute: AdminOrdersIdInvoiceRoute,
   AdminOrdersIdQuoteRoute: AdminOrdersIdQuoteRoute,
 }
 
