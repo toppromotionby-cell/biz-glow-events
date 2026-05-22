@@ -34,10 +34,12 @@ const VALUES = [
 
 type Featured = { id: string; slug: string; title: string; short_description: string | null; photo_urls: string[] | null; basePath: string };
 type BlogTeaser = { id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; published_at: string | null };
+type CaseTeaser = { id: string; slug: string; title: string; summary: string | null; cover_url: string | null; event_type: string | null; guests_count: number | null };
 
 function HomePage() {
   const [featured, setFeatured] = useState<Featured[]>([]);
   const [posts, setPosts] = useState<BlogTeaser[]>([]);
+  const [cases, setCases] = useState<CaseTeaser[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -67,6 +69,14 @@ function HomePage() {
         .order("published_at", { ascending: false, nullsFirst: false })
         .limit(3);
       setPosts((blog ?? []) as BlogTeaser[]);
+
+      const { data: cs } = await supabase
+        .from("cases")
+        .select("id, slug, title, summary, cover_url, event_type, guests_count")
+        .eq("published", true)
+        .order("event_date", { ascending: false, nullsFirst: false })
+        .limit(3);
+      setCases((cs ?? []) as CaseTeaser[]);
     })();
   }, []);
 
@@ -159,6 +169,36 @@ function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* CASES */}
+      {cases.length > 0 && (
+        <section className="container mx-auto px-4 py-16 border-t border-border/40">
+          <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-display font-bold">Наши кейсы</h2>
+              <p className="mt-2 text-muted-foreground">Реализованные мероприятия — от корпоративов до фестивалей.</p>
+            </div>
+            <Link to="/cases" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+              Все кейсы <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {cases.map((c) => (
+              <Link key={c.id} to="/cases/$slug" params={{ slug: c.slug }} className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition">
+                <div className="aspect-[16/10] bg-gradient-primary/10 overflow-hidden">
+                  {c.cover_url && <img src={c.cover_url} alt={c.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
+                </div>
+                <div className="p-4">
+                  {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
+                  <h3 className="mt-1 font-semibold leading-tight group-hover:text-primary transition">{c.title}</h3>
+                  {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
+                  {c.guests_count && <div className="mt-2 text-xs text-muted-foreground">{c.guests_count.toLocaleString("ru-BY")} гостей</div>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* GUEST ESTIMATOR */}
       <GuestEstimator />
