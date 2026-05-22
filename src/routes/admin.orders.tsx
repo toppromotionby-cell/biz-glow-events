@@ -224,7 +224,14 @@ function AdminOrders() {
                       </select>
                     </td>
                     <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
-                    <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(o.paid)}</td>
+                    <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <PaidCell
+                        value={Number(o.paid ?? 0)}
+                        total={Number(o.total ?? 0)}
+                        disabled={updatePaid.isPending}
+                        onSave={(v) => updatePaid.mutate({ id: o.id, newPaid: v, prevPaid: Number(o.paid ?? 0) })}
+                      />
+                    </td>
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right">
                       <Link to="/admin/orders/$id" params={{ id: o.id }} className="inline-flex items-center text-muted-foreground hover:text-primary" onClick={(e) => e.stopPropagation()}>
