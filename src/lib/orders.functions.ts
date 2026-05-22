@@ -149,10 +149,8 @@ export const submitOrder = createServerFn({ method: "POST" })
     let promoApplied: string | null = null;
     if (data.promo_code) {
       const code = data.promo_code.trim().toUpperCase();
-      const { data: upd } = await supabaseAdmin
-        .rpc("increment_promo_usage", { p_code: code })
-        .single<{ id: string }>();
-      if (upd) promoApplied = code;
+      const { data: upd } = await supabaseAdmin.rpc("increment_promo_usage", { p_code: code });
+      if (upd && upd.length > 0) promoApplied = code;
     }
 
     const { data: order, error } = await supabaseAdmin
