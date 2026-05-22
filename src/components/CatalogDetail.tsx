@@ -172,10 +172,47 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         </section>
       )}
 
+      {videos.length > 0 && (
+        <section className="mt-12 max-w-5xl">
+          <h2 className="text-2xl font-display font-semibold mb-4">Видео</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {videos.map((url, i) => (
+              <video key={url + i} src={url} controls playsInline preload="metadata"
+                className="w-full rounded-xl bg-black aspect-video glass" />
+            ))}
+          </div>
+        </section>
+      )}
+
       <Suspense fallback={null}>
         <RelatedItems type={entityType} currentId={item.id} category={item.category} />
       </Suspense>
       <RecentlyViewed excludeId={item.id} />
+
+      <Dialog open={lightbox !== null} onOpenChange={(v) => { if (!v) closeLightbox(); }}>
+        <DialogContent className="max-w-6xl p-0 bg-background/95 border-border/40">
+          {lightbox !== null && photos[lightbox] && (
+            <div className="relative">
+              <img src={photos[lightbox]} alt={item.title} className="w-full max-h-[85vh] object-contain rounded-lg" />
+              {photos.length > 1 && (
+                <>
+                  <button type="button" onClick={prev} aria-label="Назад"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/70 hover:bg-background flex items-center justify-center">
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button type="button" onClick={next} aria-label="Вперёд"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/70 hover:bg-background flex items-center justify-center">
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-2 py-1 rounded bg-background/70">
+                    {lightbox + 1} / {photos.length}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
