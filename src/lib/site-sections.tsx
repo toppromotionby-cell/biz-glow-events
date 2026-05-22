@@ -123,30 +123,6 @@ export function Toggleable({
   as?: "div" | "section" | "span" | "li";
 }) {
   const enabled = useSectionEnabled(sectionKey);
-  const { has } = useRoles();
-  const isAdmin = has("admin");
-  const label = useMemo(
-    () => SECTION_REGISTRY.find((s) => s.key === sectionKey)?.label ?? sectionKey,
-    [sectionKey],
-  );
-
-  if (!enabled && !isAdmin) return null;
-
-  if (enabled) {
-    return <Tag className={className}>{children}</Tag>;
-  }
-
-  // Админ видит выключенный блок с пометкой.
-  return (
-    <Tag
-      className={cn("relative opacity-40 pointer-events-none select-none", className)}
-      data-admin-hidden
-      aria-label={`Скрыто: ${label}`}
-    >
-      <div className="pointer-events-auto absolute top-2 right-2 z-30 inline-flex items-center gap-1 rounded-full bg-destructive/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-destructive-foreground shadow-lg">
-        <EyeOff className="h-3 w-3" /> Скрыто для посетителей
-      </div>
-      {children}
-    </Tag>
-  );
+  if (!enabled) return null;
+  return <Tag className={className}>{children}</Tag>;
 }
