@@ -15,12 +15,13 @@ function addMonths(d: Date, n: number) { return new Date(d.getFullYear(), d.getM
 function buildStatusMap(rows: AvailabilityRow[]): Map<string, "booked" | "maintenance"> {
   const m = new Map<string, "booked" | "maintenance">();
   for (const r of rows) {
+    if (r.status === "available") continue;
+    const st = r.status;
     const s = new Date(r.start_date);
     const e = new Date(r.end_date);
     for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
       const key = ymd(d);
-      // booked wins over maintenance
-      if (r.status === "booked" || !m.has(key)) m.set(key, r.status);
+      if (st === "booked" || !m.has(key)) m.set(key, st);
     }
   }
   return m;
