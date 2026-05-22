@@ -5,6 +5,7 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
+import { ScriptInjector } from "@/components/ScriptInjector";
 import { captureUtmFromLocation } from "@/lib/utm";
 
 function NotFoundComponent() {
@@ -99,6 +100,7 @@ function RootComponent() {
         <main className="flex-1"><Outlet /></main>
         <SiteFooter />
         <CookieConsent />
+        <ScriptInjector />
         <Toaster theme="dark" />
       </div>
     </QueryClientProvider>

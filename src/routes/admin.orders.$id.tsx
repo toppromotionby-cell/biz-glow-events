@@ -64,9 +64,12 @@ function OrderDetail() {
           <h1 className="text-3xl font-display font-bold gradient-text">Заказ #{order.id.slice(0, 8)}</h1>
           <p className="text-sm text-muted-foreground">Создан {new Date(order.created_at).toLocaleString("ru-BY")}</p>
         </div>
-        <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
-          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <div className="flex items-center gap-2">
+          <a href={`/admin/orders/${order.id}/quote`} target="_blank" rel="noopener" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/10">Скачать КП</a>
+          <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
+            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
       </header>
 
       <div className="grid lg:grid-cols-3 gap-4">
