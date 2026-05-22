@@ -34,6 +34,7 @@ function CatalogAdmin() {
 function CatalogInner({ table }: { table: Table }) {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<any | null>(null);
+  const [preview, setPreview] = useState<any | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["catalog", table],
@@ -65,7 +66,7 @@ function CatalogInner({ table }: { table: Table }) {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-display font-bold gradient-text">{LABELS[table]}</h1>
-          <p className="text-sm text-muted-foreground">{items.length} записей</p>
+          <p className="text-sm text-muted-foreground">{items.length} записей · клик по записи открывает подробный просмотр</p>
         </div>
         <Button onClick={() => create.mutate()} className="bg-gradient-primary glow-primary"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
       </header>
@@ -74,27 +75,161 @@ function CatalogInner({ table }: { table: Table }) {
         <div className="glass rounded-xl p-3 max-h-[70vh] overflow-y-auto space-y-1">
           {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
           {items.map((it: any) => (
-            <button
+            <div
               key={it.id}
-              onClick={() => setSelected(it)}
-              className={`w-full text-left p-3 rounded-lg text-sm transition ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => setPreview(it)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreview(it); } }}
+              className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-3 ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
             >
-              <div className="font-medium truncate">{it.title}</div>
-              <div className="text-xs opacity-70 flex items-center gap-2">
-                <span>{it.slug}</span>
-                {it.published ? <span className="text-success">● опубликовано</span> : <span>○ черновик</span>}
+              {it.photo_urls?.[0] ? (
+                <img src={it.photo_urls[0]} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+              ) : (
+                <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">{it.title}</div>
+                <div className="text-xs opacity-70 flex items-center gap-2">
+                  <span className="truncate">{it.slug}</span>
+                  {it.published ? <span className="text-success">●</span> : <span>○</span>}
+                </div>
               </div>
-            </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSelected(it); }}
+                title="Редактировать"
+                className="opacity-0 group-hover:opacity-100 transition inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            </div>
           ))}
         </div>
 
         <div>
           {selected ? <Editor key={selected.id} table={table} item={selected} onDelete={() => remove.mutate(selected.id)} onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })} /> : (
-            <div className="glass rounded-xl p-10 text-center text-muted-foreground">Выберите запись или создайте новую</div>
+            <div className="glass rounded-xl p-10 text-center text-muted-foreground">Кликните по записи для подробного просмотра или нажмите «Добавить»</div>
           )}
         </div>
       </div>
+
+      <PreviewDialog
+        item={preview}
+        onClose={() => setPreview(null)}
+        onEdit={(it) => { setSelected(it); setPreview(null); }}
+      />
     </div>
+  );
+}
+
+function PreviewDialog({ item, onClose, onEdit }: { item: any | null; onClose: () => void; onEdit: (it: any) => void }) {
+  const open = !!item;
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        {item && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-display flex items-center gap-3 flex-wrap">
+                {item.title}
+                {item.published
+                  ? <Badge className="bg-success/20 text-success border-success/30">Опубликовано</Badge>
+                  : <Badge variant="outline">Черновик</Badge>}
+                {item.category && <Badge variant="secondary">{item.category}</Badge>}
+              </DialogTitle>
+              {item.short_description && (
+                <p className="text-sm text-muted-foreground mt-2">{item.short_description}</p>
+              )}
+            </DialogHeader>
+
+            {(item.photo_urls?.length ?? 0) > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Фотографии ({item.photo_urls.length})</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {item.photo_urls.map((url: string, i: number) => (
+                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-[4/3] overflow-hidden rounded-lg bg-muted/30">
+                      <img src={url} alt={`${item.title} #${i + 1}`} loading="lazy" className="h-full w-full object-cover hover:scale-105 transition" />
+                    </a>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {(item.video_urls?.length ?? 0) > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Видео ({item.video_urls.length})</h3>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {item.video_urls.map((url: string, i: number) => (
+                    <video key={i} src={url} controls className="w-full rounded-lg bg-black aspect-video" />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {item.description && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Полное описание</h3>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{item.description}</p>
+              </section>
+            )}
+
+            {item.requirements && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Требования</h3>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{item.requirements}</p>
+              </section>
+            )}
+
+            {Array.isArray(item.features) && item.features.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Особенности</h3>
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  {item.features.map((f: any, i: number) => (
+                    <li key={i}>{typeof f === "string" ? f : JSON.stringify(f)}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {item.pricing && Object.keys(item.pricing).length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Цены</h3>
+                <pre className="text-xs bg-muted/40 rounded-lg p-3 overflow-x-auto">{JSON.stringify(item.pricing, null, 2)}</pre>
+              </section>
+            )}
+
+            {Array.isArray(item.faq) && item.faq.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">FAQ</h3>
+                <div className="space-y-2">
+                  {item.faq.map((q: any, i: number) => (
+                    <div key={i} className="rounded-lg border border-border/50 p-3">
+                      <div className="font-medium text-sm">{q.q ?? q.question ?? `Вопрос ${i + 1}`}</div>
+                      <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{q.a ?? q.answer ?? ""}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className="grid sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
+              <div><span className="font-semibold text-foreground">Slug:</span> {item.slug}</div>
+              <div><span className="font-semibold text-foreground">ID:</span> {item.id}</div>
+              {item.seo_title && <div><span className="font-semibold text-foreground">SEO title:</span> {item.seo_title}</div>}
+              {item.seo_description && <div className="sm:col-span-2"><span className="font-semibold text-foreground">SEO description:</span> {item.seo_description}</div>}
+              {item.created_at && <div>Создано: {new Date(item.created_at).toLocaleString("ru-BY")}</div>}
+              {item.updated_at && <div>Обновлено: {new Date(item.updated_at).toLocaleString("ru-BY")}</div>}
+            </section>
+
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button variant="outline" onClick={onClose}><X className="h-4 w-4 mr-1" />Закрыть</Button>
+              <Button onClick={() => onEdit(item)} className="bg-gradient-primary glow-primary"><Pencil className="h-4 w-4 mr-1" />Редактировать</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
