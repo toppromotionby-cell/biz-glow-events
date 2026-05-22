@@ -1,11 +1,14 @@
 // Universal catalog detail view: gallery, description, features, FAQ, JSON-LD.
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
+import { RelatedItems } from "@/components/RelatedItems";
+import { RecentlyViewed } from "@/components/RecentlyViewed";
+import { trackView } from "@/lib/recent";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
@@ -30,6 +33,17 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const from = priceFrom(item.pricing);
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
+
+  useEffect(() => {
+    trackView({
+      id: item.id,
+      entity_type: entityType,
+      slug: item.slug,
+      title: item.title,
+      price: from ?? 0,
+      image: item.photo_urls?.[0] ?? null,
+    });
+  }, [item.id, entityType, item.slug, item.title, from, item.photo_urls]);
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-6xl">
@@ -133,6 +147,11 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           </div>
         </section>
       )}
+
+      <Suspense fallback={null}>
+        <RelatedItems type={entityType} currentId={item.id} category={item.category} />
+      </Suspense>
+      <RecentlyViewed excludeId={item.id} />
     </div>
   );
 }
