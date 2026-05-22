@@ -81,16 +81,3 @@ export const getCatalogItem = createServerFn({ method: "GET" })
     const authed = await isAuthed();
     return stripPricing([row as CatalogRow], authed)[0];
   });
-
-export const getCatalogItem = createServerFn({ method: "GET" })
-  .inputValidator((i) => z.object({ type: z.enum(TYPES), slug: z.string().min(1).max(160) }).parse(i))
-  .handler(async ({ data }) => {
-    const { data: row, error } = await supabaseAdmin
-      .from(data.type)
-      .select(SELECT)
-      .eq("published", true)
-      .eq("slug", data.slug)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return (row ?? null) as CatalogRow | null;
-  });
