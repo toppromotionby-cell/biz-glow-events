@@ -16,6 +16,7 @@ const NAV = [
 
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
+  const { count } = useCart();
   return (
     <header className="sticky top-0 z-40 glass-strong border-b border-border/50">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">
