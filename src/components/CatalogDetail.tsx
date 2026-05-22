@@ -176,10 +176,29 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         <section className="mt-12 max-w-5xl">
           <h2 className="text-2xl font-display font-semibold mb-4">Видео</h2>
           <div className="grid sm:grid-cols-2 gap-4">
-            {videos.map((url, i) => (
-              <video key={url + i} src={url} controls playsInline preload="metadata"
-                className="w-full rounded-xl bg-black aspect-video glass" />
-            ))}
+            {videos.map((url, i) => {
+              const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+              if (isYouTube) {
+                let embed = url;
+                const idMatch = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([\w-]{6,})/);
+                if (idMatch) embed = `https://www.youtube.com/embed/${idMatch[1]}`;
+                return (
+                  <iframe
+                    key={url + i}
+                    src={embed}
+                    title={`${item.title} — видео ${i + 1}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    loading="lazy"
+                    className="w-full rounded-xl bg-black aspect-video glass border-0"
+                  />
+                );
+              }
+              return (
+                <video key={url + i} src={url} controls playsInline preload="metadata"
+                  className="w-full rounded-xl bg-black aspect-video glass" />
+              );
+            })}
           </div>
         </section>
       )}
