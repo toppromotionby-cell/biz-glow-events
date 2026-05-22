@@ -279,12 +279,12 @@ function CartPage() {
 }
 
 
-function Field({ label, name, type = "text", required }: { label: string; name: string; type?: string; required?: boolean }) {
+function Field({ label, name, type = "text", required, defaultValue }: { label: string; name: string; type?: string; required?: boolean; defaultValue?: string }) {
   return (
     <label className="block text-sm">
       <span className="text-muted-foreground">{label}</span>
       <input
-        name={name} type={type} required={required}
+        name={name} type={type} required={required} defaultValue={defaultValue}
         className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2 outline-none focus:border-primary"
       />
     </label>
@@ -295,11 +295,14 @@ function RequisitesDialog({
   open,
   onOpenChange,
   loading,
+  required,
   onConfirm,
+  onSkip,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   loading: boolean;
+  required?: boolean;
   onConfirm: (req: {
     company_legal_name: string | null;
     company_unp: string | null;
@@ -309,6 +312,7 @@ function RequisitesDialog({
     contact_person_position: string | null;
     acting_basis: string | null;
   }) => void;
+  onSkip?: () => void;
 }) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
