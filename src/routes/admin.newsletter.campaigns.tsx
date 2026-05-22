@@ -26,6 +26,7 @@ function Page() {
   const list = useServerFn(listCampaigns);
   const save = useServerFn(saveCampaign);
   const del = useServerFn(deleteCampaign);
+  const start = useServerFn(startCampaign);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-campaigns"],
