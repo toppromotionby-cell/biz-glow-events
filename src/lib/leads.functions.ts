@@ -86,13 +86,13 @@ export const submitLead = createServerFn({ method: "POST" })
 
     const text =
       `<b>Новая заявка</b>\n` +
-      `Имя: ${payload.client_name}\n` +
-      `Телефон: ${payload.client_phone}\n` +
-      `Email: ${payload.client_email}\n` +
-      (payload.client_company ? `Компания: ${payload.client_company}\n` : "") +
-      (payload.event_date ? `Дата: ${payload.event_date}\n` : "") +
-      (payload.notes ? `Сообщение: ${payload.notes}\n` : "") +
-      (payload.utm_source ? `UTM: ${payload.utm_source}/${payload.utm_medium ?? "-"}/${payload.utm_campaign ?? "-"}` : "");
+      `Имя: ${tgEsc(payload.client_name)}\n` +
+      `Телефон: ${tgEsc(payload.client_phone)}\n` +
+      `Email: ${tgEsc(payload.client_email)}\n` +
+      (payload.client_company ? `Компания: ${tgEsc(payload.client_company)}\n` : "") +
+      (payload.event_date ? `Дата: ${tgEsc(payload.event_date)}\n` : "") +
+      (payload.notes ? `Сообщение: ${tgEsc(payload.notes)}\n` : "") +
+      (payload.utm_source ? `UTM: ${tgEsc(payload.utm_source)}/${tgEsc(payload.utm_medium ?? "-")}/${tgEsc(payload.utm_campaign ?? "-")}` : "");
 
     const tg = await notifyTelegram(text);
     await supabaseAdmin.from("telegram_logs").insert({
