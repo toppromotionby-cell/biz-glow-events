@@ -221,16 +221,29 @@ function CartPage() {
           </section>
 
           <aside className="lg:col-span-2">
-            <form onSubmit={onSubmit} className="glass rounded-xl p-5 space-y-3">
+            <form ref={formRef} onSubmit={onSubmit} className="glass rounded-xl p-5 space-y-3">
               <h2 className="font-display font-semibold">Контактные данные</h2>
-              <Field label="Имя *" name="client_name" required />
-              <Field label="Телефон *" name="client_phone" type="tel" required />
-              <Field label="Email *" name="client_email" type="email" required />
-              <Field label="Компания" name="client_company" />
+              <div className="flex gap-2 p-1 rounded-md bg-background/40 border border-border">
+                {(["individual", "company"] as const).map(t => (
+                  <button
+                    key={t} type="button"
+                    onClick={() => setClientType(t)}
+                    className={`flex-1 rounded px-3 py-1.5 text-xs font-medium transition ${clientType === t ? "bg-gradient-primary text-primary-foreground glow-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {t === "individual" ? "Физлицо" : "Юрлицо / ИП"}
+                  </button>
+                ))}
+              </div>
+              <Field label="Имя *" name="client_name" required defaultValue={draft.client_name} />
+              <Field label="Телефон *" name="client_phone" type="tel" required defaultValue={draft.client_phone} />
+              <Field label="Email *" name="client_email" type="email" required defaultValue={draft.client_email} />
+              {clientType === "company" && (
+                <Field label="Компания *" name="client_company" required defaultValue={draft.client_company} />
+              )}
               <DateField label="Дата мероприятия" name="event_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
               <label className="block text-sm">
                 <span className="text-muted-foreground">Комментарий</span>
-                <textarea name="notes" rows={3} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
+                <textarea name="notes" rows={3} defaultValue={draft.notes ?? ""} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
               </label>
               <label className="flex items-start gap-2 text-xs text-muted-foreground">
                 <input type="checkbox" required defaultChecked className="mt-0.5" />
@@ -240,8 +253,11 @@ function CartPage() {
                 type="submit" disabled={loading}
                 className="w-full rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60"
               >
-                {loading ? "Отправляем..." : `Отправить заказ • ${fmt.format(finalTotal)}`}
+                {loading ? "Отправляем..." : clientType === "company" ? `Далее: реквизиты • ${fmt.format(finalTotal)}` : `Отправить заказ • ${fmt.format(finalTotal)}`}
               </button>
+              {clientType === "individual" && (
+                <p className="text-[11px] text-muted-foreground text-center">Реквизиты компании при необходимости запросит менеджер.</p>
+              )}
             </form>
           </aside>
         </div>
@@ -251,7 +267,12 @@ function CartPage() {
         open={reqOpen}
         onOpenChange={setReqOpen}
         loading={loading}
+        required={clientType === "company"}
         onConfirm={finalSubmit}
+        onSkip={clientType === "individual" ? () => finalSubmit({
+          company_legal_name: null, company_unp: null, company_address: null,
+          company_bank: null, contact_person_name: null, contact_person_position: null, acting_basis: null,
+        }) : undefined}
       />
     </div>
   );
