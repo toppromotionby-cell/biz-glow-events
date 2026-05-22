@@ -12,8 +12,8 @@ import { type PromoValidation } from "@/lib/promo.functions";
 export const Route = createFileRoute("/cart")({
   head: () => ({
     meta: [
-      { title: "Ваша заявка — event-hub.by" },
-      { name: "description", content: "Позиции, добавленные в заявку. Отправьте заявку — мы перезвоним." },
+      { title: "Ваша корзина — event-hub.by" },
+      { name: "description", content: "Позиции, добавленные в корзину. Отправьте запрос — мы перезвоним." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -90,7 +90,7 @@ function CartPage() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
       <header className="mb-8">
-        <h1 className="text-4xl font-display font-bold gradient-text">Ваша заявка</h1>
+        <h1 className="text-4xl font-display font-bold gradient-text">Ваша корзина</h1>
         <p className="mt-2 text-muted-foreground">{count > 0 ? `Позиций: ${count}. Итого: ${fmt.format(total)}` : "Корзина пуста — добавьте позиции из каталога."}</p>
       </header>
 
