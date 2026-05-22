@@ -28,6 +28,14 @@ const OrderSchema = z.object({
   notes: z.string().max(2000).optional().nullable(),
   source: z.string().max(80).optional().nullable(),
   promo_code: z.string().min(2).max(40).optional().nullable(),
+  // Реквизиты компании (для подготовки документов)
+  company_legal_name: z.string().max(240).optional().nullable(),
+  company_unp: z.string().max(40).optional().nullable(),
+  company_address: z.string().max(300).optional().nullable(),
+  company_bank: z.string().max(300).optional().nullable(),
+  contact_person_name: z.string().max(160).optional().nullable(),
+  contact_person_position: z.string().max(160).optional().nullable(),
+  acting_basis: z.string().max(200).optional().nullable(),
   utm_source: z.string().max(120).optional().nullable(),
   utm_medium: z.string().max(120).optional().nullable(),
   utm_campaign: z.string().max(120).optional().nullable(),
@@ -153,19 +161,30 @@ export const submitOrder = createServerFn({ method: "POST" })
       if (upd && upd.length > 0) promoApplied = code;
     }
 
+    const requisitesBlock = [
+      data.company_legal_name ? `Юр. название: ${data.company_legal_name}` : "",
+      data.company_unp ? `УНП: ${data.company_unp}` : "",
+      data.company_address ? `Юр. адрес: ${data.company_address}` : "",
+      data.company_bank ? `Банк. реквизиты: ${data.company_bank}` : "",
+      data.contact_person_name ? `Ответственное лицо: ${data.contact_person_name}` : "",
+      data.contact_person_position ? `Должность: ${data.contact_person_position}` : "",
+      data.acting_basis ? `Действует на основании: ${data.acting_basis}` : "",
+    ].filter(Boolean).join("\n");
+
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .insert({
         client_name: data.client_name,
         client_phone: data.client_phone,
         client_email: data.client_email,
-        client_company: data.client_company ?? null,
+        client_company: data.client_company ?? data.company_legal_name ?? null,
         event_date: data.event_date ?? null,
         notes: [
           data.notes ?? "",
+          requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
           promoApplied ? `Промокод: ${promoApplied}` : "",
           hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
-        ].filter(Boolean).join(" | ") || null,
+        ].filter(Boolean).join("\n\n") || null,
         source: data.source ?? "cart",
         utm_source: data.utm_source ?? null,
         utm_medium: data.utm_medium ?? null,
@@ -215,6 +234,22 @@ export const submitOrder = createServerFn({ method: "POST" })
       `\n${lines}\n\n<b>Итого: ${total} BYN</b>` +
       (promoApplied ? `\nПромокод: ${tgEsc(promoApplied)}` : "") +
       (hasDiscrepancy ? `\n⚠ <b>Ценовое расхождение</b>` : "") +
+      (data.notes ? `\n\nКомментарий: ${tgEsc(data.notes)}` : "");
+
+    const tgRequisites = requisitesBlock
+      ? `\n\n<b>Реквизиты:</b>\n${tgEsc(requisitesBlock)}`
+      : "";
+    const text =
+      `<b>Новая заявка (корзина)</b>\n` +
+      `Имя: ${tgEsc(data.client_name)}\n` +
+      `Тел: ${tgEsc(data.client_phone)}\n` +
+      `Email: ${tgEsc(data.client_email)}\n` +
+      (data.client_company ? `Компания: ${tgEsc(data.client_company)}\n` : "") +
+      (data.event_date ? `Дата: ${tgEsc(data.event_date)}\n` : "") +
+      `\n${lines}\n\n<b>Итого: ${total} BYN</b>` +
+      (promoApplied ? `\nПромокод: ${tgEsc(promoApplied)}` : "") +
+      (hasDiscrepancy ? `\n⚠ <b>Ценовое расхождение</b>` : "") +
+      tgRequisites +
       (data.notes ? `\n\nКомментарий: ${tgEsc(data.notes)}` : "");
 
     const tg = await notifyTelegram(text);
