@@ -281,13 +281,9 @@ function CartPage() {
         open={reqOpen}
         onOpenChange={setReqOpen}
         loading={loading}
-        required={clientType === "company"}
         onConfirm={finalSubmit}
-        onSkip={clientType === "individual" ? () => finalSubmit({
-          company_legal_name: null, company_unp: null, company_address: null,
-          company_bank: null, contact_person_name: null, contact_person_position: null, acting_basis: null,
-        }) : undefined}
       />
+
     </div>
   );
 }
