@@ -61,6 +61,15 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const launch = useMutation({
+    mutationFn: (id: string) => start({ data: { id } }),
+    onSuccess: (r: any) => {
+      toast.success(`Запущена отправка: ${r.total} получателей${r.suppressed ? `, ${r.suppressed} в чёрном списке` : ""}`);
+      qc.invalidateQueries({ queryKey: ["admin-campaigns"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-5">
       <header className="flex items-center justify-between flex-wrap gap-3">
