@@ -61,7 +61,7 @@ function CasePage() {
 
       {c.cover_url && (
         <MediaShield className="mt-8 rounded-2xl overflow-hidden aspect-[16/9] glass">
-          <img src={c.cover_url} alt={c.title} className="h-full w-full object-cover" loading="eager" />
+          <img src={c.cover_url} alt={c.title} className="h-full w-full object-cover" loading="eager" decoding="async" fetchPriority="high" width={1280} height={720} />
         </MediaShield>
       )}
 
