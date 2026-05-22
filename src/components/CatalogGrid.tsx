@@ -27,8 +27,14 @@ export function CatalogGrid({ items, category }: { items: CatalogItem[]; categor
                 </span>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-border/40">
-              <PriceGate price={it.priceFrom} currency="BYN" name={it.title} category={category} />
+            <div className="mt-4 pt-4 border-t border-border/40" data-category={category}>
+              <PriceGate>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xs text-muted-foreground">от</span>
+                  <span className="text-2xl font-display font-bold gradient-text">{it.priceFrom.toLocaleString("ru-BY")}</span>
+                  <span className="text-sm text-muted-foreground">BYN</span>
+                </div>
+              </PriceGate>
             </div>
           </div>
         </article>
