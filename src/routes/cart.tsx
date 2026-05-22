@@ -47,10 +47,28 @@ function CartPage() {
   const discount = promo?.discount_amount ?? 0;
   const finalTotal = Math.max(0, total - discount);
 
+  // Загрузка/сохранение черновика контактных данных
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setDraft(JSON.parse(raw));
+    } catch {}
+  }, []);
+  function saveDraft(fd: FormData) {
+    const obj: Record<string, string> = {};
+    ["client_name", "client_phone", "client_email", "client_company", "event_date", "notes"].forEach(k => {
+      const v = String(fd.get(k) ?? "").trim();
+      if (v) obj[k] = v;
+    });
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(obj)); } catch {}
+  }
+
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (items.length === 0) return;
     const fd = new FormData(e.currentTarget);
+    saveDraft(fd);
     setContactDraft({
       client_name: String(fd.get("client_name") ?? "").trim(),
       client_phone: String(fd.get("client_phone") ?? "").trim(),
