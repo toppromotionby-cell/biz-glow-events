@@ -5,6 +5,7 @@
 // надёжное решение, поддерживает Cyrillic, копируемый текст и фирстиль.
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireStaff } from "@/lib/admin-route-guard";
 
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -21,7 +22,9 @@ function money(n: number): string {
 export const Route = createFileRoute("/admin/orders/$id/quote")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
+        const auth = await requireStaff(request);
+        if (auth instanceof Response) return auth;
         const { data: order, error } = await supabaseAdmin
           .from("orders").select("*").eq("id", params.id).single();
         if (error || !order) return new Response("Not found", { status: 404 });

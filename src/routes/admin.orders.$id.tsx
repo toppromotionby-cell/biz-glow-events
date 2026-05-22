@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, Clock } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { openAuthedDocument } from "@/lib/authed-fetch";
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
@@ -66,7 +67,7 @@ function OrderDetail() {
           <p className="text-sm text-muted-foreground">Создан {new Date(order.created_at).toLocaleString("ru-BY")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <a href={`/admin/orders/${order.id}/quote`} target="_blank" rel="noopener" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/10">Скачать КП</a>
+          <button type="button" onClick={() => openAuthedDocument(`/admin/orders/${order.id}/quote`).catch((e) => toast.error((e as Error).message))} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/10">Скачать КП</button>
           <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>

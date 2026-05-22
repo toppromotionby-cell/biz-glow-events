@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const CodeSchema = z.object({
   code: z.string().min(2).max(40),
@@ -52,6 +53,7 @@ export const validatePromo = createServerFn({ method: "POST" })
   });
 
 export const redeemPromo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ code: z.string().min(2).max(40) }).parse(input))
   .handler(async ({ data }) => {
     const code = data.code.trim().toUpperCase();
