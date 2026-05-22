@@ -33,7 +33,7 @@ function EquipmentPage() {
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Техническое оснащение</h1>
         <p className="mt-4 text-muted-foreground">Звук, свет, видео и маппинг — комплекты под формат вашего мероприятия.</p>
       </header>
-      <CatalogGrid items={items} category="equipment" basePath="/equipment" />
+      <CatalogGrid items={items} category="equipment" basePath="/equipment" entityType="tech_equipment" />
     </div>
   );
 }

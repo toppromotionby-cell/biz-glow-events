@@ -37,7 +37,7 @@ function ZonesPage() {
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Интерактивные Зоны</h1>
         <p className="mt-4 text-muted-foreground">{subtitle}</p>
       </header>
-      <CatalogGrid items={items} category="zones" basePath="/zones" />
+      <CatalogGrid items={items} category="zones" basePath="/zones" entityType="zones" />
     </div>
   );
 }
