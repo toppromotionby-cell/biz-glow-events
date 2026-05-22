@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Pencil, X, ArrowRightLeft } from "lucide-react";
+import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
