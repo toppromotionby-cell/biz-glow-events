@@ -11,8 +11,8 @@ import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
 
 const NAV = [
-  { to: "/zones", label: "Зоны", key: "header.nav.zones" },
-  { to: "/equipment", label: "Оборудование", key: "header.nav.equipment" },
+  { to: "/zones", label: "Интерактивные Зоны", key: "header.nav.zones" },
+  { to: "/equipment", label: "Техническое оснащение", key: "header.nav.equipment" },
   { to: "/services", label: "Услуги", key: "header.nav.services" },
   { to: "/production", label: "Производство", key: "header.nav.production" },
   { to: "/cases", label: "Кейсы", key: "header.nav.cases" },
