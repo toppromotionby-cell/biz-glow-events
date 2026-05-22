@@ -95,12 +95,13 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             {item.short_description && <p className="mt-2 text-muted-foreground">{item.short_description}</p>}
           </header>
 
-          <div className="glass rounded-xl p-5">
+          <div className="glass rounded-xl p-5 space-y-3">
             <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
             <PriceGate>
               <div className="text-2xl font-display font-bold">
                 {from !== null ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}` : "По запросу"}
               </div>
+              {getTiers(item.pricing).length > 0 && <PriceTableView pricing={item.pricing} />}
             </PriceGate>
             <Link to="/contacts" className="mt-4 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
               Заказать
