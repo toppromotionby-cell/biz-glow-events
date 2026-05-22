@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Plus, Trash2, ExternalLink } from "lucide-react";
+import { SortableList } from "@/components/admin/SortableList";
+import { persistSortOrder } from "@/lib/sort-order";
 
 type Post = {
   id: string;
