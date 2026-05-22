@@ -35,11 +35,12 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         try {
-          const [zones, equipment, services, production] = await Promise.all([
+          const [zones, equipment, services, production, posts] = await Promise.all([
             fetchSlugs("zones"),
             fetchSlugs("tech_equipment"),
             fetchSlugs("services"),
             fetchSlugs("production_items"),
+            fetchSlugs("blog_posts"),
           ]);
 
           const dynamic: Array<{ path: string; lastmod?: string }> = [
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             ...equipment.map((r) => ({ path: `/equipment/${r.slug}`, lastmod: r.updated_at })),
             ...services.map((r) => ({ path: `/services/${r.slug}`, lastmod: r.updated_at })),
             ...production.map((r) => ({ path: `/production/${r.slug}`, lastmod: r.updated_at })),
+            ...posts.map((r) => ({ path: `/blog/${r.slug}`, lastmod: r.updated_at })),
           ];
 
           const staticXml = STATIC.map(
