@@ -34,6 +34,17 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
 
+  useEffect(() => {
+    trackView({
+      id: item.id,
+      entity_type: entityType,
+      slug: item.slug,
+      title: item.title,
+      price: from ?? 0,
+      image: item.photo_urls?.[0] ?? null,
+    });
+  }, [item.id, entityType, item.slug, item.title, from, item.photo_urls]);
+
   return (
     <div className="container mx-auto px-4 py-10 max-w-6xl">
       <Link to={backHref} className="text-sm text-muted-foreground hover:text-foreground">← {backLabel}</Link>
