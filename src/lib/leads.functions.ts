@@ -20,6 +20,12 @@ const LeadSchema = z.object({
   consent_pd: z.literal(true),
 });
 
+// Escape user-supplied text before inserting into Telegram HTML-mode messages.
+function tgEsc(s: string | null | undefined): string {
+  if (s == null) return "";
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: string }> {
   // Lovable note: requires Telegram connector linked (TELEGRAM_API_KEY) +
   // TELEGRAM_CHAT_ID secret. Best-effort, never blocks lead creation.
