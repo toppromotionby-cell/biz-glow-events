@@ -75,8 +75,9 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <h4 className="font-medium mb-3">Документы</h4>
+          <h4 className="font-medium mb-3">Информация</h4>
           <ul className="space-y-2 text-muted-foreground">
+            <li><Link to="/faq" className="hover:text-foreground">Частые вопросы</Link></li>
             <li><Link to="/privacy" className="hover:text-foreground">Политика конфиденциальности</Link></li>
             <li><Link to="/offer" className="hover:text-foreground">Публичная оферта</Link></li>
           </ul>

@@ -20,6 +20,7 @@ import { Route as ProductionRouteImport } from './routes/production'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CartRouteImport } from './routes/cart'
@@ -94,6 +95,11 @@ const OfferRoute = OfferRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipmentRoute = EquipmentRouteImport.update({
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/privacy': typeof PrivacyRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/privacy': typeof PrivacyRoute
@@ -270,6 +278,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/contacts': typeof ContactsRoute
   '/equipment': typeof EquipmentRouteWithChildren
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/privacy': typeof PrivacyRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/contacts'
     | '/equipment'
+    | '/faq'
     | '/login'
     | '/offer'
     | '/privacy'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/contacts'
     | '/equipment'
+    | '/faq'
     | '/login'
     | '/offer'
     | '/privacy'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/contacts'
     | '/equipment'
+    | '/faq'
     | '/login'
     | '/offer'
     | '/privacy'
@@ -404,6 +416,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   ContactsRoute: typeof ContactsRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
+  FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   OfferRoute: typeof OfferRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipment': {
@@ -748,6 +768,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   ContactsRoute: ContactsRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
+  FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   OfferRoute: OfferRoute,
   PrivacyRoute: PrivacyRoute,
