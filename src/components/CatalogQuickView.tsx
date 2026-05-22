@@ -10,6 +10,7 @@ import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
 import { CompareButton } from "@/components/CompareButton";
 import { useState } from "react";
+import { PriceTableView, getTiers } from "@/components/PriceTable";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
