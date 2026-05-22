@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, Clock } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { openAuthedDocument } from "@/lib/authed-fetch";
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
