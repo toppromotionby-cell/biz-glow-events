@@ -24,6 +24,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as IndustriesRouteImport } from './routes/industries'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as DeliveryRouteImport } from './routes/delivery'
@@ -131,6 +132,11 @@ const OfferRoute = OfferRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndustriesRoute = IndustriesRouteImport.update({
+  id: '/industries',
+  path: '/industries',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
+  '/industries': typeof IndustriesRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/partners': typeof PartnersRoute
@@ -361,6 +368,7 @@ export interface FileRoutesByTo {
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
+  '/industries': typeof IndustriesRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/partners': typeof PartnersRoute
@@ -412,6 +420,7 @@ export interface FileRoutesById {
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
+  '/industries': typeof IndustriesRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
   '/partners': typeof PartnersRoute
@@ -464,6 +473,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/equipment'
     | '/faq'
+    | '/industries'
     | '/login'
     | '/offer'
     | '/partners'
@@ -513,6 +523,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/equipment'
     | '/faq'
+    | '/industries'
     | '/login'
     | '/offer'
     | '/partners'
@@ -563,6 +574,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/equipment'
     | '/faq'
+    | '/industries'
     | '/login'
     | '/offer'
     | '/partners'
@@ -614,6 +626,7 @@ export interface RootRouteChildren {
   DeliveryRoute: typeof DeliveryRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
+  IndustriesRoute: typeof IndustriesRoute
   LoginRoute: typeof LoginRoute
   OfferRoute: typeof OfferRoute
   PartnersRoute: typeof PartnersRoute
@@ -736,6 +749,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/industries': {
+      id: '/industries'
+      path: '/industries'
+      fullPath: '/industries'
+      preLoaderRoute: typeof IndustriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -1109,6 +1129,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeliveryRoute: DeliveryRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
+  IndustriesRoute: IndustriesRoute,
   LoginRoute: LoginRoute,
   OfferRoute: OfferRoute,
   PartnersRoute: PartnersRoute,
