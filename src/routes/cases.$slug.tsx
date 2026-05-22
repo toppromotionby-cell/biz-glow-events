@@ -98,7 +98,7 @@ function CasePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {c.photo_urls.map((p, i) => (
               <MediaShield key={p} className="aspect-[4/3] rounded-xl overflow-hidden glass">
-                <img src={p} alt={`${c.title} — фото ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                <img src={p} alt={`${c.title} — фото ${i + 1}`} loading="lazy" decoding="async" width={640} height={400} className="h-full w-full object-cover" />
               </MediaShield>
             ))}
           </div>
