@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCart, removeFromCart, updateQty, clearCart } from "@/lib/cart";
 import { submitOrder } from "@/lib/orders.functions";
 import { readUtm } from "@/lib/utm";
@@ -95,13 +95,14 @@ function CartPage() {
       </header>
 
       {items.length === 0 ? (
-        <div className="glass rounded-xl p-8 text-center">
+        <div className="glass rounded-xl p-8 text-center space-y-4">
+          <ShoppingCart className="h-10 w-10 mx-auto text-muted-foreground" aria-hidden="true" />
           <p className="text-muted-foreground">Перейдите в каталог и нажмите «В заявку».</p>
           <div className="mt-4 flex justify-center gap-3 flex-wrap">
-            <Link to="/zones" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Зоны</Link>
-            <Link to="/equipment" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Оборудование</Link>
-            <Link to="/services" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Услуги</Link>
-            <Link to="/production" className="rounded-md border border-primary/40 px-4 py-2 text-sm hover:bg-primary/10">Производство</Link>
+            <Link to="/zones" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Зоны</Link>
+            <Link to="/equipment" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Оборудование</Link>
+            <Link to="/services" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Услуги</Link>
+            <Link to="/production" className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 px-4 py-2 text-sm font-medium hover:bg-primary/10 transition">Производство</Link>
           </div>
         </div>
       ) : (
@@ -118,20 +119,47 @@ function CartPage() {
                   <div className="font-medium truncate">{i.title}</div>
                   <div className="text-xs text-muted-foreground">{i.price > 0 ? `${fmt.format(i.price)} × ${i.qty}` : "По запросу"}</div>
                 </div>
-                <input
-                  type="number" min={1} max={99} value={i.qty}
-                  onChange={(e) => updateQty(i.id, i.entity_type, Number(e.target.value))}
-                  aria-label={`Количество для ${i.title}`}
-                  className="w-16 rounded-md bg-background/50 border border-border px-2 py-1 text-sm text-center"
-                />
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => updateQty(i.id, i.entity_type, i.qty - 1)}
+                    disabled={i.qty <= 1}
+                    aria-label={`Уменьшить количество для ${i.title}`}
+                    className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-background/60 text-foreground hover:bg-primary/10 hover:border-primary/40 disabled:opacity-40 disabled:hover:bg-transparent transition"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="w-8 text-center text-sm font-semibold">{i.qty}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateQty(i.id, i.entity_type, i.qty + 1)}
+                    disabled={i.qty >= 99}
+                    aria-label={`Увеличить количество для ${i.title}`}
+                    className="h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-background/60 text-foreground hover:bg-primary/10 hover:border-primary/40 disabled:opacity-40 disabled:hover:bg-transparent transition"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <div className="w-24 text-right text-sm font-semibold">{fmt.format(i.price * i.qty)}</div>
-                <button onClick={() => removeFromCart(i.id, i.entity_type)} aria-label={`Удалить ${i.title}`} className="text-muted-foreground hover:text-destructive p-1">
+                <button
+                  type="button"
+                  onClick={() => removeFromCart(i.id, i.entity_type)}
+                  aria-label={`Удалить ${i.title}`}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-destructive/30 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/50 transition"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </article>
             ))}
             <div className="flex justify-between items-center pt-3">
-              <button onClick={clearCart} className="text-xs text-muted-foreground hover:text-foreground">Очистить корзину</button>
+              <button
+                type="button"
+                onClick={clearCart}
+                className="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/50 transition"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Очистить корзину
+              </button>
               <div className="text-right">
                 {discount > 0 && (
                   <div className="text-sm text-muted-foreground">
