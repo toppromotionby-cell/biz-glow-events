@@ -2,6 +2,7 @@
 // Пользователь сохраняет как PDF через печать браузера (поддерживает кириллицу).
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireStaff } from "@/lib/admin-route-guard";
 
 function esc(s: unknown): string {
   return String(s ?? "")
