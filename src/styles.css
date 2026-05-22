@@ -95,8 +95,24 @@
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+  p, li { text-wrap: pretty; overflow-wrap: anywhere; hyphens: auto; }
   ::selection { background: oklch(0.55 0.24 295 / 0.4); color: white; }
+
+  /* ===== Глобальное автовыравнивание ===== */
+  /* Единый центрированный контейнер с боковыми отступами */
+  .container { margin-inline: auto; padding-inline: 1rem; width: 100%; max-width: 1280px; }
+  @media (min-width: 640px)  { .container { padding-inline: 1.5rem; } }
+  @media (min-width: 1024px) { .container { padding-inline: 2rem; } }
+
+  /* Карточки в любых grid-сетках растягиваются на одинаковую высоту */
+  main [class*="grid-cols"] > * { display: flex; flex-direction: column; height: 100%; }
+
+  /* Медиа всегда корректного размера, без сдвигов лэйаута */
+  img, video, iframe, svg { max-width: 100%; height: auto; display: block; }
+
+  /* Контент-блоки не вылезают за родителя */
+  main, section, article { min-width: 0; }
 
   /* Защита медиа: блокировка выделения/перетаскивания изображений */
   .media-shield {
