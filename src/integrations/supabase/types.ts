@@ -964,6 +964,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_promo_usage: {
+        Args: { p_code: string }
+        Returns: {
+          id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "content_editor" | "marketer"

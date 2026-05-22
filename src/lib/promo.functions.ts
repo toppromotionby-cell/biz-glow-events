@@ -52,13 +52,13 @@ export const validatePromo = createServerFn({ method: "POST" })
     };
   });
 
+// SECURITY: standalone redeem удалён — инкремент used_count теперь происходит
+// атомарно внутри submitOrder через RPC increment_promo_usage. Это устраняет
+// abuse "исчерпать чужой промокод" и TOCTOU между read и update.
 export const redeemPromo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ code: z.string().min(2).max(40) }).parse(input))
-  .handler(async ({ data }) => {
-    const code = data.code.trim().toUpperCase();
-    const { data: row } = await supabaseAdmin.from("promo_codes").select("id, used_count").eq("code", code).maybeSingle();
-    if (!row) return { ok: false };
-    await supabaseAdmin.from("promo_codes").update({ used_count: (row.used_count ?? 0) + 1 }).eq("id", row.id);
+  .handler(async () => {
+    // Deprecated: no-op. Оставлено для обратной совместимости с UI корзины.
     return { ok: true };
   });

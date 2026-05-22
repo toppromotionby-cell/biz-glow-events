@@ -7,7 +7,7 @@ import { useCart, removeFromCart, updateQty, clearCart } from "@/lib/cart";
 import { submitOrder } from "@/lib/orders.functions";
 import { readUtm } from "@/lib/utm";
 import { PromoCodeInput } from "@/components/PromoCodeInput";
-import { redeemPromo, type PromoValidation } from "@/lib/promo.functions";
+import { type PromoValidation } from "@/lib/promo.functions";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -25,7 +25,6 @@ const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN",
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
-  const redeem = useServerFn(redeemPromo);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<{ id: string } | null>(null);
   const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
@@ -46,8 +45,9 @@ function CartPage() {
           client_email: String(fd.get("client_email") ?? "").trim(),
           client_company: String(fd.get("client_company") ?? "").trim() || null,
           event_date: String(fd.get("event_date") ?? "") || null,
-          notes: [String(fd.get("notes") ?? "").trim(), promo ? `Промокод: ${promo.code} (−${promo.discount_amount} BYN)` : ""].filter(Boolean).join(" | ") || null,
+          notes: String(fd.get("notes") ?? "").trim() || null,
           source: "cart",
+          promo_code: promo?.code ?? null,
           utm_source: utm.utm_source ?? null,
           utm_medium: utm.utm_medium ?? null,
           utm_campaign: utm.utm_campaign ?? null,
@@ -65,7 +65,6 @@ function CartPage() {
           })),
         },
       });
-      if (promo) { try { await redeem({ data: { code: promo.code } }); } catch { /* non-blocking */ } }
       clearCart();
       setDone({ id: res.id });
       toast.success("Заявка отправлена");
