@@ -234,9 +234,17 @@ function CartPage() {
           </aside>
         </div>
       )}
+
+      <RequisitesDialog
+        open={reqOpen}
+        onOpenChange={setReqOpen}
+        loading={loading}
+        onConfirm={finalSubmit}
+      />
     </div>
   );
 }
+
 
 function Field({ label, name, type = "text", required }: { label: string; name: string; type?: string; required?: boolean }) {
   return (
