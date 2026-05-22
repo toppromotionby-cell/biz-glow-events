@@ -104,6 +104,7 @@ export type Database = {
           seo_description: string | null
           seo_title: string | null
           slug: string
+          sort_order: number
           tags: string[] | null
           title: string
           updated_at: string
@@ -120,6 +121,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           slug: string
+          sort_order?: number
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -136,6 +138,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           slug?: string
+          sort_order?: number
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -197,6 +200,7 @@ export type Database = {
           seo_title: string | null
           services_used: string[] | null
           slug: string
+          sort_order: number
           summary: string | null
           title: string
           updated_at: string
@@ -220,6 +224,7 @@ export type Database = {
           seo_title?: string | null
           services_used?: string[] | null
           slug: string
+          sort_order?: number
           summary?: string | null
           title: string
           updated_at?: string
@@ -243,6 +248,7 @@ export type Database = {
           seo_title?: string | null
           services_used?: string[] | null
           slug?: string
+          sort_order?: number
           summary?: string | null
           title?: string
           updated_at?: string
@@ -705,6 +711,7 @@ export type Database = {
           seo_title: string | null
           short_description: string | null
           slug: string
+          sort_order: number
           title: string
           updated_at: string
           video_urls: string[] | null
@@ -724,6 +731,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug: string
+          sort_order?: number
           title: string
           updated_at?: string
           video_urls?: string[] | null
@@ -743,6 +751,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug?: string
+          sort_order?: number
           title?: string
           updated_at?: string
           video_urls?: string[] | null
@@ -846,6 +855,7 @@ export type Database = {
           seo_title: string | null
           short_description: string | null
           slug: string
+          sort_order: number
           title: string
           updated_at: string
           video_urls: string[] | null
@@ -865,6 +875,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug: string
+          sort_order?: number
           title: string
           updated_at?: string
           video_urls?: string[] | null
@@ -884,6 +895,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug?: string
+          sort_order?: number
           title?: string
           updated_at?: string
           video_urls?: string[] | null
@@ -895,18 +907,21 @@ export type Database = {
           enabled: boolean
           key: string
           label: string
+          sort_order: number
           updated_at: string
         }
         Insert: {
           enabled?: boolean
           key: string
           label: string
+          sort_order?: number
           updated_at?: string
         }
         Update: {
           enabled?: boolean
           key?: string
           label?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -951,6 +966,7 @@ export type Database = {
           seo_title: string | null
           short_description: string | null
           slug: string
+          sort_order: number
           title: string
           updated_at: string
           video_urls: string[] | null
@@ -970,6 +986,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug: string
+          sort_order?: number
           title: string
           updated_at?: string
           video_urls?: string[] | null
@@ -989,6 +1006,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug?: string
+          sort_order?: number
           title?: string
           updated_at?: string
           video_urls?: string[] | null
@@ -1159,6 +1177,7 @@ export type Database = {
           seo_title: string | null
           short_description: string | null
           slug: string
+          sort_order: number
           title: string
           updated_at: string
           video_urls: string[] | null
@@ -1178,6 +1197,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug: string
+          sort_order?: number
           title: string
           updated_at?: string
           video_urls?: string[] | null
@@ -1197,6 +1217,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug?: string
+          sort_order?: number
           title?: string
           updated_at?: string
           video_urls?: string[] | null
