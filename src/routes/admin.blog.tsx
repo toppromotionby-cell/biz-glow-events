@@ -49,7 +49,7 @@ function AdminBlogPage() {
   const [saving, setSaving] = useState(false);
 
   async function load() {
-    const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("blog_posts").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: false });
     setPosts((data ?? []) as Post[]);
   }
   useEffect(() => { load(); }, []);
