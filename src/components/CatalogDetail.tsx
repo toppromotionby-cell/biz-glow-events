@@ -40,6 +40,15 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const from = priceFrom(item.pricing);
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
+  const tiers = getTiers(item.pricing);
+  const hasTiers = tiers.length > 0;
+  const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
+  const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
+  const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
+  const effectivePrice = tierPrice ?? from ?? 0;
+  const effectiveTitle = activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title;
+  const effectiveId = activeTier ? `${item.id}::${selectedTier}` : item.id;
+  const needsSelection = hasTiers && selectedTier === null;
 
   const openLightbox = useCallback((i: number) => setLightbox(i), []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
@@ -99,39 +108,77 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
             <PriceGate>
               <div className="text-2xl font-display font-bold">
-                {from !== null ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}` : "По запросу"}
+                {tierPrice !== null
+                  ? new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(tierPrice)
+                  : from !== null
+                  ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}`
+                  : "По запросу"}
               </div>
-              {getTiers(item.pricing).length > 0 && <PriceTableView pricing={item.pricing} />}
+              {hasTiers && (
+                <>
+                  <div className="text-xs text-muted-foreground">
+                    {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                  </div>
+                  <PriceTableView
+                    pricing={item.pricing}
+                    selectable
+                    selectedIndex={selectedTier}
+                    onSelect={(i) => setSelectedTier(i)}
+                  />
+                </>
+              )}
             </PriceGate>
-            <Link to="/contacts" className="mt-4 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
-              Заказать
-            </Link>
-            <AddToCartButton
-              entity_type={entityType}
-              id={item.id}
-              slug={item.slug}
-              title={item.title}
-              price={from ?? 0}
-              image={item.photo_urls?.[0] ?? null}
-            />
-            <WishlistButton
-              entity_type={entityType}
-              id={item.id}
-              slug={item.slug}
-              title={item.title}
-              price={from ?? 0}
-              image={item.photo_urls?.[0] ?? null}
-            />
-            <CompareButton
-              entity_type={entityType}
-              id={item.id}
-              slug={item.slug}
-              title={item.title}
-              price={from ?? 0}
-              image={item.photo_urls?.[0] ?? null}
-            />
-            <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в заявку →</Link>
+
+            {needsSelection ? (
+              <button
+                type="button"
+                disabled
+                className="mt-4 inline-flex w-full justify-center rounded-md bg-muted/40 px-5 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed"
+                title="Сначала выберите позицию"
+              >
+                Выберите позицию, чтобы заказать
+              </button>
+            ) : (
+              <Link to="/contacts" className="mt-4 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
+                Заказать{activeTier?.label ? ` «${activeTier.label}»` : ""}
+              </Link>
+            )}
+
+            {needsSelection ? (
+              <div className="mt-2 text-center text-xs text-muted-foreground">
+                Добавление в заявку и сравнение станут доступны после выбора позиции
+              </div>
+            ) : (
+              <>
+                <AddToCartButton
+                  entity_type={entityType}
+                  id={effectiveId}
+                  slug={item.slug}
+                  title={effectiveTitle}
+                  price={effectivePrice}
+                  image={item.photo_urls?.[0] ?? null}
+                />
+                <WishlistButton
+                  entity_type={entityType}
+                  id={effectiveId}
+                  slug={item.slug}
+                  title={effectiveTitle}
+                  price={effectivePrice}
+                  image={item.photo_urls?.[0] ?? null}
+                />
+                <CompareButton
+                  entity_type={entityType}
+                  id={effectiveId}
+                  slug={item.slug}
+                  title={effectiveTitle}
+                  price={effectivePrice}
+                  image={item.photo_urls?.[0] ?? null}
+                />
+                <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в заявку →</Link>
+              </>
+            )}
           </div>
+
 
           {features.length > 0 && (
             <div className="glass rounded-xl p-5">

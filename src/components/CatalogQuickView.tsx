@@ -65,6 +65,15 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
   const from = priceFrom(item.pricing);
   const [active, setActive] = useState(0);
   const cover = photos[active];
+  const tiers = getTiers(item.pricing);
+  const hasTiers = tiers.length > 0;
+  const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
+  const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
+  const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
+  const effectivePrice = tierPrice ?? from ?? 0;
+  const effectiveTitle = activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title;
+  const effectiveId = activeTier ? `${item.id}::${selectedTier}` : item.id;
+  const needsSelection = hasTiers && selectedTier === null;
 
   return (
     <div className="p-6 md:p-8">
@@ -105,17 +114,42 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
             <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
             <PriceGate>
               <div className="text-xl font-display font-bold">
-                {from !== null ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}` : "По запросу"}
+                {tierPrice !== null
+                  ? new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(tierPrice)
+                  : from !== null
+                  ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}`
+                  : "По запросу"}
               </div>
-              {getTiers(item.pricing).length > 0 && <PriceTableView pricing={item.pricing} />}
+              {hasTiers && (
+                <>
+                  <div className="text-xs text-muted-foreground">
+                    {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                  </div>
+                  <PriceTableView
+                    pricing={item.pricing}
+                    selectable
+                    selectedIndex={selectedTier}
+                    onSelect={(i) => setSelectedTier(i)}
+                  />
+                </>
+              )}
             </PriceGate>
-            <Link to="/contacts" onClick={onClose} className="mt-3 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
-              Заказать
-            </Link>
-            <AddToCartButton entity_type={type} id={item.id} slug={item.slug} title={item.title} price={from ?? 0} image={photos[0] ?? null} />
-            <WishlistButton entity_type={type} id={item.id} slug={item.slug} title={item.title} price={from ?? 0} image={photos[0] ?? null} />
-            <CompareButton entity_type={type} id={item.id} slug={item.slug} title={item.title} price={from ?? 0} image={photos[0] ?? null} />
+            {needsSelection ? (
+              <button type="button" disabled className="mt-3 inline-flex w-full justify-center rounded-md bg-muted/40 px-5 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed">
+                Выберите позицию, чтобы заказать
+              </button>
+            ) : (
+              <>
+                <Link to="/contacts" onClick={onClose} className="mt-3 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
+                  Заказать{activeTier?.label ? ` «${activeTier.label}»` : ""}
+                </Link>
+                <AddToCartButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
+                <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
+                <CompareButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={effectivePrice} image={photos[0] ?? null} />
+              </>
+            )}
           </div>
+
 
           {features.length > 0 && (
             <div className="glass rounded-xl p-4">
