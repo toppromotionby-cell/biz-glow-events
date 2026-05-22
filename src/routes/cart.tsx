@@ -6,6 +6,8 @@ import { Trash2 } from "lucide-react";
 import { useCart, removeFromCart, updateQty, clearCart } from "@/lib/cart";
 import { submitOrder } from "@/lib/orders.functions";
 import { readUtm } from "@/lib/utm";
+import { PromoCodeInput } from "@/components/PromoCodeInput";
+import { redeemPromo, type PromoValidation } from "@/lib/promo.functions";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -23,8 +25,12 @@ const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN",
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
+  const redeem = useServerFn(redeemPromo);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<{ id: string } | null>(null);
+  const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
+  const discount = promo?.discount_amount ?? 0;
+  const finalTotal = Math.max(0, total - discount);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,7 +46,7 @@ function CartPage() {
           client_email: String(fd.get("client_email") ?? "").trim(),
           client_company: String(fd.get("client_company") ?? "").trim() || null,
           event_date: String(fd.get("event_date") ?? "") || null,
-          notes: String(fd.get("notes") ?? "").trim() || null,
+          notes: [String(fd.get("notes") ?? "").trim(), promo ? `Промокод: ${promo.code} (−${promo.discount_amount} BYN)` : ""].filter(Boolean).join(" | ") || null,
           source: "cart",
           utm_source: utm.utm_source ?? null,
           utm_medium: utm.utm_medium ?? null,
@@ -59,6 +65,7 @@ function CartPage() {
           })),
         },
       });
+      if (promo) { try { await redeem({ data: { code: promo.code } }); } catch { /* non-blocking */ } }
       clearCart();
       setDone({ id: res.id });
       toast.success("Заявка отправлена");
@@ -126,8 +133,21 @@ function CartPage() {
             ))}
             <div className="flex justify-between items-center pt-3">
               <button onClick={clearCart} className="text-xs text-muted-foreground hover:text-foreground">Очистить корзину</button>
-              <div className="text-lg font-display font-bold">Итого: <span className="gradient-text">{fmt.format(total)}</span></div>
+              <div className="text-right">
+                {discount > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Сумма: {fmt.format(total)} · Скидка: <span className="text-success">−{fmt.format(discount)}</span>
+                  </div>
+                )}
+                <div className="text-lg font-display font-bold">Итого: <span className="gradient-text">{fmt.format(finalTotal)}</span></div>
+              </div>
             </div>
+            <PromoCodeInput
+              orderTotal={total}
+              applied={promo}
+              onApply={(p) => setPromo(p)}
+              onClear={() => setPromo(null)}
+            />
           </section>
 
           <aside className="lg:col-span-2">
@@ -150,7 +170,7 @@ function CartPage() {
                 type="submit" disabled={loading}
                 className="w-full rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60"
               >
-                {loading ? "Отправляем..." : `Отправить заявку • ${fmt.format(total)}`}
+                {loading ? "Отправляем..." : `Отправить заявку • ${fmt.format(finalTotal)}`}
               </button>
             </form>
           </aside>

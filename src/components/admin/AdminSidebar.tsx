@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingCart, Calendar, Package, Wrench, Sparkles, Hammer, FileText, Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote, CalendarClock, Mail } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Calendar, Package, Wrench, Sparkles, Hammer, FileText, Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote, CalendarClock, Mail, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
@@ -15,6 +15,7 @@ const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: bo
   { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
   { to: "/admin/blog", label: "Блог", icon: Newspaper },
   { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
+  { to: "/admin/promo", label: "Промокоды", icon: Tag },
   { to: "/admin/newsletter", label: "Рассылка", icon: Mail },
   { to: "/admin/users", label: "Пользователи", icon: UserCog },
   { to: "/admin/audit", label: "Аудит", icon: FileText },
