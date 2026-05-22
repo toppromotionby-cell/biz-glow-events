@@ -12,8 +12,8 @@ import { type PromoValidation } from "@/lib/promo.functions";
 export const Route = createFileRoute("/cart")({
   head: () => ({
     meta: [
-      { title: "Ваша заявка — event-hub.by" },
-      { name: "description", content: "Позиции, добавленные в заявку. Отправьте заявку — мы перезвоним." },
+      { title: "Ваша корзина — event-hub.by" },
+      { name: "description", content: "Позиции, добавленные в корзину. Отправьте запрос — мы перезвоним." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -67,7 +67,7 @@ function CartPage() {
       });
       clearCart();
       setDone({ id: res.id });
-      toast.success("Заявка отправлена");
+      toast.success("Заказ оформлен");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Ошибка отправки");
     } finally {
@@ -79,7 +79,7 @@ function CartPage() {
     return (
       <div className="container mx-auto px-4 py-16 max-w-2xl">
         <div className="glass rounded-2xl p-8 text-center">
-          <h1 className="text-3xl font-display font-bold gradient-text">Заявка принята</h1>
+          <h1 className="text-3xl font-display font-bold gradient-text">Заказ принят</h1>
           <p className="mt-3 text-muted-foreground">Номер: <span className="font-mono">{done.id.slice(0, 8)}</span>. Мы свяжемся в течение рабочего дня.</p>
           <Link to="/" className="mt-6 inline-flex rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">На главную</Link>
         </div>
@@ -90,7 +90,7 @@ function CartPage() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
       <header className="mb-8">
-        <h1 className="text-4xl font-display font-bold gradient-text">Ваша заявка</h1>
+        <h1 className="text-4xl font-display font-bold gradient-text">Ваша корзина</h1>
         <p className="mt-2 text-muted-foreground">{count > 0 ? `Позиций: ${count}. Итого: ${fmt.format(total)}` : "Корзина пуста — добавьте позиции из каталога."}</p>
       </header>
 
@@ -197,7 +197,7 @@ function CartPage() {
                 type="submit" disabled={loading}
                 className="w-full rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60"
               >
-                {loading ? "Отправляем..." : `Отправить заявку • ${fmt.format(finalTotal)}`}
+                {loading ? "Отправляем..." : `Отправить заказ • ${fmt.format(finalTotal)}`}
               </button>
             </form>
           </aside>

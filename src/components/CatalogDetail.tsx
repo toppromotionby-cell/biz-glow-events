@@ -146,7 +146,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
             {needsSelection ? (
               <div className="mt-2 text-center text-xs text-muted-foreground">
-                Добавление в заявку и сравнение станут доступны после выбора позиции
+                Добавление в корзину и сравнение станут доступны после выбора позиции
               </div>
             ) : (
               <>
@@ -174,7 +174,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                   price={effectivePrice}
                   image={item.photo_urls?.[0] ?? null}
                 />
-                <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в заявку →</Link>
+                <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в корзину →</Link>
               </>
             )}
           </div>
