@@ -11,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, Star } from "lucide-react";
+import { SortableList } from "@/components/admin/SortableList";
+import { persistSortOrder } from "@/lib/sort-order";
 
 export const Route = createFileRoute("/admin/cases")({
   component: CasesAdmin,
