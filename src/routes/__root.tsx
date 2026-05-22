@@ -60,8 +60,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "event-hub.by — Event-технологии и продакшн в Минске" },
       { property: "og:description", content: "Интерактивные зоны, оборудование, услуги и производство для мероприятий в Беларуси. VR/AR, LED, фотозоны, BTL, промо." },
       { name: "twitter:description", content: "Интерактивные зоны, оборудование, услуги и производство для мероприятий в Беларуси. VR/AR, LED, фотозоны, BTL, промо." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ffaaaf2e-1949-430d-8e96-adf5a760e4a7/id-preview-3e0fec23--8e78edb2-4da2-4eba-a854-c653075850d6.lovable.app-1779418625962.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ffaaaf2e-1949-430d-8e96-adf5a760e4a7/id-preview-3e0fec23--8e78edb2-4da2-4eba-a854-c653075850d6.lovable.app-1779418625962.png" },
+      // og:image / twitter:image задаются на листовых роутах (динамически из контента).
+      // Не задаём на root — иначе превью затирает любые попытки листьев показать свою картинку.
     ],
     links: [
       { rel: "stylesheet", href: appCss },

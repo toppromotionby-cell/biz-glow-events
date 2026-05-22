@@ -21,8 +21,7 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/terms-rental", priority: "0.5", changefreq: "yearly" },
   { path: "/privacy", priority: "0.2", changefreq: "yearly" },
   { path: "/offer", priority: "0.2", changefreq: "yearly" },
-  { path: "/login", priority: "0.3", changefreq: "yearly" },
-  { path: "/register", priority: "0.3", changefreq: "yearly" },
+  // login/register/cart/wishlist/compare/profile — служебные, не индексируем
 ];
 
 type Row = { slug: string; updated_at: string };
