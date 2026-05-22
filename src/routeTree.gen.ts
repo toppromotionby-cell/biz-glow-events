@@ -59,6 +59,7 @@ import { Route as AdminAvailabilityRouteImport } from './routes/admin.availabili
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
@@ -313,6 +314,12 @@ const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   path: '/catalog/$type',
   getParentRoute: () => AdminRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOrdersIdQuoteRoute = AdminOrdersIdQuoteRouteImport.update({
   id: '/quote',
   path: '/quote',
@@ -383,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -437,6 +445,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -493,6 +502,7 @@ export interface FileRoutesById {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -550,6 +560,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -659,6 +671,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -691,6 +704,7 @@ export interface RootRouteChildren {
   TestimonialsRoute: typeof TestimonialsRoute
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1045,6 +1059,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/orders/$id/quote': {
       id: '/admin/orders/$id/quote'
       path: '/quote'
@@ -1229,6 +1250,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestimonialsRoute: TestimonialsRoute,
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
