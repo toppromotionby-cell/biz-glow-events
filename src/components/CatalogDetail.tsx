@@ -1,6 +1,6 @@
-// Universal catalog detail view: gallery, description, features, FAQ, JSON-LD.
+// Universal catalog detail view: gallery, lightbox, video, description, FAQ, JSON-LD.
 import { Link } from "@tanstack/react-router";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { PriceGate } from "@/components/PriceGate";
@@ -10,7 +10,9 @@ import { RelatedItems } from "@/components/RelatedItems";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { CompareButton } from "@/components/CompareButton";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { trackView } from "@/lib/recent";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
@@ -30,11 +32,18 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   entityType: CatalogType;
 }) {
   const photos = item.photo_urls ?? [];
+  const videos = item.video_urls ?? [];
   const [active, setActive] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const cover = photos[active];
   const from = priceFrom(item.pricing);
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
+
+  const openLightbox = useCallback((i: number) => setLightbox(i), []);
+  const closeLightbox = useCallback(() => setLightbox(null), []);
+  const prev = useCallback(() => setLightbox((i) => (i === null ? null : (i - 1 + photos.length) % photos.length)), [photos.length]);
+  const next = useCallback(() => setLightbox((i) => (i === null ? null : (i + 1) % photos.length)), [photos.length]);
 
   useEffect(() => {
     trackView({
@@ -55,7 +64,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         <div className="lg:col-span-3 space-y-3">
           {cover ? (
             <MediaShield className="rounded-2xl overflow-hidden aspect-[16/10] glass">
-              <img src={cover} alt={item.title} className="h-full w-full object-cover" loading="eager" />
+              <button type="button" onClick={() => openLightbox(active)} className="block h-full w-full cursor-zoom-in" aria-label="Открыть фото">
+                <img src={cover} alt={item.title} className="h-full w-full object-cover" loading="eager" />
+              </button>
             </MediaShield>
           ) : (
             <div className="rounded-2xl aspect-[16/10] glass flex items-center justify-center text-muted-foreground">
@@ -64,8 +75,8 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           )}
           {photos.length > 1 && (
             <div className="grid grid-cols-5 gap-2">
-              {photos.slice(0, 5).map((p, i) => (
-                <button key={p} onClick={() => setActive(i)}
+              {photos.slice(0, 10).map((p, i) => (
+                <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
                   aria-label={`Фото ${i + 1}`}
                   className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
                   <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -74,6 +85,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             </div>
           )}
         </div>
+
 
         <aside className="lg:col-span-2 space-y-5">
           <header>
@@ -160,10 +172,47 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         </section>
       )}
 
+      {videos.length > 0 && (
+        <section className="mt-12 max-w-5xl">
+          <h2 className="text-2xl font-display font-semibold mb-4">Видео</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {videos.map((url, i) => (
+              <video key={url + i} src={url} controls playsInline preload="metadata"
+                className="w-full rounded-xl bg-black aspect-video glass" />
+            ))}
+          </div>
+        </section>
+      )}
+
       <Suspense fallback={null}>
         <RelatedItems type={entityType} currentId={item.id} category={item.category} />
       </Suspense>
       <RecentlyViewed excludeId={item.id} />
+
+      <Dialog open={lightbox !== null} onOpenChange={(v) => { if (!v) closeLightbox(); }}>
+        <DialogContent className="max-w-6xl p-0 bg-background/95 border-border/40">
+          {lightbox !== null && photos[lightbox] && (
+            <div className="relative">
+              <img src={photos[lightbox]} alt={item.title} className="w-full max-h-[85vh] object-contain rounded-lg" />
+              {photos.length > 1 && (
+                <>
+                  <button type="button" onClick={prev} aria-label="Назад"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/70 hover:bg-background flex items-center justify-center">
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button type="button" onClick={next} aria-label="Вперёд"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/70 hover:bg-background flex items-center justify-center">
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-2 py-1 rounded bg-background/70">
+                    {lightbox + 1} / {photos.length}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
