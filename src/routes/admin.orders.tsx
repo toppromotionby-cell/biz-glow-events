@@ -83,6 +83,25 @@ function AdminOrders() {
     onError: (e: any) => toast.error(e?.message ?? "Не удалось изменить статус"),
   });
 
+  const updatePaid = useMutation({
+    mutationFn: async ({ id, newPaid, prevPaid }: { id: string; newPaid: number; prevPaid: number }) => {
+      const { error } = await supabase.from("orders").update({ paid: newPaid }).eq("id", id);
+      if (error) throw error;
+      const { data: u } = await supabase.auth.getUser();
+      await supabase.from("order_timeline").insert({
+        order_id: id, event: "paid_changed",
+        actor_id: u.user?.id ?? null, payload: { from: prevPaid, to: newPaid },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Оплата обновлена");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Не удалось обновить оплату"),
+  });
+
 
   const sorted = useMemo(() => {
     const arr = [...orders];
@@ -205,7 +224,14 @@ function AdminOrders() {
                       </select>
                     </td>
                     <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
-                    <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(o.paid)}</td>
+                    <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <PaidCell
+                        value={Number(o.paid ?? 0)}
+                        total={Number(o.total ?? 0)}
+                        disabled={updatePaid.isPending}
+                        onSave={(v) => updatePaid.mutate({ id: o.id, newPaid: v, prevPaid: Number(o.paid ?? 0) })}
+                      />
+                    </td>
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right">
                       <Link to="/admin/orders/$id" params={{ id: o.id }} className="inline-flex items-center text-muted-foreground hover:text-primary" onClick={(e) => e.stopPropagation()}>
@@ -380,5 +406,49 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
       <span className="text-muted-foreground text-xs">{k}</span>
       <span className="text-right">{v}</span>
     </div>
+  );
+}
+
+function PaidCell({ value, total, disabled, onSave }: { value: number; total: number; disabled?: boolean; onSave: (v: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => { setDraft(String(value)); }, [value]);
+
+  const commit = () => {
+    const n = Number(draft.replace(",", "."));
+    setEditing(false);
+    if (Number.isFinite(n) && n >= 0 && n !== value) onSave(n);
+    else setDraft(String(value));
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        type="number"
+        min={0}
+        step="0.01"
+        value={draft}
+        disabled={disabled}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") { setDraft(String(value)); setEditing(false); }
+        }}
+        className="w-28 text-right px-2 py-1 rounded border border-primary/40 bg-input outline-none text-sm"
+      />
+    );
+  }
+  const full = value >= total && total > 0;
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      title="Клик — изменить оплату"
+      className={`px-2 py-0.5 rounded hover:bg-muted/40 cursor-text ${full ? "text-emerald-300" : "text-emerald-300/80"}`}
+    >
+      {`${Number(value ?? 0).toLocaleString("ru-BY")} BYN`}
+    </button>
   );
 }
