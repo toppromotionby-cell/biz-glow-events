@@ -80,37 +80,47 @@ function CatalogInner({ table }: { table: Table }) {
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
         <div className="glass rounded-xl p-3 max-h-[70vh] overflow-y-auto space-y-1">
           {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
-          {items.map((it: any) => (
-            <div
-              key={it.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setPreview(it)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreview(it); } }}
-              className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-3 ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
-            >
-              {it.photo_urls?.[0] ? (
-                <img src={it.photo_urls[0]} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
-              ) : (
-                <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="font-medium truncate">{it.title}</div>
-                <div className="text-xs opacity-70 flex items-center gap-2">
-                  <span className="truncate">{it.slug}</span>
-                  {it.published ? <span className="text-success">●</span> : <span>○</span>}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setSelected(it); }}
-                title="Редактировать"
-                className="opacity-0 group-hover:opacity-100 transition inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
+        <div className="glass rounded-xl p-3 max-h-[70vh] overflow-y-auto">
+          {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
+          <SortableList
+            items={items as any[]}
+            onReorder={async (ids) => {
+              try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: ["catalog", table] }); }
+              catch (e) { toast.error((e as Error).message); throw e; }
+            }}
+            className="space-y-1"
+            renderItem={(it, handle) => (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setPreview(it)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreview(it); } }}
+                className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-2 ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
               >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
+                {handle}
+                {it.photo_urls?.[0] ? (
+                  <img src={it.photo_urls[0]} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                ) : (
+                  <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{it.title}</div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    <span className="truncate">{it.slug}</span>
+                    {it.published ? <span className="text-success">●</span> : <span>○</span>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setSelected(it); }}
+                  title="Редактировать"
+                  className="opacity-0 group-hover:opacity-100 transition inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          />
         </div>
 
         <div>
