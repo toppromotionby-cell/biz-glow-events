@@ -9,6 +9,7 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/services", priority: "0.9", changefreq: "weekly" },
   { path: "/production", priority: "0.9", changefreq: "weekly" },
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
+  { path: "/cases", priority: "0.8", changefreq: "monthly" },
   { path: "/contacts", priority: "0.7", changefreq: "monthly" },
   { path: "/faq", priority: "0.6", changefreq: "monthly" },
   { path: "/privacy", priority: "0.2", changefreq: "yearly" },
@@ -19,7 +20,7 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
 
 type Row = { slug: string; updated_at: string };
 
-async function fetchSlugs(table: "zones" | "tech_equipment" | "services" | "production_items" | "blog_posts"): Promise<Row[]> {
+async function fetchSlugs(table: "zones" | "tech_equipment" | "services" | "production_items" | "blog_posts" | "cases"): Promise<Row[]> {
   const { data } = await supabaseAdmin
     .from(table)
     .select("slug, updated_at")
@@ -36,12 +37,13 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         try {
-          const [zones, equipment, services, production, posts] = await Promise.all([
+          const [zones, equipment, services, production, posts, cases] = await Promise.all([
             fetchSlugs("zones"),
             fetchSlugs("tech_equipment"),
             fetchSlugs("services"),
             fetchSlugs("production_items"),
             fetchSlugs("blog_posts"),
+            fetchSlugs("cases"),
           ]);
 
           const dynamic: Array<{ path: string; lastmod?: string }> = [
@@ -50,6 +52,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             ...services.map((r) => ({ path: `/services/${r.slug}`, lastmod: r.updated_at })),
             ...production.map((r) => ({ path: `/production/${r.slug}`, lastmod: r.updated_at })),
             ...posts.map((r) => ({ path: `/blog/${r.slug}`, lastmod: r.updated_at })),
+            ...cases.map((r) => ({ path: `/cases/${r.slug}`, lastmod: r.updated_at })),
           ];
 
           const staticXml = STATIC.map(
