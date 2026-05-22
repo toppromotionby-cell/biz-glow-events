@@ -53,6 +53,7 @@ export const validatePromo = createServerFn({ method: "POST" })
   });
 
 export const redeemPromo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ code: z.string().min(2).max(40) }).parse(input))
   .handler(async ({ data }) => {
     const code = data.code.trim().toUpperCase();
