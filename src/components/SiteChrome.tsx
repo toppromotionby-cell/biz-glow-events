@@ -44,14 +44,26 @@ export function SiteHeader() {
   const { count: wishCount } = useWishlist();
   const { count: cmpCount } = useCompare();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <Toggleable sectionKey="header.root" as="div">
-      <header className="sticky top-0 z-40 glass-strong border-b border-border/50" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <header
+        data-scrolled={scrolled ? "true" : "false"}
+        className="sticky top-0 z-40 glass-strong border-b border-border/50 transition-[height,backdrop-filter] duration-200"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">
           Перейти к содержимому
         </a>
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-2 md:gap-4">
+        <div className={`container mx-auto px-4 flex items-center justify-between gap-2 md:gap-4 transition-all duration-200 ${scrolled ? "h-12 md:h-14" : "h-16"}`}>
           <Toggleable sectionKey="header.brand" as="span">
             <Link to="/" aria-label="event-hub.by — на главную" className="flex items-center gap-2 font-display font-bold text-lg whitespace-nowrap shrink-0">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary glow-primary shrink-0" aria-hidden="true">
