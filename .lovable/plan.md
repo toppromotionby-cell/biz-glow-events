@@ -1,92 +1,66 @@
 
-## Что я посмотрел
+## Что получится
 
-- HTML главной event-tech.by, их структуру каталога и микроразметку
-- Semrush: домен, топ-ключи, топ-страницы, бэклинки event-tech.by (БД `by`)
-- Наш `__root.tsx`, список роутов, наличие sitemap/robots/llms
+Android-приложение event-hub.by — это TWA (Trusted Web Activity), тонкая нативная обёртка вокруг твоего опубликованного сайта. Без браузерной строки, с иконкой на рабочем столе, можно загрузить в Google Play.
 
-## Реальная картина по event-tech.by
+- Сайт `event-hub.by` и Android-приложение работают **одновременно** и используют **одну и ту же базу** (Lovable Cloud). Авторизация, корзина, заказы, админка — всё общее.
+- Любое изменение на сайте появляется в приложении мгновенно (ничего пересобирать не нужно).
+- Сборка `.apk` / `.aab` происходит **на твоём компьютере** одной командой Bubblewrap CLI — внутри Lovable собрать APK невозможно (нет Android SDK).
 
-Сайт **не «летит на первые строчки»** — это миф восприятия. Цифры Semrush (БД `by`):
+## Что я сделаю в проекте (со стороны сайта)
 
-- Authority Score **17/100** (низкий), Trust 17/100
-- Всего **31 ключ** в органике, ~95 визитов/мес из поиска
-- **256 бэклинков с 54 доменов** — но топ-доноры (`r24.by`, `shalash.by`, `charger.by`, `*.sbs`, `*.cfd`) — это сетки/PBN с AS 2–12, часть похожа на спам
-- Реально ранжируется только 3 страницы: фотобудка (#3–4), фотозоны (#8), робот-собака (#4)
+1. **Иконка приложения** — сгенерирую квадратную PNG-иконку 512×512 (на основе текущего favicon с оранжевой звездой) и maskable-вариант для Android-адаптивных иконок. Сохраню в `public/icon-512.png`, `public/icon-192.png`, `public/icon-maskable-512.png`.
 
-## Что им реально помогает занимать топ по узким запросам
+2. **Web App Manifest** — `public/manifest.webmanifest`:
+   - name: "event-hub.by", short_name: "Event Hub"
+   - start_url: "/", scope: "/", display: "standalone"
+   - theme_color: `#000000`, background_color: `#000000`
+   - lang: `ru-BY`, иконки (any + maskable)
+   - shortcuts: Каталог, Корзина, Профиль
 
-1. **Узкая ниша + точные slug-и под запрос.** URL вида `/catalog/arenda-fotobudki/`, `/catalog/arenda-selfi-zerkala/`, `/catalog/arenda-robotov/robot-sobaka/` — каждый продукт = отдельная страница с keyword в URL, H1, title, alt.
-2. **Schema.org Product + AggregateOffer + AggregateRating** на каждой карточке каталога (видно в HTML: `itemprop="price"`, `lowPrice`, `ratingCount`, `brand`, `model`).
-3. **Анкорные бэклинки на коммерческие фразы** — «аренда фотобудки» (79 ссылок), «аренда селфи спиннера 360», «аренда сефи зеркала». Часть выглядит как закупленные/PBN, но Яндекс на них реагирует.
-4. **Регионально-коммерческий язык** — «аренда X в Минске», «купить Y». Заточка под транзакционный интент.
-5. **Долгий возраст домена** + накопленная история в Яндексе.
-6. Микроразметка `WebPage` в `<html itemtype>`, alt с ключами, видео-баннер на главной (поведенческие).
+3. **Подключение манифеста и мета-тегов** в `src/routes/__root.tsx`:
+   - `<link rel="manifest" href="/manifest.webmanifest">`
+   - `apple-touch-icon` 180×180, `mobile-web-app-capable`
+   - existing `theme-color` оставляем
 
-## Что из этого есть у нас и чего нет
+4. **Digital Asset Links** — `public/.well-known/assetlinks.json`. Это ключевой файл для TWA: подтверждает, что приложение и домен принадлежат одному владельцу, иначе Chrome покажет браузерную строку поверх приложения. Заполнится после того, как ты сгенерируешь signing key и пришлёшь SHA-256 fingerprint (один раз).
+   - На время первой сборки положу шаблон с placeholder fingerprint, ты заменишь на реальный.
+   - Обслуживание `/.well-known/...` через TanStack — добавлю route `src/routes/.well-known/assetlinks[.]json.tsx`, отдающий статический JSON с правильным content-type, чтобы файл доехал на Cloudflare Worker без проблем.
 
-| Фактор | event-tech.by | event-hub.by |
-|---|---|---|
-| Отдельные страницы под продукт со slug | да | да (`zones.$slug`, `equipment.$slug`, `services.$slug`, `production.$slug`) |
-| Title/description per-route | да | частично — нужно проверить leaf-роуты |
-| **Schema.org Product + Offer + AggregateRating** на карточке | **да** | **нет** (root содержит только Organization/WebSite/LocalBusiness) |
-| **ItemList на категориях** | да | нет |
-| **BreadcrumbList** на вложенных страницах | частично | нет |
-| sitemap.xml, robots.txt, llms.txt | sitemap есть | есть все три |
-| Бэклинки | 54 домена | 0 в индексе Semrush (домен новый/не индексируется) |
-| Возраст домена | старый | новый |
-| Региональные ключи в H1/title («аренда X в Минске») | да, агрессивно | нужно проверить и усилить |
-| Yandex/Google verification | — | Yandex добавлен |
+5. **Bubblewrap-конфиг** — `twa/twa-manifest.json`:
+   - host: `event-hub.by`
+   - packageId: `by.event_hub.twa`
+   - appName: "event-hub.by", launcherName: "Event Hub"
+   - themeColor / backgroundColor синхронны с сайтом
+   - signingKey: путь, который ты создашь локально
 
-## Главный вывод
+6. **Инструкция сборки APK** — `twa/README.md` с пошаговыми командами:
+   - Установка Node 18+ и `@bubblewrap/cli`
+   - `bubblewrap init --manifest=https://event-hub.by/manifest.webmanifest`
+   - `bubblewrap build` → получаешь `app-release-signed.apk` и `.aab` для Google Play
+   - Получение SHA-256 fingerprint из подписанного APK + что вставить в `assetlinks.json`
+   - Тестирование на Android-устройстве через `adb install`
 
-Семантическое ядро у нас **шире** (зоны/оборудование/услуги/продакшн), архитектура сайта чище. Чего им «помогает» больше всего — **бэклинки + schema на товарах + транзакционные H1/title**. Возраст домена догнать нельзя, остальное — можно и нужно.
+## Что нужно от тебя (один раз, после моих изменений)
 
-## План — закрыть SEO-разрыв
+1. Поставить на свой Mac/PC Node 18+ и Java 17.
+2. Запустить 3 команды из `twa/README.md`.
+3. Прислать мне SHA-256 fingerprint созданного ключа — я обновлю `assetlinks.json`.
+4. Опубликовать сайт (кнопка Publish в Lovable), чтобы новый манифест и assetlinks стали доступны на `event-hub.by`.
+5. Установить полученный `.apk` на телефон или загрузить `.aab` в Google Play Console.
 
-1. **Schema.org Product + Offer на leaf-роутах каталога**
-   `equipment.$slug.tsx`, `zones.$slug.tsx`, `services.$slug.tsx`, `production.$slug.tsx` — добавить JSON-LD с `@type: Product`, `offers` (price из БД, priceCurrency `BYN`, availability), `image`, `brand: event-hub.by`. Если есть отзывы — `aggregateRating`.
+## Чего этот план НЕ делает
 
-2. **ItemList на категорийных роутах**
-   `equipment.tsx`, `zones.tsx`, `services.tsx`, `production.tsx`, `cases.tsx`, `blog.tsx` — JSON-LD `ItemList` с первыми N карточками.
-
-3. **BreadcrumbList**
-   На всех leaf-роутах (`*/$slug`) — JSON-LD `BreadcrumbList` (Главная → Категория → Товар).
-
-4. **Транзакционные title/description per-route**
-   Аудит leaf-роутов: title формата «{Название} — аренда в Минске | event-hub.by», description с ценой и регионом. Сейчас часть страниц наследует root-title.
-
-5. **H1 с ключевиком + регионом**
-   На карточках продукта/услуги — `<h1>Аренда {название} в Минске</h1>` (если ещё не так).
-
-6. **Alt-тексты с ключами**
-   Изображения товаров — alt вида «Аренда {название} в Минске» вместо просто названия.
-
-7. **OG:image из контента товара**
-   На leaf-роутах подставлять первое фото товара в og:image/twitter:image (фоллбек на дефолтный).
-
-8. **Article schema + datePublished/Author** на блог-постах, **CreativeWork/Event** на кейсах.
-
-9. **FAQPage schema** на `/faq.tsx` (у нас он есть, но без JSON-LD — высокая ROI, расширенные сниппеты в Яндексе/Google).
-
-10. **Внутренняя перелинковка**
-    Блоки «Похожие услуги» / «С этим арендуют» на leaf-роутах — равномерный PageRank, дополнительные точки входа.
-
-11. **Sitemap dynamic content**
-    Проверить, что `sitemap[.]xml.ts` тянет все опубликованные товары/посты/кейсы из Supabase, а не только статические роуты.
-
-12. **Стратегия линкбилдинга** (вне кода)
-    Отдельным треком — каталоги мероприятий Беларуси, гостевые посты, упоминания в кейсах клиентов. Это не делается в коде, но без этого AS останется низким.
+- Не создаёт нативный Kotlin-проект — это TWA, а не отдельная нативная реализация.
+- Не отдаёт готовый подписанный APK из Lovable (физически невозможно — нет Android SDK в песочнице).
+- Не добавляет push-уведомления / нативную камеру / биометрию. Если позже понадобится — переезжаем на Capacitor отдельной задачей.
 
 ## Технические детали
 
-- JSON-LD добавляется через `head().scripts` с `type: "application/ld+json"`, `children: JSON.stringify(...)` — паттерн уже используется в `__root.tsx`
-- Динамические данные берутся из `loaderData` в `head({ params, loaderData })`
-- Канонические ссылки и og:url уже корректно лежат на leaf-роутах (по правилу `head-meta`) — добавляем только schema/контентные мета
-- Один коммит = один пункт плана, чтобы можно было отслеживать ранжирование
+- Манифест и assetlinks.json раздаются с того же домена, что и сайт (`event-hub.by`), через TanStack server routes для гарантированных HTTP-заголовков.
+- Иконки PNG, не SVG: TWA/Android требует растровые иконки 192/512 + maskable.
+- `display: standalone` без `display: fullscreen` — оставляет статус-бар, как принято в Play Store.
+- `theme_color: #000000` совпадает с уже выставленным в `__root.tsx`.
+- Иконки и манифест статичны — отдаются Cloudflare как обычные файлы из `public/`.
 
-## Что предлагаю сделать первым
-
-Пп. 1–3 (Schema на каталоге) и п. 9 (FAQ) — максимальная отдача за минимум кода. Линкбилдинг (п. 12) обсудить отдельно — это уже не разработка.
-
-Подтвердите — реализую в порядке 1 → 2 → 3 → 9 → дальше по списку. Или можете указать другой приоритет.
+После твоего «ОК» я переключусь в build mode и сделаю всё за один проход.
