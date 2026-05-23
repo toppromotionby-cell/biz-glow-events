@@ -22,8 +22,8 @@ export const Route = createFileRoute("/services/$slug")({
     if (!it) return { meta: [{ title: "Услуга — event-hub.by" }] };
     return {
       meta: [
-        { title: it.seo_title ?? `${it.title} — Услуги event-hub.by` },
-        { name: "description", content: it.seo_description ?? it.short_description ?? `${it.title} для мероприятий в Минске.` },
+        { title: it.seo_title ?? `${it.title} — заказать услугу в Минске | event-hub.by` },
+        { name: "description", content: it.seo_description ?? it.short_description ?? `${it.title} — услуга для мероприятий в Минске. Профессиональная команда event-hub.by.` },
         { property: "og:title", content: it.title },
         { property: "og:description", content: it.short_description ?? "" },
         ...(it.photo_urls?.[0] ? [{ property: "og:image", content: it.photo_urls[0] }] : []),
