@@ -55,6 +55,7 @@ function HomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,oklch(0.55_0.24_295/0.25),transparent_60%)] animate-gradient" />
         <div className="container mx-auto px-4 py-24 md:py-36 relative">
           <div className="max-w-3xl">
+            <HeroLogoIntro />
             <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs mb-6">
               <Sparkles className="h-3 w-3 text-accent" /> Event-технологии нового поколения
             </div>
