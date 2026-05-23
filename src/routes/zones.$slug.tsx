@@ -22,8 +22,8 @@ export const Route = createFileRoute("/zones/$slug")({
     if (!it) return { meta: [{ title: "Зона — event-hub.by" }] };
     return {
       meta: [
-        { title: it.seo_title ?? `${it.title} — Интерактивные зоны event-hub.by` },
-        { name: "description", content: it.seo_description ?? it.short_description ?? `${it.title} для мероприятий в Минске.` },
+        { title: it.seo_title ?? `Аренда ${it.title} в Минске — event-hub.by` },
+        { name: "description", content: it.seo_description ?? it.short_description ?? `Аренда интерактивной зоны «${it.title}» в Минске. Доставка и монтаж под мероприятие.` },
         { property: "og:title", content: it.title },
         { property: "og:description", content: it.short_description ?? "" },
         ...(it.photo_urls?.[0] ? [{ property: "og:image", content: it.photo_urls[0] }] : []),
