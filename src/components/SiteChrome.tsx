@@ -55,7 +55,7 @@ export function SiteHeader() {
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary glow-primary shrink-0" aria-hidden="true">
                 <Sparkles className="h-4 w-4 text-primary-foreground" />
               </span>
-              <span className="gradient-text hidden [@media(min-width:360px)]:inline">event-hub.by</span>
+              <span className="gradient-text">event-hub.by</span>
             </Link>
           </Toggleable>
 
