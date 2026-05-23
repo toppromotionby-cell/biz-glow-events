@@ -14,6 +14,15 @@ export function formatBYN(value: number): string {
   }).format(value);
 }
 
+/** Извлекает минимальную/базовую цену из произвольного pricing-объекта.
+ *  Поддерживает ключи: from, priceFrom, min, base. Возвращает null, если число не найдено. */
+export function priceFrom(pricing: unknown): number | null {
+  if (!pricing || typeof pricing !== "object") return null;
+  const p = pricing as Record<string, unknown>;
+  const v = p.from ?? p.priceFrom ?? p.min ?? p.base;
+  return typeof v === "number" ? v : null;
+}
+
 // Транслитерация для slug'ов
 const ruMap: Record<string, string> = {
   а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"i",к:"k",л:"l",м:"m",н:"n",
