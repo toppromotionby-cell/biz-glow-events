@@ -76,7 +76,7 @@ function HomePage() {
         <div className="container mx-auto px-4 py-24 md:py-32 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-[0.25em] uppercase text-accent mb-8">
-              <Sparkles className="h-3 w-3" /> Корпоративные мероприятия / Вся Беларусь
+              <Sparkles className="h-3 w-3" /> КОРПОРАТИВНЫЕ МЕРОПРИЯТИЯ И ВСЕ ДЛЯ НИХ / ВСЯ БЕЛАРУСЬ
             </div>
             <h1 className="font-display font-black leading-[0.95] tracking-tight text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-8">
               <span className="block bg-gradient-to-r from-[oklch(0.78_0.20_55)] via-[oklch(0.82_0.18_65)] to-[oklch(0.75_0.21_45)] bg-clip-text text-transparent">
