@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { submitLead } from "@/lib/leads.functions";
 import { readUtm } from "@/lib/utm";
 import { DateField } from "@/components/DateField";
+import { trackLead } from "@/lib/analytics";
 
 const SUBJECT_KEY = "lead_subject_v1";
 
@@ -47,6 +48,7 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
         },
       });
       setDone(true);
+      trackLead(source);
       toast.success("Заявка отправлена. Мы свяжемся с вами.");
       (e.target as HTMLFormElement).reset();
     } catch (err) {
