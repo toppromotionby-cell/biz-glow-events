@@ -179,6 +179,7 @@ function RootComponent() {
         <div className="min-h-dvh flex flex-col bg-background bg-radial-glow">
           <EffectsLayer />
           <SiteHeader />
+          <AutoBreadcrumbs />
           <main id="main" className="flex-1"><Outlet /></main>
           <SiteFooter />
           <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
