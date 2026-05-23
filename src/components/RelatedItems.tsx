@@ -6,12 +6,7 @@ import { CatalogQuickView } from "@/components/CatalogQuickView";
 
 const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 });
 
-function priceFrom(pricing: unknown): number | null {
-  if (!pricing || typeof pricing !== "object") return null;
-  const p = pricing as Record<string, unknown>;
-  const v = p.from ?? p.priceFrom ?? p.min ?? p.base;
-  return typeof v === "number" ? v : null;
-}
+import { priceFrom } from "@/lib/utils";
 
 const listQuery = (type: CatalogType) => queryOptions({
   queryKey: ["catalog-list", type],
