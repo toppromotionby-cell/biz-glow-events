@@ -136,6 +136,63 @@
 .theme-light .fx-aurora,
 .theme-light .fx-cursor-glow { opacity: 0.5; }
 
+/* ===== Hero — светлая тема ===== */
+.hero-accent-text {
+  background: linear-gradient(
+    90deg,
+    oklch(0.78 0.20 55),
+    oklch(0.82 0.18 65),
+    oklch(0.75 0.21 45)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.theme-light .hero-accent-text {
+  background: linear-gradient(
+    90deg,
+    oklch(0.55 0.22 35),
+    oklch(0.62 0.24 55),
+    oklch(0.5 0.25 25)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.theme-light .spark-burst {
+  background:
+    radial-gradient(ellipse at center, oklch(0.92 0.10 70 / 0.55), transparent 55%),
+    radial-gradient(circle at center, oklch(0.97 0.03 70 / 0.7), oklch(1 0 0 / 0) 70%);
+}
+.theme-light .spark {
+  background: linear-gradient(90deg, transparent, oklch(0.65 0.22 50 / 0.85) 40%, oklch(0.55 0.24 35 / 0.75) 80%, transparent);
+  filter: blur(0.4px) drop-shadow(0 0 6px oklch(0.6 0.22 50 / 0.6));
+}
+.theme-light .hero-logo-bg { mix-blend-mode: multiply; opacity: 0.12; }
+.theme-light .hero-logo__word {
+  background: linear-gradient(
+    100deg,
+    oklch(0.45 0.22 55) 0%,
+    oklch(0.55 0.24 65) 25%,
+    oklch(0.5 0.27 45) 50%,
+    oklch(0.55 0.24 65) 75%,
+    oklch(0.45 0.22 55) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px oklch(0.6 0.22 55 / 0.35));
+}
+.theme-light .hero-logo__halo {
+  background:
+    radial-gradient(ellipse at center, oklch(0.65 0.22 55 / 0.25), transparent 55%),
+    radial-gradient(ellipse at 30% 50%, oklch(0.55 0.24 35 / 0.18), transparent 60%);
+}
+.theme-light .hero-logo__sheen::after {
+  background: linear-gradient(90deg, transparent, oklch(0.5 0.22 55 / 0.35), transparent);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html { scroll-behavior: smooth; }
