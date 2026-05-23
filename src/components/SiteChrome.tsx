@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CONTACT } from "@/lib/contacts";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { to: "/zones", label: "Интерактивные Зоны", key: "header.nav.zones" },
@@ -74,6 +75,7 @@ export function SiteHeader() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
             <Toggleable sectionKey="header.wishlist" as="span">
               <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
@@ -122,6 +124,7 @@ export function SiteHeader() {
 
           {/* Mobile actions */}
           <div className="flex md:hidden items-center gap-1">
+            <ThemeToggle />
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
             <Toggleable sectionKey="header.cart" as="span">
               <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition">

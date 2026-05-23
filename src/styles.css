@@ -82,9 +82,59 @@
   --ring: oklch(0.65 0.25 295 / 0.5);
 }
 
-.dark {
-  /* Сайт всегда тёмный — .dark = :root */
+.dark, .theme-dark {
+  /* Тёмная тема — токены наследуются из :root */
 }
+
+/* ===== Светлая тема ===== */
+.theme-light {
+  --background: oklch(0.99 0.005 280);
+  --foreground: oklch(0.18 0.02 280);
+  --surface: oklch(0.97 0.008 280);
+  --surface-2: oklch(0.94 0.01 280);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 280);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 280);
+  --primary: oklch(0.5 0.22 295);
+  --primary-foreground: oklch(1 0 0);
+  --primary-glow: oklch(0.65 0.24 300);
+  --secondary: oklch(0.92 0.02 280);
+  --secondary-foreground: oklch(0.2 0.02 280);
+  --muted: oklch(0.95 0.01 280);
+  --muted-foreground: oklch(0.45 0.02 280);
+  --accent: oklch(0.55 0.22 295);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.55 0.24 25);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.55 0.18 150);
+  --warning: oklch(0.65 0.17 80);
+  --border: oklch(0.2 0.02 280 / 0.12);
+  --input: oklch(0.2 0.02 280 / 0.08);
+  --ring: oklch(0.55 0.22 295 / 0.5);
+}
+
+.theme-light .gradient-text {
+  background: linear-gradient(135deg, oklch(0.25 0.04 295), oklch(0.5 0.22 295));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.theme-light .bg-radial-glow {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.55 0.22 295 / 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%, oklch(0.55 0.22 295 / 0.08), transparent);
+}
+.theme-light .glass {
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.75), oklch(1 0 0 / 0.45));
+  border-color: oklch(0.2 0.02 280 / 0.1);
+}
+.theme-light .glass-strong {
+  background: oklch(1 0 0 / 0.85);
+  border-color: oklch(0.2 0.02 280 / 0.1);
+}
+.theme-light .fx-aurora,
+.theme-light .fx-cursor-glow { opacity: 0.5; }
 
 @layer base {
   * { border-color: var(--color-border); }
