@@ -517,3 +517,47 @@ main, header, footer { position: relative; z-index: 2; }
   .fx-cursor-glow, .fx-aurora { display: none; }
 }
 
+
+/* =====================================================
+ * Hero spark burst — оранжево-янтарный взрыв из центра
+ * ===================================================== */
+@keyframes spark-fly {
+  0%   { transform: translate(-50%, -50%) rotate(var(--ang)) translateX(0) scaleX(0); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(var(--ang)) translateX(var(--dist, 60vmax)) scaleX(1); opacity: 0; }
+}
+.spark-burst {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, oklch(0.30 0.10 50 / 0.55), transparent 55%),
+    radial-gradient(circle at center, oklch(0.18 0.05 40 / 0.6), oklch(0 0 0) 70%);
+}
+.spark-burst::before,
+.spark-burst::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle, oklch(0.95 0.15 70 / 0.95), transparent 70%);
+  filter: blur(1px);
+  box-shadow: 0 0 14px oklch(0.85 0.18 60 / 0.9);
+}
+.spark {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--len, 120px);
+  height: 1.5px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, transparent, oklch(0.92 0.16 70 / 0.95) 40%, oklch(0.78 0.20 50 / 0.85) 80%, transparent);
+  filter: blur(0.4px) drop-shadow(0 0 6px oklch(0.85 0.18 60 / 0.7));
+  animation: spark-fly var(--dur, 4s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spark { animation: none !important; opacity: 0.4; }
+}
