@@ -39,7 +39,7 @@ function AdminLayout() {
   if (!isStaff) return null;
 
   return (
-    <div className="flex">
+    <div className="admin-shell flex">
       <AdminSidebar />
       <div className="flex-1 min-w-0 p-6"><Outlet /></div>
     </div>

@@ -1,66 +1,80 @@
+## Анализ текущего состояния
 
-## Что получится
+Сейчас сайт использует дефолтные размеры Tailwind:
+- база `body` — 16px (`text-base`)
+- описания, подписи, мета-инфо — массово `text-sm` (14px) и `text-xs` (12px)
+- заголовки — крупные (`text-5xl`–`text-8xl` в hero), это ок
 
-Android-приложение event-hub.by — это TWA (Trusted Web Activity), тонкая нативная обёртка вокруг твоего опубликованного сайта. Без браузерной строки, с иконкой на рабочем столе, можно загрузить в Google Play.
+## Сравнение с Apple и SpaceX
 
-- Сайт `event-hub.by` и Android-приложение работают **одновременно** и используют **одну и ту же базу** (Lovable Cloud). Авторизация, корзина, заказы, админка — всё общее.
-- Любое изменение на сайте появляется в приложении мгновенно (ничего пересобирать не нужно).
-- Сборка `.apk` / `.aab` происходит **на твоём компьютере** одной командой Bubblewrap CLI — внутри Lovable собрать APK невозможно (нет Android SDK).
+| Сайт | Базовый body | Подзаголовок/lead | Маркетинговый параграф |
+|---|---|---|---|
+| apple.com | 17px (SF Pro, line-height ~1.47) | 19–21px | 21–28px |
+| spacex.com | 18–20px (Drubrik/D-DIN, плотный) | 20–24px | 24–32px |
+| event-hub.by (сейчас) | 16px (Inter), много 14/12px | 16px | 16–18px |
 
-## Что я сделаю в проекте (со стороны сайта)
+Вывод: на десктопе сайт читается **мельче**, чем Apple/SpaceX, особенно в карточках каталога, описаниях, мета-данных и футере. На мобильном в целом ок, но `text-xs` (12px) — на грани комфортного чтения.
 
-1. **Иконка приложения** — сгенерирую квадратную PNG-иконку 512×512 (на основе текущего favicon с оранжевой звездой) и maskable-вариант для Android-адаптивных иконок. Сохраню в `public/icon-512.png`, `public/icon-192.png`, `public/icon-maskable-512.png`.
+## Эргономические находки
 
-2. **Web App Manifest** — `public/manifest.webmanifest`:
-   - name: "event-hub.by", short_name: "Event Hub"
-   - start_url: "/", scope: "/", display: "standalone"
-   - theme_color: `#000000`, background_color: `#000000`
-   - lang: `ru-BY`, иконки (any + maskable)
-   - shortcuts: Каталог, Корзина, Профиль
+1. **База занижена.** `body` 16px против 17–18px у эталонов — для премиального event-проекта стоит поднять.
+2. **Слишком много `text-sm`/`text-xs`.** В карточках каталога, hero-описании, формах, профиле, корзине описания падают до 14px, подписи — до 12px.
+3. **Lead-параграфы под заголовками** (`text-base sm:text-lg`) на десктопе выглядят легковесно — у Apple/SpaceX это всегда 20–24px.
+4. **Кнопки/инпуты** — высота 36–40px, шрифт 14px. Apple/SpaceX держат 17–18px на CTA. Текущие `Button` (`text-sm`) визуально мельче кнопок.
+5. **Меню/футер** — мелкие ссылки `text-sm`, у эталонов это 15–17px.
+6. **Line-height** не задан глобально — Inter на 16px по умолчанию даёт 1.5, это ок, но при увеличении нужно явно зафиксировать.
 
-3. **Подключение манифеста и мета-тегов** в `src/routes/__root.tsx`:
-   - `<link rel="manifest" href="/manifest.webmanifest">`
-   - `apple-touch-icon` 180×180, `mobile-web-app-capable`
-   - existing `theme-color` оставляем
+## План изменений
 
-4. **Digital Asset Links** — `public/.well-known/assetlinks.json`. Это ключевой файл для TWA: подтверждает, что приложение и домен принадлежат одному владельцу, иначе Chrome покажет браузерную строку поверх приложения. Заполнится после того, как ты сгенерируешь signing key и пришлёшь SHA-256 fingerprint (один раз).
-   - На время первой сборки положу шаблон с placeholder fingerprint, ты заменишь на реальный.
-   - Обслуживание `/.well-known/...` через TanStack — добавлю route `src/routes/.well-known/assetlinks[.]json.tsx`, отдающий статический JSON с правильным content-type, чтобы файл доехал на Cloudflare Worker без проблем.
+Делаю централизованно через `src/styles.css` + точечные правки в шаблонах кнопок/карточек, **без переписывания каждого компонента**.
 
-5. **Bubblewrap-конфиг** — `twa/twa-manifest.json`:
-   - host: `event-hub.by`
-   - packageId: `by.event_hub.twa`
-   - appName: "event-hub.by", launcherName: "Event Hub"
-   - themeColor / backgroundColor синхронны с сайтом
-   - signingKey: путь, который ты создашь локально
+### 1. `src/styles.css` — глобальная типографика
+- Поднять базовый размер: `html { font-size: 17px }` на десктопе, `16px` на мобильном (через media query). Это автоматически масштабирует все `rem`-значения Tailwind (text-sm → 14.9px, text-base → 17px, text-lg → 19.1px и т.д.).
+- Зафиксировать `body { line-height: 1.55; letter-spacing: -0.01em; font-feature-settings: "ss01","cv11"; }` — ближе к Apple SF.
+- Для display-шрифта (Space Grotesk) добавить `letter-spacing: -0.02em` в заголовках.
 
-6. **Инструкция сборки APK** — `twa/README.md` с пошаговыми командами:
-   - Установка Node 18+ и `@bubblewrap/cli`
-   - `bubblewrap init --manifest=https://event-hub.by/manifest.webmanifest`
-   - `bubblewrap build` → получаешь `app-release-signed.apk` и `.aab` для Google Play
-   - Получение SHA-256 fingerprint из подписанного APK + что вставить в `assetlinks.json`
-   - Тестирование на Android-устройстве через `adb install`
+### 2. Lead-параграфы
+- В `src/routes/index.tsx` hero-описание: `text-base sm:text-lg` → `text-lg sm:text-xl md:text-2xl`, max-width расширить.
+- Аналогичные правки в `services.tsx`, `equipment.tsx`, `zones.tsx`, `production.tsx`, `cases.tsx`, `blog.tsx`, `about.tsx`, `contacts.tsx` (под H1 на каждой странице).
 
-## Что нужно от тебя (один раз, после моих изменений)
+### 3. Кнопки `src/components/ui/button.tsx`
+- `default`: `h-9 text-sm` → `h-10 text-base`
+- `lg`: `h-10` → `h-12 text-lg`
+- `sm`: оставить, но `text-xs` → `text-sm`
+- `icon`: `h-9 w-9` → `h-10 w-10` (тач-таргет ближе к 44px)
 
-1. Поставить на свой Mac/PC Node 18+ и Java 17.
-2. Запустить 3 команды из `twa/README.md`.
-3. Прислать мне SHA-256 fingerprint созданного ключа — я обновлю `assetlinks.json`.
-4. Опубликовать сайт (кнопка Publish в Lovable), чтобы новый манифест и assetlinks стали доступны на `event-hub.by`.
-5. Установить полученный `.apk` на телефон или загрузить `.aab` в Google Play Console.
+### 4. Карточки каталога / featured / cases / blog
+- `h3` карточки: добавить `text-base md:text-lg`
+- описание `text-sm` → `text-[15px] md:text-base`
+- мета (`text-xs`) → `text-sm`
+Точки: `src/components/CatalogGrid.tsx`, `RelatedItems.tsx`, `RecentlyViewed.tsx`, и блоки featured/cases/blog в `src/routes/index.tsx`.
 
-## Чего этот план НЕ делает
+### 5. SiteChrome (хедер/меню) и футер
+- Ссылки навигации: `text-sm` → `text-[15px]`
+- Футер: `text-xs`/`text-sm` → `text-sm`/`text-[15px]`
 
-- Не создаёт нативный Kotlin-проект — это TWA, а не отдельная нативная реализация.
-- Не отдаёт готовый подписанный APK из Lovable (физически невозможно — нет Android SDK в песочнице).
-- Не добавляет push-уведомления / нативную камеру / биометрию. Если позже понадобится — переезжаем на Capacitor отдельной задачей.
+### 6. Профиль / корзина / формы
+- Лейблы и подписи `text-xs` → `text-sm`
+- Описания заказов `text-sm` → `text-[15px]`
+- Инпуты не трогаем (shadcn Input уже 16px=`text-base` после bump базы → 17px, что соответствует iOS-правилу «не зумить при фокусе»).
+
+### 7. Что **не** трогаю
+- Админ-панель (`admin.*`) — там плотные таблицы, увеличение ухудшит UX.
+- Mock-уведомления `toast`, popover, dropdown — shadcn размеры адекватны.
+- Hero-заголовки (уже крупные).
 
 ## Технические детали
 
-- Манифест и assetlinks.json раздаются с того же домена, что и сайт (`event-hub.by`), через TanStack server routes для гарантированных HTTP-заголовков.
-- Иконки PNG, не SVG: TWA/Android требует растровые иконки 192/512 + maskable.
-- `display: standalone` без `display: fullscreen` — оставляет статус-бар, как принято в Play Store.
-- `theme_color: #000000` совпадает с уже выставленным в `__root.tsx`.
-- Иконки и манифест статичны — отдаются Cloudflare как обычные файлы из `public/`.
+- `html { font-size: 17px }` влияет на все `rem`-значения, включая отступы Tailwind (`p-4` = 1rem = 17px). Это даст лёгкое «раздутие» интерфейса в духе Apple — это и есть цель. Если где-то это сломает плотную сетку (например, sidebar админки), оставлю там `font-size: 16px` локально.
+- Все правки — только presentational (CSS + классы). Никакой бизнес-логики.
 
-После твоего «ОК» я переключусь в build mode и сделаю всё за один проход.
+## Проверка после внедрения
+
+- Скриншоты главной, каталога, карточки услуги, корзины, профиля — десктоп 1440 и мобильный 390.
+- Сравнение с прошлыми скринами: рост размеров без сломанных переносов и горизонтального скролла.
+- Lighthouse a11y → font-size warnings должны исчезнуть.
+
+## Риски
+
+- На узких мобильных (< 360px) может появиться перенос в кнопках с длинными лейблами («Начать сотрудничество»). Решение: media query `font-size: 16px` ниже 768px.
+- Карточки в 4 колонки могут стать выше — это ок, проверю на сетке.
