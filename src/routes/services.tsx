@@ -42,7 +42,7 @@ function ServicesPage() {
   return (
     <div className="container mx-auto px-4 py-16">
       <header className="max-w-2xl mb-12">
-        <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Услуги</h1>
+        <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Event-услуги в Минске и по Беларуси</h1>
         <p className="mt-4 text-muted-foreground">От креатива и продакшна до промо и трансляций.</p>
       </header>
       <CatalogGrid items={items} category="services" basePath="/services" entityType="services" />

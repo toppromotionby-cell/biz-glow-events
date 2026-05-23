@@ -22,8 +22,8 @@ export const Route = createFileRoute("/equipment/$slug")({
     if (!it) return { meta: [{ title: "Оборудование — event-hub.by" }] };
     return {
       meta: [
-        { title: it.seo_title ?? `${it.title} — Аренда оборудования event-hub.by` },
-        { name: "description", content: it.seo_description ?? it.short_description ?? `${it.title} в аренду в Минске.` },
+        { title: it.seo_title ?? `Аренда ${it.title} в Минске — event-hub.by` },
+        { name: "description", content: it.seo_description ?? it.short_description ?? `Аренда ${it.title} в Минске под ключ. Доставка, монтаж и сопровождение event-hub.by.` },
         { property: "og:title", content: it.title },
         { property: "og:description", content: it.short_description ?? "" },
         ...(it.photo_urls?.[0] ? [{ property: "og:image", content: it.photo_urls[0] }] : []),
