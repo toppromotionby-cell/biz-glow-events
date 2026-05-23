@@ -170,6 +170,9 @@ function CartPage() {
         <p className="mt-2 text-muted-foreground">{count > 0 ? `Позиций: ${count}. Итого: ${fmt.format(total)}` : "Корзина пуста — добавьте позиции из каталога."}</p>
       </header>
 
+      <CheckoutSteps current={items.length === 0 ? 0 : reqOpen ? 1 : 0} />
+
+
       {items.length === 0 ? (
         <div className="glass rounded-xl p-8 text-center space-y-4">
           <ShoppingCart className="h-10 w-10 mx-auto text-muted-foreground" aria-hidden="true" />
