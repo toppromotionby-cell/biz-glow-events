@@ -64,7 +64,8 @@ function ComparePage() {
                 </div>
                 <div className="p-4 space-y-3">
                   <Link
-                    to={`${KIND_PATHS[it.entity_type]}/${it.slug}`}
+                    to={CATALOG_SLUG_ROUTE[it.entity_type as CatalogType]}
+                    params={{ slug: it.slug }}
                     className="font-display font-semibold hover:text-primary transition line-clamp-2"
                   >
                     {it.title}
