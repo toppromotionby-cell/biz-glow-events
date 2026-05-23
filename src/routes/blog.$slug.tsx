@@ -57,9 +57,11 @@ export const Route = createFileRoute("/blog/$slug")({
   },
   component: BlogPostPage,
   notFoundComponent: () => (
-    <div className="container mx-auto px-4 py-20 text-center">
-      <h1 className="text-3xl font-display font-bold">Запись не найдена</h1>
-      <Link to="/blog" className="mt-4 inline-block text-primary hover:underline">← Ко всем записям</Link>
+    <div className="container mx-auto px-4 py-20">
+      <div className="max-w-md mx-auto text-center border border-border rounded-2xl p-8">
+        <h1 className="text-xl font-display font-semibold">Не найдено</h1>
+        <Link to="/blog" className="mt-4 inline-block text-sm text-primary hover:underline">← Ко всем записям</Link>
+      </div>
     </div>
   ),
   errorComponent: ({ error }) => (
