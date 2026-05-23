@@ -6,6 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { notifyAdminOrderEmail } from "@/lib/admin-email.server";
 
 const EntityType = z.enum(["zones", "tech_equipment", "services", "production_items"]);
 
@@ -285,6 +286,22 @@ export const submitOrder = createServerFn({ method: "POST" })
       error: tg.error ?? null,
       payload: { text },
     });
+
+    // Email-фолбэк: если Telegram не настроен/упал — шлём уведомление на ADMIN_EMAIL.
+    if (!tg.ok) {
+      await notifyAdminOrderEmail({
+        orderId: order.id,
+        clientName: data.client_name,
+        clientPhone: data.client_phone,
+        clientEmail: data.client_email,
+        clientCompany: data.client_company ?? null,
+        total,
+        eventDate: data.event_date ?? null,
+        source: "cart",
+        notes: data.notes ?? null,
+        items: resolved.map(i => ({ title: i.title, qty: i.qty, price: i.price })),
+      }).catch((e) => console.error("[submitOrder] email fallback failed:", e));
+    }
 
     return { id: order.id, total };
   });

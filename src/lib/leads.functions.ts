@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { notifyAdminLeadEmail } from "@/lib/admin-email.server";
 
 const LeadSchema = z.object({
   client_name: z.string().min(2).max(120),
@@ -102,6 +103,18 @@ export const submitLead = createServerFn({ method: "POST" })
       error: tg.error ?? null,
       payload: { text },
     });
+
+    // Email-фолбэк: если Telegram не сработал — шлём уведомление на ADMIN_EMAIL.
+    if (!tg.ok) {
+      await notifyAdminLeadEmail({
+        leadId: order.id,
+        clientName: payload.client_name,
+        clientPhone: payload.client_phone,
+        clientEmail: payload.client_email,
+        source: payload.source ?? "website",
+        notes: payload.notes ?? null,
+      }).catch((e) => console.error("[submitLead] email fallback failed:", e));
+    }
 
     return { id: order.id };
   });
