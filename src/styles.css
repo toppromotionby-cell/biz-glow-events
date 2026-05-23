@@ -629,3 +629,50 @@ main, header, footer { position: relative; z-index: 2; }
 @media (prefers-reduced-motion: reduce) {
   .spark { animation: none !important; opacity: 0.4; }
 }
+
+/* === Smooth dialog animations === */
+@keyframes dialog-overlay-in {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; backdrop-filter: blur(8px); }
+}
+@keyframes dialog-overlay-out {
+  from { opacity: 1; backdrop-filter: blur(8px); }
+  to   { opacity: 0; backdrop-filter: blur(0px); }
+}
+@keyframes dialog-content-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 16px)) scale(0.96);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes dialog-content-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.97);
+    filter: blur(4px);
+  }
+}
+.dialog-overlay-anim[data-state="open"]  { animation: dialog-overlay-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.dialog-overlay-anim[data-state="closed"]{ animation: dialog-overlay-out 220ms cubic-bezier(0.4, 0, 1, 1) both; }
+.dialog-content-anim[data-state="open"]  { animation: dialog-content-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.dialog-content-anim[data-state="closed"]{ animation: dialog-content-out 220ms cubic-bezier(0.4, 0, 1, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .dialog-overlay-anim[data-state="open"],
+  .dialog-overlay-anim[data-state="closed"],
+  .dialog-content-anim[data-state="open"],
+  .dialog-content-anim[data-state="closed"] {
+    animation-duration: 1ms !important;
+    animation: none !important;
+  }
+}
