@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Package } from "lucide-react";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -105,6 +106,13 @@ function ProfilePage() {
 
       <div className="grid md:grid-cols-2 gap-4">
         <ChangePasswordCard />
+        <div className="glass rounded-xl p-6 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-semibold mb-1">Тема оформления</h3>
+            <p className="text-sm text-muted-foreground">Светлая, тёмная или системная</p>
+          </div>
+          <ThemeToggle />
+        </div>
       </div>
 
       <div>
