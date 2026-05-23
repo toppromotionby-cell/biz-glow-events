@@ -2,13 +2,7 @@
 // SSR-безопасен: всё работает только в браузере, ошибки глотаются.
 // gtag/ym инжектятся в ScriptInjector — здесь только обёртки событий.
 
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
-    ym?: (id: number, action: string, ...args: unknown[]) => void;
-  }
-}
+// Window-типы объявлены в src/components/ScriptInjector.tsx
 
 const YM_ID = (import.meta.env.VITE_YM_ID as string | undefined);
 
@@ -33,7 +27,7 @@ function gtagEvent(name: string, params: Record<string, unknown>) {
 function ymGoal(goal: string, params?: Record<string, unknown>) {
   if (!isBrowser() || !YM_ID || !window.ym) return;
   try {
-    window.ym(Number(YM_ID), "reachGoal", goal, params ?? {});
+    (window.ym as (...args: unknown[]) => void)(Number(YM_ID), "reachGoal", goal, params ?? {});
   } catch {}
 }
 
