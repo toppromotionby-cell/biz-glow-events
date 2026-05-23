@@ -56,6 +56,7 @@ const VALUES = [
 function HomePage() {
   const { data } = useSuspenseQuery(homeQueryOptions);
   const { featured, posts, cases } = data;
+  const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
 
   return (
     <div>
