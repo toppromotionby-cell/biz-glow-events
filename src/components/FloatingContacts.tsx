@@ -1,4 +1,4 @@
-// Плавающий виджет связи: WhatsApp + Telegram. Видим на всех страницах,
+// Плавающий виджет связи: Telegram + Звонок. Видим на всех страницах,
 // уважает настройку секции global.floating_contacts.
 import { useState } from "react";
 import { MessageCircle, Send, X, Phone } from "lucide-react";
@@ -18,16 +18,6 @@ export function FloatingContacts() {
     >
       {open && (
         <div className="mb-3 flex flex-col gap-2 items-end animate-in fade-in slide-in-from-bottom-2">
-          <a
-            href={CONTACT.whatsapp}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Написать в WhatsApp"
-            className="group inline-flex items-center gap-2 rounded-full bg-[#25D366] text-white pl-3 pr-4 py-2 shadow-lg hover:scale-105 transition"
-          >
-            <MessageCircle className="h-5 w-5" aria-hidden="true" />
-            <span className="text-sm font-medium">WhatsApp</span>
-          </a>
           <a
             href={CONTACT.telegram}
             target="_blank"

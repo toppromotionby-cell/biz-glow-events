@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, Phone, MapPin, MessageCircle, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
 
 export const Route = createFileRoute("/contacts")({
-  head: () => ({ meta: [{ title: "Контакты — event-hub.by" }, { name: "description", content: "Свяжитесь с event-hub.by — Минск, Беларусь. Телефон, WhatsApp, Telegram, email." }] }),
+  head: () => ({ meta: [{ title: "Контакты — event-hub.by" }, { name: "description", content: "Свяжитесь с event-hub.by — Минск, Беларусь. Телефон, Telegram, email." }] }),
   component: ContactsPage,
 });
 
@@ -18,11 +18,6 @@ function ContactsPage() {
           <Phone className="h-5 w-5 text-primary" />
           <div className="mt-3 text-sm text-muted-foreground">Телефон</div>
           <div className="font-medium">{CONTACT.phoneDisplay}</div>
-        </a>
-        <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="glass rounded-xl p-6 hover:glow-primary transition">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <div className="mt-3 text-sm text-muted-foreground">WhatsApp</div>
-          <div className="font-medium">Написать в WhatsApp</div>
         </a>
         <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="glass rounded-xl p-6 hover:glow-primary transition">
           <Send className="h-5 w-5 text-primary" />
