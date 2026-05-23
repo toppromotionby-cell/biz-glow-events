@@ -195,6 +195,19 @@
   animation: gradient-shift 8s ease infinite;
 }
 
+/* Контейнер фоновой заставки в hero — за текстом */
+.hero-logo-bg {
+  z-index: 0;
+  opacity: 0.18;
+  mix-blend-mode: screen;
+  filter: blur(0.5px);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 55%, transparent 85%);
+  mask-image: radial-gradient(ellipse at center, #000 55%, transparent 85%);
+}
+@media (min-width: 768px) {
+  .hero-logo-bg { opacity: 0.22; }
+}
+
 /* =====================================================
  * Hero logo — переливающийся wordmark с halo
  * ===================================================== */
