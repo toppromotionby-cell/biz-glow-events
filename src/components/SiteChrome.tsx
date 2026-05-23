@@ -145,34 +145,42 @@ export function SiteHeader() {
                   <SheetTitle className="font-display gradient-text text-xl">event-hub.by</SheetTitle>
                 </SheetHeader>
 
-                <nav aria-label="Мобильная навигация" className="px-2 pb-4 flex flex-col">
-                  {NAV.map((n) => (
-                    <SheetClose asChild key={n.to}>
-                      <Link
-                        to={n.to}
-                        className="px-3 py-3 rounded-md text-base text-foreground hover:bg-primary/10 transition"
-                        activeProps={{ className: "bg-primary/15 text-foreground" }}
-                      >
-                        {n.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
-                </nav>
+                <Toggleable sectionKey="header.nav" as="div">
+                  <nav aria-label="Мобильная навигация" className="px-2 pb-4 flex flex-col">
+                    {NAV.map((n) => (
+                      <Toggleable key={n.to} sectionKey={n.key} as="div">
+                        <SheetClose asChild>
+                          <Link
+                            to={n.to}
+                            className="block px-3 py-3 rounded-md text-base text-foreground hover:bg-primary/10 transition"
+                            activeProps={{ className: "bg-primary/15 text-foreground" }}
+                          >
+                            {n.label}
+                          </Link>
+                        </SheetClose>
+                      </Toggleable>
+                    ))}
+                  </nav>
+                </Toggleable>
 
                 <div className="border-t border-border/50 px-2 py-3">
                   <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
-                  <SheetClose asChild>
-                    <Link to="/wishlist" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                      <span className="flex items-center gap-3"><Heart className="h-4 w-4" /> Избранное</span>
-                      {wishCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{wishCount}</span>}
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                      <span className="flex items-center gap-3"><Scale className="h-4 w-4" /> Сравнение</span>
-                      {cmpCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{cmpCount}</span>}
-                    </Link>
-                  </SheetClose>
+                  <Toggleable sectionKey="header.wishlist" as="div">
+                    <SheetClose asChild>
+                      <Link to="/wishlist" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                        <span className="flex items-center gap-3"><Heart className="h-4 w-4" /> Избранное</span>
+                        {wishCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{wishCount}</span>}
+                      </Link>
+                    </SheetClose>
+                  </Toggleable>
+                  <Toggleable sectionKey="header.compare" as="div">
+                    <SheetClose asChild>
+                      <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                        <span className="flex items-center gap-3"><Scale className="h-4 w-4" /> Сравнение</span>
+                        {cmpCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{cmpCount}</span>}
+                      </Link>
+                    </SheetClose>
+                  </Toggleable>
                   <SheetClose asChild>
                     <Link to="/calculator" className="flex items-center gap-3 px-3 py-3 rounded-md hover:bg-primary/10 transition">
                       <Sparkles className="h-4 w-4" /> Калькулятор сметы
@@ -183,19 +191,27 @@ export function SiteHeader() {
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                   {isAuthenticated ? (
                     <>
-                      <SheetClose asChild>
-                        <Link to="/profile"><Button variant="outline" className="w-full"><User className="h-4 w-4 mr-2" />Личный кабинет</Button></Link>
-                      </SheetClose>
-                      <Button variant="ghost" className="w-full" onClick={() => { supabase.auth.signOut(); setOpen(false); }}>Выйти</Button>
+                      <Toggleable sectionKey="header.account" as="div">
+                        <SheetClose asChild>
+                          <Link to="/profile"><Button variant="outline" className="w-full"><User className="h-4 w-4 mr-2" />Личный кабинет</Button></Link>
+                        </SheetClose>
+                      </Toggleable>
+                      <Toggleable sectionKey="header.logout" as="div">
+                        <Button variant="ghost" className="w-full" onClick={() => { supabase.auth.signOut(); setOpen(false); }}>Выйти</Button>
+                      </Toggleable>
                     </>
                   ) : (
                     <>
-                      <SheetClose asChild>
-                        <Link to="/login"><Button variant="outline" className="w-full">Войти</Button></Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link to="/register"><Button className="w-full bg-gradient-primary glow-primary">Регистрация</Button></Link>
-                      </SheetClose>
+                      <Toggleable sectionKey="header.login" as="div">
+                        <SheetClose asChild>
+                          <Link to="/login"><Button variant="outline" className="w-full">Войти</Button></Link>
+                        </SheetClose>
+                      </Toggleable>
+                      <Toggleable sectionKey="header.register" as="div">
+                        <SheetClose asChild>
+                          <Link to="/register"><Button className="w-full bg-gradient-primary glow-primary">Регистрация</Button></Link>
+                        </SheetClose>
+                      </Toggleable>
                     </>
                   )}
                 </div>
@@ -254,32 +270,38 @@ export function SiteFooter() {
             </Toggleable>
 
             <Accordion type="multiple" className="w-full">
-              <AccordionItem value="catalog">
-                <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-2 text-muted-foreground pb-2">
-                    {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="info">
-                <AccordionTrigger className="py-3">Информация</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-2 text-muted-foreground pb-2">
-                    {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="contacts">
-                <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-2 text-muted-foreground pb-2">
-                    <li>Минск, Беларусь</li>
-                    <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
-                    <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
+              <Toggleable sectionKey="footer.catalog" as="div">
+                <AccordionItem value="catalog">
+                  <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 text-muted-foreground pb-2">
+                      {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Toggleable>
+              <Toggleable sectionKey="footer.info" as="div">
+                <AccordionItem value="info">
+                  <AccordionTrigger className="py-3">Информация</AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 text-muted-foreground pb-2">
+                      {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Toggleable>
+              <Toggleable sectionKey="footer.contacts" as="div">
+                <AccordionItem value="contacts">
+                  <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 text-muted-foreground pb-2">
+                      <li>Минск, Беларусь</li>
+                      <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
+                      <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Toggleable>
             </Accordion>
 
             <Toggleable sectionKey="footer.newsletter" as="div">
