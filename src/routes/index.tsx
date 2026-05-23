@@ -2,12 +2,22 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, CalendarCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { GuestEstimator } from "@/components/GuestEstimator";
 import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
+import { CatalogQuickView } from "@/components/CatalogQuickView";
+import type { CatalogType } from "@/lib/catalog.functions";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
+
+const BASE_TO_TYPE: Record<string, CatalogType> = {
+  "/zones": "zones",
+  "/equipment": "tech_equipment",
+  "/services": "services",
+  "/production": "production_items",
+};
 
 const homeQueryOptions = queryOptions({
   queryKey: ["home-data"],
