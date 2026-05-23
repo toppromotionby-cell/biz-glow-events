@@ -1,0 +1,41 @@
+{
+  "packageId": "by.event_hub.twa",
+  "host": "event-hub.by",
+  "name": "event-hub.by",
+  "launcherName": "Event Hub",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#000000",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://event-hub.by/icon-512.png",
+  "maskableIconUrl": "https://event-hub.by/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    { "name": "Каталог", "shortName": "Каталог", "url": "/catalog", "chosenIconUrl": "https://event-hub.by/icon-192.png" },
+    { "name": "Корзина", "shortName": "Корзина", "url": "/cart", "chosenIconUrl": "https://event-hub.by/icon-192.png" },
+    { "name": "Профиль", "shortName": "Профиль", "url": "/profile", "chosenIconUrl": "https://event-hub.by/icon-192.png" }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://event-hub.by/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://event-hub.by/",
+  "minSdkVersion": 19,
+  "orientation_": "portrait"
+}
