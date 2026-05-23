@@ -36,13 +36,20 @@ export const Route = createFileRoute("/blog/$slug")({
             type: "application/ld+json",
             children: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "BlogPosting",
+              "@type": "Article",
               headline: post.title,
               description: post.excerpt ?? post.seo_description ?? undefined,
               image: post.cover_url ?? undefined,
               datePublished: post.published_at ?? undefined,
-              author: { "@type": "Organization", name: "event-hub.by" },
-              mainEntityOfPage: url,
+              dateModified: post.published_at ?? undefined,
+              author: { "@type": "Organization", name: "event-hub.by", url: "https://event-hub.by" },
+              publisher: {
+                "@type": "Organization",
+                name: "event-hub.by",
+                logo: { "@type": "ImageObject", url: "https://event-hub.by/og-image.png" },
+              },
+              mainEntityOfPage: { "@type": "WebPage", "@id": url },
+              inLanguage: "ru-BY",
             }),
           }]
         : [],
