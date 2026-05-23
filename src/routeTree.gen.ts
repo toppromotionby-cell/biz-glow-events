@@ -45,6 +45,7 @@ import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -61,9 +62,12 @@ import { Route as AdminAvailabilityRouteImport } from './routes/admin.availabili
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminNewsletterIndexRouteImport } from './routes/admin.newsletter.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminNewsletterCampaignsRouteImport } from './routes/admin.newsletter.campaigns'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
@@ -250,6 +254,11 @@ const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => EquipmentRoute,
 } as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CasesSlugRoute = CasesSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -330,6 +339,11 @@ const OrderSuccessIdRoute = OrderSuccessIdRouteImport.update({
   path: '/order/success/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -346,6 +360,18 @@ const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -420,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -428,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter/': typeof AdminNewsletterIndexRoute
   '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
@@ -435,6 +463,8 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -481,6 +511,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -489,6 +520,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter': typeof AdminNewsletterIndexRoute
   '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
@@ -496,6 +528,8 @@ export interface FileRoutesByTo {
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -544,6 +578,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -552,6 +587,7 @@ export interface FileRoutesById {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter/': typeof AdminNewsletterIndexRoute
   '/admin/newsletter/campaigns/$id': typeof AdminNewsletterCampaignsIdRoute
@@ -559,6 +595,8 @@ export interface FileRoutesById {
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -608,6 +646,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/blog/$slug'
     | '/cases/$slug'
+    | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -616,6 +655,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/newsletter/'
     | '/admin/newsletter/campaigns/$id'
@@ -623,6 +663,8 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -669,6 +711,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/blog/$slug'
     | '/cases/$slug'
+    | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -677,6 +720,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/newsletter'
     | '/admin/newsletter/campaigns/$id'
@@ -684,6 +728,8 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   id:
     | '__root__'
     | '/'
@@ -731,6 +777,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/blog/$slug'
     | '/cases/$slug'
+    | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -739,6 +786,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/newsletter/'
     | '/admin/newsletter/campaigns/$id'
@@ -746,6 +794,8 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -780,8 +830,12 @@ export interface RootRouteChildren {
   TestimonialsRoute: typeof TestimonialsRoute
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1038,6 +1092,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EquipmentSlugRouteImport
       parentRoute: typeof EquipmentRoute
     }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cases/$slug': {
       id: '/cases/$slug'
       path: '/$slug'
@@ -1150,6 +1211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderSuccessIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/orders/$id': {
       id: '/admin/orders/$id'
       path: '/$id'
@@ -1170,6 +1238,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/catalog/$type'
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
       parentRoute: typeof AdminCatalogRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -1399,8 +1481,12 @@ const rootRouteChildren: RootRouteChildren = {
   TestimonialsRoute: TestimonialsRoute,
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
