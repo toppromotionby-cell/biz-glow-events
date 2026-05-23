@@ -94,20 +94,20 @@ function HomePage() {
             <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs mb-6">
               <Sparkles className="h-3 w-3 text-accent" /> Event-технологии нового поколения
             </div>
-            <h1 className="text-5xl md:text-7xl font-display font-bold leading-[1.05] mb-6">
-              Превращаем идеи <br />в <span className="gradient-text">незабываемые события</span>
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-display font-bold leading-tight md:leading-[1.05] mb-6">
+              Превращаем идеи в <span className="gradient-text">незабываемые события</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mb-8">
+            <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-8">
               Полный цикл event-производства в Беларуси: интерактивные зоны, техническое оснащение,
               маркетинговые активации и декорации под ключ.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <CatalogChoiceModal>
-                <Button size="lg" className="bg-gradient-primary glow-primary-lg">
+                <Button size="lg" className="bg-gradient-primary glow-primary-lg w-full sm:w-auto">
                   Смотреть каталог <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CatalogChoiceModal>
-              <Link to="/contacts"><Button size="lg" variant="outline">Получить смету</Button></Link>
+              <Link to="/contacts" className="w-full sm:w-auto"><Button size="lg" variant="outline" className="w-full sm:w-auto">Получить смету</Button></Link>
             </div>
           </div>
         </div>

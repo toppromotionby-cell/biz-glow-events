@@ -289,7 +289,7 @@ export function SiteFooter() {
             </Toggleable>
           </div>
         </div>
-        <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 text-center text-xs text-muted-foreground" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+        <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} event-hub.by. Все права защищены.
         </Toggleable>
       </footer>
