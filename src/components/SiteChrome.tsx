@@ -270,32 +270,38 @@ export function SiteFooter() {
             </Toggleable>
 
             <Accordion type="multiple" className="w-full">
-              <AccordionItem value="catalog">
-                <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-2 text-muted-foreground pb-2">
-                    {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="info">
-                <AccordionTrigger className="py-3">Информация</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-2 text-muted-foreground pb-2">
-                    {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="contacts">
-                <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-2 text-muted-foreground pb-2">
-                    <li>Минск, Беларусь</li>
-                    <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
-                    <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
+              <Toggleable sectionKey="footer.catalog" as="div">
+                <AccordionItem value="catalog">
+                  <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 text-muted-foreground pb-2">
+                      {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Toggleable>
+              <Toggleable sectionKey="footer.info" as="div">
+                <AccordionItem value="info">
+                  <AccordionTrigger className="py-3">Информация</AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 text-muted-foreground pb-2">
+                      {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Toggleable>
+              <Toggleable sectionKey="footer.contacts" as="div">
+                <AccordionItem value="contacts">
+                  <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 text-muted-foreground pb-2">
+                      <li>Минск, Беларусь</li>
+                      <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
+                      <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Toggleable>
             </Accordion>
 
             <Toggleable sectionKey="footer.newsletter" as="div">
