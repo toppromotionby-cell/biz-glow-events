@@ -10,15 +10,24 @@ export function GoogleButton({ label = "Продолжить с Google" }: { lab
       disabled={loading}
       onClick={async () => {
         setLoading(true);
-        const res = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin,
-        });
-        if (res.error) {
+        try {
+          console.log("[GoogleButton] starting OAuth", { origin: window.location.origin });
+          const res = await lovable.auth.signInWithOAuth("google", {
+            redirect_uri: window.location.origin,
+          });
+          console.log("[GoogleButton] result", res);
+          if (res.error) {
+            setLoading(false);
+            toast.error(res.error.message ?? "Не удалось войти через Google");
+            return;
+          }
+          if (res.redirected) return;
+        } catch (e) {
+          console.error("[GoogleButton] exception", e);
           setLoading(false);
-          toast.error(res.error.message ?? "Не удалось войти через Google");
+          toast.error(e instanceof Error ? e.message : "Ошибка входа через Google");
           return;
         }
-        if (res.redirected) return;
         window.location.href = "/profile";
       }}
       className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border bg-background/60 px-4 py-2.5 text-sm font-medium hover:bg-primary/10 hover:border-primary/40 transition disabled:opacity-60"
