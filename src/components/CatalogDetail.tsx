@@ -349,6 +349,30 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Sticky mobile CTA */}
+      <div
+        className="lg:hidden fixed inset-x-0 bottom-0 z-30 glass-strong border-t border-border/50 px-4 py-2.5 flex items-center gap-3"
+        style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            {tierPrice !== null ? activeTier?.label || "Цена" : from !== null ? "от" : "Цена"}
+          </div>
+          <div className="font-display font-bold text-base truncate">
+            {tierPrice !== null ? formatBYN(tierPrice) : from !== null ? formatBYN(from) : "По запросу"}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handlePrimaryOrder}
+          disabled={needsSelection}
+          className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md bg-gradient-primary px-4 h-11 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isByRequest ? <MessageSquare className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+          <span>{needsSelection ? "Выберите" : isByRequest ? "Запрос" : "Заказать"}</span>
+        </button>
+      </div>
     </div>
   );
 }
