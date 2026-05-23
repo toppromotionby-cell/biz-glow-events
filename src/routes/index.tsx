@@ -5,6 +5,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { GuestEstimator } from "@/components/GuestEstimator";
 import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
+import { HeroLogoIntro } from "@/components/HeroLogoIntro";
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
 
