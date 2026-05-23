@@ -289,7 +289,11 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
+                      {NAV.map(n => (
+                        <Toggleable key={n.to} sectionKey={n.footerKey} as="li">
+                          <Link to={n.to} className="hover:text-foreground">{n.label}</Link>
+                        </Toggleable>
+                      ))}
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -299,7 +303,11 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Информация</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
+                      {INFO_LINKS.map(l => (
+                        <Toggleable key={l.to} sectionKey={l.footerKey} as="li">
+                          <Link to={l.to} className="hover:text-foreground">{l.label}</Link>
+                        </Toggleable>
+                      ))}
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -309,12 +317,12 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      <li>{CONTACT.address}</li>
-                      <li><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></li>
-                      <li className="flex gap-3 text-xs">
+                      <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
+                      <Toggleable sectionKey="footer.contacts.phone" as="li"><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></Toggleable>
+                      <Toggleable sectionKey="footer.contacts.telegram" as="li" className="flex gap-3 text-xs">
                         <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
-                      </li>
-                      <li><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></li>
+                      </Toggleable>
+                      <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
