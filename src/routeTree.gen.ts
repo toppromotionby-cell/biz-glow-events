@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ZonesRouteImport } from './routes/zones'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TestimonialsRouteImport } from './routes/testimonials'
 import { Route as TermsRentalRouteImport } from './routes/terms-rental'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -82,6 +83,11 @@ const ZonesRoute = ZonesRouteImport.update({
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TestimonialsRoute = TestimonialsRouteImport.update({
@@ -430,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -495,6 +502,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -562,6 +570,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
@@ -630,6 +639,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-rental'
     | '/testimonials'
+    | '/unsubscribe'
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
@@ -695,6 +705,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-rental'
     | '/testimonials'
+    | '/unsubscribe'
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
@@ -761,6 +772,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-rental'
     | '/testimonials'
+    | '/unsubscribe'
     | '/wishlist'
     | '/zones'
     | '/admin/audit'
@@ -828,6 +840,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRentalRoute: typeof TermsRentalRoute
   TestimonialsRoute: typeof TestimonialsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -852,6 +865,13 @@ declare module '@tanstack/react-router' {
       path: '/wishlist'
       fullPath: '/wishlist'
       preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/testimonials': {
@@ -1479,6 +1499,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRentalRoute: TermsRentalRoute,
   TestimonialsRoute: TestimonialsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
