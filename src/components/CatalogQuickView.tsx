@@ -1,15 +1,17 @@
 // Модальное окно «быстрый просмотр» позиции каталога.
 // Подтягивает полную запись из БД и показывает все поля, заполненные при создании.
+import { useState } from "react";
+import { SearchX } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { getCatalogItem, type CatalogType, type CatalogRow } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
 import { CompareButton } from "@/components/CompareButton";
-import { useState } from "react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 
 function priceFrom(pricing: unknown): number | null {
