@@ -75,7 +75,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
           {item.title}
         </Link>
         <div className="text-xs text-muted-foreground">
-          {price > 0 ? `от ${fmt.format(price)}` : "По запросу"}
+          {price > 0 ? `от ${formatBYN(price)}` : "По запросу"}
         </div>
         <button
           type="button"
