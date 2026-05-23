@@ -140,9 +140,9 @@ function HomePage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {featured.map((f, idx) => (
-              <a
+              <Link
                 key={f.id}
-                href={`${f.basePath}/${f.slug}`}
+                to={`${f.basePath}/${f.slug}`}
                 className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition block"
               >
                 <div className="aspect-[16/10] overflow-hidden bg-gradient-primary/10">
@@ -161,7 +161,7 @@ function HomePage() {
                   <h3 className="font-semibold leading-tight group-hover:text-primary transition">{f.title}</h3>
                   {f.short_description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{f.short_description}</p>}
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
 
