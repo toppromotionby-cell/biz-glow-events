@@ -174,8 +174,8 @@ function HomePage() {
       <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 py-20 border-t border-border/40">
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
-            <div key={v.title} className="text-center">
-              <div className="inline-flex h-14 w-14 items-center justify-center rounded-full glass mb-4 animate-pulse-glow">
+            <div key={v.title} className="flex flex-col items-center text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full glass mb-4 animate-pulse-glow pointer-events-none select-none" aria-hidden="true">
                 <v.icon className="h-6 w-6 text-accent" />
               </div>
               <h3 className="font-display font-semibold text-xl mb-2">{v.title}</h3>
@@ -266,6 +266,48 @@ function HomePage() {
           <Link to="/register"><Button size="lg" className="bg-gradient-primary glow-primary-lg">
             Начать сотрудничество <ArrowRight className="ml-2 h-4 w-4" />
           </Button></Link>
+        </div>
+      </Toggleable>
+
+      {/* ORDER SERVICES — перед подвалом */}
+      <Toggleable sectionKey="home.order" as="section" className="container mx-auto px-4 pb-20">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Заказ услуг</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Выберите направление и оформите заявку — мы соберём смету и свяжемся в течение 24 часов.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="glass rounded-2xl p-6 flex flex-col">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary mb-4">
+                <f.icon className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <h3 className="font-semibold mb-2">{f.title}</h3>
+              <p className="text-sm text-muted-foreground mb-5 flex-1">{f.desc}</p>
+              <div className="flex flex-col gap-2">
+                <Link to={f.to}>
+                  <Button size="sm" className="w-full bg-gradient-primary">
+                    Заказать <ArrowRight className="ml-2 h-3 w-3" />
+                  </Button>
+                </Link>
+                <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
+                  Посмотреть каталог
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 glass-strong rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div>
+            <h3 className="font-display font-semibold text-xl mb-1">Не нашли подходящее?</h3>
+            <p className="text-sm text-muted-foreground">Опишите задачу — подберём решение под ваш бюджет и сроки.</p>
+          </div>
+          <Link to="/contacts">
+            <Button size="lg" variant="outline">
+              Оставить заявку <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </Toggleable>
     </div>
