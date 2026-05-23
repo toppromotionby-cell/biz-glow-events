@@ -3,7 +3,7 @@ import { Sparkles, Zap, Shield, Award, ArrowRight, Cpu, Lightbulb, Music, Packag
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { GuestEstimator } from "@/components/GuestEstimator";
+import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
 import { Toggleable } from "@/lib/site-sections";
 
