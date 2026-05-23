@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
 import { useSectionEnabled } from "@/lib/site-sections";
+import { isEmbeddedOAuthContext, openOAuthInNewTab } from "@/lib/oauth-redirect";
 
 export function GoogleButton({ label = "Продолжить с Google" }: { label?: string }) {
   const enabled = useSectionEnabled("auth.google");
@@ -12,6 +13,13 @@ export function GoogleButton({ label = "Продолжить с Google" }: { lab
       type="button"
       disabled={loading}
       onClick={async () => {
+        if (isEmbeddedOAuthContext()) {
+          if (!openOAuthInNewTab("google")) {
+            toast.error("Разрешите всплывающие окна для входа через Google");
+          }
+          return;
+        }
+
         setLoading(true);
         try {
           console.log("[GoogleButton] starting OAuth", { origin: window.location.origin });
