@@ -51,8 +51,17 @@ export function CatalogQuickView({
           <div className="p-10 text-center text-muted-foreground">Загрузка…</div>
         )}
         {!isLoading && !data && (
-          <div className="m-6 p-8 text-center text-muted-foreground border border-border rounded-xl">
-            <p className="text-sm">Не найдено</p>
+          <div className="flex flex-col items-center justify-center min-h-[50vh] p-10 text-center">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-5">
+              <SearchX className="h-7 w-7 text-muted-foreground/60" />
+            </div>
+            <p className="text-lg font-semibold text-foreground mb-1">Не найдено</p>
+            <p className="text-sm text-muted-foreground mb-6 max-w-[240px]">
+              Запись была удалена или перемещена
+            </p>
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+              Закрыть
+            </Button>
           </div>
         )}
         {data && <Body item={data} basePath={basePath} type={type} onClose={() => onOpenChange(false)} />}
