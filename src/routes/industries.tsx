@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, Heart, Music, GraduationCap, PartyPopper, Trophy, Briefcase, Tv, ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 type Industry = {
   slug: string;
@@ -92,6 +94,9 @@ export const Route = createFileRoute("/industries")({
 });
 
 function Page() {
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const active = INDUSTRIES.find((i) => i.slug === openSlug) ?? null;
+
   return (
     <div className="container mx-auto px-4 py-16 max-w-6xl">
       <header className="max-w-3xl">
@@ -112,15 +117,18 @@ function Page() {
         <h2 id="grid-heading" className="sr-only">Список индустрий</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {INDUSTRIES.map((ind) => (
-            <article
+            <button
               key={ind.slug}
-              className="group glass rounded-2xl border border-border/50 p-6 hover:border-primary/50 transition relative overflow-hidden"
+              type="button"
+              onClick={() => setOpenSlug(ind.slug)}
+              aria-label={`Подробнее: ${ind.title}`}
+              className="group glass rounded-2xl border border-border/50 p-6 hover:border-primary/50 transition relative overflow-hidden text-left cursor-pointer"
             >
               <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/10 blur-3xl opacity-0 group-hover:opacity-100 transition" />
               <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary glow-primary text-primary-foreground">
                 <ind.icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-4 font-display font-semibold text-lg">{ind.title}</h3>
+              <h3 className="mt-4 font-display font-semibold text-lg group-hover:text-primary transition">{ind.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">{ind.scale}</p>
               <p className="mt-3 text-sm text-muted-foreground">{ind.lead}</p>
               <ul className="mt-4 space-y-1.5 text-sm">
@@ -131,10 +139,47 @@ function Page() {
                   </li>
                 ))}
               </ul>
-            </article>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs text-primary opacity-0 group-hover:opacity-100 transition">
+                Подробнее <ArrowRight className="h-3 w-3" />
+              </span>
+            </button>
           ))}
         </div>
       </section>
+
+      <Dialog open={!!active} onOpenChange={(v) => { if (!v) setOpenSlug(null); }}>
+        <DialogContent className="max-w-lg">
+          {active && (
+            <>
+              <DialogHeader>
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary glow-primary text-primary-foreground mb-3">
+                  <active.icon className="h-5 w-5" />
+                </div>
+                <DialogTitle className="font-display text-2xl">{active.title}</DialogTitle>
+                <DialogDescription className="text-xs uppercase tracking-wider">{active.scale}</DialogDescription>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">{active.lead}</p>
+              <ul className="mt-2 space-y-2 text-sm">
+                {active.bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2">
+                    <span className="mt-2 h-1 w-1 rounded-full bg-primary shrink-0" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/cases">Кейсы по теме</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/contacts">Обсудить проект <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
 
       <section className="mt-16 glass-strong rounded-3xl p-8 md:p-12 border border-border/50">
         <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
