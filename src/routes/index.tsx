@@ -85,7 +85,7 @@ function HomePage() {
               <span className="block text-foreground">Незабываемые</span>
               <span className="block text-foreground">События</span>
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
               Полный цикл event-производства: от идеи до финального аккорда.
               Интерактивные зоны, техническое оснащение, шоу-программы и декорации.
             </p>
