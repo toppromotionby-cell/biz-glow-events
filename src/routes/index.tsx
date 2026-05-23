@@ -101,20 +101,6 @@ function HomePage() {
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
-              {[
-                { n: "150+", l: "Мероприятий" },
-                { n: "50+", l: "Интерактивных зон" },
-                { n: "10+", l: "Лет опыта" },
-              ].map((s) => (
-                <div key={s.l} className="text-center">
-                  <div className="font-display font-black text-3xl sm:text-4xl md:text-5xl bg-gradient-to-r from-[oklch(0.80_0.19_60)] to-[oklch(0.72_0.21_45)] bg-clip-text text-transparent">
-                    {s.n}
-                  </div>
-                  <div className="mt-2 text-xs sm:text-sm text-muted-foreground">{s.l}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </Toggleable>
