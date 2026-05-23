@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { notifyAdminOrderEmail } from "@/lib/admin-email.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const EntityType = z.enum(["zones", "tech_equipment", "services", "production_items"]);
 
@@ -306,3 +307,143 @@ export const submitOrder = createServerFn({ method: "POST" })
     return { id: order.id, total };
   });
 
+
+// ===== User self-service: edit / cancel own order =====
+
+const EDITABLE_STATUSES = ["new", "consultation", "estimate"];
+
+const UpdateOrderSchema = z.object({
+  id: z.string().uuid(),
+  client_name: z.string().min(2).max(120),
+  client_phone: z.string().min(5).max(40),
+  client_email: z.string().email().max(160),
+  client_company: z.string().max(160).optional().nullable(),
+  event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+});
+
+export const updateOwnOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => UpdateOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: existing, error: fetchErr } = await supabaseAdmin
+      .from("orders")
+      .select("id, user_id, status, client_name, client_phone, client_email, client_company, event_date, notes, total")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (fetchErr || !existing) throw new Error("Заявка не найдена");
+    if (existing.user_id !== userId) throw new Error("Нет доступа к этой заявке");
+    if (!EDITABLE_STATUSES.includes(existing.status)) {
+      throw new Error("Заявку нельзя редактировать на текущем статусе");
+    }
+
+    if (data.event_date) {
+      const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+      const ev = new Date(`${data.event_date}T00:00:00Z`);
+      if (Number.isFinite(ev.getTime()) && ev.getTime() < today.getTime()) {
+        throw new Error("Дата мероприятия не может быть в прошлом.");
+      }
+    }
+
+    const { error: updErr } = await supabaseAdmin
+      .from("orders")
+      .update({
+        client_name: data.client_name,
+        client_phone: data.client_phone,
+        client_email: data.client_email,
+        client_company: data.client_company ?? null,
+        event_date: data.event_date ?? null,
+        notes: data.notes ?? null,
+      })
+      .eq("id", data.id);
+    if (updErr) throw new Error("Не удалось сохранить изменения");
+
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: data.id,
+      actor_id: userId,
+      event: "order_edited_by_client",
+      payload: {
+        before: {
+          client_name: existing.client_name,
+          client_phone: existing.client_phone,
+          client_email: existing.client_email,
+          client_company: existing.client_company,
+          event_date: existing.event_date,
+          notes: existing.notes,
+        },
+        after: {
+          client_name: data.client_name,
+          client_phone: data.client_phone,
+          client_email: data.client_email,
+          client_company: data.client_company ?? null,
+          event_date: data.event_date ?? null,
+          notes: data.notes ?? null,
+        },
+      },
+    });
+
+    const text =
+      `<b>✏ Клиент изменил заявку</b>\n` +
+      `ID: <code>${tgEsc(data.id.slice(0, 8))}</code>\n` +
+      `Имя: ${tgEsc(data.client_name)}\n` +
+      `Тел: ${tgEsc(data.client_phone)}\n` +
+      `Email: ${tgEsc(data.client_email)}\n` +
+      (data.client_company ? `Компания: ${tgEsc(data.client_company)}\n` : "") +
+      (data.event_date ? `Дата: ${tgEsc(data.event_date)}\n` : "") +
+      `\n<b>Итого: ${Number(existing.total ?? 0)} BYN</b>` +
+      (data.notes ? `\n\nКомментарий: ${tgEsc(data.notes)}` : "");
+
+    const tg = await notifyTelegram(text);
+    await supabaseAdmin.from("telegram_logs").insert({
+      order_id: data.id,
+      status: tg.ok ? "sent" : "skipped",
+      error: tg.error ?? null,
+      payload: { text, kind: "order_edited_by_client" },
+    });
+
+    return { ok: true };
+  });
+
+const DeleteOrderSchema = z.object({ id: z.string().uuid() });
+
+export const deleteOwnOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => DeleteOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: existing, error: fetchErr } = await supabaseAdmin
+      .from("orders")
+      .select("id, user_id, status, client_name, client_phone, client_email, client_company, event_date, total")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (fetchErr || !existing) throw new Error("Заявка не найдена");
+    if (existing.user_id !== userId) throw new Error("Нет доступа к этой заявке");
+    if (!EDITABLE_STATUSES.includes(existing.status)) {
+      throw new Error("Заявку нельзя удалить на текущем статусе");
+    }
+
+    // cascade delete: items, timeline, attachments. RLS bypassed via admin client.
+    await supabaseAdmin.from("order_items").delete().eq("order_id", data.id);
+    await supabaseAdmin.from("availability").delete().eq("order_id", data.id);
+    await supabaseAdmin.from("order_attachments").delete().eq("order_id", data.id);
+    await supabaseAdmin.from("order_timeline").delete().eq("order_id", data.id);
+
+    const { error: delErr } = await supabaseAdmin.from("orders").delete().eq("id", data.id);
+    if (delErr) throw new Error("Не удалось удалить заявку");
+
+    const text =
+      `<b>🗑 Клиент удалил заявку</b>\n` +
+      `ID: <code>${tgEsc(existing.id.slice(0, 8))}</code>\n` +
+      `Имя: ${tgEsc(existing.client_name)}\n` +
+      `Тел: ${tgEsc(existing.client_phone)}\n` +
+      `Email: ${tgEsc(existing.client_email)}\n` +
+      (existing.client_company ? `Компания: ${tgEsc(existing.client_company)}\n` : "") +
+      (existing.event_date ? `Дата: ${tgEsc(existing.event_date)}\n` : "") +
+      `Сумма: ${Number(existing.total ?? 0)} BYN`;
+
+    await notifyTelegram(text);
+    return { ok: true };
+  });

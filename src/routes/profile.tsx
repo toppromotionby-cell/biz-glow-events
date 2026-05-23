@@ -1,11 +1,19 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Package } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ChevronDown, ChevronUp, Package, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { updateOwnOrder, deleteOwnOrder } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -43,6 +51,19 @@ function ProfilePage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, { items: any[]; timeline: any[] }>>({});
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ client_name: "", client_phone: "", client_email: "", client_company: "", event_date: "", notes: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const updateFn = useServerFn(updateOwnOrder);
+  const deleteFn = useServerFn(deleteOwnOrder);
+
+  async function reloadOrders() {
+    const { data: o } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    setOrders(o ?? []);
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -50,9 +71,9 @@ function ProfilePage() {
     (async () => {
       const { data: p } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       setProfile(p);
-      const { data: o } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-      setOrders(o ?? []);
+      await reloadOrders();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, navigate]);
 
   async function toggle(orderId: string) {
@@ -66,6 +87,60 @@ function ProfilePage() {
       setDetails((d) => ({ ...d, [orderId]: { items: items ?? [], timeline: timeline ?? [] } }));
     }
   }
+
+  function openEdit(o: any) {
+    setEditing(o);
+    setEditForm({
+      client_name: o.client_name ?? "",
+      client_phone: o.client_phone ?? "",
+      client_email: o.client_email ?? "",
+      client_company: o.client_company ?? "",
+      event_date: o.event_date ?? "",
+      notes: o.notes ?? "",
+    });
+  }
+
+  async function submitEdit() {
+    if (!editing) return;
+    setSavingEdit(true);
+    try {
+      await updateFn({ data: {
+        id: editing.id,
+        client_name: editForm.client_name.trim(),
+        client_phone: editForm.client_phone.trim(),
+        client_email: editForm.client_email.trim(),
+        client_company: editForm.client_company.trim() || null,
+        event_date: editForm.event_date || null,
+        notes: editForm.notes.trim() || null,
+      }});
+      toast.success("Заявка обновлена");
+      setEditing(null);
+      setDetails((d) => { const c = { ...d }; delete c[editing.id]; return c; });
+      await reloadOrders();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Ошибка сохранения");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await deleteFn({ data: { id: deleteId } });
+      toast.success("Заявка удалена");
+      setOrders((arr) => arr.filter((x) => x.id !== deleteId));
+      setDeleteId(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Ошибка удаления");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const canEdit = (status: string) => ["new", "consultation", "estimate"].includes(status);
+
 
   if (loading || !profile) return <div className="container mx-auto px-4 py-16">Загрузка...</div>;
 
@@ -191,6 +266,16 @@ function ProfilePage() {
                               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{o.notes}</p>
                             </div>
                           )}
+                          {canEdit(o.status) && (
+                            <div className="flex flex-wrap gap-2 pt-2 border-t border-border/40">
+                              <Button size="sm" variant="outline" onClick={() => openEdit(o)}>
+                                <Pencil className="h-3.5 w-3.5 mr-1.5" /> Редактировать
+                              </Button>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(o.id)}>
+                                <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Удалить
+                              </Button>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -201,6 +286,66 @@ function ProfilePage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Редактирование заявки</DialogTitle>
+            <DialogDescription>Изменения будут отправлены менеджеру.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="ed-name">Имя</Label>
+              <Input id="ed-name" value={editForm.client_name} onChange={(e) => setEditForm((f) => ({ ...f, client_name: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-phone">Телефон</Label>
+                <Input id="ed-phone" value={editForm.client_phone} onChange={(e) => setEditForm((f) => ({ ...f, client_phone: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-email">Email</Label>
+                <Input id="ed-email" type="email" value={editForm.client_email} onChange={(e) => setEditForm((f) => ({ ...f, client_email: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-company">Компания</Label>
+                <Input id="ed-company" value={editForm.client_company} onChange={(e) => setEditForm((f) => ({ ...f, client_company: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-date">Дата мероприятия</Label>
+                <Input id="ed-date" type="date" value={editForm.event_date} onChange={(e) => setEditForm((f) => ({ ...f, event_date: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="ed-notes">Комментарий</Label>
+              <Textarea id="ed-notes" rows={3} value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)} disabled={savingEdit}>Отмена</Button>
+            <Button onClick={submitEdit} disabled={savingEdit}>{savingEdit ? "Сохранение..." : "Сохранить"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить заявку?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Заявка и её позиции будут удалены безвозвратно. Менеджер получит уведомление.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
