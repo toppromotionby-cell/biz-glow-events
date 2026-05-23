@@ -2,12 +2,22 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, CalendarCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { GuestEstimator } from "@/components/GuestEstimator";
 import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
+import { CatalogQuickView } from "@/components/CatalogQuickView";
+import type { CatalogType } from "@/lib/catalog.functions";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
+
+const BASE_TO_TYPE: Record<string, CatalogType> = {
+  "/zones": "zones",
+  "/equipment": "tech_equipment",
+  "/services": "services",
+  "/production": "production_items",
+};
 
 const homeQueryOptions = queryOptions({
   queryKey: ["home-data"],
@@ -46,6 +56,7 @@ const VALUES = [
 function HomePage() {
   const { data } = useSuspenseQuery(homeQueryOptions);
   const { featured, posts, cases } = data;
+  const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
 
   return (
     <div>
@@ -128,8 +139,15 @@ function HomePage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {featured.map((f, idx) => {
-              const inner = (
-                <>
+              const type = BASE_TO_TYPE[f.basePath] ?? "tech_equipment";
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
+                  className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition block text-left w-full"
+                  aria-label={`Открыть ${f.title}`}
+                >
                   <div className="aspect-[16/10] overflow-hidden bg-gradient-primary/10">
                     {f.photo_urls?.[0] ? (
                       <img
@@ -146,21 +164,19 @@ function HomePage() {
                     <h3 className="font-semibold leading-tight group-hover:text-primary transition">{f.title}</h3>
                     {f.short_description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{f.short_description}</p>}
                   </div>
-                </>
+                </button>
               );
-              const cls = "group glass rounded-xl overflow-hidden hover:border-primary/50 transition block";
-              if (f.basePath === "/zones") {
-                return <Link key={f.id} to="/zones/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
-              }
-              if (f.basePath === "/services") {
-                return <Link key={f.id} to="/services/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
-              }
-              if (f.basePath === "/production") {
-                return <Link key={f.id} to="/production/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
-              }
-              return <Link key={f.id} to="/equipment/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
             })}
           </div>
+          {quick && (
+            <CatalogQuickView
+              open={!!quick}
+              onOpenChange={(v) => { if (!v) setQuick(null); }}
+              type={quick.type}
+              slug={quick.slug}
+              basePath={quick.basePath}
+            />
+          )}
 
         </Toggleable>
       )}
