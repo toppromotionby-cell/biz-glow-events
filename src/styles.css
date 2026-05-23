@@ -196,6 +196,103 @@
 }
 
 /* =====================================================
+ * Hero logo — переливающийся wordmark с halo
+ * ===================================================== */
+@keyframes logo-iridescent {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes logo-halo {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 0.95; transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes logo-sheen {
+  0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+  20%  { opacity: 0.9; }
+  60%  { opacity: 0.9; }
+  100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+}
+@keyframes logo-rise {
+  0%   { opacity: 0; transform: translateY(14px) scale(0.96); filter: blur(8px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes logo-spark {
+  0%, 100% { transform: translate(0,0) scale(0.9); opacity: 0.3; }
+  50%      { transform: translate(var(--sx, 6px), var(--sy, -8px)) scale(1.2); opacity: 1; }
+}
+
+.hero-logo {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+  animation: logo-rise 1.1s cubic-bezier(.2,.8,.2,1) both;
+}
+.hero-logo__word {
+  background: linear-gradient(
+    100deg,
+    oklch(0.98 0.02 300) 0%,
+    oklch(0.78 0.22 300) 18%,
+    oklch(0.65 0.27 320) 34%,
+    oklch(0.72 0.22 250) 52%,
+    oklch(0.85 0.18 200) 68%,
+    oklch(0.78 0.22 300) 84%,
+    oklch(0.98 0.02 300) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: logo-iridescent 6s linear infinite;
+  filter: drop-shadow(0 0 18px oklch(0.7 0.25 300 / 0.45));
+  position: relative;
+}
+.hero-logo__halo {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 120%; height: 220%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at center, oklch(0.7 0.25 300 / 0.45), transparent 55%),
+    radial-gradient(ellipse at 30% 50%, oklch(0.6 0.22 250 / 0.30), transparent 60%);
+  filter: blur(28px);
+  z-index: -1;
+  animation: logo-halo 5s ease-in-out infinite;
+  pointer-events: none;
+}
+.hero-logo__sheen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000, #000);
+}
+.hero-logo__sheen::after {
+  content: "";
+  position: absolute;
+  top: -20%; bottom: -20%;
+  left: 0; width: 30%;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.55), transparent);
+  filter: blur(6px);
+  animation: logo-sheen 4.5s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+.hero-logo__spark {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: oklch(0.95 0.08 300);
+  box-shadow: 0 0 12px oklch(0.85 0.2 300 / 0.9);
+  animation: logo-spark 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-logo, .hero-logo__word, .hero-logo__halo, .hero-logo__sheen::after, .hero-logo__spark {
+    animation: none !important;
+  }
+}
+
+/* =====================================================
  * Динамические эффекты света и взаимодействий
  * ===================================================== */
 
