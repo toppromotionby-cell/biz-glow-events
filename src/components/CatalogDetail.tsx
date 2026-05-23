@@ -282,36 +282,44 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         </section>
       )}
 
-      {videos.length > 0 && (
-        <section className="mt-12 max-w-5xl">
-          <h2 className="text-2xl font-display font-semibold mb-4">Видео</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {videos.map((url, i) => {
-              const isYouTube = /youtube\.com|youtu\.be/i.test(url);
-              if (isYouTube) {
-                let embed = url;
-                const idMatch = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([\w-]{6,})/);
-                if (idMatch) embed = `https://www.youtube.com/embed/${idMatch[1]}`;
+      {videoSectionEnabled && videos.length > 0 && (() => {
+        const visibleVideos = videos.filter((url) => {
+          const isExternal = /youtube\.com|youtu\.be|vimeo\.com|rutube\.ru|vk\.com|ok\.ru/i.test(url);
+          return isExternal ? externalVideosEnabled : uploadedVideosEnabled;
+        });
+        if (visibleVideos.length === 0) return null;
+        return (
+          <section className="mt-12 max-w-5xl">
+            <h2 className="text-2xl font-display font-semibold mb-4">Видео</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {visibleVideos.map((url, i) => {
+                const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+                if (isYouTube) {
+                  let embed = url;
+                  const idMatch = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([\w-]{6,})/);
+                  if (idMatch) embed = `https://www.youtube.com/embed/${idMatch[1]}`;
+                  return (
+                    <iframe
+                      key={url + i}
+                      src={embed}
+                      title={`${item.title} — видео ${i + 1}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      loading="lazy"
+                      className="w-full rounded-xl bg-black aspect-video glass border-0"
+                    />
+                  );
+                }
                 return (
-                  <iframe
-                    key={url + i}
-                    src={embed}
-                    title={`${item.title} — видео ${i + 1}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    loading="lazy"
-                    className="w-full rounded-xl bg-black aspect-video glass border-0"
-                  />
+                  <video key={url + i} src={url} controls playsInline preload="metadata"
+                    className="w-full rounded-xl bg-black aspect-video glass" />
                 );
-              }
-              return (
-                <video key={url + i} src={url} controls playsInline preload="metadata"
-                  className="w-full rounded-xl bg-black aspect-video glass" />
-              );
-            })}
-          </div>
-        </section>
-      )}
+              })}
+            </div>
+          </section>
+        );
+      })()}
+
 
       <Suspense fallback={null}>
         <RelatedItems type={entityType} currentId={item.id} category={item.category} />
