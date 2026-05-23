@@ -11,6 +11,7 @@ import { CatalogSocialProof } from "@/components/CatalogSocialProof";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { CompareButton } from "@/components/CompareButton";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { trackView } from "@/lib/recent";
 import { useSectionEnabled } from "@/lib/site-sections";
@@ -19,7 +20,7 @@ import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
-import { priceFrom } from "@/lib/utils";
+import { priceFrom, formatBYN } from "@/lib/utils";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
