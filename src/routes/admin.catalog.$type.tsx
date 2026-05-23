@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -153,6 +153,7 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
                   : <Badge variant="outline">Черновик</Badge>}
                 {item.category && <Badge variant="secondary">{item.category}</Badge>}
               </DialogTitle>
+              <DialogDescription className="sr-only">Редактирование позиции каталога</DialogDescription>
               {item.short_description && (
                 <p className="text-sm text-muted-foreground mt-2">{item.short_description}</p>
               )}

@@ -11,7 +11,7 @@ import { CatalogSocialProof } from "@/components/CatalogSocialProof";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { CompareButton } from "@/components/CompareButton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { trackView } from "@/lib/recent";
 import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
@@ -315,6 +315,8 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
       <Dialog open={lightbox !== null} onOpenChange={(v) => { if (!v) closeLightbox(); }}>
         <DialogContent className="max-w-6xl p-0 bg-background/95 border-border/40">
+          <DialogTitle className="sr-only">{item.title}</DialogTitle>
+          <DialogDescription className="sr-only">Просмотр фотографии</DialogDescription>
           {lightbox !== null && photos[lightbox] && (
             <div className="relative">
               <img src={photos[lightbox]} alt={item.title} className="w-full max-h-[85vh] object-contain rounded-lg" />

@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { Download, Search, ExternalLink, Clock, Paperclip } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
@@ -304,6 +304,7 @@ function OrderDialog({ id, onClose }: { id: string | null; onClose: () => void }
               </Link>
             )}
           </DialogTitle>
+          <DialogDescription className="sr-only">Детали и управление заказом</DialogDescription>
         </DialogHeader>
 
         {!order ? <div className="text-sm text-muted-foreground p-6">Загрузка...</div> : (
