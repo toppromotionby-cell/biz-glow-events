@@ -46,7 +46,7 @@ export function CatalogQuickView({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 bg-background border-border/40">
+      <DialogContent className={`max-w-5xl max-h-[90vh] overflow-y-auto p-0 bg-background ${(!isLoading && !data) ? 'border-0' : 'border-border/40'}`}>
         {isLoading && (
           <div className="p-10 text-center text-muted-foreground">Загрузка…</div>
         )}
