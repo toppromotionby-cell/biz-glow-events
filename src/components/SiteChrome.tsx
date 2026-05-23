@@ -11,6 +11,7 @@ import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CONTACT } from "@/lib/contacts";
 import { useState } from "react";
 
 const NAV = [
@@ -250,9 +251,13 @@ export function SiteFooter() {
             <Toggleable sectionKey="footer.contacts" as="div">
               <h4 className="font-medium mb-3">Контакты</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li>Минск, Беларусь</li>
-                <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
-                <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
+                <li>{CONTACT.address}</li>
+                <li><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></li>
+                <li className="flex gap-3 text-xs">
+                  <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">WhatsApp</a>
+                  <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
+                </li>
+                <li><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></li>
               </ul>
               <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
                 <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
@@ -295,9 +300,13 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      <li>Минск, Беларусь</li>
-                      <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
-                      <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
+                      <li>{CONTACT.address}</li>
+                      <li><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></li>
+                      <li className="flex gap-3 text-xs">
+                        <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">WhatsApp</a>
+                        <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
+                      </li>
+                      <li><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></li>
                     </ul>
                   </AccordionContent>
                 </AccordionItem>

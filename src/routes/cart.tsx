@@ -166,7 +166,7 @@ function CartPage() {
         <div className="grid lg:grid-cols-5 gap-8">
           <section className="lg:col-span-3 space-y-3">
             {items.map((i) => (
-              <article key={`${i.entity_type}:${i.id}`} className="glass rounded-xl p-4 flex gap-4 items-center">
+              <article key={`${i.entity_type}:${i.id}`} className="glass rounded-xl p-4 flex flex-wrap gap-3 items-center">
                 {i.image ? (
                   <img src={i.image} alt="" className="h-16 w-16 rounded-md object-cover" />
                 ) : (
@@ -260,7 +260,7 @@ function CartPage() {
                 <textarea name="notes" rows={3} defaultValue={draft.notes ?? ""} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
               </label>
               <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                <input type="checkbox" required defaultChecked className="mt-0.5" />
+                <input type="checkbox" name="consent_pd" required className="mt-0.5" />
                 <span>Согласен на обработку персональных данных.</span>
               </label>
               <button
