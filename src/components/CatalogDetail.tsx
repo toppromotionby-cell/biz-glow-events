@@ -285,21 +285,38 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   );
 }
 
-export function productJsonLd(item: CatalogRow): string {
+export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseLabel?: string }): string {
   const from = priceFrom(item.pricing);
+  const slug = (item as unknown as { slug?: string }).slug ?? "";
+  const baseUrl = "https://event-hub.by";
+  const basePath = ctx?.basePath ?? "";
+  const itemUrl = basePath && slug ? `${baseUrl}${basePath}/${slug}` : undefined;
   return JSON.stringify({
     "@context": "https://schema.org",
-    "@type": "Product",
-    name: item.title,
-    description: item.short_description ?? item.description ?? undefined,
-    image: item.photo_urls ?? undefined,
-    brand: { "@type": "Brand", name: "event-hub.by" },
-    offers: from !== null ? {
-      "@type": "Offer",
-      priceCurrency: "BYN",
-      price: from,
-      availability: "https://schema.org/InStock",
-      url: "https://event-hub.by/contacts",
-    } : undefined,
+    "@graph": [
+      {
+        "@type": "Product",
+        name: item.title,
+        description: item.short_description ?? item.description ?? undefined,
+        image: item.photo_urls ?? undefined,
+        brand: { "@type": "Brand", name: "event-hub.by" },
+        url: itemUrl,
+        offers: from !== null ? {
+          "@type": "Offer",
+          priceCurrency: "BYN",
+          price: from,
+          availability: "https://schema.org/InStock",
+          url: itemUrl ?? "https://event-hub.by/contacts",
+        } : undefined,
+      },
+      ...(basePath && ctx?.baseLabel ? [{
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Главная", item: baseUrl },
+          { "@type": "ListItem", position: 2, name: ctx.baseLabel, item: `${baseUrl}${basePath}` },
+          { "@type": "ListItem", position: 3, name: item.title, item: itemUrl },
+        ],
+      }] : []),
+    ],
   });
 }
