@@ -13,7 +13,8 @@ export function EffectsLayer() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
+    const isCoarse = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    if (reduce || isCoarse) return;
 
     const root = document.documentElement;
     let raf = 0;

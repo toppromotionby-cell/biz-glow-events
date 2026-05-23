@@ -17,17 +17,21 @@ export const Route = createFileRoute("/equipment/$slug")({
     if (!item) throw notFound();
     return { item };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const it = loaderData?.item;
     if (!it) return { meta: [{ title: "Оборудование — event-hub.by" }] };
+    const url = `https://event-hub.by/equipment/${params.slug}`;
     return {
       meta: [
         { title: it.seo_title ?? `Аренда ${it.title} в Минске — event-hub.by` },
         { name: "description", content: it.seo_description ?? it.short_description ?? `Аренда ${it.title} в Минске под ключ. Доставка, монтаж и сопровождение event-hub.by.` },
         { property: "og:title", content: it.title },
         { property: "og:description", content: it.short_description ?? "" },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "product" },
         ...(it.photo_urls?.[0] ? [{ property: "og:image", content: it.photo_urls[0] }] : []),
       ],
+      links: [{ rel: "canonical", href: url }],
       scripts: [{ type: "application/ld+json", children: productJsonLd(it, { basePath: "/equipment", baseLabel: "Оборудование" }) }],
     };
   },
