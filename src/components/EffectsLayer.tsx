@@ -1,20 +1,16 @@
 import { useEffect } from "react";
 
 /**
- * Глобальный слой эффектов:
- *  - Свечение, следящее за курсором (фоновый радиальный glow)
- *  - Подсветка интерактивных элементов под курсором (через CSS-переменные --mx/--my)
- *  - Ripple-вспышка при клике на кнопки/ссылки
- *  - Reveal-on-scroll для элементов с data-reveal
- *
- * Эффекты — чисто визуальные, не перехватывают события и не ломают логику.
+ * Глобальный слой эффектов (облегчённая версия для производительности):
+ *  - Свечение, следящее за курсором (только CSS-переменные --cursor-x/y)
+ *  - Ripple-вспышка при клике
+ *  - Reveal-on-scroll для элементов с data-reveal (без MutationObserver)
  */
 export function EffectsLayer() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isCoarse = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-    if (reduce || isCoarse) return;
 
     const root = document.documentElement;
     let raf = 0;
@@ -28,14 +24,6 @@ export function EffectsLayer() {
         raf = 0;
         root.style.setProperty("--cursor-x", `${lastX}px`);
         root.style.setProperty("--cursor-y", `${lastY}px`);
-        // Локальные координаты для интерактивных элементов
-        const target = document.elementFromPoint(lastX, lastY);
-        const host = target?.closest<HTMLElement>("[data-glow], button, a, .glass, .interactive-glow");
-        if (host) {
-          const r = host.getBoundingClientRect();
-          host.style.setProperty("--mx", `${lastX - r.left}px`);
-          host.style.setProperty("--my", `${lastY - r.top}px`);
-        }
       });
     };
 
@@ -62,7 +50,8 @@ export function EffectsLayer() {
       }, 650);
     };
 
-    // Reveal-on-scroll
+    // Reveal-on-scroll: периодически сканируем (без MutationObserver на subtree),
+    // чтобы не платить за каждый mutate во время переходов и открытия диалогов.
     const io = new IntersectionObserver(
       (entries) => {
         for (const en of entries) {
@@ -75,19 +64,35 @@ export function EffectsLayer() {
       { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
     );
     const observe = () => {
-      document.querySelectorAll<HTMLElement>("[data-reveal]:not(.is-revealed)").forEach((el) => io.observe(el));
+      document
+        .querySelectorAll<HTMLElement>("[data-reveal]:not(.is-revealed)")
+        .forEach((el) => io.observe(el));
     };
     observe();
-    const mo = new MutationObserver(observe);
-    mo.observe(document.body, { childList: true, subtree: true });
+    let scanTimer: number | null = null;
+    const scheduleScan = () => {
+      if (scanTimer != null) return;
+      scanTimer = window.setTimeout(() => {
+        scanTimer = null;
+        observe();
+      }, 400);
+    };
+    // Скан после смены маршрута / навигации
+    window.addEventListener("popstate", scheduleScan);
+    // Скан раз в 1.5с — дешевле, чем MutationObserver на всём body
+    const interval = window.setInterval(observe, 1500);
 
-    window.addEventListener("pointermove", onMove, { passive: true });
+    if (!reduce && !isCoarse) {
+      window.addEventListener("pointermove", onMove, { passive: true });
+    }
     window.addEventListener("pointerdown", onClick, { passive: true });
 
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onClick);
-      mo.disconnect();
+      window.removeEventListener("popstate", scheduleScan);
+      if (scanTimer != null) clearTimeout(scanTimer);
+      clearInterval(interval);
       io.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
