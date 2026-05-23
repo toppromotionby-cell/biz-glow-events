@@ -75,6 +75,7 @@ export function SiteHeader() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
             <Toggleable sectionKey="header.wishlist" as="span">
               <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
