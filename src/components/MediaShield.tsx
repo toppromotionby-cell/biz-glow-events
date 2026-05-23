@@ -109,7 +109,7 @@ import { supabase } from "@/integrations/supabase/client";
 export async function createSignedMediaUrl(path: string, ttlSeconds = 900): Promise<string | null> {
   const { data, error } = await supabase.storage.from("media").createSignedUrl(path, ttlSeconds);
   if (error) {
-    console.error("createSignedUrl failed:", error);
+    if (import.meta.env.DEV) console.error("createSignedUrl failed:", error);
     return null;
   }
   return data.signedUrl;

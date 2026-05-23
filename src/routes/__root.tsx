@@ -15,7 +15,7 @@ import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background bg-radial-glow px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-background bg-radial-glow px-4">
       <div className="max-w-md text-center">
         <h1 className="text-8xl font-display font-bold gradient-text">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Страница не найдена</h2>
@@ -32,7 +32,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Что-то пошло не так</h1>
         <p className="mt-2 text-sm text-muted-foreground">Попробуйте ещё раз или вернитесь на главную.</p>
@@ -175,7 +175,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <SiteSectionsProvider>
-        <div className="min-h-screen flex flex-col bg-background bg-radial-glow">
+        <div className="min-h-dvh flex flex-col bg-background bg-radial-glow">
           <EffectsLayer />
           <SiteHeader />
           <main id="main" className="flex-1"><Outlet /></main>
