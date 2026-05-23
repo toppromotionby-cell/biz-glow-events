@@ -9,6 +9,7 @@ import { Plus } from "lucide-react";
 import { addToCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
 import { toast } from "sonner";
+import { formatBYN, priceFrom as priceFromUtil } from "@/lib/utils";
 
 const LABEL: Record<CatalogType, string> = {
   zones: "Зона",
@@ -17,14 +18,7 @@ const LABEL: Record<CatalogType, string> = {
   production_items: "Производство",
 };
 
-const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 });
-
-function priceFrom(pricing: unknown): number {
-  if (!pricing || typeof pricing !== "object") return 0;
-  const p = pricing as Record<string, unknown>;
-  const v = p.from ?? p.priceFrom ?? p.min ?? p.base;
-  return typeof v === "number" ? v : 0;
-}
+const priceFrom = (p: unknown): number => priceFromUtil(p) ?? 0;
 
 export function CartCrossSell({ presentTypes }: { presentTypes: CartEntityType[] }) {
   // Приоритет: что предложить — услуги, потом оборудование, потом производство, потом зоны
