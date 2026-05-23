@@ -169,7 +169,7 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
                 >
                   <X className="h-3 w-3" /> очистить
                 </button>
-              </span> as unknown as string
+              </span>
             }
           >
             {recent.map((r) => (
