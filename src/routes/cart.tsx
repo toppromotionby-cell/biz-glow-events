@@ -10,6 +10,7 @@ import { PromoCodeInput } from "@/components/PromoCodeInput";
 import { DateField } from "@/components/DateField";
 import { type PromoValidation } from "@/lib/promo.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { trackBeginCheckout, trackPurchase } from "@/lib/analytics";
 
 const DRAFT_KEY = "cart_contact_draft_v1";
 
@@ -101,6 +102,14 @@ function CartPage() {
   async function finalSubmitWith(contact: NonNullable<typeof contactDraft>, req: Req) {
     const utm = readUtm() ?? {};
     setLoading(true);
+    const analyticsItems = items.map(i => ({
+      item_id: i.id,
+      item_name: i.title,
+      item_category: i.entity_type,
+      price: i.price,
+      quantity: i.qty,
+    }));
+    trackBeginCheckout(analyticsItems, finalTotal);
     try {
       const res = await submit({
         data: {
@@ -125,6 +134,14 @@ function CartPage() {
           })),
         },
       });
+      trackPurchase({
+        transaction_id: res.id,
+        value: res.total,
+        items: analyticsItems,
+      });
+      try {
+        sessionStorage.setItem(`order_purchase_${res.id}`, JSON.stringify({ value: res.total, ts: Date.now() }));
+      } catch {}
       clearCart();
       setReqOpen(false);
       try { localStorage.removeItem(DRAFT_KEY); } catch {}
@@ -136,6 +153,7 @@ function CartPage() {
       setLoading(false);
     }
   }
+
 
   async function finalSubmit(req: Req) {
     if (!contactDraft) return;
