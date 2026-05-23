@@ -53,9 +53,12 @@ function HomePage() {
       <Toggleable sectionKey="home.hero" as="section" className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero opacity-80" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,oklch(0.55_0.24_295/0.25),transparent_60%)] animate-gradient" />
+        {/* Переливающийся логотип-заставка на заднем плане */}
+        <div className="hero-logo-bg pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+          <HeroLogoIntro />
+        </div>
         <div className="container mx-auto px-4 py-24 md:py-36 relative">
           <div className="max-w-3xl">
-            <HeroLogoIntro />
             <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs mb-6">
               <Sparkles className="h-3 w-3 text-accent" /> Event-технологии нового поколения
             </div>
