@@ -13,6 +13,7 @@ import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { CompareButton } from "@/components/CompareButton";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { trackView } from "@/lib/recent";
+import { useSectionEnabled } from "@/lib/site-sections";
 import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
