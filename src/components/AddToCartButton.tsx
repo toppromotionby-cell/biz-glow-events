@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { addToCart, type CartEntityType } from "@/lib/cart";
+import { trackAddToCart } from "@/lib/analytics";
 
 export function AddToCartButton({
   entity_type, id, slug, title, price, image,
@@ -18,6 +19,13 @@ export function AddToCartButton({
       type="button"
       onClick={() => {
         addToCart({ entity_type, id, slug, title, price, image, qty: 1 });
+        trackAddToCart({
+          item_id: id,
+          item_name: title,
+          item_category: entity_type,
+          price,
+          quantity: 1,
+        });
         setAdded(true);
         toast.success(`«${title}» добавлено в корзину`);
         setTimeout(() => setAdded(false), 1500);
@@ -28,3 +36,4 @@ export function AddToCartButton({
     </button>
   );
 }
+

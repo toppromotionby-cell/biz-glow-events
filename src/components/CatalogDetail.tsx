@@ -15,6 +15,7 @@ import { trackView } from "@/lib/recent";
 import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
+import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 
 function priceFrom(pricing: unknown): number | null {
@@ -63,6 +64,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
     if (needsSelection) return;
     if (isByRequest) {
       try { localStorage.setItem("lead_subject_v1", effectiveTitle); } catch {}
+      trackLead("by_request_button");
       navigate({ to: "/contacts" });
       return;
     }
@@ -74,6 +76,13 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       price: effectivePrice,
       image: item.photo_urls?.[0] ?? null,
       qty: 1,
+    });
+    trackAddToCart({
+      item_id: effectiveId,
+      item_name: effectiveTitle,
+      item_category: entityType,
+      price: effectivePrice,
+      quantity: 1,
     });
     toast.success(`«${effectiveTitle}» добавлено в корзину`);
     navigate({ to: "/cart" });
@@ -88,7 +97,14 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       price: from ?? 0,
       image: item.photo_urls?.[0] ?? null,
     });
+    trackViewItem({
+      item_id: item.id,
+      item_name: item.title,
+      item_category: entityType,
+      price: from ?? 0,
+    });
   }, [item.id, entityType, item.slug, item.title, from, item.photo_urls]);
+
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-6xl">

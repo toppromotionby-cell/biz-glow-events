@@ -127,11 +127,25 @@ async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: stri
 export const submitOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => OrderSchema.parse(input))
   .handler(async ({ data }) => {
+    // 0. Серверная валидация даты — не позволяем прошлые даты.
+    if (data.event_date) {
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const ev = new Date(`${data.event_date}T00:00:00Z`);
+      if (Number.isFinite(ev.getTime()) && ev.getTime() < today.getTime()) {
+        throw new Error("Дата мероприятия не может быть в прошлом.");
+      }
+    }
+    for (const i of data.items) {
+      if (i.start_date && i.end_date && i.end_date < i.start_date) {
+        throw new Error("Некорректные даты позиции.");
+      }
+    }
+
     // 1. Серверная перепроверка цен — клиентские price используются только как hint.
     const resolved: ResolvedItem[] = await Promise.all(
       data.items.map(async (i) => {
         const { price: canonical, title } = await resolveServerPrice(i.entity_type, i.entity_id);
-        // Если каноническая цена недоступна — используем клиентскую как fallback, помечаем discrepancy.
         const finalPrice = canonical ?? i.price;
         const discrepancy =
           canonical == null ||
@@ -153,14 +167,6 @@ export const submitOrder = createServerFn({ method: "POST" })
     const total = resolved.reduce((s, i) => s + i.qty * i.price, 0);
     const hasDiscrepancy = resolved.some((r) => r.discrepancy);
 
-    // 2. Атомарный инкремент промокода (если задан) — если лимит исчерпан, заказ продолжаем без скидки.
-    let promoApplied: string | null = null;
-    if (data.promo_code) {
-      const code = data.promo_code.trim().toUpperCase();
-      const { data: upd } = await supabaseAdmin.rpc("increment_promo_usage", { p_code: code });
-      if (upd && upd.length > 0) promoApplied = code;
-    }
-
     const requisitesBlock = [
       data.company_legal_name ? `Юр. название: ${data.company_legal_name}` : "",
       data.company_unp ? `УНП: ${data.company_unp}` : "",
@@ -171,6 +177,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       data.acting_basis ? `Действует на основании: ${data.acting_basis}` : "",
     ].filter(Boolean).join("\n");
 
+    // 2. Создаём заказ.
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -182,7 +189,6 @@ export const submitOrder = createServerFn({ method: "POST" })
         notes: [
           data.notes ?? "",
           requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
-          promoApplied ? `Промокод: ${promoApplied}` : "",
           hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
         ].filter(Boolean).join("\n\n") || null,
         source: data.source ?? "cart",
@@ -202,6 +208,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       throw new Error("Не удалось создать заявку. Попробуйте ещё раз.");
     }
 
+    // 3. Позиции — если упало, откатываем заказ, чтобы не оставлять «голый» order.
     const rows = resolved.map((i) => ({
       order_id: order.id,
       entity_type: i.entity_type,
@@ -220,7 +227,31 @@ export const submitOrder = createServerFn({ method: "POST" })
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
     if (itemsErr) {
       console.error("[submitOrder] items insert error:", itemsErr);
+      // Rollback: удаляем «голый» заказ
+      await supabaseAdmin.from("orders").delete().eq("id", order.id);
       throw new Error("Не удалось сохранить позиции заявки.");
+    }
+
+    // 4. Промокод — инкрементируем ТОЛЬКО после успешного создания позиций.
+    let promoApplied: string | null = null;
+    if (data.promo_code) {
+      const code = data.promo_code.trim().toUpperCase();
+      const { data: upd } = await supabaseAdmin.rpc("increment_promo_usage", { p_code: code });
+      if (upd && upd.length > 0) {
+        promoApplied = code;
+        // Дописываем промокод в notes для удобства менеджера
+        await supabaseAdmin
+          .from("orders")
+          .update({
+            notes: [
+              data.notes ?? "",
+              requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
+              `Промокод: ${promoApplied}`,
+              hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
+            ].filter(Boolean).join("\n\n") || null,
+          })
+          .eq("id", order.id);
+      }
     }
 
     await supabaseAdmin.from("order_timeline").insert({
@@ -230,7 +261,6 @@ export const submitOrder = createServerFn({ method: "POST" })
     });
 
     const lines = resolved.map((i) => `• ${tgEsc(i.title)} × ${i.qty} — ${i.price * i.qty} BYN`).join("\n");
-
 
     const tgRequisites = requisitesBlock
       ? `\n\n<b>Реквизиты:</b>\n${tgEsc(requisitesBlock)}`
@@ -258,3 +288,4 @@ export const submitOrder = createServerFn({ method: "POST" })
 
     return { id: order.id, total };
   });
+
