@@ -2,13 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listCatalog, type CatalogRow, type CatalogType } from "@/lib/catalog.functions";
-
-const BASE: Record<CatalogType, string> = {
-  zones: "/zones",
-  tech_equipment: "/equipment",
-  services: "/services",
-  production_items: "/production",
-};
+import { CATALOG_SLUG_ROUTE, type CatalogSlugRoute } from "@/lib/catalog-routes";
 
 const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 });
 
