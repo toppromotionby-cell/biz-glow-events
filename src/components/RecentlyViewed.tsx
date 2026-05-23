@@ -1,13 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useRecent } from "@/lib/recent";
-import type { CartEntityType } from "@/lib/cart";
-
-const BASE: Record<CartEntityType, string> = {
-  zones: "/zones",
-  tech_equipment: "/equipment",
-  services: "/services",
-  production_items: "/production",
-};
+import { CATALOG_SLUG_ROUTE } from "@/lib/catalog-routes";
 
 export function RecentlyViewed({ excludeId, max = 6 }: { excludeId?: string; max?: number }) {
   const all = useRecent();
