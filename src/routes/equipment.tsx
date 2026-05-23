@@ -3,6 +3,7 @@ import { CatalogGrid } from "@/components/CatalogGrid";
 import { EQUIPMENT } from "@/lib/catalog-mock";
 import { listCatalog } from "@/lib/catalog.functions";
 import { rowsToItems } from "@/lib/catalog-adapter";
+import { itemListJsonLd } from "@/lib/seo-jsonld";
 
 export const Route = createFileRoute("/equipment")({
   loader: async () => {
@@ -14,13 +15,24 @@ export const Route = createFileRoute("/equipment")({
       return { items: EQUIPMENT };
     }
   },
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: "Аренда event-оборудования в Минске — event-hub.by" },
       { name: "description", content: "LED-экраны, звук, свет, проекционный маппинг. Аренда и монтаж под мероприятие." },
       { property: "og:title", content: "Оборудование — event-hub.by" },
       { property: "og:description", content: "Профессиональное event-оборудование в аренду." },
     ],
+    scripts: loaderData?.items?.length
+      ? [{
+          type: "application/ld+json",
+          children: itemListJsonLd({
+            basePath: "/equipment",
+            pageUrl: "https://event-hub.by/equipment",
+            name: "Аренда event-оборудования в Минске",
+            items: loaderData.items as { title?: string; slug?: string }[],
+          }),
+        }]
+      : [],
   }),
   component: EquipmentPage,
 });
