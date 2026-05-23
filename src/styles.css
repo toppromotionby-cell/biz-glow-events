@@ -197,11 +197,13 @@
   * { border-color: var(--color-border); }
   html {
     scroll-behavior: smooth;
-    /* Эргономика типографики в духе Apple: на десктопе rem ≈ 17px, на мобильном — 16px */
-    font-size: 16px;
+    /* Текучая эргономичная типографика: ~15px на 320px, ~17px на 1024px+, плавно масштабируется. */
+    font-size: clamp(15px, 0.9rem + 0.25vw, 17.5px);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
-  @media (min-width: 1024px) {
-    html { font-size: 17px; }
+  @media (min-width: 1440px) {
+    html { font-size: 17.5px; }
   }
   /* Админ-панель: плотные таблицы — фиксируем 16px, чтобы не «раздувать» сетку */
   .admin-shell { font-size: 16px; }
