@@ -1,0 +1,64 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export const Route = createFileRoute("/forgot-password")({
+  head: () => ({ meta: [{ title: "Восстановление пароля — event-hub.by" }, { name: "robots", content: "noindex,follow" }] }),
+  component: ForgotPasswordPage,
+});
+
+const schema = z.object({ email: z.string().email("Введите корректный email") });
+type Form = z.infer<typeof schema>;
+
+function ForgotPasswordPage() {
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const { register, handleSubmit, formState: { errors } } = useForm<Form>({ resolver: zodResolver(schema) });
+
+  const onSubmit = async ({ email }: Form) => {
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    setSent(true);
+    toast.success("Письмо отправлено");
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-16 max-w-md">
+      <div className="glass-strong rounded-2xl p-8">
+        <h1 className="text-3xl font-display font-bold mb-2">Восстановление пароля</h1>
+        <p className="text-sm text-muted-foreground mb-6">Введите email — мы вышлем ссылку для сброса пароля.</p>
+        {sent ? (
+          <div className="space-y-4">
+            <p className="text-sm">Если такой email зарегистрирован, на него отправлена ссылка для восстановления пароля. Проверьте почту, в том числе папку «Спам».</p>
+            <Button asChild variant="outline" className="w-full"><Link to="/login">Вернуться ко входу</Link></Button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" autoComplete="email" {...register("email")} />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            </div>
+            <Button type="submit" disabled={loading} className="w-full bg-gradient-primary glow-primary">
+              {loading ? "Отправляем..." : "Отправить ссылку"}
+            </Button>
+            <p className="text-sm text-center text-muted-foreground">
+              Вспомнили пароль? <Link to="/login" className="text-accent">Войти</Link>
+            </p>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
