@@ -2,8 +2,22 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BASE = "https://event-hub.by";
+
+/**
+ * Альтернативные локали. Сайт пока работает только на русском (рынок BY/RU),
+ * EN-перевода нет — поэтому EN-альтернатив не указываем (фейковые hreflang
+ * вредят SEO). Если появится EN — добавим { hreflang: "en", base: ... }.
+ */
+const HREFLANGS: Array<{ hreflang: string; base: string }> = [
+  { hreflang: "ru", base: BASE },
+  { hreflang: "ru-BY", base: BASE },
+  { hreflang: "ru-RU", base: BASE },
+  { hreflang: "x-default", base: BASE },
+];
+
 const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
+  { path: "/catalog", priority: "0.9", changefreq: "weekly" },
   { path: "/zones", priority: "0.9", changefreq: "weekly" },
   { path: "/equipment", priority: "0.9", changefreq: "weekly" },
   { path: "/services", priority: "0.9", changefreq: "weekly" },
@@ -21,12 +35,13 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/terms-rental", priority: "0.5", changefreq: "yearly" },
   { path: "/privacy", priority: "0.2", changefreq: "yearly" },
   { path: "/offer", priority: "0.2", changefreq: "yearly" },
-  // login/register/cart/wishlist/compare/profile — служебные, не индексируем
 ];
 
 type Row = { slug: string; updated_at: string };
 
-async function fetchSlugs(table: "zones" | "tech_equipment" | "services" | "production_items" | "blog_posts" | "cases"): Promise<Row[]> {
+async function fetchSlugs(
+  table: "zones" | "tech_equipment" | "services" | "production_items" | "blog_posts" | "cases",
+): Promise<Row[]> {
   const { data } = await supabaseAdmin
     .from(table)
     .select("slug, updated_at")
@@ -36,6 +51,22 @@ async function fetchSlugs(table: "zones" | "tech_equipment" | "services" | "prod
 
 function escape(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderHreflangs(path: string): string {
+  return HREFLANGS.map(
+    (h) =>
+      `<xhtml:link rel="alternate" hreflang="${h.hreflang}" href="${h.base}${escape(path)}"/>`,
+  ).join("");
+}
+
+function renderUrl(opts: { path: string; lastmod?: string; changefreq?: string; priority?: string }): string {
+  const lm = opts.lastmod
+    ? `<lastmod>${new Date(opts.lastmod).toISOString().slice(0, 10)}</lastmod>`
+    : "";
+  const cf = opts.changefreq ? `<changefreq>${opts.changefreq}</changefreq>` : "";
+  const pr = opts.priority ? `<priority>${opts.priority}</priority>` : "";
+  return `<url><loc>${BASE}${escape(opts.path)}</loc>${lm}${cf}${pr}${renderHreflangs(opts.path)}</url>`;
 }
 
 export const Route = createFileRoute("/sitemap.xml")({
@@ -61,18 +92,27 @@ export const Route = createFileRoute("/sitemap.xml")({
             ...cases.map((r) => ({ path: `/cases/${r.slug}`, lastmod: r.updated_at })),
           ];
 
-          const staticXml = STATIC.map(
-            (u) => `<url><loc>${BASE}${u.path}</loc><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`,
-          ).join("");
+          // Дедупликация по path: статические перебивают динамические дубли
+          const seen = new Set<string>();
+          const all: string[] = [];
 
-          const dynXml = dynamic
-            .map((u) => {
-              const lm = u.lastmod ? `<lastmod>${new Date(u.lastmod).toISOString().slice(0, 10)}</lastmod>` : "";
-              return `<url><loc>${BASE}${escape(u.path)}</loc>${lm}<changefreq>weekly</changefreq><priority>0.8</priority></url>`;
-            })
-            .join("");
+          for (const u of STATIC) {
+            if (seen.has(u.path)) continue;
+            seen.add(u.path);
+            all.push(renderUrl({ path: u.path, changefreq: u.changefreq, priority: u.priority }));
+          }
+          for (const u of dynamic) {
+            if (!u.path || seen.has(u.path)) continue;
+            seen.add(u.path);
+            all.push(renderUrl({ path: u.path, lastmod: u.lastmod, changefreq: "weekly", priority: "0.8" }));
+          }
 
-          const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${staticXml}${dynXml}</urlset>`;
+          const xml =
+            `<?xml version="1.0" encoding="UTF-8"?>` +
+            `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">` +
+            all.join("") +
+            `</urlset>`;
+
           return new Response(xml, {
             headers: {
               "Content-Type": "application/xml; charset=utf-8",
@@ -80,7 +120,11 @@ export const Route = createFileRoute("/sitemap.xml")({
             },
           });
         } catch {
-          const xml = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${STATIC.map((u) => `<url><loc>${BASE}${u.path}</loc></url>`).join("")}</urlset>`;
+          const xml =
+            `<?xml version="1.0" encoding="UTF-8"?>` +
+            `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">` +
+            STATIC.map((u) => renderUrl({ path: u.path, changefreq: u.changefreq, priority: u.priority })).join("") +
+            `</urlset>`;
           return new Response(xml, { headers: { "Content-Type": "application/xml; charset=utf-8" } });
         }
       },
