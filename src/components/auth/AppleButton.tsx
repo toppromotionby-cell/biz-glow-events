@@ -22,11 +22,9 @@ export function AppleButton({ label = "Продолжить с Apple" }: { label
 
         setLoading(true);
         try {
-          console.log("[AppleButton] starting OAuth", { origin: window.location.origin });
           const res = await lovable.auth.signInWithOAuth("apple", {
             redirect_uri: window.location.origin,
           });
-          console.log("[AppleButton] result", res);
           if (res.error) {
             setLoading(false);
             toast.error(res.error.message ?? "Не удалось войти через Apple");
@@ -34,7 +32,7 @@ export function AppleButton({ label = "Продолжить с Apple" }: { label
           }
           if (res.redirected) return;
         } catch (e) {
-          console.error("[AppleButton] exception", e);
+          if (import.meta.env.DEV) console.error("[AppleButton]", e);
           setLoading(false);
           toast.error(e instanceof Error ? e.message : "Ошибка входа через Apple");
           return;

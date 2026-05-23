@@ -22,11 +22,9 @@ export function GoogleButton({ label = "Продолжить с Google" }: { lab
 
         setLoading(true);
         try {
-          console.log("[GoogleButton] starting OAuth", { origin: window.location.origin });
           const res = await lovable.auth.signInWithOAuth("google", {
             redirect_uri: window.location.origin,
           });
-          console.log("[GoogleButton] result", res);
           if (res.error) {
             setLoading(false);
             toast.error(res.error.message ?? "Не удалось войти через Google");
@@ -34,7 +32,7 @@ export function GoogleButton({ label = "Продолжить с Google" }: { lab
           }
           if (res.redirected) return;
         } catch (e) {
-          console.error("[GoogleButton] exception", e);
+          if (import.meta.env.DEV) console.error("[GoogleButton]", e);
           setLoading(false);
           toast.error(e instanceof Error ? e.message : "Ошибка входа через Google");
           return;
