@@ -92,14 +92,9 @@ function HomePage() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mb-16">
               <CatalogChoiceModal>
                 <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto">
-                  Рассчитать стоимость <ArrowRight className="ml-2 h-4 w-4" />
+                  Каталог услуг <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CatalogChoiceModal>
-              <Link to="/equipment" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="rounded-full px-8 h-12 border-foreground/20 hover:border-accent hover:text-accent w-full sm:w-auto">
-                  Смотреть услуги
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
