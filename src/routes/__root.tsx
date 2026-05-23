@@ -8,6 +8,7 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { ScriptInjector } from "@/components/ScriptInjector";
 import { EffectsLayer } from "@/components/EffectsLayer";
+import { FloatingContacts } from "@/components/FloatingContacts";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 
@@ -90,8 +91,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               url: "https://event-hub.by",
               logo: "https://event-hub.by/favicon.ico",
               email: "hello@event-hub.by",
-              telephone: "+375290000000",
-              sameAs: [],
+              telephone: "+375447099122",
+              sameAs: ["https://wa.me/375447099122", "https://t.me/+375447099122"],
             },
             {
               "@type": "WebSite",
@@ -112,7 +113,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               name: "event-hub.by",
               description: "Event-технологии, продакшн, интерактивные зоны и производство для мероприятий",
               url: "https://event-hub.by",
-              telephone: "+375290000000",
+              telephone: "+375447099122",
               email: "hello@event-hub.by",
               address: { "@type": "PostalAddress", addressLocality: "Минск", addressCountry: "BY" },
               areaServed: "BY",
@@ -150,6 +151,7 @@ function RootComponent() {
           <main id="main" className="flex-1"><Outlet /></main>
           <SiteFooter />
           <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
+          <FloatingContacts />
           <ScriptInjector />
           <Toaster theme="dark" />
         </div>
