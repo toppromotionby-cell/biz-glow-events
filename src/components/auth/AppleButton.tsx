@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
+import { useSectionEnabled } from "@/lib/site-sections";
 
 export function AppleButton({ label = "Продолжить с Apple" }: { label?: string }) {
+  const enabled = useSectionEnabled("auth.apple");
   const [loading, setLoading] = useState(false);
+  if (!enabled) return null;
   return (
     <button
       type="button"
