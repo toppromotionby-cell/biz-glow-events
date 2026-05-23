@@ -69,11 +69,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
       qty: 1,
       image: item.photo_urls?.[0] ?? null,
     });
-    trackAddToCart({
-      currency: "BYN",
-      value: price,
-      items: [{ item_id: item.id, item_name: item.title, item_category: type, price, quantity: 1 }],
-    });
+    trackAddToCart({ item_id: item.id, item_name: item.title, item_category: type, price, quantity: 1 });
     toast.success(`${LABEL[type]} добавлено в корзину`);
   }
   return (
