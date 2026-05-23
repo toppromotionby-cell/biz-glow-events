@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Package } from "lucide-react";
+import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
