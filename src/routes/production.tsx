@@ -3,6 +3,7 @@ import { CatalogGrid } from "@/components/CatalogGrid";
 import { PRODUCTION } from "@/lib/catalog-mock";
 import { listCatalog } from "@/lib/catalog.functions";
 import { rowsToItems } from "@/lib/catalog-adapter";
+import { itemListJsonLd } from "@/lib/seo-jsonld";
 
 export const Route = createFileRoute("/production")({
   loader: async () => {
@@ -14,13 +15,24 @@ export const Route = createFileRoute("/production")({
       return { items: PRODUCTION };
     }
   },
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: "Производство декораций и конструкций — event-hub.by" },
       { name: "description", content: "Фотостены, арки, сцены, реквизит, печать. Производство под ключ в Минске." },
       { property: "og:title", content: "Производство — event-hub.by" },
       { property: "og:description", content: "Event-производство: декор, конструкции, печать." },
     ],
+    scripts: loaderData?.items?.length
+      ? [{
+          type: "application/ld+json",
+          children: itemListJsonLd({
+            basePath: "/production",
+            pageUrl: "https://event-hub.by/production",
+            name: "Производство декораций и конструкций для мероприятий",
+            items: loaderData.items as { title?: string; slug?: string }[],
+          }),
+        }]
+      : [],
   }),
   component: ProductionPage,
 });
