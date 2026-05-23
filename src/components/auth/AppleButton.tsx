@@ -10,15 +10,24 @@ export function AppleButton({ label = "Продолжить с Apple" }: { label
       disabled={loading}
       onClick={async () => {
         setLoading(true);
-        const res = await lovable.auth.signInWithOAuth("apple", {
-          redirect_uri: window.location.origin,
-        });
-        if (res.error) {
+        try {
+          console.log("[AppleButton] starting OAuth", { origin: window.location.origin });
+          const res = await lovable.auth.signInWithOAuth("apple", {
+            redirect_uri: window.location.origin,
+          });
+          console.log("[AppleButton] result", res);
+          if (res.error) {
+            setLoading(false);
+            toast.error(res.error.message ?? "Не удалось войти через Apple");
+            return;
+          }
+          if (res.redirected) return;
+        } catch (e) {
+          console.error("[AppleButton] exception", e);
           setLoading(false);
-          toast.error(res.error.message ?? "Не удалось войти через Apple");
+          toast.error(e instanceof Error ? e.message : "Ошибка входа через Apple");
           return;
         }
-        if (res.redirected) return;
         window.location.href = "/profile";
       }}
       className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border bg-background/60 px-4 py-2.5 text-sm font-medium hover:bg-primary/10 hover:border-primary/40 transition disabled:opacity-60"
