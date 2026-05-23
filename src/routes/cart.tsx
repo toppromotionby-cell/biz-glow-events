@@ -11,6 +11,7 @@ import { DateField } from "@/components/DateField";
 import { type PromoValidation } from "@/lib/promo.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { trackBeginCheckout, trackPurchase } from "@/lib/analytics";
+import { CartCrossSell } from "@/components/CartCrossSell";
 
 const DRAFT_KEY = "cart_contact_draft_v1";
 
@@ -293,6 +294,10 @@ function CartPage() {
             </form>
           </aside>
         </div>
+      )}
+
+      {items.length > 0 && (
+        <CartCrossSell presentTypes={Array.from(new Set(items.map(i => i.entity_type)))} />
       )}
 
       <RequisitesDialog

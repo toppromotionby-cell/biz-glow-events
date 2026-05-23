@@ -40,11 +40,11 @@ function OrderSuccess() {
               <div className="text-sm font-medium">{CONTACT.phoneDisplay}</div>
             </div>
           </a>
-          <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition">
+          <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition">
             <MessageCircle className="h-5 w-5 text-primary" />
             <div>
               <div className="text-xs text-muted-foreground">Чат</div>
-              <div className="text-sm font-medium">WhatsApp / Telegram</div>
+              <div className="text-sm font-medium">Telegram</div>
             </div>
           </a>
           <a href={`mailto:${CONTACT.email}`} className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition sm:col-span-2">

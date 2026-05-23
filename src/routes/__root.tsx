@@ -92,7 +92,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               logo: "https://event-hub.by/favicon.ico",
               email: "hello@event-hub.by",
               telephone: "+375447099122",
-              sameAs: ["https://wa.me/375447099122", "https://t.me/+375447099122"],
+              sameAs: ["https://t.me/+375447099122"],
             },
             {
               "@type": "WebSite",

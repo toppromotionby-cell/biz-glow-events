@@ -254,7 +254,6 @@ export function SiteFooter() {
                 <li>{CONTACT.address}</li>
                 <li><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></li>
                 <li className="flex gap-3 text-xs">
-                  <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">WhatsApp</a>
                   <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
                 </li>
                 <li><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></li>
@@ -303,7 +302,6 @@ export function SiteFooter() {
                       <li>{CONTACT.address}</li>
                       <li><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></li>
                       <li className="flex gap-3 text-xs">
-                        <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">WhatsApp</a>
                         <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
                       </li>
                       <li><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></li>
