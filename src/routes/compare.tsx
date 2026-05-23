@@ -2,13 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCompare, removeFromCompare, clearCompare } from "@/lib/compare";
 import { Button } from "@/components/ui/button";
 import { Scale, X, Trash2 } from "lucide-react";
-
-const KIND_PATHS: Record<string, string> = {
-  zones: "/zones",
-  tech_equipment: "/equipment",
-  services: "/services",
-  production_items: "/production",
-};
+import { CATALOG_SLUG_ROUTE } from "@/lib/catalog-routes";
+import type { CatalogType } from "@/lib/catalog.functions";
 
 const KIND_LABELS: Record<string, string> = {
   zones: "Зоны",
