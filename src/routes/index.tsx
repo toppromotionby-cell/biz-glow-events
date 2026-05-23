@@ -49,33 +49,76 @@ function HomePage() {
 
   return (
     <div>
-      {/* HERO */}
-      <Toggleable sectionKey="home.hero" as="section" className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-80" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,oklch(0.55_0.24_295/0.25),transparent_60%)] animate-gradient" />
-        <div className="container mx-auto px-4 py-24 md:py-36 relative">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs mb-6">
-              <Sparkles className="h-3 w-3 text-accent" /> Event-технологии нового поколения
+      {/* HERO — spark burst */}
+      <Toggleable sectionKey="home.hero" as="section" className="relative overflow-hidden min-h-[92vh] flex items-center">
+        <div className="spark-burst" aria-hidden="true">
+          {Array.from({ length: 60 }).map((_, i) => {
+            const ang = (i * 360) / 60 + (i % 3) * 4;
+            const len = 80 + ((i * 37) % 220);
+            const dist = 50 + ((i * 17) % 40);
+            const dur = 3 + ((i * 13) % 40) / 10;
+            const delay = ((i * 23) % 40) / 10;
+            return (
+              <span
+                key={i}
+                className="spark"
+                style={{
+                  ["--ang" as string]: `${ang}deg`,
+                  ["--len" as string]: `${len}px`,
+                  ["--dist" as string]: `${dist}vmax`,
+                  ["--dur" as string]: `${dur}s`,
+                  ["--delay" as string]: `${delay}s`,
+                }}
+              />
+            );
+          })}
+        </div>
+        <div className="container mx-auto px-4 py-24 md:py-32 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-[0.25em] uppercase text-accent mb-8">
+              <Sparkles className="h-3 w-3" /> Корпоративные мероприятия / Вся Беларусь
             </div>
-            <h1 className="text-3xl sm:text-5xl md:text-7xl font-display font-bold leading-tight md:leading-[1.05] mb-6">
-              Превращаем идеи в <span className="gradient-text">незабываемые события</span>
+            <h1 className="font-display font-black leading-[0.95] tracking-tight text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-8">
+              <span className="block bg-gradient-to-r from-[oklch(0.78_0.20_55)] via-[oklch(0.82_0.18_65)] to-[oklch(0.75_0.21_45)] bg-clip-text text-transparent">
+                Создаём
+              </span>
+              <span className="block text-foreground">Незабываемые</span>
+              <span className="block text-foreground">События</span>
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-8">
-              Полный цикл event-производства в Беларуси: интерактивные зоны, техническое оснащение,
-              маркетинговые активации и декорации под ключ.
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+              Полный цикл event-производства: от идеи до финального аккорда.
+              Интерактивные зоны, техническое оснащение, шоу-программы и декорации.
             </p>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mb-16">
               <CatalogChoiceModal>
-                <Button size="lg" className="bg-gradient-primary glow-primary-lg w-full sm:w-auto">
-                  Смотреть каталог <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto">
+                  Рассчитать стоимость <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CatalogChoiceModal>
-              <Link to="/contacts" className="w-full sm:w-auto"><Button size="lg" variant="outline" className="w-full sm:w-auto">Получить смету</Button></Link>
+              <Link to="/equipment" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="rounded-full px-8 h-12 border-foreground/20 hover:border-accent hover:text-accent w-full sm:w-auto">
+                  Смотреть услуги
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+              {[
+                { n: "150+", l: "Мероприятий" },
+                { n: "50+", l: "Интерактивных зон" },
+                { n: "10+", l: "Лет опыта" },
+              ].map((s) => (
+                <div key={s.l} className="text-center">
+                  <div className="font-display font-black text-3xl sm:text-4xl md:text-5xl bg-gradient-to-r from-[oklch(0.80_0.19_60)] to-[oklch(0.72_0.21_45)] bg-clip-text text-transparent">
+                    {s.n}
+                  </div>
+                  <div className="mt-2 text-xs sm:text-sm text-muted-foreground">{s.l}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </Toggleable>
+
 
       {/* DIRECTIONS */}
       <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 py-20">

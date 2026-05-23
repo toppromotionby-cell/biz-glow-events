@@ -45,12 +45,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --shadow-glow: 0 0 32px oklch(0.65 0.25 295 / 0.35);
-  --shadow-glow-lg: 0 0 60px oklch(0.65 0.25 295 / 0.45);
+  --shadow-glow: 0 0 32px oklch(0.72 0.20 55 / 0.45);
+  --shadow-glow-lg: 0 0 60px oklch(0.75 0.20 50 / 0.55);
   --shadow-elegant: 0 20px 60px -15px oklch(0 0 0 / 0.6);
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.5 0.24 295), oklch(0.65 0.25 295));
-  --gradient-hero: radial-gradient(ellipse at top, oklch(0.5 0.24 295 / 0.35), transparent 60%);
+  --gradient-primary: linear-gradient(135deg, oklch(0.70 0.21 45), oklch(0.80 0.18 75));
+  --gradient-hero: radial-gradient(ellipse at center, oklch(0.70 0.21 45 / 0.35), transparent 60%);
   --gradient-glass: linear-gradient(135deg, oklch(1 0 0 / 0.05), oklch(1 0 0 / 0.01));
 }
 
@@ -64,22 +64,22 @@
   --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0.07 0 0);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.55 0.24 295);
-  --primary-foreground: oklch(1 0 0);
-  --primary-glow: oklch(0.7 0.25 300);
-  --secondary: oklch(0.15 0.02 280);
+  --primary: oklch(0.72 0.20 50);
+  --primary-foreground: oklch(0.15 0.02 40);
+  --primary-glow: oklch(0.82 0.17 70);
+  --secondary: oklch(0.15 0.02 50);
   --secondary-foreground: oklch(0.95 0 0);
   --muted: oklch(0.12 0 0);
-  --muted-foreground: oklch(0.72 0.02 260);
-  --accent: oklch(0.65 0.25 295);
-  --accent-foreground: oklch(0 0 0);
+  --muted-foreground: oklch(0.72 0.02 60);
+  --accent: oklch(0.78 0.19 60);
+  --accent-foreground: oklch(0.12 0.02 40);
   --destructive: oklch(0.62 0.24 25);
   --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.7 0.18 150);
   --warning: oklch(0.78 0.17 80);
   --border: oklch(1 0 0 / 0.1);
   --input: oklch(1 0 0 / 0.08);
-  --ring: oklch(0.65 0.25 295 / 0.5);
+  --ring: oklch(0.75 0.20 55 / 0.5);
 }
 
 .dark, .theme-dark {
@@ -88,50 +88,50 @@
 
 /* ===== Светлая тема ===== */
 .theme-light {
-  --background: oklch(0.99 0.005 280);
-  --foreground: oklch(0.18 0.02 280);
-  --surface: oklch(0.97 0.008 280);
-  --surface-2: oklch(0.94 0.01 280);
+  --background: oklch(0.99 0.005 50);
+  --foreground: oklch(0.18 0.02 50);
+  --surface: oklch(0.97 0.008 50);
+  --surface-2: oklch(0.94 0.01 50);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 280);
+  --card-foreground: oklch(0.18 0.02 50);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 280);
-  --primary: oklch(0.5 0.22 295);
+  --popover-foreground: oklch(0.18 0.02 50);
+  --primary: oklch(0.5 0.22 55);
   --primary-foreground: oklch(1 0 0);
-  --primary-glow: oklch(0.65 0.24 300);
-  --secondary: oklch(0.92 0.02 280);
-  --secondary-foreground: oklch(0.2 0.02 280);
-  --muted: oklch(0.95 0.01 280);
-  --muted-foreground: oklch(0.45 0.02 280);
-  --accent: oklch(0.55 0.22 295);
+  --primary-glow: oklch(0.65 0.24 65);
+  --secondary: oklch(0.92 0.02 50);
+  --secondary-foreground: oklch(0.2 0.02 50);
+  --muted: oklch(0.95 0.01 50);
+  --muted-foreground: oklch(0.45 0.02 50);
+  --accent: oklch(0.55 0.22 55);
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.55 0.24 25);
   --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.55 0.18 150);
   --warning: oklch(0.65 0.17 80);
-  --border: oklch(0.2 0.02 280 / 0.12);
-  --input: oklch(0.2 0.02 280 / 0.08);
-  --ring: oklch(0.55 0.22 295 / 0.5);
+  --border: oklch(0.2 0.02 50 / 0.12);
+  --input: oklch(0.2 0.02 50 / 0.08);
+  --ring: oklch(0.55 0.22 55 / 0.5);
 }
 
 .theme-light .gradient-text {
-  background: linear-gradient(135deg, oklch(0.25 0.04 295), oklch(0.5 0.22 295));
+  background: linear-gradient(135deg, oklch(0.25 0.04 55), oklch(0.5 0.22 55));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .theme-light .bg-radial-glow {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.55 0.22 295 / 0.18), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 60%, oklch(0.55 0.22 295 / 0.08), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.55 0.22 55 / 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%, oklch(0.55 0.22 55 / 0.08), transparent);
 }
 .theme-light .glass {
   background: linear-gradient(135deg, oklch(1 0 0 / 0.75), oklch(1 0 0 / 0.45));
-  border-color: oklch(0.2 0.02 280 / 0.1);
+  border-color: oklch(0.2 0.02 50 / 0.1);
 }
 .theme-light .glass-strong {
   background: oklch(1 0 0 / 0.85);
-  border-color: oklch(0.2 0.02 280 / 0.1);
+  border-color: oklch(0.2 0.02 50 / 0.1);
 }
 .theme-light .fx-aurora,
 .theme-light .fx-cursor-glow { opacity: 0.5; }
@@ -147,7 +147,7 @@
   }
   h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
   p, li { text-wrap: pretty; overflow-wrap: anywhere; hyphens: auto; }
-  ::selection { background: oklch(0.55 0.24 295 / 0.4); color: white; }
+  ::selection { background: oklch(0.55 0.24 55 / 0.4); color: white; }
 
   /* ===== Глобальное автовыравнивание ===== */
   /* Единый центрированный контейнер с боковыми отступами */
@@ -200,7 +200,7 @@
     border: 1px solid oklch(1 0 0 / 0.12);
   }
   .gradient-text {
-    background: linear-gradient(135deg, oklch(1 0 0), oklch(0.7 0.25 300));
+    background: linear-gradient(135deg, oklch(1 0 0), oklch(0.7 0.25 65));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -211,8 +211,8 @@
   .bg-gradient-hero { background: var(--gradient-hero); }
   .bg-radial-glow {
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.55 0.24 295 / 0.3), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 60%, oklch(0.55 0.24 295 / 0.15), transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.55 0.24 55 / 0.3), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 60%, oklch(0.55 0.24 55 / 0.15), transparent);
   }
 }
 
@@ -221,8 +221,8 @@
   100% { background-position: 200% 0; }
 }
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px oklch(0.65 0.25 295 / 0.3); }
-  50% { box-shadow: 0 0 40px oklch(0.65 0.25 295 / 0.6); }
+  0%, 100% { box-shadow: 0 0 20px oklch(0.65 0.25 55 / 0.3); }
+  50% { box-shadow: 0 0 40px oklch(0.65 0.25 55 / 0.6); }
 }
 @keyframes float-slow {
   0%, 100% { transform: translateY(0) translateX(0); }
@@ -293,20 +293,20 @@
 .hero-logo__word {
   background: linear-gradient(
     100deg,
-    oklch(0.98 0.02 300) 0%,
-    oklch(0.78 0.22 300) 18%,
-    oklch(0.65 0.27 320) 34%,
-    oklch(0.72 0.22 250) 52%,
+    oklch(0.98 0.02 65) 0%,
+    oklch(0.78 0.22 65) 18%,
+    oklch(0.65 0.27 75) 34%,
+    oklch(0.72 0.22 45) 52%,
     oklch(0.85 0.18 200) 68%,
-    oklch(0.78 0.22 300) 84%,
-    oklch(0.98 0.02 300) 100%
+    oklch(0.78 0.22 65) 84%,
+    oklch(0.98 0.02 65) 100%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: logo-iridescent 6s linear infinite;
-  filter: drop-shadow(0 0 18px oklch(0.7 0.25 300 / 0.45));
+  filter: drop-shadow(0 0 18px oklch(0.7 0.25 65 / 0.45));
   position: relative;
 }
 .hero-logo__halo {
@@ -316,8 +316,8 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background:
-    radial-gradient(ellipse at center, oklch(0.7 0.25 300 / 0.45), transparent 55%),
-    radial-gradient(ellipse at 30% 50%, oklch(0.6 0.22 250 / 0.30), transparent 60%);
+    radial-gradient(ellipse at center, oklch(0.7 0.25 65 / 0.45), transparent 55%),
+    radial-gradient(ellipse at 30% 50%, oklch(0.6 0.22 45 / 0.30), transparent 60%);
   filter: blur(28px);
   z-index: -1;
   animation: logo-halo 5s ease-in-out infinite;
@@ -344,8 +344,8 @@
   position: absolute;
   width: 6px; height: 6px;
   border-radius: 999px;
-  background: oklch(0.95 0.08 300);
-  box-shadow: 0 0 12px oklch(0.85 0.2 300 / 0.9);
+  background: oklch(0.95 0.08 65);
+  box-shadow: 0 0 12px oklch(0.85 0.2 65 / 0.9);
   animation: logo-spark 3.6s ease-in-out infinite;
   pointer-events: none;
 }
@@ -367,8 +367,8 @@
   z-index: 1;
   background: radial-gradient(
     520px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
-    oklch(0.65 0.25 295 / 0.18),
-    oklch(0.65 0.25 295 / 0.06) 30%,
+    oklch(0.65 0.25 55 / 0.18),
+    oklch(0.65 0.25 55 / 0.06) 30%,
     transparent 60%
   );
   mix-blend-mode: screen;
@@ -394,17 +394,17 @@
   will-change: transform;
 }
 .fx-blob-1 {
-  background: radial-gradient(circle, oklch(0.55 0.24 295 / 0.6), transparent 60%);
+  background: radial-gradient(circle, oklch(0.55 0.24 55 / 0.6), transparent 60%);
   top: -20%; left: -10%;
   animation: fx-float-1 22s ease-in-out infinite;
 }
 .fx-blob-2 {
-  background: radial-gradient(circle, oklch(0.7 0.25 300 / 0.45), transparent 60%);
+  background: radial-gradient(circle, oklch(0.7 0.25 65 / 0.45), transparent 60%);
   bottom: -25%; right: -15%;
   animation: fx-float-2 28s ease-in-out infinite;
 }
 .fx-blob-3 {
-  background: radial-gradient(circle, oklch(0.6 0.22 320 / 0.35), transparent 60%);
+  background: radial-gradient(circle, oklch(0.6 0.22 75 / 0.35), transparent 60%);
   top: 30%; right: 20%;
   width: 36vmax; height: 36vmax;
   animation: fx-float-3 34s ease-in-out infinite;
@@ -440,7 +440,7 @@ main, header, footer { position: relative; z-index: 2; }
   transition: opacity 0.4s ease;
   background: radial-gradient(
     220px circle at var(--mx, 50%) var(--my, 50%),
-    oklch(0.7 0.25 300 / 0.22),
+    oklch(0.7 0.25 65 / 0.22),
     transparent 60%
   );
 }
@@ -454,7 +454,7 @@ main, header, footer { position: relative; z-index: 2; }
   height: 8px;
   border-radius: 999px;
   transform: translate(-50%, -50%) scale(0);
-  background: radial-gradient(circle, oklch(0.85 0.2 300 / 0.55), oklch(0.65 0.25 295 / 0.15) 60%, transparent 70%);
+  background: radial-gradient(circle, oklch(0.85 0.2 65 / 0.55), oklch(0.65 0.25 55 / 0.15) 60%, transparent 70%);
   pointer-events: none;
   animation: fx-ripple 0.6s ease-out forwards;
   z-index: 0;
@@ -481,7 +481,7 @@ main, header, footer { position: relative; z-index: 2; }
 }
 .glass:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 50px -20px oklch(0.55 0.24 295 / 0.45);
+  box-shadow: 0 20px 50px -20px oklch(0.55 0.24 55 / 0.45);
 }
 
 /* Сияние границ кнопок градиента */
@@ -493,7 +493,7 @@ main, header, footer { position: relative; z-index: 2; }
   content: "";
   position: absolute;
   inset: -1px;
-  background: conic-gradient(from var(--a, 0deg), transparent 70%, oklch(0.85 0.2 300 / 0.6), transparent);
+  background: conic-gradient(from var(--a, 0deg), transparent 70%, oklch(0.85 0.2 65 / 0.6), transparent);
   animation: fx-spin 4s linear infinite;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -517,3 +517,47 @@ main, header, footer { position: relative; z-index: 2; }
   .fx-cursor-glow, .fx-aurora { display: none; }
 }
 
+
+/* =====================================================
+ * Hero spark burst — оранжево-янтарный взрыв из центра
+ * ===================================================== */
+@keyframes spark-fly {
+  0%   { transform: translate(-50%, -50%) rotate(var(--ang)) translateX(0) scaleX(0); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(var(--ang)) translateX(var(--dist, 60vmax)) scaleX(1); opacity: 0; }
+}
+.spark-burst {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, oklch(0.30 0.10 50 / 0.55), transparent 55%),
+    radial-gradient(circle at center, oklch(0.18 0.05 40 / 0.6), oklch(0 0 0) 70%);
+}
+.spark-burst::before,
+.spark-burst::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle, oklch(0.95 0.15 70 / 0.95), transparent 70%);
+  filter: blur(1px);
+  box-shadow: 0 0 14px oklch(0.85 0.18 60 / 0.9);
+}
+.spark {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--len, 120px);
+  height: 1.5px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, transparent, oklch(0.92 0.16 70 / 0.95) 40%, oklch(0.78 0.20 50 / 0.85) 80%, transparent);
+  filter: blur(0.4px) drop-shadow(0 0 6px oklch(0.85 0.18 60 / 0.7));
+  animation: spark-fly var(--dur, 4s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spark { animation: none !important; opacity: 0.4; }
+}
