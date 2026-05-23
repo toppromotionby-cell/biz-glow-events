@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
 import { useSectionEnabled } from "@/lib/site-sections";
+import { isEmbeddedOAuthContext, openOAuthInNewTab } from "@/lib/oauth-redirect";
 
 export function AppleButton({ label = "Продолжить с Apple" }: { label?: string }) {
   const enabled = useSectionEnabled("auth.apple");
@@ -12,6 +13,13 @@ export function AppleButton({ label = "Продолжить с Apple" }: { label
       type="button"
       disabled={loading}
       onClick={async () => {
+        if (isEmbeddedOAuthContext()) {
+          if (!openOAuthInNewTab("apple")) {
+            toast.error("Разрешите всплывающие окна для входа через Apple");
+          }
+          return;
+        }
+
         setLoading(true);
         try {
           console.log("[AppleButton] starting OAuth", { origin: window.location.origin });
