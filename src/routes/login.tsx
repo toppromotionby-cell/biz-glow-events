@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import { AppleButton } from "@/components/auth/AppleButton";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
