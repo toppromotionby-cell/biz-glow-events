@@ -195,14 +195,25 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    /* Эргономика типографики в духе Apple: на десктопе rem ≈ 17px, на мобильном — 16px */
+    font-size: 16px;
+  }
+  @media (min-width: 1024px) {
+    html { font-size: 17px; }
+  }
+  /* Админ-панель: плотные таблицы — фиксируем 16px, чтобы не «раздувать» сетку */
+  .admin-shell { font-size: 16px; }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
+    line-height: 1.55;
+    letter-spacing: -0.01em;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.022em; text-wrap: balance; line-height: 1.05; }
   p, li { text-wrap: pretty; overflow-wrap: anywhere; hyphens: auto; }
   ::selection { background: oklch(0.55 0.24 55 / 0.4); color: white; }
 
