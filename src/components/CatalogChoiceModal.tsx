@@ -11,32 +11,29 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Cpu, Music, Lightbulb, Package, ArrowRight, X } from "lucide-react";
+import { Gamepad2, Settings2, CalendarCheck, Package, ArrowRight, X } from "lucide-react";
 
 const CATALOGS = [
   {
     id: "zones",
     title: "Интерактивные зоны",
-    desc: "VR/AR, фотозоны, геймификация, иммерсивные зоны",
+    desc: "VR/AR, геймификация, фотозоны и иммерсивные активности",
     to: "/zones" as const,
-    icon: Cpu,
-    color: "from-primary to-primary-glow",
+    icon: Gamepad2,
   },
   {
     id: "equipment",
-    title: "Оборудование",
-    desc: "Звук, свет, LED-экраны любых размеров",
+    title: "Техническое оснащение мероприятий",
+    desc: "Звук, свет, LED-экраны и сцена под ключ",
     to: "/equipment" as const,
-    icon: Music,
-    color: "from-accent to-accent-glow",
+    icon: Settings2,
   },
   {
     id: "services",
-    title: "Услуги",
-    desc: "BTL, промо-персонал, event-услуги",
+    title: "Организация мероприятий под ключ",
+    desc: "Полный цикл: концепция, подрядчики, координация в день",
     to: "/services" as const,
-    icon: Lightbulb,
-    color: "from-primary to-accent",
+    icon: CalendarCheck,
   },
   {
     id: "production",
@@ -44,7 +41,6 @@ const CATALOGS = [
     desc: "Декорации, баннеры, арт-объекты, реквизит",
     to: "/production" as const,
     icon: Package,
-    color: "from-accent to-primary",
   },
 ];
 
