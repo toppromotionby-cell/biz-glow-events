@@ -80,7 +80,7 @@ function ComparePage() {
                       <dd className="text-xs">{KIND_LABELS[it.entity_type]}</dd>
                     </div>
                   </dl>
-                  <Link to={`${KIND_PATHS[it.entity_type]}/${it.slug}`} className="block">
+                  <Link to={CATALOG_SLUG_ROUTE[it.entity_type as CatalogType]} params={{ slug: it.slug }} className="block">
                     <Button size="sm" variant="outline" className="w-full">Подробнее</Button>
                   </Link>
                 </div>
