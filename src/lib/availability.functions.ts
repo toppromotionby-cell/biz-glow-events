@@ -12,13 +12,15 @@ export type AvailabilityRow = {
   status: "available" | "booked" | "maintenance";
 };
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 export const listItemAvailability = createServerFn({ method: "GET" })
   .inputValidator((i) =>
     z.object({
       entity_type: z.enum(["zones", "tech_equipment", "services", "production_items"]),
       item_id: z.string().uuid(),
-      from: z.string().optional(),
-      to: z.string().optional(),
+      from: z.string().regex(ISO_DATE).optional(),
+      to: z.string().regex(ISO_DATE).optional(),
     }).parse(i)
   )
   .handler(async ({ data }) => {
@@ -31,6 +33,9 @@ export const listItemAvailability = createServerFn({ method: "GET" })
     if (data.from) q = q.gte("end_date", data.from);
     if (data.to) q = q.lte("start_date", data.to);
     const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[listItemAvailability] DB error:", error);
+      throw new Error("Не удалось загрузить данные о доступности.");
+    }
     return (rows ?? []) as AvailabilityRow[];
   });
