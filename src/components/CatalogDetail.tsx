@@ -1,5 +1,5 @@
 // Universal catalog detail view: gallery, lightbox, video, description, FAQ, JSON-LD.
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
@@ -12,8 +12,10 @@ import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { CompareButton } from "@/components/CompareButton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { trackView } from "@/lib/recent";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
+import { addToCart } from "@/lib/cart";
+import { toast } from "sonner";
 
 function priceFrom(pricing: unknown): number | null {
   if (!pricing || typeof pricing !== "object") return null;
@@ -34,6 +36,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 }) {
   const photos = item.photo_urls ?? [];
   const videos = item.video_urls ?? [];
+  const navigate = useNavigate();
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const cover = photos[active];
@@ -49,11 +52,32 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const effectiveTitle = activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title;
   const effectiveId = activeTier ? `${item.id}::${selectedTier}` : item.id;
   const needsSelection = hasTiers && selectedTier === null;
+  const isByRequest = !needsSelection && effectivePrice <= 0;
 
   const openLightbox = useCallback((i: number) => setLightbox(i), []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
   const prev = useCallback(() => setLightbox((i) => (i === null ? null : (i - 1 + photos.length) % photos.length)), [photos.length]);
   const next = useCallback(() => setLightbox((i) => (i === null ? null : (i + 1) % photos.length)), [photos.length]);
+
+  function handlePrimaryOrder() {
+    if (needsSelection) return;
+    if (isByRequest) {
+      try { localStorage.setItem("lead_subject_v1", effectiveTitle); } catch {}
+      navigate({ to: "/contacts" });
+      return;
+    }
+    addToCart({
+      entity_type: entityType,
+      id: effectiveId,
+      slug: item.slug,
+      title: effectiveTitle,
+      price: effectivePrice,
+      image: item.photo_urls?.[0] ?? null,
+      qty: 1,
+    });
+    toast.success(`«${effectiveTitle}» добавлено в корзину`);
+    navigate({ to: "/cart" });
+  }
 
   useEffect(() => {
     trackView({
