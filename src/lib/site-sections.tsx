@@ -74,6 +74,11 @@ export const SECTION_REGISTRY = [
   // Глобально
   { key: "global.cookies", label: "Глобально: Cookie-баннер", group: "Глобально" },
 
+  // Карточки каталога
+  { key: "catalog.video", label: "Карточки: Блок «Видео» целиком", group: "Карточки каталога" },
+  { key: "catalog.video.external", label: "Карточки: Видео со сторонних ресурсов (YouTube и др.)", group: "Карточки каталога" },
+  { key: "catalog.video.uploaded", label: "Карточки: Загруженные видео-файлы", group: "Карточки каталога" },
+
   // Авторизация
   { key: "auth.google", label: "Авторизация: Кнопка входа через Google", group: "Авторизация" },
   { key: "auth.apple", label: "Авторизация: Кнопка входа через Apple", group: "Авторизация" },
