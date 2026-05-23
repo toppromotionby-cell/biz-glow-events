@@ -303,7 +303,7 @@ function HomePage() {
             <h3 className="font-display font-semibold text-xl mb-1">Не нашли подходящее?</h3>
             <p className="text-sm text-muted-foreground">Опишите задачу — подберём решение под ваш бюджет и сроки.</p>
           </div>
-          <Link to="/contact">
+          <Link to="/contacts">
             <Button size="lg" variant="outline">
               Оставить заявку <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
