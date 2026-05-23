@@ -15,17 +15,45 @@ export const Route = createFileRoute("/cases/$slug")({
     if (!item) throw notFound();
     return { item };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const c = loaderData?.item;
     if (!c) return { meta: [{ title: "Кейс — event-hub.by" }] };
+    const url = `https://event-hub.by/cases/${params.slug}`;
+    const eventLd: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: c.title,
+      description: c.summary ?? c.description ?? undefined,
+      eventStatus: "https://schema.org/EventScheduled",
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      url,
+      image: c.cover_url ?? undefined,
+      startDate: c.event_date ?? undefined,
+      location: c.location
+        ? {
+            "@type": "Place",
+            name: c.location,
+            address: { "@type": "PostalAddress", addressLocality: c.location, addressCountry: "BY" },
+          }
+        : undefined,
+      organizer: {
+        "@type": "Organization",
+        name: "event-hub.by",
+        url: "https://event-hub.by",
+      },
+      ...(c.client ? { performer: { "@type": "Organization", name: c.client } } : {}),
+    };
     return {
       meta: [
         { title: c.seo_title ?? `${c.title} — кейс event-hub.by` },
         { name: "description", content: c.seo_description ?? c.summary ?? `Реализованный проект ${c.title}.` },
         { property: "og:title", content: c.title },
         { property: "og:description", content: c.summary ?? "" },
+        { property: "og:type", content: "article" },
         ...(c.cover_url ? [{ property: "og:image", content: c.cover_url }] : []),
       ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{ type: "application/ld+json", children: JSON.stringify(eventLd) }],
     };
   },
   component: CasePage,
