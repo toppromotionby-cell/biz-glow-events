@@ -51,6 +51,19 @@ function ProfilePage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, { items: any[]; timeline: any[] }>>({});
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ client_name: "", client_phone: "", client_email: "", client_company: "", event_date: "", notes: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const updateFn = useServerFn(updateOwnOrder);
+  const deleteFn = useServerFn(deleteOwnOrder);
+
+  async function reloadOrders() {
+    const { data: o } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    setOrders(o ?? []);
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -58,9 +71,9 @@ function ProfilePage() {
     (async () => {
       const { data: p } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       setProfile(p);
-      const { data: o } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-      setOrders(o ?? []);
+      await reloadOrders();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, navigate]);
 
   async function toggle(orderId: string) {
@@ -74,6 +87,60 @@ function ProfilePage() {
       setDetails((d) => ({ ...d, [orderId]: { items: items ?? [], timeline: timeline ?? [] } }));
     }
   }
+
+  function openEdit(o: any) {
+    setEditing(o);
+    setEditForm({
+      client_name: o.client_name ?? "",
+      client_phone: o.client_phone ?? "",
+      client_email: o.client_email ?? "",
+      client_company: o.client_company ?? "",
+      event_date: o.event_date ?? "",
+      notes: o.notes ?? "",
+    });
+  }
+
+  async function submitEdit() {
+    if (!editing) return;
+    setSavingEdit(true);
+    try {
+      await updateFn({ data: {
+        id: editing.id,
+        client_name: editForm.client_name.trim(),
+        client_phone: editForm.client_phone.trim(),
+        client_email: editForm.client_email.trim(),
+        client_company: editForm.client_company.trim() || null,
+        event_date: editForm.event_date || null,
+        notes: editForm.notes.trim() || null,
+      }});
+      toast.success("Заявка обновлена");
+      setEditing(null);
+      setDetails((d) => { const c = { ...d }; delete c[editing.id]; return c; });
+      await reloadOrders();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Ошибка сохранения");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await deleteFn({ data: { id: deleteId } });
+      toast.success("Заявка удалена");
+      setOrders((arr) => arr.filter((x) => x.id !== deleteId));
+      setDeleteId(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Ошибка удаления");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const canEdit = (status: string) => ["new", "consultation", "estimate"].includes(status);
+
 
   if (loading || !profile) return <div className="container mx-auto px-4 py-16">Загрузка...</div>;
 
