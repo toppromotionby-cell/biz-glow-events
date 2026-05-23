@@ -52,6 +52,10 @@ export const SECTION_REGISTRY = [
 
   // Глобально
   { key: "global.cookies", label: "Глобально: Cookie-баннер", group: "Глобально" },
+
+  // Авторизация
+  { key: "auth.google", label: "Авторизация: Кнопка входа через Google", group: "Авторизация" },
+  { key: "auth.apple", label: "Авторизация: Кнопка входа через Apple", group: "Авторизация" },
 ] as const;
 
 export type SectionKey = (typeof SECTION_REGISTRY)[number]["key"];
