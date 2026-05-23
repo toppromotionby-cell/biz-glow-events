@@ -42,7 +42,7 @@ function ProductionPage() {
   return (
     <div className="container mx-auto px-4 py-16">
       <header className="max-w-2xl mb-12">
-        <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Производство</h1>
+        <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Производство декораций и конструкций в Минске</h1>
         <p className="mt-4 text-muted-foreground">Декорации, фотозоны, сцены и печать. От эскиза до монтажа на площадке.</p>
       </header>
       <CatalogGrid items={items} category="production" basePath="/production" entityType="production_items" />
