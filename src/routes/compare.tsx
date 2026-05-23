@@ -2,13 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCompare, removeFromCompare, clearCompare } from "@/lib/compare";
 import { Button } from "@/components/ui/button";
 import { Scale, X, Trash2 } from "lucide-react";
-
-const KIND_PATHS: Record<string, string> = {
-  zones: "/zones",
-  tech_equipment: "/equipment",
-  services: "/services",
-  production_items: "/production",
-};
+import { CATALOG_SLUG_ROUTE } from "@/lib/catalog-routes";
+import type { CatalogType } from "@/lib/catalog.functions";
 
 const KIND_LABELS: Record<string, string> = {
   zones: "Зоны",
@@ -69,7 +64,8 @@ function ComparePage() {
                 </div>
                 <div className="p-4 space-y-3">
                   <Link
-                    to={`${KIND_PATHS[it.entity_type]}/${it.slug}`}
+                    to={CATALOG_SLUG_ROUTE[it.entity_type as CatalogType]}
+                    params={{ slug: it.slug }}
                     className="font-display font-semibold hover:text-primary transition line-clamp-2"
                   >
                     {it.title}
@@ -84,7 +80,7 @@ function ComparePage() {
                       <dd className="text-xs">{KIND_LABELS[it.entity_type]}</dd>
                     </div>
                   </dl>
-                  <Link to={`${KIND_PATHS[it.entity_type]}/${it.slug}`} className="block">
+                  <Link to={CATALOG_SLUG_ROUTE[it.entity_type as CatalogType]} params={{ slug: it.slug }} className="block">
                     <Button size="sm" variant="outline" className="w-full">Подробнее</Button>
                   </Link>
                 </div>

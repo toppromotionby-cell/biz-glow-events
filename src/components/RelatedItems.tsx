@@ -2,13 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listCatalog, type CatalogRow, type CatalogType } from "@/lib/catalog.functions";
-
-const BASE: Record<CatalogType, string> = {
-  zones: "/zones",
-  tech_equipment: "/equipment",
-  services: "/services",
-  production_items: "/production",
-};
+import { CATALOG_SLUG_ROUTE, type CatalogSlugRoute } from "@/lib/catalog-routes";
 
 const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 });
 
@@ -43,17 +37,17 @@ export function RelatedItems({ type, currentId, category }: {
     <section className="mt-16">
       <h2 className="text-2xl font-display font-semibold mb-5">Похожие позиции</h2>
       <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {items.map(i => <Card key={i.id} item={i} base={BASE[type]} />)}
+        {items.map(i => <Card key={i.id} item={i} to={CATALOG_SLUG_ROUTE[type]} />)}
       </ul>
     </section>
   );
 }
 
-function Card({ item, base }: { item: CatalogRow; base: string }) {
+function Card({ item, to }: { item: CatalogRow; to: CatalogSlugRoute }) {
   const from = priceFrom(item.pricing);
   return (
     <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group">
-      <Link to={`${base}/${item.slug}`} className="block">
+      <Link to={to} params={{ slug: item.slug }} className="block">
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (
             <img src={item.photo_urls[0]} alt={item.title} loading="lazy"

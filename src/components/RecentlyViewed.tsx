@@ -1,13 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useRecent } from "@/lib/recent";
-import type { CartEntityType } from "@/lib/cart";
-
-const BASE: Record<CartEntityType, string> = {
-  zones: "/zones",
-  tech_equipment: "/equipment",
-  services: "/services",
-  production_items: "/production",
-};
+import { CATALOG_SLUG_ROUTE } from "@/lib/catalog-routes";
 
 export function RecentlyViewed({ excludeId, max = 6 }: { excludeId?: string; max?: number }) {
   const all = useRecent();
@@ -19,7 +12,7 @@ export function RecentlyViewed({ excludeId, max = 6 }: { excludeId?: string; max
       <ul className="flex gap-3 overflow-x-auto pb-2 snap-x">
         {items.map(i => (
           <li key={`${i.entity_type}:${i.id}`} className="snap-start shrink-0 w-48 glass rounded-lg overflow-hidden hover:glow-primary transition">
-            <Link to={`${BASE[i.entity_type]}/${i.slug}`} className="block">
+            <Link to={CATALOG_SLUG_ROUTE[i.entity_type]} params={{ slug: i.slug }} className="block">
               <div className="aspect-[16/10] bg-surface">
                 {i.image && <img src={i.image} alt={i.title} loading="lazy" className="h-full w-full object-cover" />}
               </div>
