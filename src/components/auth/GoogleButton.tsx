@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
+import { useSectionEnabled } from "@/lib/site-sections";
 
 export function GoogleButton({ label = "Продолжить с Google" }: { label?: string }) {
+  const enabled = useSectionEnabled("auth.google");
   const [loading, setLoading] = useState(false);
+  if (!enabled) return null;
   return (
     <button
       type="button"
