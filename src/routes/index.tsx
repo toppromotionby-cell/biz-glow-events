@@ -133,20 +133,8 @@ function HomePage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {featured.map((f, idx) => {
-              const routeMap: Record<string, "/zones/$slug" | "/equipment/$slug" | "/services/$slug" | "/production/$slug"> = {
-                "/zones": "/zones/$slug",
-                "/equipment": "/equipment/$slug",
-                "/services": "/services/$slug",
-                "/production": "/production/$slug",
-              };
-              const to = routeMap[f.basePath] ?? "/equipment/$slug";
-              return (
-                <Link
-                  key={f.id}
-                  to={to}
-                  params={{ slug: f.slug }}
-                  className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition block"
-                >
+              const inner = (
+                <>
                   <div className="aspect-[16/10] overflow-hidden bg-gradient-primary/10">
                     {f.photo_urls?.[0] ? (
                       <img
@@ -163,8 +151,19 @@ function HomePage() {
                     <h3 className="font-semibold leading-tight group-hover:text-primary transition">{f.title}</h3>
                     {f.short_description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{f.short_description}</p>}
                   </div>
-                </Link>
+                </>
               );
+              const cls = "group glass rounded-xl overflow-hidden hover:border-primary/50 transition block";
+              if (f.basePath === "/zones") {
+                return <Link key={f.id} to="/zones/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
+              }
+              if (f.basePath === "/services") {
+                return <Link key={f.id} to="/services/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
+              }
+              if (f.basePath === "/production") {
+                return <Link key={f.id} to="/production/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
+              }
+              return <Link key={f.id} to="/equipment/$slug" params={{ slug: f.slug }} className={cls}>{inner}</Link>;
             })}
           </div>
 
