@@ -102,9 +102,11 @@ function HomePage() {
               маркетинговые активации и декорации под ключ.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link to="/zones"><Button size="lg" className="bg-gradient-primary glow-primary-lg">
-                Смотреть каталог <ArrowRight className="ml-2 h-4 w-4" />
-              </Button></Link>
+              <CatalogChoiceModal>
+                <Button size="lg" className="bg-gradient-primary glow-primary-lg">
+                  Смотреть каталог <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CatalogChoiceModal>
               <Link to="/contacts"><Button size="lg" variant="outline">Получить смету</Button></Link>
             </div>
           </div>
