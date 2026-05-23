@@ -143,6 +143,22 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function DynamicToaster() {
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const update = () => {
+      setTheme(document.documentElement.classList.contains("theme-light") ? "light" : "dark");
+    };
+    update();
+    const obs = new MutationObserver(update);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  return <Toaster theme={theme} />;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => { captureUtmFromLocation(); }, []);
@@ -158,7 +174,7 @@ function RootComponent() {
           <FloatingContacts />
           <CartSync />
           <ScriptInjector />
-          <Toaster theme="dark" />
+          <DynamicToaster />
         </div>
       </SiteSectionsProvider>
     </QueryClientProvider>
