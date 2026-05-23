@@ -266,6 +266,16 @@ function ProfilePage() {
                               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{o.notes}</p>
                             </div>
                           )}
+                          {canEdit(o.status) && (
+                            <div className="flex flex-wrap gap-2 pt-2 border-t border-border/40">
+                              <Button size="sm" variant="outline" onClick={() => openEdit(o)}>
+                                <Pencil className="h-3.5 w-3.5 mr-1.5" /> Редактировать
+                              </Button>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(o.id)}>
+                                <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Удалить
+                              </Button>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
