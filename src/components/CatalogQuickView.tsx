@@ -14,12 +14,7 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { CompareButton } from "@/components/CompareButton";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 
-function priceFrom(pricing: unknown): number | null {
-  if (!pricing || typeof pricing !== "object") return null;
-  const p = pricing as Record<string, unknown>;
-  const v = p.from ?? p.priceFrom ?? p.min ?? p.base;
-  return typeof v === "number" ? v : null;
-}
+import { priceFrom } from "@/lib/utils";
 function asArray<T = unknown>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
