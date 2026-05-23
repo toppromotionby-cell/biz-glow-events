@@ -36,7 +36,10 @@ export const listCases = createServerFn({ method: "GET" })
     if (data.featuredOnly) q = q.eq("featured", true);
     if (data.limit) q = q.limit(data.limit);
     const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[listCases] DB error:", error);
+      throw new Error("Не удалось загрузить кейсы.");
+    }
     return (rows ?? []) as CaseRow[];
   });
 
@@ -47,6 +50,9 @@ export const getCase = createServerFn({ method: "GET" })
       .from("cases").select(SELECT)
       .eq("published", true).eq("slug", data.slug)
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[getCase] DB error:", error);
+      throw new Error("Не удалось загрузить кейс.");
+    }
     return (row ?? null) as CaseRow | null;
   });
