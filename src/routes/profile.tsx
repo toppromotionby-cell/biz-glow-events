@@ -103,6 +103,10 @@ function ProfilePage() {
         </div>
       </div>
 
+      <div className="grid md:grid-cols-2 gap-4">
+        <ChangePasswordCard />
+      </div>
+
       <div>
         <h2 className="text-xl font-display font-semibold mb-4">История заявок</h2>
         {orders.length === 0 ? (
