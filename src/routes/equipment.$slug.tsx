@@ -28,7 +28,7 @@ export const Route = createFileRoute("/equipment/$slug")({
         { property: "og:description", content: it.short_description ?? "" },
         ...(it.photo_urls?.[0] ? [{ property: "og:image", content: it.photo_urls[0] }] : []),
       ],
-      scripts: [{ type: "application/ld+json", children: productJsonLd(it) }],
+      scripts: [{ type: "application/ld+json", children: productJsonLd(it, { basePath: "/equipment", baseLabel: "Оборудование" }) }],
     };
   },
   component: Page,
