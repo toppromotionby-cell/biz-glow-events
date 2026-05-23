@@ -145,6 +145,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SiteSectionsProvider>
         <div className="min-h-screen flex flex-col bg-background bg-radial-glow">
+          <EffectsLayer />
           <SiteHeader />
           <main id="main" className="flex-1"><Outlet /></main>
           <SiteFooter />
