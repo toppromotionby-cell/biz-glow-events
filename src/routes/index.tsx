@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Zap, Shield, Award, ArrowRight, Cpu, Lightbulb, Music, Package } from "lucide-react";
+import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, CalendarCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { GuestEstimator } from "@/components/GuestEstimator";
@@ -31,9 +31,9 @@ export const Route = createFileRoute("/")({
 });
 
 const FEATURES = [
-  { icon: Cpu, title: "VR/AR & интерактив", desc: "Иммерсивные зоны, геймификация, фотостены", to: "/zones" as const },
-  { icon: Music, title: "Звук и свет", desc: "Профессиональное оборудование под ключ", to: "/equipment" as const },
-  { icon: Lightbulb, title: "LED-экраны", desc: "Любых размеров, монтаж в день мероприятия", to: "/equipment" as const },
+  { icon: Gamepad2, title: "Интерактивные зоны", desc: "VR/AR, геймификация, фотозоны и иммерсивные активности", to: "/zones" as const },
+  { icon: Settings2, title: "Техническое оснащение мероприятий", desc: "Звук, свет, LED-экраны и сцена под ключ", to: "/equipment" as const },
+  { icon: CalendarCheck, title: "Организация мероприятий под ключ", desc: "Полный цикл: концепция, подрядчики, координация в день", to: "/services" as const },
   { icon: Package, title: "Производство", desc: "Декорации, баннеры, арт-объекты, реквизит", to: "/production" as const },
 ];
 
