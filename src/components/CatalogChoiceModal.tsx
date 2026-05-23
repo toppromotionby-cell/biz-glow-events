@@ -69,9 +69,7 @@ export function CatalogChoiceModal({ children }: { children: React.ReactNode }) 
               className="group relative glass rounded-xl p-5 hover:border-primary/50 transition-all duration-200 block"
             >
               <div className="flex items-start gap-4">
-                <div
-                  className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${cat.color} mb-0 group-hover:glow-primary transition`}
-                >
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-primary mb-0 group-hover:glow-primary transition">
                   <cat.icon className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div className="min-w-0">
