@@ -49,7 +49,9 @@ export function CatalogQuickView({
           <div className="p-10 text-center text-muted-foreground">Загрузка…</div>
         )}
         {!isLoading && !data && (
-          <div className="p-10 text-center text-muted-foreground">Запись не найдена</div>
+          <div className="m-6 p-8 text-center text-muted-foreground border border-border rounded-xl">
+            <p className="text-sm">Не найдено</p>
+          </div>
         )}
         {data && <Body item={data} basePath={basePath} type={type} onClose={() => onOpenChange(false)} />}
       </DialogContent>
