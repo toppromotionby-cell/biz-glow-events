@@ -45,7 +45,26 @@ export function CatalogQuickView({
         <DialogTitle className="sr-only">{data?.title ?? "Просмотр позиции"}</DialogTitle>
         <DialogDescription className="sr-only">{data?.short_description ?? "Детальная информация о позиции каталога"}</DialogDescription>
         {isLoading && (
-          <div className="p-10 text-center text-muted-foreground">Загрузка…</div>
+          <div className="p-6 md:p-8" aria-busy="true" aria-label="Загрузка позиции">
+            <div className="grid md:grid-cols-5 gap-6">
+              <div className="md:col-span-3 space-y-3">
+                <div className="aspect-[16/10] rounded-2xl bg-muted/40 animate-pulse" />
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="aspect-[4/3] rounded-md bg-muted/30 animate-pulse" />
+                  ))}
+                </div>
+              </div>
+              <div className="md:col-span-2 space-y-3">
+                <div className="h-3 w-24 bg-muted/30 rounded animate-pulse" />
+                <div className="h-7 w-3/4 bg-muted/40 rounded animate-pulse" />
+                <div className="h-4 w-full bg-muted/30 rounded animate-pulse" />
+                <div className="h-4 w-2/3 bg-muted/30 rounded animate-pulse" />
+                <div className="h-24 w-full rounded-xl bg-muted/30 animate-pulse" />
+                <div className="h-10 w-full rounded-md bg-muted/40 animate-pulse" />
+              </div>
+            </div>
+          </div>
         )}
         {!isLoading && !data && (
           <div className="flex flex-col items-center justify-center min-h-[50vh] p-10 text-center">

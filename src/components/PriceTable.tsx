@@ -157,6 +157,8 @@ export function PriceTableView({
 }) {
   const tiers = getTiers(pricing);
   if (tiers.length === 0) return null;
+  // Mark the middle tier as "Популярный выбор" when there are 3+ tiers
+  const popularIndex = tiers.length >= 3 ? Math.floor(tiers.length / 2) : -1;
   return (
     <div className="overflow-hidden rounded-lg border border-border/40">
       <table className="w-full text-sm">
@@ -167,6 +169,7 @@ export function PriceTableView({
             const unit = (t.unit ?? "").trim();
             const showCurrency = !unit || /byn/i.test(unit);
             const isSelected = selectable && selectedIndex === i;
+            const isPopular = i === popularIndex;
             const rowClass = selectable
               ? `cursor-pointer transition ${isSelected ? "bg-primary/15 ring-1 ring-primary/50" : "hover:bg-muted/40"}`
               : "";
@@ -174,7 +177,7 @@ export function PriceTableView({
             return (
               <tr
                 key={i}
-                className={`border-t border-border/30 first:border-t-0 ${rowClass}`}
+                className={`border-t border-border/30 first:border-t-0 ${rowClass} ${isPopular && !isSelected ? "bg-accent/5" : ""}`}
                 onClick={handle}
                 onKeyDown={(e) => {
                   if (selectable && (e.key === "Enter" || e.key === " ")) {
@@ -195,7 +198,14 @@ export function PriceTableView({
                   </td>
                 )}
                 <td className="px-3 py-2">
-                  <div className="font-medium">{t.label || "—"}</div>
+                  <div className="font-medium flex items-center gap-2 flex-wrap">
+                    <span>{t.label || "—"}</span>
+                    {isPopular && (
+                      <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
+                        Популярный
+                      </span>
+                    )}
+                  </div>
                   {t.note && <div className="text-xs text-muted-foreground mt-0.5">{t.note}</div>}
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap font-semibold">
