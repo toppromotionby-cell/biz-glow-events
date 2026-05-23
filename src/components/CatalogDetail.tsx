@@ -130,7 +130,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
           <div className="glass rounded-xl p-5 space-y-3">
             <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
-            <PriceGate>
+            <PriceGate fromPrice={from}>
               <div className="text-2xl font-display font-bold">
                 {tierPrice !== null
                   ? new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(tierPrice)
@@ -163,25 +163,35 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 Выберите позицию, чтобы заказать
               </button>
             ) : (
-              <Link to="/contacts" className="mt-4 inline-flex w-full justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
-                Заказать{activeTier?.label ? ` «${activeTier.label}»` : ""}
-              </Link>
+              <button
+                type="button"
+                onClick={handlePrimaryOrder}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition"
+              >
+                {isByRequest ? (
+                  <><MessageSquare className="h-4 w-4" /> Запросить смету</>
+                ) : (
+                  <><ShoppingCart className="h-4 w-4" /> Заказать{activeTier?.label ? ` «${activeTier.label}»` : ""}</>
+                )}
+              </button>
             )}
 
             {needsSelection ? (
               <div className="mt-2 text-center text-xs text-muted-foreground">
                 Добавление в корзину и сравнение станут доступны после выбора позиции
               </div>
-            ) : entityType !== "services" ? (
+            ) : (
               <>
-                <AddToCartButton
-                  entity_type={entityType}
-                  id={effectiveId}
-                  slug={item.slug}
-                  title={effectiveTitle}
-                  price={effectivePrice}
-                  image={item.photo_urls?.[0] ?? null}
-                />
+                {!isByRequest && (
+                  <AddToCartButton
+                    entity_type={entityType}
+                    id={effectiveId}
+                    slug={item.slug}
+                    title={effectiveTitle}
+                    price={effectivePrice}
+                    image={item.photo_urls?.[0] ?? null}
+                  />
+                )}
                 <WishlistButton
                   entity_type={entityType}
                   id={effectiveId}
@@ -198,10 +208,13 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                   price={effectivePrice}
                   image={item.photo_urls?.[0] ?? null}
                 />
-                <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в корзину →</Link>
+                {!isByRequest && (
+                  <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в корзину →</Link>
+                )}
               </>
-            ) : null}
+            )}
           </div>
+
 
 
           {features.length > 0 && (
