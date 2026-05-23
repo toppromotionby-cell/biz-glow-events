@@ -19,13 +19,8 @@ import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
+import { priceFrom } from "@/lib/utils";
 
-function priceFrom(pricing: unknown): number | null {
-  if (!pricing || typeof pricing !== "object") return null;
-  const p = pricing as Record<string, unknown>;
-  const v = p.from ?? p.priceFrom ?? p.min ?? p.base;
-  return typeof v === "number" ? v : null;
-}
 
 function asArray<T = unknown>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
