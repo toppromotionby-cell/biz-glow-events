@@ -230,7 +230,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 )}
               </>
             )}
+            <CatalogSocialProof />
           </div>
+
 
 
 
