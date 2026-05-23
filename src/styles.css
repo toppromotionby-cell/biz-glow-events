@@ -105,6 +105,15 @@
   @media (min-width: 640px)  { .container { padding-inline: 1.5rem; } }
   @media (min-width: 1024px) { .container { padding-inline: 2rem; } }
 
+  /* Защита от горизонтального скролла на мобильных */
+  html, body { overflow-x: hidden; max-width: 100vw; }
+
+  /* Очень длинные слова/URL не ломают вёрстку (только в текстовых блоках) */
+  p, li, dd, blockquote, .break-words { overflow-wrap: anywhere; }
+
+  /* Заголовки на узких экранах балансируются */
+  h1, h2, h3 { text-wrap: balance; }
+
   /* Карточки в любых grid-сетках растягиваются на одинаковую высоту */
   main [class*="grid-cols"] > * { display: flex; flex-direction: column; height: 100%; }
 

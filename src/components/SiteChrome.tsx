@@ -3,12 +3,15 @@ import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Heart, Scale } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Heart, Scale, Menu } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useCompare } from "@/lib/compare";
 import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useState } from "react";
 
 const NAV = [
   { to: "/zones", label: "Интерактивные Зоны", key: "header.nav.zones" },
@@ -23,26 +26,39 @@ const NAV = [
   { to: "/contacts", label: "Контакты", key: "header.nav.contacts" },
 ] as const;
 
+const INFO_LINKS = [
+  { to: "/partners", label: "Агентствам" },
+  { to: "/calculator", label: "Калькулятор сметы" },
+  { to: "/delivery", label: "Доставка и оплата" },
+  { to: "/faq", label: "Частые вопросы" },
+  { to: "/terms-rental", label: "Условия аренды" },
+  { to: "/privacy", label: "Политика конфиденциальности" },
+  { to: "/offer", label: "Публичная оферта" },
+] as const;
+
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
   const { count: cmpCount } = useCompare();
+  const [open, setOpen] = useState(false);
+
   return (
     <Toggleable sectionKey="header.root" as="div">
-      <header className="sticky top-0 z-40 glass-strong border-b border-border/50">
+      <header className="sticky top-0 z-40 glass-strong border-b border-border/50" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">
           Перейти к содержимому
         </a>
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-2 md:gap-4">
           <Toggleable sectionKey="header.brand" as="span">
-            <Link to="/" aria-label="event-hub.by — на главную" className="flex items-center gap-2 font-display font-bold text-lg">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary glow-primary" aria-hidden="true">
+            <Link to="/" aria-label="event-hub.by — на главную" className="flex items-center gap-2 font-display font-bold text-lg whitespace-nowrap shrink-0">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary glow-primary shrink-0" aria-hidden="true">
                 <Sparkles className="h-4 w-4 text-primary-foreground" />
               </span>
               <span className="gradient-text">event-hub.by</span>
             </Link>
           </Toggleable>
+
           <Toggleable sectionKey="header.nav" as="span">
             <nav aria-label="Основная навигация" className="hidden md:flex items-center gap-6 text-sm">
               {NAV.map(n => (
@@ -54,7 +70,9 @@ export function SiteHeader() {
               ))}
             </nav>
           </Toggleable>
-          <div className="flex items-center gap-2">
+
+          {/* Desktop actions */}
+          <div className="hidden md:flex items-center gap-2">
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
             <Toggleable sectionKey="header.wishlist" as="span">
               <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
@@ -100,6 +118,90 @@ export function SiteHeader() {
               </>
             )}
           </div>
+
+          {/* Mobile actions */}
+          <div className="flex md:hidden items-center gap-1">
+            <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
+            <Toggleable sectionKey="header.cart" as="span">
+              <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition">
+                <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+                {count > 0 && (
+                  <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{count}</span>
+                )}
+              </Link>
+            </Toggleable>
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Открыть меню"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition"
+                >
+                  <Menu className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto p-0 flex flex-col">
+                <SheetHeader className="px-5 pt-5">
+                  <SheetTitle className="font-display gradient-text text-xl">event-hub.by</SheetTitle>
+                </SheetHeader>
+
+                <nav aria-label="Мобильная навигация" className="px-2 pb-4 flex flex-col">
+                  {NAV.map((n) => (
+                    <SheetClose asChild key={n.to}>
+                      <Link
+                        to={n.to}
+                        className="px-3 py-3 rounded-md text-base text-foreground hover:bg-primary/10 transition"
+                        activeProps={{ className: "bg-primary/15 text-foreground" }}
+                      >
+                        {n.label}
+                      </Link>
+                    </SheetClose>
+                  ))}
+                </nav>
+
+                <div className="border-t border-border/50 px-2 py-3">
+                  <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
+                  <SheetClose asChild>
+                    <Link to="/wishlist" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                      <span className="flex items-center gap-3"><Heart className="h-4 w-4" /> Избранное</span>
+                      {wishCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{wishCount}</span>}
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                      <span className="flex items-center gap-3"><Scale className="h-4 w-4" /> Сравнение</span>
+                      {cmpCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{cmpCount}</span>}
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link to="/calculator" className="flex items-center gap-3 px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                      <Sparkles className="h-4 w-4" /> Калькулятор сметы
+                    </Link>
+                  </SheetClose>
+                </div>
+
+                <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+                  {isAuthenticated ? (
+                    <>
+                      <SheetClose asChild>
+                        <Link to="/profile"><Button variant="outline" className="w-full"><User className="h-4 w-4 mr-2" />Личный кабинет</Button></Link>
+                      </SheetClose>
+                      <Button variant="ghost" className="w-full" onClick={() => { supabase.auth.signOut(); setOpen(false); }}>Выйти</Button>
+                    </>
+                  ) : (
+                    <>
+                      <SheetClose asChild>
+                        <Link to="/login"><Button variant="outline" className="w-full">Войти</Button></Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link to="/register"><Button className="w-full bg-gradient-primary glow-primary">Регистрация</Button></Link>
+                      </SheetClose>
+                    </>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
     </Toggleable>
@@ -110,44 +212,84 @@ export function SiteFooter() {
   return (
     <Toggleable sectionKey="footer.root" as="div">
       <footer className="border-t border-border/50 mt-20">
-        <div className="container mx-auto px-4 py-10 grid md:grid-cols-4 gap-8 text-sm">
-          <Toggleable sectionKey="footer.brand" as="div">
-            <div className="font-display font-bold text-lg gradient-text">event-hub.by</div>
-            <p className="text-muted-foreground mt-2">Event-технологии и продакшн в Беларуси. Минск.</p>
-          </Toggleable>
-          <Toggleable sectionKey="footer.catalog" as="div">
-            <h4 className="font-medium mb-3">Каталог</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
-            </ul>
-          </Toggleable>
-          <Toggleable sectionKey="footer.info" as="div">
-            <h4 className="font-medium mb-3">Информация</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link to="/partners" className="hover:text-foreground">Агентствам</Link></li>
-              <li><Link to="/calculator" className="hover:text-foreground">Калькулятор сметы</Link></li>
-              <li><Link to="/delivery" className="hover:text-foreground">Доставка и оплата</Link></li>
-              <li><Link to="/faq" className="hover:text-foreground">Частые вопросы</Link></li>
-              <li><Link to="/terms-rental" className="hover:text-foreground">Условия аренды</Link></li>
-              <li><Link to="/privacy" className="hover:text-foreground">Политика конфиденциальности</Link></li>
-              <li><Link to="/offer" className="hover:text-foreground">Публичная оферта</Link></li>
-            </ul>
-          </Toggleable>
-          <Toggleable sectionKey="footer.contacts" as="div">
-            <h4 className="font-medium mb-3">Контакты</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li>Минск, Беларусь</li>
-              <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
-              <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
-            </ul>
-            <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
+        <div className="container mx-auto px-4 py-10 text-sm">
+          {/* Desktop layout */}
+          <div className="hidden md:grid md:grid-cols-4 gap-8">
+            <Toggleable sectionKey="footer.brand" as="div">
+              <div className="font-display font-bold text-lg gradient-text">event-hub.by</div>
+              <p className="text-muted-foreground mt-2">Event-технологии и продакшн в Беларуси. Минск.</p>
+            </Toggleable>
+            <Toggleable sectionKey="footer.catalog" as="div">
+              <h4 className="font-medium mb-3">Каталог</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
+              </ul>
+            </Toggleable>
+            <Toggleable sectionKey="footer.info" as="div">
+              <h4 className="font-medium mb-3">Информация</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
+              </ul>
+            </Toggleable>
+            <Toggleable sectionKey="footer.contacts" as="div">
+              <h4 className="font-medium mb-3">Контакты</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>Минск, Беларусь</li>
+                <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
+                <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
+              </ul>
+              <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
+                <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
+                <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
+                <NewsletterSignup />
+              </Toggleable>
+            </Toggleable>
+          </div>
+
+          {/* Mobile layout */}
+          <div className="md:hidden flex flex-col gap-4">
+            <Toggleable sectionKey="footer.brand" as="div">
+              <div className="font-display font-bold text-lg gradient-text">event-hub.by</div>
+              <p className="text-muted-foreground mt-2">Event-технологии и продакшн в Беларуси. Минск.</p>
+            </Toggleable>
+
+            <Accordion type="multiple" className="w-full">
+              <AccordionItem value="catalog">
+                <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-2 text-muted-foreground pb-2">
+                    {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="info">
+                <AccordionTrigger className="py-3">Информация</AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-2 text-muted-foreground pb-2">
+                    {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="contacts">
+                <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-2 text-muted-foreground pb-2">
+                    <li>Минск, Беларусь</li>
+                    <li><a href="tel:+375290000000" className="hover:text-foreground">+375 (29) 000-00-00</a></li>
+                    <li><a href="mailto:hello@event-hub.by" className="hover:text-foreground">hello@event-hub.by</a></li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <Toggleable sectionKey="footer.newsletter" as="div">
               <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
               <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
               <NewsletterSignup />
             </Toggleable>
-          </Toggleable>
+          </div>
         </div>
-        <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 text-center text-xs text-muted-foreground">
+        <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} event-hub.by. Все права защищены.
         </Toggleable>
       </footer>
