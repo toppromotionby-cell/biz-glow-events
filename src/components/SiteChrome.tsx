@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CONTACT } from "@/lib/contacts";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { to: "/zones", label: "Интерактивные Зоны", key: "header.nav.zones" },
