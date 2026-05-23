@@ -27,26 +27,107 @@ export type HomeCaseTeaser = {
   guests_count: number | null;
 };
 
-export const getHomeData = createServerFn({ method: "GET" }).handler(async () => {
-  const tables = [
-    { name: "zones" as const, base: "/zones" },
-    { name: "tech_equipment" as const, base: "/equipment" },
-    { name: "services" as const, base: "/services" },
-    { name: "production_items" as const, base: "/production" },
-  ];
+type EntityType = "zones" | "tech_equipment" | "services" | "production_items";
+const TABLES: { name: EntityType; base: string }[] = [
+  { name: "zones", base: "/zones" },
+  { name: "tech_equipment", base: "/equipment" },
+  { name: "services", base: "/services" },
+  { name: "production_items", base: "/production" },
+];
 
+// Веса сигналов популярности от зарегистрированных пользователей.
+const WEIGHT_ORDER = 3;
+const WEIGHT_CART = 1;
+
+async function buildPopularityScores(): Promise<Map<string, number>> {
+  const scores = new Map<string, number>();
+  const bump = (entity_type: string, entity_id: string, w: number) => {
+    if (!entity_type || !entity_id) return;
+    const k = `${entity_type}:${entity_id}`;
+    scores.set(k, (scores.get(k) ?? 0) + w);
+  };
+
+  // 1) Заказы зарегистрированных пользователей за последние 180 дней.
+  const since = new Date(Date.now() - 180 * 86_400_000).toISOString();
+  const { data: orderRows } = await supabaseAdmin
+    .from("order_items")
+    .select("entity_type, entity_id, qty, orders!inner(user_id, created_at)")
+    .gte("orders.created_at", since)
+    .not("orders.user_id", "is", null)
+    .limit(2000);
+  for (const r of (orderRows ?? []) as Array<{
+    entity_type: string;
+    entity_id: string | null;
+    qty: number | null;
+  }>) {
+    if (!r.entity_id) continue;
+    bump(r.entity_type, r.entity_id, WEIGHT_ORDER * Math.max(1, r.qty ?? 1));
+  }
+
+  // 2) Активные корзины зарегистрированных пользователей.
+  const { data: drafts } = await supabaseAdmin
+    .from("cart_drafts")
+    .select("items, user_id")
+    .not("user_id", "is", null)
+    .limit(2000);
+  for (const d of (drafts ?? []) as Array<{ items: unknown }>) {
+    const arr = Array.isArray(d.items) ? (d.items as Array<Record<string, unknown>>) : [];
+    for (const it of arr) {
+      const et = String(it?.entity_type ?? "");
+      const id = String(it?.id ?? "");
+      const qty = Number(it?.qty ?? 1) || 1;
+      bump(et, id, WEIGHT_CART * Math.max(1, qty));
+    }
+  }
+
+  return scores;
+}
+
+export const getHomeData = createServerFn({ method: "GET" }).handler(async () => {
+  const scores = await buildPopularityScores();
+
+  // Тянем опубликованные карточки каждого типа, сортируем по score, fallback — updated_at.
   const featuredResults = await Promise.all(
-    tables.map(async (t) => {
+    TABLES.map(async (t) => {
       const { data } = await supabaseAdmin
         .from(t.name)
-        .select("id, slug, title, short_description, photo_urls")
+        .select("id, slug, title, short_description, photo_urls, updated_at")
         .eq("published", true)
         .order("updated_at", { ascending: false })
-        .limit(2);
-      return (data ?? []).map((row) => ({ ...row, basePath: t.base }) as HomeFeatured);
+        .limit(40);
+      const rows = (data ?? []) as Array<{
+        id: string;
+        slug: string;
+        title: string;
+        short_description: string | null;
+        photo_urls: string[] | null;
+        updated_at: string;
+      }>;
+      return rows
+        .map((row) => ({
+          row,
+          score: scores.get(`${t.name}:${row.id}`) ?? 0,
+          basePath: t.base,
+        }))
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return (b.row.updated_at ?? "").localeCompare(a.row.updated_at ?? "");
+        })
+        .slice(0, 2)
+        .map(({ row, basePath }) => {
+          const { updated_at: _u, ...rest } = row;
+          return { ...rest, basePath } as HomeFeatured;
+        });
     }),
   );
-  const featured = featuredResults.flat().slice(0, 6);
+
+  // Сводим вместе и финально пересортируем по score, чтобы топовые шли первыми.
+  const merged = featuredResults
+    .flat()
+    .map((item) => ({ item, score: scores.get(`${detectType(item.basePath)}:${item.id}`) ?? 0 }))
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.item);
+  const featured = merged.slice(0, 6);
 
   const { data: blog } = await supabaseAdmin
     .from("blog_posts")
@@ -68,3 +149,18 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
     cases: (cs ?? []) as HomeCaseTeaser[],
   };
 });
+
+function detectType(base: string): EntityType {
+  switch (base) {
+    case "/zones":
+      return "zones";
+    case "/equipment":
+      return "tech_equipment";
+    case "/services":
+      return "services";
+    case "/production":
+      return "production_items";
+    default:
+      return "zones";
+  }
+}
