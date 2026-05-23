@@ -33,7 +33,7 @@ export const Route = createFileRoute("/")({
 const FEATURES = [
   { icon: Gamepad2, title: "Интерактивные зоны", desc: "VR/AR, геймификация, фотозоны и иммерсивные активности", to: "/zones" as const },
   { icon: Settings2, title: "Техническое оснащение мероприятий", desc: "Звук, свет, LED-экраны и сцена под ключ", to: "/equipment" as const },
-  { icon: CalendarCheck, title: "Организация мероприятий под ключ", desc: "Полный цикл: концепция, подрядчики, координация в день", to: "/services" as const },
+  { icon: CalendarCheck, title: "Организация мероприятий под ключ", desc: "Концепция, площадка, подрядчики, монтаж, координация — мы берём всё", to: "/services" as const },
   { icon: Package, title: "Производство", desc: "Декорации, баннеры, арт-объекты, реквизит", to: "/production" as const },
 ];
 
