@@ -75,7 +75,10 @@ function LoginPage() {
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
           <div className="space-y-1.5">
-            <Label>Пароль</Label>
+            <div className="flex items-center justify-between">
+              <Label>Пароль</Label>
+              <Link to="/forgot-password" className="text-xs text-accent hover:underline">Забыли пароль?</Link>
+            </div>
             <Input type="password" {...register("password")} autoComplete="current-password" />
           </div>
           <Button type="submit" disabled={loading} className="w-full bg-gradient-primary glow-primary">

@@ -26,6 +26,7 @@ import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as IndustriesRouteImport } from './routes/industries'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as DeliveryRouteImport } from './routes/delivery'
@@ -151,6 +152,11 @@ const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
 const IndustriesRoute = IndustriesRouteImport.update({
   id: '/industries',
   path: '/industries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -375,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/industries': typeof IndustriesRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
@@ -434,6 +441,7 @@ export interface FileRoutesByTo {
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/industries': typeof IndustriesRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
@@ -495,6 +503,7 @@ export interface FileRoutesById {
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/industries': typeof IndustriesRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
@@ -557,6 +566,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/equipment'
     | '/faq'
+    | '/forgot-password'
     | '/industries'
     | '/llms.txt'
     | '/login'
@@ -616,6 +626,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/equipment'
     | '/faq'
+    | '/forgot-password'
     | '/industries'
     | '/llms.txt'
     | '/login'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/equipment'
     | '/faq'
+    | '/forgot-password'
     | '/industries'
     | '/llms.txt'
     | '/login'
@@ -737,6 +749,7 @@ export interface RootRouteChildren {
   DeliveryRoute: typeof DeliveryRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   IndustriesRoute: typeof IndustriesRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
@@ -877,6 +890,13 @@ declare module '@tanstack/react-router' {
       path: '/industries'
       fullPath: '/industries'
       preLoaderRoute: typeof IndustriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -1340,6 +1360,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeliveryRoute: DeliveryRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   IndustriesRoute: IndustriesRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
