@@ -92,8 +92,8 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
 
   return (
     <div className="p-6 md:p-8">
-      <DialogTitle className="sr-only">{item.title}</DialogTitle>
-      <DialogDescription className="sr-only">{item.short_description ?? ""}</DialogDescription>
+
+
 
       <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-3">
