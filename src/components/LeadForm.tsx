@@ -1,14 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { submitLead } from "@/lib/leads.functions";
 import { readUtm } from "@/lib/utm";
 import { DateField } from "@/components/DateField";
 
+const SUBJECT_KEY = "lead_subject_v1";
+
 export function LeadForm({ source = "contacts" }: { source?: string }) {
   const submit = useServerFn(submitLead);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [subjectPrefill, setSubjectPrefill] = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SUBJECT_KEY);
+      if (raw) {
+        setSubjectPrefill(`Интересует: ${raw}`);
+        localStorage.removeItem(SUBJECT_KEY);
+      }
+    } catch {}
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,10 +75,10 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
       </div>
       <label className="block text-sm">
         <span className="text-muted-foreground">Сообщение</span>
-        <textarea name="notes" rows={4} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
+        <textarea name="notes" rows={4} defaultValue={subjectPrefill} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
       </label>
       <label className="flex items-start gap-2 text-xs text-muted-foreground">
-        <input type="checkbox" required defaultChecked className="mt-0.5" />
+        <input type="checkbox" name="consent_pd" required className="mt-0.5" />
         <span>Согласен на обработку персональных данных согласно политике конфиденциальности.</span>
       </label>
       <button
