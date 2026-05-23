@@ -7,6 +7,7 @@ import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
 import { RelatedItems } from "@/components/RelatedItems";
+import { CatalogSocialProof } from "@/components/CatalogSocialProof";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { CompareButton } from "@/components/CompareButton";
@@ -229,7 +230,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 )}
               </>
             )}
+            <CatalogSocialProof />
           </div>
+
 
 
 

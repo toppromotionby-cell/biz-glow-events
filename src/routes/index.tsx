@@ -1,15 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Zap, Shield, Award, ArrowRight, Cpu, Lightbulb, Music, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { GuestEstimator } from "@/components/GuestEstimator";
 import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
 import { Toggleable } from "@/lib/site-sections";
+import { getHomeData } from "@/lib/home.functions";
+
+const homeQueryOptions = queryOptions({
+  queryKey: ["home-data"],
+  queryFn: () => getHomeData(),
+  staleTime: 60_000,
+});
 
 export const Route = createFileRoute("/")({
   component: HomePage,
+  loader: ({ context }) => context.queryClient.ensureQueryData(homeQueryOptions),
   head: () => ({
     meta: [
       { title: "event-hub.by — Event-технологии и продакшн в Минске" },
@@ -35,53 +42,9 @@ const VALUES = [
   { icon: Award, title: "Качество", desc: "200+ реализованных мероприятий" },
 ];
 
-type Featured = { id: string; slug: string; title: string; short_description: string | null; photo_urls: string[] | null; basePath: string };
-type BlogTeaser = { id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; published_at: string | null };
-type CaseTeaser = { id: string; slug: string; title: string; summary: string | null; cover_url: string | null; event_type: string | null; guests_count: number | null };
-
 function HomePage() {
-  const [featured, setFeatured] = useState<Featured[]>([]);
-  const [posts, setPosts] = useState<BlogTeaser[]>([]);
-  const [cases, setCases] = useState<CaseTeaser[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      const tables = [
-        { name: "zones" as const, base: "/zones" },
-        { name: "tech_equipment" as const, base: "/equipment" },
-        { name: "services" as const, base: "/services" },
-        { name: "production_items" as const, base: "/production" },
-      ];
-      const results = await Promise.all(
-        tables.map((t) =>
-          supabase
-            .from(t.name)
-            .select("id, slug, title, short_description, photo_urls")
-            .eq("published", true)
-            .order("updated_at", { ascending: false })
-            .limit(2)
-            .then((r) => (r.data ?? []).map((row) => ({ ...row, basePath: t.base }) as Featured)),
-        ),
-      );
-      setFeatured(results.flat().slice(0, 6));
-
-      const { data: blog } = await supabase
-        .from("blog_posts")
-        .select("id, slug, title, excerpt, cover_url, published_at")
-        .eq("published", true)
-        .order("published_at", { ascending: false, nullsFirst: false })
-        .limit(3);
-      setPosts((blog ?? []) as BlogTeaser[]);
-
-      const { data: cs } = await supabase
-        .from("cases")
-        .select("id, slug, title, summary, cover_url, event_type, guests_count")
-        .eq("published", true)
-        .order("event_date", { ascending: false, nullsFirst: false })
-        .limit(3);
-      setCases((cs ?? []) as CaseTeaser[]);
-    })();
-  }, []);
+  const { data } = useSuspenseQuery(homeQueryOptions);
+  const { featured, posts, cases } = data;
 
   return (
     <div>
