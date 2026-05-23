@@ -57,6 +57,10 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const needsSelection = hasTiers && selectedTier === null;
   const isByRequest = !needsSelection && effectivePrice <= 0;
 
+  const videoSectionEnabled = useSectionEnabled("catalog.video");
+  const externalVideosEnabled = useSectionEnabled("catalog.video.external");
+  const uploadedVideosEnabled = useSectionEnabled("catalog.video.uploaded");
+
   const openLightbox = useCallback((i: number) => setLightbox(i), []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
   const prev = useCallback(() => setLightbox((i) => (i === null ? null : (i - 1 + photos.length) % photos.length)), [photos.length]);
