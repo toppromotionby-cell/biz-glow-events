@@ -9,6 +9,7 @@ import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { ScriptInjector } from "@/components/ScriptInjector";
 import { EffectsLayer } from "@/components/EffectsLayer";
 import { FloatingContacts } from "@/components/FloatingContacts";
+import { CartSync } from "@/components/CartSync";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 
