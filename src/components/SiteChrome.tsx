@@ -16,26 +16,26 @@ import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
-  { to: "/zones", label: "Интерактивные Зоны", key: "header.nav.zones" },
-  { to: "/equipment", label: "Техническое оснащение", key: "header.nav.equipment" },
-  { to: "/services", label: "Услуги", key: "header.nav.services" },
-  { to: "/production", label: "Производство", key: "header.nav.production" },
-  { to: "/cases", label: "Кейсы", key: "header.nav.cases" },
-  { to: "/industries", label: "Индустрии", key: "header.nav.industries" },
-  { to: "/testimonials", label: "Отзывы", key: "header.nav.testimonials" },
-  { to: "/blog", label: "Блог", key: "header.nav.blog" },
-  { to: "/about", label: "О нас", key: "header.nav.about" },
-  { to: "/contacts", label: "Контакты", key: "header.nav.contacts" },
+  { to: "/zones", label: "Интерактивные Зоны", key: "header.nav.zones", footerKey: "footer.catalog.zones" },
+  { to: "/equipment", label: "Техническое оснащение", key: "header.nav.equipment", footerKey: "footer.catalog.equipment" },
+  { to: "/services", label: "Услуги", key: "header.nav.services", footerKey: "footer.catalog.services" },
+  { to: "/production", label: "Производство", key: "header.nav.production", footerKey: "footer.catalog.production" },
+  { to: "/cases", label: "Кейсы", key: "header.nav.cases", footerKey: "footer.catalog.cases" },
+  { to: "/industries", label: "Индустрии", key: "header.nav.industries", footerKey: "footer.catalog.industries" },
+  { to: "/testimonials", label: "Отзывы", key: "header.nav.testimonials", footerKey: "footer.catalog.testimonials" },
+  { to: "/blog", label: "Блог", key: "header.nav.blog", footerKey: "footer.catalog.blog" },
+  { to: "/about", label: "О нас", key: "header.nav.about", footerKey: "footer.catalog.about" },
+  { to: "/contacts", label: "Контакты", key: "header.nav.contacts", footerKey: "footer.catalog.contacts_link" },
 ] as const;
 
 const INFO_LINKS = [
-  { to: "/partners", label: "Агентствам" },
-  { to: "/calculator", label: "Калькулятор сметы" },
-  { to: "/delivery", label: "Доставка и оплата" },
-  { to: "/faq", label: "Частые вопросы" },
-  { to: "/terms-rental", label: "Условия аренды" },
-  { to: "/privacy", label: "Политика конфиденциальности" },
-  { to: "/offer", label: "Публичная оферта" },
+  { to: "/partners", label: "Агентствам", footerKey: "footer.info.partners" },
+  { to: "/calculator", label: "Калькулятор сметы", footerKey: "footer.info.calculator" },
+  { to: "/delivery", label: "Доставка и оплата", footerKey: "footer.info.delivery" },
+  { to: "/faq", label: "Частые вопросы", footerKey: "footer.info.faq" },
+  { to: "/terms-rental", label: "Условия аренды", footerKey: "footer.info.terms" },
+  { to: "/privacy", label: "Политика конфиденциальности", footerKey: "footer.info.privacy" },
+  { to: "/offer", label: "Публичная оферта", footerKey: "footer.info.offer" },
 ] as const;
 
 export function SiteHeader() {
@@ -241,24 +241,32 @@ export function SiteFooter() {
             <Toggleable sectionKey="footer.catalog" as="div">
               <h4 className="font-medium mb-3">Каталог</h4>
               <ul className="space-y-2 text-muted-foreground">
-                {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
+                {NAV.map(n => (
+                  <Toggleable key={n.to} sectionKey={n.footerKey} as="li">
+                    <Link to={n.to} className="hover:text-foreground">{n.label}</Link>
+                  </Toggleable>
+                ))}
               </ul>
             </Toggleable>
             <Toggleable sectionKey="footer.info" as="div">
               <h4 className="font-medium mb-3">Информация</h4>
               <ul className="space-y-2 text-muted-foreground">
-                {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
+                {INFO_LINKS.map(l => (
+                  <Toggleable key={l.to} sectionKey={l.footerKey} as="li">
+                    <Link to={l.to} className="hover:text-foreground">{l.label}</Link>
+                  </Toggleable>
+                ))}
               </ul>
             </Toggleable>
             <Toggleable sectionKey="footer.contacts" as="div">
               <h4 className="font-medium mb-3">Контакты</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li>{CONTACT.address}</li>
-                <li><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></li>
-                <li className="flex gap-3 text-xs">
+                <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
+                <Toggleable sectionKey="footer.contacts.phone" as="li"><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></Toggleable>
+                <Toggleable sectionKey="footer.contacts.telegram" as="li" className="flex gap-3 text-xs">
                   <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
-                </li>
-                <li><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></li>
+                </Toggleable>
+                <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
               </ul>
               <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
                 <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
@@ -281,7 +289,11 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      {NAV.map(n => <li key={n.to}><Link to={n.to} className="hover:text-foreground">{n.label}</Link></li>)}
+                      {NAV.map(n => (
+                        <Toggleable key={n.to} sectionKey={n.footerKey} as="li">
+                          <Link to={n.to} className="hover:text-foreground">{n.label}</Link>
+                        </Toggleable>
+                      ))}
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -291,7 +303,11 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Информация</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      {INFO_LINKS.map(l => <li key={l.to}><Link to={l.to} className="hover:text-foreground">{l.label}</Link></li>)}
+                      {INFO_LINKS.map(l => (
+                        <Toggleable key={l.to} sectionKey={l.footerKey} as="li">
+                          <Link to={l.to} className="hover:text-foreground">{l.label}</Link>
+                        </Toggleable>
+                      ))}
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -301,12 +317,12 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Контакты</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      <li>{CONTACT.address}</li>
-                      <li><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></li>
-                      <li className="flex gap-3 text-xs">
+                      <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
+                      <Toggleable sectionKey="footer.contacts.phone" as="li"><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></Toggleable>
+                      <Toggleable sectionKey="footer.contacts.telegram" as="li" className="flex gap-3 text-xs">
                         <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
-                      </li>
-                      <li><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></li>
+                      </Toggleable>
+                      <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
