@@ -68,7 +68,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
   }
   return (
     <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex flex-col">
-      <Link to={`${BASE[type]}/${item.slug}`} className="block">
+      <Link to={CATALOG_SLUG_ROUTE[type]} params={{ slug: item.slug }} className="block">
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (
             <img src={item.photo_urls[0]} alt={item.title} loading="lazy"
@@ -77,7 +77,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
         </div>
       </Link>
       <div className="p-3 flex-1 flex flex-col gap-2">
-        <Link to={`${BASE[type]}/${item.slug}`} className="font-medium text-sm line-clamp-2 hover:text-primary transition">
+        <Link to={CATALOG_SLUG_ROUTE[type]} params={{ slug: item.slug }} className="font-medium text-sm line-clamp-2 hover:text-primary transition">
           {item.title}
         </Link>
         <div className="text-xs text-muted-foreground">
