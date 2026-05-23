@@ -174,8 +174,8 @@ function HomePage() {
       <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 py-20 border-t border-border/40">
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
-            <div key={v.title} className="text-center">
-              <div className="inline-flex h-14 w-14 items-center justify-center rounded-full glass mb-4 animate-pulse-glow">
+            <div key={v.title} className="flex flex-col items-center text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full glass mb-4 animate-pulse-glow pointer-events-none select-none" aria-hidden="true">
                 <v.icon className="h-6 w-6 text-accent" />
               </div>
               <h3 className="font-display font-semibold text-xl mb-2">{v.title}</h3>
