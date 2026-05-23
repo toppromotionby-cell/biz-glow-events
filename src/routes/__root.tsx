@@ -153,6 +153,7 @@ function RootComponent() {
           <SiteFooter />
           <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
           <FloatingContacts />
+          <CartSync />
           <ScriptInjector />
           <Toaster theme="dark" />
         </div>
