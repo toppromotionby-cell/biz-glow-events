@@ -286,6 +286,66 @@ function ProfilePage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Редактирование заявки</DialogTitle>
+            <DialogDescription>Изменения будут отправлены менеджеру.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="ed-name">Имя</Label>
+              <Input id="ed-name" value={editForm.client_name} onChange={(e) => setEditForm((f) => ({ ...f, client_name: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-phone">Телефон</Label>
+                <Input id="ed-phone" value={editForm.client_phone} onChange={(e) => setEditForm((f) => ({ ...f, client_phone: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-email">Email</Label>
+                <Input id="ed-email" type="email" value={editForm.client_email} onChange={(e) => setEditForm((f) => ({ ...f, client_email: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-company">Компания</Label>
+                <Input id="ed-company" value={editForm.client_company} onChange={(e) => setEditForm((f) => ({ ...f, client_company: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="ed-date">Дата мероприятия</Label>
+                <Input id="ed-date" type="date" value={editForm.event_date} onChange={(e) => setEditForm((f) => ({ ...f, event_date: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="ed-notes">Комментарий</Label>
+              <Textarea id="ed-notes" rows={3} value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)} disabled={savingEdit}>Отмена</Button>
+            <Button onClick={submitEdit} disabled={savingEdit}>{savingEdit ? "Сохранение..." : "Сохранить"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить заявку?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Заявка и её позиции будут удалены безвозвратно. Менеджер получит уведомление.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
