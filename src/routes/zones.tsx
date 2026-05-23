@@ -46,7 +46,7 @@ function ZonesPage() {
   return (
     <div className="container mx-auto px-4 py-16">
       <header className="max-w-2xl mb-12">
-        <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Интерактивные Зоны</h1>
+        <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Интерактивные зоны для мероприятий в Минске</h1>
         <p className="mt-4 text-muted-foreground">{subtitle}</p>
       </header>
       <CatalogGrid items={items} category="zones" basePath="/zones" entityType="zones" />
