@@ -632,7 +632,7 @@ main, header, footer { position: relative; z-index: 2; }
 .dialog-content-anim {
   transform: translate(-50%, -50%);
   transform-origin: center;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
 }
 @keyframes dialog-overlay-in {
   from { opacity: 0; }
