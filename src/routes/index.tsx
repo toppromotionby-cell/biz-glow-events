@@ -97,7 +97,7 @@ function HomePage() {
       {featured.length > 0 && (
         <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
           <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
-            <h2 className="text-3xl md:text-4xl font-display font-bold">Из нашего каталога</h2>
+            <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
             <Link to="/equipment" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
               Весь каталог <ArrowRight className="h-3 w-3" />
             </Link>
