@@ -110,7 +110,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-6xl pb-24 lg:pb-10">
-      <Breadcrumbs items={[{ label: backLabel, to: backHref }, { label: item.title }]} className="mb-3" />
       <Link to={backHref} className="text-sm text-muted-foreground hover:text-foreground">← {backLabel}</Link>
 
       <div className="mt-6 grid lg:grid-cols-5 gap-8">
