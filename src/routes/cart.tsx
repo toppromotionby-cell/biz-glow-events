@@ -245,12 +245,20 @@ function CartPage() {
                 <div className="text-lg font-display font-bold">Итого: <span className="gradient-text">{fmt.format(finalTotal)}</span></div>
               </div>
             </div>
-            <PromoCodeInput
-              orderTotal={total}
-              applied={promo}
-              onApply={(p) => setPromo(p)}
-              onClear={() => setPromo(null)}
-            />
+            <details className="mt-3 group" open={!!promo}>
+              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 select-none">
+                <span className="inline-block transition-transform group-open:rotate-90">›</span>
+                {promo ? `Промокод применён: ${promo.code}` : "Есть промокод?"}
+              </summary>
+              <div className="mt-3">
+                <PromoCodeInput
+                  orderTotal={total}
+                  applied={promo}
+                  onApply={(p) => setPromo(p)}
+                  onClear={() => setPromo(null)}
+                />
+              </div>
+            </details>
           </section>
 
           <aside className="lg:col-span-2">

@@ -750,3 +750,22 @@ main, header, footer { position: relative; z-index: 2; }
 }
 
 
+
+/* Cross-document/route view transitions — мягкие переходы между маршрутами.
+   Поддерживается только Chromium-браузерами; в остальных просто игнорируется. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
