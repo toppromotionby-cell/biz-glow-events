@@ -63,7 +63,10 @@ export const listCatalog = createServerFn({ method: "GET" })
       .eq("published", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[listCatalog] DB error:", error);
+      throw new Error("Не удалось загрузить каталог.");
+    }
     const authed = await isAuthed();
     return stripPricing((rows ?? []) as CatalogRow[], authed);
   });
@@ -77,7 +80,10 @@ export const getCatalogItem = createServerFn({ method: "GET" })
       .eq("published", true)
       .eq("slug", data.slug)
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[getCatalogItem] DB error:", error);
+      throw new Error("Не удалось загрузить элемент каталога.");
+    }
     if (!row) return null;
     const authed = await isAuthed();
     return stripPricing([row as CatalogRow], authed)[0];
