@@ -177,7 +177,6 @@ function HomePage() {
               basePath={quick.basePath}
             />
           )}
-          </div>
 
         </Toggleable>
       )}
