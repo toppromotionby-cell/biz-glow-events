@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import { AppleButton } from "@/components/auth/AppleButton";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -62,7 +63,10 @@ function LoginPage() {
     <div className="container mx-auto px-4 py-16 max-w-md">
       <div className="glass-strong rounded-2xl p-8">
         <h1 className="text-3xl font-display font-bold mb-6">Вход</h1>
-        <GoogleButton />
+        <div className="space-y-2">
+          <GoogleButton />
+          <AppleButton />
+        </div>
         <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
           или через email
