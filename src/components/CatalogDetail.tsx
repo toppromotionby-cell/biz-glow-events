@@ -317,10 +317,33 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       })()}
 
 
+      <section className="mt-14">
+        <QuickQuoteForm itemTitle={item.title} source={`quick_quote:${entityType}`} />
+      </section>
+
       <Suspense fallback={null}>
         <RelatedItems type={entityType} currentId={item.id} category={item.category} />
       </Suspense>
       <RecentlyViewed excludeId={item.id} />
+
+      {faq.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: faq
+                .filter((f) => f.q && f.a)
+                .map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+            }),
+          }}
+        />
+      )}
 
       <Dialog open={lightbox !== null} onOpenChange={(v) => { if (!v) closeLightbox(); }}>
         <DialogContent className="max-w-6xl p-0 bg-background/95 border-border/40">
