@@ -11,6 +11,9 @@ import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
+import { SparkBurst } from "@/components/SparkBurst";
+import { DirectionCard } from "@/components/ui/DirectionCard";
+import { MediaCard } from "@/components/ui/MediaCard";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
@@ -66,28 +69,7 @@ function HomePage() {
     <div>
       {/* HERO — spark burst */}
       <Toggleable sectionKey="home.hero" as="section" className="relative overflow-hidden min-h-[92vh] flex items-center">
-        <div className="spark-burst" aria-hidden="true">
-          {Array.from({ length: 60 }).map((_, i) => {
-            const ang = (i * 360) / 60 + (i % 3) * 4;
-            const len = 80 + ((i * 37) % 220);
-            const dist = 50 + ((i * 17) % 40);
-            const dur = 3 + ((i * 13) % 40) / 10;
-            const delay = ((i * 23) % 40) / 10;
-            return (
-              <span
-                key={i}
-                className="spark"
-                style={{
-                  ["--ang" as string]: `${ang}deg`,
-                  ["--len" as string]: `${len}px`,
-                  ["--dist" as string]: `${dist}vmax`,
-                  ["--dur" as string]: `${dur}s`,
-                  ["--delay" as string]: `${delay}s`,
-                }}
-              />
-            );
-          })}
-        </div>
+        <SparkBurst />
         <div className="container mx-auto px-4 py-10 md:py-12 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-[0.25em] uppercase text-accent mb-8">
@@ -121,13 +103,7 @@ function HomePage() {
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
-            <Link key={f.title} to={f.to} className="glass rounded-2xl p-6 hover:border-primary/50 transition group block">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary mb-4 group-hover:glow-primary transition">
-                <f.icon className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground">{f.desc}</p>
-            </Link>
+            <DirectionCard key={f.title} icon={f.icon} title={f.title} description={f.desc} to={f.to} />
           ))}
         </div>
       </Toggleable>
@@ -215,17 +191,18 @@ function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {cases.map((c) => (
-              <Link key={c.id} to="/cases/$slug" params={{ slug: c.slug }} className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition">
-                <div className="aspect-[16/10] bg-gradient-primary/10 overflow-hidden">
-                  {c.cover_url && <img src={c.cover_url} alt={c.title} width={640} height={400} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
-                </div>
-                <div className="p-4">
-                  {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
-                  <h3 className="mt-1 font-semibold leading-tight group-hover:text-primary transition">{c.title}</h3>
-                  {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
-                  {c.guests_count && <div className="mt-2 text-xs text-muted-foreground">{c.guests_count.toLocaleString("ru-BY")} гостей</div>}
-                </div>
-              </Link>
+              <MediaCard
+                key={c.id}
+                cover={c.cover_url}
+                alt={c.title}
+                to="/cases/$slug"
+                params={{ slug: c.slug }}
+              >
+                {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
+                <h3 className="mt-1 font-semibold leading-tight group-hover:text-primary transition">{c.title}</h3>
+                {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
+                {c.guests_count && <div className="mt-2 text-xs text-muted-foreground">{c.guests_count.toLocaleString("ru-BY")} гостей</div>}
+              </MediaCard>
             ))}
           </div>
         </Toggleable>
@@ -248,25 +225,21 @@ function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {posts.map((p) => (
-              <Link
+              <MediaCard
                 key={p.id}
+                cover={p.cover_url}
+                alt={p.title}
                 to="/blog/$slug"
                 params={{ slug: p.slug }}
-                className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition"
               >
-                <div className="aspect-[16/10] bg-gradient-primary/10 overflow-hidden">
-                  {p.cover_url && <img src={p.cover_url} alt={p.title} width={640} height={400} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
-                </div>
-                <div className="p-4">
-                  {p.published_at && (
-                    <div className="text-xs text-muted-foreground mb-1">
-                      {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
-                    </div>
-                  )}
-                  <h3 className="font-semibold leading-tight group-hover:text-primary transition">{p.title}</h3>
-                  {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>}
-                </div>
-              </Link>
+                {p.published_at && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
+                  </div>
+                )}
+                <h3 className="font-semibold leading-tight group-hover:text-primary transition">{p.title}</h3>
+                {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>}
+              </MediaCard>
             ))}
           </div>
         </Toggleable>
@@ -295,25 +268,26 @@ function HomePage() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
-            <div key={f.title} className="glass rounded-2xl p-6 flex flex-col">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary mb-4">
-                <f.icon className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground mb-5 flex-1">{f.desc}</p>
-              <div className="flex flex-col gap-2">
-                <Button
-                  size="sm"
-                  className="w-full bg-gradient-primary"
-                  onClick={() => setOrderTopic(f.title)}
-                >
-                  Заказать <ArrowRight className="ml-2 h-3 w-3" />
-                </Button>
-                <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
-                  Посмотреть каталог
-                </Link>
-              </div>
-            </div>
+            <DirectionCard
+              key={f.title}
+              icon={f.icon}
+              title={f.title}
+              description={f.desc}
+              footer={
+                <div className="flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    className="w-full bg-gradient-primary"
+                    onClick={() => setOrderTopic(f.title)}
+                  >
+                    Заказать <ArrowRight className="ml-2 h-3 w-3" />
+                  </Button>
+                  <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
+                    Посмотреть каталог
+                  </Link>
+                </div>
+              }
+            />
           ))}
         </div>
         <div className="mt-12 glass-strong rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/15 via-transparent to-accent/10 relative overflow-hidden">
@@ -368,18 +342,22 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
           <div className="mt-6 pt-5 border-t border-border/60">
             <h4 className="font-display font-semibold text-base mb-3">Контакты</h4>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
-              <a href={`mailto:${CONTACT.email}`} className="glass rounded-lg p-3 hover:border-primary/50 transition">
-                <div className="text-xs text-muted-foreground">E-mail</div>
-                <div className="font-medium break-all">{CONTACT.email}</div>
-              </a>
-              <div className="glass rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Адрес</div>
-                <div className="font-medium">{CONTACT.address}</div>
-              </div>
-              <div className="glass rounded-lg p-3 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Часы работы</div>
-                <div className="font-medium">{CONTACT.hours}</div>
-              </div>
+              {[
+                { label: "E-mail", value: CONTACT.email, href: `mailto:${CONTACT.email}`, breakAll: true },
+                { label: "Адрес", value: CONTACT.address },
+                { label: "Часы работы", value: CONTACT.hours, span: true },
+              ].map((c) => {
+                const cls = `glass rounded-lg p-3 ${c.span ? "sm:col-span-2" : ""} ${c.href ? "hover:border-primary/50 transition" : ""}`;
+                const body = (
+                  <>
+                    <div className="text-xs text-muted-foreground">{c.label}</div>
+                    <div className={`font-medium ${c.breakAll ? "break-all" : ""}`}>{c.value}</div>
+                  </>
+                );
+                return c.href
+                  ? <a key={c.label} href={c.href} className={cls}>{body}</a>
+                  : <div key={c.label} className={cls}>{body}</div>;
+              })}
             </div>
           </div>
         </div>

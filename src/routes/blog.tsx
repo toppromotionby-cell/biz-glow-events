@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { MediaCard } from "@/components/ui/MediaCard";
 
 type Post = {
   id: string;
@@ -81,39 +82,32 @@ function BlogIndex() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {posts.map((p) => (
-            <Link
+            <MediaCard
               key={p.id}
+              cover={p.cover_url}
+              alt={p.title}
               to="/blog/$slug"
               params={{ slug: p.slug }}
-              className="group glass rounded-xl overflow-hidden hover:border-primary/40 transition"
             >
-              {p.cover_url ? (
-                <div className="aspect-[16/10] overflow-hidden">
-                  <img src={p.cover_url} alt={p.title} loading="lazy" decoding="async" width={640} height={400} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+              {p.published_at && (
+                <div className="text-xs text-muted-foreground mb-1">
+                  {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
                 </div>
-              ) : (
-                <div className="aspect-[16/10] bg-gradient-primary/20" />
               )}
-              <div className="p-5">
-                {p.published_at && (
-                  <div className="text-xs text-muted-foreground mb-1">
-                    {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
-                  </div>
-                )}
-                <h2 className="font-display font-semibold leading-tight group-hover:text-primary transition">{p.title}</h2>
-                {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{p.excerpt}</p>}
-                {p.tags && p.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {p.tags.slice(0, 3).map((t) => (
-                      <span key={t} className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-border/50 text-muted-foreground">{t}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </Link>
+              <h2 className="font-display font-semibold leading-tight group-hover:text-primary transition">{p.title}</h2>
+              {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{p.excerpt}</p>}
+              {p.tags && p.tags.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {p.tags.slice(0, 3).map((t) => (
+                    <span key={t} className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-border/50 text-muted-foreground">{t}</span>
+                  ))}
+                </div>
+              )}
+            </MediaCard>
           ))}
         </div>
       )}
     </div>
   );
 }
+

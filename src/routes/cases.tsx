@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listCases } from "@/lib/cases.functions";
 import { MapPin, Users, Calendar } from "lucide-react";
+import { MediaCard } from "@/components/ui/MediaCard";
 
 const casesQuery = queryOptions({
   queryKey: ["cases", "all"],
@@ -34,23 +35,24 @@ function CasesPage() {
         <div className="glass rounded-xl p-12 text-center text-muted-foreground">Скоро здесь появятся наши работы.</div>
       ) : (
         <ul className="grid md:grid-cols-2 gap-6">
-          {cases.map(c => (
-            <li key={c.id} className="glass rounded-2xl overflow-hidden group hover:glow-primary transition">
-              <Link to="/cases/$slug" params={{ slug: c.slug }} className="block">
-                <div className="aspect-[16/10] bg-surface overflow-hidden">
-                  {c.cover_url && <img src={c.cover_url} alt={c.title} loading="lazy" decoding="async" width={640} height={400} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />}
+          {cases.map((c) => (
+            <li key={c.id}>
+              <MediaCard
+                cover={c.cover_url}
+                alt={c.title}
+                rounded="2xl"
+                to="/cases/$slug"
+                params={{ slug: c.slug }}
+              >
+                {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
+                <h2 className="mt-1 text-xl font-display font-semibold">{c.title}</h2>
+                {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
+                <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                  {c.event_date && <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{new Date(c.event_date).toLocaleDateString("ru-BY", { year: "numeric", month: "long" })}</span>}
+                  {c.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.location}</span>}
+                  {c.guests_count && <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" />{c.guests_count.toLocaleString("ru-BY")} гостей</span>}
                 </div>
-                <div className="p-5">
-                  {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
-                  <h2 className="mt-1 text-xl font-display font-semibold">{c.title}</h2>
-                  {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
-                  <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                    {c.event_date && <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{new Date(c.event_date).toLocaleDateString("ru-BY", { year: "numeric", month: "long" })}</span>}
-                    {c.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{c.location}</span>}
-                    {c.guests_count && <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" />{c.guests_count.toLocaleString("ru-BY")} гостей</span>}
-                  </div>
-                </div>
-              </Link>
+              </MediaCard>
             </li>
           ))}
         </ul>
@@ -58,3 +60,4 @@ function CasesPage() {
     </div>
   );
 }
+

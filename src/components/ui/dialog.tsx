@@ -47,7 +47,7 @@ const DialogContent = React.forwardRef<
     >
       <DialogPrimitive.Close
         aria-label="Закрыть"
-        className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none"
+        className="btn-dialog-close"
       >
         <X className="h-4 w-4" strokeWidth={2.5} />
         <span className="sr-only">Закрыть</span>
