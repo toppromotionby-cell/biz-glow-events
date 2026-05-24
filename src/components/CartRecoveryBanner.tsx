@@ -96,14 +96,6 @@ export function CartRecoveryBanner() {
 
   return (
     <div className="fixed bottom-4 left-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 rounded-xl border border-border/60 bg-background/95 p-4 shadow-2xl backdrop-blur-md md:bottom-6">
-      <button
-        type="button"
-        aria-label="Закрыть"
-        onClick={dismiss}
-        className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-offset-background cursor-pointer transition-all hover:bg-primary/90 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-right"
-      >
-        <X className="h-4 w-4" strokeWidth={2.5} />
-      </button>
       <div className="flex items-center gap-3 pr-6">
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-primary text-primary-foreground">
           <ShoppingCart className="h-5 w-5" />
