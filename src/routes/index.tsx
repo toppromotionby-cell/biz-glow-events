@@ -191,17 +191,18 @@ function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {cases.map((c) => (
-              <Link key={c.id} to="/cases/$slug" params={{ slug: c.slug }} className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition">
-                <div className="aspect-[16/10] bg-gradient-primary/10 overflow-hidden">
-                  {c.cover_url && <img src={c.cover_url} alt={c.title} width={640} height={400} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
-                </div>
-                <div className="p-4">
-                  {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
-                  <h3 className="mt-1 font-semibold leading-tight group-hover:text-primary transition">{c.title}</h3>
-                  {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
-                  {c.guests_count && <div className="mt-2 text-xs text-muted-foreground">{c.guests_count.toLocaleString("ru-BY")} гостей</div>}
-                </div>
-              </Link>
+              <MediaCard
+                key={c.id}
+                cover={c.cover_url}
+                alt={c.title}
+                to="/cases/$slug"
+                params={{ slug: c.slug }}
+              >
+                {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
+                <h3 className="mt-1 font-semibold leading-tight group-hover:text-primary transition">{c.title}</h3>
+                {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
+                {c.guests_count && <div className="mt-2 text-xs text-muted-foreground">{c.guests_count.toLocaleString("ru-BY")} гостей</div>}
+              </MediaCard>
             ))}
           </div>
         </Toggleable>
@@ -224,25 +225,21 @@ function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {posts.map((p) => (
-              <Link
+              <MediaCard
                 key={p.id}
+                cover={p.cover_url}
+                alt={p.title}
                 to="/blog/$slug"
                 params={{ slug: p.slug }}
-                className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition"
               >
-                <div className="aspect-[16/10] bg-gradient-primary/10 overflow-hidden">
-                  {p.cover_url && <img src={p.cover_url} alt={p.title} width={640} height={400} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform group-hover:scale-105" />}
-                </div>
-                <div className="p-4">
-                  {p.published_at && (
-                    <div className="text-xs text-muted-foreground mb-1">
-                      {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
-                    </div>
-                  )}
-                  <h3 className="font-semibold leading-tight group-hover:text-primary transition">{p.title}</h3>
-                  {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>}
-                </div>
-              </Link>
+                {p.published_at && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
+                  </div>
+                )}
+                <h3 className="font-semibold leading-tight group-hover:text-primary transition">{p.title}</h3>
+                {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>}
+              </MediaCard>
             ))}
           </div>
         </Toggleable>
