@@ -369,7 +369,7 @@ function RequisitesDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!loading) onOpenChange(v); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Реквизиты для подготовки документов</DialogTitle>
           <DialogDescription>

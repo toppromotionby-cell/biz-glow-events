@@ -327,7 +327,7 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
   const open = !!topic;
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="max-w-2xl" bodyClassName="p-0 gap-0">
         <div className="bg-gradient-primary px-6 py-5 text-primary-foreground">
           <DialogTitle className="font-display text-2xl font-bold leading-tight">
             Заявка на услугу

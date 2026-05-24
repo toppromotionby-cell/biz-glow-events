@@ -282,7 +282,7 @@ function OrderDialog({ id, onClose }: { id: string | null; onClose: () => void }
 
   return (
     <Dialog open={enabled} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 flex-wrap">
             <span>Заказ #{id?.slice(0, 8)}</span>

@@ -72,7 +72,7 @@ export function ExitIntentModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-primary/30">
+      <DialogContent className="max-w-md border-primary/30" bodyClassName="p-0 gap-0">
         <div className="bg-gradient-primary px-6 py-5 text-primary-foreground">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider opacity-90">
             <Gift className="h-4 w-4" />
