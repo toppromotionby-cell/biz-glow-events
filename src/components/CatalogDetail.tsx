@@ -21,6 +21,7 @@ import { addToCart } from "@/lib/cart";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
+import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
@@ -147,7 +148,10 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           </header>
 
           <div className="glass rounded-xl p-5 space-y-3">
-            <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Стоимость актуальна в безналичном расчете</span>
+              <PriceFactorsPopup />
+            </div>
             <PriceGate fromPrice={from}>
               <div className="text-2xl font-display font-bold">
                 {tierPrice !== null
