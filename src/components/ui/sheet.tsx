@@ -20,8 +20,6 @@ const sheetClosePosition: React.CSSProperties = {
   right: "0.875rem",
   bottom: "auto",
   left: "auto",
-  insetInlineStart: "auto",
-  insetInlineEnd: "0.875rem",
 };
 
 const SheetPortal = SheetPrimitive.Portal;

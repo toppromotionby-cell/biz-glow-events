@@ -334,15 +334,13 @@
   }
   /* Кнопка закрытия модалок (dialog/sheet/баннер/чат).
      Всегда закреплена на самом блоке в нативном правом верхнем углу;
-     left сбрасывается принудительно, чтобы старые/локальные стили не уводили кнопку влево. */
+     используем только физические top/right, чтобы направление текста не переносило её влево. */
   .btn-dialog-close {
     position: absolute;
     top: 0.625rem !important;
     right: 0.625rem !important;
     bottom: auto !important;
     left: auto !important;
-    inset-inline-start: auto !important;
-    inset-inline-end: 0.625rem !important;
     display: inline-flex;
     height: 2.75rem;
     width: 2.75rem;
@@ -359,7 +357,6 @@
     .btn-dialog-close {
       top: 0.875rem !important;
       right: 0.875rem !important;
-      inset-inline-end: 0.875rem !important;
       height: 2.5rem;
       width: 2.5rem;
     }
