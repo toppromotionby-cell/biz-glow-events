@@ -65,6 +65,7 @@ import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminNewsletterIndexRouteImport } from './routes/admin.newsletter.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminNewsletterCampaignsRouteImport } from './routes/admin.newsletter.campaigns'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
@@ -356,6 +357,12 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramSupportRoute =
+  ApiPublicTelegramSupportRouteImport.update({
+    id: '/api/public/telegram-support',
+    path: '/api/public/telegram-support',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -469,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter/': typeof AdminNewsletterIndexRoute
@@ -536,6 +544,7 @@ export interface FileRoutesByTo {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter': typeof AdminNewsletterIndexRoute
@@ -605,6 +614,7 @@ export interface FileRoutesById {
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/newsletter/campaigns': typeof AdminNewsletterCampaignsRouteWithChildren
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/newsletter/': typeof AdminNewsletterIndexRoute
@@ -675,6 +685,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/newsletter/'
@@ -742,6 +753,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/newsletter'
@@ -810,6 +822,7 @@ export interface FileRouteTypes {
     | '/admin/catalog/$type'
     | '/admin/newsletter/campaigns'
     | '/admin/orders/$id'
+    | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/newsletter/'
@@ -857,6 +870,7 @@ export interface RootRouteChildren {
   ZonesRoute: typeof ZonesRouteWithChildren
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LpSlugRoute: typeof LpSlugRoute
+  ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1258,6 +1272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram-support': {
+      id: '/api/public/telegram-support'
+      path: '/api/public/telegram-support'
+      fullPath: '/api/public/telegram-support'
+      preLoaderRoute: typeof ApiPublicTelegramSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/orders/$id': {
       id: '/admin/orders/$id'
       path: '/$id'
@@ -1524,6 +1545,7 @@ const rootRouteChildren: RootRouteChildren = {
   ZonesRoute: ZonesRouteWithChildren,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LpSlugRoute: LpSlugRoute,
+  ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
