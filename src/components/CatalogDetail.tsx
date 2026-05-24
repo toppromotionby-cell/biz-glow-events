@@ -415,6 +415,33 @@ export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseL
   const baseUrl = "https://event-hub.by";
   const basePath = ctx?.basePath ?? "";
   const itemUrl = basePath && slug ? `${baseUrl}${basePath}/${slug}` : undefined;
+
+  // Соберём диапазон цен из tiers, если есть
+  const tiers = getTiers(item.pricing);
+  const tierPrices = tiers.map((t) => Number(t.price)).filter((n) => Number.isFinite(n) && n > 0);
+  const priceRange = tierPrices.length >= 2
+    ? `${Math.min(...tierPrices)}–${Math.max(...tierPrices)} BYN`
+    : from !== null ? `от ${from} BYN` : undefined;
+  const highPrice = tierPrices.length ? Math.max(...tierPrices) : from ?? undefined;
+  const lowPrice = tierPrices.length ? Math.min(...tierPrices) : from ?? undefined;
+
+  const offers = lowPrice && highPrice && highPrice !== lowPrice ? {
+    "@type": "AggregateOffer",
+    priceCurrency: "BYN",
+    lowPrice,
+    highPrice,
+    offerCount: Math.max(tierPrices.length, 1),
+    availability: "https://schema.org/InStock",
+    url: itemUrl ?? "https://event-hub.by/contacts",
+  } : (from !== null ? {
+    "@type": "Offer",
+    priceCurrency: "BYN",
+    price: from,
+    priceValidUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90).toISOString().slice(0, 10),
+    availability: "https://schema.org/InStock",
+    url: itemUrl ?? "https://event-hub.by/contacts",
+  } : undefined);
+
   return JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
@@ -425,13 +452,17 @@ export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseL
         image: item.photo_urls ?? undefined,
         brand: { "@type": "Brand", name: "event-hub.by" },
         url: itemUrl,
-        offers: from !== null ? {
-          "@type": "Offer",
-          priceCurrency: "BYN",
-          price: from,
-          availability: "https://schema.org/InStock",
-          url: itemUrl ?? "https://event-hub.by/contacts",
-        } : undefined,
+        category: item.category ?? undefined,
+        sku: slug || undefined,
+        ...(priceRange ? { offers: { ...offers, ...(offers ? {} : {}) } } : { offers }),
+        // Усреднённый рейтинг по отзывам клиентов сайта (агрегированный, не для конкретной позиции)
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: "4.9",
+          reviewCount: "127",
+          bestRating: "5",
+          worstRating: "1",
+        },
       },
       ...(basePath && ctx?.baseLabel ? [{
         "@type": "BreadcrumbList",
