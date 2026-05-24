@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronUp, Package, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Package, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { updateOwnOrder, deleteOwnOrder } from "@/lib/orders.functions";
+import { addToCart, clearCart, type CartEntityType } from "@/lib/cart";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
