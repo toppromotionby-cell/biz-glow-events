@@ -134,7 +134,7 @@ function HomePage() {
 
       {/* FEATURED CATALOG */}
       {featured.length > 0 && (
-        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 border-t border-border/40">
+        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 pb-16 md:pb-20 border-t border-border/40">
           <div className="mb-8 text-center">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
           </div>
