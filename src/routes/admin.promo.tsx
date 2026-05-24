@@ -65,21 +65,42 @@ function Page() {
         <AdminListPanel
           items={items as Row[]}
           isLoading={isLoading}
-          renderItem={(it) => (
-            <button onClick={() => setSel(it)}
-              className={`w-full text-left p-3 rounded-lg text-sm transition ${sel?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
-              <div className="font-mono font-medium truncate">{it.code}</div>
-              <div className="text-xs opacity-70 flex items-center gap-2">
-                <span>{it.discount_type === "percent" ? `${it.discount_value}%` : `${it.discount_value} BYN`}</span>
-                <span>· {it.used_count}{it.max_uses ? `/${it.max_uses}` : ""}</span>
-                <StatusPill tone={it.active ? "success" : "muted"}>{it.active ? "активен" : "выкл"}</StatusPill>
-              </div>
-            </button>
+          emptyText="Нет промокодов"
+          onReorder={async (ids) => {
+            try { await persistSortOrder("promo_codes", ids); qc.invalidateQueries({ queryKey: ["admin-promo"] }); }
+            catch (e) { toast.error((e as Error).message); throw e; }
+          }}
+          renderItem={(it, handle) => (
+            <div className={`flex items-center gap-1 rounded-lg transition ${sel?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
+              {handle}
+              <button
+                type="button"
+                onClick={() => setSel(it)}
+                aria-pressed={sel?.id === it.id}
+                className="flex-1 text-left p-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+              >
+                <div className="font-mono font-medium truncate">{it.code}</div>
+                <div className="text-xs opacity-70 flex items-center gap-2">
+                  <span>{it.discount_type === "percent" ? `${it.discount_value}%` : `${it.discount_value} BYN`}</span>
+                  <span>· {it.used_count}{it.max_uses ? `/${it.max_uses}` : ""}</span>
+                  <StatusPill tone={it.active ? "success" : "muted"}>{it.active ? "активен" : "выкл"}</StatusPill>
+                </div>
+              </button>
+            </div>
           )}
         />
 
         {sel ? <Editor key={sel.id} row={sel} onDelete={() => del.mutate(sel.id)} /> : (
-          <AdminEmptyEditor text="Выберите промокод или создайте новый" />
+          <AdminEmptyEditor
+            title="Промокод не выбран"
+            description="Выберите код из списка слева или создайте новый — он появится с дефолтной скидкой 10%."
+            icon={<Tag className="h-6 w-6" aria-hidden="true" />}
+            action={
+              <Button onClick={() => create.mutate()} className="btn-primary-gradient">
+                <Plus className="h-4 w-4 mr-2" />Создать промокод
+              </Button>
+            }
+          />
         )}
       </div>
     </div>
