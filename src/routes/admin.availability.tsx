@@ -5,10 +5,12 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Field } from "@/components/admin/Field";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 export const Route = createFileRoute("/admin/availability")({ component: Page });
 
@@ -28,14 +30,16 @@ function Page() {
   const [form, setForm] = useState({ start_date: "", end_date: "", status: "booked" as "booked" | "maintenance" });
 
   const { data: items = [] } = useQuery({
-    queryKey: ["admin-items", entityType],
-    queryFn: async () => (await supabase.from(entityType).select("id,title").order("title")).data ?? [],
+    queryKey: ["admin-availability-items", entityType],
+    queryFn: async () => {
+      const { data } = await supabase.from(entityType).select("id, title").order("title");
+      return data ?? [];
+    },
   });
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["admin-availability", entityType, itemId],
     queryFn: async () => {
-      if (!itemId) return [];
       const { data } = await supabase.from("availability")
         .select("*").eq("entity_type", entityType).eq("item_id", itemId)
         .order("start_date", { ascending: false });
@@ -72,30 +76,28 @@ function Page() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="admin-h1">Занятость каталога</h1>
-        <p className="text-sm text-muted-foreground">Брони и периоды обслуживания. Отображаются клиентам на странице товара.</p>
-      </header>
+      <AdminPageHeader
+        title="Занятость каталога"
+        subtitle="Брони и периоды обслуживания. Отображаются клиентам на странице товара."
+      />
 
       <div className="glass rounded-xl p-5 grid md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Раздел</Label>
+        <Field label="Раздел">
           <Select value={entityType} onValueChange={(v) => { setEntityType(v as EntityType); setItemId(""); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {TYPES.map(t => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Позиция</Label>
+        </Field>
+        <Field label="Позиция">
           <Select value={itemId} onValueChange={setItemId}>
             <SelectTrigger><SelectValue placeholder="Выберите..." /></SelectTrigger>
             <SelectContent>
               {items.map((it: { id: string; title: string }) => <SelectItem key={it.id} value={it.id}>{it.title}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </Field>
       </div>
 
       {itemId && (
@@ -103,10 +105,13 @@ function Page() {
           <div className="glass rounded-xl p-5">
             <h2 className="font-semibold mb-4">Добавить период</h2>
             <div className="grid md:grid-cols-4 gap-3 items-end">
-              <div className="space-y-2"><Label>С</Label><Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></div>
-              <div className="space-y-2"><Label>По</Label><Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} /></div>
-              <div className="space-y-2">
-                <Label>Статус</Label>
+              <Field label="С">
+                <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+              </Field>
+              <Field label="По">
+                <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+              </Field>
+              <Field label="Статус">
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as "booked" | "maintenance" })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -114,7 +119,7 @@ function Page() {
                     <SelectItem value="maintenance">Обслуживание</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </Field>
               <Button onClick={() => add.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
             </div>
           </div>
@@ -126,11 +131,11 @@ function Page() {
             <ul className="space-y-2">
               {rows.map((r) => (
                 <li key={r.id} className="flex items-center justify-between p-3 rounded-lg border border-border/40">
-                  <div className="text-sm">
+                  <div className="text-sm flex items-center gap-3">
                     <span className="font-medium">{r.start_date} → {r.end_date}</span>
-                    <span className={`ml-3 text-xs px-2 py-0.5 rounded ${r.status === "booked" ? "bg-destructive/20 text-destructive" : "bg-warning/20 text-warning"}`}>
+                    <StatusPill tone={r.status === "booked" ? "danger" : "warning"}>
                       {r.status === "booked" ? "Занято" : "Обслуживание"}
-                    </span>
+                    </StatusPill>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить?")) remove.mutate(r.id); }}>
                     <Trash2 className="h-4 w-4" />
