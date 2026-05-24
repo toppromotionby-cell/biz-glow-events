@@ -39,7 +39,7 @@ export function AdminOrderEmail(props: AdminOrderProps) {
             <Heading as="h2" style={{ fontSize: '18px' }}>Клиент</Heading>
             <Text>{clientName}{clientCompany ? ` · ${clientCompany}` : ''}</Text>
             <Text>
-              Тел: <Link href={`tel:${clientPhone}`}>{clientPhone}</Link>
+              Тел: {clientPhone}
               {' · '}Email: <Link href={`mailto:${clientEmail}`}>{clientEmail}</Link>
             </Text>
             {eventDate && <Text>Дата мероприятия: {eventDate}</Text>}

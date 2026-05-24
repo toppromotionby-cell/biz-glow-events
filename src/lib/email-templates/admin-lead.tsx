@@ -28,7 +28,7 @@ export function AdminLeadEmail(props: AdminLeadProps) {
           <Section>
             <Text>{clientName}</Text>
             <Text>
-              Тел: <Link href={`tel:${clientPhone}`}>{clientPhone}</Link>
+              Тел: {clientPhone}
               {clientEmail !== '—' && <> · Email: <Link href={`mailto:${clientEmail}`}>{clientEmail}</Link></>}
             </Text>
             {notes && <Text>Комментарий: {notes}</Text>}
