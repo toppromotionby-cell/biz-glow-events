@@ -268,25 +268,26 @@ function HomePage() {
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
-            <div key={f.title} className="glass rounded-2xl p-6 flex flex-col">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary mb-4">
-                <f.icon className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground mb-5 flex-1">{f.desc}</p>
-              <div className="flex flex-col gap-2">
-                <Button
-                  size="sm"
-                  className="w-full bg-gradient-primary"
-                  onClick={() => setOrderTopic(f.title)}
-                >
-                  Заказать <ArrowRight className="ml-2 h-3 w-3" />
-                </Button>
-                <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
-                  Посмотреть каталог
-                </Link>
-              </div>
-            </div>
+            <DirectionCard
+              key={f.title}
+              icon={f.icon}
+              title={f.title}
+              description={f.desc}
+              footer={
+                <div className="flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    className="w-full bg-gradient-primary"
+                    onClick={() => setOrderTopic(f.title)}
+                  >
+                    Заказать <ArrowRight className="ml-2 h-3 w-3" />
+                  </Button>
+                  <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
+                    Посмотреть каталог
+                  </Link>
+                </div>
+              }
+            />
           ))}
         </div>
         <div className="mt-12 glass-strong rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/15 via-transparent to-accent/10 relative overflow-hidden">
