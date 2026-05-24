@@ -12,7 +12,8 @@ export function FloatingContacts() {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  if (!enabled) return null;
+  // Онлайн-помощник доступен только зарегистрированным пользователям.
+  if (!enabled || !isAuthenticated) return null;
 
   return (
     <>
