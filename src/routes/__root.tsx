@@ -177,6 +177,33 @@ function DynamicToaster() {
   return <Toaster theme={theme} />;
 }
 
+function useIdleMount(delayMs = 1500) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+    if (typeof w.requestIdleCallback === "function") {
+      const id = w.requestIdleCallback(() => setReady(true), { timeout: delayMs });
+      return () => (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => setReady(true), delayMs);
+    return () => clearTimeout(t);
+  }, [delayMs]);
+  return ready;
+}
+
+function DeferredOverlays() {
+  const ready = useIdleMount(1200);
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <EffectsLayer />
+      <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
+      <FloatingContacts />
+      <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
+    </Suspense>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => { captureUtmFromLocation(); }, []);
@@ -184,21 +211,17 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SiteSectionsProvider>
         <div className="min-h-dvh flex flex-col bg-background bg-radial-glow">
-          <EffectsLayer />
           <SiteHeader />
           <AutoBreadcrumbs />
           <main id="main" className="flex-1"><Outlet /></main>
           <SiteFooter />
-          <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
-          <FloatingContacts />
           <CartSync />
           <ScriptInjector />
-          <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
-          {/* CartRecoveryBanner удалён вместе с кнопкой закрытия */}
-          {/* SupportChat теперь рендерится из FloatingContacts */}
+          <DeferredOverlays />
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
     </QueryClientProvider>
   );
 }
+
