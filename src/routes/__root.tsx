@@ -14,6 +14,7 @@ import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 import { ExitIntentModal } from "@/components/ExitIntentModal";
+import { CartRecoveryBanner } from "@/components/CartRecoveryBanner";
 
 function NotFoundComponent() {
   return (
@@ -194,6 +195,7 @@ function RootComponent() {
           <CartSync />
           <ScriptInjector />
           <ExitIntentModal />
+          <CartRecoveryBanner />
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
