@@ -1,20 +1,22 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import ogDefault from "@/assets/og-default.jpg";
 import { Toaster } from "@/components/ui/sonner";
-import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { ScriptInjector } from "@/components/ScriptInjector";
-import { EffectsLayer } from "@/components/EffectsLayer";
-import { FloatingContacts } from "@/components/FloatingContacts";
 import { CartSync } from "@/components/CartSync";
 import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
-import { ExitIntentModal } from "@/components/ExitIntentModal";
-// SupportChat встроен в FloatingContacts
+
+// Тяжёлые/второстепенные виджеты — лениво, после первой интерактивности.
+const EffectsLayer = lazy(() => import("@/components/EffectsLayer").then(m => ({ default: m.EffectsLayer })));
+const FloatingContacts = lazy(() => import("@/components/FloatingContacts").then(m => ({ default: m.FloatingContacts })));
+const ExitIntentModal = lazy(() => import("@/components/ExitIntentModal").then(m => ({ default: m.ExitIntentModal })));
+const CookieConsent = lazy(() => import("@/components/CookieConsent").then(m => ({ default: m.CookieConsent })));
+
 
 function NotFoundComponent() {
   return (
