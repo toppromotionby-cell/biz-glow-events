@@ -95,7 +95,7 @@ function AdminDashboard() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-display font-bold gradient-text">Дашборд</h1>
+        <h1 className="admin-h1">Дашборд</h1>
         <p className="text-sm text-muted-foreground">Обзор операционных метрик в реальном времени.</p>
       </header>
 

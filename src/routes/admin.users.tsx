@@ -70,7 +70,7 @@ function UsersAdminPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary glow-primary">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl btn-primary-gradient">
           <UserCog className="h-5 w-5 text-primary-foreground" />
         </span>
         <div>

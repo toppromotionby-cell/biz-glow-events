@@ -73,7 +73,7 @@ function Page() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-3xl font-display font-bold gradient-text">Занятость каталога</h1>
+        <h1 className="admin-h1">Занятость каталога</h1>
         <p className="text-sm text-muted-foreground">Брони и периоды обслуживания. Отображаются клиентам на странице товара.</p>
       </header>
 
@@ -115,7 +115,7 @@ function Page() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={() => add.mutate()} className="bg-gradient-primary glow-primary"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
+              <Button onClick={() => add.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
             </div>
           </div>
 
