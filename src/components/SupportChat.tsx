@@ -125,7 +125,7 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
           role="dialog"
           aria-label="Онлайн-помощник"
         >
-          <div className="relative flex items-center justify-between border-b border-border bg-gradient-primary px-4 py-3 text-primary-foreground">
+          <div className="relative flex items-center justify-between border-b border-border bg-gradient-primary px-4 py-3 pr-14 text-primary-foreground">
             <div className="min-w-0">
               <div className="text-sm font-semibold truncate">{ADMIN_NAME}</div>
               <div className="text-xs opacity-80 truncate">
