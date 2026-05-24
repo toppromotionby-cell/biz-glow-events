@@ -122,7 +122,7 @@ function HomePage() {
                   key={f.id}
                   type="button"
                   onClick={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
-                  className="group glass rounded-xl sm:rounded-2xl overflow-hidden hover:border-primary/50 transition block text-left w-full flex flex-col h-full"
+                  className="group glass border-0 rounded-xl sm:rounded-2xl overflow-hidden transition block text-left w-full flex flex-col h-full"
                   aria-label={`Открыть ${f.title}`}
                 >
                   <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-gradient-primary/10">
