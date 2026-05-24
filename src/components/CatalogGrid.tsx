@@ -122,18 +122,27 @@ export function CatalogGrid({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
-          {filtered.map((it) => (
-            <CatalogCard
-              key={it.slug}
-              item={it}
-              category={category}
-              activeTags={activeTags}
-              onOpen={() => setOpenSlug(it.slug)}
-              onToggleTag={toggleTag}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+            {paged.map((it) => (
+              <CatalogCard
+                key={it.slug}
+                item={it}
+                category={category}
+                activeTags={activeTags}
+                onOpen={() => setOpenSlug(it.slug)}
+                onToggleTag={toggleTag}
+              />
+            ))}
+          </div>
+          <PaginationControls
+            total={filtered.length}
+            page={currentPage}
+            perPage={perPage}
+            onPageChange={handlePage}
+            onPerPageChange={setPerPage}
+          />
+        </>
       )}
 
       {openSlug && (
