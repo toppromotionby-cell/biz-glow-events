@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { Plus, Trash2, ExternalLink } from "lucide-react";
 import { SortableList } from "@/components/admin/SortableList";
 import { persistSortOrder } from "@/lib/sort-order";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Field } from "@/components/admin/Field";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 type Post = {
   id: string;
@@ -90,60 +93,44 @@ function AdminBlogPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Блог</h1>
-          <p className="text-sm text-muted-foreground">Статьи и кейсы</p>
-        </div>
-        <Button onClick={() => setEditing({ ...EMPTY })}><Plus className="h-4 w-4 mr-1" />Новая запись</Button>
-      </header>
+      <AdminPageHeader
+        title="Блог"
+        subtitle="Статьи и кейсы"
+        action={<Button onClick={() => setEditing({ ...EMPTY })}><Plus className="h-4 w-4 mr-1" />Новая запись</Button>}
+      />
 
       {editing && (
         <div className="glass rounded-xl p-5 space-y-4">
           <h2 className="font-display font-semibold">{editing.id ? "Редактировать" : "Новая запись"}</h2>
           <div className="grid md:grid-cols-2 gap-3">
-            <div>
-              <Label>Заголовок</Label>
+            <Field label="Заголовок">
               <Input value={editing.title} onChange={(e) => {
                 const title = e.target.value;
                 setEditing((s) => s && ({ ...s, title, slug: s.slug || slugify(title) }));
               }} />
-            </div>
-            <div>
-              <Label>Slug</Label>
+            </Field>
+            <Field label="Slug">
               <Input value={editing.slug} onChange={(e) => setEditing((s) => s && ({ ...s, slug: slugify(e.target.value) }))} />
-            </div>
+            </Field>
           </div>
-          <div>
-            <Label>Excerpt (короткое описание)</Label>
+          <Field label="Excerpt (короткое описание)">
             <Textarea rows={2} value={editing.excerpt ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, excerpt: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Текст статьи</Label>
+          </Field>
+          <Field label="Текст статьи">
             <Textarea rows={10} value={editing.body ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, body: e.target.value }))} />
-          </div>
+          </Field>
           <div className="grid md:grid-cols-2 gap-3">
-            <div>
-              <Label>Обложка (URL)</Label>
-              <Input value={editing.cover_url ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, cover_url: e.target.value }))} />
-            </div>
-            <div>
-              <Label>Теги (через запятую)</Label>
+            <Field label="Обложка (URL)"><Input value={editing.cover_url ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, cover_url: e.target.value }))} /></Field>
+            <Field label="Теги (через запятую)">
               <Input
                 value={(editing.tags ?? []).join(", ")}
                 onChange={(e) => setEditing((s) => s && ({ ...s, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) }))}
               />
-            </div>
+            </Field>
           </div>
           <div className="grid md:grid-cols-2 gap-3">
-            <div>
-              <Label>SEO title</Label>
-              <Input value={editing.seo_title ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, seo_title: e.target.value }))} />
-            </div>
-            <div>
-              <Label>SEO description</Label>
-              <Input value={editing.seo_description ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, seo_description: e.target.value }))} />
-            </div>
+            <Field label="SEO title"><Input value={editing.seo_title ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, seo_title: e.target.value }))} /></Field>
+            <Field label="SEO description"><Input value={editing.seo_description ?? ""} onChange={(e) => setEditing((s) => s && ({ ...s, seo_description: e.target.value }))} /></Field>
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={editing.published} onCheckedChange={(v) => setEditing((s) => s && ({ ...s, published: v }))} />
@@ -173,11 +160,9 @@ function AdminBlogPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium truncate">{p.title}</span>
-                  {p.published ? (
-                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full border border-emerald-500/40 text-emerald-500">опубликовано</span>
-                  ) : (
-                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full border border-border/50 text-muted-foreground">черновик</span>
-                  )}
+                  <StatusPill tone={p.published ? "success" : "muted"}>
+                    {p.published ? "опубликовано" : "черновик"}
+                  </StatusPill>
                 </div>
                 <div className="text-xs text-muted-foreground truncate">/{p.slug}</div>
               </div>

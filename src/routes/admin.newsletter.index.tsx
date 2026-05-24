@@ -39,7 +39,7 @@ function Page() {
     <div className="space-y-5">
       <header className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-display font-bold gradient-text flex items-center gap-2">
+          <h1 className="admin-h1 flex items-center gap-2">
             <Mail className="h-7 w-7" /> Подписчики рассылки
           </h1>
           <p className="text-sm text-muted-foreground">{data.length} записей</p>

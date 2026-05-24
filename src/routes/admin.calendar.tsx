@@ -33,7 +33,7 @@ function CalendarPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-3xl font-display font-bold gradient-text">Календарь</h1>
+        <h1 className="admin-h1">Календарь</h1>
         <p className="text-sm text-muted-foreground">Бронирования и доступность ресурсов</p>
       </header>
       <div className="glass rounded-xl p-4 [&_.fc]:text-foreground [&_.fc-button]:bg-primary [&_.fc-button]:border-0">

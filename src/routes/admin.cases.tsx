@@ -10,9 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Star } from "lucide-react";
-import { SortableList } from "@/components/admin/SortableList";
+import { Plus, Star } from "lucide-react";
 import { persistSortOrder } from "@/lib/sort-order";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminListPanel } from "@/components/admin/AdminListPanel";
+import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEditorShell";
+import { Field } from "@/components/admin/Field";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 export const Route = createFileRoute("/admin/cases")({
   component: CasesAdmin,
@@ -54,44 +58,38 @@ function CasesAdmin() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Кейсы</h1>
-          <p className="text-sm text-muted-foreground">{items.length} записей</p>
-        </div>
-        <Button onClick={() => create.mutate()} className="bg-gradient-primary glow-primary"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
-      </header>
+      <AdminPageHeader
+        title="Кейсы"
+        subtitle={`${items.length} записей`}
+        action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
+      />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <div className="glass rounded-xl p-3 max-h-[75vh] overflow-y-auto">
-          {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
-          <SortableList
-            items={items as CaseRow[]}
-            onReorder={async (ids) => {
-              try { await persistSortOrder("cases", ids); qc.invalidateQueries({ queryKey: ["admin-cases"] }); }
-              catch (e) { toast.error((e as Error).message); throw e; }
-            }}
-            className="space-y-1"
-            renderItem={(it, handle) => (
-              <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
-                {handle}
-                <button
-                  onClick={() => setSelected(it)}
-                  className="flex-1 text-left p-3 text-sm min-w-0"
-                >
-                  <div className="font-medium truncate flex items-center gap-1.5">
-                    {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
-                    <span className="truncate">{it.title}</span>
-                  </div>
-                  <div className="text-xs opacity-70 flex items-center gap-2">
-                    <span>{it.event_date ?? "—"}</span>
-                    {it.published ? <span className="text-success">● опубликовано</span> : <span>○ черновик</span>}
-                  </div>
-                </button>
-              </div>
-            )}
-          />
-        </div>
+        <AdminListPanel
+          items={items as CaseRow[]}
+          isLoading={isLoading}
+          onReorder={async (ids) => {
+            try { await persistSortOrder("cases", ids); qc.invalidateQueries({ queryKey: ["admin-cases"] }); }
+            catch (e) { toast.error((e as Error).message); throw e; }
+          }}
+          renderItem={(it, handle) => (
+            <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
+              {handle}
+              <button onClick={() => setSelected(it)} className="flex-1 text-left p-3 text-sm min-w-0">
+                <div className="font-medium truncate flex items-center gap-1.5">
+                  {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
+                  <span className="truncate">{it.title}</span>
+                </div>
+                <div className="text-xs opacity-70 flex items-center gap-2">
+                  <span>{it.event_date ?? "—"}</span>
+                  <StatusPill tone={it.published ? "success" : "muted"}>
+                    {it.published ? "опубликовано" : "черновик"}
+                  </StatusPill>
+                </div>
+              </button>
+            </div>
+          )}
+        />
 
         <div>
           {selected ? (
@@ -100,7 +98,7 @@ function CasesAdmin() {
               onSaved={() => qc.invalidateQueries({ queryKey: ["admin-cases"] })}
             />
           ) : (
-            <div className="glass rounded-xl p-10 text-center text-muted-foreground">Выберите кейс или создайте новый</div>
+            <AdminEmptyEditor text="Выберите кейс или создайте новый" />
           )}
         </div>
       </div>
@@ -141,9 +139,9 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
   };
 
   return (
-    <div className="glass rounded-xl p-6 space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-5">
+    <AdminEditorShell
+      switches={
+        <>
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
             {form.published ? "Опубликовано" : "Черновик"}
@@ -152,33 +150,32 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
             <Switch checked={!!form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
             <Star className="h-3.5 w-3.5" /> На главную
           </label>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onDelete}><Trash2 className="h-4 w-4 mr-1" />Удалить</Button>
-          <Button size="sm" onClick={save} disabled={saving} className="bg-gradient-primary glow-primary"><Save className="h-4 w-4 mr-1" />{saving ? "..." : "Сохранить"}</Button>
-        </div>
+        </>
+      }
+      onDelete={onDelete}
+      onSave={save}
+      saving={saving}
+    >
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Заголовок"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+        <Field label="Slug"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
+        <Field label="Клиент"><Input value={form.client ?? ""} onChange={(e) => setForm({ ...form, client: e.target.value })} /></Field>
+        <Field label="Тип события"><Input value={form.event_type ?? ""} onChange={(e) => setForm({ ...form, event_type: e.target.value })} placeholder="Корпоратив / Конференция / Фестиваль" /></Field>
+        <Field label="Дата"><Input type="date" value={form.event_date ?? ""} onChange={(e) => setForm({ ...form, event_date: e.target.value })} /></Field>
+        <Field label="Локация"><Input value={form.location ?? ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></Field>
+        <Field label="Число гостей"><Input type="number" value={form.guests_count ?? ""} onChange={(e) => setForm({ ...form, guests_count: e.target.value })} /></Field>
+        <Field label="URL обложки (опц.)" hint="Иначе берём первое фото"><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></Field>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <div><Label>Заголовок</Label><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-        <div><Label>Slug</Label><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
-        <div><Label>Клиент</Label><Input value={form.client ?? ""} onChange={(e) => setForm({ ...form, client: e.target.value })} /></div>
-        <div><Label>Тип события</Label><Input value={form.event_type ?? ""} onChange={(e) => setForm({ ...form, event_type: e.target.value })} placeholder="Корпоратив / Конференция / Фестиваль" /></div>
-        <div><Label>Дата</Label><Input type="date" value={form.event_date ?? ""} onChange={(e) => setForm({ ...form, event_date: e.target.value })} /></div>
-        <div><Label>Локация</Label><Input value={form.location ?? ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
-        <div><Label>Число гостей</Label><Input type="number" value={form.guests_count ?? ""} onChange={(e) => setForm({ ...form, guests_count: e.target.value })} /></div>
-        <div><Label>URL обложки (опц.)</Label><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="Иначе берём первое фото" /></div>
-      </div>
+      <Field label="Краткое описание"><Textarea rows={2} value={form.summary ?? ""} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></Field>
+      <Field label="Полное описание"><Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
 
-      <div><Label>Краткое описание</Label><Textarea rows={2} value={form.summary ?? ""} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></div>
-      <div><Label>Полное описание</Label><Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-
-      <div><Label>Услуги (через запятую)</Label><Input value={servicesInput} onChange={(e) => setServicesInput(e.target.value)} placeholder="Сцена и свет, VR-арена, LED-экран" /></div>
-      <div><Label>Метрики (JSON)</Label><Textarea rows={4} value={metricsInput} onChange={(e) => setMetricsInput(e.target.value)} className="font-mono text-xs" /></div>
+      <Field label="Услуги (через запятую)"><Input value={servicesInput} onChange={(e) => setServicesInput(e.target.value)} placeholder="Сцена и свет, VR-арена, LED-экран" /></Field>
+      <Field label="Метрики (JSON)"><Textarea rows={4} value={metricsInput} onChange={(e) => setMetricsInput(e.target.value)} className="font-mono text-xs" /></Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <div><Label>SEO title</Label><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></div>
-        <div><Label>SEO description</Label><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></div>
+        <Field label="SEO title"><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></Field>
+        <Field label="SEO description"><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></Field>
       </div>
 
       <div>
@@ -191,6 +188,6 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
           onChange={({ photoUrls, videoUrls }) => setForm({ ...form, photo_urls: photoUrls, video_urls: videoUrls })}
         />
       </div>
-    </div>
+    </AdminEditorShell>
   );
 }

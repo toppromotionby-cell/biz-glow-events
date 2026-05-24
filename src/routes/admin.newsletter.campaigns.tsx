@@ -117,7 +117,7 @@ function Page() {
           <Link to="/admin/newsletter" className="text-xs text-muted-foreground hover:underline flex items-center gap-1 mb-1">
             <ArrowLeft className="h-3 w-3" /> К подписчикам
           </Link>
-          <h1 className="text-3xl font-display font-bold gradient-text flex items-center gap-2">
+          <h1 className="admin-h1 flex items-center gap-2">
             <Megaphone className="h-7 w-7" /> Email-кампании
           </h1>
           <p className="text-sm text-muted-foreground">Массовые рассылки для пиара портала</p>

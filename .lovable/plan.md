@@ -1,51 +1,98 @@
-## Что нашёл
 
-Прошёлся по `src/routes` (70 файлов) и `src/components` (54 файла). Код в порядке, но 5 паттернов копируются повсеместно и раздувают разметку. Главные находки:
+# Аудит разметки админки
 
-1. **Карточка `glass rounded-* overflow-hidden hover:border-primary/50 ...` встречается 122 раза.** Структура «обложка 16/10 + paragraph` с `line-clamp` повторяется на главной (кейсы, блог), в `/cases`, `/blog`, `/lp/$slug`, `geo.$city` — каждый раз заново.
-2. **На главной `FEATURES.map` рендерится дважды** — в блоке «Направления» (стр. 122–132) и в «Заказ услуг» (стр. 296–318) — одинаковая иконка-плитка + заголовок + описание, но в двух разных JSX-формах.
-3. **Кнопки `+` / `−` / удалить в корзине** — длинная className на 200+ символов дублируется 3 раза подряд (cart.tsx 207, 217, 227).
-4. **Кнопки закрытия Dialog/Sheet/CartRecoveryBanner/SupportChat** — одинаковая className на 200+ символов скопирована в 4 местах.
-5. **Hero spark-burst на главной** (60 искр через `Array.from({length:60}).map(...)` со стилями inline) занимает 22 строки JSX внутри роута и мешает читать код страницы.
+Прошёлся по всем 22 файлам `src/routes/admin*.tsx` (3475 строк). Структура чистая, баги отсутствуют — но видна сильная **повторяемость одних и тех же блоков разметки** между страницами CRUD-каталогов и редакторов. Один и тот же шаблон «шапка + список слева + редактор справа» воспроизведён руками в 7 страницах с десятками копий длинных Tailwind-цепочек.
 
-Кроме этого: пустая корзина рендерит 4 почти одинаковых `<Link>` подряд; `OrderDialog` — 3 одинаковые контактные карточки; на главной кейсы и блог делают идентичную teaser-карточку.
+## Что повторяется (с цифрами)
 
-## Предлагаемые упрощения
+| Паттерн | Где | Кол-во |
+|---|---|---|
+| `<header>` с `text-3xl font-display font-bold gradient-text` + кнопка «Добавить» с `bg-gradient-primary glow-primary` | catalog, cases, testimonials, promo, blog, marketing, newsletter, availability, orders, users | **14** |
+| Левый сайдбар-список `glass rounded-xl p-3 max-h-[70-75vh] overflow-y-auto` | catalog, cases, testimonials, promo | **4** (идентичные классы) |
+| Карточка-пустышка справа `glass rounded-xl p-10/12 text-center text-muted-foreground` «Выберите …» | catalog, cases, testimonials, promo | **4** |
+| Шапка-редактора: `flex items-center justify-between flex-wrap gap-3` + Switch publish/featured + Удалить + Сохранить | catalog, cases, testimonials, promo, marketing | **5** |
+| `<div className="space-y-2"><Label>…</Label><Input … /></div>` | catalog, cases, testimonials, promo, blog, marketing, availability | **16** |
+| Таблица `glass rounded-xl overflow-hidden` + `thead bg-muted/30 text-muted-foreground text-xs uppercase` | orders, users, marketing | **3** |
+| Бейдж статуса `px-2 py-0.5/1 rounded-full text-xs border` | orders, blog, promo, cases, testimonials, availability | **8+** |
 
-### Шаг 1. Вынести 4 переиспользуемых компонента (без изменения визуала)
+## Замечания по UX/вёрстке (мелкие, без регрессий)
 
-- `src/components/ui/MediaCard.tsx` — обложка 16/10 + контент-слот. Заменяет дубли в `index.tsx` (кейсы + блог), `cases.tsx`, `blog.tsx`, `lp.$slug.tsx`, `geo.$city.tsx`. Принимает `to`, `cover`, `eyebrow`, `title`, `excerpt` или `children`.
-- `src/components/ui/DirectionCard.tsx` — иконка-плитка + заголовок + описание + опциональный CTA. Заменяет оба рендера `FEATURES` на главной.
-- `src/components/ui/QtyStepper.tsx` — кнопки `−` / число / `+`. Заменяет дубли в `cart.tsx` (и потенциально в `CatalogQuickView`).
-- `src/components/SparkBurst.tsx` — 60 искр уезжают из `index.tsx` в отдельный файл; в роуте остаётся `<SparkBurst />`.
+1. `admin.orders.tsx`: открытие карточки заказа по **двойному клику** — нестандартно и не дискаверабельно. Лучше один клик по строке (а stop-propagation оставить только на интерактивных ячейках статуса/оплаты/ссылки).
+2. `admin.cases.tsx` / `admin.testimonials.tsx` / `admin.promo.tsx`: подсветка выбранной записи в списке использует `selected?.id`, но в catalog подсветка завязана на `selected`, а открывается `preview` — выбранная запись визуально не помечается. Нужно унифицировать: подсветка = «то, что открыто в редакторе».
+3. `admin.tsx`: при `loading` показываем «Проверка доступа…», но `<Outlet />` не рендерится, и сайдбар тоже скрыт — лёгкое мерцание. Можно показывать скелетон-сетку (sidebar + main) той же ширины.
+4. `admin.availability.tsx`: статусы `booked/maintenance` раскрашены `bg-destructive/20` и `bg-warning/20` инлайном — стоит превратить в общий `<StatusPill>`.
+5. `admin.orders.tsx` карта статусов `STATUS_COLOR` (8 строк цветов прямо в файле) и `admin.index.tsx` `STATUS_LABEL` (в двух файлах) — дубли. Перенести в `src/lib/order-status.ts`.
+6. `admin.blog.tsx` использует кастомный `useState` вместо react-query (единственная страница без него). Не блокер, но непоследовательно.
+7. `<select>` нативный встречается в 4 местах (orders, promo, blog), а в остальных — shadcn `<Select>`. Унифицировать на shadcn.
+8. `admin.marketing.tsx`, `admin.cases.tsx`, `admin.catalog.$type.tsx`: остались `(c: any)`, `as any` — типизировать через `Database['public']['Tables'][…]['Row']`.
 
-### Шаг 2. Свести 3 длинных className к утилитам в `src/styles.css`
+## План упрощения
 
-В `@layer utilities` добавить:
-- `.btn-icon-soft` — `h-7 w-7 inline-flex items-center justify-center rounded-md border border-border bg-background/60 hover:bg-primary/10 hover:border-primary/40 disabled:opacity-40 transition` (используют корзина, степпер).
-- `.btn-icon-danger` — то же, но с `border-destructive/30 hover:text-destructive hover:bg-destructive/10`.
-- `.btn-dialog-close` — длинный absolute-класс кнопки закрытия модалок; обновить `dialog.tsx`, `sheet.tsx`, `CartRecoveryBanner.tsx`, `SupportChat.tsx`.
+### 1. Создать 5 общих admin-компонентов в `src/components/admin/`
 
-### Шаг 3. Локальные мелочи
+- **`AdminPageHeader.tsx`** — `{ title, subtitle?, action? }`. Заменяет 14 одинаковых `<header>` блоков с `text-3xl font-display font-bold gradient-text` и кнопкой действия.
+- **`AdminListPanel.tsx`** — обёртка левого сайдбара со скроллом. Принимает `{ items, isLoading, sortable?, getId, isActive, onSelect, onReorder?, renderItem }`. Инкапсулирует `glass rounded-xl p-3 max-h-[75vh] overflow-y-auto` + `SortableList` + состояния «Загрузка…» / «Пусто». Заменяет 4 практически идентичных блока в catalog/cases/testimonials/promo.
+- **`AdminEditorShell.tsx`** — обёртка редактора с шапкой `{ switches, onDelete, onSave, saving }` (Publish/Featured/Active + кнопки). Заменяет 5 копий шапки редактора.
+- **`AdminEmptyEditor.tsx`** — placeholder «Выберите … или создайте новый» (4 копии).
+- **`Field.tsx`** — `{ label, children, hint?, required? }` для пары Label+Input. Срезает 16+ повторов `<div className="space-y-2"><Label>…<Input …/></div>` и упростит сетки `grid md:grid-cols-2 gap-4`.
 
-- В пустой корзине заменить 4 хардкод-`<Link>` на `.map()` по массиву разделов.
-- В `OrderDialog` (`index.tsx`) — массив контактных карточек + один `.map()`.
-- В `index.tsx` секцию «Заказ услуг» переписать через `DirectionCard` + общий рендер.
+### 2. Один общий `<StatusPill variant="…">` в `src/components/admin/StatusPill.tsx`
 
-## Итого
+Маппинг status→class вытащить в один словарь. Использовать в:
+- `admin.orders.tsx` (вместо STATUS_COLOR + inline-select-стилей),
+- `admin.blog.tsx` («опубликовано/черновик»),
+- `admin.cases.tsx`, `admin.testimonials.tsx` (точечки `●/○`),
+- `admin.availability.tsx` (booked/maintenance),
+- `admin.promo.tsx` (активен/нет).
 
-- Минус ~250–300 строк JSX без потери функционала.
-- 4 новых небольших компонента + 3 utility-класса.
-- Визуал и поведение остаются ровно прежними — это чисто рефакторинг разметки.
-- Отдельно НЕ трогаю: админку (другая логика, другой риск), shadcn-примитивы кроме `dialog.tsx`/`sheet.tsx` (там только замена строки className).
+### 3. Утилитные классы в `src/styles.css` (`@layer utilities`)
+
+- `.admin-h1` — `text-3xl font-display font-bold gradient-text`
+- `.admin-table-head` — `bg-muted/30 text-muted-foreground text-xs uppercase`
+- `.btn-primary-gradient` — `bg-gradient-primary glow-primary` (используется 14 раз только в админке + ещё на сайте)
+
+### 4. Вынести общие данные
+
+- `src/lib/order-status.ts` — `ORDER_STATUS_LABEL`, `ORDER_STATUS_COLOR`, типы. Импортировать в `admin.orders.tsx`, `admin.orders.$id.tsx`, `admin.index.tsx`.
+
+### 5. UX-фиксы (точечные)
+
+- `admin.orders.tsx`: одиночный клик открывает модалку (исключения — ячейки status/paid/external link уже имеют `stopPropagation`); подсказка «двойной клик» убирается.
+- `admin.catalog.$type.tsx`: вместо `selected` для подсветки + `preview` для открытия — оставить **одно** состояние «открыто в редакторе» и подсвечивать им же.
+- `admin.tsx` loading-состояние рендерить с уже видимым sidebar-скелетоном.
+- `admin.availability.tsx`: native `<Select>` уже shadcn — оставить; только обернуть статусы в `StatusPill`.
+
+### 6. Без изменений
+
+- Бизнес-логика, серверные функции, RLS, миграции — **не трогаем**.
+- `admin.orders.$id.tsx`, `*.invoice/*.contract/*.quote.tsx` — там разметка уже компактная, только подключим `Field` и `AdminPageHeader`.
+- `routeTree.gen.ts` — генерируется автоматически.
 
 ## Технические детали
 
-- Все новые компоненты — презентационные, без хуков и без зависимости от данных. Принимают `to?: LinkOptions` или `onClick`.
-- `MediaCard` использует тот же `<Link>` из `@tanstack/react-router` с `from={Route.fullPath}` опциональным; по умолчанию рендерит `<article>` если `to` не задан.
-- `QtyStepper` — управляемый: `value`, `onChange`, `min`, `max`, `label`. Aria-label генерируется из `label`.
-- Утилиты в `styles.css` идут под `@layer utilities`, чтобы их можно было перекрывать произвольным `className`.
-- TypeScript строгий: проверим `bunx tsc --noEmit` после каждого шага.
-- Никаких изменений в БД/RLS/server functions — это чисто фронт.
+```text
+src/components/admin/
+├── AdminPageHeader.tsx     (новый, ~25 строк)
+├── AdminListPanel.tsx      (новый, ~50 строк)
+├── AdminEditorShell.tsx    (новый, ~40 строк)
+├── AdminEmptyEditor.tsx    (новый, ~10 строк)
+├── Field.tsx               (новый, ~15 строк)
+└── StatusPill.tsx          (новый, ~30 строк)
 
-После одобрения сделаю Шаги 1→2→3 последовательно, между шагами прогоняю tsc.
+src/lib/
+└── order-status.ts         (новый, ~25 строк)
+
+src/styles.css              (+3 утилитные класса)
+```
+
+После рефакторинга ожидаемое сокращение: **~3475 → ~2700 строк** в admin-роутах (≈22%) при сохранении всего функционала и визуально идентичной странице.
+
+## Порядок шагов
+
+1. Создать 6 компонентов + `order-status.ts` + утилитные классы в `styles.css`.
+2. Прогнать `bunx tsc --noEmit` — убедиться, что новые компоненты типизированы.
+3. По одному файлу мигрировать роуты в порядке убывания дублей: `admin.testimonials` → `admin.cases` → `admin.promo` → `admin.catalog.$type` → `admin.blog` → `admin.marketing` → `admin.orders` → `admin.users` → `admin.availability` → `admin.index` → остальные.
+4. После каждого файла — `bunx tsc --noEmit` и быстрый смок (`/admin/cases`, `/admin/orders`).
+5. UX-фиксы (одиночный клик в orders, подсветка в catalog) — отдельным проходом после миграции.
+
+Дизайн-токены, сетки и визуальные акценты остаются прежними — это чисто структурный рефакторинг разметки.

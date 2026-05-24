@@ -5,13 +5,16 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Star } from "lucide-react";
-import { SortableList } from "@/components/admin/SortableList";
+import { Plus, Star } from "lucide-react";
 import { persistSortOrder } from "@/lib/sort-order";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminListPanel } from "@/components/admin/AdminListPanel";
+import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEditorShell";
+import { Field } from "@/components/admin/Field";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 export const Route = createFileRoute("/admin/testimonials")({ component: Page });
 
@@ -50,49 +53,43 @@ function Page() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Отзывы</h1>
-          <p className="text-sm text-muted-foreground">{items.length} записей</p>
-        </div>
-        <Button onClick={() => create.mutate()} className="bg-gradient-primary glow-primary"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
-      </header>
+      <AdminPageHeader
+        title="Отзывы"
+        subtitle={`${items.length} записей`}
+        action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
+      />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <div className="glass rounded-xl p-3 max-h-[75vh] overflow-y-auto">
-          {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
-          <SortableList
-            items={items as Row[]}
-            onReorder={async (ids) => {
-              try { await persistSortOrder("testimonials", ids); qc.invalidateQueries({ queryKey: ["admin-testimonials"] }); }
-              catch (e) { toast.error((e as Error).message); throw e; }
-            }}
-            className="space-y-1"
-            renderItem={(it, handle) => (
-              <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
-                {handle}
-                <button
-                  onClick={() => setSelected(it)}
-                  className="flex-1 text-left p-3 text-sm min-w-0"
-                >
-                  <div className="font-medium truncate flex items-center gap-1.5">
-                    {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
-                    <span className="truncate">{it.client_name}</span>
-                  </div>
-                  <div className="text-xs opacity-70 flex items-center gap-2">
-                    <span>{"★".repeat(it.rating)}</span>
-                    {it.published ? <span className="text-success">● опубликовано</span> : <span>○ черновик</span>}
-                  </div>
-                </button>
-              </div>
-            )}
-          />
-        </div>
+        <AdminListPanel
+          items={items as Row[]}
+          isLoading={isLoading}
+          onReorder={async (ids) => {
+            try { await persistSortOrder("testimonials", ids); qc.invalidateQueries({ queryKey: ["admin-testimonials"] }); }
+            catch (e) { toast.error((e as Error).message); throw e; }
+          }}
+          renderItem={(it, handle) => (
+            <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
+              {handle}
+              <button onClick={() => setSelected(it)} className="flex-1 text-left p-3 text-sm min-w-0">
+                <div className="font-medium truncate flex items-center gap-1.5">
+                  {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
+                  <span className="truncate">{it.client_name}</span>
+                </div>
+                <div className="text-xs opacity-70 flex items-center gap-2">
+                  <span>{"★".repeat(it.rating)}</span>
+                  <StatusPill tone={it.published ? "success" : "muted"}>
+                    {it.published ? "опубликовано" : "черновик"}
+                  </StatusPill>
+                </div>
+              </button>
+            </div>
+          )}
+        />
 
         {selected ? (
           <Editor key={selected.id} row={selected} onDelete={() => remove.mutate(selected.id)} />
         ) : (
-          <div className="glass rounded-xl p-12 text-center text-muted-foreground">Выберите отзыв или создайте новый</div>
+          <AdminEmptyEditor text="Выберите отзыв или создайте новый" />
         )}
       </div>
     </div>
@@ -125,28 +122,31 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   });
 
   return (
-    <div className="glass rounded-xl p-5 space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-xl font-semibold">{f.client_name || "Без имени"}</h2>
-        <div className="flex items-center gap-4">
+    <AdminEditorShell
+      title={f.client_name || "Без имени"}
+      switches={
+        <>
           <label className="flex items-center gap-2 text-sm"><Switch checked={!!f.published} onCheckedChange={(v) => setF({ ...f, published: v })} /> Опубликовано</label>
           <label className="flex items-center gap-2 text-sm"><Switch checked={!!f.featured} onCheckedChange={(v) => setF({ ...f, featured: v })} /> Featured</label>
-          <Button variant="destructive" size="sm" onClick={() => { if (confirm("Удалить?")) onDelete(); }}><Trash2 className="h-4 w-4" /></Button>
-          <Button onClick={() => save.mutate()} className="bg-gradient-primary glow-primary"><Save className="h-4 w-4 mr-2" />Сохранить</Button>
-        </div>
-      </div>
-
+        </>
+      }
+      onDelete={onDelete}
+      onSave={() => save.mutate()}
+      saving={save.isPending}
+    >
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="space-y-2"><Label>Имя клиента *</Label><Input value={f.client_name ?? ""} onChange={(e) => setF({ ...f, client_name: e.target.value })} /></div>
-        <div className="space-y-2"><Label>Компания</Label><Input value={f.client_company ?? ""} onChange={(e) => setF({ ...f, client_company: e.target.value })} /></div>
-        <div className="space-y-2"><Label>Должность</Label><Input value={f.client_role ?? ""} onChange={(e) => setF({ ...f, client_role: e.target.value })} /></div>
-        <div className="space-y-2"><Label>URL фото</Label><Input value={f.client_photo_url ?? ""} onChange={(e) => setF({ ...f, client_photo_url: e.target.value })} /></div>
-        <div className="space-y-2"><Label>Оценка (1–5)</Label><Input type="number" min={1} max={5} value={f.rating ?? 5} onChange={(e) => setF({ ...f, rating: Number(e.target.value) })} /></div>
-        <div className="space-y-2"><Label>Дата мероприятия</Label><Input type="date" value={f.event_date ?? ""} onChange={(e) => setF({ ...f, event_date: e.target.value })} /></div>
-        <div className="space-y-2"><Label>Порядок сортировки</Label><Input type="number" value={f.sort_order ?? 0} onChange={(e) => setF({ ...f, sort_order: Number(e.target.value) })} /></div>
+        <Field label="Имя клиента" required><Input value={f.client_name ?? ""} onChange={(e) => setF({ ...f, client_name: e.target.value })} /></Field>
+        <Field label="Компания"><Input value={f.client_company ?? ""} onChange={(e) => setF({ ...f, client_company: e.target.value })} /></Field>
+        <Field label="Должность"><Input value={f.client_role ?? ""} onChange={(e) => setF({ ...f, client_role: e.target.value })} /></Field>
+        <Field label="URL фото"><Input value={f.client_photo_url ?? ""} onChange={(e) => setF({ ...f, client_photo_url: e.target.value })} /></Field>
+        <Field label="Оценка (1–5)"><Input type="number" min={1} max={5} value={f.rating ?? 5} onChange={(e) => setF({ ...f, rating: Number(e.target.value) })} /></Field>
+        <Field label="Дата мероприятия"><Input type="date" value={f.event_date ?? ""} onChange={(e) => setF({ ...f, event_date: e.target.value })} /></Field>
+        <Field label="Порядок сортировки"><Input type="number" value={f.sort_order ?? 0} onChange={(e) => setF({ ...f, sort_order: Number(e.target.value) })} /></Field>
       </div>
 
-      <div className="space-y-2"><Label>Текст отзыва *</Label><Textarea rows={6} value={f.text ?? ""} onChange={(e) => setF({ ...f, text: e.target.value })} /></div>
-    </div>
+      <Field label="Текст отзыва" required>
+        <Textarea rows={6} value={f.text ?? ""} onChange={(e) => setF({ ...f, text: e.target.value })} />
+      </Field>
+    </AdminEditorShell>
   );
 }

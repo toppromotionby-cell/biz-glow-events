@@ -9,26 +9,16 @@ import { downloadCsv, toCsv } from "@/lib/csv";
 import { Download, Search, ExternalLink, Clock, Paperclip } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 
-const STATUS_LABEL: Record<string, string> = {
-  new: "Новый", consultation: "Консультация", estimate: "Смета", contract: "Договор",
-  in_progress: "В работе", paid: "Оплачен", completed: "Завершён", cancelled: "Отменён",
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  new: "bg-blue-500/15 text-blue-300 border-blue-400/30",
-  consultation: "bg-cyan-500/15 text-cyan-300 border-cyan-400/30",
-  estimate: "bg-violet-500/15 text-violet-300 border-violet-400/30",
-  contract: "bg-amber-500/15 text-amber-300 border-amber-400/30",
-  in_progress: "bg-orange-500/15 text-orange-300 border-orange-400/30",
-  paid: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
-  completed: "bg-green-600/15 text-green-300 border-green-500/30",
-  cancelled: "bg-red-500/15 text-red-300 border-red-400/30",
-};
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtDate = (v: any) => (v ? new Date(v).toLocaleDateString("ru-BY") : "—");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtDateTime = (v: any) => (v ? new Date(v).toLocaleString("ru-BY") : "—");
+
 
 export const Route = createFileRoute("/admin/orders")({
   component: AdminOrders,
@@ -134,13 +124,11 @@ function AdminOrders() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Заказы (CRM)</h1>
-          <p className="text-sm text-muted-foreground">{orders.length} записей · двойной клик по строке — подробности</p>
-        </div>
-        <Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-2" />Экспорт CSV</Button>
-      </header>
+      <AdminPageHeader
+        title="Заказы (CRM)"
+        subtitle={`${orders.length} записей · клик по строке — подробности`}
+        action={<Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-2" />Экспорт CSV</Button>}
+      />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Всего заказов" value={String(orders.length)} />

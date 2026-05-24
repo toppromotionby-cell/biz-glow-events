@@ -63,7 +63,7 @@ function OrderDetail() {
       <Link to="/admin/orders" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="h-4 w-4" />К списку</Link>
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Заказ #{order.id.slice(0, 8)}</h1>
+          <h1 className="admin-h1">Заказ #{order.id.slice(0, 8)}</h1>
           <p className="text-sm text-muted-foreground">Создан {new Date(order.created_at).toLocaleString("ru-BY")}</p>
         </div>
         <div className="flex items-center gap-2">

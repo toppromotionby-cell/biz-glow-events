@@ -14,7 +14,7 @@ function AuditPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-3xl font-display font-bold gradient-text">Журнал аудита</h1>
+      <h1 className="admin-h1">Журнал аудита</h1>
       <div className="glass rounded-xl overflow-hidden overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-muted/30 text-muted-foreground uppercase">

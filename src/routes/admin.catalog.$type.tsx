@@ -13,10 +13,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Pencil, X, ArrowRightLeft } from "lucide-react";
+import { Plus, Pencil, X, ArrowRightLeft } from "lucide-react";
 import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
-import { SortableList } from "@/components/admin/SortableList";
 import { persistSortOrder } from "@/lib/sort-order";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminListPanel } from "@/components/admin/AdminListPanel";
+import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEditorShell";
+import { Field } from "@/components/admin/Field";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
@@ -37,7 +41,9 @@ function CatalogAdmin() {
 
 function CatalogInner({ table }: { table: Table }) {
   const qc = useQueryClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selected, setSelected] = useState<any | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [preview, setPreview] = useState<any | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
@@ -67,63 +73,62 @@ function CatalogInner({ table }: { table: Table }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Подсветка строки = «то, что сейчас открыто пользователю» (preview либо editor).
+  const activeId = preview?.id ?? selected?.id;
+
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">{LABELS[table]}</h1>
-          <p className="text-sm text-muted-foreground">{items.length} записей · клик по записи открывает подробный просмотр</p>
-        </div>
-        <Button onClick={() => create.mutate()} className="bg-gradient-primary glow-primary"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
-      </header>
+      <AdminPageHeader
+        title={LABELS[table]}
+        subtitle={`${items.length} записей · клик по записи открывает подробный просмотр`}
+        action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
+      />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <div className="glass rounded-xl p-3 max-h-[70vh] overflow-y-auto">
-          {isLoading && <div className="p-4 text-sm text-muted-foreground">Загрузка...</div>}
-          <SortableList
-            items={items as any[]}
-            onReorder={async (ids) => {
-              try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: ["catalog", table] }); }
-              catch (e) { toast.error((e as Error).message); throw e; }
-            }}
-            className="space-y-1"
-            renderItem={(it, handle) => (
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setPreview(it)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreview(it); } }}
-                className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-2 ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
-              >
-                {handle}
-                {it.photo_urls?.[0] ? (
-                  <img src={it.photo_urls[0]} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
-                ) : (
-                  <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate">{it.title}</div>
-                  <div className="text-xs opacity-70 flex items-center gap-2">
-                    <span className="truncate">{it.slug}</span>
-                    {it.published ? <span className="text-success">●</span> : <span>○</span>}
-                  </div>
+        <AdminListPanel
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          items={items as any[]}
+          isLoading={isLoading}
+          onReorder={async (ids) => {
+            try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: ["catalog", table] }); }
+            catch (e) { toast.error((e as Error).message); throw e; }
+          }}
+          renderItem={(it, handle) => (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setPreview(it)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreview(it); } }}
+              className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-2 ${activeId === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
+            >
+              {handle}
+              {it.photo_urls?.[0] ? (
+                <img src={it.photo_urls[0]} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+              ) : (
+                <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">{it.title}</div>
+                <div className="text-xs opacity-70 flex items-center gap-2">
+                  <span className="truncate">{it.slug}</span>
+                  <StatusPill tone={it.published ? "success" : "muted"}>{it.published ? "опубл." : "черн."}</StatusPill>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setSelected(it); }}
-                  title="Редактировать"
-                  className="opacity-0 group-hover:opacity-100 transition inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
               </div>
-            )}
-          />
-        </div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSelected(it); }}
+                title="Редактировать"
+                className="opacity-0 group-hover:opacity-100 transition inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        />
 
         <div>
           {selected ? <Editor key={selected.id} table={table} item={selected} onDelete={() => remove.mutate(selected.id)} onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })} /> : (
-            <div className="glass rounded-xl p-10 text-center text-muted-foreground">Кликните по записи для подробного просмотра или нажмите «Добавить»</div>
+            <AdminEmptyEditor text="Кликните по записи для подробного просмотра или нажмите «Добавить»" />
           )}
         </div>
       </div>
@@ -136,6 +141,7 @@ function CatalogInner({ table }: { table: Table }) {
     </div>
   );
 }
+
 
 type PreviewDialogProps = { item: any | null; onClose: () => void; onEdit: (it: any) => void };
 function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
@@ -308,13 +314,13 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
   const otherTables = TABLES.filter((t) => t !== table);
 
   return (
-    <div className="glass rounded-xl p-6 space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
-          <span className="text-sm">{form.published ? "Опубликовано" : "Черновик"}</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <AdminEditorShell
+      switches={
+        <>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
+            {form.published ? "Опубликовано" : "Черновик"}
+          </label>
           <div className="flex items-center gap-1">
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
             <Select value={moveTarget} onValueChange={(v) => { setMoveTarget(v as Table); moveTo(v as Table); }} disabled={moving}>
@@ -324,15 +330,16 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" size="sm" onClick={onDelete}><Trash2 className="h-4 w-4 mr-1" />Удалить</Button>
-          <Button size="sm" onClick={save} disabled={saving} className="bg-gradient-primary glow-primary"><Save className="h-4 w-4 mr-1" />{saving ? "..." : "Сохранить"}</Button>
-        </div>
-      </div>
-
+        </>
+      }
+      onDelete={onDelete}
+      onSave={save}
+      saving={saving}
+    >
       <div className="grid sm:grid-cols-3 gap-3">
-        <div><Label>Заголовок</Label><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-        <div><Label>Slug</Label><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
-        <div><Label>Категория</Label><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+        <Field label="Заголовок"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+        <Field label="Slug"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
+        <Field label="Категория"><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
       </div>
 
       <PriceTableEditor
@@ -346,13 +353,13 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
         })()}
       </div>
 
-      <div><Label>Краткое описание</Label><Textarea rows={2} value={form.short_description ?? ""} onChange={(e) => setForm({ ...form, short_description: e.target.value })} /></div>
-      <div><Label>Описание</Label><Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-      <div><Label>Требования</Label><Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} /></div>
+      <Field label="Краткое описание"><Textarea rows={2} value={form.short_description ?? ""} onChange={(e) => setForm({ ...form, short_description: e.target.value })} /></Field>
+      <Field label="Описание"><Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+      <Field label="Требования"><Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} /></Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <div><Label>SEO title</Label><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></div>
-        <div><Label>SEO description</Label><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></div>
+        <Field label="SEO title"><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></Field>
+        <Field label="SEO description"><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></Field>
       </div>
 
       <div>
@@ -365,6 +372,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
           onChange={({ photoUrls, videoUrls }) => setForm({ ...form, photo_urls: photoUrls, video_urls: videoUrls })}
         />
       </div>
-    </div>
+    </AdminEditorShell>
   );
 }
+
