@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listCases } from "@/lib/cases.functions";
 import { MapPin, Users, Calendar } from "lucide-react";
 import { MediaCard } from "@/components/ui/MediaCard";
+import { PaginationControls, type PerPage } from "@/components/ui/PaginationControls";
 
 const casesQuery = queryOptions({
   queryKey: ["cases", "all"],
