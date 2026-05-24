@@ -117,7 +117,7 @@ function HomePage() {
 
 
       {/* DIRECTIONS */}
-      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4">
+      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 pb-16 md:pb-20">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
@@ -134,7 +134,7 @@ function HomePage() {
 
       {/* FEATURED CATALOG */}
       {featured.length > 0 && (
-        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 border-t border-border/40">
+        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 pb-16 md:pb-20 border-t border-border/40">
           <div className="mb-8 text-center">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
           </div>
@@ -187,7 +187,7 @@ function HomePage() {
       )}
 
       {/* VALUES */}
-      <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 border-t border-border/40">
+      <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 pb-16 md:pb-20 border-t border-border/40">
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
             <div key={v.title} className="flex flex-col items-center text-center">
