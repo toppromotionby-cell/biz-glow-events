@@ -203,7 +203,10 @@ async function enqueueAllForCampaign(campaignId: string) {
 
   const html = renderEmailHtml(campaign.subject, campaign.html_content);
 
-  while (true) {
+  // Защита от бесконечного цикла: ограничиваем количество итераций.
+  const MAX_ITERATIONS = 1000;
+  let iter = 0;
+  while (iter++ < MAX_ITERATIONS) {
     const { data: pending } = await supabaseAdmin
       .from("email_campaign_recipients")
       .select("id, email")
@@ -235,26 +238,82 @@ async function enqueueAllForCampaign(campaignId: string) {
         await supabaseAdmin.from("email_campaign_recipients")
           .update({ status: "failed", error: enqErr.message }).eq("id", rec.id);
       } else {
+        // queued — письмо успешно поставлено в очередь, но фактическая
+        // доставка подтверждается позже через email_send_log (см. refreshCampaignStats).
         await supabaseAdmin.from("email_campaign_recipients")
-          .update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", rec.id);
+          .update({ status: "queued", sent_at: new Date().toISOString(), error: null }).eq("id", rec.id);
       }
     }
   }
 
-  // Обновляем статистику кампании
-  const { data: stats } = await supabaseAdmin
-    .from("email_campaign_recipients")
-    .select("status")
-    .eq("campaign_id", campaignId);
-  const sent = (stats ?? []).filter((r) => r.status === "sent").length;
-  const failed = (stats ?? []).filter((r) => r.status === "failed").length;
-
+  // Кампания помечается завершённой по факту постановки в очередь;
+  // финальная статистика синхронизируется с email_send_log по запросу.
+  await reconcileCampaignFromLog(campaignId);
   await supabaseAdmin.from("email_campaigns").update({
     status: "completed",
-    sent_count: sent,
-    failed_count: failed,
     completed_at: new Date().toISOString(),
   }).eq("id", campaignId);
+}
+
+// Сверяет статусы получателей с email_send_log (по message_id) и обновляет агрегаты.
+async function reconcileCampaignFromLog(campaignId: string) {
+  const { data: recipients } = await supabaseAdmin
+    .from("email_campaign_recipients")
+    .select("id, status")
+    .eq("campaign_id", campaignId);
+  if (!recipients?.length) return { sent: 0, failed: 0, pending: 0, suppressed: 0, queued: 0 };
+
+  // Берём финальные статусы из email_send_log по message_id (последняя запись на сообщение).
+  const ids = recipients.map((r) => `campaign-${campaignId}-${r.id}`);
+  const { data: logRows } = await supabaseAdmin
+    .from("email_send_log")
+    .select("message_id, status, error_message, created_at")
+    .in("message_id", ids)
+    .order("created_at", { ascending: false });
+
+  const latestByMsg = new Map<string, { status: string; error: string | null }>();
+  for (const row of logRows ?? []) {
+    if (!row.message_id || latestByMsg.has(row.message_id)) continue;
+    latestByMsg.set(row.message_id, { status: row.status, error: row.error_message });
+  }
+
+  // Маппинг статусов лога на статусы получателя кампании.
+  const mapStatus = (s: string): "sent" | "failed" | "suppressed" | null => {
+    if (s === "sent") return "sent";
+    if (s === "dlq" || s === "failed" || s === "bounced" || s === "complained") return "failed";
+    if (s === "suppressed") return "suppressed";
+    return null; // pending — оставляем как есть (queued)
+  };
+
+  for (const r of recipients) {
+    if (r.status === "suppressed" || r.status === "failed") continue;
+    const log = latestByMsg.get(`campaign-${campaignId}-${r.id}`);
+    if (!log) continue;
+    const newStatus = mapStatus(log.status);
+    if (!newStatus || newStatus === r.status) continue;
+    await supabaseAdmin.from("email_campaign_recipients")
+      .update({ status: newStatus, error: newStatus === "failed" ? log.error : null })
+      .eq("id", r.id);
+  }
+
+  const { data: refreshed } = await supabaseAdmin
+    .from("email_campaign_recipients").select("status").eq("campaign_id", campaignId);
+  const counts = { sent: 0, failed: 0, pending: 0, suppressed: 0, queued: 0 };
+  for (const r of refreshed ?? []) {
+    if (r.status === "sent") counts.sent++;
+    else if (r.status === "failed") counts.failed++;
+    else if (r.status === "suppressed") counts.suppressed++;
+    else if (r.status === "queued") counts.queued++;
+    else counts.pending++;
+  }
+
+  await supabaseAdmin.from("email_campaigns").update({
+    sent_count: counts.sent,
+    failed_count: counts.failed,
+    suppressed_count: counts.suppressed,
+  }).eq("id", campaignId);
+
+  return counts;
 }
 
 export const refreshCampaignStats = createServerFn({ method: "POST" })
@@ -262,14 +321,5 @@ export const refreshCampaignStats = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: stats } = await supabaseAdmin
-      .from("email_campaign_recipients").select("status").eq("campaign_id", data.id);
-    const sent = (stats ?? []).filter((r) => r.status === "sent").length;
-    const failed = (stats ?? []).filter((r) => r.status === "failed").length;
-    const pending = (stats ?? []).filter((r) => r.status === "pending").length;
-    await supabaseAdmin.from("email_campaigns").update({
-      sent_count: sent,
-      failed_count: failed,
-    }).eq("id", data.id);
-    return { sent, failed, pending };
+    return await reconcileCampaignFromLog(data.id);
   });
