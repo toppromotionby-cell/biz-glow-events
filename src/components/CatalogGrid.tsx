@@ -125,15 +125,13 @@ export function CatalogGrid({
                           playsInline
                           preload="none"
                           className="absolute inset-0 h-full w-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                          onMouseEnter={(e) => { e.currentTarget.play().catch(() => {}); }}
-                          onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
                           ref={(el) => {
                             if (!el) return;
-                            const parent = el.closest("article");
-                            if (!parent || (parent as HTMLElement).dataset.videoBound) return;
-                            (parent as HTMLElement).dataset.videoBound = "1";
+                            const parent = el.closest("article") as HTMLElement | null;
+                            if (!parent || parent.dataset.videoBound === "1") return;
+                            parent.dataset.videoBound = "1";
                             parent.addEventListener("mouseenter", () => { el.play().catch(() => {}); });
-                            parent.addEventListener("mouseleave", () => { el.pause(); el.currentTarget && (el.currentTime = 0); });
+                            parent.addEventListener("mouseleave", () => { el.pause(); el.currentTime = 0; });
                           }}
                         />
                         <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur opacity-90 group-hover:opacity-0 transition">
