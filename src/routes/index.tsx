@@ -298,11 +298,13 @@ function HomePage() {
               <h3 className="font-semibold mb-2">{f.title}</h3>
               <p className="text-sm text-muted-foreground mb-5 flex-1">{f.desc}</p>
               <div className="flex flex-col gap-2">
-                <Link to={f.to}>
-                  <Button size="sm" className="w-full bg-gradient-primary">
-                    Заказать <ArrowRight className="ml-2 h-3 w-3" />
-                  </Button>
-                </Link>
+                <Button
+                  size="sm"
+                  className="w-full bg-gradient-primary"
+                  onClick={() => setOrderTopic(f.title)}
+                >
+                  Заказать <ArrowRight className="ml-2 h-3 w-3" />
+                </Button>
                 <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
                   Посмотреть каталог
                 </Link>
@@ -310,18 +312,74 @@ function HomePage() {
             </div>
           ))}
         </div>
-        <div className="mt-10 glass-strong rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-          <div>
-            <h3 className="font-display font-semibold text-xl mb-1">Не нашли подходящее?</h3>
-            <p className="text-sm text-muted-foreground">Опишите задачу — подберём решение под ваш бюджет и сроки.</p>
+        <div className="mt-12 glass-strong rounded-3xl p-8 md:p-12 bg-gradient-to-br from-primary/15 via-transparent to-accent/10 relative overflow-hidden">
+          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/15 blur-3xl pointer-events-none" aria-hidden="true" />
+          <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-accent/15 blur-3xl pointer-events-none" aria-hidden="true" />
+          <div className="relative grid md:grid-cols-[1fr_auto] items-center gap-8">
+            <div className="text-center md:text-left">
+              <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] uppercase text-accent mb-3">
+                <Sparkles className="h-3 w-3" /> Индивидуальное решение
+              </div>
+              <h3 className="font-display font-bold text-2xl md:text-3xl mb-2">Не нашли подходящее?</h3>
+              <p className="text-sm md:text-base text-muted-foreground max-w-xl">
+                Опишите задачу — подберём решение под ваш бюджет, формат и сроки. Бесплатный расчёт за 24 часа.
+              </p>
+            </div>
+            <div className="flex justify-center md:justify-end">
+              <Button
+                size="lg"
+                onClick={() => setOrderTopic("Индивидуальный запрос")}
+                className="btn-orange-shine rounded-full px-8 h-12 font-semibold"
+              >
+                Оставить заявку <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <Link to="/contacts">
-            <Button size="lg" variant="outline">
-              Оставить заявку <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
         </div>
       </Toggleable>
+
+      {/* Диалог быстрого заказа */}
+      <OrderDialog topic={orderTopic} onClose={() => setOrderTopic(null)} />
     </div>
+  );
+}
+
+// === Диалог «Заказать»: форма + контакты ===
+function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => void }) {
+  const open = !!topic;
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+        <div className="bg-gradient-primary px-6 py-5 text-primary-foreground">
+          <DialogTitle className="font-display text-2xl font-bold leading-tight">
+            Заявка на услугу
+          </DialogTitle>
+          <DialogDescription className="text-primary-foreground/85 mt-1 text-sm">
+            {topic ? <>Направление: <span className="font-medium">{topic}</span>. </> : null}
+            Заполните форму — менеджер свяжется в течение 24 часов.
+          </DialogDescription>
+        </div>
+        <div className="px-6 pt-5 pb-6 max-h-[70vh] overflow-y-auto">
+          <LeadForm source={topic ? `home_order:${topic}` : "home_order"} />
+          <div className="mt-6 pt-5 border-t border-border/60">
+            <h4 className="font-display font-semibold text-base mb-3">Контакты</h4>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <a href={`mailto:${CONTACT.email}`} className="glass rounded-lg p-3 hover:border-primary/50 transition">
+                <div className="text-xs text-muted-foreground">E-mail</div>
+                <div className="font-medium break-all">{CONTACT.email}</div>
+              </a>
+              <div className="glass rounded-lg p-3">
+                <div className="text-xs text-muted-foreground">Адрес</div>
+                <div className="font-medium">{CONTACT.address}</div>
+              </div>
+              <div className="glass rounded-lg p-3 sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Часы работы</div>
+                <div className="font-medium">{CONTACT.hours}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
