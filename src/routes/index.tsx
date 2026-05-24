@@ -69,28 +69,7 @@ function HomePage() {
     <div>
       {/* HERO — spark burst */}
       <Toggleable sectionKey="home.hero" as="section" className="relative overflow-hidden min-h-[92vh] flex items-center">
-        <div className="spark-burst" aria-hidden="true">
-          {Array.from({ length: 60 }).map((_, i) => {
-            const ang = (i * 360) / 60 + (i % 3) * 4;
-            const len = 80 + ((i * 37) % 220);
-            const dist = 50 + ((i * 17) % 40);
-            const dur = 3 + ((i * 13) % 40) / 10;
-            const delay = ((i * 23) % 40) / 10;
-            return (
-              <span
-                key={i}
-                className="spark"
-                style={{
-                  ["--ang" as string]: `${ang}deg`,
-                  ["--len" as string]: `${len}px`,
-                  ["--dist" as string]: `${dist}vmax`,
-                  ["--dur" as string]: `${dur}s`,
-                  ["--delay" as string]: `${delay}s`,
-                }}
-              />
-            );
-          })}
-        </div>
+        <SparkBurst />
         <div className="container mx-auto px-4 py-10 md:py-12 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-[0.25em] uppercase text-accent mb-8">
@@ -124,13 +103,7 @@ function HomePage() {
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
-            <Link key={f.title} to={f.to} className="glass rounded-2xl p-6 hover:border-primary/50 transition group block">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary mb-4 group-hover:glow-primary transition">
-                <f.icon className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <h3 className="font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground">{f.desc}</p>
-            </Link>
+            <DirectionCard key={f.title} icon={f.icon} title={f.title} description={f.desc} to={f.to} />
           ))}
         </div>
       </Toggleable>
