@@ -2,6 +2,7 @@ import { Scale } from "lucide-react";
 import { toast } from "sonner";
 import { toggleCompare, useCompare, COMPARE_MAX } from "@/lib/compare";
 import type { CartEntityType } from "@/lib/cart";
+import { useAuth } from "@/hooks/use-auth";
 
 export function CompareButton({
   entity_type, id, slug, title, price, image,
@@ -13,7 +14,9 @@ export function CompareButton({
   price: number;
   image?: string | null;
 }) {
+  const { isAuthenticated } = useAuth();
   const { has } = useCompare();
+  if (!isAuthenticated) return null;
   const active = has(id, entity_type);
   return (
     <button

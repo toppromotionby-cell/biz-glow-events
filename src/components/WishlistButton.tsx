@@ -2,6 +2,7 @@ import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { toggleWishlist, useWishlist } from "@/lib/wishlist";
 import type { CartEntityType } from "@/lib/cart";
+import { useAuth } from "@/hooks/use-auth";
 
 export function WishlistButton({
   entity_type, id, slug, title, price, image,
@@ -13,7 +14,9 @@ export function WishlistButton({
   price: number;
   image?: string | null;
 }) {
+  const { isAuthenticated } = useAuth();
   const { has } = useWishlist();
+  if (!isAuthenticated) return null;
   const active = has(id, entity_type);
   return (
     <button
