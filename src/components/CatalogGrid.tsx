@@ -68,6 +68,18 @@ export function CatalogGrid({
     return items.filter((it) => activeTags.every((t) => it.tags?.includes(t)));
   }, [items, activeTags]);
 
+  const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
+  const currentPage = Math.min(page, pageCount);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * perPage, currentPage * perPage),
+    [filtered, currentPage, perPage],
+  );
+
+  const handlePage = (p: number) => {
+    setPage(p);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <>
       {topTags.length > 1 && (
