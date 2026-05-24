@@ -15,6 +15,7 @@ const BODY = [
   "Disallow: /reset-password",
   "Disallow: /lovable",
   "",
+  "Sitemap: https://event-hub.by/sitemap-index.xml",
   "Sitemap: https://event-hub.by/sitemap.xml",
   "",
 ].join("\n");
