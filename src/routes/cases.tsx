@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listCases } from "@/lib/cases.functions";
 import { MapPin, Users, Calendar } from "lucide-react";
 import { MediaCard } from "@/components/ui/MediaCard";
+import { PaginationControls, type PerPage } from "@/components/ui/PaginationControls";
 
 const casesQuery = queryOptions({
   queryKey: ["cases", "all"],
@@ -24,6 +26,10 @@ export const Route = createFileRoute("/cases")({
 
 function CasesPage() {
   const { data: cases } = useSuspenseQuery(casesQuery);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<PerPage>(30);
+  useEffect(() => { setPage(1); }, [perPage]);
+  const paged = cases.slice((page - 1) * perPage, page * perPage);
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       <header className="mb-10">
@@ -34,8 +40,9 @@ function CasesPage() {
       {cases.length === 0 ? (
         <div className="glass rounded-xl p-12 text-center text-muted-foreground">Скоро здесь появятся наши работы.</div>
       ) : (
+        <>
         <ul className="grid md:grid-cols-2 gap-6">
-          {cases.map((c) => (
+          {paged.map((c) => (
             <li key={c.id}>
               <MediaCard
                 cover={c.cover_url}
@@ -56,8 +63,17 @@ function CasesPage() {
             </li>
           ))}
         </ul>
+        <PaginationControls
+          total={cases.length}
+          page={page}
+          perPage={perPage}
+          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onPerPageChange={setPerPage}
+        />
+        </>
       )}
     </div>
   );
 }
+
 

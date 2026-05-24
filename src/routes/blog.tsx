@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MediaCard } from "@/components/ui/MediaCard";
+import { PaginationControls, type PerPage } from "@/components/ui/PaginationControls";
 
 type Post = {
   id: string;
@@ -41,6 +42,10 @@ export const Route = createFileRoute("/blog")({
 function BlogIndex() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<PerPage>(30);
+  useEffect(() => { setPage(1); }, [perPage]);
+  const paged = posts.slice((page - 1) * perPage, page * perPage);
 
   useEffect(() => {
     (async () => {
@@ -80,8 +85,9 @@ function BlogIndex() {
           Скоро здесь появятся первые публикации.
         </div>
       ) : (
+        <>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {posts.map((p) => (
+          {paged.map((p) => (
             <MediaCard
               key={p.id}
               cover={p.cover_url}
@@ -106,6 +112,14 @@ function BlogIndex() {
             </MediaCard>
           ))}
         </div>
+        <PaginationControls
+          total={posts.length}
+          page={page}
+          perPage={perPage}
+          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onPerPageChange={setPerPage}
+        />
+        </>
       )}
     </div>
   );

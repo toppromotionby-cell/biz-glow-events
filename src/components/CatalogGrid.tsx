@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
+import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { X } from "lucide-react";
@@ -19,6 +20,8 @@ export function CatalogGrid({
 }) {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<PerPage>(30);
 
   // Top tags by frequency (max 12)
   const topTags = useMemo(() => {
@@ -36,18 +39,26 @@ export function CatalogGrid({
     const params = new URLSearchParams(window.location.search);
     const t = params.get("tags");
     if (t) setActiveTags(t.split(",").filter(Boolean));
+    const pg = Number(params.get("page"));
+    if (pg > 0) setPage(pg);
+    const pp = Number(params.get("per"));
+    if ((PER_PAGE_OPTIONS as readonly number[]).includes(pp)) setPerPage(pp as PerPage);
   }, []);
 
   // Sync to URL
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (activeTags.length) params.set("tags", activeTags.join(","));
-    else params.delete("tags");
+    if (activeTags.length) params.set("tags", activeTags.join(",")); else params.delete("tags");
+    if (page > 1) params.set("page", String(page)); else params.delete("page");
+    if (perPage !== 30) params.set("per", String(perPage)); else params.delete("per");
     const qs = params.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     window.history.replaceState(null, "", url);
-  }, [activeTags]);
+  }, [activeTags, page, perPage]);
+
+  // Reset page when filter changes
+  useEffect(() => { setPage(1); }, [activeTags, perPage]);
 
   const toggleTag = (t: string) =>
     setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
@@ -56,6 +67,18 @@ export function CatalogGrid({
     if (!activeTags.length) return items;
     return items.filter((it) => activeTags.every((t) => it.tags?.includes(t)));
   }, [items, activeTags]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
+  const currentPage = Math.min(page, pageCount);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * perPage, currentPage * perPage),
+    [filtered, currentPage, perPage],
+  );
+
+  const handlePage = (p: number) => {
+    setPage(p);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <>
@@ -99,18 +122,27 @@ export function CatalogGrid({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
-          {filtered.map((it) => (
-            <CatalogCard
-              key={it.slug}
-              item={it}
-              category={category}
-              activeTags={activeTags}
-              onOpen={() => setOpenSlug(it.slug)}
-              onToggleTag={toggleTag}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+            {paged.map((it) => (
+              <CatalogCard
+                key={it.slug}
+                item={it}
+                category={category}
+                activeTags={activeTags}
+                onOpen={() => setOpenSlug(it.slug)}
+                onToggleTag={toggleTag}
+              />
+            ))}
+          </div>
+          <PaginationControls
+            total={filtered.length}
+            page={currentPage}
+            perPage={perPage}
+            onPageChange={handlePage}
+            onPerPageChange={setPerPage}
+          />
+        </>
       )}
 
       {openSlug && (
