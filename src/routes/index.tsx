@@ -88,7 +88,7 @@ function HomePage() {
             );
           })}
         </div>
-        <div className="container mx-auto px-4 md:py-32 relative z-10">
+        <div className="container mx-auto px-4 py-10 md:py-12 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-[0.25em] uppercase text-accent mb-8">
               <Sparkles className="h-3 w-3" /> КОРПОРАТИВНЫЕ МЕРОПРИЯТИЯ И ВСЕ ДЛЯ НИХ / ВСЯ БЕЛАРУСЬ
@@ -117,7 +117,7 @@ function HomePage() {
 
 
       {/* DIRECTIONS */}
-      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 py-20">
+      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
@@ -273,7 +273,7 @@ function HomePage() {
       )}
 
       {/* CTA */}
-      <Toggleable sectionKey="home.cta" as="section" className="container mx-auto px-4 py-20">
+      <Toggleable sectionKey="home.cta" as="section" className="container mx-auto px-4">
         <div className="glass-strong rounded-3xl p-10 md:p-16 text-center bg-gradient-to-br from-primary/10 to-transparent">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Готовы обсудить ваше мероприятие?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
