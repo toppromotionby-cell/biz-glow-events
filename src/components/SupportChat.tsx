@@ -136,7 +136,7 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
               type="button"
               onClick={closeChat}
               aria-label="Закрыть"
-              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+              className="btn-dialog-close"
             >
               <X className="h-4 w-4" strokeWidth={2.5} />
             </button>
