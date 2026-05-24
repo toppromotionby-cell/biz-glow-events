@@ -39,18 +39,26 @@ export function CatalogGrid({
     const params = new URLSearchParams(window.location.search);
     const t = params.get("tags");
     if (t) setActiveTags(t.split(",").filter(Boolean));
+    const pg = Number(params.get("page"));
+    if (pg > 0) setPage(pg);
+    const pp = Number(params.get("per"));
+    if ((PER_PAGE_OPTIONS as readonly number[]).includes(pp)) setPerPage(pp as PerPage);
   }, []);
 
   // Sync to URL
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (activeTags.length) params.set("tags", activeTags.join(","));
-    else params.delete("tags");
+    if (activeTags.length) params.set("tags", activeTags.join(",")); else params.delete("tags");
+    if (page > 1) params.set("page", String(page)); else params.delete("page");
+    if (perPage !== 30) params.set("per", String(perPage)); else params.delete("per");
     const qs = params.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     window.history.replaceState(null, "", url);
-  }, [activeTags]);
+  }, [activeTags, page, perPage]);
+
+  // Reset page when filter changes
+  useEffect(() => { setPage(1); }, [activeTags, perPage]);
 
   const toggleTag = (t: string) =>
     setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
