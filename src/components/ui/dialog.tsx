@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+
 
 
 import { cn } from "@/lib/utils";
@@ -43,6 +45,13 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
+      <DialogPrimitive.Close
+        aria-label="Закрыть"
+        className="absolute right-0 top-0 inline-flex h-9 w-11 items-center justify-center bg-primary text-primary-foreground rounded-bl-md rounded-tr-lg shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none"
+      >
+        <X className="h-4 w-4" strokeWidth={2.5} />
+        <span className="sr-only">Закрыть</span>
+      </DialogPrimitive.Close>
       {children}
     </DialogPrimitive.Content>
   </DialogPortal>
