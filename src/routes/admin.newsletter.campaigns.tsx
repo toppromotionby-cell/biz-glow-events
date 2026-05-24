@@ -34,23 +34,32 @@ function Page() {
   });
 
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [mode, setMode] = useState<"confirmed_subscribers" | "all_subscribers" | "manual">("all_subscribers");
   const [emails, setEmails] = useState("");
 
-  const create = useMutation({
-    mutationFn: async () => {
-      const recipient_filter: any = { mode };
-      if (mode === "manual") {
-        recipient_filter.emails = emails.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean);
-      }
-      return save({ data: { subject, html_content: body, recipient_filter } });
-    },
-    onSuccess: () => {
+  const drafts = (data as any[]).filter((c) => c.status === "draft");
+
+  const resetForm = () => {
+    setEditingId(null); setSubject(""); setBody(""); setEmails(""); setMode("all_subscribers");
+  };
+
+  const buildPayload = () => {
+    const recipient_filter: any = { mode };
+    if (mode === "manual") {
+      recipient_filter.emails = emails.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean);
+    }
+    return { id: editingId ?? undefined, subject, html_content: body, recipient_filter };
+  };
+
+  const saveDraft = useMutation({
+    mutationFn: async () => save({ data: buildPayload() }),
+    onSuccess: (r: any) => {
       qc.invalidateQueries({ queryKey: ["admin-campaigns"] });
-      toast.success("Черновик создан");
-      setShowForm(false); setSubject(""); setBody(""); setEmails("");
+      if (r?.id) setEditingId(r.id);
+      toast.success("Черновик сохранён");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -70,6 +79,37 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveAndSend = useMutation({
+    mutationFn: async () => {
+      if (!subject.trim()) throw new Error("Укажите тему письма");
+      if (!body.trim()) throw new Error("Добавьте содержимое письма");
+      const r: any = await save({ data: buildPayload() });
+      if (!confirm(`Отправить кампанию «${subject}»? Получатели вычисляются в момент запуска.`)) {
+        throw new Error("__cancelled__");
+      }
+      const sent: any = await start({ data: { id: r.id } });
+      return { ...sent, id: r.id };
+    },
+    onSuccess: (r: any) => {
+      qc.invalidateQueries({ queryKey: ["admin-campaigns"] });
+      toast.success(`Отправка запущена: ${r.total} получателей`);
+      setShowForm(false); resetForm();
+    },
+    onError: (e: Error) => { if (e.message !== "__cancelled__") toast.error(e.message); },
+  });
+
+  const loadDraft = (id: string) => {
+    const c = drafts.find((d: any) => d.id === id);
+    if (!c) return;
+    setEditingId(c.id);
+    setSubject(c.subject ?? "");
+    setBody(c.html_content ?? "");
+    const f = c.recipient_filter ?? {};
+    setMode((f.mode as any) ?? "all_subscribers");
+    setEmails(Array.isArray(f.emails) ? f.emails.join(", ") : "");
+    setShowForm(true);
+  };
+
   return (
     <div className="space-y-5">
       <header className="flex items-center justify-between flex-wrap gap-3">
@@ -82,13 +122,33 @@ function Page() {
           </h1>
           <p className="text-sm text-muted-foreground">Массовые рассылки для пиара портала</p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)}>
+        <Button onClick={() => { if (showForm) { setShowForm(false); resetForm(); } else { setShowForm(true); } }}>
           <Plus className="h-4 w-4 mr-2" />{showForm ? "Отмена" : "Новая кампания"}
         </Button>
       </header>
 
       {showForm && (
         <div className="glass rounded-xl p-5 space-y-4">
+          {drafts.length > 0 && (
+            <div>
+              <Label>Загрузить из черновиков ({drafts.length})</Label>
+              <Select value={editingId ?? ""} onValueChange={loadDraft}>
+                <SelectTrigger><SelectValue placeholder="Выбрать черновик…" /></SelectTrigger>
+                <SelectContent>
+                  {drafts.map((d: any) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.subject || "(без темы)"} — {new Date(d.created_at).toLocaleDateString("ru-RU")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {editingId && (
+                <button type="button" onClick={resetForm} className="text-xs text-muted-foreground hover:underline mt-1">
+                  Сбросить и создать новый
+                </button>
+              )}
+            </div>
+          )}
           <div>
             <Label>Тема письма</Label>
             <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Открылся портал event-hub.by — приглашаем!" />
@@ -115,9 +175,15 @@ function Page() {
             <Textarea rows={12} value={body} onChange={(e) => setBody(e.target.value)} placeholder="<h2>Заголовок</h2><p>Здравствуйте! Рады представить...</p>" className="font-mono text-xs" />
             <p className="text-xs text-muted-foreground mt-1">Контент будет вставлен в фирменный шаблон с шапкой и подвалом.</p>
           </div>
-          <Button onClick={() => create.mutate()} disabled={!subject || !body || create.isPending}>
-            {create.isPending ? "Сохранение..." : "Сохранить черновик"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => saveDraft.mutate()} disabled={saveDraft.isPending}>
+              {saveDraft.isPending ? "Сохранение…" : editingId ? "Обновить черновик" : "Сохранить черновик"}
+            </Button>
+            <Button onClick={() => saveAndSend.mutate()} disabled={saveAndSend.isPending}>
+              <Send className="h-4 w-4 mr-2" />
+              {saveAndSend.isPending ? "Отправка…" : "Отправить"}
+            </Button>
+          </div>
         </div>
       )}
 

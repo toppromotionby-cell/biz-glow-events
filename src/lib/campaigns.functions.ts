@@ -52,13 +52,14 @@ export const getCampaign = createServerFn({ method: "POST" })
 // === Создание / обновление черновика ===
 const CampaignInput = z.object({
   id: z.string().uuid().optional(),
-  subject: z.string().min(1).max(255),
-  html_content: z.string().min(1).max(200000),
+  subject: z.string().max(255).default(""),
+  html_content: z.string().max(200000).default(""),
   recipient_filter: z.object({
     mode: z.enum(["confirmed_subscribers", "all_subscribers", "manual"]),
     emails: z.array(z.string().email()).max(5000).optional(),
   }),
 });
+
 
 export const saveCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -154,6 +155,9 @@ export const startCampaign = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     if (!campaign) throw new Error("Кампания не найдена");
     if (campaign.status !== "draft") throw new Error("Кампания уже запущена");
+    if (!campaign.subject?.trim()) throw new Error("Укажите тему письма перед отправкой");
+    if (!campaign.html_content?.trim()) throw new Error("Добавьте содержимое письма перед отправкой");
+
 
     const recipients = await resolveRecipients(campaign.recipient_filter as any);
     if (recipients.length === 0) throw new Error("Нет получателей");
