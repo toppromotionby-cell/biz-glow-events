@@ -2,6 +2,7 @@ import { Scale } from "lucide-react";
 import { toast } from "sonner";
 import { toggleCompare, useCompare, COMPARE_MAX } from "@/lib/compare";
 import type { CartEntityType } from "@/lib/cart";
+import { useAuth } from "@/hooks/use-auth";
 
 export function CompareButton({
   entity_type, id, slug, title, price, image,
