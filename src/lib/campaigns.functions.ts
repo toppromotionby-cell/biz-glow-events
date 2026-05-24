@@ -155,6 +155,9 @@ export const startCampaign = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     if (!campaign) throw new Error("Кампания не найдена");
     if (campaign.status !== "draft") throw new Error("Кампания уже запущена");
+    if (!campaign.subject?.trim()) throw new Error("Укажите тему письма перед отправкой");
+    if (!campaign.html_content?.trim()) throw new Error("Добавьте содержимое письма перед отправкой");
+
 
     const recipients = await resolveRecipients(campaign.recipient_filter as any);
     if (recipients.length === 0) throw new Error("Нет получателей");
