@@ -125,7 +125,7 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
           role="dialog"
           aria-label="Онлайн-помощник"
         >
-          <div className="relative flex items-center justify-between border-b border-border bg-gradient-primary px-4 py-3 pr-14 text-primary-foreground">
+          <div className="relative flex items-center justify-between border-b border-border bg-gradient-primary px-4 py-3 text-primary-foreground">
             <div className="min-w-0">
               <div className="text-sm font-semibold truncate">{ADMIN_NAME}</div>
               <div className="text-xs opacity-80 truncate">
@@ -136,7 +136,7 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
               type="button"
               onClick={closeChat}
               aria-label="Закрыть"
-              className="absolute right-1 top-1 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+              className="absolute right-0 top-0 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
             >
               <X className="h-3 w-3" strokeWidth={2.5} />
             </button>
