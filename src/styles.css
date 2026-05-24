@@ -332,18 +332,17 @@
     background: color-mix(in oklab, var(--color-destructive) 10%, transparent);
     border-color: color-mix(in oklab, var(--color-destructive) 50%, transparent);
   }
-  /* Кнопка закрытия модалок (dialog/sheet/баннер/чат).
-     Всегда закреплена на самом блоке в нативном правом верхнем углу;
-     позиция считается от ширины блока, чтобы не зависеть от dir/scroll/портала. */
+  /* Кнопка закрытия модалок (dialog/sheet).
+     Закрепляется в правом верхнем углу контейнера модалки, который сам
+     не скроллится (скролл — у внутреннего враппера), поэтому простого
+     right: top достаточно. */
   .btn-dialog-close {
     position: absolute;
-    top: 0.625rem !important;
-    right: auto !important;
-    bottom: auto !important;
-    left: calc(100% - 3.375rem) !important;
+    top: 0.625rem;
+    right: 0.625rem;
     display: inline-flex;
-    height: 2.75rem;
-    width: 2.75rem;
+    height: 2.5rem;
+    width: 2.5rem;
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
@@ -355,11 +354,8 @@
   }
   @media (min-width: 640px) {
     .btn-dialog-close {
-      top: 0.875rem !important;
-      right: auto !important;
-      left: calc(100% - 3.375rem) !important;
-      height: 2.5rem;
-      width: 2.5rem;
+      top: 0.75rem;
+      right: 0.75rem;
     }
   }
   .btn-dialog-close:hover {
