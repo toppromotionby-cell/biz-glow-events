@@ -114,7 +114,7 @@ export const Route = createFileRoute("/lp/$slug")({
 });
 
 function LandingPage() {
-  const { lp } = Route.useLoaderData();
+  const { lp } = Route.useLoaderData() as { lp: LP };
   const Icon = lp.icon;
 
   return (

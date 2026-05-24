@@ -45,6 +45,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
+import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
@@ -255,6 +256,11 @@ const ProductionSlugRoute = ProductionSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ProductionRoute,
 } as any)
+const LpSlugRoute = LpSlugRouteImport.update({
+  id: '/lp/$slug',
+  path: '/lp/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -455,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
@@ -521,6 +528,7 @@ export interface FileRoutesByTo {
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
@@ -589,6 +597,7 @@ export interface FileRoutesById {
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
@@ -658,6 +667,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
+    | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
     | '/zones/$slug'
@@ -724,6 +734,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
+    | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
     | '/zones/$slug'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
+    | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
     | '/zones/$slug'
@@ -844,6 +856,7 @@ export interface RootRouteChildren {
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  LpSlugRoute: typeof LpSlugRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1104,6 +1117,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/production/$slug'
       preLoaderRoute: typeof ProductionSlugRouteImport
       parentRoute: typeof ProductionRoute
+    }
+    '/lp/$slug': {
+      id: '/lp/$slug'
+      path: '/lp/$slug'
+      fullPath: '/lp/$slug'
+      preLoaderRoute: typeof LpSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/equipment/$slug': {
       id: '/equipment/$slug'
@@ -1503,6 +1523,7 @@ const rootRouteChildren: RootRouteChildren = {
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  LpSlugRoute: LpSlugRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
