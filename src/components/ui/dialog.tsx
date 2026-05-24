@@ -18,9 +18,9 @@ const DialogClose = DialogPrimitive.Close;
 
 const modalClosePosition: React.CSSProperties = {
   top: "0.875rem",
-  right: "0.875rem",
+  right: "auto",
   bottom: "auto",
-  left: "auto",
+  left: "calc(100% - 3.375rem)",
 };
 
 const DialogOverlay = React.forwardRef<

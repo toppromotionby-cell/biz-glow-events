@@ -17,9 +17,9 @@ const SheetClose = SheetPrimitive.Close;
 
 const sheetClosePosition: React.CSSProperties = {
   top: "0.875rem",
-  right: "0.875rem",
+  right: "auto",
   bottom: "auto",
-  left: "auto",
+  left: "calc(100% - 3.375rem)",
 };
 
 const SheetPortal = SheetPrimitive.Portal;
