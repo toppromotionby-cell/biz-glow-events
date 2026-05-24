@@ -124,13 +124,11 @@ function AdminOrders() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-display font-bold gradient-text">Заказы (CRM)</h1>
-          <p className="text-sm text-muted-foreground">{orders.length} записей · двойной клик по строке — подробности</p>
-        </div>
-        <Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-2" />Экспорт CSV</Button>
-      </header>
+      <AdminPageHeader
+        title="Заказы (CRM)"
+        subtitle={`${orders.length} записей · клик по строке — подробности`}
+        action={<Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-2" />Экспорт CSV</Button>}
+      />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Всего заказов" value={String(orders.length)} />
