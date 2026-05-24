@@ -1,20 +1,22 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import ogDefault from "@/assets/og-default.jpg";
 import { Toaster } from "@/components/ui/sonner";
-import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { ScriptInjector } from "@/components/ScriptInjector";
-import { EffectsLayer } from "@/components/EffectsLayer";
-import { FloatingContacts } from "@/components/FloatingContacts";
 import { CartSync } from "@/components/CartSync";
 import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
-import { ExitIntentModal } from "@/components/ExitIntentModal";
-// SupportChat встроен в FloatingContacts
+
+// Тяжёлые/второстепенные виджеты — лениво, после первой интерактивности.
+const EffectsLayer = lazy(() => import("@/components/EffectsLayer").then(m => ({ default: m.EffectsLayer })));
+const FloatingContacts = lazy(() => import("@/components/FloatingContacts").then(m => ({ default: m.FloatingContacts })));
+const ExitIntentModal = lazy(() => import("@/components/ExitIntentModal").then(m => ({ default: m.ExitIntentModal })));
+const CookieConsent = lazy(() => import("@/components/CookieConsent").then(m => ({ default: m.CookieConsent })));
+
 
 function NotFoundComponent() {
   return (
@@ -175,6 +177,33 @@ function DynamicToaster() {
   return <Toaster theme={theme} />;
 }
 
+function useIdleMount(delayMs = 1500) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+    if (typeof w.requestIdleCallback === "function") {
+      const id = w.requestIdleCallback(() => setReady(true), { timeout: delayMs });
+      return () => (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => setReady(true), delayMs);
+    return () => clearTimeout(t);
+  }, [delayMs]);
+  return ready;
+}
+
+function DeferredOverlays() {
+  const ready = useIdleMount(1200);
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <EffectsLayer />
+      <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
+      <FloatingContacts />
+      <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
+    </Suspense>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => { captureUtmFromLocation(); }, []);
@@ -182,21 +211,17 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SiteSectionsProvider>
         <div className="min-h-dvh flex flex-col bg-background bg-radial-glow">
-          <EffectsLayer />
           <SiteHeader />
           <AutoBreadcrumbs />
           <main id="main" className="flex-1"><Outlet /></main>
           <SiteFooter />
-          <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
-          <FloatingContacts />
           <CartSync />
           <ScriptInjector />
-          <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
-          {/* CartRecoveryBanner удалён вместе с кнопкой закрытия */}
-          {/* SupportChat теперь рендерится из FloatingContacts */}
+          <DeferredOverlays />
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
     </QueryClientProvider>
   );
 }
+
