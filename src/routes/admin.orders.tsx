@@ -203,7 +203,7 @@ function AdminOrders() {
                       {o.client_company && <div className="text-xs text-muted-foreground">{o.client_company}</div>}
                     </td>
                     <td className="p-3 text-xs">
-                      <a href={`tel:${o.client_phone}`} className="hover:text-primary">{o.client_phone}</a>
+                      <span className="hover:text-primary">{o.client_phone}</span>
                       <br /><a href={`mailto:${o.client_email}`} className="text-muted-foreground hover:text-primary">{o.client_email}</a>
                     </td>
                     <td className="p-3 whitespace-nowrap text-muted-foreground">{fmtDate(o.event_date)}</td>
@@ -312,7 +312,7 @@ function OrderDialog({ id, onClose }: { id: string | null; onClose: () => void }
             <div className="grid md:grid-cols-3 gap-3 text-sm">
               <InfoCard title="Клиент">
                 <Row k="Имя" v={order.client_name} />
-                <Row k="Телефон" v={<a href={`tel:${order.client_phone}`} className="hover:text-primary">{order.client_phone}</a>} />
+                <Row k="Телефон" v={<span className="hover:text-primary">{order.client_phone}</span>} />
                 <Row k="Email" v={<a href={`mailto:${order.client_email}`} className="hover:text-primary">{order.client_email}</a>} />
                 <Row k="Компания" v={order.client_company || "—"} />
               </InfoCard>
