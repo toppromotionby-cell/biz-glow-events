@@ -40,7 +40,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "dialog-content-anim fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg flex-col border bg-background shadow-2xl sm:rounded-lg max-h-[calc(100dvh-2rem)] overflow-hidden",
+        "dialog-content-anim fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-1rem)] max-w-lg gap-4 border bg-background p-5 sm:p-6 shadow-2xl sm:rounded-lg max-h-[calc(100dvh-2rem)] overflow-y-auto",
         className,
       )}
       {...props}
@@ -52,9 +52,7 @@ const DialogContent = React.forwardRef<
         <X className="h-4 w-4" strokeWidth={2.5} />
         <span className="sr-only">Закрыть</span>
       </DialogPrimitive.Close>
-      <div className="flex flex-col gap-4 overflow-y-auto p-5 pr-14 sm:p-6 sm:pr-14">
-        {children}
-      </div>
+      {children}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));
