@@ -47,7 +47,7 @@ function OrderDetail() {
       await supabase.from("order_timeline").insert({ order_id: id, event: "status_changed", payload: { to: status } });
     },
     onSuccess: () => { toast.success("Статус обновлён"); qc.invalidateQueries({ queryKey: ["order", id] }); qc.invalidateQueries({ queryKey: ["order-timeline", id] }); },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const saveNotes = async () => {
