@@ -88,16 +88,6 @@ export function CatalogChoiceModal({ children }: { children: React.ReactNode }) 
           ))}
         </div>
 
-        <div className="mt-2 text-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpen(false)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="mr-1 h-3 w-3" /> Закрыть
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
