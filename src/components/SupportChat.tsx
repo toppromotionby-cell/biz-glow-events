@@ -129,7 +129,7 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
             <div className="min-w-0">
               <div className="text-sm font-semibold truncate">{ADMIN_NAME}</div>
               <div className="text-xs opacity-80 truncate">
-                {greetingName ? `Здравствуйте, ${greetingName}!` : "Ответим в чате и Telegram"}
+                {greetingName ? `Здравствуйте, ${greetingName}!` : "Ответим в чате"}
               </div>
             </div>
             <button onClick={closeChat} aria-label="Закрыть" className="rounded p-1 hover:bg-white/10">
