@@ -162,7 +162,11 @@ function HomePage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold leading-tight group-hover:text-primary transition">{f.title}</h3>
-                    {f.short_description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{f.short_description}</p>}
+                    {f.short_description && (
+                      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                        {f.short_description.length > 300 ? f.short_description.slice(0, 300) + '…' : f.short_description}
+                      </p>
+                    )}
                   </div>
                 </button>
               );
