@@ -88,7 +88,7 @@ function HomePage() {
             );
           })}
         </div>
-        <div className="container mx-auto px-4 py-24 md:py-32 relative z-10">
+        <div className="container mx-auto px-4 py-10 md:py-12 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-[0.25em] uppercase text-accent mb-8">
               <Sparkles className="h-3 w-3" /> КОРПОРАТИВНЫЕ МЕРОПРИЯТИЯ И ВСЕ ДЛЯ НИХ / ВСЯ БЕЛАРУСЬ
@@ -117,7 +117,7 @@ function HomePage() {
 
 
       {/* DIRECTIONS */}
-      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 py-20">
+      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
@@ -134,7 +134,7 @@ function HomePage() {
 
       {/* FEATURED CATALOG */}
       {featured.length > 0 && (
-        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
+        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 border-t border-border/40">
           <div className="mb-8 text-center">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
           </div>
@@ -187,7 +187,7 @@ function HomePage() {
       )}
 
       {/* VALUES */}
-      <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 py-20 border-t border-border/40">
+      <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 border-t border-border/40">
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
             <div key={v.title} className="flex flex-col items-center text-center">
@@ -203,7 +203,7 @@ function HomePage() {
 
       {/* CASES */}
       {cases.length > 0 && (
-        <Toggleable sectionKey="home.cases" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
+        <Toggleable sectionKey="home.cases" as="section" className="container mx-auto px-4 border-t border-border/40">
           <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
             <div>
               <h2 className="text-3xl md:text-4xl font-display font-bold">Наши кейсы</h2>
@@ -239,7 +239,7 @@ function HomePage() {
 
       {/* BLOG TEASER */}
       {posts.length > 0 && (
-        <Toggleable sectionKey="home.blog" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
+        <Toggleable sectionKey="home.blog" as="section" className="container mx-auto px-4 border-t border-border/40">
           <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Из блога</h2>
             <Link to="/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
@@ -273,7 +273,7 @@ function HomePage() {
       )}
 
       {/* CTA */}
-      <Toggleable sectionKey="home.cta" as="section" className="container mx-auto px-4 py-20">
+      <Toggleable sectionKey="home.cta" as="section" className="container mx-auto px-4">
         <div className="glass-strong rounded-3xl p-10 md:p-16 text-center bg-gradient-to-br from-primary/10 to-transparent">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Готовы обсудить ваше мероприятие?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
@@ -286,7 +286,7 @@ function HomePage() {
       </Toggleable>
 
       {/* ORDER SERVICES — перед подвалом */}
-      <Toggleable sectionKey="home.order" as="section" className="container mx-auto px-4 pb-20">
+      <Toggleable sectionKey="home.order" as="section" className="container mx-auto px-4">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Заказ услуг</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
