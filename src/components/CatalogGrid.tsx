@@ -20,6 +20,8 @@ export function CatalogGrid({
 }) {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<PerPage>(30);
 
   // Top tags by frequency (max 12)
   const topTags = useMemo(() => {
