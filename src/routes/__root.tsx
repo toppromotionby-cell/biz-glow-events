@@ -15,7 +15,7 @@ import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 import { ExitIntentModal } from "@/components/ExitIntentModal";
 import { CartRecoveryBanner } from "@/components/CartRecoveryBanner";
-import { SupportChat } from "@/components/SupportChat";
+// SupportChat встроен в FloatingContacts
 
 function NotFoundComponent() {
   return (
@@ -197,7 +197,7 @@ function RootComponent() {
           <ScriptInjector />
           <ExitIntentModal />
           <CartRecoveryBanner />
-          <SupportChat />
+          {/* SupportChat теперь рендерится из FloatingContacts */}
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
