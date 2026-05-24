@@ -15,6 +15,7 @@ import { AdminListPanel } from "@/components/admin/AdminListPanel";
 import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEditorShell";
 import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { persistSortOrder } from "@/lib/sort-order";
 
 export const Route = createFileRoute("/admin/promo")({ component: Page });
 
