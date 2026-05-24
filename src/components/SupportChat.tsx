@@ -125,15 +125,19 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
           role="dialog"
           aria-label="Онлайн-помощник"
         >
-          <div className="flex items-center justify-between border-b border-border bg-gradient-primary px-4 py-3 text-primary-foreground">
+          <div className="relative flex items-center justify-between border-b border-border bg-gradient-primary px-4 py-3 pr-14 text-primary-foreground">
             <div className="min-w-0">
               <div className="text-sm font-semibold truncate">{ADMIN_NAME}</div>
               <div className="text-xs opacity-80 truncate">
                 {greetingName ? `Здравствуйте, ${greetingName}!` : "Ответим в чате"}
               </div>
             </div>
-            <button onClick={closeChat} aria-label="Закрыть" className="rounded p-1 hover:bg-white/10">
-              <X className="h-5 w-5" />
+            <button
+              onClick={closeChat}
+              aria-label="Закрыть"
+              className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-offset-background cursor-pointer transition-all hover:bg-primary/90 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 text-right"
+            >
+              <X className="h-4 w-4" strokeWidth={2.5} />
             </button>
           </div>
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
