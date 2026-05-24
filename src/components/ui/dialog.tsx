@@ -16,13 +16,6 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
-const modalClosePosition: React.CSSProperties = {
-  top: "0.875rem",
-  right: "auto",
-  bottom: "auto",
-  left: "calc(100% - 3.375rem)",
-};
-
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -47,7 +40,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "dialog-content-anim fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg gap-4 border bg-background p-6 pr-16 sm:pr-16 shadow-2xl sm:rounded-lg max-h-[calc(100dvh-2rem)] overflow-y-auto",
+        "dialog-content-anim fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg flex-col border bg-background shadow-2xl sm:rounded-lg max-h-[calc(100dvh-2rem)] overflow-hidden",
         className,
       )}
       {...props}
@@ -55,12 +48,13 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Close
         aria-label="Закрыть"
         className="btn-dialog-close"
-        style={modalClosePosition}
       >
         <X className="h-4 w-4" strokeWidth={2.5} />
         <span className="sr-only">Закрыть</span>
       </DialogPrimitive.Close>
-      {children}
+      <div className="flex flex-col gap-4 overflow-y-auto p-5 pr-14 sm:p-6 sm:pr-14">
+        {children}
+      </div>
     </DialogPrimitive.Content>
   </DialogPortal>
 ));
