@@ -15,6 +15,7 @@ import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 import { ExitIntentModal } from "@/components/ExitIntentModal";
 import { CartRecoveryBanner } from "@/components/CartRecoveryBanner";
+import { SupportChat } from "@/components/SupportChat";
 
 function NotFoundComponent() {
   return (
@@ -196,6 +197,7 @@ function RootComponent() {
           <ScriptInjector />
           <ExitIntentModal />
           <CartRecoveryBanner />
+          <SupportChat />
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
