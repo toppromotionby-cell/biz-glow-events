@@ -170,7 +170,7 @@ function CartPage() {
         <p className="mt-2 text-muted-foreground">{count > 0 ? `Позиций: ${count}. Итого: ${fmt.format(total)}` : "Корзина пуста — добавьте позиции из каталога."}</p>
       </header>
 
-      <CheckoutSteps current={items.length === 0 ? 0 : reqOpen ? 1 : 0} />
+      <CheckoutSteps current={items.length === 0 ? 0 : reqOpen ? 2 : 1} />
 
 
       {items.length === 0 ? (
@@ -460,7 +460,7 @@ function ReqField({
 }
 
 function CheckoutSteps({ current }: { current: 0 | 1 | 2 }) {
-  const steps = ["Корзина", "Контакты", "Готово"] as const;
+  const steps = ["Корзина", "Контакты", "Реквизиты"] as const;
   return (
     <ol className="mb-8 flex items-center gap-2 text-xs sm:text-sm" aria-label="Шаги оформления">
       {steps.map((label, i) => {

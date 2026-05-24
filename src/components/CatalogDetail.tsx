@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
 import { trackView } from "@/lib/recent";
 import { useSectionEnabled } from "@/lib/site-sections";
-import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare, Check } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
@@ -239,9 +239,19 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
           {features.length > 0 && (
             <div className="glass rounded-xl p-5">
-              <h2 className="font-semibold mb-3">Что входит</h2>
-              <ul className="space-y-2 text-sm">
-                {features.map((f, i) => <li key={i} className="flex gap-2"><span className="text-primary">•</span><span>{String(f)}</span></li>)}
+              <h2 className="font-display font-semibold mb-4 flex items-center gap-2">
+                <Check className="h-4 w-4 text-success" />
+                Что входит в стоимость
+              </h2>
+              <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
+                {features.map((f, i) => (
+                  <li key={i} className="flex gap-2 items-start">
+                    <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </span>
+                    <span className="text-foreground/90">{String(f)}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           )}
