@@ -6,8 +6,17 @@ import { listSubscribers, deleteSubscriber } from "@/lib/newsletter.functions";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download, Mail, Megaphone } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminTable } from "@/components/admin/AdminTable";
 
 export const Route = createFileRoute("/admin/newsletter/")({ component: Page });
+
+const COLS = [
+  { key: "email", label: "Email" },
+  { key: "source", label: "Источник" },
+  { key: "date", label: "Дата" },
+  { key: "actions", label: "", className: "w-12" },
+];
 
 function Page() {
   const qc = useQueryClient();
@@ -37,55 +46,41 @@ function Page() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="admin-h1 flex items-center gap-2">
-            <Mail className="h-7 w-7" /> Подписчики рассылки
-          </h1>
-          <p className="text-sm text-muted-foreground">{data.length} записей</p>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="default">
-            <Link to="/admin/newsletter/campaigns"><Megaphone className="h-4 w-4 mr-2" />Кампании</Link>
-          </Button>
-          <Button onClick={exportCsv} variant="outline" disabled={!data.length}>
-            <Download className="h-4 w-4 mr-2" />Экспорт CSV
-          </Button>
-        </div>
-      </header>
+      <AdminPageHeader
+        icon={<Mail className="h-7 w-7" />}
+        title="Подписчики рассылки"
+        subtitle={`${data.length} записей`}
+        action={
+          <div className="flex gap-2">
+            <Button asChild variant="default">
+              <Link to="/admin/newsletter/campaigns"><Megaphone className="h-4 w-4 mr-2" />Кампании</Link>
+            </Button>
+            <Button onClick={exportCsv} variant="outline" disabled={!data.length}>
+              <Download className="h-4 w-4 mr-2" />Экспорт CSV
+            </Button>
+          </div>
+        }
+      />
 
-      <div className="glass rounded-xl overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
-        ) : data.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">Пока нет подписчиков.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-muted/30 text-left">
-              <tr>
-                <th className="p-3 font-medium">Email</th>
-                <th className="p-3 font-medium">Источник</th>
-                <th className="p-3 font-medium">Дата</th>
-                <th className="p-3 font-medium w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((r) => (
-                <tr key={r.id} className="border-t border-border/40">
-                  <td className="p-3">{r.email}</td>
-                  <td className="p-3 text-muted-foreground">{r.source ?? "—"}</td>
-                  <td className="p-3 text-muted-foreground">{new Date(r.created_at).toLocaleDateString("ru-RU")}</td>
-                  <td className="p-3">
-                    <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить?")) remove.mutate(r.id); }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <AdminTable
+        columns={COLS}
+        isLoading={isLoading}
+        isEmpty={!isLoading && data.length === 0}
+        emptyText="Пока нет подписчиков."
+      >
+        {data.map((r) => (
+          <tr key={r.id} className="border-t border-border/40">
+            <td className="p-3">{r.email}</td>
+            <td className="p-3 text-muted-foreground">{r.source ?? "—"}</td>
+            <td className="p-3 text-muted-foreground">{new Date(r.created_at).toLocaleDateString("ru-RU")}</td>
+            <td className="p-3">
+              <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить?")) remove.mutate(r.id); }}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </td>
+          </tr>
+        ))}
+      </AdminTable>
     </div>
   );
 }

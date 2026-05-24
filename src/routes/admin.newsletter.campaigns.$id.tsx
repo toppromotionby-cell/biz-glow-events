@@ -6,6 +6,13 @@ import { getCampaign, startCampaign, refreshCampaignStats } from "@/lib/campaign
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { AdminTable } from "@/components/admin/AdminTable";
+
+const RECIPIENT_COLS = [
+  { key: "email", label: "Email" },
+  { key: "status", label: "Статус" },
+  { key: "error", label: "Ошибка" },
+];
 
 export const Route = createFileRoute("/admin/newsletter/campaigns/$id")({ component: Page });
 
@@ -89,28 +96,17 @@ function Page() {
       </div>
 
       {recipients.length > 0 && (
-        <div className="glass rounded-xl overflow-hidden">
-          <div className="p-3 border-b border-border/40 text-sm font-medium">Получатели ({recipients.length})</div>
-          <div className="max-h-[400px] overflow-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/30 text-left sticky top-0">
-                <tr>
-                  <th className="p-2 font-medium">Email</th>
-                  <th className="p-2 font-medium">Статус</th>
-                  <th className="p-2 font-medium">Ошибка</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recipients.slice(0, 500).map((r: any) => (
-                  <tr key={r.id} className="border-t border-border/40">
-                    <td className="p-2">{r.email}</td>
-                    <td className="p-2">{r.status}</td>
-                    <td className="p-2 text-red-600">{r.error ?? ""}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div>
+          <div className="text-sm font-medium mb-2">Получатели ({recipients.length})</div>
+          <AdminTable columns={RECIPIENT_COLS} textSize="xs">
+            {recipients.slice(0, 500).map((r: any) => (
+              <tr key={r.id} className="border-t border-border/40">
+                <td className="p-2">{r.email}</td>
+                <td className="p-2">{r.status}</td>
+                <td className="p-2 text-red-600">{r.error ?? ""}</td>
+              </tr>
+            ))}
+          </AdminTable>
         </div>
       )}
     </div>

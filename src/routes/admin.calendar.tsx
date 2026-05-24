@@ -6,6 +6,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { ClientOnly } from "@tanstack/react-router";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export const Route = createFileRoute("/admin/calendar")({
   component: CalendarPage,
@@ -32,10 +33,7 @@ function CalendarPage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="admin-h1">Календарь</h1>
-        <p className="text-sm text-muted-foreground">Бронирования и доступность ресурсов</p>
-      </header>
+      <AdminPageHeader title="Календарь" subtitle="Бронирования и доступность ресурсов" />
       <div className="glass rounded-xl p-4 [&_.fc]:text-foreground [&_.fc-button]:bg-primary [&_.fc-button]:border-0">
         <ClientOnly fallback={<div className="h-[500px] flex items-center justify-center text-muted-foreground">Загрузка календаря…</div>}>
           <FullCalendar
