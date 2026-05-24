@@ -197,7 +197,7 @@ function RootComponent() {
           <ScriptInjector />
           <ExitIntentModal />
           <CartRecoveryBanner />
-          <SupportChat />
+          {/* SupportChat теперь рендерится из FloatingContacts */}
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
