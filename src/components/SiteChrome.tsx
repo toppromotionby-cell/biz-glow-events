@@ -83,8 +83,11 @@ export function SiteHeader() {
             </Link>
           </Toggleable>
 
-          <Toggleable sectionKey="header.nav" as="span">
-            <nav aria-label="Основная навигация" className="hidden md:flex items-center gap-6 text-sm">
+          <Toggleable sectionKey="header.nav" as="span" className={!isAuthenticated ? "flex-1" : undefined}>
+            <nav
+              aria-label="Основная навигация"
+              className={`hidden md:flex items-center gap-6 text-sm ${!isAuthenticated ? "justify-center" : ""}`}
+            >
               {NAV.map(n => (
                 <Toggleable key={n.to} sectionKey={n.key} as="span">
                   <Link to={n.to} className="text-muted-foreground hover:text-foreground transition" activeProps={{ className: "text-foreground" }}>
