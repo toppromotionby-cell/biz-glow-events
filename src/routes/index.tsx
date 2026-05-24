@@ -131,11 +131,8 @@ function HomePage() {
       {/* FEATURED CATALOG */}
       {featured.length > 0 && (
         <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 py-16 border-t border-border/40">
-          <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
+          <div className="mb-8 text-center">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
-            <Link to="/equipment" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
-              Весь каталог <ArrowRight className="h-3 w-3" />
-            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
             {featured.map((f, idx) => {
