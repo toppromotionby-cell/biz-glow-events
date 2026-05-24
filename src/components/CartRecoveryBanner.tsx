@@ -1,7 +1,7 @@
 // Баннер восстановления корзины + автонотификация в Telegram через 1 час бездействия.
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ShoppingCart, X } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";

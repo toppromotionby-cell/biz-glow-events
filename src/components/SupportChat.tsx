@@ -4,7 +4,7 @@
 // из FloatingContacts (через props open/onClose).
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { getMyThread, sendSupportMessage } from "@/lib/support.functions";
