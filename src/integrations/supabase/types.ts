@@ -820,6 +820,7 @@ export type Database = {
           id: string
           max_uses: number | null
           min_order_total: number
+          sort_order: number
           updated_at: string
           used_count: number
           valid_from: string | null
@@ -835,6 +836,7 @@ export type Database = {
           id?: string
           max_uses?: number | null
           min_order_total?: number
+          sort_order?: number
           updated_at?: string
           used_count?: number
           valid_from?: string | null
@@ -850,6 +852,7 @@ export type Database = {
           id?: string
           max_uses?: number | null
           min_order_total?: number
+          sort_order?: number
           updated_at?: string
           used_count?: number
           valid_from?: string | null

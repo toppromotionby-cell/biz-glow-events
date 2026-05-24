@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Таблицы, которые поддерживают sort_order и используют id как PK.
 type SortableTable =
-  | "testimonials" | "blog_posts" | "cases"
+  | "testimonials" | "blog_posts" | "cases" | "promo_codes"
   | "zones" | "tech_equipment" | "services" | "production_items";
 
 export async function persistSortOrder(table: SortableTable, orderedIds: string[]) {

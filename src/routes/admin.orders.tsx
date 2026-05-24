@@ -155,19 +155,19 @@ function AdminOrders() {
 
       <div className="glass rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/30 text-muted-foreground text-xs uppercase">
+          <table className="w-full text-sm" aria-label="Список заказов">
+            <thead className="admin-table-head">
               <tr>
-                <th className="text-left p-3">Создан</th>
-                <th className="text-left p-3">Клиент / Компания</th>
-                <th className="text-left p-3">Контакты</th>
-                <th className="text-left p-3">Мероприятие</th>
-                <th className="text-left p-3">Источник</th>
-                <th className="text-left p-3">Статус</th>
-                <th className="text-right p-3">Сумма</th>
-                <th className="text-right p-3">Оплачено</th>
-                <th className="text-right p-3">Долг</th>
-                <th className="p-3"></th>
+                <th scope="col" aria-sort={sortBy === "created_at" ? "descending" : "none"} className="text-left p-3">Создан</th>
+                <th scope="col" className="text-left p-3">Клиент / Компания</th>
+                <th scope="col" className="text-left p-3">Контакты</th>
+                <th scope="col" aria-sort={sortBy === "event_date" ? "descending" : "none"} className="text-left p-3">Мероприятие</th>
+                <th scope="col" className="text-left p-3">Источник</th>
+                <th scope="col" className="text-left p-3">Статус</th>
+                <th scope="col" aria-sort={sortBy === "total" ? "descending" : "none"} className="text-right p-3">Сумма</th>
+                <th scope="col" className="text-right p-3">Оплачено</th>
+                <th scope="col" className="text-right p-3">Долг</th>
+                <th scope="col" className="p-3"><span className="sr-only">Действия</span></th>
               </tr>
             </thead>
             <tbody>
@@ -178,9 +178,14 @@ function AdminOrders() {
                 return (
                   <tr
                     key={o.id}
-                    onDoubleClick={() => setOpenId(o.id)}
-                    className="border-t border-border/40 hover:bg-muted/20 cursor-pointer select-none"
-                    title="Двойной клик — открыть карточку"
+                    onClick={() => setOpenId(o.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(o.id); }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Заказ ${o.client_name}, ${fmtDate(o.created_at)}`}
+                    className="border-t border-border/40 hover:bg-muted/20 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                   >
                     <td className="p-3 whitespace-nowrap text-muted-foreground">
                       <div>{fmtDate(o.created_at)}</div>

@@ -60,13 +60,22 @@ function MarketingPage() {
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-5">
         <div className="glass rounded-xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label="Маркетинговые кампании">
             <thead className="admin-table-head">
-              <tr><th className="text-left p-3">Кампания</th><th className="text-left p-3">Источник</th><th className="text-right p-3">Бюджет</th><th className="text-right p-3">Цель</th><th className="text-left p-3">Статус</th></tr>
+              <tr><th scope="col" className="text-left p-3">Кампания</th><th scope="col" className="text-left p-3">Источник</th><th scope="col" className="text-right p-3">Бюджет</th><th scope="col" className="text-right p-3">Цель</th><th scope="col" className="text-left p-3">Статус</th></tr>
             </thead>
             <tbody>
               {campaigns.map((c: Row) => (
-                <tr key={c.id} onClick={() => setSelected(c)} className={`border-t border-border/40 cursor-pointer hover:bg-muted/20 ${selected?.id === c.id ? "bg-muted/30" : ""}`}>
+                <tr
+                  key={c.id}
+                  onClick={() => setSelected(c)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(c); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Кампания ${c.name}`}
+                  aria-pressed={selected?.id === c.id}
+                  className={`border-t border-border/40 cursor-pointer hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${selected?.id === c.id ? "bg-muted/30" : ""}`}
+                >
                   <td className="p-3 font-medium">{c.name}</td>
                   <td className="p-3">{c.source ?? "—"}</td>
                   <td className="p-3 text-right">{Number(c.budget ?? 0).toLocaleString("ru-BY")} BYN</td>

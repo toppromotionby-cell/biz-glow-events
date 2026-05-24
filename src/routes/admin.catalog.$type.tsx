@@ -128,7 +128,10 @@ function CatalogInner({ table }: { table: Table }) {
 
         <div>
           {selected ? <Editor key={selected.id} table={table} item={selected} onDelete={() => remove.mutate(selected.id)} onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })} /> : (
-            <AdminEmptyEditor text="Кликните по записи для подробного просмотра или нажмите «Добавить»" />
+            <AdminEmptyEditor
+              title="Запись не выбрана"
+              description="Кликните по карточке слева для подробного просмотра, либо добавьте новую — список поддерживает перетаскивание."
+            />
           )}
         </div>
       </div>

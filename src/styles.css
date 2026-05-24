@@ -332,24 +332,35 @@
     background: color-mix(in oklab, var(--color-destructive) 10%, transparent);
     border-color: color-mix(in oklab, var(--color-destructive) 50%, transparent);
   }
-  /* Кнопка закрытия модалок: dialog/sheet/банер/чат. */
+  /* Кнопка закрытия модалок (dialog/sheet/баннер/чат).
+     Native-стиль: правый верхний угол, нейтральный круг, comfort-tap 44×44 на мобиле. */
   .btn-dialog-close {
     position: absolute;
-    right: 0.75rem;
-    top: 0.75rem;
+    top: 0.5rem;
+    right: 0.5rem;
     display: inline-flex;
-    height: 2rem;
-    width: 2rem;
+    height: 2.75rem;
+    width: 2.75rem;
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    background: var(--color-primary);
-    color: var(--color-primary-foreground);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    transition: background-color 150ms;
+    background: color-mix(in oklab, var(--color-muted) 50%, transparent);
+    color: var(--color-foreground);
+    border: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+    transition: background-color 150ms, color 150ms, transform 150ms;
+    z-index: 10;
+  }
+  @media (min-width: 640px) {
+    .btn-dialog-close {
+      top: 0.75rem;
+      right: 0.75rem;
+      height: 2.25rem;
+      width: 2.25rem;
+    }
   }
   .btn-dialog-close:hover {
-    background: color-mix(in oklab, var(--color-primary) 90%, transparent);
+    background: color-mix(in oklab, var(--color-muted) 80%, transparent);
+    color: var(--color-foreground);
   }
   .btn-dialog-close:focus-visible {
     outline: none;
@@ -357,8 +368,12 @@
       0 0 0 2px var(--color-background),
       0 0 0 4px var(--color-primary);
   }
+  .btn-dialog-close:active {
+    transform: scale(0.94);
+  }
   .btn-dialog-close:disabled {
     pointer-events: none;
+    opacity: 0.5;
   }
 
   .glass-strong {

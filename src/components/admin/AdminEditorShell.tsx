@@ -2,7 +2,7 @@
 // шапка с переключателями (publish/featured/active) и кнопками удалить/сохранить.
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2 } from "lucide-react";
+import { Save, Trash2, Inbox } from "lucide-react";
 
 export function AdminEditorShell({
   title, switches, onDelete, onSave, saving, children, deleteLabel = "Удалить", confirmDelete = true,
@@ -43,8 +43,40 @@ export function AdminEditorShell({
   );
 }
 
-export function AdminEmptyEditor({ text = "Выберите запись или создайте новую" }: { text?: string }) {
+/**
+ * Универсальное пустое состояние для admin-редакторов и таблиц.
+ * Унифицирует все «Выберите запись...», «Пока нет ...», «Загрузка...».
+ */
+export function AdminEmptyEditor({
+  title,
+  description,
+  icon,
+  action,
+  /** @deprecated используйте title/description */
+  text,
+  className,
+}: {
+  title?: ReactNode;
+  description?: ReactNode;
+  icon?: ReactNode;
+  action?: ReactNode;
+  text?: string;
+  className?: string;
+}) {
+  const heading = title ?? text ?? "Ничего не выбрано";
   return (
-    <div className="glass rounded-xl p-10 text-center text-muted-foreground">{text}</div>
+    <div
+      role="status"
+      className={`glass rounded-xl p-10 flex flex-col items-center justify-center text-center gap-3 ${className ?? ""}`}
+    >
+      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted/40 text-muted-foreground">
+        {icon ?? <Inbox className="h-6 w-6" aria-hidden="true" />}
+      </div>
+      <div className="space-y-1">
+        <div className="font-medium text-foreground">{heading}</div>
+        {description && <div className="text-sm text-muted-foreground max-w-md">{description}</div>}
+      </div>
+      {action && <div className="pt-1">{action}</div>}
+    </div>
   );
 }
