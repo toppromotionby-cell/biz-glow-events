@@ -48,6 +48,7 @@ function Page() {
   const { campaign, recipients } = data;
   const stats = {
     pending: recipients.filter((r: any) => r.status === "pending").length,
+    queued: recipients.filter((r: any) => r.status === "queued").length,
     sent: recipients.filter((r: any) => r.status === "sent").length,
     failed: recipients.filter((r: any) => r.status === "failed").length,
     suppressed: recipients.filter((r: any) => r.status === "suppressed").length,
@@ -65,12 +66,14 @@ function Page() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatCard label="Всего" value={campaign.total_recipients || recipients.length} />
-        <StatCard label="Отправлено" value={stats.sent} color="text-green-600" />
+        <StatCard label="В очереди" value={stats.queued + stats.pending} color="text-blue-600" />
+        <StatCard label="Доставлено" value={stats.sent} color="text-green-600" />
         <StatCard label="Ошибок" value={stats.failed} color="text-red-600" />
         <StatCard label="В чёрном списке" value={stats.suppressed} color="text-yellow-600" />
       </div>
+
 
       <div className="flex gap-2">
         {campaign.status === "draft" && (

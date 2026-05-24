@@ -332,38 +332,36 @@
     background: color-mix(in oklab, var(--color-destructive) 10%, transparent);
     border-color: color-mix(in oklab, var(--color-destructive) 50%, transparent);
   }
-  /* Кнопка закрытия модалок (dialog/sheet/баннер/чат).
-     Всегда закреплена на самом блоке в нативном правом верхнем углу;
-     позиция считается от ширины блока, чтобы не зависеть от dir/scroll/портала. */
+  /* Кнопка закрытия модалок (dialog/sheet).
+     Контейнер модалки не скроллится сам (overflow:hidden), скроллится
+     внутренний враппер с контентом — поэтому absolute right/top держится
+     на углу модалки и не уезжает с прокруткой. */
   .btn-dialog-close {
     position: absolute;
-    top: 0.625rem !important;
-    right: auto !important;
-    bottom: auto !important;
-    left: calc(100% - 3.375rem) !important;
+    top: 0.625rem;
+    right: 0.625rem;
+    z-index: 20;
     display: inline-flex;
-    height: 2.75rem;
-    width: 2.75rem;
+    height: 2.5rem;
+    width: 2.5rem;
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    background: color-mix(in oklab, var(--color-muted) 50%, transparent);
+    background: color-mix(in oklab, var(--color-muted) 70%, var(--color-background));
     color: var(--color-foreground);
-    border: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
     transition: background-color 150ms, color 150ms, transform 150ms;
-    z-index: 10;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
   @media (min-width: 640px) {
     .btn-dialog-close {
-      top: 0.875rem !important;
-      right: auto !important;
-      left: calc(100% - 3.375rem) !important;
-      height: 2.5rem;
-      width: 2.5rem;
+      top: 0.75rem;
+      right: 0.75rem;
     }
   }
   .btn-dialog-close:hover {
-    background: color-mix(in oklab, var(--color-muted) 80%, transparent);
+    background: color-mix(in oklab, var(--color-muted) 90%, var(--color-background));
     color: var(--color-foreground);
   }
   .btn-dialog-close:focus-visible {

@@ -361,7 +361,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       )}
 
       <Dialog open={lightbox !== null} onOpenChange={(v) => { if (!v) closeLightbox(); }}>
-        <DialogContent className="max-w-6xl p-0 bg-background/95 border-border/40">
+        <DialogContent className="max-w-6xl bg-background/95 border-border/40" bodyClassName="p-0 gap-0">
           <DialogTitle className="sr-only">{item.title}</DialogTitle>
           <DialogDescription className="sr-only">Просмотр фотографии</DialogDescription>
           {lightbox !== null && photos[lightbox] && (

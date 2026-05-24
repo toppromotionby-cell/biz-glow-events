@@ -41,7 +41,7 @@ export function CatalogQuickView({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`max-w-5xl max-h-[90vh] overflow-y-auto p-0 bg-background ${(!isLoading && !data) ? 'border-0' : 'border-border/40'}`}>
+      <DialogContent className={`max-w-5xl max-h-[90vh] bg-background ${(!isLoading && !data) ? 'border-0' : 'border-border/40'}`} bodyClassName="p-0 gap-0">
         <DialogTitle className="sr-only">{data?.title ?? "Просмотр позиции"}</DialogTitle>
         <DialogDescription className="sr-only">{data?.short_description ?? "Детальная информация о позиции каталога"}</DialogDescription>
         {isLoading && (

@@ -151,7 +151,7 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
   const open = !!item;
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh]">
         {item && (
           <>
             <DialogHeader>
