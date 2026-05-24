@@ -293,8 +293,18 @@ function ProfilePage() {
                               <Button size="sm" variant="outline" onClick={() => openEdit(o)}>
                                 <Pencil className="h-3.5 w-3.5 mr-1.5" /> Редактировать
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => repeatOrder(o.id)} disabled={!d || d.items.length === 0}>
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Повторить
+                              </Button>
                               <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(o.id)}>
                                 <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Удалить
+                              </Button>
+                            </div>
+                          )}
+                          {!canEdit(o.status) && d && d.items.length > 0 && (
+                            <div className="pt-2 border-t border-border/40">
+                              <Button size="sm" variant="outline" onClick={() => repeatOrder(o.id)}>
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Повторить заказ
                               </Button>
                             </div>
                           )}
