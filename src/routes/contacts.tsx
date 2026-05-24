@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
 
 export const Route = createFileRoute("/contacts")({
-  head: () => ({ meta: [{ title: "Контакты — event-hub.by" }, { name: "description", content: "Свяжитесь с event-hub.by — Минск, Беларусь. Телефон, Telegram, email." }] }),
+  head: () => ({ meta: [{ title: "Контакты — event-hub.by" }, { name: "description", content: "Свяжитесь с event-hub.by — Минск, Беларусь. Email." }] }),
   component: ContactsPage,
 });
 
@@ -14,16 +14,6 @@ function ContactsPage() {
       <h1 className="text-4xl font-display font-bold gradient-text">Контакты</h1>
       <p className="mt-4 text-muted-foreground">Мы на связи {CONTACT.hours.toLowerCase()}.</p>
       <div className="mt-10 grid sm:grid-cols-2 gap-4">
-        <a href={`tel:${CONTACT.phoneTel}`} className="glass rounded-xl p-6 hover:glow-primary transition">
-          <Phone className="h-5 w-5 text-primary" />
-          <div className="mt-3 text-sm text-muted-foreground">Телефон</div>
-          <div className="font-medium">{CONTACT.phoneDisplay}</div>
-        </a>
-        <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="glass rounded-xl p-6 hover:glow-primary transition">
-          <Send className="h-5 w-5 text-primary" />
-          <div className="mt-3 text-sm text-muted-foreground">Telegram</div>
-          <div className="font-medium">Написать в Telegram</div>
-        </a>
         <a href={`mailto:${CONTACT.email}`} className="glass rounded-xl p-6 hover:glow-primary transition">
           <Mail className="h-5 w-5 text-primary" />
           <div className="mt-3 text-sm text-muted-foreground">Email</div>

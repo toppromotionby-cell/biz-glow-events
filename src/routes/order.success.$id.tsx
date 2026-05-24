@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Phone, Mail, FileText, MessageCircle } from "lucide-react";
+import { CheckCircle2, Mail, FileText } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
 
 export const Route = createFileRoute("/order/success/$id")({
@@ -33,21 +33,7 @@ function OrderSuccess() {
         </p>
 
         <div className="grid sm:grid-cols-2 gap-3 text-left">
-          <a href={`tel:${CONTACT.phoneTel}`} className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition">
-            <Phone className="h-5 w-5 text-primary" />
-            <div>
-              <div className="text-xs text-muted-foreground">Срочный вопрос?</div>
-              <div className="text-sm font-medium">{CONTACT.phoneDisplay}</div>
-            </div>
-          </a>
-          <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            <div>
-              <div className="text-xs text-muted-foreground">Чат</div>
-              <div className="text-sm font-medium">Telegram</div>
-            </div>
-          </a>
-          <a href={`mailto:${CONTACT.email}`} className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition sm:col-span-2">
+          <a href={`mailto:${CONTACT.email}`} className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition">
             <Mail className="h-5 w-5 text-primary" />
             <div>
               <div className="text-xs text-muted-foreground">Email</div>
