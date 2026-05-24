@@ -88,61 +88,62 @@
 
 /* ===== Светлая тема ===== */
 .theme-light {
-  --background: oklch(0.99 0.005 50);
-  --foreground: oklch(0.18 0.02 50);
-  --surface: oklch(0.97 0.008 50);
-  --surface-2: oklch(0.94 0.01 50);
+  /* Чистая палитра: только белый, чёрный, оранжевый. Без красных и тёплых тинтов на нейтралях. */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.12 0 0);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.97 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 50);
+  --card-foreground: oklch(0.12 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 50);
-  --primary: oklch(0.5 0.22 55);
+  --popover-foreground: oklch(0.12 0 0);
+  --primary: oklch(0.7 0.19 65);
   --primary-foreground: oklch(1 0 0);
-  --primary-glow: oklch(0.65 0.24 65);
-  --secondary: oklch(0.92 0.02 50);
-  --secondary-foreground: oklch(0.2 0.02 50);
-  --muted: oklch(0.95 0.01 50);
-  --muted-foreground: oklch(0.45 0.02 50);
-  --accent: oklch(0.55 0.22 55);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.55 0.24 25);
+  --primary-glow: oklch(0.78 0.17 75);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.12 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.40 0 0);
+  --accent: oklch(0.72 0.18 70);
+  --accent-foreground: oklch(0.12 0 0);
+  --destructive: oklch(0.12 0 0);
   --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.55 0.18 150);
-  --warning: oklch(0.65 0.17 80);
-  --border: oklch(0.2 0.02 50 / 0.12);
-  --input: oklch(0.2 0.02 50 / 0.08);
-  --ring: oklch(0.55 0.22 55 / 0.5);
+  --warning: oklch(0.7 0.18 75);
+  --border: oklch(0 0 0 / 0.10);
+  --input: oklch(0 0 0 / 0.06);
+  --ring: oklch(0.7 0.19 70 / 0.5);
 }
 
 .theme-light .gradient-text {
-  background: linear-gradient(135deg, oklch(0.25 0.04 55), oklch(0.5 0.22 55));
+  background: linear-gradient(135deg, oklch(0.12 0 0), oklch(0.65 0.20 70));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .theme-light .bg-radial-glow {
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.55 0.22 55 / 0.18), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 60%, oklch(0.55 0.22 55 / 0.08), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.75 0.18 70 / 0.10), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%, oklch(0.75 0.18 70 / 0.05), transparent);
 }
 .theme-light .glass {
-  background: linear-gradient(135deg, oklch(1 0 0 / 0.75), oklch(1 0 0 / 0.45));
-  border-color: oklch(0.2 0.02 50 / 0.1);
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.85), oklch(1 0 0 / 0.6));
+  border-color: oklch(0 0 0 / 0.08);
 }
 .theme-light .glass-strong {
-  background: oklch(1 0 0 / 0.85);
-  border-color: oklch(0.2 0.02 50 / 0.1);
+  background: oklch(1 0 0 / 0.92);
+  border-color: oklch(0 0 0 / 0.08);
 }
 .theme-light .fx-aurora,
-.theme-light .fx-cursor-glow { opacity: 0.5; }
+.theme-light .fx-cursor-glow { opacity: 0; }
 
 /* ===== Hero — светлая тема ===== */
 .hero-accent-text {
   background: linear-gradient(
     90deg,
-    oklch(0.78 0.20 55),
-    oklch(0.82 0.18 65),
-    oklch(0.75 0.21 45)
+    oklch(0.78 0.18 70),
+    oklch(0.82 0.17 75),
+    oklch(0.75 0.19 65)
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -151,9 +152,9 @@
 .theme-light .hero-accent-text {
   background: linear-gradient(
     90deg,
-    oklch(0.55 0.22 35),
-    oklch(0.62 0.24 55),
-    oklch(0.5 0.25 25)
+    oklch(0.65 0.20 70),
+    oklch(0.70 0.19 75),
+    oklch(0.60 0.21 65)
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -161,36 +162,36 @@
 }
 .theme-light .spark-burst {
   background:
-    radial-gradient(ellipse at center, oklch(0.92 0.10 70 / 0.55), transparent 55%),
-    radial-gradient(circle at center, oklch(0.97 0.03 70 / 0.7), oklch(1 0 0 / 0) 70%);
+    radial-gradient(ellipse at center, oklch(0.92 0.10 75 / 0.45), transparent 55%),
+    radial-gradient(circle at center, oklch(1 0 0 / 0.7), oklch(1 0 0 / 0) 70%);
 }
 .theme-light .spark {
-  background: linear-gradient(90deg, transparent, oklch(0.65 0.22 50 / 0.85) 40%, oklch(0.55 0.24 35 / 0.75) 80%, transparent);
-  filter: blur(0.4px) drop-shadow(0 0 6px oklch(0.6 0.22 50 / 0.6));
+  background: linear-gradient(90deg, transparent, oklch(0.70 0.19 70 / 0.85) 40%, oklch(0.65 0.20 75 / 0.75) 80%, transparent);
+  filter: blur(0.4px) drop-shadow(0 0 6px oklch(0.70 0.19 70 / 0.6));
 }
-.theme-light .hero-logo-bg { mix-blend-mode: multiply; opacity: 0.12; }
+.theme-light .hero-logo-bg { mix-blend-mode: multiply; opacity: 0.08; }
 .theme-light .hero-logo__word {
   background: linear-gradient(
     100deg,
-    oklch(0.45 0.22 55) 0%,
-    oklch(0.55 0.24 65) 25%,
-    oklch(0.5 0.27 45) 50%,
-    oklch(0.55 0.24 65) 75%,
-    oklch(0.45 0.22 55) 100%
+    oklch(0.55 0.20 70) 0%,
+    oklch(0.65 0.20 75) 25%,
+    oklch(0.60 0.22 70) 50%,
+    oklch(0.65 0.20 75) 75%,
+    oklch(0.55 0.20 70) 100%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 18px oklch(0.6 0.22 55 / 0.35));
+  filter: drop-shadow(0 0 18px oklch(0.70 0.19 70 / 0.30));
 }
 .theme-light .hero-logo__halo {
   background:
-    radial-gradient(ellipse at center, oklch(0.65 0.22 55 / 0.25), transparent 55%),
-    radial-gradient(ellipse at 30% 50%, oklch(0.55 0.24 35 / 0.18), transparent 60%);
+    radial-gradient(ellipse at center, oklch(0.75 0.18 70 / 0.20), transparent 55%),
+    radial-gradient(ellipse at 30% 50%, oklch(0.70 0.19 75 / 0.14), transparent 60%);
 }
 .theme-light .hero-logo__sheen::after {
-  background: linear-gradient(90deg, transparent, oklch(0.5 0.22 55 / 0.35), transparent);
+  background: linear-gradient(90deg, transparent, oklch(0.70 0.19 70 / 0.30), transparent);
 }
 
 @layer base {
