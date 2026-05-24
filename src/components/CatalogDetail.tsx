@@ -336,7 +336,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         <QuickQuoteForm itemTitle={item.title} source={`quick_quote:${entityType}`} />
       </section>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="mt-12"><CatalogSkeleton count={3} /></div>}>
         <RelatedItems type={entityType} currentId={item.id} category={item.category} />
       </Suspense>
       <RecentlyViewed excludeId={item.id} />
