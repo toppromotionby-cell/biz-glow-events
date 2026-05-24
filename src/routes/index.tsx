@@ -137,7 +137,7 @@ function HomePage() {
               Весь каталог <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
             {featured.map((f, idx) => {
               const type = BASE_TO_TYPE[f.basePath] ?? "tech_equipment";
               return (
@@ -145,10 +145,10 @@ function HomePage() {
                   key={f.id}
                   type="button"
                   onClick={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
-                  className="group glass rounded-xl overflow-hidden hover:border-primary/50 transition block text-left w-full"
+                  className="group glass rounded-xl sm:rounded-2xl overflow-hidden hover:border-primary/50 transition block text-left w-full flex flex-col h-full"
                   aria-label={`Открыть ${f.title}`}
                 >
-                  <div className="aspect-[16/10] overflow-hidden bg-gradient-primary/10">
+                  <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-gradient-primary/10">
                     {f.photo_urls?.[0] ? (
                       <img
                         src={f.photo_urls[0]} alt={f.title}
@@ -160,10 +160,10 @@ function HomePage() {
                       />
                     ) : null}
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold leading-tight group-hover:text-primary transition">{f.title}</h3>
+                  <div className="p-3.5 sm:p-4 lg:p-5 flex-1 flex flex-col">
+                    <h3 className="font-display font-semibold text-base sm:text-lg leading-tight group-hover:text-primary transition">{f.title}</h3>
                     {f.short_description && (
-                      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                      <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground flex-1 line-clamp-3 sm:line-clamp-4">
                         {f.short_description.length > 300 ? f.short_description.slice(0, 300) + '…' : f.short_description}
                       </p>
                     )}
