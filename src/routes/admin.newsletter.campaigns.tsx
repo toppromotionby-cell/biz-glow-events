@@ -131,26 +131,28 @@ function Page() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <Link to="/admin/newsletter" className="text-xs text-muted-foreground hover:underline flex items-center gap-1 mb-1">
-            <ArrowLeft className="h-3 w-3" /> К подписчикам
-          </Link>
-          <h1 className="admin-h1 flex items-center gap-2">
-            <Megaphone className="h-7 w-7" /> Email-кампании
-          </h1>
-          <p className="text-sm text-muted-foreground">Массовые рассылки для пиара портала</p>
-        </div>
-        <Button onClick={() => { if (showForm) { setShowForm(false); resetForm(); } else { setShowForm(true); } }}>
-          <Plus className="h-4 w-4 mr-2" />{showForm ? "Отмена" : "Новая кампания"}
-        </Button>
-      </header>
+      <AdminPageHeader
+        icon={<Megaphone className="h-7 w-7" />}
+        title="Email-кампании"
+        subtitle={
+          <>
+            <Link to="/admin/newsletter" className="text-xs text-muted-foreground hover:underline inline-flex items-center gap-1">
+              <ArrowLeft className="h-3 w-3" /> К подписчикам
+            </Link>
+            <span className="block">Массовые рассылки для пиара портала</span>
+          </>
+        }
+        action={
+          <Button onClick={() => { if (showForm) { setShowForm(false); resetForm(); } else { setShowForm(true); } }}>
+            <Plus className="h-4 w-4 mr-2" />{showForm ? "Отмена" : "Новая кампания"}
+          </Button>
+        }
+      />
 
       {showForm && (
         <div className="glass rounded-xl p-5 space-y-4">
           {drafts.length > 0 && (
-            <div>
-              <Label>Загрузить из черновиков ({drafts.length})</Label>
+            <Field label={`Загрузить из черновиков (${drafts.length})`}>
               <Select value={editingId ?? ""} onValueChange={loadDraft}>
                 <SelectTrigger><SelectValue placeholder="Выбрать черновик…" /></SelectTrigger>
                 <SelectContent>
@@ -166,14 +168,12 @@ function Page() {
                   Сбросить и создать новый
                 </button>
               )}
-            </div>
+            </Field>
           )}
-          <div>
-            <Label>Тема письма</Label>
+          <Field label="Тема письма">
             <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Открылся портал event-hub.by — приглашаем!" />
-          </div>
-          <div>
-            <Label>Получатели</Label>
+          </Field>
+          <Field label="Получатели">
             <Select value={mode} onValueChange={(v) => setMode(v as any)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -182,18 +182,15 @@ function Page() {
                 <SelectItem value="manual">Ручной список email</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Field>
           {mode === "manual" && (
-            <div>
-              <Label>Email-адреса (через запятую, пробел или с новой строки)</Label>
+            <Field label="Email-адреса (через запятую, пробел или с новой строки)">
               <Textarea rows={4} value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="info@example.com, partner@company.by" />
-            </div>
+            </Field>
           )}
-          <div>
-            <Label>HTML-контент письма</Label>
+          <Field label="HTML-контент письма" hint="Контент будет вставлен в фирменный шаблон с шапкой и подвалом.">
             <Textarea rows={12} value={body} onChange={(e) => setBody(e.target.value)} placeholder="<h2>Заголовок</h2><p>Здравствуйте! Рады представить...</p>" className="font-mono text-xs" />
-            <p className="text-xs text-muted-foreground mt-1">Контент будет вставлен в фирменный шаблон с шапкой и подвалом.</p>
-          </div>
+          </Field>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => saveDraft.mutate()} disabled={saveDraft.isPending}>
               {saveDraft.isPending ? "Сохранение…" : editingId ? "Обновить черновик" : "Сохранить черновик"}
@@ -206,66 +203,48 @@ function Page() {
         </div>
       )}
 
-      <div className="glass rounded-xl overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground">Загрузка...</div>
-        ) : data.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">Пока нет кампаний.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-muted/30 text-left">
-              <tr>
-                <th className="p-3 font-medium">Тема</th>
-                <th className="p-3 font-medium">Статус</th>
-                <th className="p-3 font-medium">Получатели</th>
-                <th className="p-3 font-medium">Отправлено</th>
-                <th className="p-3 font-medium">Дата</th>
-                <th className="p-3 font-medium w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((c: any) => (
-                <tr key={c.id} className="border-t border-border/40">
-                  <td className="p-3">
-                    <Link to="/admin/newsletter/campaigns/$id" params={{ id: c.id }} className="hover:underline font-medium">
-                      {c.subject}
-                    </Link>
-                  </td>
-                  <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-xs ${
-                      c.status === "completed" ? "bg-green-500/20 text-green-700" :
-                      c.status === "sending" ? "bg-blue-500/20 text-blue-700" :
-                      c.status === "failed" ? "bg-red-500/20 text-red-700" :
-                      "bg-muted text-muted-foreground"
-                    }`}>{STATUS_LABELS[c.status] ?? c.status}</span>
-                  </td>
-                  <td className="p-3 text-muted-foreground">{c.total_recipients}</td>
-                  <td className="p-3 text-muted-foreground">
-                    {c.sent_count} / {c.failed_count > 0 ? <span className="text-red-600">{c.failed_count} ошибок</span> : "0 ошибок"}
-                  </td>
-                  <td className="p-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString("ru-RU")}</td>
-                  <td className="p-3">
-                    {c.status === "draft" && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          onClick={() => { if (confirm(`Отправить кампанию «${c.subject}»? Получатели вычисляются в момент запуска.`)) launch.mutate(c.id); }}
-                          disabled={launch.isPending}
-                        >
-                          <Send className="h-4 w-4 mr-1" />Отправить
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить черновик?")) remove.mutate(c.id); }}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <AdminTable
+        columns={TABLE_COLS}
+        isLoading={isLoading}
+        isEmpty={!isLoading && data.length === 0}
+        emptyText="Пока нет кампаний."
+      >
+        {data.map((c: any) => (
+          <tr key={c.id} className="border-t border-border/40">
+            <td className="p-3">
+              <Link to="/admin/newsletter/campaigns/$id" params={{ id: c.id }} className="hover:underline font-medium">
+                {c.subject}
+              </Link>
+            </td>
+            <td className="p-3">
+              <StatusPill tone={STATUS_TONE[c.status] ?? "muted"}>
+                {STATUS_LABELS[c.status] ?? c.status}
+              </StatusPill>
+            </td>
+            <td className="p-3 text-muted-foreground">{c.total_recipients}</td>
+            <td className="p-3 text-muted-foreground">
+              {c.sent_count} / {c.failed_count > 0 ? <span className="text-red-600">{c.failed_count} ошибок</span> : "0 ошибок"}
+            </td>
+            <td className="p-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString("ru-RU")}</td>
+            <td className="p-3">
+              {c.status === "draft" && (
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    onClick={() => { if (confirm(`Отправить кампанию «${c.subject}»? Получатели вычисляются в момент запуска.`)) launch.mutate(c.id); }}
+                    disabled={launch.isPending}
+                  >
+                    <Send className="h-4 w-4 mr-1" />Отправить
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить черновик?")) remove.mutate(c.id); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </td>
+          </tr>
+        ))}
+      </AdminTable>
     </div>
   );
 }
