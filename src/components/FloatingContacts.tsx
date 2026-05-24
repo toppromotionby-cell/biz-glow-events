@@ -1,7 +1,7 @@
 // Плавающий виджет связи: Онлайн-помощник (для авторизованных) + Telegram + Звонок.
 // Видим на всех страницах, уважает настройку секции global.floating_contacts.
 import { useState } from "react";
-import { MessageCircle, Send, X, Phone, Headphones } from "lucide-react";
+import { MessageCircle, X, Headphones } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
 import { useSectionEnabled } from "@/lib/site-sections";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,24 +35,6 @@ export function FloatingContacts() {
                 <span className="text-sm font-medium">Онлайн-помощник</span>
               </button>
             )}
-            <a
-              href={CONTACT.telegram}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Написать в Telegram"
-              className="group inline-flex items-center gap-2 rounded-full bg-[#229ED9] text-white pl-3 pr-4 py-2 shadow-lg hover:scale-105 transition"
-            >
-              <Send className="h-5 w-5" aria-hidden="true" />
-              <span className="text-sm font-medium">Telegram</span>
-            </a>
-            <a
-              href={`tel:${CONTACT.phoneTel}`}
-              aria-label="Позвонить"
-              className="group inline-flex items-center gap-2 rounded-full bg-foreground text-background pl-3 pr-4 py-2 shadow-lg hover:scale-105 transition"
-            >
-              <Phone className="h-5 w-5" aria-hidden="true" />
-              <span className="text-sm font-medium">Позвонить</span>
-            </a>
           </div>
         )}
         {!chatOpen && (

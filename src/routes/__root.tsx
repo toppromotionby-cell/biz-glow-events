@@ -109,8 +109,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               url: "https://event-hub.by",
               logo: "https://event-hub.by/favicon.ico",
               email: "hello@event-hub.by",
-              telephone: "+375447099122",
-              sameAs: ["https://t.me/+375447099122"],
             },
             {
               "@type": "WebSite",
@@ -131,7 +129,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               name: "event-hub.by",
               description: "Event-технологии, продакшн, интерактивные зоны и производство для мероприятий",
               url: "https://event-hub.by",
-              telephone: "+375447099122",
               email: "hello@event-hub.by",
               address: { "@type": "PostalAddress", addressLocality: "Минск", addressCountry: "BY" },
               areaServed: { "@type": "Country", name: "Belarus" },

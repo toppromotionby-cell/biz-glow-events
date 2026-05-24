@@ -44,7 +44,7 @@ export function PriceFactorsPopup({ trigger }: { trigger?: React.ReactNode }) {
           ))}
         </ul>
         <div className="mt-3 rounded-lg bg-primary/10 p-3 text-xs text-foreground/90">
-          💡 Бесплатный расчёт за 1 час — оставьте заявку, и менеджер пришлёт точную смету в Telegram или на e-mail.
+          💡 Бесплатный расчёт за 1 час — оставьте заявку, и менеджер пришлёт точную смету на e-mail.
         </div>
       </DialogContent>
     </Dialog>

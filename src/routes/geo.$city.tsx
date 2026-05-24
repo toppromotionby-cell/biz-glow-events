@@ -134,7 +134,6 @@ function GeoCityPage() {
       <section className="mt-10 glass rounded-xl p-6 max-w-3xl">
         <h2 className="font-display font-semibold text-xl">Доставка и работа в {city.name}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{city.delivery}</p>
-        <p className="mt-2 text-sm text-muted-foreground">Телефон: <a className="text-foreground hover:underline" href={`tel:${city.phone.replace(/\D/g, "")}`}>{city.phone}</a></p>
       </section>
 
       <section className="mt-10">

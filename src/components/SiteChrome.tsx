@@ -274,10 +274,6 @@ export function SiteFooter() {
               <h4 className="font-medium mb-3">Контакты</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
-                <Toggleable sectionKey="footer.contacts.phone" as="li"><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></Toggleable>
-                <Toggleable sectionKey="footer.contacts.telegram" as="li" className="flex gap-3 text-xs">
-                  <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
-                </Toggleable>
                 <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
               </ul>
               <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
@@ -330,10 +326,6 @@ export function SiteFooter() {
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
                       <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
-                      <Toggleable sectionKey="footer.contacts.phone" as="li"><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></Toggleable>
-                      <Toggleable sectionKey="footer.contacts.telegram" as="li" className="flex gap-3 text-xs">
-                        <a href={CONTACT.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram</a>
-                      </Toggleable>
                       <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
                     </ul>
                   </AccordionContent>

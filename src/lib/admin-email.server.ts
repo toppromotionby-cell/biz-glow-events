@@ -92,7 +92,7 @@ export async function notifyAdminOrderEmail(p: AdminOrderPayload): Promise<{ ok:
   <hr style="border-color:#333"/>
   <h2 style="font-size:18px">Клиент</h2>
   <p>${escapeHtml(p.clientName)}${p.clientCompany ? " · " + escapeHtml(p.clientCompany) : ""}</p>
-  <p>Тел: <a href="tel:${escapeHtml(p.clientPhone)}" style="color:#a78bfa">${escapeHtml(p.clientPhone)}</a>
+  <p>Тел: ${escapeHtml(p.clientPhone)}
      · Email: <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:#a78bfa">${escapeHtml(p.clientEmail)}</a></p>
   ${p.eventDate ? `<p>Дата: ${escapeHtml(p.eventDate)}</p>` : ""}
   ${p.notes ? `<p>Комментарий: ${escapeHtml(p.notes)}</p>` : ""}
@@ -125,7 +125,7 @@ export async function notifyAdminLeadEmail(p: AdminLeadPayload): Promise<{ ok: b
   <p><strong>Источник:</strong> ${escapeHtml(p.source ?? "—")}</p>
   <hr style="border-color:#333"/>
   <p>${escapeHtml(p.clientName)}</p>
-  <p>Тел: <a href="tel:${escapeHtml(p.clientPhone)}" style="color:#a78bfa">${escapeHtml(p.clientPhone)}</a>
+  <p>Тел: ${escapeHtml(p.clientPhone)}
   ${p.clientEmail ? ` · Email: <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:#a78bfa">${escapeHtml(p.clientEmail)}</a>` : ""}</p>
   ${p.notes ? `<p>Комментарий: ${escapeHtml(p.notes)}</p>` : ""}
 </div></body></html>`;
