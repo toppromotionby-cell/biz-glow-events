@@ -136,9 +136,9 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
               type="button"
               onClick={closeChat}
               aria-label="Закрыть"
-              className="absolute right-0 top-0 inline-flex h-9 w-11 items-center justify-center bg-primary text-primary-foreground rounded-bl-md rounded-tr-2xl shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+              className="absolute right-1 top-1 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
             >
-              <X className="h-4 w-4" strokeWidth={2.5} />
+              <X className="h-3 w-3" strokeWidth={2.5} />
             </button>
           </div>
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
