@@ -42,6 +42,10 @@ export const Route = createFileRoute("/blog")({
 function BlogIndex() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<PerPage>(30);
+  useEffect(() => { setPage(1); }, [perPage]);
+  const paged = posts.slice((page - 1) * perPage, page * perPage);
 
   useEffect(() => {
     (async () => {
