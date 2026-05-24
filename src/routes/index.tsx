@@ -3,10 +3,12 @@ import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, Calendar
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { GuestEstimator } from "@/components/GuestEstimator";
 import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
+import { CatalogQuickView } from "@/components/CatalogQuickView";
+import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { SparkBurst } from "@/components/SparkBurst";
@@ -15,11 +17,6 @@ import { MediaCard } from "@/components/ui/MediaCard";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
-
-// Тяжёлые модалки и формы — лениво (открываются по действию пользователя).
-const CatalogQuickView = lazy(() => import("@/components/CatalogQuickView").then(m => ({ default: m.CatalogQuickView })));
-const LeadForm = lazy(() => import("@/components/LeadForm").then(m => ({ default: m.LeadForm })));
-
 
 const BASE_TO_TYPE: Record<string, CatalogType> = {
   "/zones": "zones",
@@ -153,15 +150,13 @@ function HomePage() {
             })}
           </div>
           {quick && (
-            <Suspense fallback={null}>
-              <CatalogQuickView
-                open={!!quick}
-                onOpenChange={(v) => { if (!v) setQuick(null); }}
-                type={quick.type}
-                slug={quick.slug}
-                basePath={quick.basePath}
-              />
-            </Suspense>
+            <CatalogQuickView
+              open={!!quick}
+              onOpenChange={(v) => { if (!v) setQuick(null); }}
+              type={quick.type}
+              slug={quick.slug}
+              basePath={quick.basePath}
+            />
           )}
 
         </Toggleable>
@@ -343,9 +338,7 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
           </DialogDescription>
         </div>
         <div className="px-6 pt-5 pb-6 max-h-[70vh] overflow-y-auto">
-          <Suspense fallback={<div className="h-40" />}>
-            <LeadForm source={topic ? `home_order:${topic}` : "home_order"} />
-          </Suspense>
+          <LeadForm source={topic ? `home_order:${topic}` : "home_order"} />
           <div className="mt-6 pt-5 border-t border-border/60">
             <h4 className="font-display font-semibold text-base mb-3">Контакты</h4>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">

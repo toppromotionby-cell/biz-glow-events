@@ -1,101 +1,98 @@
-## Что это за файл
 
-`index-BW6uVVU8.js` — это собранный Vite клиентский **entry-bundle** (главный JS, который грузится при первом заходе на сайт). Хеш `BW6uVVU8` — отпечаток содержимого: при любом изменении кода или зависимостей он будет другим. Сам по себе файл «неправильным» не бывает — вопрос в том, **что в него попало** и **сколько он весит**.
+# Аудит разметки админки
 
-В этом проекте у entry-bundle есть несколько типичных проблем, которые я нашёл по коду (vite.config.ts + package.json + структура импортов).
+Прошёлся по всем 22 файлам `src/routes/admin*.tsx` (3475 строк). Структура чистая, баги отсутствуют — но видна сильная **повторяемость одних и тех же блоков разметки** между страницами CRUD-каталогов и редакторов. Один и тот же шаблон «шапка + список слева + редактор справа» воспроизведён руками в 7 страницах с десятками копий длинных Tailwind-цепочек.
 
-## Что с ним «не так»
+## Что повторяется (с цифрами)
 
-1. **Тяжёлые зависимости тянутся в общий чанк, а не в чанк маршрута**
-   Найдены крупные библиотеки, которые нужны только в админке/email, но из-за общих barrel-импортов могут утекать в основной бандл:
-   - `@fullcalendar/*` (~200 КБ gz) — используется только в `admin.calendar.tsx`
-   - `recharts` (~90 КБ gz) — только в `admin.index.tsx` и `components/ui/chart.tsx`
-   - `@react-email/components` + `react-email` — это **серверные** темплейты писем, в клиенте не должны быть вообще
-   - `@dnd-kit/*`, `embla-carousel-react`, `cmdk`, `vaul`, `react-day-picker`, `react-resizable-panels`, `input-otp` — каждая 10–40 КБ; нужны только на отдельных страницах
+| Паттерн | Где | Кол-во |
+|---|---|---|
+| `<header>` с `text-3xl font-display font-bold gradient-text` + кнопка «Добавить» с `bg-gradient-primary glow-primary` | catalog, cases, testimonials, promo, blog, marketing, newsletter, availability, orders, users | **14** |
+| Левый сайдбар-список `glass rounded-xl p-3 max-h-[70-75vh] overflow-y-auto` | catalog, cases, testimonials, promo | **4** (идентичные классы) |
+| Карточка-пустышка справа `glass rounded-xl p-10/12 text-center text-muted-foreground` «Выберите …» | catalog, cases, testimonials, promo | **4** |
+| Шапка-редактора: `flex items-center justify-between flex-wrap gap-3` + Switch publish/featured + Удалить + Сохранить | catalog, cases, testimonials, promo, marketing | **5** |
+| `<div className="space-y-2"><Label>…</Label><Input … /></div>` | catalog, cases, testimonials, promo, blog, marketing, availability | **16** |
+| Таблица `glass rounded-xl overflow-hidden` + `thead bg-muted/30 text-muted-foreground text-xs uppercase` | orders, users, marketing | **3** |
+| Бейдж статуса `px-2 py-0.5/1 rounded-full text-xs border` | orders, blog, promo, cases, testimonials, availability | **8+** |
 
-2. **Корневой layout (`__root.tsx`) грузит «всё и сразу»**
-   В корне импортятся `EffectsLayer`, `FloatingContacts` (с `SupportChat`), `ExitIntentModal`, `CookieConsent`, `CartSync`, `AutoBreadcrumbs`, `ScriptInjector`. Всё это попадает в первый чанк, хотя половина не нужна на первом экране.
+## Замечания по UX/вёрстке (мелкие, без регрессий)
 
-3. **Главная (`index.tsx`) тянет каталог-модалки**
-   `CatalogChoiceModal`, `CatalogQuickView`, `LeadForm`, `GuestEstimator`, `Dialog` подключены статически — попадают в основной чанк, хотя открываются только по клику.
+1. `admin.orders.tsx`: открытие карточки заказа по **двойному клику** — нестандартно и не дискаверабельно. Лучше один клик по строке (а stop-propagation оставить только на интерактивных ячейках статуса/оплаты/ссылки).
+2. `admin.cases.tsx` / `admin.testimonials.tsx` / `admin.promo.tsx`: подсветка выбранной записи в списке использует `selected?.id`, но в catalog подсветка завязана на `selected`, а открывается `preview` — выбранная запись визуально не помечается. Нужно унифицировать: подсветка = «то, что открыто в редакторе».
+3. `admin.tsx`: при `loading` показываем «Проверка доступа…», но `<Outlet />` не рендерится, и сайдбар тоже скрыт — лёгкое мерцание. Можно показывать скелетон-сетку (sidebar + main) той же ширины.
+4. `admin.availability.tsx`: статусы `booked/maintenance` раскрашены `bg-destructive/20` и `bg-warning/20` инлайном — стоит превратить в общий `<StatusPill>`.
+5. `admin.orders.tsx` карта статусов `STATUS_COLOR` (8 строк цветов прямо в файле) и `admin.index.tsx` `STATUS_LABEL` (в двух файлах) — дубли. Перенести в `src/lib/order-status.ts`.
+6. `admin.blog.tsx` использует кастомный `useState` вместо react-query (единственная страница без него). Не блокер, но непоследовательно.
+7. `<select>` нативный встречается в 4 местах (orders, promo, blog), а в остальных — shadcn `<Select>`. Унифицировать на shadcn.
+8. `admin.marketing.tsx`, `admin.cases.tsx`, `admin.catalog.$type.tsx`: остались `(c: any)`, `as any` — типизировать через `Database['public']['Tables'][…]['Row']`.
 
-4. **`lucide-react` импортируется именными импортами в десятках файлов**
-   У lucide есть tree-shaking, но при отсутствии `optimizeDeps` для production-сборки в общий чанк может попадать общий index. По факту проект ОК (`sideEffects: false` в package.json), но в бандле всё равно остаётся ~30–60 иконок.
+## План упрощения
 
-5. **`date-fns` v4 — но импортируется как `date-fns`**
-   Если где-то стоит `import { format } from "date-fns"`, в чанк падает крупная часть библиотеки. Нужно `date-fns/format` (named exports из подпапок).
+### 1. Создать 5 общих admin-компонентов в `src/components/admin/`
 
-6. **70 файлов маршрутов**
-   TanStack Router разбивает их по чанкам автоматически, но **только компоненты**. Всё, что импортится на верхнем уровне route-файла (типы, утилиты, хелперы), переезжает в общий чанк через граф зависимостей.
+- **`AdminPageHeader.tsx`** — `{ title, subtitle?, action? }`. Заменяет 14 одинаковых `<header>` блоков с `text-3xl font-display font-bold gradient-text` и кнопкой действия.
+- **`AdminListPanel.tsx`** — обёртка левого сайдбара со скроллом. Принимает `{ items, isLoading, sortable?, getId, isActive, onSelect, onReorder?, renderItem }`. Инкапсулирует `glass rounded-xl p-3 max-h-[75vh] overflow-y-auto` + `SortableList` + состояния «Загрузка…» / «Пусто». Заменяет 4 практически идентичных блока в catalog/cases/testimonials/promo.
+- **`AdminEditorShell.tsx`** — обёртка редактора с шапкой `{ switches, onDelete, onSave, saving }` (Publish/Featured/Active + кнопки). Заменяет 5 копий шапки редактора.
+- **`AdminEmptyEditor.tsx`** — placeholder «Выберите … или создайте новый» (4 копии).
+- **`Field.tsx`** — `{ label, children, hint?, required? }` для пары Label+Input. Срезает 16+ повторов `<div className="space-y-2"><Label>…<Input …/></div>` и упростит сетки `grid md:grid-cols-2 gap-4`.
 
-7. **Email-темплейты в `src/lib/email-templates/`**
-   Используют `@react-email/components`. Если хоть один клиентский файл импортит из этой папки (например, через barrel или общий тип), вся библиотека упадёт в клиент. Надо проверить.
+### 2. Один общий `<StatusPill variant="…">` в `src/components/admin/StatusPill.tsx`
 
-## План оптимизации
+Маппинг status→class вытащить в один словарь. Использовать в:
+- `admin.orders.tsx` (вместо STATUS_COLOR + inline-select-стилей),
+- `admin.blog.tsx` («опубликовано/черновик»),
+- `admin.cases.tsx`, `admin.testimonials.tsx` (точечки `●/○`),
+- `admin.availability.tsx` (booked/maintenance),
+- `admin.promo.tsx` (активен/нет).
 
-### Этап 1. Диагностика (без изменений в коде)
+### 3. Утилитные классы в `src/styles.css` (`@layer utilities`)
 
-1. Прогнать сборку с анализом размеров:
-   - запустить `bun run build` и посмотреть итоговые размеры чанков
-   - подключить `rollup-plugin-visualizer` (только локально) и получить `stats.html` — точная карта, что именно лежит в `index-*.js`
-2. Зафиксировать топ-10 крупнейших модулей в основном чанке.
+- `.admin-h1` — `text-3xl font-display font-bold gradient-text`
+- `.admin-table-head` — `bg-muted/30 text-muted-foreground text-xs uppercase`
+- `.btn-primary-gradient` — `bg-gradient-primary glow-primary` (используется 14 раз только в админке + ещё на сайте)
 
-### Этап 2. Серверные модули — вон из клиента
+### 4. Вынести общие данные
 
-3. Убедиться, что `src/lib/email-templates/*` и всё под `src/routes/lovable/email/*` и `src/routes/api/*` **не импортятся** из клиентского кода. Если импортятся — переименовать в `*.server.tsx` (механизм import-protection это автоматически вырежет).
-4. Проверить, что `@react-email/components` и `react-email` не попадают в `index-*.js` (после шага 1 это видно).
+- `src/lib/order-status.ts` — `ORDER_STATUS_LABEL`, `ORDER_STATUS_COLOR`, типы. Импортировать в `admin.orders.tsx`, `admin.orders.$id.tsx`, `admin.index.tsx`.
 
-### Этап 3. Ленивая загрузка тяжёлых страниц/виджетов
+### 5. UX-фиксы (точечные)
 
-5. **Админка целиком** — admin-маршруты уже разделены TanStack Router, но дополнительно сделать `lazy` для самых тяжёлых:
-   - `admin.calendar.tsx` (FullCalendar) — `createLazyFileRoute`
-   - `admin.index.tsx` (recharts) — `createLazyFileRoute`
-   - `admin.newsletter.campaigns.$id.tsx` (если есть тяжёлый редактор)
-6. **Главная — отложить модалки**:
-   - `CatalogChoiceModal`, `CatalogQuickView`, `LeadForm`, `ExitIntentModal`, `GuestEstimator` обернуть в `React.lazy(() => import(...))` + `<Suspense>` и монтировать только когда `open=true`.
-   - Эффект: ~30–80 КБ вынесено из первого чанка.
-7. **Корневой layout — отложить «вторичные» виджеты**:
-   - `FloatingContacts` / `SupportChat`, `ExitIntentModal`, `CookieConsent`, `CartRecoveryBanner` — через `lazy` с монтированием по таймеру (после `requestIdleCallback` / 1.5–2 сек после mount).
-   - `EffectsLayer` — если это декор (частицы/градиенты), грузить только на десктопе и после первой интерактивности.
+- `admin.orders.tsx`: одиночный клик открывает модалку (исключения — ячейки status/paid/external link уже имеют `stopPropagation`); подсказка «двойной клик» убирается.
+- `admin.catalog.$type.tsx`: вместо `selected` для подсветки + `preview` для открытия — оставить **одно** состояние «открыто в редакторе» и подсвечивать им же.
+- `admin.tsx` loading-состояние рендерить с уже видимым sidebar-скелетоном.
+- `admin.availability.tsx`: native `<Select>` уже shadcn — оставить; только обернуть статусы в `StatusPill`.
 
-### Этап 4. Уменьшение тяжёлых либ
+### 6. Без изменений
 
-8. **`date-fns`** — заменить везде `from "date-fns"` на `from "date-fns/<fn>"` (или включить `manualChunks` для неё).
-9. **`recharts`** — рассмотреть замену на лёгкий аналог в админке (`@nivo/core` тяжелее, лучше `chart.js` или собственная отрисовка SVG). Опционально.
-10. **`lucide-react`** — оставить как есть (tree-shake работает), но проверить, что нигде нет `import * as Icons from "lucide-react"`.
-11. **Radix UI** — у нас 28 пакетов в зависимостях. Удалить неиспользуемые (по grep): для каждого `@radix-ui/react-*` проверить наличие импорта и удалить мёртвые.
-
-### Этап 5. Конфигурация Vite
-
-12. В `vite.config.ts` добавить `build.rollupOptions.output.manualChunks` (через `vite` блок `defineConfig`), чтобы вынести в отдельные чанки:
-    - `vendor-react` (react, react-dom)
-    - `vendor-radix` (@radix-ui/*)
-    - `vendor-tanstack` (@tanstack/*)
-    - `vendor-charts` (recharts) — лениво
-    - `vendor-calendar` (fullcalendar) — лениво
-    Это даст лучшее кеширование (изменение бизнес-логики не инвалидирует vendor-чанк) и чистый граф загрузки.
-13. Включить `build.cssCodeSplit: true` (по умолчанию включено) и проверить, что CSS не дублируется.
-
-### Этап 6. Мелкие победы
-
-14. Заменить barrel-импорты `@/components/ui` на прямые пути файлов (если такие есть).
-15. Удалить мёртвые роуты/компоненты (после `knip` или `ts-prune`).
-16. На главной заменить статический `Dialog` (Radix) на `lazy` — открывается редко, тянет ~15 КБ.
+- Бизнес-логика, серверные функции, RLS, миграции — **не трогаем**.
+- `admin.orders.$id.tsx`, `*.invoice/*.contract/*.quote.tsx` — там разметка уже компактная, только подключим `Field` и `AdminPageHeader`.
+- `routeTree.gen.ts` — генерируется автоматически.
 
 ## Технические детали
 
-- TanStack Router по умолчанию code-splitит **только** `component`/`pendingComponent`/`errorComponent`. Всё, что импортируется в `createFileRoute({...})` верхнего уровня (loader, validateSearch, head), идёт в общий граф. Это значит: тяжёлые либы нельзя импортить на верхнем уровне route-файла — только внутри `component` или внутри `loader` (для серверных).
-- Для админских маршрутов идеально использовать `createLazyFileRoute("/admin/calendar")({...})` в файле `admin.calendar.lazy.tsx` — компонент тогда грузится отдельным запросом.
-- `React.lazy` + `<Suspense fallback={null}>` — стандартный путь для отложенных модалок.
-- `vite-bundle-visualizer` (или `rollup-plugin-visualizer`) — единственный надёжный способ увидеть, что именно занимает место.
+```text
+src/components/admin/
+├── AdminPageHeader.tsx     (новый, ~25 строк)
+├── AdminListPanel.tsx      (новый, ~50 строк)
+├── AdminEditorShell.tsx    (новый, ~40 строк)
+├── AdminEmptyEditor.tsx    (новый, ~10 строк)
+├── Field.tsx               (новый, ~15 строк)
+└── StatusPill.tsx          (новый, ~30 строк)
 
-## Ожидаемый эффект
+src/lib/
+└── order-status.ts         (новый, ~25 строк)
 
-После шагов 2–4 основной `index-*.js` должен уменьшиться на **40–60%** (типично с 350–450 КБ gz до 140–200 КБ gz), TTI на главной — на 0.5–1.2 сек на медленных каналах. Точные цифры даст шаг 1 (визуализатор).
+src/styles.css              (+3 утилитные класса)
+```
 
-## Что нужно от вас
+После рефакторинга ожидаемое сокращение: **~3475 → ~2700 строк** в admin-роутах (≈22%) при сохранении всего функционала и визуально идентичной странице.
 
-Подтвердите, с чего начинаем:
-1. Только диагностика (visualizer + отчёт) — безопасно, ничего не ломаем.
-2. Полный рефакторинг по этапам 1–5.
-3. Минимальный вариант: только этапы 2 и 3 (вынос email-серверных модулей + lazy для admin/модалок) — обычно даёт 70% эффекта при 20% трудозатрат.
+## Порядок шагов
+
+1. Создать 6 компонентов + `order-status.ts` + утилитные классы в `styles.css`.
+2. Прогнать `bunx tsc --noEmit` — убедиться, что новые компоненты типизированы.
+3. По одному файлу мигрировать роуты в порядке убывания дублей: `admin.testimonials` → `admin.cases` → `admin.promo` → `admin.catalog.$type` → `admin.blog` → `admin.marketing` → `admin.orders` → `admin.users` → `admin.availability` → `admin.index` → остальные.
+4. После каждого файла — `bunx tsc --noEmit` и быстрый смок (`/admin/cases`, `/admin/orders`).
+5. UX-фиксы (одиночный клик в orders, подсветка в catalog) — отдельным проходом после миграции.
+
+Дизайн-токены, сетки и визуальные акценты остаются прежними — это чисто структурный рефакторинг разметки.
