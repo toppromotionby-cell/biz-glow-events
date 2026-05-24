@@ -808,3 +808,24 @@ main, header, footer { position: relative; z-index: 2; }
     animation: none !important;
   }
 }
+
+/* Mobile: отключение всех динамических эффектов (анимации, переходы, transform-hover, parallax) */
+@media (max-width: 767px) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
+  .hover-scale,
+  .hover-scale:hover {
+    transform: none !important;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
