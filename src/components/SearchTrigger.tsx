@@ -87,13 +87,27 @@ export function SearchTrigger() {
   }, []);
   return (
     <>
+      {/* Mobile: icon-only */}
       <button
         onClick={() => setOpen(true)}
         aria-label={`Поиск (${mac ? "⌘" : "Ctrl"}+K)`}
         title={`Поиск (${mac ? "⌘" : "Ctrl"}+K)`}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition"
+        className="md:hidden inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition"
       >
-        <Search className="h-4 w-4" aria-hidden="true" />
+        <Search className="h-5 w-5" aria-hidden="true" />
+      </button>
+      {/* Desktop: full search bar */}
+      <button
+        onClick={() => setOpen(true)}
+        aria-label={`Поиск (${mac ? "⌘" : "Ctrl"}+K)`}
+        title={`Поиск (${mac ? "⌘" : "Ctrl"}+K)`}
+        className="hidden md:inline-flex h-9 w-56 lg:w-72 items-center gap-2 rounded-md border border-border/60 bg-background/40 px-3 text-sm text-muted-foreground hover:border-primary/40 hover:bg-primary/5 transition"
+      >
+        <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="flex-1 text-left truncate">Поиск по сайту…</span>
+        <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border border-border/60 bg-muted/40 px-1.5 font-mono text-[10px] font-medium">
+          {mac ? "⌘" : "Ctrl"}K
+        </kbd>
       </button>
       <SearchDialog open={open} onOpenChange={setOpen} mac={mac} />
     </>
