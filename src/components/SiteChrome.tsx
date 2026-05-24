@@ -196,11 +196,7 @@ export function SiteHeader() {
                       </Link>
                     </SheetClose>
                   </Toggleable>
-                  <SheetClose asChild>
-                    <Link to="/calculator" className="flex items-center gap-3 px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                      <Sparkles className="h-4 w-4" /> Калькулятор сметы
-                    </Link>
-                  </SheetClose>
+                  {/* Калькулятор сметы убран из быстрых действий мобильного меню */}
                 </div>
 
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>

@@ -14,7 +14,6 @@ import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 import { ExitIntentModal } from "@/components/ExitIntentModal";
-import { CartRecoveryBanner } from "@/components/CartRecoveryBanner";
 // SupportChat встроен в FloatingContacts
 
 function NotFoundComponent() {
@@ -192,8 +191,8 @@ function RootComponent() {
           <FloatingContacts />
           <CartSync />
           <ScriptInjector />
-          <ExitIntentModal />
-          <CartRecoveryBanner />
+          <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
+          {/* CartRecoveryBanner удалён вместе с кнопкой закрытия */}
           {/* SupportChat теперь рендерится из FloatingContacts */}
           <DynamicToaster />
         </div>

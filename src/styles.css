@@ -317,6 +317,37 @@
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
+
+/* Привлекающая внимание оранжевая кнопка с переливом */
+@keyframes orange-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes orange-pulse {
+  0%, 100% { box-shadow: 0 0 24px oklch(0.72 0.20 65 / 0.45), 0 0 48px oklch(0.72 0.20 65 / 0.25); }
+  50%      { box-shadow: 0 0 36px oklch(0.78 0.22 70 / 0.7),  0 0 72px oklch(0.78 0.22 70 / 0.4); }
+}
+.btn-orange-shine {
+  position: relative;
+  background: linear-gradient(
+    110deg,
+    oklch(0.72 0.20 65) 0%,
+    oklch(0.82 0.20 75) 25%,
+    oklch(1 0 0 / 0.55) 50%,
+    oklch(0.82 0.20 75) 75%,
+    oklch(0.72 0.20 65) 100%
+  );
+  background-size: 200% 100%;
+  color: oklch(0.12 0 0);
+  animation: orange-shine 3.2s linear infinite, orange-pulse 2.4s ease-in-out infinite;
+  border: 1px solid oklch(0.78 0.18 70 / 0.6);
+}
+.btn-orange-shine:hover { filter: brightness(1.06); transform: translateY(-1px); }
+
+/* Скрываем системный бейдж Lovable во всех окружениях */
+#lovable-badge,
+[id="lovable-badge"],
+[data-lovable-badge] { display: none !important; visibility: hidden !important; }
 .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 .animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
 .animate-gradient {
