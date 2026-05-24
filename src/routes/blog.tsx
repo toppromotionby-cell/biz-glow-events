@@ -85,8 +85,9 @@ function BlogIndex() {
           Скоро здесь появятся первые публикации.
         </div>
       ) : (
+        <>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {posts.map((p) => (
+          {paged.map((p) => (
             <MediaCard
               key={p.id}
               cover={p.cover_url}
@@ -111,6 +112,14 @@ function BlogIndex() {
             </MediaCard>
           ))}
         </div>
+        <PaginationControls
+          total={posts.length}
+          page={page}
+          perPage={perPage}
+          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onPerPageChange={setPerPage}
+        />
+        </>
       )}
     </div>
   );
