@@ -80,7 +80,7 @@ function AdminOrders() {
       qc.invalidateQueries({ queryKey: ["order-modal"] });
       qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Не удалось изменить статус"),
+    onError: (e: Error) => toast.error(e?.message ?? "Не удалось изменить статус"),
   });
 
   const updatePaid = useMutation({
@@ -99,7 +99,7 @@ function AdminOrders() {
       qc.invalidateQueries({ queryKey: ["order-modal"] });
       qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Не удалось обновить оплату"),
+    onError: (e: Error) => toast.error(e?.message ?? "Не удалось обновить оплату"),
   });
 
 
