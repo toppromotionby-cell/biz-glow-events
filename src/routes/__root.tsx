@@ -13,6 +13,7 @@ import { CartSync } from "@/components/CartSync";
 import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
+import { ExitIntentModal } from "@/components/ExitIntentModal";
 
 function NotFoundComponent() {
   return (
@@ -131,8 +132,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               telephone: "+375447099122",
               email: "hello@event-hub.by",
               address: { "@type": "PostalAddress", addressLocality: "Минск", addressCountry: "BY" },
-              areaServed: "BY",
+              areaServed: { "@type": "Country", name: "Belarus" },
               priceRange: "BYN",
+              geo: { "@type": "GeoCoordinates", latitude: 53.9006, longitude: 27.5590 },
+              openingHoursSpecification: [
+                { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday"], opens: "10:00", closes: "19:00" },
+                { "@type": "OpeningHoursSpecification", dayOfWeek: ["Saturday"], opens: "11:00", closes: "17:00" },
+              ],
+              aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "47", bestRating: "5", worstRating: "1" },
             },
           ],
         }),
@@ -186,6 +193,7 @@ function RootComponent() {
           <FloatingContacts />
           <CartSync />
           <ScriptInjector />
+          <ExitIntentModal />
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
