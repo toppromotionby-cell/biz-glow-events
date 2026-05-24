@@ -297,8 +297,8 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
       qc.invalidateQueries({ queryKey: ["catalog", table] });
       qc.invalidateQueries({ queryKey: ["catalog", target] });
       navigate({ to: "/admin/catalog/$type", params: { type: target } });
-    } catch (e: any) {
-      toast.error(e.message ?? "Не удалось переместить");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось переместить");
     } finally {
       setMoving(false);
       setMoveTarget("");
