@@ -45,24 +45,34 @@ export function SiteHeader() {
   const { count: cmpCount } = useCompare();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [scrolling, setScrolling] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
+    const onScroll = () => {
+      setScrolled(window.scrollY > 40);
+      setScrolling(true);
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => setScrolling(false), 180);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (idleTimer) clearTimeout(idleTimer);
+    };
   }, []);
 
   return (
     <Toggleable sectionKey="header.root" as="div">
       <header
         data-scrolled={scrolled ? "true" : "false"}
-        className="sticky top-0 z-40 glass-strong border-b border-border/50 transition-[height,backdrop-filter] duration-200"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
+        className="sticky top-0 z-40 glass-strong border-b border-border/50 transition-transform duration-300 ease-out will-change-transform"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          transform: scrolling && scrolled ? "translateY(-100%)" : "translateY(0)",
+        }}
       >
-        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground">
-          Перейти к содержимому
-        </a>
         <div className={`container mx-auto px-4 flex items-center justify-between gap-2 md:gap-4 transition-all duration-200 ${scrolled ? "h-12 md:h-14" : "h-16"}`}>
           <Toggleable sectionKey="header.brand" as="span">
             <Link to="/" aria-label="event-hub.by — на главную" className="flex items-center gap-2 font-display font-bold text-lg whitespace-nowrap shrink-0">
