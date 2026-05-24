@@ -4,7 +4,7 @@
 // из FloatingContacts (через props open/onClose).
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { getMyThread, sendSupportMessage } from "@/lib/support.functions";
@@ -132,6 +132,14 @@ export function SupportChat({ open: openProp, onClose, hideTrigger }: Props = {}
                 {greetingName ? `Здравствуйте, ${greetingName}!` : "Ответим в чате"}
               </div>
             </div>
+            <button
+              type="button"
+              onClick={closeChat}
+              aria-label="Закрыть"
+              className="absolute right-0 top-0 inline-flex h-9 w-11 items-center justify-center bg-primary text-primary-foreground rounded-bl-md rounded-tr-2xl shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/60"
+            >
+              <X className="h-4 w-4" strokeWidth={2.5} />
+            </button>
           </div>
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
             {messages.length === 0 && (

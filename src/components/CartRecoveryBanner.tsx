@@ -1,7 +1,7 @@
 // Баннер восстановления корзины + автонотификация в Telegram через 1 час бездействия.
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";
@@ -96,6 +96,14 @@ export function CartRecoveryBanner() {
 
   return (
     <div className="fixed bottom-4 left-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 rounded-xl border border-border/60 bg-background/95 p-4 shadow-2xl backdrop-blur-md md:bottom-6">
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Закрыть"
+        className="absolute right-0 top-0 inline-flex h-9 w-11 items-center justify-center bg-primary text-primary-foreground rounded-bl-md rounded-tr-xl shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <X className="h-4 w-4" strokeWidth={2.5} />
+      </button>
       <div className="flex items-center gap-3 pr-6">
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gradient-primary text-primary-foreground">
           <ShoppingCart className="h-5 w-5" />
