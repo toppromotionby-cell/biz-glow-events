@@ -333,33 +333,36 @@
     border-color: color-mix(in oklab, var(--color-destructive) 50%, transparent);
   }
   /* Кнопка закрытия модалок (dialog/sheet).
-     Закрепляется в правом верхнем углу контейнера модалки, который сам
-     не скроллится (скролл — у внутреннего враппера), поэтому простого
-     right: top достаточно. */
+     Sticky-позиционирование держит кнопку у правого верхнего угла модалки,
+     даже если содержимое внутри прокручивается. Отрицательные отступы
+     компенсируют padding родителя, чтобы кнопка вставала вплотную к углу. */
   .btn-dialog-close {
-    position: absolute;
-    top: 0.625rem;
-    right: 0.625rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    justify-self: end;
+    align-self: start;
+    margin: -0.5rem -0.5rem -2.5rem auto;
     display: inline-flex;
     height: 2.5rem;
     width: 2.5rem;
     align-items: center;
     justify-content: center;
     border-radius: 9999px;
-    background: color-mix(in oklab, var(--color-muted) 50%, transparent);
+    background: color-mix(in oklab, var(--color-muted) 70%, var(--color-background));
     color: var(--color-foreground);
-    border: 1px solid color-mix(in oklab, var(--color-border) 60%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
     transition: background-color 150ms, color 150ms, transform 150ms;
-    z-index: 10;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
   @media (min-width: 640px) {
     .btn-dialog-close {
-      top: 0.75rem;
-      right: 0.75rem;
+      margin: -0.75rem -0.75rem -2.5rem auto;
     }
   }
   .btn-dialog-close:hover {
-    background: color-mix(in oklab, var(--color-muted) 80%, transparent);
+    background: color-mix(in oklab, var(--color-muted) 90%, var(--color-background));
     color: var(--color-foreground);
   }
   .btn-dialog-close:focus-visible {
