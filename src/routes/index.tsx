@@ -343,7 +343,9 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
           </DialogDescription>
         </div>
         <div className="px-6 pt-5 pb-6 max-h-[70vh] overflow-y-auto">
-          <LeadForm source={topic ? `home_order:${topic}` : "home_order"} />
+          <Suspense fallback={<div className="h-40" />}>
+            <LeadForm source={topic ? `home_order:${topic}` : "home_order"} />
+          </Suspense>
           <div className="mt-6 pt-5 border-t border-border/60">
             <h4 className="font-display font-semibold text-base mb-3">Контакты</h4>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
