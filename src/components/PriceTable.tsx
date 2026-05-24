@@ -127,6 +127,7 @@ export function PriceTableEditor({
                       onClick={() => remove(i)}
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
                       title="Удалить строку"
+                      aria-label="Удалить строку"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
