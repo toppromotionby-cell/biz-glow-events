@@ -15,6 +15,15 @@ const SheetTrigger = SheetPrimitive.Trigger;
 
 const SheetClose = SheetPrimitive.Close;
 
+const sheetClosePosition: React.CSSProperties = {
+  top: "0.875rem",
+  right: "0.875rem",
+  bottom: "auto",
+  left: "auto",
+  insetInlineStart: "auto",
+  insetInlineEnd: "0.875rem",
+};
+
 const SheetPortal = SheetPrimitive.Portal;
 
 const SheetOverlay = React.forwardRef<
@@ -66,6 +75,7 @@ const SheetContent = React.forwardRef<
       <SheetPrimitive.Close
         aria-label="Закрыть"
         className="btn-dialog-close"
+        style={sheetClosePosition}
       >
         <X className="h-4 w-4" strokeWidth={2.5} />
         <span className="sr-only">Закрыть</span>

@@ -16,6 +16,15 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
+const modalClosePosition: React.CSSProperties = {
+  top: "0.875rem",
+  right: "0.875rem",
+  bottom: "auto",
+  left: "auto",
+  insetInlineStart: "auto",
+  insetInlineEnd: "0.875rem",
+};
+
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -48,6 +57,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Close
         aria-label="Закрыть"
         className="btn-dialog-close"
+        style={modalClosePosition}
       >
         <X className="h-4 w-4" strokeWidth={2.5} />
         <span className="sr-only">Закрыть</span>
