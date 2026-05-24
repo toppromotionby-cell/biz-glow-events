@@ -142,6 +142,27 @@ function ProfilePage() {
 
   const canEdit = (status: string) => ["new", "consultation", "estimate"].includes(status);
 
+  function repeatOrder(orderId: string) {
+    const d = details[orderId];
+    if (!d || d.items.length === 0) { toast.error("Нет позиций для повтора"); return; }
+    if (typeof window !== "undefined" && !window.confirm("Заменить текущую корзину позициями этой заявки?")) return;
+    clearCart();
+    for (const it of d.items) {
+      const meta = (it.meta as { slug?: string } | null) ?? null;
+      addToCart({
+        id: it.entity_id ?? meta?.slug ?? it.id,
+        entity_type: it.entity_type as CartEntityType,
+        slug: meta?.slug ?? it.entity_id ?? it.id,
+        title: it.title,
+        price: Number(it.price ?? 0),
+        qty: Number(it.qty ?? 1),
+      });
+    }
+    toast.success("Позиции добавлены в корзину");
+    navigate({ to: "/cart" });
+  }
+
+
 
   if (loading || !profile) return <div className="container mx-auto px-4 py-16">Загрузка...</div>;
 
