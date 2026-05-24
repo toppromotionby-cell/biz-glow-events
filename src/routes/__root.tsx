@@ -14,8 +14,6 @@ import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
 import { ExitIntentModal } from "@/components/ExitIntentModal";
-import { Toggleable } from "@/lib/site-sections";
-import { CartRecoveryBanner } from "@/components/CartRecoveryBanner";
 // SupportChat встроен в FloatingContacts
 
 function NotFoundComponent() {
