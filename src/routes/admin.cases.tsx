@@ -98,7 +98,10 @@ function CasesAdmin() {
               onSaved={() => qc.invalidateQueries({ queryKey: ["admin-cases"] })}
             />
           ) : (
-            <AdminEmptyEditor text="Выберите кейс или создайте новый" />
+            <AdminEmptyEditor
+              title="Кейс не выбран"
+              description="Выберите кейс из списка слева для редактирования или создайте новый."
+            />
           )}
         </div>
       </div>

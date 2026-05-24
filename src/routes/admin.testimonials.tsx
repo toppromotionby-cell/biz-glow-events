@@ -89,8 +89,10 @@ function Page() {
         {selected ? (
           <Editor key={selected.id} row={selected} onDelete={() => remove.mutate(selected.id)} />
         ) : (
-          <AdminEmptyEditor text="Выберите отзыв или создайте новый" />
-        )}
+          <AdminEmptyEditor
+            title="Отзыв не выбран"
+            description="Выберите отзыв из списка слева, чтобы отредактировать его, или создайте новый."
+          />)}
       </div>
     </div>
   );
