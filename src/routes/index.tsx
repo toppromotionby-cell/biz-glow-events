@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, CalendarCheck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { GuestEstimator } from "@/components/GuestEstimator";
 import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
 import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
+import { LeadForm } from "@/components/LeadForm";
+import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 
 import { Toggleable } from "@/lib/site-sections";
@@ -57,6 +60,7 @@ function HomePage() {
   const { data } = useSuspenseQuery(homeQueryOptions);
   const { featured, posts, cases } = data;
   const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
+  const [orderTopic, setOrderTopic] = useState<string | null>(null);
 
   return (
     <div>
