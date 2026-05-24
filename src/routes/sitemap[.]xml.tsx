@@ -35,6 +35,12 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/terms-rental", priority: "0.5", changefreq: "yearly" },
   { path: "/privacy", priority: "0.2", changefreq: "yearly" },
   { path: "/offer", priority: "0.2", changefreq: "yearly" },
+  { path: "/geo/minsk", priority: "0.8", changefreq: "monthly" },
+  { path: "/geo/gomel", priority: "0.7", changefreq: "monthly" },
+  { path: "/geo/brest", priority: "0.7", changefreq: "monthly" },
+  { path: "/geo/grodno", priority: "0.7", changefreq: "monthly" },
+  { path: "/geo/vitebsk", priority: "0.7", changefreq: "monthly" },
+  { path: "/geo/mogilev", priority: "0.7", changefreq: "monthly" },
 ];
 
 type Row = { slug: string; updated_at: string };

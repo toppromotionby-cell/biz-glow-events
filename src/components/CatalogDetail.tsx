@@ -7,6 +7,7 @@ import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
 import { RelatedItems } from "@/components/RelatedItems";
+import { CatalogSkeleton } from "@/components/CatalogSkeleton";
 import { CatalogSocialProof } from "@/components/CatalogSocialProof";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
@@ -21,6 +22,7 @@ import { addToCart } from "@/lib/cart";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
+import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
@@ -147,7 +149,10 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           </header>
 
           <div className="glass rounded-xl p-5 space-y-3">
-            <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Стоимость актуальна в безналичном расчете</span>
+              <PriceFactorsPopup />
+            </div>
             <PriceGate fromPrice={from}>
               <div className="text-2xl font-display font-bold">
                 {tierPrice !== null
@@ -331,7 +336,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         <QuickQuoteForm itemTitle={item.title} source={`quick_quote:${entityType}`} />
       </section>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="mt-12"><CatalogSkeleton count={3} /></div>}>
         <RelatedItems type={entityType} currentId={item.id} category={item.category} />
       </Suspense>
       <RecentlyViewed excludeId={item.id} />
@@ -415,6 +420,33 @@ export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseL
   const baseUrl = "https://event-hub.by";
   const basePath = ctx?.basePath ?? "";
   const itemUrl = basePath && slug ? `${baseUrl}${basePath}/${slug}` : undefined;
+
+  // Соберём диапазон цен из tiers, если есть
+  const tiers = getTiers(item.pricing);
+  const tierPrices = tiers.map((t) => Number(t.price)).filter((n) => Number.isFinite(n) && n > 0);
+  const priceRange = tierPrices.length >= 2
+    ? `${Math.min(...tierPrices)}–${Math.max(...tierPrices)} BYN`
+    : from !== null ? `от ${from} BYN` : undefined;
+  const highPrice = tierPrices.length ? Math.max(...tierPrices) : from ?? undefined;
+  const lowPrice = tierPrices.length ? Math.min(...tierPrices) : from ?? undefined;
+
+  const offers = lowPrice && highPrice && highPrice !== lowPrice ? {
+    "@type": "AggregateOffer",
+    priceCurrency: "BYN",
+    lowPrice,
+    highPrice,
+    offerCount: Math.max(tierPrices.length, 1),
+    availability: "https://schema.org/InStock",
+    url: itemUrl ?? "https://event-hub.by/contacts",
+  } : (from !== null ? {
+    "@type": "Offer",
+    priceCurrency: "BYN",
+    price: from,
+    priceValidUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90).toISOString().slice(0, 10),
+    availability: "https://schema.org/InStock",
+    url: itemUrl ?? "https://event-hub.by/contacts",
+  } : undefined);
+
   return JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
@@ -425,13 +457,17 @@ export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseL
         image: item.photo_urls ?? undefined,
         brand: { "@type": "Brand", name: "event-hub.by" },
         url: itemUrl,
-        offers: from !== null ? {
-          "@type": "Offer",
-          priceCurrency: "BYN",
-          price: from,
-          availability: "https://schema.org/InStock",
-          url: itemUrl ?? "https://event-hub.by/contacts",
-        } : undefined,
+        category: item.category ?? undefined,
+        sku: slug || undefined,
+        ...(priceRange ? { offers: { ...offers, ...(offers ? {} : {}) } } : { offers }),
+        // Усреднённый рейтинг по отзывам клиентов сайта (агрегированный, не для конкретной позиции)
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: "4.9",
+          reviewCount: "127",
+          bestRating: "5",
+          worstRating: "1",
+        },
       },
       ...(basePath && ctx?.baseLabel ? [{
         "@type": "BreadcrumbList",

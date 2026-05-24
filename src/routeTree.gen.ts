@@ -15,6 +15,10 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TestimonialsRouteImport } from './routes/testimonials'
 import { Route as TermsRentalRouteImport } from './routes/terms-rental'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SitemapServicesDotxmlRouteImport } from './routes/sitemap-services[.]xml'
+import { Route as SitemapIndexDotxmlRouteImport } from './routes/sitemap-index[.]xml'
+import { Route as SitemapEquipmentDotxmlRouteImport } from './routes/sitemap-equipment[.]xml'
+import { Route as SitemapBlogDotxmlRouteImport } from './routes/sitemap-blog[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -46,6 +50,7 @@ import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
+import { Route as GeoCityRouteImport } from './routes/geo.$city'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
@@ -105,6 +110,26 @@ const TermsRentalRoute = TermsRentalRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapServicesDotxmlRoute = SitemapServicesDotxmlRouteImport.update({
+  id: '/sitemap-services.xml',
+  path: '/sitemap-services.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapIndexDotxmlRoute = SitemapIndexDotxmlRouteImport.update({
+  id: '/sitemap-index.xml',
+  path: '/sitemap-index.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapEquipmentDotxmlRoute = SitemapEquipmentDotxmlRouteImport.update({
+  id: '/sitemap-equipment.xml',
+  path: '/sitemap-equipment.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapBlogDotxmlRoute = SitemapBlogDotxmlRouteImport.update({
+  id: '/sitemap-blog.xml',
+  path: '/sitemap-blog.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServicesRoute = ServicesRouteImport.update({
@@ -260,6 +285,11 @@ const ProductionSlugRoute = ProductionSlugRouteImport.update({
 const LpSlugRoute = LpSlugRouteImport.update({
   id: '/lp/$slug',
   path: '/lp/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GeoCityRoute = GeoCityRouteImport.update({
+  id: '/geo/$city',
+  path: '/geo/$city',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
@@ -446,6 +476,10 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
+  '/sitemap-blog.xml': typeof SitemapBlogDotxmlRoute
+  '/sitemap-equipment.xml': typeof SitemapEquipmentDotxmlRoute
+  '/sitemap-index.xml': typeof SitemapIndexDotxmlRoute
+  '/sitemap-services.xml': typeof SitemapServicesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
@@ -468,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/geo/$city': typeof GeoCityRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -514,6 +549,10 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
+  '/sitemap-blog.xml': typeof SitemapBlogDotxmlRoute
+  '/sitemap-equipment.xml': typeof SitemapEquipmentDotxmlRoute
+  '/sitemap-index.xml': typeof SitemapIndexDotxmlRoute
+  '/sitemap-services.xml': typeof SitemapServicesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
@@ -536,6 +575,7 @@ export interface FileRoutesByTo {
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/geo/$city': typeof GeoCityRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -584,6 +624,10 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
+  '/sitemap-blog.xml': typeof SitemapBlogDotxmlRoute
+  '/sitemap-equipment.xml': typeof SitemapEquipmentDotxmlRoute
+  '/sitemap-index.xml': typeof SitemapIndexDotxmlRoute
+  '/sitemap-services.xml': typeof SitemapServicesDotxmlRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
@@ -606,6 +650,7 @@ export interface FileRoutesById {
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
+  '/geo/$city': typeof GeoCityRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -655,6 +700,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/robots.txt'
     | '/services'
+    | '/sitemap-blog.xml'
+    | '/sitemap-equipment.xml'
+    | '/sitemap-index.xml'
+    | '/sitemap-services.xml'
     | '/sitemap.xml'
     | '/terms-rental'
     | '/testimonials'
@@ -677,6 +726,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
+    | '/geo/$city'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -723,6 +773,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/robots.txt'
     | '/services'
+    | '/sitemap-blog.xml'
+    | '/sitemap-equipment.xml'
+    | '/sitemap-index.xml'
+    | '/sitemap-services.xml'
     | '/sitemap.xml'
     | '/terms-rental'
     | '/testimonials'
@@ -745,6 +799,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
+    | '/geo/$city'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -792,6 +847,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/robots.txt'
     | '/services'
+    | '/sitemap-blog.xml'
+    | '/sitemap-equipment.xml'
+    | '/sitemap-index.xml'
+    | '/sitemap-services.xml'
     | '/sitemap.xml'
     | '/terms-rental'
     | '/testimonials'
@@ -814,6 +873,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
+    | '/geo/$city'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -862,6 +922,10 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ServicesRoute: typeof ServicesRouteWithChildren
+  SitemapBlogDotxmlRoute: typeof SitemapBlogDotxmlRoute
+  SitemapEquipmentDotxmlRoute: typeof SitemapEquipmentDotxmlRoute
+  SitemapIndexDotxmlRoute: typeof SitemapIndexDotxmlRoute
+  SitemapServicesDotxmlRoute: typeof SitemapServicesDotxmlRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRentalRoute: typeof TermsRentalRoute
   TestimonialsRoute: typeof TestimonialsRoute
@@ -869,6 +933,7 @@ export interface RootRouteChildren {
   WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  GeoCityRoute: typeof GeoCityRoute
   LpSlugRoute: typeof LpSlugRoute
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -920,6 +985,34 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-services.xml': {
+      id: '/sitemap-services.xml'
+      path: '/sitemap-services.xml'
+      fullPath: '/sitemap-services.xml'
+      preLoaderRoute: typeof SitemapServicesDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-index.xml': {
+      id: '/sitemap-index.xml'
+      path: '/sitemap-index.xml'
+      fullPath: '/sitemap-index.xml'
+      preLoaderRoute: typeof SitemapIndexDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-equipment.xml': {
+      id: '/sitemap-equipment.xml'
+      path: '/sitemap-equipment.xml'
+      fullPath: '/sitemap-equipment.xml'
+      preLoaderRoute: typeof SitemapEquipmentDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap-blog.xml': {
+      id: '/sitemap-blog.xml'
+      path: '/sitemap-blog.xml'
+      fullPath: '/sitemap-blog.xml'
+      preLoaderRoute: typeof SitemapBlogDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/services': {
@@ -1137,6 +1230,13 @@ declare module '@tanstack/react-router' {
       path: '/lp/$slug'
       fullPath: '/lp/$slug'
       preLoaderRoute: typeof LpSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/geo/$city': {
+      id: '/geo/$city'
+      path: '/geo/$city'
+      fullPath: '/geo/$city'
+      preLoaderRoute: typeof GeoCityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipment/$slug': {
@@ -1537,6 +1637,10 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   ServicesRoute: ServicesRouteWithChildren,
+  SitemapBlogDotxmlRoute: SitemapBlogDotxmlRoute,
+  SitemapEquipmentDotxmlRoute: SitemapEquipmentDotxmlRoute,
+  SitemapIndexDotxmlRoute: SitemapIndexDotxmlRoute,
+  SitemapServicesDotxmlRoute: SitemapServicesDotxmlRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRentalRoute: TermsRentalRoute,
   TestimonialsRoute: TestimonialsRoute,
@@ -1544,6 +1648,7 @@ const rootRouteChildren: RootRouteChildren = {
   WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  GeoCityRoute: GeoCityRoute,
   LpSlugRoute: LpSlugRoute,
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,

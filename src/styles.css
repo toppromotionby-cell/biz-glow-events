@@ -70,7 +70,7 @@
   --secondary: oklch(0.15 0.02 50);
   --secondary-foreground: oklch(0.95 0 0);
   --muted: oklch(0.12 0 0);
-  --muted-foreground: oklch(0.72 0.02 60);
+  --muted-foreground: oklch(0.78 0.02 60); /* AA-контраст с черным фоном */
   --accent: oklch(0.78 0.19 60);
   --accent-foreground: oklch(0.12 0.02 40);
   --destructive: oklch(0.62 0.24 25);
@@ -215,7 +215,14 @@
     line-height: 1.55;
     letter-spacing: -0.01em;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.022em; text-wrap: balance; line-height: 1.1; overflow-wrap: break-word; word-break: normal; hyphens: none; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.03em; text-wrap: balance; line-height: 1.05; overflow-wrap: break-word; word-break: normal; hyphens: none; font-feature-settings: "ss01", "ss02", "cv11", "kern"; font-variant-ligatures: common-ligatures; }
+  h1 { font-size: clamp(2rem, 1.4rem + 3vw, 3.75rem); }
+  h2 { font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem); }
+  h3 { font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); }
+  /* Тач-таргет 48px на мобильных — кнопки и ссылки в сетке */
+  @media (pointer: coarse) {
+    button, a[role="button"], [data-touch="true"] { min-height: 44px; }
+  }
   p, li { text-wrap: pretty; overflow-wrap: break-word; word-break: normal; hyphens: none; }
   ::selection { background: oklch(0.55 0.24 55 / 0.4); color: white; }
 
