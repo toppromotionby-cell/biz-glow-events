@@ -75,9 +75,6 @@ export function CatalogQuickView({
             <p className="text-sm text-muted-foreground mb-6 max-w-[240px]">
               Запись была удалена или перемещена
             </p>
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Закрыть
-            </Button>
           </div>
         )}
         {data && <Body item={data} basePath={basePath} type={type} onClose={() => onOpenChange(false)} />}
