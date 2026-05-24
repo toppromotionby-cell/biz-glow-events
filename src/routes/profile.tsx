@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronUp, Package, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Package, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { updateOwnOrder, deleteOwnOrder } from "@/lib/orders.functions";
+import { addToCart, clearCart, type CartEntityType } from "@/lib/cart";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -140,6 +141,27 @@ function ProfilePage() {
   }
 
   const canEdit = (status: string) => ["new", "consultation", "estimate"].includes(status);
+
+  function repeatOrder(orderId: string) {
+    const d = details[orderId];
+    if (!d || d.items.length === 0) { toast.error("Нет позиций для повтора"); return; }
+    if (typeof window !== "undefined" && !window.confirm("Заменить текущую корзину позициями этой заявки?")) return;
+    clearCart();
+    for (const it of d.items) {
+      const meta = (it.meta as { slug?: string } | null) ?? null;
+      addToCart({
+        id: it.entity_id ?? meta?.slug ?? it.id,
+        entity_type: it.entity_type as CartEntityType,
+        slug: meta?.slug ?? it.entity_id ?? it.id,
+        title: it.title,
+        price: Number(it.price ?? 0),
+        qty: Number(it.qty ?? 1),
+      });
+    }
+    toast.success("Позиции добавлены в корзину");
+    navigate({ to: "/cart" });
+  }
+
 
 
   if (loading || !profile) return <div className="container mx-auto px-4 py-16">Загрузка...</div>;
@@ -271,8 +293,18 @@ function ProfilePage() {
                               <Button size="sm" variant="outline" onClick={() => openEdit(o)}>
                                 <Pencil className="h-3.5 w-3.5 mr-1.5" /> Редактировать
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => repeatOrder(o.id)} disabled={!d || d.items.length === 0}>
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Повторить
+                              </Button>
                               <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(o.id)}>
                                 <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Удалить
+                              </Button>
+                            </div>
+                          )}
+                          {!canEdit(o.status) && d && d.items.length > 0 && (
+                            <div className="pt-2 border-t border-border/40">
+                              <Button size="sm" variant="outline" onClick={() => repeatOrder(o.id)}>
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Повторить заказ
                               </Button>
                             </div>
                           )}

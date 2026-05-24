@@ -1,25 +1,91 @@
-// Баннер восстановления корзины: если в корзине есть товары и пользователь не на /cart,
-// показываем плашку с напоминанием. Закрытие — на сессию.
+// Баннер восстановления корзины + автонотификация в Telegram через 1 час бездействия.
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ShoppingCart, X } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { notifyAbandonedCart } from "@/lib/cart-recovery.functions";
 
 const DISMISS_KEY = "eh_cart_recovery_dismissed_v1";
+const NOTIFIED_KEY = "eh_cart_abandoned_notified_v1";
+const INACTIVITY_MS = 60 * 60 * 1000; // 1 час
+
+function hashCart(items: { title: string; qty: number }[]): string {
+  const s = items
+    .map((i) => `${i.title}|${i.qty}`)
+    .sort()
+    .join("::");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h).toString(36);
+}
 
 export function CartRecoveryBanner() {
-  const { count, total } = useCart();
+  const { items, count, total } = useCart();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { user } = useAuth();
+  const notify = useServerFn(notifyAbandonedCart);
   const [show, setShow] = useState(false);
+  const timerRef = useRef<number | null>(null);
 
+  // Баннер: показываем через 6с
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (count === 0) { setShow(false); return; }
-    if (path === "/cart") { setShow(false); return; }
+    if (path === "/cart" || path === "/order/success") { setShow(false); return; }
     if (sessionStorage.getItem(DISMISS_KEY)) return;
     const t = window.setTimeout(() => setShow(true), 6000);
     return () => window.clearTimeout(t);
   }, [count, path]);
+
+  // Нотификация админу через 1ч бездействия
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (timerRef.current) { window.clearTimeout(timerRef.current); timerRef.current = null; }
+    if (count === 0 || path === "/cart" || path === "/order/success") return;
+
+    const cart_hash = hashCart(items.map((i) => ({ title: i.title, qty: i.qty })));
+    let notified: Record<string, number> = {};
+    try { notified = JSON.parse(localStorage.getItem(NOTIFIED_KEY) ?? "{}"); } catch {}
+    // Если для этого хеша уже отправляли за последние 24ч — пропускаем.
+    const last = notified[cart_hash];
+    if (last && Date.now() - last < 24 * 60 * 60 * 1000) return;
+
+    timerRef.current = window.setTimeout(async () => {
+      try {
+        let profile: { full_name?: string; email?: string; phone?: string } | null = null;
+        if (user) {
+          const { data } = await supabase
+            .from("profiles")
+            .select("full_name,email,phone")
+            .eq("id", user.id)
+            .maybeSingle();
+          profile = data;
+        }
+        await notify({ data: {
+          cart_hash,
+          client_name: profile?.full_name ?? null,
+          client_email: profile?.email ?? user?.email ?? null,
+          client_phone: profile?.phone ?? null,
+          user_id: user?.id ?? null,
+          items: items.map((i) => ({ title: i.title, qty: i.qty, price: i.price })),
+          total,
+          page_url: typeof window !== "undefined" ? window.location.href : null,
+        }});
+        notified[cart_hash] = Date.now();
+        try { localStorage.setItem(NOTIFIED_KEY, JSON.stringify(notified)); } catch {}
+      } catch (e) {
+        // тихо — не мешаем UX
+        console.warn("[abandoned-cart] notify failed", e);
+      }
+    }, INACTIVITY_MS);
+
+    return () => {
+      if (timerRef.current) { window.clearTimeout(timerRef.current); timerRef.current = null; }
+    };
+  }, [items, count, total, path, user, notify]);
 
   if (!show || count === 0 || path === "/cart") return null;
 
