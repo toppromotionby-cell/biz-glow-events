@@ -333,11 +333,11 @@
     border-color: color-mix(in oklab, var(--color-destructive) 50%, transparent);
   }
   /* Кнопка закрытия модалок (dialog/sheet/баннер/чат).
-     Native-стиль: правый верхний угол, нейтральный круг, comfort-tap 44×44 на мобиле. */
+     Native-стиль: левый верхний угол, нейтральный круг, comfort-tap 44×44 на мобиле. */
   .btn-dialog-close {
     position: absolute;
     top: 0.5rem;
-    right: 0.5rem;
+    left: 0.5rem;
     display: inline-flex;
     height: 2.75rem;
     width: 2.75rem;
@@ -353,7 +353,7 @@
   @media (min-width: 640px) {
     .btn-dialog-close {
       top: 0.75rem;
-      right: 0.75rem;
+      left: 0.75rem;
       height: 2.25rem;
       width: 2.25rem;
     }
