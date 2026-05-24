@@ -342,18 +342,22 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
           <div className="mt-6 pt-5 border-t border-border/60">
             <h4 className="font-display font-semibold text-base mb-3">Контакты</h4>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
-              <a href={`mailto:${CONTACT.email}`} className="glass rounded-lg p-3 hover:border-primary/50 transition">
-                <div className="text-xs text-muted-foreground">E-mail</div>
-                <div className="font-medium break-all">{CONTACT.email}</div>
-              </a>
-              <div className="glass rounded-lg p-3">
-                <div className="text-xs text-muted-foreground">Адрес</div>
-                <div className="font-medium">{CONTACT.address}</div>
-              </div>
-              <div className="glass rounded-lg p-3 sm:col-span-2">
-                <div className="text-xs text-muted-foreground">Часы работы</div>
-                <div className="font-medium">{CONTACT.hours}</div>
-              </div>
+              {[
+                { label: "E-mail", value: CONTACT.email, href: `mailto:${CONTACT.email}`, breakAll: true },
+                { label: "Адрес", value: CONTACT.address },
+                { label: "Часы работы", value: CONTACT.hours, span: true },
+              ].map((c) => {
+                const cls = `glass rounded-lg p-3 ${c.span ? "sm:col-span-2" : ""} ${c.href ? "hover:border-primary/50 transition" : ""}`;
+                const body = (
+                  <>
+                    <div className="text-xs text-muted-foreground">{c.label}</div>
+                    <div className={`font-medium ${c.breakAll ? "break-all" : ""}`}>{c.value}</div>
+                  </>
+                );
+                return c.href
+                  ? <a key={c.label} href={c.href} className={cls}>{body}</a>
+                  : <div key={c.label} className={cls}>{body}</div>;
+              })}
             </div>
           </div>
         </div>
