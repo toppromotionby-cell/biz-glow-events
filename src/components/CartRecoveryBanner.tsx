@@ -100,7 +100,7 @@ export function CartRecoveryBanner() {
         type="button"
         onClick={dismiss}
         aria-label="Закрыть"
-        className="absolute right-0 top-0 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="absolute left-0 top-0 inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <X className="h-3 w-3" strokeWidth={2.5} />
       </button>
