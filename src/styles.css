@@ -333,16 +333,14 @@
     border-color: color-mix(in oklab, var(--color-destructive) 50%, transparent);
   }
   /* Кнопка закрытия модалок (dialog/sheet).
-     Sticky-позиционирование держит кнопку у правого верхнего угла модалки,
-     даже если содержимое внутри прокручивается. Отрицательные отступы
-     компенсируют padding родителя, чтобы кнопка вставала вплотную к углу. */
+     Контейнер модалки не скроллится сам (overflow:hidden), скроллится
+     внутренний враппер с контентом — поэтому absolute right/top держится
+     на углу модалки и не уезжает с прокруткой. */
   .btn-dialog-close {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    justify-self: end;
-    align-self: start;
-    margin: -0.5rem -0.5rem -2.5rem auto;
+    position: absolute;
+    top: 0.625rem;
+    right: 0.625rem;
+    z-index: 20;
     display: inline-flex;
     height: 2.5rem;
     width: 2.5rem;
@@ -358,7 +356,8 @@
   }
   @media (min-width: 640px) {
     .btn-dialog-close {
-      margin: -0.75rem -0.75rem -2.5rem auto;
+      top: 0.75rem;
+      right: 0.75rem;
     }
   }
   .btn-dialog-close:hover {
