@@ -7,10 +7,29 @@ import { listCampaigns, saveCampaign, deleteCampaign, startCampaign } from "@/li
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Megaphone, Plus, Trash2, ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminTable } from "@/components/admin/AdminTable";
+import { Field } from "@/components/admin/Field";
+import { StatusPill, type PillTone } from "@/components/admin/StatusPill";
+
+const STATUS_TONE: Record<string, PillTone> = {
+  completed: "success",
+  sending: "info",
+  failed: "danger",
+  draft: "muted",
+};
+
+const TABLE_COLS = [
+  { key: "subject", label: "Тема" },
+  { key: "status", label: "Статус" },
+  { key: "recipients", label: "Получатели" },
+  { key: "sent", label: "Отправлено" },
+  { key: "date", label: "Дата" },
+  { key: "actions", label: "", className: "w-12" },
+];
 
 export const Route = createFileRoute("/admin/newsletter/campaigns")({ component: Page });
 
