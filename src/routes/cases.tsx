@@ -26,6 +26,10 @@ export const Route = createFileRoute("/cases")({
 
 function CasesPage() {
   const { data: cases } = useSuspenseQuery(casesQuery);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<PerPage>(30);
+  useEffect(() => { setPage(1); }, [perPage]);
+  const paged = cases.slice((page - 1) * perPage, page * perPage);
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       <header className="mb-10">
