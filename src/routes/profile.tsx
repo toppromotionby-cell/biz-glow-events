@@ -198,19 +198,14 @@ function ProfilePage() {
           <Button asChild size="sm" variant="outline"><Link to="/cart">Корзина</Link></Button>
           <Button asChild size="sm" variant="outline"><Link to="/equipment">Каталог</Link></Button>
           <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut().then(() => navigate({ to: "/" }))}>Выйти</Button>
+          <div className="pt-1"><ThemeToggle /></div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div>
         <ChangePasswordCard />
-        <div className="glass rounded-xl p-6 flex items-center justify-between gap-4">
-          <div>
-            <h3 className="font-semibold mb-1">Тема оформления</h3>
-            <p className="text-sm text-muted-foreground">Светлая, тёмная или системная</p>
-          </div>
-          <ThemeToggle />
-        </div>
       </div>
+
 
       <div>
         <h2 className="text-xl font-display font-semibold mb-4">История заявок</h2>
@@ -288,26 +283,7 @@ function ProfilePage() {
                               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{o.notes}</p>
                             </div>
                           )}
-                          {canEdit(o.status) && (
-                            <div className="flex flex-wrap gap-2 pt-2 border-t border-border/40">
-                              <Button size="sm" variant="outline" onClick={() => openEdit(o)}>
-                                <Pencil className="h-3.5 w-3.5 mr-1.5" /> Редактировать
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => repeatOrder(o.id)} disabled={!d || d.items.length === 0}>
-                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Повторить
-                              </Button>
-                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(o.id)}>
-                                <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Удалить
-                              </Button>
-                            </div>
-                          )}
-                          {!canEdit(o.status) && d && d.items.length > 0 && (
-                            <div className="pt-2 border-t border-border/40">
-                              <Button size="sm" variant="outline" onClick={() => repeatOrder(o.id)}>
-                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Повторить заказ
-                              </Button>
-                            </div>
-                          )}
+
                         </>
                       )}
                     </div>
