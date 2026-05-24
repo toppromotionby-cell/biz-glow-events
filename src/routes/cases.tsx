@@ -40,8 +40,9 @@ function CasesPage() {
       {cases.length === 0 ? (
         <div className="glass rounded-xl p-12 text-center text-muted-foreground">Скоро здесь появятся наши работы.</div>
       ) : (
+        <>
         <ul className="grid md:grid-cols-2 gap-6">
-          {cases.map((c) => (
+          {paged.map((c) => (
             <li key={c.id}>
               <MediaCard
                 cover={c.cover_url}
@@ -62,8 +63,17 @@ function CasesPage() {
             </li>
           ))}
         </ul>
+        <PaginationControls
+          total={cases.length}
+          page={page}
+          perPage={perPage}
+          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onPerPageChange={setPerPage}
+        />
+        </>
       )}
     </div>
   );
 }
+
 
