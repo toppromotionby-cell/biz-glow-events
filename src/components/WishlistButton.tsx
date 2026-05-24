@@ -14,7 +14,9 @@ export function WishlistButton({
   price: number;
   image?: string | null;
 }) {
+  const { isAuthenticated } = useAuth();
   const { has } = useWishlist();
+  if (!isAuthenticated) return null;
   const active = has(id, entity_type);
   return (
     <button
