@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MediaCard } from "@/components/ui/MediaCard";
+import { PaginationControls, type PerPage } from "@/components/ui/PaginationControls";
 
 type Post = {
   id: string;
