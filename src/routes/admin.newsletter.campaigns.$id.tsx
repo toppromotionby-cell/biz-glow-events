@@ -6,6 +6,13 @@ import { getCampaign, startCampaign, refreshCampaignStats } from "@/lib/campaign
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { AdminTable } from "@/components/admin/AdminTable";
+
+const RECIPIENT_COLS = [
+  { key: "email", label: "Email" },
+  { key: "status", label: "Статус" },
+  { key: "error", label: "Ошибка" },
+];
 
 export const Route = createFileRoute("/admin/newsletter/campaigns/$id")({ component: Page });
 
