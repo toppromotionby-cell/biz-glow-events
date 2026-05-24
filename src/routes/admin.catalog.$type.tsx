@@ -314,13 +314,13 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
   const otherTables = TABLES.filter((t) => t !== table);
 
   return (
-    <div className="glass rounded-xl p-6 space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
-          <span className="text-sm">{form.published ? "Опубликовано" : "Черновик"}</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <AdminEditorShell
+      switches={
+        <>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
+            {form.published ? "Опубликовано" : "Черновик"}
+          </label>
           <div className="flex items-center gap-1">
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
             <Select value={moveTarget} onValueChange={(v) => { setMoveTarget(v as Table); moveTo(v as Table); }} disabled={moving}>
@@ -330,15 +330,16 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" size="sm" onClick={onDelete}><Trash2 className="h-4 w-4 mr-1" />Удалить</Button>
-          <Button size="sm" onClick={save} disabled={saving} className="bg-gradient-primary glow-primary"><Save className="h-4 w-4 mr-1" />{saving ? "..." : "Сохранить"}</Button>
-        </div>
-      </div>
-
+        </>
+      }
+      onDelete={onDelete}
+      onSave={save}
+      saving={saving}
+    >
       <div className="grid sm:grid-cols-3 gap-3">
-        <div><Label>Заголовок</Label><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-        <div><Label>Slug</Label><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
-        <div><Label>Категория</Label><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+        <Field label="Заголовок"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+        <Field label="Slug"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
+        <Field label="Категория"><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
       </div>
 
       <PriceTableEditor
@@ -352,13 +353,13 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
         })()}
       </div>
 
-      <div><Label>Краткое описание</Label><Textarea rows={2} value={form.short_description ?? ""} onChange={(e) => setForm({ ...form, short_description: e.target.value })} /></div>
-      <div><Label>Описание</Label><Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-      <div><Label>Требования</Label><Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} /></div>
+      <Field label="Краткое описание"><Textarea rows={2} value={form.short_description ?? ""} onChange={(e) => setForm({ ...form, short_description: e.target.value })} /></Field>
+      <Field label="Описание"><Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+      <Field label="Требования"><Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} /></Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <div><Label>SEO title</Label><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></div>
-        <div><Label>SEO description</Label><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></div>
+        <Field label="SEO title"><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></Field>
+        <Field label="SEO description"><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></Field>
       </div>
 
       <div>
@@ -371,6 +372,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
           onChange={({ photoUrls, videoUrls }) => setForm({ ...form, photo_urls: photoUrls, video_urls: videoUrls })}
         />
       </div>
-    </div>
+    </AdminEditorShell>
   );
 }
+
