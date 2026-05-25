@@ -136,37 +136,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 <button type="button" onClick={() => openLightbox(active)} className="block h-full w-full cursor-zoom-in" aria-label="Открыть фото">
                   <img src={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" loading="eager" />
                 </button>
-                {photos.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setActive((i) => (i - 1 + photos.length) % photos.length); }}
-                      aria-label="Предыдущее фото"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover/gallery:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
-                    >
-                      <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setActive((i) => (i + 1) % photos.length); }}
-                      aria-label="Следующее фото"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover/gallery:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
-                    >
-                      <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1.5 backdrop-blur-md">
-                      {photos.map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setActive(i); }}
-                          aria-label={`Фото ${i + 1}`}
-                          className={`h-1.5 rounded-full transition-all ${i === active ? "w-6 bg-primary" : "w-1.5 bg-white/60 hover:bg-white"}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
               </div>
             </MediaShield>
           ) : (
