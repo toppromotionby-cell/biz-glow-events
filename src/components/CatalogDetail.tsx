@@ -40,7 +40,15 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const navigate = useNavigate();
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [galleryHover, setGalleryHover] = useState(false);
   const cover = photos[active];
+  useEffect(() => {
+    if (photos.length < 2 || galleryHover || lightbox !== null) return;
+    const id = window.setInterval(() => {
+      setActive((i) => (i + 1) % photos.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [photos.length, galleryHover, lightbox]);
   const from = priceFrom(item.pricing);
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
