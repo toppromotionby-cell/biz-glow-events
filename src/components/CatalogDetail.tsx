@@ -185,17 +185,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               ))}
             </div>
           )}
-          {photos.length > 1 && (
-            <div className="grid grid-cols-5 gap-2">
-              {photos.slice(0, 10).map((p, i) => (
-                <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
-                  aria-label={`Фото ${i + 1}`}
-                  className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
-                  <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
 
