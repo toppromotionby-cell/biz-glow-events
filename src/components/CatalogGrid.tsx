@@ -200,14 +200,8 @@ function CatalogCard({
     }
   };
 
-  const go = (dir: 1 | -1) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIndex((i) => (i + dir + photos.length) % photos.length);
-  };
-  const jumpTo = (i: number) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIndex(i);
-  };
+
+
 
   return (
     <article
