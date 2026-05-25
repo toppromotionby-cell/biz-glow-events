@@ -4,17 +4,11 @@ import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scrip
 import appCss from "../styles.css?url";
 import ogDefault from "@/assets/og-default.jpg";
 import { Toaster } from "@/components/ui/sonner";
-import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
-import { ScriptInjector } from "@/components/ScriptInjector";
-import { EffectsLayer } from "@/components/EffectsLayer";
-import { FloatingContacts } from "@/components/FloatingContacts";
-import { CartSync } from "@/components/CartSync";
 import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
-import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
-import { ExitIntentModal } from "@/components/ExitIntentModal";
-// SupportChat встроен в FloatingContacts
+import { SiteSectionsProvider } from "@/lib/site-sections";
+import { DeferredGlobals } from "@/components/DeferredGlobals";
 
 function NotFoundComponent() {
   return (
