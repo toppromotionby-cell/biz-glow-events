@@ -44,12 +44,18 @@ const CATALOGS = [
   },
 ];
 
-export function CatalogChoiceModal({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+type Props =
+  | { children: React.ReactNode; open?: undefined; onOpenChange?: undefined }
+  | { children?: undefined; open: boolean; onOpenChange: (v: boolean) => void };
+
+export function CatalogChoiceModal(props: Props) {
+  const [uncontrolled, setUncontrolled] = useState(false);
+  const open = props.open ?? uncontrolled;
+  const setOpen = props.onOpenChange ?? setUncontrolled;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {props.children ? <DialogTrigger asChild>{props.children}</DialogTrigger> : null}
       <DialogContent className="max-w-2xl bg-gradient-to-b from-background to-muted/20 border-border/50">
         <DialogHeader className="text-center sm:text-center">
           <DialogTitle className="text-2xl font-display font-bold">
