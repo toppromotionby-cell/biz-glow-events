@@ -217,7 +217,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
           <div className="space-y-2">
             {faq.map((f, i) => (
               <details key={i} className="glass rounded-xl p-4">
-                <summary className="cursor-pointer font-medium text-sm">{f.q ?? "Вопрос"}</summary>
+                <summary className="cursor-pointer font-medium text-sm [overflow-wrap:anywhere]">{f.q ?? "Вопрос"}</summary>
                 <div className="mt-2 text-[13px] sm:text-sm text-muted-foreground whitespace-pre-wrap [overflow-wrap:anywhere] leading-relaxed">{f.a ?? ""}</div>
               </details>
             ))}
