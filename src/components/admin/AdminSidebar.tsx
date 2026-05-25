@@ -1,46 +1,200 @@
+// Адаптивный сайдбар админки на базе shadcn Sidebar (collapsible="icon").
+// Состояние свёрнутости сохраняется в cookie самим SidebarProvider.
+// На мобильных превращается в off-canvas drawer.
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingCart, Calendar, Package, FileText, Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote, CalendarClock, Mail, Tag, ToggleRight } from "lucide-react";
+import { useState } from "react";
+import {
+  LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
+  Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
+  CalendarClock, Mail, Tag, ToggleRight, LogOut, ChevronDown,
+} from "lucide-react";
+import {
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
+  SidebarGroupContent, SidebarGroupLabel, SidebarMenu,
+  SidebarMenuButton, SidebarMenuItem, useSidebar,
+} from "@/components/ui/sidebar";
+import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
-const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
-  { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
-  { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart },
-  { to: "/admin/calendar", label: "Календарь", icon: Calendar },
-  { to: "/admin/availability", label: "Занятость", icon: CalendarClock },
-  { to: "/admin/catalog/zones", label: "Наполнение", icon: Package },
-  { to: "/admin/cases", label: "Кейсы", icon: Trophy },
-  { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
-  { to: "/admin/blog", label: "Блог", icon: Newspaper },
-  { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
-  { to: "/admin/promo", label: "Промокоды", icon: Tag },
-  { to: "/admin/newsletter", label: "Рассылка", icon: Mail },
-  { to: "/admin/users", label: "Пользователи", icon: UserCog },
-  { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
-  { to: "/admin/audit", label: "Аудит", icon: FileText },
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+type NavGroup = { label: string; items: NavItem[] };
+
+const GROUPS: NavGroup[] = [
+  {
+    label: "Операции",
+    items: [
+      { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
+      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart },
+      { to: "/admin/calendar", label: "Календарь", icon: Calendar },
+      { to: "/admin/availability", label: "Занятость", icon: CalendarClock },
+    ],
+  },
+  {
+    label: "Контент",
+    items: [
+      { to: "/admin/catalog/zones", label: "Наполнение", icon: Package },
+      { to: "/admin/cases", label: "Кейсы", icon: Trophy },
+      { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
+      { to: "/admin/blog", label: "Блог", icon: Newspaper },
+    ],
+  },
+  {
+    label: "Маркетинг",
+    items: [
+      { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
+      { to: "/admin/promo", label: "Промокоды", icon: Tag },
+      { to: "/admin/newsletter", label: "Рассылка", icon: Mail },
+    ],
+  },
+  {
+    label: "Система",
+    items: [
+      { to: "/admin/users", label: "Пользователи", icon: UserCog },
+      { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
+      { to: "/admin/audit", label: "Аудит", icon: FileText },
+    ],
+  },
 ];
+
+function isItemActive(pathname: string, item: NavItem): boolean {
+  if (item.exact) return pathname === item.to;
+  // catalog/zones is one of variants — активен любой catalog подпуть
+  if (item.to.startsWith("/admin/catalog/")) return pathname.startsWith("/admin/catalog");
+  return pathname === item.to || pathname.startsWith(item.to + "/");
+}
 
 export function AdminSidebar() {
   const loc = useLocation();
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
+  const { user } = useAuth();
+
   return (
-    <aside className="w-64 shrink-0 glass-strong border-r border-border/50 min-h-[calc(100vh-4rem)] p-4">
-      <nav className="space-y-1">
-        {NAV.map(n => {
-          const active = n.exact ? loc.pathname === n.to : loc.pathname.startsWith(n.to);
+    <Sidebar collapsible="icon" className="border-r border-border/50">
+      <SidebarContent className="gap-0">
+        {GROUPS.map((group) => {
+          const hasActive = group.items.some((i) => isItemActive(loc.pathname, i));
           return (
-            <Link
-              key={n.to}
-              to={n.to}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                active ? "bg-gradient-primary glow-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-              )}
-            >
-              <n.icon className="h-4 w-4" />
-              {n.label}
-            </Link>
+            <NavSection
+              key={group.label}
+              group={group}
+              pathname={loc.pathname}
+              collapsed={collapsed}
+              defaultOpen={hasActive}
+            />
           );
         })}
-      </nav>
-    </aside>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-border/40">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={user?.email ?? "Профиль"}
+              className="cursor-default hover:bg-transparent"
+            >
+              <div className="h-7 w-7 shrink-0 rounded-full bg-gradient-primary flex items-center justify-center text-[11px] font-semibold text-primary-foreground">
+                {(user?.email ?? "?").slice(0, 1).toUpperCase()}
+              </div>
+              <span className="truncate text-xs text-muted-foreground">
+                {user?.email ?? "—"}
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Выйти"
+              onClick={() => supabase.auth.signOut()}
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Выйти</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+function NavSection({
+  group, pathname, collapsed, defaultOpen,
+}: {
+  group: NavGroup;
+  pathname: string;
+  collapsed: boolean;
+  defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  // В collapsed-режиме группы всегда «раскрыты» как иконки — без обёртки Collapsible
+  if (collapsed) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {group.items.map((item) => (
+              <NavLinkRow key={item.to} item={item} pathname={pathname} />
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <SidebarGroup>
+        <CollapsibleTrigger asChild>
+          <SidebarGroupLabel
+            className={cn(
+              "group/label cursor-pointer flex items-center justify-between text-[11px] uppercase tracking-wider",
+              "hover:text-foreground transition",
+            )}
+          >
+            <span>{group.label}</span>
+            <ChevronDown
+              className={cn(
+                "h-3 w-3 transition-transform",
+                open ? "rotate-0" : "-rotate-90",
+              )}
+            />
+          </SidebarGroupLabel>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {group.items.map((item) => (
+                <NavLinkRow key={item.to} item={item} pathname={pathname} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
+
+function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
+  const active = isItemActive(pathname, item);
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        isActive={active}
+        tooltip={item.label}
+        className={cn(
+          active && "bg-gradient-primary text-primary-foreground hover:bg-gradient-primary hover:text-primary-foreground",
+        )}
+      >
+        <Link to={item.to}>
+          <item.icon className="h-4 w-4" />
+          <span>{item.label}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
