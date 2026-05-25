@@ -194,18 +194,18 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
 
       {item.description && (
         <section className="mt-10">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
-            <h3 className="text-lg font-display font-semibold mb-3">Описание</h3>
-            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/90 max-w-prose">{item.description}</p>
+          <div className="glass rounded-2xl p-5 sm:p-6 md:p-8 w-full overflow-hidden">
+            <h3 className="text-base sm:text-lg md:text-xl font-display font-semibold mb-3">Описание</h3>
+            <p className="whitespace-pre-wrap [overflow-wrap:anywhere] text-[14px] sm:text-[15px] md:text-base leading-relaxed text-foreground/90 max-w-[68ch]">{item.description}</p>
           </div>
         </section>
       )}
 
       {item.requirements && (
         <section className="mt-6">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
-            <h3 className="text-base font-display font-semibold mb-3">Технические требования</h3>
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground max-w-prose">{item.requirements}</p>
+          <div className="glass rounded-2xl p-5 sm:p-6 md:p-8 w-full overflow-hidden">
+            <h3 className="text-sm sm:text-base md:text-lg font-display font-semibold mb-3">Технические требования</h3>
+            <p className="whitespace-pre-wrap [overflow-wrap:anywhere] text-[13px] sm:text-sm md:text-[15px] leading-relaxed text-muted-foreground max-w-[68ch]">{item.requirements}</p>
           </div>
         </section>
       )}
@@ -217,7 +217,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
             {faq.map((f, i) => (
               <details key={i} className="glass rounded-xl p-4">
                 <summary className="cursor-pointer font-medium text-sm">{f.q ?? "Вопрос"}</summary>
-                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap break-words hyphens-auto leading-relaxed">{f.a ?? ""}</div>
+                <div className="mt-2 text-[13px] sm:text-sm text-muted-foreground whitespace-pre-wrap [overflow-wrap:anywhere] leading-relaxed">{f.a ?? ""}</div>
               </details>
             ))}
           </div>
