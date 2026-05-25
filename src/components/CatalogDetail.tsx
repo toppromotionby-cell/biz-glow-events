@@ -266,16 +266,20 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       </div>
 
       {item.description && (
-        <section className="mt-12 prose prose-invert max-w-3xl">
-          <h2 className="text-2xl font-display font-semibold">Описание</h2>
-          <p className="whitespace-pre-wrap text-foreground/90">{item.description}</p>
+        <section className="mt-12">
+          <div className="glass rounded-2xl p-6 md:p-8 max-w-3xl">
+            <h2 className="text-2xl font-display font-semibold mb-4">Описание</h2>
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
+          </div>
         </section>
       )}
 
       {item.requirements && (
-        <section className="mt-10 max-w-3xl">
-          <h2 className="text-xl font-display font-semibold">Технические требования</h2>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{item.requirements}</p>
+        <section className="mt-8">
+          <div className="glass rounded-2xl p-6 md:p-8 max-w-3xl">
+            <h2 className="text-xl font-display font-semibold mb-3">Технические требования</h2>
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
+          </div>
         </section>
       )}
 
@@ -284,9 +288,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           <h2 className="text-xl font-display font-semibold mb-4">Частые вопросы</h2>
           <div className="space-y-3">
             {faq.map((f, i) => (
-              <details key={i} className="glass rounded-lg p-4">
+              <details key={i} className="glass rounded-xl p-4">
                 <summary className="cursor-pointer font-medium">{f.q ?? "Вопрос"}</summary>
-                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">{f.a ?? ""}</div>
+                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap break-words leading-relaxed">{f.a ?? ""}</div>
               </details>
             ))}
           </div>
