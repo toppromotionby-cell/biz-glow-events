@@ -199,23 +199,8 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
         </aside>
       </div>
 
-      {item.description && (
-        <section className="mt-10">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full min-w-0 overflow-hidden">
-            <h3 className="text-lg font-display font-semibold mb-3">Описание</h3>
-            <p className="prose-wrap text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
-          </div>
-        </section>
-      )}
+      <CatalogProse description={item.description} requirements={item.requirements} variant="modal" />
 
-      {item.requirements && (
-        <section className="mt-6">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full min-w-0 overflow-hidden">
-            <h3 className="text-base font-display font-semibold mb-3">Технические требования</h3>
-            <p className="prose-wrap text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
-          </div>
-        </section>
-      )}
 
       {faq.length > 0 && (
         <section className="mt-6">
