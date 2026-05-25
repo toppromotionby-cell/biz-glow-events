@@ -267,18 +267,18 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
       {item.description && (
         <section className="mt-12">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
-            <h2 className="text-2xl font-display font-semibold mb-4">Описание</h2>
-            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/90 max-w-prose">{item.description}</p>
+          <div className="glass rounded-2xl p-5 sm:p-6 md:p-8 w-full overflow-hidden">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-semibold mb-4">Описание</h2>
+            <p className="whitespace-pre-wrap [overflow-wrap:anywhere] text-[14px] sm:text-[15px] md:text-base leading-relaxed text-foreground/90 max-w-[68ch]">{item.description}</p>
           </div>
         </section>
       )}
 
       {item.requirements && (
         <section className="mt-8">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
-            <h2 className="text-xl font-display font-semibold mb-3">Технические требования</h2>
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground max-w-prose">{item.requirements}</p>
+          <div className="glass rounded-2xl p-5 sm:p-6 md:p-8 w-full overflow-hidden">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-display font-semibold mb-3">Технические требования</h2>
+            <p className="whitespace-pre-wrap [overflow-wrap:anywhere] text-[13px] sm:text-sm md:text-[15px] leading-relaxed text-muted-foreground max-w-[68ch]">{item.requirements}</p>
           </div>
         </section>
       )}
