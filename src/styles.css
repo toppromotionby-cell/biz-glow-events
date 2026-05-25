@@ -939,3 +939,20 @@ a[href],
     animation: none !important;
   }
 }
+
+/* Принудительный перенос длинных слов/URL в текстовых блоках модалок и описаний */
+.prose-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  text-wrap: pretty;
+  max-width: 100%;
+  min-width: 0;
+}
+.prose-wrap * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
