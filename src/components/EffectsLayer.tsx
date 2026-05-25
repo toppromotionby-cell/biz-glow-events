@@ -69,18 +69,14 @@ export function EffectsLayer() {
         .forEach((el) => io.observe(el));
     };
     observe();
+    // Дешёвый MutationObserver на body с дебаунсом вместо setInterval — реагируем
+    // на реальные изменения DOM (новые маршруты, модалки), а не каждые 1.5с.
     let scanTimer: number | null = null;
-    const scheduleScan = () => {
+    const mo = new MutationObserver(() => {
       if (scanTimer != null) return;
-      scanTimer = window.setTimeout(() => {
-        scanTimer = null;
-        observe();
-      }, 400);
-    };
-    // Скан после смены маршрута / навигации
-    window.addEventListener("popstate", scheduleScan);
-    // Скан раз в 1.5с — дешевле, чем MutationObserver на всём body
-    const interval = window.setInterval(observe, 1500);
+      scanTimer = window.setTimeout(() => { scanTimer = null; observe(); }, 250);
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
 
     if (!reduce && !isCoarse) {
       window.addEventListener("pointermove", onMove, { passive: true });
@@ -90,9 +86,8 @@ export function EffectsLayer() {
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onClick);
-      window.removeEventListener("popstate", scheduleScan);
       if (scanTimer != null) clearTimeout(scanTimer);
-      clearInterval(interval);
+      mo.disconnect();
       io.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
