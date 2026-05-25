@@ -176,18 +176,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SiteSectionsProvider>
         <div className="min-h-dvh flex flex-col bg-background bg-radial-glow">
-          <EffectsLayer />
           <SiteHeader />
           <AutoBreadcrumbs />
           <main id="main" className="flex-1"><Outlet /></main>
           <SiteFooter />
-          <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
-          <FloatingContacts />
-          <CartSync />
-          <ScriptInjector />
-          <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
-          {/* CartRecoveryBanner удалён вместе с кнопкой закрытия */}
-          {/* SupportChat теперь рендерится из FloatingContacts */}
+          <DeferredGlobals />
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>
