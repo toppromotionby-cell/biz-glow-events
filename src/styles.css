@@ -639,7 +639,11 @@
 main, header, footer { position: relative; z-index: 2; }
 
 /* Локальная подсветка под курсором у glass/кнопок/ссылок */
-.glass, button, a[href], [role="button"], .interactive-glow {
+.glass,
+button:not(.btn-dialog-close),
+a[href],
+[role="button"]:not(.btn-dialog-close),
+.interactive-glow {
   position: relative;
 }
 .glass::before,
