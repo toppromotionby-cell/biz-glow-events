@@ -152,13 +152,15 @@ function HomePage() {
             })}
           </div>
           {quick && (
-            <CatalogQuickView
-              open={!!quick}
-              onOpenChange={(v) => { if (!v) setQuick(null); }}
-              type={quick.type}
-              slug={quick.slug}
-              basePath={quick.basePath}
-            />
+            <Suspense fallback={null}>
+              <CatalogQuickView
+                open={!!quick}
+                onOpenChange={(v) => { if (!v) setQuick(null); }}
+                type={quick.type}
+                slug={quick.slug}
+                basePath={quick.basePath}
+              />
+            </Suspense>
           )}
 
         </Toggleable>
