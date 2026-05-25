@@ -162,13 +162,17 @@ function DynamicToaster() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const update = () => {
-      setTheme(document.documentElement.classList.contains("theme-light") ? "light" : "dark");
+    const read = () => (document.documentElement.classList.contains("theme-light") ? "light" : "dark");
+    setTheme(read());
+    // Тема меняется только через ThemeToggle (custom event) и системой (matchMedia).
+    const onChange = () => setTheme(read());
+    window.addEventListener("themechange", onChange);
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    mq.addEventListener?.("change", onChange);
+    return () => {
+      window.removeEventListener("themechange", onChange);
+      mq.removeEventListener?.("change", onChange);
     };
-    update();
-    const obs = new MutationObserver(update);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
   }, []);
 
   return <Toaster theme={theme} />;
