@@ -193,16 +193,20 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
       </div>
 
       {item.description && (
-        <section className="mt-8 max-w-3xl">
-          <h3 className="text-lg font-display font-semibold">Описание</h3>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">{item.description}</p>
+        <section className="mt-10">
+          <div className="glass rounded-2xl p-6 md:p-8 max-w-3xl">
+            <h3 className="text-lg font-display font-semibold mb-3">Описание</h3>
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
+          </div>
         </section>
       )}
 
       {item.requirements && (
-        <section className="mt-6 max-w-3xl">
-          <h3 className="text-base font-display font-semibold">Технические требования</h3>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{item.requirements}</p>
+        <section className="mt-6">
+          <div className="glass rounded-2xl p-6 md:p-8 max-w-3xl">
+            <h3 className="text-base font-display font-semibold mb-3">Технические требования</h3>
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
+          </div>
         </section>
       )}
 
@@ -211,9 +215,9 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
           <h3 className="text-base font-display font-semibold mb-3">Частые вопросы</h3>
           <div className="space-y-2">
             {faq.map((f, i) => (
-              <details key={i} className="glass rounded-lg p-3">
+              <details key={i} className="glass rounded-xl p-4">
                 <summary className="cursor-pointer font-medium text-sm">{f.q ?? "Вопрос"}</summary>
-                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">{f.a ?? ""}</div>
+                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap break-words leading-relaxed">{f.a ?? ""}</div>
               </details>
             ))}
           </div>
