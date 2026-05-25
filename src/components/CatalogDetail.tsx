@@ -289,7 +289,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           <div className="space-y-3">
             {faq.map((f, i) => (
               <details key={i} className="glass rounded-xl p-4">
-                <summary className="cursor-pointer font-medium">{f.q ?? "Вопрос"}</summary>
+                <summary className="cursor-pointer font-medium [overflow-wrap:anywhere]">{f.q ?? "Вопрос"}</summary>
                 <div className="mt-2 text-[13px] sm:text-sm text-muted-foreground whitespace-pre-wrap [overflow-wrap:anywhere] leading-relaxed">{f.a ?? ""}</div>
               </details>
             ))}
