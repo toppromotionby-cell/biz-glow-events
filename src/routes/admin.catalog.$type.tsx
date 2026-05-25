@@ -21,6 +21,7 @@ import { AdminListPanel } from "@/components/admin/AdminListPanel";
 import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEditorShell";
 import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
@@ -342,7 +343,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
       <div className="grid sm:grid-cols-3 gap-3">
         <Field label="Заголовок"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
         <Field label="Slug"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
-        <Field label="Категория"><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
+        <Field label="Категория"><CategoryCombobox entityType={table} value={form.category ?? null} onChange={(v) => setForm({ ...form, category: v })} /></Field>
       </div>
 
       <PriceTableEditor
