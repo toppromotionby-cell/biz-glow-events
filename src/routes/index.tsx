@@ -3,12 +3,7 @@ import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, Calendar
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { GuestEstimator } from "@/components/GuestEstimator";
-import { CatalogChoiceModal } from "@/components/CatalogChoiceModal";
-import { TestimonialsTeaser } from "@/components/TestimonialsTeaser";
-import { CatalogQuickView } from "@/components/CatalogQuickView";
-import { LeadForm } from "@/components/LeadForm";
+import { lazy, Suspense, useState } from "react";
 import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { SparkBurst } from "@/components/SparkBurst";
@@ -17,6 +12,13 @@ import { MediaCard } from "@/components/ui/MediaCard";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
+
+// Тяжёлые модалки/виджеты — ленивая загрузка ради меньшего initial JS.
+const GuestEstimator = lazy(() => import("@/components/GuestEstimator").then((m) => ({ default: m.GuestEstimator })));
+const CatalogChoiceModal = lazy(() => import("@/components/CatalogChoiceModal").then((m) => ({ default: m.CatalogChoiceModal })));
+const TestimonialsTeaser = lazy(() => import("@/components/TestimonialsTeaser").then((m) => ({ default: m.TestimonialsTeaser })));
+const CatalogQuickView = lazy(() => import("@/components/CatalogQuickView").then((m) => ({ default: m.CatalogQuickView })));
+const LeadForm = lazy(() => import("@/components/LeadForm").then((m) => ({ default: m.LeadForm })));
 
 const BASE_TO_TYPE: Record<string, CatalogType> = {
   "/zones": "zones",
@@ -64,6 +66,7 @@ function HomePage() {
   const { featured, posts, cases } = data;
   const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const [orderTopic, setOrderTopic] = useState<string | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   return (
     <div>
@@ -87,15 +90,23 @@ function HomePage() {
               Интерактивные зоны, техническое оснащение, шоу-программы и декорации.
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mb-16">
-              <CatalogChoiceModal>
-                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto">
-                  Каталог услуг <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CatalogChoiceModal>
+              <Button
+                size="lg"
+                onClick={() => setCatalogOpen(true)}
+                className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto"
+              >
+                Каталог услуг <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              {catalogOpen && (
+                <Suspense fallback={null}>
+                  <CatalogChoiceModal open={catalogOpen} onOpenChange={setCatalogOpen} />
+                </Suspense>
+              )}
             </div>
           </div>
         </div>
       </Toggleable>
+
 
 
       {/* DIRECTIONS */}
@@ -150,13 +161,15 @@ function HomePage() {
             })}
           </div>
           {quick && (
-            <CatalogQuickView
-              open={!!quick}
-              onOpenChange={(v) => { if (!v) setQuick(null); }}
-              type={quick.type}
-              slug={quick.slug}
-              basePath={quick.basePath}
-            />
+            <Suspense fallback={null}>
+              <CatalogQuickView
+                open={!!quick}
+                onOpenChange={(v) => { if (!v) setQuick(null); }}
+                type={quick.type}
+                slug={quick.slug}
+                basePath={quick.basePath}
+              />
+            </Suspense>
           )}
 
         </Toggleable>
@@ -209,10 +222,10 @@ function HomePage() {
       )}
 
       {/* GUEST ESTIMATOR */}
-      <Toggleable sectionKey="home.estimator"><GuestEstimator /></Toggleable>
+      <Toggleable sectionKey="home.estimator"><Suspense fallback={null}><GuestEstimator /></Suspense></Toggleable>
 
       {/* TESTIMONIALS */}
-      <Toggleable sectionKey="home.testimonials"><TestimonialsTeaser /></Toggleable>
+      <Toggleable sectionKey="home.testimonials"><Suspense fallback={null}><TestimonialsTeaser /></Suspense></Toggleable>
 
       {/* BLOG TEASER */}
       {posts.length > 0 && (
@@ -338,7 +351,9 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
           </DialogDescription>
         </div>
         <div className="px-6 pt-5 pb-6 max-h-[70vh] overflow-y-auto">
-          <LeadForm source={topic ? `home_order:${topic}` : "home_order"} />
+          <Suspense fallback={<div className="text-sm text-muted-foreground">Загрузка формы…</div>}>
+            <LeadForm source={topic ? `home_order:${topic}` : "home_order"} />
+          </Suspense>
           <div className="mt-6 pt-5 border-t border-border/60">
             <h4 className="font-display font-semibold text-base mb-3">Контакты</h4>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">

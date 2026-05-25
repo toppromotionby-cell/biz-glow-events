@@ -4,17 +4,11 @@ import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scrip
 import appCss from "../styles.css?url";
 import ogDefault from "@/assets/og-default.jpg";
 import { Toaster } from "@/components/ui/sonner";
-import { CookieConsent } from "@/components/CookieConsent";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
-import { ScriptInjector } from "@/components/ScriptInjector";
-import { EffectsLayer } from "@/components/EffectsLayer";
-import { FloatingContacts } from "@/components/FloatingContacts";
-import { CartSync } from "@/components/CartSync";
 import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
-import { SiteSectionsProvider, Toggleable } from "@/lib/site-sections";
-import { ExitIntentModal } from "@/components/ExitIntentModal";
-// SupportChat встроен в FloatingContacts
+import { SiteSectionsProvider } from "@/lib/site-sections";
+import { DeferredGlobals } from "@/components/DeferredGlobals";
 
 function NotFoundComponent() {
   return (
@@ -90,11 +84,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "preconnect", href: "https://blevlkoetlbhtzhakqsi.supabase.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://blevlkoetlbhtzhakqsi.supabase.co" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" },
+      // Шрифты грузим неблокирующе: link.media="print" → меняем на "all" после load.
+      { rel: "preload", as: "style", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap", media: "print", id: "google-fonts" },
     ],
     scripts: [
       {
         children: `(function(){try{var t=localStorage.getItem('site-theme')||'auto';var isLight=t==='light'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: light)').matches);var r=document.documentElement;r.classList.remove('theme-dark','theme-light');r.classList.add(isLight?'theme-light':'theme-dark');r.dataset.theme=t;}catch(e){}})();`,
+      },
+      {
+        children: `(function(){function s(){var l=document.getElementById('google-fonts');if(l)l.media='all';}if(document.readyState==='complete'){s();}else{window.addEventListener('load',s,{once:true});}})();`,
       },
       {
         type: "application/ld+json",
@@ -163,13 +162,17 @@ function DynamicToaster() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const update = () => {
-      setTheme(document.documentElement.classList.contains("theme-light") ? "light" : "dark");
+    const read = () => (document.documentElement.classList.contains("theme-light") ? "light" : "dark");
+    setTheme(read());
+    // Тема меняется только через ThemeToggle (custom event) и системой (matchMedia).
+    const onChange = () => setTheme(read());
+    window.addEventListener("themechange", onChange);
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    mq.addEventListener?.("change", onChange);
+    return () => {
+      window.removeEventListener("themechange", onChange);
+      mq.removeEventListener?.("change", onChange);
     };
-    update();
-    const obs = new MutationObserver(update);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
   }, []);
 
   return <Toaster theme={theme} />;
@@ -182,18 +185,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SiteSectionsProvider>
         <div className="min-h-dvh flex flex-col bg-background bg-radial-glow">
-          <EffectsLayer />
           <SiteHeader />
           <AutoBreadcrumbs />
           <main id="main" className="flex-1"><Outlet /></main>
           <SiteFooter />
-          <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
-          <FloatingContacts />
-          <CartSync />
-          <ScriptInjector />
-          <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
-          {/* CartRecoveryBanner удалён вместе с кнопкой закрытия */}
-          {/* SupportChat теперь рендерится из FloatingContacts */}
+          <DeferredGlobals />
           <DynamicToaster />
         </div>
       </SiteSectionsProvider>

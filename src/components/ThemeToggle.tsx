@@ -22,6 +22,7 @@ function applyResolvedTheme(mode: ThemeMode) {
   root.classList.remove("theme-dark", "theme-light");
   root.classList.add(resolved === "light" ? "theme-light" : "theme-dark");
   root.dataset.theme = mode;
+  try { window.dispatchEvent(new Event("themechange")); } catch {}
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
