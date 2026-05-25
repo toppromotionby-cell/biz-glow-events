@@ -125,14 +125,64 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       <div className="mt-6 grid lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3 space-y-3">
           {cover ? (
-            <MediaShield className="rounded-2xl overflow-hidden aspect-[16/10] glass">
-              <button type="button" onClick={() => openLightbox(active)} className="block h-full w-full cursor-zoom-in" aria-label="Открыть фото">
-                <img src={cover} alt={item.title} className="h-full w-full object-cover" loading="eager" />
-              </button>
+            <MediaShield
+              className="rounded-2xl overflow-hidden aspect-[16/10] glass relative group/gallery"
+            >
+              <div
+                onMouseEnter={() => setGalleryHover(true)}
+                onMouseLeave={() => setGalleryHover(false)}
+                className="h-full w-full"
+              >
+                <button type="button" onClick={() => openLightbox(active)} className="block h-full w-full cursor-zoom-in" aria-label="Открыть фото">
+                  <img src={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" loading="eager" />
+                </button>
+                {photos.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setActive((i) => (i - 1 + photos.length) % photos.length); }}
+                      aria-label="Предыдущее фото"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover/gallery:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
+                    >
+                      <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setActive((i) => (i + 1) % photos.length); }}
+                      aria-label="Следующее фото"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover/gallery:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
+                    >
+                      <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
+                    </button>
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1.5 backdrop-blur-md">
+                      {photos.map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setActive(i); }}
+                          aria-label={`Фото ${i + 1}`}
+                          className={`h-1.5 rounded-full transition-all ${i === active ? "w-6 bg-primary" : "w-1.5 bg-white/60 hover:bg-white"}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </MediaShield>
           ) : (
             <div className="rounded-2xl aspect-[16/10] glass flex items-center justify-center text-muted-foreground">
               Нет изображения
+            </div>
+          )}
+          {photos.length > 1 && (
+            <div className="grid grid-cols-5 gap-2">
+              {photos.slice(0, 10).map((p, i) => (
+                <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
+                  aria-label={`Фото ${i + 1}`}
+                  className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
+                  <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
+                </button>
+              ))}
             </div>
           )}
           {photos.length > 1 && (
