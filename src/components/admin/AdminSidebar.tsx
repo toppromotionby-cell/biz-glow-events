@@ -75,7 +75,7 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
-      <SidebarContent className="gap-0">
+      <SidebarContent className="gap-0 pt-14">
         {GROUPS.map((group) => {
           const hasActive = group.items.some((i) => isItemActive(loc.pathname, i));
           return (
