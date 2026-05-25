@@ -252,39 +252,6 @@ function CatalogCard({
               </>
             ) : null}
 
-            {hasMultiple && (
-              <>
-                <button
-                  type="button"
-                  onClick={go(-1)}
-                  aria-label="Предыдущее фото"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
-                >
-                  <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
-                </button>
-                <button
-                  type="button"
-                  onClick={go(1)}
-                  aria-label="Следующее фото"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
-                >
-                  <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
-                </button>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 rounded-full bg-black/45 px-2 py-1 backdrop-blur-md">
-                  {photos.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={jumpTo(i)}
-                      aria-label={`Фото ${i + 1}`}
-                      className={`h-1.5 rounded-full transition-all ${
-                        i === index ? "w-5 bg-primary" : "w-1.5 bg-white/60 hover:bg-white"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
           </div>
         </MediaShield>
       </button>
