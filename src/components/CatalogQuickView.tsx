@@ -13,6 +13,7 @@ import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
 import { CompareButton } from "@/components/CompareButton";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
+import { CatalogProse } from "@/components/CatalogProse";
 
 import { priceFrom } from "@/lib/utils";
 function asArray<T = unknown>(v: unknown): T[] {

@@ -23,6 +23,7 @@ import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
+import { CatalogProse } from "@/components/CatalogProse";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
