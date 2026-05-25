@@ -222,10 +222,10 @@ function HomePage() {
       )}
 
       {/* GUEST ESTIMATOR */}
-      <Toggleable sectionKey="home.estimator"><GuestEstimator /></Toggleable>
+      <Toggleable sectionKey="home.estimator"><Suspense fallback={null}><GuestEstimator /></Suspense></Toggleable>
 
       {/* TESTIMONIALS */}
-      <Toggleable sectionKey="home.testimonials"><TestimonialsTeaser /></Toggleable>
+      <Toggleable sectionKey="home.testimonials"><Suspense fallback={null}><TestimonialsTeaser /></Suspense></Toggleable>
 
       {/* BLOG TEASER */}
       {posts.length > 0 && (
