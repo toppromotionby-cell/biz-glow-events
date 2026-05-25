@@ -1,7 +1,7 @@
 // Модальное окно «быстрый просмотр» позиции каталога.
 // Подтягивает полную запись из БД и показывает все поля, заполненные при создании.
-import { useState } from "react";
-import { SearchX } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, SearchX } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
