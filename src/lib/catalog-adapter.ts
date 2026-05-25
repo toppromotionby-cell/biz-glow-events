@@ -16,6 +16,7 @@ export function rowToItem(r: CatalogRow): CatalogItem {
     description: r.short_description ?? r.description ?? "",
     priceFrom,
     image: photos[0] ?? FALLBACK_IMG,
+    images: photos.length > 0 ? photos : [FALLBACK_IMG],
     video: videos[0] ?? null,
     tags,
   };

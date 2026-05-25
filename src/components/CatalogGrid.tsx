@@ -5,7 +5,7 @@ import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export function CatalogGrid({
   items,
@@ -172,16 +172,41 @@ function CatalogCard({
   onToggleTag: (t: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const photos = (item.images && item.images.length > 0 ? item.images : [item.image]).filter(Boolean);
+  const hasMultiple = photos.length > 1;
+  const [index, setIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+
+  // Автоскролл каждые 5 секунд, пауза при наведении
+  useEffect(() => {
+    if (!hasMultiple || hovered) return;
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % photos.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [hasMultiple, hovered, photos.length]);
+
   const handleEnter = () => {
+    setHovered(true);
     const el = videoRef.current;
     if (el) el.play().catch(() => {});
   };
   const handleLeave = () => {
+    setHovered(false);
     const el = videoRef.current;
     if (el) {
       el.pause();
       el.currentTime = 0;
     }
+  };
+
+  const go = (dir: 1 | -1) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIndex((i) => (i + dir + photos.length) % photos.length);
+  };
+  const jumpTo = (i: number) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIndex(i);
   };
 
   return (
@@ -198,12 +223,18 @@ function CatalogCard({
       >
         <MediaShield>
           <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-surface relative">
-            <img
-              src={item.image}
-              alt={item.title}
-              loading="lazy"
-              className="h-full w-full object-cover group-hover:scale-105 transition duration-700"
-            />
+            {photos.map((src, i) => (
+              <img
+                key={src + i}
+                src={src}
+                alt={item.title}
+                loading={i === 0 ? "lazy" : "lazy"}
+                aria-hidden={i !== index}
+                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+                  i === index ? "opacity-100" : "opacity-0"
+                } group-hover:scale-105 transition-transform [transition-duration:700ms]`}
+              />
+            ))}
             {item.video ? (
               <>
                 <video
@@ -220,6 +251,40 @@ function CatalogCard({
                 </span>
               </>
             ) : null}
+
+            {hasMultiple && (
+              <>
+                <button
+                  type="button"
+                  onClick={go(-1)}
+                  aria-label="Предыдущее фото"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
+                >
+                  <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={go(1)}
+                  aria-label="Следующее фото"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full glass border border-primary/30 text-foreground/90 backdrop-blur-md opacity-0 group-hover:opacity-100 hover:border-primary/60 hover:text-primary hover:scale-105 transition shadow-lg"
+                >
+                  <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+                </button>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 rounded-full bg-black/45 px-2 py-1 backdrop-blur-md">
+                  {photos.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={jumpTo(i)}
+                      aria-label={`Фото ${i + 1}`}
+                      className={`h-1.5 rounded-full transition-all ${
+                        i === index ? "w-5 bg-primary" : "w-1.5 bg-white/60 hover:bg-white"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </MediaShield>
       </button>

@@ -5,6 +5,7 @@ export type CatalogItem = {
   description: string;
   priceFrom: number; // BYN
   image: string;
+  images?: string[];
   video?: string | null;
   tags: string[];
 };
