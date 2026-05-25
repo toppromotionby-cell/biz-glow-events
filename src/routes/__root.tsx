@@ -93,6 +93,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: `(function(){try{var t=localStorage.getItem('site-theme')||'auto';var isLight=t==='light'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: light)').matches);var r=document.documentElement;r.classList.remove('theme-dark','theme-light');r.classList.add(isLight?'theme-light':'theme-dark');r.dataset.theme=t;}catch(e){}})();`,
       },
       {
+        children: `(function(){function s(){var l=document.getElementById('google-fonts');if(l)l.media='all';}if(document.readyState==='complete'){s();}else{window.addEventListener('load',s,{once:true});}})();`,
+      },
+      {
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
