@@ -23,6 +23,7 @@ import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
+import { CatalogProse } from "@/components/CatalogProse";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
@@ -281,23 +282,8 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         </aside>
       </div>
 
-      {item.description && (
-        <section className="mt-12">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full min-w-0 overflow-hidden">
-            <h2 className="text-2xl font-display font-semibold mb-4">Описание</h2>
-            <p className="prose-wrap text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
-          </div>
-        </section>
-      )}
+      <CatalogProse description={item.description} requirements={item.requirements} variant="page" />
 
-      {item.requirements && (
-        <section className="mt-8">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full min-w-0 overflow-hidden">
-            <h2 className="text-xl font-display font-semibold mb-3">Технические требования</h2>
-            <p className="prose-wrap text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
-          </div>
-        </section>
-      )}
 
       {faq.length > 0 && (
         <section className="mt-10">
