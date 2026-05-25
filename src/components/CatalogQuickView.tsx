@@ -194,18 +194,18 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
 
       {item.description && (
         <section className="mt-10">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
+          <div className="glass rounded-2xl p-6 md:p-8 w-full">
             <h3 className="text-lg font-display font-semibold mb-3">Описание</h3>
-            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/90 max-w-prose">{item.description}</p>
+            <p className="whitespace-pre-wrap break-words hyphens-auto text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
           </div>
         </section>
       )}
 
       {item.requirements && (
         <section className="mt-6">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
+          <div className="glass rounded-2xl p-6 md:p-8 w-full">
             <h3 className="text-base font-display font-semibold mb-3">Технические требования</h3>
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground max-w-prose">{item.requirements}</p>
+            <p className="whitespace-pre-wrap break-words hyphens-auto text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
           </div>
         </section>
       )}

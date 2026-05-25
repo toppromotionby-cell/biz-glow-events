@@ -267,18 +267,18 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
       {item.description && (
         <section className="mt-12">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
+          <div className="glass rounded-2xl p-6 md:p-8 w-full">
             <h2 className="text-2xl font-display font-semibold mb-4">Описание</h2>
-            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/90 max-w-prose">{item.description}</p>
+            <p className="whitespace-pre-wrap break-words hyphens-auto text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
           </div>
         </section>
       )}
 
       {item.requirements && (
         <section className="mt-8">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full overflow-hidden">
+          <div className="glass rounded-2xl p-6 md:p-8 w-full">
             <h2 className="text-xl font-display font-semibold mb-3">Технические требования</h2>
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground max-w-prose">{item.requirements}</p>
+            <p className="whitespace-pre-wrap break-words hyphens-auto text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
           </div>
         </section>
       )}
