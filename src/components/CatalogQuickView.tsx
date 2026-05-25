@@ -194,30 +194,30 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
 
       {item.description && (
         <section className="mt-10">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full">
+          <div className="glass rounded-2xl p-6 md:p-8 max-w-3xl">
             <h3 className="text-lg font-display font-semibold mb-3">Описание</h3>
-            <p className="whitespace-pre-wrap break-words hyphens-auto text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/90">{item.description}</p>
           </div>
         </section>
       )}
 
       {item.requirements && (
         <section className="mt-6">
-          <div className="glass rounded-2xl p-6 md:p-8 w-full">
+          <div className="glass rounded-2xl p-6 md:p-8 max-w-3xl">
             <h3 className="text-base font-display font-semibold mb-3">Технические требования</h3>
-            <p className="whitespace-pre-wrap break-words hyphens-auto text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{item.requirements}</p>
           </div>
         </section>
       )}
 
       {faq.length > 0 && (
-        <section className="mt-6">
+        <section className="mt-6 max-w-3xl">
           <h3 className="text-base font-display font-semibold mb-3">Частые вопросы</h3>
           <div className="space-y-2">
             {faq.map((f, i) => (
               <details key={i} className="glass rounded-xl p-4">
                 <summary className="cursor-pointer font-medium text-sm">{f.q ?? "Вопрос"}</summary>
-                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap break-words hyphens-auto leading-relaxed">{f.a ?? ""}</div>
+                <div className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap break-words leading-relaxed">{f.a ?? ""}</div>
               </details>
             ))}
           </div>
