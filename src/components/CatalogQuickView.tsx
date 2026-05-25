@@ -102,12 +102,12 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
   const needsSelection = hasTiers && selectedTier === null;
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 min-w-0 max-w-full overflow-hidden">
 
 
 
-      <div className="grid lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3 space-y-3">
+      <div className="grid lg:grid-cols-5 gap-6 min-w-0">
+        <div className="lg:col-span-3 space-y-3 min-w-0">
           {cover ? (
             <MediaShield className="rounded-2xl overflow-hidden aspect-[16/10] glass">
               <img src={cover} alt={item.title} className="h-full w-full object-cover" />
@@ -129,12 +129,13 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
           )}
         </div>
 
-        <aside className="lg:col-span-2 space-y-4">
-          <header>
+        <aside className="lg:col-span-2 space-y-4 min-w-0">
+          <header className="min-w-0">
             {item.category && <div className="text-xs uppercase tracking-wide text-primary">{item.category}</div>}
-            <h2 className="mt-1 text-2xl font-display font-bold gradient-text">{item.title}</h2>
-            {item.short_description && <p className="mt-2 text-sm text-muted-foreground">{item.short_description}</p>}
+            <h2 className="mt-1 text-2xl font-display font-bold gradient-text [overflow-wrap:anywhere]">{item.title}</h2>
+            {item.short_description && <p className="mt-2 text-sm text-muted-foreground [overflow-wrap:anywhere]">{item.short_description}</p>}
           </header>
+
 
           <div className="glass rounded-xl p-4 space-y-3">
             <div className="text-sm text-muted-foreground">Стоимость актуальна в безналичном расчете</div>
