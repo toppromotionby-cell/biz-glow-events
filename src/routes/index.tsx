@@ -66,6 +66,7 @@ function HomePage() {
   const { featured, posts, cases } = data;
   const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const [orderTopic, setOrderTopic] = useState<string | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   return (
     <div>
@@ -89,15 +90,23 @@ function HomePage() {
               Интерактивные зоны, техническое оснащение, шоу-программы и декорации.
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mb-16">
-              <CatalogChoiceModal>
-                <Button size="lg" className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto">
-                  Каталог услуг <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CatalogChoiceModal>
+              <Button
+                size="lg"
+                onClick={() => setCatalogOpen(true)}
+                className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto"
+              >
+                Каталог услуг <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              {catalogOpen && (
+                <Suspense fallback={null}>
+                  <CatalogChoiceModal open={catalogOpen} onOpenChange={setCatalogOpen} />
+                </Suspense>
+              )}
             </div>
           </div>
         </div>
       </Toggleable>
+
 
 
       {/* DIRECTIONS */}
