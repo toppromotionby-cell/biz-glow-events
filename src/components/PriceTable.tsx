@@ -15,6 +15,8 @@ export type PriceTier = {
 export type PricingValue = {
   from?: number;
   tiers?: PriceTier[];
+  /** Цена за каждый последующий час сверх максимальной строки в таблице (BYN). */
+  extraHourPrice?: number | "";
 } & Record<string, unknown>;
 
 const fmt = (n: number) =>
