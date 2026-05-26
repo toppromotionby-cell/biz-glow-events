@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
+
 export type HomeFeatured = {
   id: string;
   slug: string;
@@ -8,6 +10,7 @@ export type HomeFeatured = {
   short_description: string | null;
   photo_urls: string[] | null;
   basePath: string;
+  pricing: JsonValue;
 };
 export type HomeBlogTeaser = {
   id: string;
@@ -91,7 +94,7 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
     TABLES.map(async (t) => {
       const { data } = await supabaseAdmin
         .from(t.name)
-        .select("id, slug, title, short_description, photo_urls, updated_at")
+        .select("id, slug, title, short_description, photo_urls, pricing, updated_at")
         .eq("published", true)
         .order("updated_at", { ascending: false })
         .limit(40);
@@ -101,6 +104,7 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
         title: string;
         short_description: string | null;
         photo_urls: string[] | null;
+        pricing: JsonValue;
         updated_at: string;
       }>;
       return rows
