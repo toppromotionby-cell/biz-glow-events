@@ -122,16 +122,16 @@ function Page() {
               type="button"
               onClick={() => setOpenSlug(ind.slug)}
               aria-label={`Подробнее: ${ind.title}`}
-              className="group glass rounded-2xl border border-border/50 p-6 hover:border-primary/50 transition relative overflow-hidden text-left cursor-pointer"
+              className="group glass rounded-2xl border border-border/50 p-6 hover:border-primary/50 transition relative overflow-hidden text-center md:text-left cursor-pointer h-full flex flex-col items-center md:items-start"
             >
               <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/10 blur-3xl opacity-0 group-hover:opacity-100 transition" />
               <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary glow-primary text-primary-foreground">
                 <ind.icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-4 font-display font-semibold text-lg group-hover:text-primary transition">{ind.title}</h3>
+              <h3 className="mt-4 font-display font-semibold text-lg leading-snug text-balance group-hover:text-primary transition">{ind.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">{ind.scale}</p>
-              <p className="mt-3 text-sm text-muted-foreground">{ind.lead}</p>
-              <ul className="mt-4 space-y-1.5 text-sm">
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground text-pretty max-w-[34ch] md:max-w-none">{ind.lead}</p>
+              <ul className="mt-4 space-y-1.5 text-sm text-left self-stretch md:self-auto">
                 {ind.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2">
                     <span className="mt-2 h-1 w-1 rounded-full bg-primary shrink-0" />
