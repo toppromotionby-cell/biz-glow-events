@@ -142,7 +142,7 @@ function CatalogInner({ table }: { table: Table }) {
             >
               {handle}
               {it.photo_urls?.[0] ? (
-                <img src={it.photo_urls[0]} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                <StorageImg path={it.photo_urls[0]} className="h-10 w-10 rounded object-cover shrink-0" fallbackClassName="h-10 w-10 rounded shrink-0" />
               ) : (
                 <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
               )}
