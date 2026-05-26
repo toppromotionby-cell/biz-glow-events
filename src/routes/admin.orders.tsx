@@ -282,7 +282,13 @@ function AdminOrders() {
                     </td>
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right">
-                      <Link to="/admin/orders/$id" params={{ id: o.id }} className="inline-flex items-center text-muted-foreground hover:text-primary" onClick={(e) => e.stopPropagation()}>
+                      <Link
+                        to="/admin/orders/$id"
+                        params={{ id: o.id }}
+                        aria-label={`Открыть полную страницу заказа ${o.client_name}`}
+                        className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <ExternalLink className="h-4 w-4" />
                       </Link>
                     </td>
@@ -290,6 +296,19 @@ function AdminOrders() {
                 );
               })}
             </tbody>
+            {!isLoading && sorted.length > 0 && (
+              <tfoot className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border/60">
+                <tr className="text-sm font-medium">
+                  <td colSpan={7} className="p-3 text-right text-muted-foreground">
+                    Итого по фильтру ({sorted.length}):
+                  </td>
+                  <td className="p-3 text-right whitespace-nowrap">{fmtMoney(totals.total)}</td>
+                  <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(totals.paid)}</td>
+                  <td className={`p-3 text-right whitespace-nowrap ${totals.debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(totals.debt)}</td>
+                  <td className="p-3" />
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>
