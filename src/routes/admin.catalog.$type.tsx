@@ -475,12 +475,39 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
 }
 
 function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; onSaved: () => void; onDelete: () => void }) {
-  const [form, setForm] = useState({ ...item });
+  const draftKey = `catalog-draft:${table}:${item.id}`;
+  // Восстанавливаем черновик из localStorage (если есть и новее серверного updated_at).
+  const [form, setForm] = useState(() => {
+    if (typeof window === "undefined") return { ...item };
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const cached = JSON.parse(raw) as { savedAt: number; data: any };
+        if (cached?.data && cached.savedAt > new Date(item.updated_at ?? 0).getTime()) {
+          return { ...item, ...cached.data };
+        }
+      }
+    } catch { /* ignore */ }
+    return { ...item };
+  });
   const [saving, setSaving] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const [moveTarget, setMoveTarget] = useState<Table | "">("");
   const [moving, setMoving] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
+
+  // Автосохранение черновика (debounce 500ms).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify({ savedAt: Date.now(), data: form }));
+        setHasDraft(true);
+      } catch { /* quota */ }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [form, draftKey]);
 
   const save = async () => {
     setSaving(true);
@@ -493,6 +520,8 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
     }).eq("id", item.id);
     setSaving(false);
     if (error) return toast.error(error.message);
+    try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+    setHasDraft(false);
     toast.success("Сохранено");
     onSaved();
   };
