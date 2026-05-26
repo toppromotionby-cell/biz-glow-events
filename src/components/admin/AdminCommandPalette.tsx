@@ -207,14 +207,14 @@ export function AdminCommandPalette() {
   );
 }
 
-// Кнопка-триггер для шапки.
-export function CommandPaletteTrigger({ onClick }: { onClick: () => void }) {
+// Кнопка-триггер для шапки. Открывает палитру через CustomEvent.
+export function CommandPaletteTrigger() {
   const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
   return (
     <button
       type="button"
-      onClick={onClick}
-      aria-label="Открыть командный палитр"
+      onClick={() => window.dispatchEvent(new CustomEvent("admin-cmdk-open"))}
+      aria-label="Открыть командный палитр (Ctrl+K)"
       className="hidden sm:inline-flex items-center gap-2 h-8 px-2.5 rounded-md border border-border/60 bg-muted/30 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <Search className="h-3.5 w-3.5" />
