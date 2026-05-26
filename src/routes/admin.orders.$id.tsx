@@ -118,6 +118,9 @@ function OrderDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => openAuthedDocument(`/admin/orders/${order.id}/quote`).catch((e) => toast.error((e as Error).message))} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/10">Скачать КП</button>
+          <Button variant="outline" size="sm" onClick={() => loadPreview.mutate()} disabled={loadPreview.isPending}>
+            <Mail className="h-4 w-4 mr-1" />{loadPreview.isPending ? "Загрузка…" : "Предпросмотр письма"}
+          </Button>
           <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
