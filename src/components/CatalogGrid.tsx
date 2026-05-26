@@ -159,6 +159,29 @@ export function CatalogGrid({
   );
 }
 
+function SlidePhoto({ src, alt, active }: { src: string; alt: string; active: boolean }) {
+  const url = useResolvedUrl(src);
+  if (!url) {
+    return (
+      <div
+        aria-hidden={!active}
+        className={`absolute inset-0 h-full w-full bg-muted/30 transition-opacity duration-500 ${active ? "opacity-100" : "opacity-0"}`}
+      />
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt={alt}
+      loading="lazy"
+      aria-hidden={!active}
+      className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+        active ? "opacity-100" : "opacity-0"
+      } group-hover:scale-105 transition-transform [transition-duration:700ms]`}
+    />
+  );
+}
+
 function CatalogCard({
   item,
   category,
