@@ -89,7 +89,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
             style={style(0)}
           >
             <Sparkles className="h-3 w-3" />
-            Онлайн-магазин event-решений
+            ОНЛАЙН-МАГАЗИН EVENT-РЕШЕНИЙ
           </div>
 
           {/* H1 */}
