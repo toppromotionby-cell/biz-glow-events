@@ -66,8 +66,9 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
       <Link to={CATALOG_SLUG_ROUTE[type]} params={{ slug: item.slug }} className="block">
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (
-            <img src={item.photo_urls[0]} alt={item.title} loading="lazy"
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <StorageImg path={item.photo_urls[0]} alt={item.title}
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fallbackClassName="h-full w-full" />
           )}
         </div>
       </Link>
