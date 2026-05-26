@@ -8,8 +8,7 @@ import { GoogleButton } from "@/components/auth/GoogleButton";
 import { useAuthPromptState, closeAuthPrompt } from "@/lib/auth-prompt";
 
 export function AuthPromptDialog() {
-  const { open, reason, redirect } = useAuthPromptState();
-  const search = redirect ? { redirect } : undefined;
+  const { open, reason } = useAuthPromptState();
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) closeAuthPrompt(); }}>
       <DialogContent className="max-w-md">
