@@ -18,6 +18,7 @@ export function QuickQuoteForm({
   source?: string;
 }) {
   const submit = useServerFn(submitLead);
+  const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [name, setName] = useState("");
@@ -26,6 +27,7 @@ export function QuickQuoteForm({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы получить расчёт.")) return;
     if (!name.trim() || !phone.trim()) {
       toast.error("Укажите имя и телефон");
       return;
