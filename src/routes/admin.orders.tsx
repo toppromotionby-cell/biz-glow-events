@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip } from "lucide-react";
-import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { Download, Search, ExternalLink, Clock, Paperclip, Plus } from "lucide-react";
+// OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
+const OrderAttachments = lazy(() =>
+  import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
+);
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
