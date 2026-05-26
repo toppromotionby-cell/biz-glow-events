@@ -96,8 +96,10 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const prev = useCallback(() => setLightbox((i) => (i === null ? null : (i - 1 + photos.length) % photos.length)), [photos.length]);
   const next = useCallback(() => setLightbox((i) => (i === null ? null : (i + 1) % photos.length)), [photos.length]);
 
+  const { isAuthenticated } = useAuth();
   function handlePrimaryOrder() {
     if (needsSelection) return;
+    if (!isAuthenticated) { openAuthPrompt({ reason: "Войдите, чтобы оформить заказ или отправить запрос." }); return; }
     if (isByRequest) {
       try { localStorage.setItem("lead_subject_v1", effectiveTitle); } catch {}
       trackLead("by_request_button");
