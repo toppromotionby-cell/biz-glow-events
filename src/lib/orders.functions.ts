@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail } from "@/lib/admin-email.server";
+import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail, buildClientOrderConfirmedEmail } from "@/lib/admin-email.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const EntityType = z.enum(["zones", "tech_equipment", "services", "production_items"]);
