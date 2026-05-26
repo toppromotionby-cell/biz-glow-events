@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { trackBeginCheckout, trackPurchase } from "@/lib/analytics";
 import { CartCrossSell } from "@/components/CartCrossSell";
 import { QtyStepper } from "@/components/ui/QtyStepper";
+import { useAuth } from "@/hooks/use-auth";
+import { ensureAuthOrPrompt } from "@/hooks/use-require-auth";
 
 const DRAFT_KEY = "cart_contact_draft_v1";
 
