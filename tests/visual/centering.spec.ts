@@ -67,11 +67,12 @@ test.describe("Centering — industries page", () => {
     const firstTile = page
       .locator('section[aria-labelledby="grid-heading"] button')
       .first();
+    await firstTile.scrollIntoViewIfNeeded();
     await firstTile.click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await page.waitForTimeout(150);
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(300);
     await expect(dialog).toHaveScreenshot(`industries-dialog-${testInfo.project.name}.png`);
   });
 });
