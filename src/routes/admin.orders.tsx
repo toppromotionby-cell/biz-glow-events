@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2, CheckCircle2, Mail, AlertTriangle } from "lucide-react";
+import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
 // OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
 const OrderAttachments = lazy(() =>
   import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
