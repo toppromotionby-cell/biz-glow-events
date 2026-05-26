@@ -3,7 +3,7 @@ import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, Calendar
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { HeroSection } from "@/components/HeroSection";
