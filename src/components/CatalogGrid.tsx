@@ -309,6 +309,29 @@ function CatalogCard({
               <span className="text-xs sm:text-sm text-muted-foreground">BYN</span>
             </div>
           </PriceGate>
+          <div className="mt-3 flex items-stretch gap-2">
+            <div className="flex-1">
+              <AddToCartButton
+                entity_type={entityType}
+                id={item.slug}
+                slug={item.slug}
+                title={item.title}
+                price={item.priceFrom}
+                image={item.image}
+              />
+            </div>
+            <div className="mt-2">
+              <WishlistButton
+                entity_type={entityType}
+                id={item.slug}
+                slug={item.slug}
+                title={item.title}
+                price={item.priceFrom}
+                image={item.image}
+                compact
+              />
+            </div>
+          </div>
         </div>
       </div>
     </article>
