@@ -61,6 +61,22 @@ function OrderDetail() {
     toast.success("Сохранено");
   };
 
+  const removeOrder = useMutation({
+    mutationFn: async () => {
+      await supabase.from("order_items").delete().eq("order_id", id);
+      await supabase.from("order_timeline").delete().eq("order_id", id);
+      await supabase.from("order_attachments").delete().eq("order_id", id);
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Заказ удалён");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      navigate({ to: "/admin/orders" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (!order) return <div>Загрузка...</div>;
 
   return (
