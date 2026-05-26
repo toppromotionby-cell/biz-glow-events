@@ -149,12 +149,13 @@ export function AdminSidebar() {
 }
 
 function NavSection({
-  group, pathname, collapsed, defaultOpen,
+  group, pathname, collapsed, defaultOpen, badges,
 }: {
   group: NavGroup;
   pathname: string;
   collapsed: boolean;
   defaultOpen: boolean;
+  badges?: Record<BadgeKey, number>;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -165,7 +166,7 @@ function NavSection({
         <SidebarGroupContent>
           <SidebarMenu>
             {group.items.map((item) => (
-              <NavLinkRow key={item.to} item={item} pathname={pathname} />
+              <NavLinkRow key={item.to} item={item} pathname={pathname} badges={badges} />
             ))}
           </SidebarMenu>
         </SidebarGroupContent>
@@ -196,7 +197,7 @@ function NavSection({
           <SidebarGroupContent>
             <SidebarMenu>
               {group.items.map((item) => (
-                <NavLinkRow key={item.to} item={item} pathname={pathname} />
+                <NavLinkRow key={item.to} item={item} pathname={pathname} badges={badges} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -206,23 +207,38 @@ function NavSection({
   );
 }
 
-function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavLinkRow({ item, pathname, badges }: { item: NavItem; pathname: string; badges?: Record<BadgeKey, number> }) {
   const active = isItemActive(pathname, item);
+  const count = item.badgeKey ? badges?.[item.badgeKey] ?? 0 : 0;
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
         isActive={active}
-        tooltip={item.label}
+        tooltip={count > 0 ? `${item.label} · ${count}` : item.label}
         className={cn(
           active && "bg-gradient-primary text-primary-foreground hover:bg-gradient-primary hover:text-primary-foreground",
         )}
       >
-        <Link to={item.to}>
+        <Link to={item.to} preload="intent">
           <item.icon className="h-4 w-4" />
-          <span>{item.label}</span>
+          <span className="flex-1 truncate">{item.label}</span>
+          {count > 0 && (
+            <span
+              className={cn(
+                "ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[10px] font-semibold rounded-full tabular-nums",
+                active
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-primary/15 text-primary",
+              )}
+              aria-label={`${count} новых`}
+            >
+              {count > 99 ? "99+" : count}
+            </span>
+          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
 }
+
