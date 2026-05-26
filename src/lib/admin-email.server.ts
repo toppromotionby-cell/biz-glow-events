@@ -185,10 +185,7 @@ function fmtDateRu(d?: string | null): string {
   try { return new Date(d).toLocaleDateString("ru-BY"); } catch { return String(d); }
 }
 
-export async function notifyClientOrderConfirmedEmail(
-  p: ClientOrderConfirmedPayload,
-): Promise<{ ok: boolean; error?: string }> {
-  if (!p.clientEmail) return { ok: false, error: "no client email" };
+export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): { subject: string; html: string } {
   const subject = `Ваш заказ подтверждён — ${SITE_NAME}`;
   const statusKey = p.status ?? "confirmed";
   const statusLabel = STATUS_LABEL_RU[statusKey] ?? "Подтверждён";
@@ -281,6 +278,14 @@ export async function notifyClientOrderConfirmedEmail(
     С уважением, команда ${SITE_NAME}.
   </p>
 </div></body></html>`;
+  return { subject, html };
+}
+
+export async function notifyClientOrderConfirmedEmail(
+  p: ClientOrderConfirmedPayload,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!p.clientEmail) return { ok: false, error: "no client email" };
+  const { subject, html } = buildClientOrderConfirmedEmail(p);
   return enqueue({
     to: p.clientEmail,
     subject,
@@ -289,5 +294,6 @@ export async function notifyClientOrderConfirmedEmail(
     messageId: `order-confirmed-${p.orderId}`,
   });
 }
+
 
 

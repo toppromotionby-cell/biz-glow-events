@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,10 +8,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Trash2, Mail } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument } from "@/lib/authed-fetch";
+import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
+
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
@@ -30,6 +36,14 @@ function OrderDetail() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [internalNotes, setInternalNotes] = useState("");
+  const [emailPreview, setEmailPreview] = useState<{ subject: string; html: string; to: string | null } | null>(null);
+  const previewFn = useServerFn(previewOrderConfirmationEmail);
+  const loadPreview = useMutation({
+    mutationFn: async () => previewFn({ data: { id } }),
+    onSuccess: (res) => setEmailPreview(res),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const { data: order } = useQuery({
     queryKey: ["order", id],
@@ -104,6 +118,9 @@ function OrderDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => openAuthedDocument(`/admin/orders/${order.id}/quote`).catch((e) => toast.error((e as Error).message))} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/10">Скачать КП</button>
+          <Button variant="outline" size="sm" onClick={() => loadPreview.mutate()} disabled={loadPreview.isPending}>
+            <Mail className="h-4 w-4 mr-1" />{loadPreview.isPending ? "Загрузка…" : "Предпросмотр письма"}
+          </Button>
           <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
@@ -201,6 +218,28 @@ function OrderDetail() {
           </ol>
         )}
       </div>
+
+      <Dialog open={!!emailPreview} onOpenChange={(o) => !o && setEmailPreview(null)}>
+        <DialogContent className="max-w-3xl p-0 gap-0 max-h-[90vh] flex flex-col">
+          <DialogHeader className="p-5 pb-3 border-b border-border">
+            <DialogTitle>Предпросмотр письма клиенту</DialogTitle>
+            <DialogDescription className="space-y-0.5">
+              <div><span className="text-muted-foreground">Кому:</span> {emailPreview?.to ?? "— email клиента не указан"}</div>
+              <div><span className="text-muted-foreground">Тема:</span> {emailPreview?.subject}</div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden bg-[#0a0a0f]">
+            {emailPreview && (
+              <iframe
+                title="email-preview"
+                srcDoc={emailPreview.html}
+                sandbox=""
+                className="w-full h-[70vh] border-0 bg-white"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
