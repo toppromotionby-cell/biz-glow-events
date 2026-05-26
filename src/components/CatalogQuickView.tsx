@@ -214,24 +214,35 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
             <div className="glass rounded-xl p-4 space-y-3 hidden md:block">
               <div className="text-xs text-muted-foreground">Стоимость актуальна в безналичном расчёте</div>
               <PriceGate>
-                <div className="text-2xl font-display font-bold tabular-nums">
-                  {tierPrice !== null
-                    ? formatBYNTotal(tierPrice)
-                    : from !== null
-                    ? `от ${formatBYNTotal(from)}`
-                    : "По запросу"}
-                </div>
-                {hasTiers && (
+                {isHourMode ? (
+                  <HourPriceSlider
+                    pricing={hourPricing!}
+                    hours={hours}
+                    onChange={setHours}
+                    rawPricing={item.pricing}
+                  />
+                ) : (
                   <>
-                    <div className="text-xs text-muted-foreground">
-                      {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                    <div className="text-2xl font-display font-bold tabular-nums">
+                      {tierPrice !== null
+                        ? formatBYNTotal(tierPrice)
+                        : from !== null
+                        ? `от ${formatBYNTotal(from)}`
+                        : "По запросу"}
                     </div>
-                    <PriceTableView
-                      pricing={item.pricing}
-                      selectable
-                      selectedIndex={selectedTier}
-                      onSelect={(i) => setSelectedTier(i)}
-                    />
+                    {hasTiers && (
+                      <>
+                        <div className="text-xs text-muted-foreground">
+                          {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                        </div>
+                        <PriceTableView
+                          pricing={item.pricing}
+                          selectable
+                          selectedIndex={selectedTier}
+                          onSelect={(i) => setSelectedTier(i)}
+                        />
+                      </>
+                    )}
                   </>
                 )}
               </PriceGate>
@@ -244,7 +255,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                     kind={qtyKind}
                     min={1}
                     max={maxQtyFor(qtyKind)}
-                    label={qtyKind === "hour" ? "Часов" : qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
+                    label={qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
                   />
                   <div className="flex items-baseline justify-between border-t border-border/30 pt-2">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">Итого</span>
@@ -257,6 +268,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                   </div>
                 </>
               )}
+
 
               {needsSelection ? (
                 <button type="button" disabled className="inline-flex w-full justify-center rounded-md bg-muted/40 px-5 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed">
