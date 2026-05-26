@@ -33,13 +33,13 @@ export function AuthPromptDialog() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Link to="/login" search={search} onClick={() => closeAuthPrompt()}>
+            <Link to="/login" onClick={() => closeAuthPrompt()}>
               <Button variant="outline" className="w-full">
                 <LogIn className="h-4 w-4 mr-1.5" aria-hidden="true" />
                 Войти
               </Button>
             </Link>
-            <Link to="/register" search={search} onClick={() => closeAuthPrompt()}>
+            <Link to="/register" onClick={() => closeAuthPrompt()}>
               <Button className="w-full bg-gradient-primary glow-primary">
                 <UserPlus className="h-4 w-4 mr-1.5" aria-hidden="true" />
                 Регистрация
