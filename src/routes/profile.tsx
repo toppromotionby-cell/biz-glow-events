@@ -23,8 +23,11 @@ export const Route = createFileRoute("/profile")({
 
 const STATUS_LABEL: Record<string, string> = {
   new: "Новая",
+  consultation: "Консультация",
+  estimate: "Смета",
   in_progress: "В работе",
   quoted: "Смета выслана",
+  contract: "Договор",
   confirmed: "Подтверждена",
   paid: "Оплачена",
   completed: "Завершена",
@@ -33,8 +36,11 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_TONE: Record<string, string> = {
   new: "border-primary/40 text-primary",
+  consultation: "border-primary/40 text-primary",
+  estimate: "border-sky-400/40 text-sky-400",
   in_progress: "border-amber-400/40 text-amber-400",
   quoted: "border-sky-400/40 text-sky-400",
+  contract: "border-violet-400/40 text-violet-400",
   confirmed: "border-emerald-400/40 text-emerald-400",
   paid: "border-emerald-500/50 text-emerald-500",
   completed: "border-muted-foreground/40 text-muted-foreground",
