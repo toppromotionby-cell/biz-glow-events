@@ -734,6 +734,12 @@ a[href],
   .fx-cursor-glow, .fx-aurora { display: none; }
 }
 
+/* На тач-устройствах курсорный glow бесполезен (нет указателя) — отключаем его,
+   чтобы убрать застывшее пятно по центру экрана на iPhone/Android. */
+@media (hover: none), (pointer: coarse) {
+  .fx-cursor-glow { display: none; }
+}
+
 
 /* =====================================================
  * Hero spark burst — оранжево-янтарный взрыв из центра
