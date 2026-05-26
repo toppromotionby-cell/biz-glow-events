@@ -78,6 +78,11 @@ function HomePage() {
         onOpenCatalog={() => setCatalogOpen(true)}
         onOpenHelp={() => setOrderTopic("Помощь в подборе")}
       />
+      {catalogOpen && (
+        <Suspense fallback={null}>
+          <CatalogChoiceModal open={catalogOpen} onOpenChange={setCatalogOpen} />
+        </Suspense>
+      )}
 
 
 
