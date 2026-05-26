@@ -249,5 +249,15 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
         ))}
       </CommandList>
     </CommandDialog>
+    {quick && (
+      <CatalogQuickView
+        open={!!quick}
+        onOpenChange={(v) => { if (!v) setQuick(null); }}
+        type={quick.type}
+        slug={quick.slug}
+        basePath={quick.basePath}
+      />
+    )}
+    </>
   );
 }
