@@ -46,6 +46,7 @@ function CatalogInner({ table }: { table: Table }) {
   const [selected, setSelected] = useState<any | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [preview, setPreview] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["catalog", table],
