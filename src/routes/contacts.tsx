@@ -4,7 +4,14 @@ import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
 
 export const Route = createFileRoute("/contacts")({
-  head: () => ({ meta: [{ title: "Контакты — event-hub.by" }, { name: "description", content: "Свяжитесь с event-hub.by — Минск, Беларусь. Email." }] }),
+  head: () => ({
+    meta: [
+      { title: "Контакты — event-hub.by" },
+      { name: "description", content: "Свяжитесь с event-hub.by: офис в Минске, email и форма заявки. Подберём оборудование, зоны и услуги под ваше мероприятие в Беларуси." },
+      { property: "og:title", content: "Контакты event-hub.by — Минск, Беларусь" },
+      { property: "og:description", content: "Напишите нам или оставьте заявку — поможем подобрать оборудование, площадки и услуги для вашего мероприятия." },
+    ],
+  }),
   component: ContactsPage,
 });
 

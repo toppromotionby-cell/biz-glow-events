@@ -19,7 +19,9 @@ export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
       { title: "Регистрация — event-hub.by" },
-      { name: "description", content: "Создайте аккаунт, чтобы видеть цены и оформлять заявки." },
+      { name: "description", content: "Создайте аккаунт event-hub.by, чтобы видеть цены, оформлять заявки и пользоваться личным кабинетом для заказов оборудования." },
+      { property: "og:title", content: "Регистрация в event-hub.by" },
+      { property: "og:description", content: "Создайте аккаунт — получите доступ к ценам, каталогу и оформлению заявок." },
       { name: "robots", content: "noindex,follow" },
     ],
   }),

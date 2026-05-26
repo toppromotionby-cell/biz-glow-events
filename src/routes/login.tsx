@@ -16,6 +16,9 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Вход — event-hub.by" },
+      { name: "description", content: "Войдите в личный кабинет event-hub.by, чтобы видеть цены, оформлять заявки и отслеживать статус заказов на оборудование и услуги." },
+      { property: "og:title", content: "Вход в личный кабинет — event-hub.by" },
+      { property: "og:description", content: "Доступ к ценам, заявкам и истории заказов event-hub.by." },
       { name: "robots", content: "noindex,follow" },
     ],
   }),
