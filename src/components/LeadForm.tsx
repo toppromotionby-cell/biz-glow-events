@@ -5,6 +5,8 @@ import { submitLead } from "@/lib/leads.functions";
 import { readUtm } from "@/lib/utm";
 import { DateField } from "@/components/DateField";
 import { trackLead } from "@/lib/analytics";
+import { useAuth } from "@/hooks/use-auth";
+import { ensureAuthOrPrompt } from "@/hooks/use-require-auth";
 
 const SUBJECT_KEY = "lead_subject_v1";
 
