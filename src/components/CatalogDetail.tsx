@@ -26,6 +26,8 @@ import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
+import { QuantityStepper } from "@/components/QuantityStepper";
+import { detectQuantityKind, maxQtyFor, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
