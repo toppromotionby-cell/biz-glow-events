@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listCatalog, type CatalogRow, type CatalogType } from "@/lib/catalog.functions";
 import { CATALOG_SLUG_ROUTE } from "@/lib/catalog-routes";
 import { Plus } from "lucide-react";
+import { StorageImg } from "@/components/StorageMedia";
 import { addToCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
 import { toast } from "sonner";
