@@ -16,6 +16,7 @@ import { ArrowLeft, Clock, Trash2, Mail } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
+import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
