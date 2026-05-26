@@ -718,6 +718,7 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          extras: Json
           faq: Json | null
           features: Json | null
           id: string
@@ -738,6 +739,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string
@@ -758,6 +760,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string
@@ -865,6 +868,7 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          extras: Json
           faq: Json | null
           features: Json | null
           id: string
@@ -885,6 +889,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string
@@ -905,6 +910,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string
@@ -1035,6 +1041,7 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          extras: Json
           faq: Json | null
           features: Json | null
           id: string
@@ -1055,6 +1062,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string
@@ -1075,6 +1083,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string
@@ -1246,6 +1255,7 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          extras: Json
           faq: Json | null
           features: Json | null
           id: string
@@ -1266,6 +1276,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string
@@ -1286,6 +1297,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          extras?: Json
           faq?: Json | null
           features?: Json | null
           id?: string

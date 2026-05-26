@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 import { CatalogProse } from "@/components/CatalogProse";
+import { ExtrasBlock } from "@/components/ExtrasBlock";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
@@ -278,6 +279,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               </ul>
             </div>
           )}
+
+          <ExtrasBlock extras={(item as unknown as { extras?: unknown }).extras} variant="page" />
+
 
           <AvailabilityCalendar entityType={entityType} itemId={item.id} />
         </aside>

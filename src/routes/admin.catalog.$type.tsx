@@ -23,6 +23,9 @@ import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEdit
 import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
+import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
+import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
+import { Info } from "lucide-react";
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
@@ -248,12 +251,26 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
 
             {Array.isArray(item.features) && item.features.length > 0 && (
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Особенности</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Что входит</h3>
                 <ul className="list-disc list-inside text-sm space-y-1">
                   {item.features.map((f: any, i: number) => (
                     <li key={i}>{typeof f === "string" ? f : JSON.stringify(f)}</li>
                   ))}
                 </ul>
+              </section>
+            )}
+
+            {Array.isArray(item.extras) && item.extras.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2"><Info className="h-3.5 w-3.5" />Дополнительно</h3>
+                <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                  {item.extras.map((r: any, i: number) => (
+                    <div key={i} className="flex justify-between gap-3 border-b border-border/30 py-1">
+                      <dt className="text-muted-foreground">{r?.label ?? ""}</dt>
+                      <dd className="font-medium text-right">{r?.value ?? ""}</dd>
+                    </div>
+                  ))}
+                </dl>
               </section>
             )}
 
@@ -312,7 +329,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
       short_description: form.short_description, description: form.description,
       requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
       published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
-      pricing: form.pricing ?? {}, features: form.features ?? [], faq: form.faq ?? [],
+      pricing: form.pricing ?? {}, features: form.features ?? [], extras: form.extras ?? [], faq: form.faq ?? [],
     }).eq("id", item.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -330,7 +347,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
         short_description: form.short_description, description: form.description,
         requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
         published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
-        pricing: form.pricing ?? {}, features: form.features ?? [], faq: form.faq ?? [],
+        pricing: form.pricing ?? {}, features: form.features ?? [], extras: form.extras ?? [], faq: form.faq ?? [],
       };
       // Handle slug uniqueness in target table
       const { data: existing } = await supabase.from(target).select("id").eq("slug", payload.slug).maybeSingle();
@@ -398,6 +415,15 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
       <Field label="Краткое описание"><Textarea rows={2} className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30" value={form.short_description ?? ""} onChange={(e) => setForm({ ...form, short_description: e.target.value })} /></Field>
       <Field label="Описание"><Textarea rows={6} className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
       <Field label="Требования"><Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} /></Field>
+
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="glass rounded-xl p-4">
+          <FeaturesEditor value={form.features} onChange={(next) => setForm({ ...form, features: next })} />
+        </div>
+        <div className="glass rounded-xl p-4">
+          <ExtrasEditor value={form.extras} onChange={(next) => setForm({ ...form, extras: next })} />
+        </div>
+      </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="SEO title"><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></Field>

@@ -15,6 +15,7 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { CompareButton } from "@/components/CompareButton";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { CatalogProse } from "@/components/CatalogProse";
+import { ExtrasBlock } from "@/components/ExtrasBlock";
 
 import { priceFrom } from "@/lib/utils";
 function asArray<T = unknown>(v: unknown): T[] {
@@ -198,6 +199,8 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
               </ul>
             </div>
           )}
+
+          <ExtrasBlock extras={(item as unknown as { extras?: unknown }).extras} variant="modal" />
         </aside>
       </div>
 
