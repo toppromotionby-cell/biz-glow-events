@@ -15,6 +15,8 @@ export type PriceTier = {
 export type PricingValue = {
   from?: number;
   tiers?: PriceTier[];
+  /** Цена за каждый последующий час сверх максимальной строки в таблице (BYN). */
+  extraHourPrice?: number | "";
 } & Record<string, unknown>;
 
 const fmt = (n: number) =>
@@ -138,6 +140,27 @@ export function PriceTableEditor({
           </table>
         </div>
       )}
+      {/* Цена за каждый последующий час — используется ползунком в карточке для корректного расчёта стоимости свыше максимальной строки таблицы. */}
+      <div className="flex flex-wrap items-end gap-3 pt-2">
+        <div className="flex-1 min-w-[220px]">
+          <Label className="text-xs text-muted-foreground">Каждый последующий час, BYN</Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={pricing.extraHourPrice === "" || pricing.extraHourPrice == null ? "" : pricing.extraHourPrice}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChange({ ...pricing, extraHourPrice: v === "" ? "" : Number(v) });
+            }}
+            placeholder="напр. 80"
+            className="h-9 mt-1"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground flex-1 min-w-[240px]">
+          Заполните, если у позиции почасовая тарификация — ползунок будет добавлять эту сумму за каждый час сверх максимального тарифа в таблице.
+        </p>
+      </div>
       <p className="text-xs text-muted-foreground">
         «Цена от» рассчитывается автоматически как минимум из заполненных строк.
       </p>

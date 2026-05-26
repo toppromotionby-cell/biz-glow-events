@@ -71,12 +71,13 @@ function isExtraHourRow(label?: string, unit?: string): boolean {
 
 export function parseHourTiers(
   tiers: Array<{ label?: string; price: number | ""; unit?: string }>,
+  extraHourOverride?: number | null,
 ): HourPricing | null {
-  if (!Array.isArray(tiers) || tiers.length === 0) return null;
+  const list = Array.isArray(tiers) ? tiers : [];
   const points: HourTier[] = [];
   let extraPerHour: number | null = null;
 
-  for (const t of tiers) {
+  for (const t of list) {
     const price = Number(t.price);
     if (!Number.isFinite(price) || price <= 0) continue;
     const isHourUnit = detectQuantityKind(t.unit) === "hour" || /час/i.test(t.label ?? "");
@@ -90,6 +91,10 @@ export function parseHourTiers(
       points.push({ hours, price, label: t.label });
     }
   }
+
+  // Explicit admin override wins over rows inferred from labels.
+  const ov = Number(extraHourOverride);
+  if (Number.isFinite(ov) && ov > 0) extraPerHour = ov;
 
   if (points.length === 0 && extraPerHour === null) return null;
 

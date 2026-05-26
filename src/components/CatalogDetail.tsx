@@ -60,7 +60,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
   const tiers = getTiers(item.pricing);
   const hasTiers = tiers.length > 0;
-  const hourPricing = parseHourTiers(tiers);
+  const hourPricing = parseHourTiers(tiers, (item.pricing as { extraHourPrice?: number } | null)?.extraHourPrice);
   const isHourMode = hourPricing !== null;
   const [hours, setHours] = useState<number>(hourPricing?.popularHours ?? hourPricing?.minHours ?? 1);
   const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
