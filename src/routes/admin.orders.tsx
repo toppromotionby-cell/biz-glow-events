@@ -367,6 +367,7 @@ function AdminOrders() {
               {sorted.map((o: any) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
                 const age = ageInfo(o.updated_at ?? o.created_at, o.status);
+                const canConfirm = o.status === "new" || o.status === "pending";
                 return (
 
                   <tr
@@ -425,6 +426,17 @@ function AdminOrders() {
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex items-center gap-2">
+                        {canConfirm && (
+                          <button
+                            type="button"
+                            title="Подтвердить заказ"
+                            disabled={confirmOrder.isPending}
+                            onClick={() => confirmOrder.mutate(o.id)}
+                            className="inline-flex items-center text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </button>
+                        )}
                         <Link
                           to="/admin/orders/$id"
                           params={{ id: o.id }}
