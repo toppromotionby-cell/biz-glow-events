@@ -133,15 +133,35 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
     .map((x) => x.item);
   const featured = merged.slice(0, 6);
 
-  // Подписываем первую фотку каждой карточки на сервере (bucket приватный, anon не может подписывать).
-  await Promise.all(
-    featured.map(async (f) => {
-      const first = f.photo_urls?.[0];
-      if (!first || /^(https?:|blob:|data:)/i.test(first)) return;
-      const { data } = await supabaseAdmin.storage.from("media").createSignedUrl(first, 900);
-      if (data?.signedUrl) f.photo_urls = [data.signedUrl, ...(f.photo_urls?.slice(1) ?? [])];
-    }),
-  );
+  // Подписываем ВСЕ фото каждой featured-карточки одним батчем
+  // (bucket приватный — anon не может подписывать на клиенте, иначе
+  //  слайды 2..N в автоскролинге останутся пульсирующим скелетом).
+  {
+    const paths = new Set<string>();
+    for (const f of featured) {
+      for (const u of f.photo_urls ?? []) {
+        if (u && !/^(https?:|blob:|data:)/i.test(u)) paths.add(u);
+      }
+    }
+    if (paths.size > 0) {
+      const list = Array.from(paths);
+      const TTL = 60 * 60 * 24 * 7; // 7 дней
+      const { data, error } = await supabaseAdmin.storage
+        .from("media")
+        .createSignedUrls(list, TTL);
+      if (error) {
+        console.error("[home.featured] createSignedUrls failed:", error);
+      } else if (data) {
+        const map = new Map<string, string>();
+        data.forEach((d, i) => { if (d.signedUrl) map.set(list[i], d.signedUrl); });
+        for (const f of featured) {
+          f.photo_urls = (f.photo_urls ?? []).map((u) =>
+            u && !/^(https?:|blob:|data:)/i.test(u) ? map.get(u) ?? u : u,
+          );
+        }
+      }
+    }
+  }
 
   const { data: blog } = await supabaseAdmin
     .from("blog_posts")
