@@ -10,6 +10,8 @@ import { SparkBurst } from "@/components/SparkBurst";
 import { DirectionCard } from "@/components/ui/DirectionCard";
 import { MediaCard } from "@/components/ui/MediaCard";
 import { StorageImg } from "@/components/StorageMedia";
+import { PriceGate } from "@/components/PriceGate";
+import { priceFrom as priceFromUtil } from "@/lib/utils";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
