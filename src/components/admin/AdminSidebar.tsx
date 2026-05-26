@@ -97,6 +97,7 @@ export function AdminSidebar() {
   const { state, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
   const { user } = useAuth();
+  const { data: badges } = useSidebarBadges();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
@@ -110,10 +111,12 @@ export function AdminSidebar() {
               pathname={loc.pathname}
               collapsed={collapsed}
               defaultOpen={hasActive}
+              badges={badges}
             />
           );
         })}
       </SidebarContent>
+
 
       <SidebarFooter className="border-t border-border/40">
         <SidebarMenu>
