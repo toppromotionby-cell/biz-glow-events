@@ -18,6 +18,8 @@ import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
 import { detectQuantityKind, maxQtyFor, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
+import { useAuth } from "@/hooks/use-auth";
+import { openAuthPrompt } from "@/lib/auth-prompt";
 import { toast } from "sonner";
 import { priceFrom } from "@/lib/utils";
 
