@@ -45,7 +45,19 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "VR/AR, LED, фотозоны, BTL, промо-персонал, производство декораций." },
       { property: "og:url", content: "/" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [
+      { rel: "canonical", href: "/" },
+      // Preload LCP hero image (responsive AVIF). Browser matches imagesrcset/imagesizes to the <picture> source.
+      {
+        rel: "preload",
+        as: "image",
+        href: "/hero-bg-1920.avif",
+        imagesrcset: "/hero-bg-828.avif 828w, /hero-bg-1920.avif 1920w",
+        imagesizes: "100vw",
+        type: "image/avif",
+        fetchpriority: "high",
+      } as unknown as { rel: string; href: string },
+    ],
   }),
 });
 
