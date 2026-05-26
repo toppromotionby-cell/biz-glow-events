@@ -119,7 +119,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
         <div className="lg:col-span-3 space-y-3">
           {cover ? (
             <MediaShield className="rounded-2xl overflow-hidden aspect-[16/10] glass">
-              <img src={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" />
+              <StorageImg path={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" fallbackClassName="h-full w-full" />
             </MediaShield>
           ) : (
             <div className="rounded-2xl aspect-[16/10] glass flex items-center justify-center text-muted-foreground">
@@ -131,7 +131,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
               {photos.slice(0, 10).map((p, i) => (
                 <button key={p + i} type="button" onClick={() => setActive(i)}
                   className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
-                  <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <StorageImg path={p} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
                 </button>
               ))}
             </div>
