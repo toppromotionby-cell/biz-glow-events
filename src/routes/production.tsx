@@ -1,18 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CatalogGrid } from "@/components/CatalogGrid";
 import { PRODUCTION } from "@/lib/catalog-mock";
-import { listCatalog } from "@/lib/catalog.functions";
+import { listCatalog, listCatalogCategories } from "@/lib/catalog.functions";
 import { rowsToItems } from "@/lib/catalog-adapter";
 import { itemListJsonLd } from "@/lib/seo-jsonld";
 
 export const Route = createFileRoute("/production")({
   loader: async () => {
     try {
-      const rows = await listCatalog({ data: { type: "production_items" } });
+      const [rows, categories] = await Promise.all([
+        listCatalog({ data: { type: "production_items" } }),
+        listCatalogCategories({ data: { type: "production_items" } }),
+      ]);
       const items = rowsToItems(rows);
-      return { items: items.length ? items : PRODUCTION };
+      return { items: items.length ? items : PRODUCTION, categories };
     } catch {
-      return { items: PRODUCTION };
+      return { items: PRODUCTION, categories: [] };
     }
   },
   head: ({ loaderData }) => ({
@@ -38,14 +41,14 @@ export const Route = createFileRoute("/production")({
 });
 
 function ProductionPage() {
-  const { items } = Route.useLoaderData();
+  const { items, categories } = Route.useLoaderData();
   return (
     <div className="container mx-auto px-4 py-16">
       <header className="max-w-2xl mb-12">
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Производство декораций и конструкций в Минске</h1>
         <p className="mt-4 text-muted-foreground">Декорации, фотозоны, сцены и печать. От эскиза до монтажа на площадке.</p>
       </header>
-      <CatalogGrid items={items} category="production" basePath="/production" entityType="production_items" />
+      <CatalogGrid items={items} category="production" basePath="/production" entityType="production_items" categories={categories} />
     </div>
   );
 }

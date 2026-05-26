@@ -9,7 +9,8 @@ export function rowToItem(r: CatalogRow): CatalogItem {
   const videos = Array.isArray(r.video_urls) ? r.video_urls : [];
   const pricing = (r.pricing ?? {}) as { from?: number; price_from?: number };
   const priceFrom = Number(pricing.from ?? pricing.price_from ?? 0) || 0;
-  const tags = r.category ? [r.category] : [];
+  // Категория хранится в r.category и пробрасывается отдельно — общим источником
+  // истины является таблица catalog_categories (см. listCatalogCategories).
   return {
     slug: r.slug,
     title: r.title,
@@ -18,7 +19,8 @@ export function rowToItem(r: CatalogRow): CatalogItem {
     image: photos[0] ?? FALLBACK_IMG,
     images: photos.length > 0 ? photos : [FALLBACK_IMG],
     video: videos[0] ?? null,
-    tags,
+    tags: [],
+    category: r.category ?? null,
   };
 }
 

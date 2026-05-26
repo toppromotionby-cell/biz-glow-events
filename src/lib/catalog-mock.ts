@@ -8,6 +8,7 @@ export type CatalogItem = {
   images?: string[];
   video?: string | null;
   tags: string[];
+  category?: string | null;
 };
 
 export const ZONES: CatalogItem[] = [
