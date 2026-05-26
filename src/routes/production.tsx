@@ -1,18 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CatalogGrid } from "@/components/CatalogGrid";
 import { PRODUCTION } from "@/lib/catalog-mock";
-import { listCatalog } from "@/lib/catalog.functions";
+import { listCatalog, listCatalogCategories } from "@/lib/catalog.functions";
 import { rowsToItems } from "@/lib/catalog-adapter";
 import { itemListJsonLd } from "@/lib/seo-jsonld";
 
 export const Route = createFileRoute("/production")({
   loader: async () => {
     try {
-      const rows = await listCatalog({ data: { type: "production_items" } });
+      const [rows, categories] = await Promise.all([
+        listCatalog({ data: { type: "production_items" } }),
+        listCatalogCategories({ data: { type: "production_items" } }),
+      ]);
       const items = rowsToItems(rows);
-      return { items: items.length ? items : PRODUCTION };
+      return { items: items.length ? items : PRODUCTION, categories };
     } catch {
-      return { items: PRODUCTION };
+      return { items: PRODUCTION, categories: [] };
     }
   },
   head: ({ loaderData }) => ({
