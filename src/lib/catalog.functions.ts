@@ -119,5 +119,6 @@ export const getCatalogItem = createServerFn({ method: "GET" })
     }
     if (!row) return null;
     const authed = await isAuthed();
-    return stripPricing([row as CatalogRow], authed)[0];
+    const signed = await signMediaUrls([row as CatalogRow]);
+    return stripPricing(signed, authed)[0];
   });
