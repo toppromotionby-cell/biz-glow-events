@@ -41,9 +41,19 @@ const STATUS_TONE: Record<string, string> = {
   cancelled: "border-destructive/40 text-destructive",
 };
 
+const TIMELINE_EVENT_LABEL: Record<string, string> = {
+  order_created: "Заявка создана",
+  order_confirmed_by_admin: "Заказ подтверждён менеджером",
+  status_changed: "Статус изменён",
+  note_added: "Добавлен комментарий",
+  quote_sent: "Смета отправлена",
+  payment_received: "Оплата получена",
+};
+
 function formatBYN(n: number | null | undefined) {
   return new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(Number(n ?? 0));
 }
+
 
 function ProfilePage() {
   const navigate = useNavigate();
