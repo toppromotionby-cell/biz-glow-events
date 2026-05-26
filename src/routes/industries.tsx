@@ -151,11 +151,11 @@ function Page() {
         <DialogContent className="max-w-lg">
           {active && (
             <>
-              <DialogHeader>
+              <DialogHeader className="items-center text-center md:items-start md:text-left">
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary glow-primary text-primary-foreground mb-3">
                   <active.icon className="h-5 w-5" />
                 </div>
-                <DialogTitle className="font-display text-2xl">{active.title}</DialogTitle>
+                <DialogTitle className="font-display text-2xl leading-snug">{active.title}</DialogTitle>
                 <DialogDescription className="text-xs uppercase tracking-wider">{active.scale}</DialogDescription>
               </DialogHeader>
               <p className="text-sm text-muted-foreground">{active.lead}</p>
