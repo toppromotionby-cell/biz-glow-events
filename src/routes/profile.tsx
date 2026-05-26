@@ -48,6 +48,8 @@ const TIMELINE_EVENT_LABEL: Record<string, string> = {
   note_added: "Добавлен комментарий",
   quote_sent: "Смета отправлена",
   payment_received: "Оплата получена",
+  confirmation_email_sent: "Письмо клиенту отправлено",
+  confirmation_email_failed: "Ошибка отправки письма клиенту",
 };
 
 function formatBYN(n: number | null | undefined) {
