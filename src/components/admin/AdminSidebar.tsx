@@ -3,6 +3,7 @@
 // На мобильных превращается в off-canvas drawer.
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
@@ -20,8 +21,10 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+type BadgeKey = "newOrders" | "todayBookings" | "pendingTestimonials";
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey };
 type NavGroup = { label: string; items: NavItem[] };
+
 
 const GROUPS: NavGroup[] = [
   {
