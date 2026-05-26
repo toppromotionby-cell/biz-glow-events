@@ -47,6 +47,7 @@ function UsersAdminPage() {
   const fetchUsers = useServerFn(listUsersWithRoles);
   const assignFn = useServerFn(assignRole);
   const revokeFn = useServerFn(revokeRole);
+  const deleteFn = useServerFn(deleteUser);
 
   const [search, setSearch] = useState("");
   const [selectedRole, setSelectedRole] = useState<Record<string, string>>({});
