@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, X, ArrowRightLeft } from "lucide-react";
+import { Plus, Pencil, X, ArrowRightLeft, Search } from "lucide-react";
 import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -46,6 +46,7 @@ function CatalogInner({ table }: { table: Table }) {
   const [selected, setSelected] = useState<any | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [preview, setPreview] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["catalog", table],
@@ -77,6 +78,16 @@ function CatalogInner({ table }: { table: Table }) {
   // Подсветка строки = «то, что сейчас открыто пользователю» (preview либо editor).
   const activeId = preview?.id ?? selected?.id;
 
+  // Локальный поиск по карточкам (название, slug, категория, описание).
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? (items as any[]).filter((it) => {
+        const hay = [it.title, it.slug, it.category, it.short_description, it.description]
+          .filter(Boolean).join(" ").toLowerCase();
+        return hay.includes(q);
+      })
+    : (items as any[]);
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
@@ -86,11 +97,37 @@ function CatalogInner({ table }: { table: Table }) {
       />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск по карточкам…"
+              className="pl-9 pr-9"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label="Очистить"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded hover:bg-muted/60"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          {q && (
+            <div className="text-xs text-muted-foreground px-1">
+              Найдено: {filtered.length} из {items.length}
+            </div>
+          )}
         <AdminListPanel
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          items={items as any[]}
+          items={filtered as any[]}
           isLoading={isLoading}
-          onReorder={async (ids) => {
+          emptyText={q ? "Ничего не найдено" : "Нет записей"}
+          onReorder={q ? undefined : async (ids) => {
             try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: ["catalog", table] }); }
             catch (e) { toast.error((e as Error).message); throw e; }
           }}
@@ -126,6 +163,7 @@ function CatalogInner({ table }: { table: Table }) {
             </div>
           )}
         />
+        </div>
 
         <div>
           {selected ? <Editor key={selected.id} table={table} item={selected} onDelete={() => remove.mutate(selected.id)} onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })} /> : (
