@@ -1,4 +1,4 @@
-// Единый источник правды по статусам заказов.
+// Единый источник правды по статусам заказов и форматированию денег.
 export const ORDER_STATUS_LABEL: Record<string, string> = {
   new: "Новый",
   consultation: "Консультация",
@@ -24,3 +24,11 @@ export const ORDER_STATUS_COLOR: Record<string, string> = {
   completed: "bg-green-600/15 text-green-300 border-green-500/30",
   cancelled: "bg-red-500/15 text-red-300 border-red-400/30",
 };
+
+// Единый формат денег для заказов: совпадает с тем, что показывает админка
+// (`1 500 BYN`). Используется и в админ-UI, и в клиентских письмах, чтобы
+// клиент видел ровно ту же сумму и валюту.
+export function formatOrderBYN(n: number | null | undefined): string {
+  const v = Number(n ?? 0);
+  return `${v.toLocaleString("ru-BY", { maximumFractionDigits: 0 })} BYN`;
+}
