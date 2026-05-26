@@ -73,6 +73,7 @@ function CartPage() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (items.length === 0) return;
+    if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы оформить заказ.")) return;
     const fd = new FormData(e.currentTarget);
     saveDraft(fd);
     const contact = {
