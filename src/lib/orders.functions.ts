@@ -193,6 +193,9 @@ export const submitOrder = createServerFn({ method: "POST" })
         client_company: data.client_company ?? data.company_legal_name ?? null,
         event_date: data.event_date ?? null,
         notes: [
+          data.event_end_date && data.event_end_date !== data.event_date
+            ? `Период мероприятия: ${data.event_date ?? "?"} — ${data.event_end_date}`
+            : "",
           data.notes ?? "",
           requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
           hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
