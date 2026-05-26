@@ -355,16 +355,47 @@ function AdminOrders() {
                       />
                     </td>
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
-                    <td className="p-3 text-right">
-                      <Link
-                        to="/admin/orders/$id"
-                        params={{ id: o.id }}
-                        aria-label={`Открыть полную страницу заказа ${o.client_name}`}
-                        className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Link>
+                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <div className="inline-flex items-center gap-2">
+                        <Link
+                          to="/admin/orders/$id"
+                          params={{ id: o.id }}
+                          aria-label={`Открыть полную страницу заказа ${o.client_name}`}
+                          className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Удалить заказ ${o.client_name}`}
+                              className="inline-flex items-center text-muted-foreground hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Заказ <b>{o.client_name}</b> от {fmtDate(o.created_at)} будет удалён вместе с позициями,
+                                таймлайном и вложениями. Он также исчезнет из кабинета клиента. Действие необратимо.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction
+                                disabled={deleteOrder.isPending}
+                                onClick={() => deleteOrder.mutate(o.id)}
+                                className="bg-rose-600 hover:bg-rose-700 text-white"
+                              >
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </td>
                   </tr>
                 );
