@@ -64,7 +64,7 @@ function CartPage() {
   }, []);
   function saveDraft(fd: FormData) {
     const obj: Record<string, string> = {};
-    ["client_name", "client_phone", "client_email", "client_company", "event_date", "notes"].forEach(k => {
+    ["client_name", "client_phone", "client_email", "client_company", "event_date", "event_end_date", "notes"].forEach(k => {
       const v = String(fd.get(k) ?? "").trim();
       if (v) obj[k] = v;
     });
@@ -83,6 +83,7 @@ function CartPage() {
       client_email: String(fd.get("client_email") ?? "").trim(),
       client_company: String(fd.get("client_company") ?? "").trim() || null,
       event_date: String(fd.get("event_date") ?? "") || null,
+      event_end_date: String(fd.get("event_end_date") ?? "") || null,
       notes: String(fd.get("notes") ?? "").trim() || null,
     };
     setContactDraft(contact);
