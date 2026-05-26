@@ -12,6 +12,7 @@ const SUBJECT_KEY = "lead_subject_v1";
 
 export function LeadForm({ source = "contacts" }: { source?: string }) {
   const submit = useServerFn(submitLead);
+  const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [subjectPrefill, setSubjectPrefill] = useState<string>("");
