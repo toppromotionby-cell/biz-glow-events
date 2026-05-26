@@ -51,12 +51,7 @@ export function HourPriceSlider({
             {formatBYNTotal(total)}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {hours} {pluralizeUnit("hour", hours)} · {formatBYNTotal(unitPrice)}/час
-            {isExtended && extraPerHour !== null && (
-              <span className="ml-1 text-muted-foreground/80">
-                (+{formatBYNTotal(extraPerHour)} за каждый сверх {points[points.length - 1].hours}ч)
-              </span>
-            )}
+            {hours} {pluralizeUnit("hour", hours)}
           </div>
         </div>
         {isPopular && (
