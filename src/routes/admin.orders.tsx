@@ -136,6 +136,23 @@ function AdminOrders() {
     onError: (e: Error) => toast.error(e?.message ?? "Не удалось удалить заказ"),
   });
 
+  const confirmFn = useServerFn(confirmOrderAdmin);
+  const confirmOrder = useMutation({
+    mutationFn: async (id: string) => confirmFn({ data: { id } }),
+    onSuccess: (res) => {
+      toast.success(
+        res?.emailSent
+          ? "Заказ подтверждён — клиенту отправлено письмо"
+          : "Заказ подтверждён (письмо не отправлено)",
+      );
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: Error) => toast.error(e?.message ?? "Не удалось подтвердить заказ"),
+  });
+
+
 
   const sorted = useMemo(() => {
     const arr = [...orders];
