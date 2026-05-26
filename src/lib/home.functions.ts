@@ -10,7 +10,7 @@ export type HomeFeatured = {
   short_description: string | null;
   photo_urls: string[] | null;
   basePath: string;
-  pricing: Record<string, unknown> | null;
+  pricing: JsonValue;
   tags: string[] | null;
 };
 export type HomeBlogTeaser = {
