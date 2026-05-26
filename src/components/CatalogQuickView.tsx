@@ -18,6 +18,8 @@ import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
 import { detectQuantityKind, maxQtyFor, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
+import { useAuth } from "@/hooks/use-auth";
+import { openAuthPrompt } from "@/lib/auth-prompt";
 import { toast } from "sonner";
 import { priceFrom } from "@/lib/utils";
 
@@ -138,7 +140,9 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
   const extras = (item as unknown as { extras?: unknown }).extras;
   const hasExtras = Array.isArray(extras) && extras.length > 0;
 
+  const { isAuthenticated } = useAuth();
   function handleOrder() {
+    if (!isAuthenticated) { openAuthPrompt({ reason: "Войдите, чтобы оформить заказ или отправить запрос." }); return; }
     if (needsSelection) return;
     if (isByRequest) {
       try { localStorage.setItem("lead_subject_v1", effectiveTitle); } catch { /* ignore */ }
