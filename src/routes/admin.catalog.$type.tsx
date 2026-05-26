@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, X, ArrowRightLeft } from "lucide-react";
+import { Plus, Pencil, X, ArrowRightLeft, Search } from "lucide-react";
 import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
