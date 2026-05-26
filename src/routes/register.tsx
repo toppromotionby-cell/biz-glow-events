@@ -116,6 +116,34 @@ function RegisterPage() {
           Уже есть аккаунт? <Link to="/login" className="text-accent">Войти</Link>
         </p>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={(open) => {
+        setConfirmOpen(open);
+        if (!open) navigate({ to: "/login" });
+      }}>
+        <DialogContent className="glass-strong border-primary/40 sm:max-w-md">
+          <DialogHeader className="items-center text-center space-y-4">
+            <div className="h-14 w-14 rounded-full bg-gradient-primary glow-primary flex items-center justify-center">
+              <MailCheck className="h-7 w-7 text-primary-foreground" />
+            </div>
+            <DialogTitle className="font-display text-2xl">Спасибо за регистрацию!</DialogTitle>
+            <DialogDescription className="text-base text-muted-foreground leading-relaxed">
+              Мы отправили письмо на <span className="text-foreground font-medium">{registeredEmail}</span>.
+              Перейдите по ссылке из письма, чтобы подтвердить email и активировать аккаунт.
+              <br /><br />
+              <span className="text-xs">Не нашли письмо? Проверьте папку «Спам» или промо-вкладку.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              onClick={() => { setConfirmOpen(false); navigate({ to: "/login" }); }}
+              className="w-full bg-gradient-primary glow-primary"
+            >
+              Перейти ко входу
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
