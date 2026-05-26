@@ -436,7 +436,9 @@ function OrderDialog({ id, onClose }: { id: string | null; onClose: () => void }
             )}
 
             <InfoCard title={<span className="flex items-center gap-2"><Paperclip className="h-4 w-4" />Вложения ({attachCount})</span>}>
-              <OrderAttachments orderId={order.id} />
+              <Suspense fallback={<div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div>}>
+                <OrderAttachments orderId={order.id} />
+              </Suspense>
             </InfoCard>
 
             <InfoCard title={<span className="flex items-center gap-2"><Clock className="h-4 w-4" />Таймлайн ({timeline.length})</span>}>
