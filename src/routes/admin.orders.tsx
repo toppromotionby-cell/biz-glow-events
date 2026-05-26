@@ -196,7 +196,9 @@ function AdminOrders() {
 
               {sorted.map((o: any) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
+                const age = ageInfo(o.updated_at ?? o.created_at, o.status);
                 return (
+
                   <tr
                     key={o.id}
                     onClick={() => setOpenId(o.id)}
