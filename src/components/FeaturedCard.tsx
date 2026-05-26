@@ -178,15 +178,16 @@ export function FeaturedCard({
         </button>
       </div>
       <div className="p-3 sm:p-4 lg:p-5 flex-1 flex flex-col min-w-0">
-        <h3 className="font-display font-semibold text-sm sm:text-base lg:text-lg leading-snug break-words hyphens-auto">
+        <h3 className="font-display font-bold text-base sm:text-lg lg:text-xl leading-snug tracking-tight break-words hyphens-auto">
           <button
             type="button"
             onClick={onOpen}
-            className="hover:text-primary transition text-left line-clamp-2 w-full"
+            className="text-left line-clamp-2 w-full"
           >
-            {item.title}
+            <span className="card-title-gradient">{item.title}</span>
           </button>
         </h3>
+        <span className="card-title-accent mt-2" aria-hidden />
         <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3 break-words hyphens-auto min-h-[2.25rem] sm:min-h-[3.75rem]">
           {item.short_description ?? "\u00A0"}
         </p>

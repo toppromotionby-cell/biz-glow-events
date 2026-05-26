@@ -352,15 +352,16 @@ function CatalogCard({
         </MediaShield>
       </button>
       <div className="p-3.5 sm:p-4 lg:p-5 flex-1 flex flex-col">
-        <h3 className="font-display font-semibold text-base sm:text-lg leading-tight">
+        <h3 className="font-display font-bold text-lg sm:text-xl leading-tight tracking-tight">
           <button
             type="button"
             onClick={onOpen}
-            className="hover:text-primary transition text-left line-clamp-2"
+            className="text-left line-clamp-2 w-full"
           >
-            {item.title}
+            <span className="card-title-gradient">{item.title}</span>
           </button>
         </h3>
+        <span className="card-title-accent mt-2" aria-hidden />
         <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3">{item.description}</p>
         <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2 sm:mt-3">
           {item.tags.slice(0, 3).map((t) => (
