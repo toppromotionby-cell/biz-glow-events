@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 import { CatalogProse } from "@/components/CatalogProse";
+import { ExtrasBlock } from "@/components/ExtrasBlock";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
