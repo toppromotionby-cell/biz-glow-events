@@ -19,7 +19,9 @@ import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 
 
-const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
+// Единый список статусов и их подписи берём из ORDER_STATUS_LABEL,
+// чтобы локализация в админке и письмах не расходилась.
+
 
 const ENTITY_LABEL: Record<string, string> = {
   zone: "Зона", service: "Услуга", equipment: "Оборудование",
