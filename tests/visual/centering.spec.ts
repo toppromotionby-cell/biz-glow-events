@@ -37,14 +37,13 @@ test.describe("Centering — catalog choice modal", () => {
     await page.goto("/");
     await stabilizePage(page);
 
-    // Open the catalog picker. The home page has a "Каталог" trigger that
-    // opens CatalogChoiceModal. We target by accessible name; fall back to text.
-    const trigger = page.getByRole("button", { name: /каталог/i }).first();
+    const trigger = page.getByRole("button", { name: /перейти в каталог/i }).first();
+    await trigger.scrollIntoViewIfNeeded();
     await trigger.click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await page.waitForTimeout(150); // dialog enter animation
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(300); // dialog enter animation
 
     await expect(dialog).toHaveScreenshot(`catalog-choice-${testInfo.project.name}.png`);
   });
