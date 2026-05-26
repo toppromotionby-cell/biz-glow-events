@@ -181,6 +181,7 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
   const trimmed = q.trim();
 
   return (
+    <>
     <CommandDialog open={open} onOpenChange={onOpenChange} shouldFilter={false}>
       <div className="relative">
         <CommandInput placeholder="Поиск по сайту..." value={q} onValueChange={setQ} />
