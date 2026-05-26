@@ -38,22 +38,6 @@ function SlidePhoto({
 }
 
 function PriceBlock({ price }: { price: number | null }) {
-  const { user, loading } = useAuth();
-
-  // Пока определяем сессию — держим место скелетом.
-  if (loading) {
-    return <div className="h-6 sm:h-7 w-1/2 rounded bg-muted/30 animate-pulse" data-nosnippet />;
-  }
-
-  // Гость — цена скрыта.
-  if (!user) {
-    return (
-      <div className="text-xs sm:text-sm text-muted-foreground" data-nosnippet>
-        Цена по запросу
-      </div>
-    );
-  }
-
   if (price === null || price <= 0) {
     return (
       <div className="text-xs sm:text-sm text-muted-foreground" data-nosnippet>
@@ -72,6 +56,7 @@ function PriceBlock({ price }: { price: number | null }) {
     </div>
   );
 }
+
 
 export function FeaturedCard({
   item,
