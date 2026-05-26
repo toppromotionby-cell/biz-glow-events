@@ -63,7 +63,12 @@ export const submitLead = createServerFn({ method: "POST" })
         client_phone: payload.client_phone,
         client_email: payload.client_email,
         client_company: payload.client_company ?? null,
-        notes: payload.notes ?? null,
+        notes: [
+          payload.event_end_date && payload.event_end_date !== payload.event_date
+            ? `Период мероприятия: ${payload.event_date ?? "?"} — ${payload.event_end_date}`
+            : "",
+          payload.notes ?? "",
+        ].filter(Boolean).join("\n\n") || null,
         event_date: payload.event_date ?? null,
         source: payload.source ?? "website",
         utm_source: payload.utm_source ?? null,
