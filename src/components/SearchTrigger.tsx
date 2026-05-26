@@ -5,6 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, Clock, X } from "lucide-react";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { globalSearch, type SearchHit } from "@/lib/search.functions";
+import { CatalogQuickView } from "@/components/CatalogQuickView";
+import type { CatalogType } from "@/lib/catalog.functions";
+
+const CATALOG_KINDS: Record<string, CatalogType> = {
+  zones: "zones",
+  tech_equipment: "tech_equipment",
+  services: "services",
+  production_items: "production_items",
+};
 
 const KIND_LABELS: Record<SearchHit["kind"], string> = {
   zones: "Зоны",
@@ -118,6 +127,7 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
   const [q, setQ] = useState("");
   const [qDebounced, setQDebounced] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
+  const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const navigate = useNavigate();
   const tRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -155,6 +165,14 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
 
   const go = (h: SearchHit) => {
     saveRecent(qDebounced);
+    const catalogType = CATALOG_KINDS[h.kind];
+    if (catalogType) {
+      // Открываем модалку быстрого просмотра прямо из поиска
+      setQuick({ type: catalogType, slug: h.slug, basePath: KIND_PATHS[h.kind] });
+      onOpenChange(false);
+      setQ("");
+      return;
+    }
     onOpenChange(false);
     setQ("");
     navigate({ to: `${KIND_PATHS[h.kind]}/${h.slug}` });
@@ -163,6 +181,7 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
   const trimmed = q.trim();
 
   return (
+    <>
     <CommandDialog open={open} onOpenChange={onOpenChange} shouldFilter={false}>
       <div className="relative">
         <CommandInput placeholder="Поиск по сайту..." value={q} onValueChange={setQ} />
@@ -230,5 +249,15 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
         ))}
       </CommandList>
     </CommandDialog>
+    {quick && (
+      <CatalogQuickView
+        open={!!quick}
+        onOpenChange={(v) => { if (!v) setQuick(null); }}
+        type={quick.type}
+        slug={quick.slug}
+        basePath={quick.basePath}
+      />
+    )}
+    </>
   );
 }
