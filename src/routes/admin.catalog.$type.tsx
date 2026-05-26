@@ -402,6 +402,15 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
       <Field label="Описание"><Textarea rows={6} className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
       <Field label="Требования"><Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} /></Field>
 
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="glass rounded-xl p-4">
+          <FeaturesEditor value={form.features} onChange={(next) => setForm({ ...form, features: next })} />
+        </div>
+        <div className="glass rounded-xl p-4">
+          <ExtrasEditor value={form.extras} onChange={(next) => setForm({ ...form, extras: next })} />
+        </div>
+      </div>
+
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="SEO title"><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></Field>
         <Field label="SEO description"><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></Field>
