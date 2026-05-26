@@ -85,5 +85,45 @@ test.describe("Centering — about values cards", () => {
     const section = page.locator('section[aria-labelledby="values-heading"]');
     await expect(section).toBeVisible();
     await expect(section).toHaveScreenshot(`about-values-${testInfo.project.name}.png`);
+});
+
+test.describe("Centering — catalog landing", () => {
+  test("CATALOGS grid matches snapshot", async ({ page }, testInfo) => {
+    await page.goto("/catalog");
+    await stabilizePage(page);
+    const grid = page.locator("main, body").locator(".grid").first();
+    await expect(grid).toBeVisible();
+    await expect(grid).toHaveScreenshot(`catalog-landing-${testInfo.project.name}.png`);
+  });
+});
+
+test.describe("Centering — terms-rental BLOCKS", () => {
+  test("BLOCKS grid matches snapshot", async ({ page }, testInfo) => {
+    await page.goto("/terms-rental");
+    await stabilizePage(page);
+    // First grid section under the header
+    const grid = page.locator("section.grid").first();
+    await expect(grid).toBeVisible();
+    await expect(grid).toHaveScreenshot(`terms-rental-blocks-${testInfo.project.name}.png`);
+  });
+});
+
+test.describe("Centering — partners BENEFITS", () => {
+  test("BENEFITS grid matches snapshot", async ({ page }, testInfo) => {
+    await page.goto("/partners");
+    await stabilizePage(page);
+    const section = page.locator('section[aria-labelledby="benefits-heading"]');
+    await expect(section).toBeVisible();
+    await expect(section).toHaveScreenshot(`partners-benefits-${testInfo.project.name}.png`);
+  });
+});
+
+test.describe("Centering — delivery PAYMENT cards", () => {
+  test("PAYMENT grid matches snapshot", async ({ page }, testInfo) => {
+    await page.goto("/delivery");
+    await stabilizePage(page);
+    const section = page.locator('section[aria-labelledby="payment-heading"]');
+    await expect(section).toBeVisible();
+    await expect(section).toHaveScreenshot(`delivery-payment-${testInfo.project.name}.png`);
   });
 });
