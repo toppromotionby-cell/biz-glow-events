@@ -32,6 +32,38 @@ export const Route = createFileRoute("/cart")({
 
 const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 });
 
+const FIELD_LABELS: Record<string, string> = {
+  client_name: "Имя",
+  client_phone: "Телефон",
+  client_email: "Email",
+  client_company: "Компания",
+  event_date: "Дата мероприятия",
+  notes: "Комментарий",
+  items: "Позиции в корзине",
+};
+
+function humanizeError(err: unknown): string {
+  if (!(err instanceof Error)) return "Ошибка отправки. Попробуйте ещё раз.";
+  const msg = err.message;
+  // Попытка распарсить ZodError, который пришёл в виде JSON-массива.
+  const trimmed = msg.trim();
+  if (trimmed.startsWith("[")) {
+    try {
+      const issues = JSON.parse(trimmed) as Array<{ path?: string[]; message?: string }>;
+      if (Array.isArray(issues) && issues.length > 0) {
+        const first = issues[0];
+        const field = first.path?.[0];
+        const label = field ? (FIELD_LABELS[field] ?? field) : null;
+        const baseMsg = first.message ?? "Проверьте корректность данных";
+        return label ? `${label}: ${baseMsg}` : baseMsg;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return msg || "Ошибка отправки";
+}
+
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
