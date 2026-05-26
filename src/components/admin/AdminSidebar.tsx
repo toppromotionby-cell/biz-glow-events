@@ -3,6 +3,7 @@
 // На мобильных превращается в off-canvas drawer.
 import { Link, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
@@ -20,16 +21,18 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+type BadgeKey = "newOrders" | "todayBookings" | "pendingTestimonials";
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey };
 type NavGroup = { label: string; items: NavItem[] };
+
 
 const GROUPS: NavGroup[] = [
   {
     label: "Операции",
     items: [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
-      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart },
-      { to: "/admin/calendar", label: "Календарь", icon: Calendar },
+      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, badgeKey: "newOrders" },
+      { to: "/admin/calendar", label: "Календарь", icon: Calendar, badgeKey: "todayBookings" },
       { to: "/admin/availability", label: "Занятость", icon: CalendarClock },
     ],
   },
@@ -38,7 +41,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/catalog/zones", label: "Наполнение", icon: Package },
       { to: "/admin/cases", label: "Кейсы", icon: Trophy },
-      { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
+      { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials" },
       { to: "/admin/blog", label: "Блог", icon: Newspaper },
     ],
   },
@@ -60,6 +63,28 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
+function useSidebarBadges() {
+  return useQuery({
+    queryKey: ["admin-sidebar-badges"],
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    queryFn: async (): Promise<Record<BadgeKey, number>> => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [newOrders, todayBookings, pendingTestimonials] = await Promise.all([
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new" as any),
+        supabase.from("availability").select("id", { count: "exact", head: true }).lte("start_date", today).gte("end_date", today),
+        supabase.from("testimonials").select("id", { count: "exact", head: true }).eq("published", false),
+      ]);
+      return {
+        newOrders: newOrders.count ?? 0,
+        todayBookings: todayBookings.count ?? 0,
+        pendingTestimonials: pendingTestimonials.count ?? 0,
+      };
+    },
+  });
+}
+
+
 function isItemActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.to;
   // catalog/zones is one of variants — активен любой catalog подпуть
@@ -72,6 +97,7 @@ export function AdminSidebar() {
   const { state, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
   const { user } = useAuth();
+  const { data: badges } = useSidebarBadges();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
@@ -85,10 +111,12 @@ export function AdminSidebar() {
               pathname={loc.pathname}
               collapsed={collapsed}
               defaultOpen={hasActive}
+              badges={badges}
             />
           );
         })}
       </SidebarContent>
+
 
       <SidebarFooter className="border-t border-border/40">
         <SidebarMenu>
@@ -121,12 +149,13 @@ export function AdminSidebar() {
 }
 
 function NavSection({
-  group, pathname, collapsed, defaultOpen,
+  group, pathname, collapsed, defaultOpen, badges,
 }: {
   group: NavGroup;
   pathname: string;
   collapsed: boolean;
   defaultOpen: boolean;
+  badges?: Record<BadgeKey, number>;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -137,7 +166,7 @@ function NavSection({
         <SidebarGroupContent>
           <SidebarMenu>
             {group.items.map((item) => (
-              <NavLinkRow key={item.to} item={item} pathname={pathname} />
+              <NavLinkRow key={item.to} item={item} pathname={pathname} badges={badges} />
             ))}
           </SidebarMenu>
         </SidebarGroupContent>
@@ -168,7 +197,7 @@ function NavSection({
           <SidebarGroupContent>
             <SidebarMenu>
               {group.items.map((item) => (
-                <NavLinkRow key={item.to} item={item} pathname={pathname} />
+                <NavLinkRow key={item.to} item={item} pathname={pathname} badges={badges} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -178,23 +207,38 @@ function NavSection({
   );
 }
 
-function NavLinkRow({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavLinkRow({ item, pathname, badges }: { item: NavItem; pathname: string; badges?: Record<BadgeKey, number> }) {
   const active = isItemActive(pathname, item);
+  const count = item.badgeKey ? badges?.[item.badgeKey] ?? 0 : 0;
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
         isActive={active}
-        tooltip={item.label}
+        tooltip={count > 0 ? `${item.label} · ${count}` : item.label}
         className={cn(
           active && "bg-gradient-primary text-primary-foreground hover:bg-gradient-primary hover:text-primary-foreground",
         )}
       >
-        <Link to={item.to}>
+        <Link to={item.to} preload="intent">
           <item.icon className="h-4 w-4" />
-          <span>{item.label}</span>
+          <span className="flex-1 truncate">{item.label}</span>
+          {count > 0 && (
+            <span
+              className={cn(
+                "ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[10px] font-semibold rounded-full tabular-nums",
+                active
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-primary/15 text-primary",
+              )}
+              aria-label={`${count} новых`}
+            >
+              {count > 99 ? "99+" : count}
+            </span>
+          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
 }
+

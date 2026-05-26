@@ -11,6 +11,7 @@ import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
@@ -18,6 +19,21 @@ const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
 const fmtDate = (v: any) => (v ? new Date(v).toLocaleDateString("ru-BY") : "—");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtDateTime = (v: any) => (v ? new Date(v).toLocaleString("ru-BY") : "—");
+
+// Возраст «в статусе» по updated_at: цвет — SLA-подсветка
+function ageInfo(updatedAt: string | null | undefined, status: string) {
+  if (!updatedAt) return { label: "—", cls: "text-muted-foreground" };
+  const ms = Date.now() - new Date(updatedAt).getTime();
+  const h = Math.floor(ms / 3_600_000);
+  const d = Math.floor(h / 24);
+  const label = d >= 1 ? `${d} д` : `${Math.max(h, 0)} ч`;
+  // финальные статусы не подсвечиваем
+  if (["paid", "completed", "cancelled"].includes(status)) return { label, cls: "text-muted-foreground" };
+  if (h >= 72) return { label, cls: "text-rose-400" };
+  if (h >= 24) return { label, cls: "text-amber-300" };
+  return { label, cls: "text-emerald-300" };
+}
+
 
 
 export const Route = createFileRoute("/admin/orders")({
@@ -27,21 +43,23 @@ export const Route = createFileRoute("/admin/orders")({
 function AdminOrders() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const dq = useDebouncedValue(q, 300);
   const [status, setStatus] = useState<string>("");
   const [sortBy, setSortBy] = useState<"created_at" | "total" | "event_date">("created_at");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["admin-orders", q, status],
+    queryKey: ["admin-orders", dq, status],
     queryFn: async () => {
       let query = supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(500);
       if (status) query = query.eq("status", status as any);
-      if (q) query = query.or(`client_name.ilike.%${q}%,client_phone.ilike.%${q}%,client_email.ilike.%${q}%,client_company.ilike.%${q}%`);
+      if (dq) query = query.or(`client_name.ilike.%${dq}%,client_phone.ilike.%${dq}%,client_email.ilike.%${dq}%,client_company.ilike.%${dq}%`);
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
   });
+
 
   // Realtime: обновляем список при любых изменениях в orders
   useEffect(() => {
@@ -164,18 +182,23 @@ function AdminOrders() {
                 <th scope="col" aria-sort={sortBy === "event_date" ? "descending" : "none"} className="text-left p-3">Мероприятие</th>
                 <th scope="col" className="text-left p-3">Источник</th>
                 <th scope="col" className="text-left p-3">Статус</th>
+                <th scope="col" className="text-left p-3" title="Время в текущем статусе (по updated_at)">В статусе</th>
                 <th scope="col" aria-sort={sortBy === "total" ? "descending" : "none"} className="text-right p-3">Сумма</th>
                 <th scope="col" className="text-right p-3">Оплачено</th>
                 <th scope="col" className="text-right p-3">Долг</th>
                 <th scope="col" className="p-3"><span className="sr-only">Действия</span></th>
+
               </tr>
             </thead>
             <tbody>
-              {isLoading && <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Загрузка...</td></tr>}
-              {!isLoading && sorted.length === 0 && <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Нет заказов</td></tr>}
+              {isLoading && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Загрузка...</td></tr>}
+              {!isLoading && sorted.length === 0 && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Нет заказов</td></tr>}
+
               {sorted.map((o: any) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
+                const age = ageInfo(o.updated_at ?? o.created_at, o.status);
                 return (
+
                   <tr
                     key={o.id}
                     onClick={() => setOpenId(o.id)}
@@ -216,7 +239,11 @@ function AdminOrders() {
                         ))}
                       </select>
                     </td>
+                    <td className={`p-3 whitespace-nowrap text-xs tabular-nums ${age.cls}`} title={`Обновлён: ${fmtDateTime(o.updated_at ?? o.created_at)}`}>
+                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{age.label}</span>
+                    </td>
                     <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
+
                     <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       <PaidCell
                         value={Number(o.paid ?? 0)}
