@@ -75,7 +75,8 @@ function CartPage() {
     e.preventDefault();
     if (items.length === 0) return;
     if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы оформить заказ.")) return;
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     saveDraft(fd);
     const contact = {
       client_name: String(fd.get("client_name") ?? "").trim(),
@@ -86,6 +87,19 @@ function CartPage() {
       event_end_date: String(fd.get("event_end_date") ?? "") || null,
       notes: String(fd.get("notes") ?? "").trim() || null,
     };
+    // Дружелюбная клиентская валидация — чтобы пользователь видел понятную ошибку, а не JSON от zod.
+    const missing: { field: string; label: string }[] = [];
+    if (contact.client_name.length < 2) missing.push({ field: "client_name", label: "Укажите ваше имя (минимум 2 символа)" });
+    if (contact.client_phone.length < 5) missing.push({ field: "client_phone", label: "Укажите корректный телефон" });
+    if (!/.+@.+\..+/.test(contact.client_email)) missing.push({ field: "client_email", label: "Укажите корректный email" });
+    if (clientType === "company" && !contact.client_company) missing.push({ field: "client_company", label: "Укажите название компании" });
+    if (missing.length > 0) {
+      toast.error(missing[0].label);
+      const el = form.querySelector<HTMLInputElement>(`[name="${missing[0].field}"]`);
+      el?.focus();
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setContactDraft(contact);
     if (clientType === "company") {
       setReqOpen(true);
