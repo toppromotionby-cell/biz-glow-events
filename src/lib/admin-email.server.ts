@@ -19,8 +19,10 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-const fmtBYN = (n: number) =>
-  new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(n);
+// Используем общий хелпер из order-status, чтобы валюта/формат в письме
+// совпадали с тем, что показывает админка (`1 500 BYN`).
+const fmtBYN = (n: number) => formatOrderBYN(n);
+
 
 async function enqueue(opts: {
   to: string;
