@@ -27,6 +27,7 @@ const OrderSchema = z.object({
   client_email: z.string().email().max(160),
   client_company: z.string().max(160).optional().nullable(),
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  event_end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   source: z.string().max(80).optional().nullable(),
   promo_code: z.string().min(2).max(40).optional().nullable(),
