@@ -345,10 +345,18 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
 
       {/* Sticky mobile CTA */}
       <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur px-5 py-3 space-y-2">
-        {hasTiers && (
+        {hasTiers && !isHourMode && (
           <div className="text-xs text-muted-foreground">
             {needsSelection ? "Выберите позицию ↑" : `Выбрано: ${activeTier?.label || "—"}`}
           </div>
+        )}
+        {isHourMode && (
+          <HourPriceSlider
+            pricing={hourPricing!}
+            hours={hours}
+            onChange={setHours}
+            rawPricing={item.pricing}
+          />
         )}
         {qtyKind && !needsSelection && !isByRequest && (
           <QuantityStepper
@@ -357,7 +365,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
             kind={qtyKind}
             min={1}
             max={maxQtyFor(qtyKind)}
-            label={qtyKind === "hour" ? "Часов" : qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
+            label={qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
           />
         )}
         <button
