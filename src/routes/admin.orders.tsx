@@ -17,7 +17,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteOrderAdmin } from "@/lib/orders.functions";
+import { deleteOrderAdmin, confirmOrderAdmin } from "@/lib/orders.functions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
