@@ -165,6 +165,14 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
 
   const go = (h: SearchHit) => {
     saveRecent(qDebounced);
+    const catalogType = CATALOG_KINDS[h.kind];
+    if (catalogType) {
+      // Открываем модалку быстрого просмотра прямо из поиска
+      setQuick({ type: catalogType, slug: h.slug, basePath: KIND_PATHS[h.kind] });
+      onOpenChange(false);
+      setQ("");
+      return;
+    }
     onOpenChange(false);
     setQ("");
     navigate({ to: `${KIND_PATHS[h.kind]}/${h.slug}` });
