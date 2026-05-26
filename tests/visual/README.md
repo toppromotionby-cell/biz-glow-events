@@ -19,21 +19,31 @@ dedicated snapshot:
 ## Run
 
 ```bash
-# First time: install Chromium browser binary (~110 MB)
+# First time on Linux: install Chromium + system libs (~110 MB).
+# --with-deps uses apt-get to pull libglib, libnss, libxkbcommon, etc.
+bunx playwright install --with-deps chromium
+
+# macOS / Windows already ship the required system libs.
 bunx playwright install chromium
 
-# Run all visual tests (auto-starts `bun run dev`)
+# Run all visual tests (auto-starts `bun run dev` on :8080)
 bunx playwright test
 
-# Run a single viewport
+# A single viewport
 bunx playwright test --project mobile-375
 
 # Update snapshots after an intentional design change
 bunx playwright test --update-snapshots
 
 # Run against an already-running preview
-PW_BASE_URL=http://localhost:3000 bunx playwright test
+PW_BASE_URL=http://localhost:8080 bunx playwright test
 ```
+
+> **Heads up — Lovable sandbox.** Browsers cannot launch in the Lovable
+> editor sandbox (no `apt-get`, missing `libglib-2.0` and friends). Run
+> these tests on your local machine or in CI. The first run there will
+> generate the baseline PNGs; commit them.
+
 
 The first run on a new machine creates baselines under
 `tests/visual/centering.spec.ts-snapshots/`. Commit those baselines.
