@@ -292,21 +292,33 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
           </aside>
         </div>
 
-        {hasDescription && (
-          <div className="mt-5">
-            <CatalogProse description={item.description} requirements={item.requirements} variant="modal" />
-          </div>
+        {videos.length > 0 && (
+          <section className="mt-6">
+            <h3 className="text-base font-display font-semibold mb-3">Видео</h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {videos.map((url, i) => {
+                const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+                if (isYouTube) {
+                  let embed = url;
+                  const m = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([\w-]{6,})/);
+                  if (m) embed = `https://www.youtube.com/embed/${m[1]}`;
+                  return (
+                    <iframe
+                      key={url + i}
+                      src={embed}
+                      title={`${item.title} — видео ${i + 1}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      loading="lazy"
+                      className="w-full rounded-xl bg-black aspect-video glass border-0"
+                    />
+                  );
+                }
+                return <StorageVideo key={url + i} path={url} className="w-full rounded-xl bg-black aspect-video glass" />;
+              })}
+            </div>
+          </section>
         )}
-
-        <div className="mt-5 flex justify-end">
-          <a
-            href={`${basePath}/${item.slug}`}
-            onClick={(e) => { e.preventDefault(); onClose(); navigate({ to: `${basePath}/${item.slug}` as never }); }}
-            className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition"
-          >
-            Подробнее на странице <ArrowRight className="h-3.5 w-3.5" />
-          </a>
-        </div>
       </div>
 
       {/* Sticky mobile CTA */}
