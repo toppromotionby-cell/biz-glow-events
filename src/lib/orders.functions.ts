@@ -139,6 +139,9 @@ export const submitOrder = createServerFn({ method: "POST" })
         throw new Error("Дата мероприятия не может быть в прошлом.");
       }
     }
+    if (data.event_end_date && data.event_date && data.event_end_date < data.event_date) {
+      throw new Error("Дата окончания не может быть раньше даты начала.");
+    }
     for (const i of data.items) {
       if (i.start_date && i.end_date && i.end_date < i.start_date) {
         throw new Error("Некорректные даты позиции.");
