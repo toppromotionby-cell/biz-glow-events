@@ -295,14 +295,13 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
         )}
 
         <div className="mt-5 flex justify-end">
-          <Link
-            to={`${basePath}/$slug`}
-            params={{ slug: item.slug }}
-            onClick={onClose}
+          <a
+            href={`${basePath}/${item.slug}`}
+            onClick={(e) => { e.preventDefault(); onClose(); navigate({ to: `${basePath}/${item.slug}` as never }); }}
             className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition"
           >
             Подробнее на странице <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          </a>
         </div>
       </div>
 
