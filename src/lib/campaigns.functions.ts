@@ -5,6 +5,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendViaResend } from "@/lib/email/resend.server";
+import { wrapCampaignHtml, htmlToPlainText } from "@/lib/email/campaign-template.server";
 
 async function assertAdmin(userId: string): Promise<void> {
   const { data, error } = await supabaseAdmin
