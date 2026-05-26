@@ -1,4 +1,8 @@
 import heroBg from "/hero-bg.jpg";
+import heroAvif828 from "/hero-bg-828.avif";
+import heroAvif1920 from "/hero-bg-1920.avif";
+import heroWebp828 from "/hero-bg-828.webp";
+import heroWebp1920 from "/hero-bg-1920.webp";
 import React, { useEffect, useRef } from "react";
 import { ArrowRight, Search, Package, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
