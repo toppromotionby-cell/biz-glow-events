@@ -1,11 +1,8 @@
 // UniversalMediaUploader — drag&drop + строгий лимит ≤5 фото и ≤5 видео.
-// Валидация MIME и размера. Загрузка в Supabase Storage bucket `media`,
-// путь: /{entity}/{slug}/{type}-{timestamp}-{name}.
-// Возвращает массивы публичных путей (для signed URL на фронте).
-import { useCallback, useState } from "react";
+// Превью через signed URL (bucket `media` приватный). Кнопка удаления — сверху.
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, X, Image as ImageIcon, Video, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +14,8 @@ const PHOTO_MIMES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_MIMES = ["video/mp4", "video/webm"];
 
 export interface MediaUploaderProps {
-  entity: string;          // например "zones"
-  slug: string;            // slug сущности
+  entity: string;
+  slug: string;
   photoUrls: string[];
   videoUrls: string[];
   onChange: (next: { photoUrls: string[]; videoUrls: string[] }) => void;
@@ -53,7 +50,8 @@ export function UniversalMediaUploader({
           toast.error(`Файл слишком большой: ${file.name}`);
           continue;
         }
-        const path = `${entity}/${slug}/${kind}-${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${entity}/${slug || "untitled"}/${kind}-${Date.now()}-${safeName}`;
         const { error } = await supabase.storage.from("media").upload(path, file, {
           upsert: false,
           contentType: file.type,
@@ -75,7 +73,8 @@ export function UniversalMediaUploader({
   }, [entity, slug, photoUrls, videoUrls, onChange]);
 
   const remove = async (path: string, kind: "photo" | "video") => {
-    await supabase.storage.from("media").remove([path]);
+    const { error } = await supabase.storage.from("media").remove([path]);
+    if (error) toast.error(error.message);
     if (kind === "photo") onChange({ photoUrls: photoUrls.filter(p => p !== path), videoUrls });
     else onChange({ photoUrls, videoUrls: videoUrls.filter(p => p !== path) });
   };
@@ -106,6 +105,58 @@ export function UniversalMediaUploader({
         onFiles={(f) => uploadFiles(f, "video")}
         onRemove={(p) => remove(p, "video")}
       />
+    </div>
+  );
+}
+
+function MediaThumb({ path, kind, onRemove }: { path: string; kind: "photo" | "video"; onRemove: () => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    let revoke: string | null = null;
+    (async () => {
+      // Если path — уже полноценный URL/blob, используем как есть
+      if (/^(https?:|blob:|data:)/.test(path)) {
+        setUrl(path);
+        return;
+      }
+      const { data, error } = await supabase.storage.from("media").createSignedUrl(path, 3600);
+      if (!mounted.current) return;
+      if (error || !data?.signedUrl) {
+        setUrl(null);
+        return;
+      }
+      setUrl(data.signedUrl);
+    })();
+    return () => {
+      mounted.current = false;
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [path]);
+
+  return (
+    <div className="relative aspect-square glass rounded-md overflow-hidden group bg-muted/30">
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 z-10 bg-destructive text-destructive-foreground rounded-full p-1 shadow-md opacity-90 hover:opacity-100 transition"
+        aria-label="Удалить"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+      {url ? (
+        kind === "photo" ? (
+          <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <video src={url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+        )
+      ) : (
+        <div className="flex items-center justify-center h-full text-[10px] text-muted-foreground p-1 text-center break-all">
+          {path.split("/").pop()}
+        </div>
+      )}
     </div>
   );
 }
@@ -163,19 +214,7 @@ function DropZone({
       {items.length > 0 && (
         <div className="grid grid-cols-5 gap-2">
           {items.map((path) => (
-            <div key={path} className="relative aspect-square glass rounded-md overflow-hidden group">
-              <div className="flex items-center justify-center h-full text-xs text-muted-foreground truncate p-1">
-                {path.split("/").pop()}
-              </div>
-              <button
-                type="button"
-                onClick={() => onRemove(path)}
-                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                aria-label="Удалить"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
+            <MediaThumb key={path} path={path} kind={kind} onRemove={() => onRemove(path)} />
           ))}
         </div>
       )}
