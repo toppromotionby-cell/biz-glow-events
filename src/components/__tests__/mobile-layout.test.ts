@@ -26,28 +26,26 @@ function expectAllPresent(source: string, snippets: string[], file: string) {
 }
 
 describe("mobile layout: centering regressions", () => {
-  it("CatalogChoiceModal: catalog cards center on mobile, left-align on sm+", () => {
+  it("CatalogChoiceModal: cards stay centered until md, switch to row at md+", () => {
     const file = "src/components/CatalogChoiceModal.tsx";
     const src = read(file);
 
-    // Card row container: vertical + centered on mobile, horizontal + left on sm+
+    // Card row container: vertical + centered through tablet, horizontal + left at md+.
+    // Intentionally md: (not sm:) so the 640–767 range keeps the centered stacked layout
+    // and avoids cramped horizontal cards inside the 2-col grid.
     expectAllPresent(
       src,
       [
         "flex h-full flex-col items-center text-center gap-3",
-        "sm:flex-row",
-        "sm:items-start",
-        "sm:text-left",
+        "md:flex-row",
+        "md:items-start",
+        "md:text-left",
       ],
       file,
     );
 
-    // "Перейти" CTA: centered on mobile, pushed to start on sm+
-    expectAllPresent(
-      src,
-      ["justify-center sm:justify-start"],
-      file,
-    );
+    // "Перейти" CTA: centered through tablet, pushed to start at md+
+    expectAllPresent(src, ["justify-center md:justify-start"], file);
 
     // Dialog header text-center on mobile
     expect(src).toMatch(/DialogHeader[^>]*className="[^"]*text-center/);
