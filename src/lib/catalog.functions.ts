@@ -98,3 +98,22 @@ export const getCatalogItem = createServerFn({ method: "GET" })
     const signed = await signMediaUrls([row as CatalogRow]);
     return signed[0];
   });
+
+// Категории каталога — единый источник истины (таблица catalog_categories).
+// Используется и админкой (CategoryCombobox), и публичными страницами,
+// чтобы фильтры/значения всегда совпадали.
+export const listCatalogCategories = createServerFn({ method: "GET" })
+  .inputValidator((i) => z.object({ type: z.enum(TYPES) }).parse(i))
+  .handler(async ({ data }) => {
+    const { data: rows, error } = await supabaseAdmin
+      .from("catalog_categories")
+      .select("id,name,sort_order")
+      .eq("entity_type", data.type)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) {
+      console.error("[listCatalogCategories] DB error:", error);
+      return [] as { id: string; name: string; sort_order: number }[];
+    }
+    return (rows ?? []) as { id: string; name: string; sort_order: number }[];
+  });
