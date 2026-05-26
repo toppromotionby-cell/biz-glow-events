@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { AppleButton } from "@/components/auth/AppleButton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { MailCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
