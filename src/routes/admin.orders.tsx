@@ -468,7 +468,7 @@ function AdminOrders() {
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex items-center gap-2">
-                        {canConfirm && (
+                        {canConfirm ? (
                           <button
                             type="button"
                             title="Подтвердить заказ"
@@ -477,6 +477,16 @@ function AdminOrders() {
                             className="inline-flex items-center text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
                           >
                             <CheckCircle2 className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            title={o.client_email ? "Отправить письмо клиенту повторно" : "У клиента не указан email"}
+                            disabled={resendEmail.isPending || !o.client_email}
+                            onClick={() => resendEmail.mutate(o.id)}
+                            className="inline-flex items-center text-primary hover:text-primary/80 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                          >
+                            <Mail className="h-4 w-4" />
                           </button>
                         )}
                         <Link
