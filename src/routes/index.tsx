@@ -6,7 +6,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState } from "react";
 import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
-import { SparkBurst } from "@/components/SparkBurst";
+import { HeroSection } from "@/components/HeroSection";
 import { DirectionCard } from "@/components/ui/DirectionCard";
 import { MediaCard } from "@/components/ui/MediaCard";
 import { StorageImg } from "@/components/StorageMedia";
@@ -73,42 +73,16 @@ function HomePage() {
 
   return (
     <div>
-      {/* HERO — spark burst */}
-      <Toggleable sectionKey="home.hero" as="section" className="relative overflow-hidden min-h-[92vh] flex items-center">
-        <SparkBurst />
-        <div className="container mx-auto px-4 py-10 md:py-12 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-[0.25em] uppercase text-accent mb-8">
-              <Sparkles className="h-3 w-3" /> КОРПОРАТИВНЫЕ МЕРОПРИЯТИЯ И ВСЕ ДЛЯ НИХ / ВСЯ БЕЛАРУСЬ
-            </div>
-            <h1 className="font-display font-black leading-[0.95] tracking-tight text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-8">
-              <span className="hero-accent-text block">
-                Создаём
-              </span>
-              <span className="block text-foreground">Незабываемые</span>
-              <span className="block text-foreground">События</span>
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
-              Полный цикл event-производства: от идеи до финального аккорда.
-              Интерактивные зоны, техническое оснащение, шоу-программы и декорации.
-            </p>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center mb-16">
-              <Button
-                size="lg"
-                onClick={() => setCatalogOpen(true)}
-                className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto"
-              >
-                Каталог услуг <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              {catalogOpen && (
-                <Suspense fallback={null}>
-                  <CatalogChoiceModal open={catalogOpen} onOpenChange={setCatalogOpen} />
-                </Suspense>
-              )}
-            </div>
-          </div>
-        </div>
-      </Toggleable>
+      {/* HERO */}
+      <HeroSection
+        onOpenCatalog={() => setCatalogOpen(true)}
+        onOpenHelp={() => setOrderTopic("Помощь в подборе")}
+      />
+      {catalogOpen && (
+        <Suspense fallback={null}>
+          <CatalogChoiceModal open={catalogOpen} onOpenChange={setCatalogOpen} />
+        </Suspense>
+      )}
 
 
 
