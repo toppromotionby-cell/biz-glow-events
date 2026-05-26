@@ -136,7 +136,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 className="h-full w-full"
               >
                 <button type="button" onClick={() => openLightbox(active)} className="block h-full w-full cursor-zoom-in" aria-label="Открыть фото">
-                  <img src={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" loading="eager" />
+                  <StorageImg path={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" fallbackClassName="h-full w-full" />
                 </button>
               </div>
             </MediaShield>
