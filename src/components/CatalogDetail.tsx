@@ -97,7 +97,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       id: effectiveId,
       slug: item.slug,
       title: effectiveTitle,
-      price: effectivePrice,
+      price: effectiveTotal,
       image: item.photo_urls?.[0] ?? null,
       qty: 1,
     });
@@ -105,8 +105,8 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       item_id: effectiveId,
       item_name: effectiveTitle,
       item_category: entityType,
-      price: effectivePrice,
-      quantity: 1,
+      price: effectiveTotal,
+      quantity: effectiveQty,
     });
     toast.success(`«${effectiveTitle}» добавлено в корзину`);
     navigate({ to: "/cart" });
