@@ -162,7 +162,7 @@ function OrderDetail() {
           <div className="space-y-2">
             {items.map((it: any) => (
               <div key={it.id} className="flex items-center justify-between text-sm border-b border-border/30 pb-2">
-                <div><div className="font-medium">{it.title}</div><div className="text-xs text-muted-foreground">{it.entity_type} · {it.qty} шт.</div></div>
+                <div><div className="font-medium">{it.title}</div><div className="text-xs text-muted-foreground">{ENTITY_LABEL[it.entity_type] ?? it.entity_type} · {it.qty} шт.</div></div>
                 <div className="font-medium">{Number(it.price ?? 0).toLocaleString("ru-BY")} BYN</div>
               </div>
             ))}
