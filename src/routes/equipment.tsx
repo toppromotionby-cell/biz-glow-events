@@ -41,14 +41,14 @@ export const Route = createFileRoute("/equipment")({
 });
 
 function EquipmentPage() {
-  const { items } = Route.useLoaderData();
+  const { items, categories } = Route.useLoaderData();
   return (
     <div className="container mx-auto px-4 py-16">
       <header className="max-w-2xl mb-12">
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Аренда event-оборудования в Минске</h1>
         <p className="mt-4 text-muted-foreground">Звук, свет, видео и проекционный маппинг — комплекты под формат вашего мероприятия.</p>
       </header>
-      <CatalogGrid items={items} category="equipment" basePath="/equipment" entityType="tech_equipment" />
+      <CatalogGrid items={items} category="equipment" basePath="/equipment" entityType="tech_equipment" categories={categories} />
     </div>
   );
 }
