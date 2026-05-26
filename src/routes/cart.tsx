@@ -35,6 +35,7 @@ const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN",
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
