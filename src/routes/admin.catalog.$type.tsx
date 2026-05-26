@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
+import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -141,7 +142,7 @@ function CatalogInner({ table }: { table: Table }) {
             >
               {handle}
               {it.photo_urls?.[0] ? (
-                <img src={it.photo_urls[0]} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                <StorageImg path={it.photo_urls[0]} className="h-10 w-10 rounded object-cover shrink-0" fallbackClassName="h-10 w-10 rounded shrink-0" />
               ) : (
                 <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
               )}
@@ -212,9 +213,9 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Фотографии ({item.photo_urls.length})</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {item.photo_urls.map((url: string, i: number) => (
-                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-[4/3] overflow-hidden rounded-lg bg-muted/30">
-                      <img src={url} alt={`${item.title} #${i + 1}`} loading="lazy" className="h-full w-full object-cover hover:scale-105 transition" />
-                    </a>
+                    <div key={i} className="block aspect-[4/3] overflow-hidden rounded-lg bg-muted/30">
+                      <StorageImg path={url} alt={`${item.title} #${i + 1}`} className="h-full w-full object-cover hover:scale-105 transition" fallbackClassName="h-full w-full" />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -225,7 +226,7 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Видео ({item.video_urls.length})</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {item.video_urls.map((url: string, i: number) => (
-                    <video key={i} src={url} controls className="w-full rounded-lg bg-black aspect-video" />
+                    <StorageVideo key={i} path={url} className="w-full rounded-lg bg-black aspect-video" />
                   ))}
                 </div>
               </section>
@@ -287,7 +288,6 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
             </section>
 
             <DialogFooter className="gap-2 sm:gap-2">
-              <Button variant="outline" onClick={onClose}><X className="h-4 w-4 mr-1" />Закрыть</Button>
               <Button onClick={() => onEdit(item)} className="bg-gradient-primary glow-primary"><Pencil className="h-4 w-4 mr-1" />Редактировать</Button>
             </DialogFooter>
           </>

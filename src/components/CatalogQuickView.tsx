@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button";
 import { getCatalogItem, type CatalogType, type CatalogRow } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
+import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
@@ -118,7 +119,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
         <div className="lg:col-span-3 space-y-3">
           {cover ? (
             <MediaShield className="rounded-2xl overflow-hidden aspect-[16/10] glass">
-              <img src={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" />
+              <StorageImg path={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" fallbackClassName="h-full w-full" />
             </MediaShield>
           ) : (
             <div className="rounded-2xl aspect-[16/10] glass flex items-center justify-center text-muted-foreground">
@@ -130,7 +131,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
               {photos.slice(0, 10).map((p, i) => (
                 <button key={p + i} type="button" onClick={() => setActive(i)}
                   className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
-                  <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <StorageImg path={p} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
                 </button>
               ))}
             </div>
@@ -234,7 +235,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
                     className="w-full rounded-xl bg-black aspect-video glass border-0" />
                 );
               }
-              return <video key={url + i} src={url} controls playsInline preload="metadata" className="w-full rounded-xl bg-black aspect-video glass" />;
+              return <StorageVideo key={url + i} path={url} className="w-full rounded-xl bg-black aspect-video glass" />;
             })}
           </div>
         </section>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import type { CatalogRow, CatalogType } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
+import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
@@ -135,7 +136,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 className="h-full w-full"
               >
                 <button type="button" onClick={() => openLightbox(active)} className="block h-full w-full cursor-zoom-in" aria-label="Открыть фото">
-                  <img src={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" loading="eager" />
+                  <StorageImg path={cover} alt={item.title} className="h-full w-full object-cover transition-opacity duration-500" fallbackClassName="h-full w-full" />
                 </button>
               </div>
             </MediaShield>
@@ -150,7 +151,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
                   aria-label={`Фото ${i + 1}`}
                   className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
-                  <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <StorageImg path={p} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
                 </button>
               ))}
             </div>
@@ -328,8 +329,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                   );
                 }
                 return (
-                  <video key={url + i} src={url} controls playsInline preload="metadata"
-                    className="w-full rounded-xl bg-black aspect-video glass" />
+                  <StorageVideo key={url + i} path={url} className="w-full rounded-xl bg-black aspect-video glass" />
                 );
               })}
             </div>
@@ -372,7 +372,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           <DialogDescription className="sr-only">Просмотр фотографии</DialogDescription>
           {lightbox !== null && photos[lightbox] && (
             <div className="relative">
-              <img src={photos[lightbox]} alt={item.title} className="w-full max-h-[85vh] object-contain rounded-lg" />
+              <StorageImg path={photos[lightbox]} alt={item.title} className="w-full max-h-[85vh] object-contain rounded-lg" fallbackClassName="w-full max-h-[85vh] rounded-lg" />
               {photos.length > 1 && (
                 <>
                   <button type="button" onClick={prev} aria-label="Назад"

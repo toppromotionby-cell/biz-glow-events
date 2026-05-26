@@ -6,6 +6,7 @@ import { Search, Loader2, Clock, X } from "lucide-react";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { globalSearch, type SearchHit } from "@/lib/search.functions";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
+import { StorageImg } from "@/components/StorageMedia";
 import type { CatalogType } from "@/lib/catalog.functions";
 
 const CATALOG_KINDS: Record<string, CatalogType> = {
@@ -234,7 +235,7 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
           <CommandGroup key={kind} heading={KIND_LABELS[kind]}>
             {items.map(h => (
               <CommandItem key={`${h.kind}-${h.id}`} value={`${h.kind}-${h.id}`} onSelect={() => go(h)}>
-                {h.image && <img src={h.image} alt="" loading="lazy" className="h-8 w-8 rounded object-cover mr-2 shrink-0" />}
+                {h.image && <StorageImg path={h.image} className="h-8 w-8 rounded object-cover mr-2 shrink-0" fallbackClassName="h-8 w-8 rounded mr-2 shrink-0" />}
                 <div className="min-w-0">
                   <div className="font-medium truncate"><Highlight text={h.title} q={qDebounced} /></div>
                   {h.excerpt && (
