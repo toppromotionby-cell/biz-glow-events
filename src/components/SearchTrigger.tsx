@@ -6,6 +6,7 @@ import { Search, Loader2, Clock, X } from "lucide-react";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { globalSearch, type SearchHit } from "@/lib/search.functions";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
+import { StorageImg } from "@/components/StorageMedia";
 import type { CatalogType } from "@/lib/catalog.functions";
 
 const CATALOG_KINDS: Record<string, CatalogType> = {
