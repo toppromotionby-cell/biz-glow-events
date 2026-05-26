@@ -20,6 +20,8 @@ import { useSectionEnabled } from "@/lib/site-sections";
 import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare, Check } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
+import { useAuth } from "@/hooks/use-auth";
+import { openAuthPrompt } from "@/lib/auth-prompt";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
