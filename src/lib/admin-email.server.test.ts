@@ -4,21 +4,15 @@
 // сущности), тест падает и заставляет синхронизировать обе стороны.
 import { describe, it, expect } from "vitest";
 import { buildClientOrderConfirmedEmail, type ClientOrderConfirmedPayload } from "@/lib/admin-email.server";
+import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 
-// Зеркало карт из admin.orders.$id.tsx / admin-email.server.ts.
-// Если меняешь одну — синхронизируй другую (тест поймает расхождение).
+// Зеркало ENTITY_LABEL из admin.orders.$id.tsx — если меняешь там, синхронизируй здесь.
 const ENTITY_LABEL_ADMIN: Record<string, string> = {
   zone: "Зона", service: "Услуга", equipment: "Оборудование",
   tech_equipment: "Оборудование", production: "Продакшн",
   production_item: "Продакшн", extras: "Доп. услуга",
 };
 
-const STATUS_LABEL_ADMIN: Record<string, string> = {
-  new: "Новая", consultation: "Консультация", estimate: "Смета",
-  in_progress: "В работе", quoted: "Смета выслана", contract: "Договор",
-  confirmed: "Подтверждён", paid: "Оплачен", completed: "Завершён",
-  cancelled: "Отменён",
-};
 
 // Реалистичная "база" — то же, что админка читает из таблицы orders + order_items.
 const sampleOrder = {
