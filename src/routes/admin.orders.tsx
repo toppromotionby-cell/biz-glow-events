@@ -114,7 +114,18 @@ function AdminOrders() {
       await supabase.from("order_timeline").insert({
         order_id: id, event: "paid_changed",
         actor_id: u.user?.id ?? null, payload: { from: prevPaid, to: newPaid },
-      });
+  });
+
+  const deleteFn = useServerFn(deleteOrderAdmin);
+  const deleteOrder = useMutation({
+    mutationFn: async (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Заказ удалён");
+      setOpenId(null);
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
+    onError: (e: Error) => toast.error(e?.message ?? "Не удалось удалить заказ"),
+  });
     },
     onSuccess: () => {
       toast.success("Оплата обновлена");
