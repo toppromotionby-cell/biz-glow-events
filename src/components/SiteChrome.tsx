@@ -344,11 +344,6 @@ export function SiteFooter() {
               </Toggleable>
             </Accordion>
 
-            <Toggleable sectionKey="footer.newsletter" as="div">
-              <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
-              <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
-              <NewsletterSignup />
-            </Toggleable>
           </div>
         </div>
         <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
