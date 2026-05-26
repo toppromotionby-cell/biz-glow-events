@@ -13,6 +13,7 @@ import { FeaturedCard, FeaturedCardSkeleton } from "@/components/FeaturedCard";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
+import { InView } from "@/components/InView";
 
 // Тяжёлые модалки/виджеты — ленивая загрузка ради меньшего initial JS.
 const GuestEstimator = lazy(() => import("@/components/GuestEstimator").then((m) => ({ default: m.GuestEstimator })));
