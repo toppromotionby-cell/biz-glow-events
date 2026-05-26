@@ -137,14 +137,43 @@ function AdminOrders() {
   });
 
   const confirmFn = useServerFn(confirmOrderAdmin);
+  const resendFn = useServerFn(resendOrderConfirmationEmailAdmin);
+
+  const resendEmail = useMutation({
+    mutationFn: async (id: string) => resendFn({ data: { id } }),
+    onSuccess: (res, id) => {
+      if (res?.emailSent) {
+        toast.success("Письмо клиенту отправлено повторно");
+      } else {
+        toast.error(`Не удалось отправить письмо: ${res?.emailError ?? "неизвестная ошибка"}`, {
+          duration: 8000,
+          action: { label: "Повторить", onClick: () => resendEmail.mutate(id) },
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: Error, id) =>
+      toast.error(e?.message ?? "Не удалось отправить письмо", {
+        duration: 8000,
+        action: { label: "Повторить", onClick: () => resendEmail.mutate(id) },
+      }),
+  });
+
   const confirmOrder = useMutation({
     mutationFn: async (id: string) => confirmFn({ data: { id } }),
-    onSuccess: (res) => {
-      toast.success(
-        res?.emailSent
-          ? "Заказ подтверждён — клиенту отправлено письмо"
-          : "Заказ подтверждён (письмо не отправлено)",
-      );
+    onSuccess: (res, id) => {
+      if (res?.emailSent) {
+        toast.success("Заказ подтверждён — клиенту отправлено письмо");
+      } else {
+        toast.warning(
+          `Заказ подтверждён, но письмо не доставлено: ${res?.emailError ?? "неизвестная ошибка"}`,
+          {
+            duration: 10000,
+            action: { label: "Отправить повторно", onClick: () => resendEmail.mutate(id) },
+          },
+        );
+      }
       qc.invalidateQueries({ queryKey: ["admin-orders"] });
       qc.invalidateQueries({ queryKey: ["order-modal"] });
       qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
