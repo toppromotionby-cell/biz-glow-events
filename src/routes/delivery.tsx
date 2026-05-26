@@ -76,21 +76,21 @@ function Page() {
         <h2 id="payment-heading" className="text-2xl md:text-3xl font-display font-bold flex items-center gap-3">
           <CreditCard className="h-6 w-6 text-primary" /> Способы оплаты
         </h2>
-        <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
           {PAYMENT.map((p) => (
-            <article key={p.title} className="glass p-6 rounded-2xl border border-border/50">
+            <article key={p.title} className="glass p-6 rounded-2xl border border-border/50 flex h-full flex-col items-center text-center md:items-start md:text-left">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <p.icon className="h-5 w-5" />
               </div>
-              <div className="mt-4 flex items-center gap-2">
-                <h3 className="font-display font-semibold">{p.title}</h3>
+              <div className="mt-4 flex items-center gap-2 flex-wrap justify-center md:justify-start">
+                <h3 className="font-display font-semibold leading-snug">{p.title}</h3>
                 {p.badge && (
                   <span className="text-[10px] uppercase tracking-wider bg-primary/15 text-primary px-2 py-0.5 rounded-full">
                     {p.badge}
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">{p.text}</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty max-w-[34ch] md:max-w-none">{p.text}</p>
             </article>
           ))}
         </div>
