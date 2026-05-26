@@ -292,8 +292,8 @@ function AdminOrders() {
                   {debt > 0 ? `Долг ${fmtMoney(debt)}` : "Оплачен"}
                 </span>
               </div>
-              {canConfirm && (
-                <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-1">
+                {canConfirm ? (
                   <Button
                     type="button"
                     size="sm"
@@ -304,6 +304,20 @@ function AdminOrders() {
                   >
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Подтвердить
                   </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-xs border-primary/40 text-primary hover:bg-primary/10"
+                    disabled={resendEmail.isPending || !o.client_email}
+                    title={o.client_email ? "Отправить письмо клиенту повторно" : "У клиента не указан email"}
+                    onClick={(e) => { e.stopPropagation(); resendEmail.mutate(o.id); }}
+                  >
+                    <Mail className="h-3.5 w-3.5 mr-1" />
+                    {resendEmail.isPending && resendEmail.variables === o.id ? "Отправка…" : "Письмо ещё раз"}
+                  </Button>
+                )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
