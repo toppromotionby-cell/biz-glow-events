@@ -569,6 +569,11 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
             <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
             {form.published ? "Опубликовано" : "Черновик"}
           </label>
+          {hasDraft && (
+            <span className="text-xs text-amber-300/90 inline-flex items-center gap-1" title="Есть несохранённые изменения, восстановятся после перезагрузки">
+              <AlertTriangle className="h-3 w-3" />черновик не сохранён</span>
+          )}
+          <span className="hidden">{/* placeholder */}</span>
           <div className="flex items-center gap-1">
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
             <Select value={moveTarget} onValueChange={(v) => { setMoveTarget(v as Table); moveTo(v as Table); }} disabled={moving}>
