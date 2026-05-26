@@ -170,7 +170,7 @@ function CartPage() {
       toast.success("Заказ оформлен");
       navigate({ to: "/order/success/$id", params: { id: res.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Ошибка отправки");
+      toast.error(humanizeError(err));
     } finally {
       setLoading(false);
     }
