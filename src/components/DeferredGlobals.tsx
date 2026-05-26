@@ -40,7 +40,7 @@ export function DeferredGlobals() {
       <FloatingContacts />
       <CartSync />
       <ScriptInjector />
-      <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
+      
     </Suspense>
   );
 }
