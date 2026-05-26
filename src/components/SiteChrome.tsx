@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { NewsletterSignup } from "@/components/NewsletterSignup";
+
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
