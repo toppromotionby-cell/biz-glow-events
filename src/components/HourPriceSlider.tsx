@@ -17,9 +17,8 @@ export function HourPriceSlider({
   onChange: (h: number) => void;
   rawPricing: unknown;
 }) {
-  const { minHours, maxHours, popularHours, points, extraPerHour } = pricing;
+  const { minHours, maxHours, popularHours, points } = pricing;
   const total = useMemo(() => priceForHours(pricing, hours), [pricing, hours]);
-  const unitPrice = hours > 0 ? Math.round(total / hours) : total;
   const [showTable, setShowTable] = useState(false);
 
   // Keep value within bounds when pricing changes
@@ -30,7 +29,6 @@ export function HourPriceSlider({
 
   const clamp = (n: number) => Math.max(minHours, Math.min(maxHours, n));
   const isPopular = popularHours !== null && hours === popularHours;
-  const isExtended = points.length > 0 && hours > (points[points.length - 1]?.hours ?? 0);
 
   // Build tick marks (start, popular, last tier, max)
   const ticks = useMemo(() => {
