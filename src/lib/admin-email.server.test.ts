@@ -4,21 +4,15 @@
 // сущности), тест падает и заставляет синхронизировать обе стороны.
 import { describe, it, expect } from "vitest";
 import { buildClientOrderConfirmedEmail, type ClientOrderConfirmedPayload } from "@/lib/admin-email.server";
+import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 
-// Зеркало карт из admin.orders.$id.tsx / admin-email.server.ts.
-// Если меняешь одну — синхронизируй другую (тест поймает расхождение).
+// Зеркало ENTITY_LABEL из admin.orders.$id.tsx — если меняешь там, синхронизируй здесь.
 const ENTITY_LABEL_ADMIN: Record<string, string> = {
   zone: "Зона", service: "Услуга", equipment: "Оборудование",
   tech_equipment: "Оборудование", production: "Продакшн",
   production_item: "Продакшн", extras: "Доп. услуга",
 };
 
-const STATUS_LABEL_ADMIN: Record<string, string> = {
-  new: "Новая", consultation: "Консультация", estimate: "Смета",
-  in_progress: "В работе", quoted: "Смета выслана", contract: "Договор",
-  confirmed: "Подтверждён", paid: "Оплачен", completed: "Завершён",
-  cancelled: "Отменён",
-};
 
 // Реалистичная "база" — то же, что админка читает из таблицы orders + order_items.
 const sampleOrder = {
@@ -78,8 +72,8 @@ describe("client confirmation email vs admin order view", () => {
     expect(html).toContain(sampleOrder.client_company.replace(/"/g, "&quot;"));
   });
 
-  it("статус в письме совпадает со словарём админки", () => {
-    expect(html).toContain(STATUS_LABEL_ADMIN[sampleOrder.status]);
+  it("статус в письме берётся из общего ORDER_STATUS_LABEL (как в админке)", () => {
+    expect(html).toContain(ORDER_STATUS_LABEL[sampleOrder.status]);
   });
 
   it("дата мероприятия отформатирована как в админке (ru-BY)", () => {
@@ -94,15 +88,20 @@ describe("client confirmation email vs admin order view", () => {
     }
   });
 
-  it("итого, оплачено и остаток к оплате присутствуют", () => {
-    // BYN форматер использует non-breaking spaces — проверяем по числам.
+  it("суммы отформатированы тем же formatOrderBYN, что и админ-карточка", () => {
+    // Контракт: и админка, и письмо используют formatOrderBYN → один и тот же
+    // формат валюты (`1 500 BYN`, локаль ru-BY). Если кто-то заменит форматер
+    // в письме на Intl currency (`Br`), этот тест упадёт.
+    expect(html).toContain(formatOrderBYN(sampleOrder.total));   // 1 500 BYN
+    expect(html).toContain(formatOrderBYN(sampleOrder.paid));    // 500 BYN
+    expect(html).toContain(formatOrderBYN(sampleOrder.total - sampleOrder.paid)); // 1 000 BYN
     expect(html).toMatch(/Итого/);
-    expect(html).toMatch(/1[\s\u00A0\u202F]?500/); // total
     expect(html).toMatch(/Оплачено/);
-    expect(html).toMatch(/500/);
     expect(html).toMatch(/Осталось доплатить/);
-    expect(html).toMatch(/1[\s\u00A0\u202F]?000/); // remaining = 1500-500
+    // Защита от Intl.NumberFormat(..., {currency:"BYN"}) — он рендерит "Br".
+    expect(html).not.toMatch(/\bBr\b/);
   });
+
 
   it("комментарий клиента (notes) попадает в письмо как есть", () => {
     expect(html).toContain(sampleOrder.notes);

@@ -16,9 +16,12 @@ import { ArrowLeft, Clock, Trash2, Mail } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
+import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 
 
-const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
+// Единый список статусов и их подписи берём из ORDER_STATUS_LABEL,
+// чтобы локализация в админке и письмах не расходилась.
+
 
 const ENTITY_LABEL: Record<string, string> = {
   zone: "Зона", service: "Услуга", equipment: "Оборудование",
@@ -122,7 +125,7 @@ function OrderDetail() {
             <Mail className="h-4 w-4 mr-1" />{loadPreview.isPending ? "Загрузка…" : "Предпросмотр письма"}
           </Button>
           <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
-            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <AlertDialog>
             <AlertDialogTrigger asChild>

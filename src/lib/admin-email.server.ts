@@ -2,6 +2,7 @@
 // или вернул ошибку. Рендерит простой HTML и пихает напрямую в pgmq-очередь
 // (transactional_emails) через service-role admin клиент.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 
 const SITE_NAME = "event-hub.by";
 const SENDER_DOMAIN = "z.event-hub.by";
@@ -18,8 +19,10 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-const fmtBYN = (n: number) =>
-  new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(n);
+// Используем общий хелпер из order-status, чтобы валюта/формат в письме
+// совпадали с тем, что показывает админка (`1 500 BYN`).
+const fmtBYN = (n: number) => formatOrderBYN(n);
+
 
 async function enqueue(opts: {
   to: string;
@@ -167,19 +170,6 @@ const ENTITY_LABEL_RU: Record<string, string> = {
 };
 
 
-const STATUS_LABEL_RU: Record<string, string> = {
-  new: "Новая",
-  consultation: "Консультация",
-  estimate: "Смета",
-  in_progress: "В работе",
-  quoted: "Смета выслана",
-  contract: "Договор",
-  confirmed: "Подтверждён",
-  paid: "Оплачен",
-  completed: "Завершён",
-  cancelled: "Отменён",
-};
-
 function fmtDateRu(d?: string | null): string {
   if (!d) return "";
   try { return new Date(d).toLocaleDateString("ru-BY"); } catch { return String(d); }
@@ -188,7 +178,9 @@ function fmtDateRu(d?: string | null): string {
 export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): { subject: string; html: string } {
   const subject = `Ваш заказ подтверждён — ${SITE_NAME}`;
   const statusKey = p.status ?? "confirmed";
-  const statusLabel = STATUS_LABEL_RU[statusKey] ?? "Подтверждён";
+  // Используем общий ORDER_STATUS_LABEL — единый источник правды с админкой.
+  const statusLabel = ORDER_STATUS_LABEL[statusKey] ?? ORDER_STATUS_LABEL.confirmed;
+
 
   const itemsHtml = p.items.map(i => {
     const sub = [
