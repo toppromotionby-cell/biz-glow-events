@@ -139,7 +139,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
           {/* Hint line */}
           <div
-            className={`flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground/80 ${childClass()}`}
+            className={`flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-white/80 ${childClass()}`}
             style={style(4)}
           >
             <span className="inline-flex items-center gap-1.5">
