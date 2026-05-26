@@ -27,6 +27,19 @@ import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
 import { Info } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// Признак «черновика»: нет фото / нет цены / нет описания.
+function draftIssues(it: any): string[] {
+  const issues: string[] = [];
+  if (!it.photo_urls?.length) issues.push("нет фото");
+  if (!getTiers(it.pricing).length) issues.push("нет цены");
+  if (!it.short_description && !it.description) issues.push("нет описания");
+  return issues;
+}
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
