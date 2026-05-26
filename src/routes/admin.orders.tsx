@@ -191,8 +191,9 @@ function AdminOrders() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Загрузка...</td></tr>}
-              {!isLoading && sorted.length === 0 && <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Нет заказов</td></tr>}
+              {isLoading && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Загрузка...</td></tr>}
+              {!isLoading && sorted.length === 0 && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Нет заказов</td></tr>}
+
               {sorted.map((o: any) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
                 return (
