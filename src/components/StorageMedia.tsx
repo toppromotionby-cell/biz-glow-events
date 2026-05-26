@@ -9,7 +9,7 @@ function isAbsolute(src: string): boolean {
   return /^(https?:|blob:|data:)/i.test(src);
 }
 
-function useResolvedUrl(path: string | null | undefined): string | null {
+export function useResolvedUrl(path: string | null | undefined): string | null {
   const [url, setUrl] = useState<string | null>(() =>
     path && isAbsolute(path) ? path : null,
   );
