@@ -116,7 +116,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
           {/* CTA Buttons */}
           <div
-            className={`flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-8 md:mb-10 ${childClass()}`}
+            className={`flex flex-col sm:flex-row flex-wrap items-center sm:items-start gap-3 sm:gap-4 mb-8 md:mb-10 ${childClass()}`}
             style={style(3)}
           >
             <Button
@@ -139,7 +139,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
           {/* Hint line */}
           <div
-            className={`flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-white/80 ${childClass()}`}
+            className={`flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 text-xs sm:text-sm text-white/80 ${childClass()}`}
             style={style(4)}
           >
             <span className="inline-flex items-center gap-1.5">
