@@ -251,12 +251,26 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
 
             {Array.isArray(item.features) && item.features.length > 0 && (
               <section className="space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Особенности</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Что входит</h3>
                 <ul className="list-disc list-inside text-sm space-y-1">
                   {item.features.map((f: any, i: number) => (
                     <li key={i}>{typeof f === "string" ? f : JSON.stringify(f)}</li>
                   ))}
                 </ul>
+              </section>
+            )}
+
+            {Array.isArray(item.extras) && item.extras.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2"><Info className="h-3.5 w-3.5" />Дополнительно</h3>
+                <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                  {item.extras.map((r: any, i: number) => (
+                    <div key={i} className="flex justify-between gap-3 border-b border-border/30 py-1">
+                      <dt className="text-muted-foreground">{r?.label ?? ""}</dt>
+                      <dd className="font-medium text-right">{r?.value ?? ""}</dd>
+                    </div>
+                  ))}
+                </dl>
               </section>
             )}
 
