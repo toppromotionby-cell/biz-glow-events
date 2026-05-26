@@ -218,6 +218,28 @@ function OrderDetail() {
           </ol>
         )}
       </div>
+
+      <Dialog open={!!emailPreview} onOpenChange={(o) => !o && setEmailPreview(null)}>
+        <DialogContent className="max-w-3xl p-0 gap-0 max-h-[90vh] flex flex-col">
+          <DialogHeader className="p-5 pb-3 border-b border-border">
+            <DialogTitle>Предпросмотр письма клиенту</DialogTitle>
+            <DialogDescription className="space-y-0.5">
+              <div><span className="text-muted-foreground">Кому:</span> {emailPreview?.to ?? "— email клиента не указан"}</div>
+              <div><span className="text-muted-foreground">Тема:</span> {emailPreview?.subject}</div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden bg-[#0a0a0f]">
+            {emailPreview && (
+              <iframe
+                title="email-preview"
+                srcDoc={emailPreview.html}
+                sandbox=""
+                className="w-full h-[70vh] border-0 bg-white"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
