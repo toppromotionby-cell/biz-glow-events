@@ -109,18 +109,15 @@ export function SiteHeader() {
                 )}
               </Link>
             </Toggleable>
-            {isAuthenticated && (
-              <>
-                <Toggleable sectionKey="header.compare" as="span">
-                  <Link to="/compare" aria-label={cmpCount > 0 ? `Сравнение, ${cmpCount} позиций` : "Сравнение"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                    <Scale className="h-4 w-4" aria-hidden="true" />
-                    {cmpCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{cmpCount}</span>
-                    )}
-                  </Link>
-                </Toggleable>
-              </>
-            )}
+            <Toggleable sectionKey="header.compare" as="span">
+              <Link to="/compare" aria-label={cmpCount > 0 ? `Сравнение, ${cmpCount} позиций` : "Сравнение"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+                <Scale className="h-4 w-4" aria-hidden="true" />
+                {cmpCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{cmpCount}</span>
+                )}
+              </Link>
+            </Toggleable>
+
             <Toggleable sectionKey="header.cart" as="span">
               <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
                 <ShoppingCart className="h-4 w-4" aria-hidden="true" />
@@ -205,16 +202,15 @@ export function SiteHeader() {
                       </Link>
                     </SheetClose>
                   </Toggleable>
-                  {isAuthenticated && (
-                    <Toggleable sectionKey="header.compare" as="div">
-                      <SheetClose asChild>
-                        <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                          <span className="flex items-center gap-3"><Scale className="h-4 w-4" /> Сравнение</span>
-                          {cmpCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{cmpCount}</span>}
-                        </Link>
-                      </SheetClose>
-                    </Toggleable>
-                  )}
+                  <Toggleable sectionKey="header.compare" as="div">
+                    <SheetClose asChild>
+                      <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                        <span className="flex items-center gap-3"><Scale className="h-4 w-4" /> Сравнение</span>
+                        {cmpCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{cmpCount}</span>}
+                      </Link>
+                    </SheetClose>
+                  </Toggleable>
+
                 </div>
 
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>

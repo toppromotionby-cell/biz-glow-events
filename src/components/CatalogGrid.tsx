@@ -4,7 +4,7 @@ import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
-import { AddToCartButton } from "@/components/AddToCartButton";
+
 import { WishlistButton } from "@/components/WishlistButton";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
@@ -311,16 +311,6 @@ function CatalogCard({
           </PriceGate>
           <div className="mt-3 flex items-stretch gap-2">
             <div className="flex-1">
-              <AddToCartButton
-                entity_type={entityType}
-                id={item.slug}
-                slug={item.slug}
-                title={item.title}
-                price={item.priceFrom}
-                image={item.image}
-              />
-            </div>
-            <div className="mt-2">
               <WishlistButton
                 entity_type={entityType}
                 id={item.slug}
@@ -328,10 +318,10 @@ function CatalogCard({
                 title={item.title}
                 price={item.priceFrom}
                 image={item.image}
-                compact
               />
             </div>
           </div>
+
         </div>
       </div>
     </article>
