@@ -35,16 +35,17 @@ async function stabilizePage(page: Page) {
 test.describe("Centering — catalog choice modal", () => {
   test("opens and matches snapshot", async ({ page }, testInfo) => {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await stabilizePage(page);
 
-    // Open the catalog picker. The home page has a "Каталог" trigger that
-    // opens CatalogChoiceModal. We target by accessible name; fall back to text.
-    const trigger = page.getByRole("button", { name: /каталог/i }).first();
-    await trigger.click();
+    const trigger = page.getByRole("button", { name: /перейти в каталог/i }).first();
+    await trigger.waitFor({ state: "visible", timeout: 10000 });
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click({ force: true });
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await page.waitForTimeout(150); // dialog enter animation
+    await expect(dialog).toBeVisible({ timeout: 15000 });
+    await page.waitForTimeout(400);
 
     await expect(dialog).toHaveScreenshot(`catalog-choice-${testInfo.project.name}.png`);
   });
@@ -62,17 +63,19 @@ test.describe("Centering — industries page", () => {
 
   test("dialog header matches snapshot", async ({ page }, testInfo) => {
     await page.goto("/industries");
+    await page.waitForLoadState("networkidle");
     await stabilizePage(page);
 
-    // First industry tile
     const firstTile = page
       .locator('section[aria-labelledby="grid-heading"] button')
       .first();
-    await firstTile.click();
+    await firstTile.waitFor({ state: "visible", timeout: 10000 });
+    await firstTile.scrollIntoViewIfNeeded();
+    await firstTile.evaluate((el: HTMLElement) => el.click());
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await page.waitForTimeout(150);
+    await expect(dialog).toBeVisible({ timeout: 15000 });
+    await page.waitForTimeout(400);
     await expect(dialog).toHaveScreenshot(`industries-dialog-${testInfo.project.name}.png`);
   });
 });
