@@ -22,7 +22,7 @@ function OrderDetail() {
   const { id } = useParams({ from: "/admin/orders/$id" });
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [notes, setNotes] = useState("");
+  const [internalNotes, setInternalNotes] = useState("");
 
   const { data: order } = useQuery({
     queryKey: ["order", id],
@@ -43,7 +43,13 @@ function OrderDetail() {
     queryFn: async () => (await supabase.from("order_timeline").select("*").eq("order_id", id).order("created_at", { ascending: false })).data ?? [],
   });
 
-  useEffect(() => { if (order?.notes) setNotes(order.notes); }, [order?.notes]);
+  useEffect(() => {
+    if (order && typeof (order as any).internal_notes === "string") {
+      setInternalNotes((order as any).internal_notes ?? "");
+    } else if (order) {
+      setInternalNotes("");
+    }
+  }, [(order as any)?.internal_notes]);
 
   const updateStatus = useMutation({
     mutationFn: async (status: string) => {
@@ -55,11 +61,13 @@ function OrderDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const saveNotes = async () => {
-    const { error } = await supabase.from("orders").update({ notes }).eq("id", id);
+  const saveInternalNotes = async () => {
+    const { error } = await supabase.from("orders").update({ internal_notes: internalNotes } as any).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Сохранено");
+    qc.invalidateQueries({ queryKey: ["order", id] });
   };
+
 
   const removeOrder = useMutation({
     mutationFn: async () => {
