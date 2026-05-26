@@ -152,7 +152,7 @@ function HomePage() {
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
             <div key={v.title} className="flex flex-col items-center text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full glass mb-4 animate-pulse-glow pointer-events-none select-none" aria-hidden="true">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full glass mb-4 md:motion-safe:animate-pulse-glow pointer-events-none select-none" aria-hidden="true">
                 <v.icon className="h-6 w-6 text-accent" />
               </div>
               <h3 className="font-display font-semibold text-xl mb-2">{v.title}</h3>
