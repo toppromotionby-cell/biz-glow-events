@@ -120,7 +120,14 @@ function UsersAdminPage() {
                   {u.company && <div className="text-xs text-muted-foreground mt-0.5">{u.company}</div>}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  <div>{u.email}</div>
+                  <div className="flex items-center gap-2">
+                    <span>{u.email}</span>
+                    {u.email_confirmed_at ? (
+                      <Badge variant="outline" className="border-emerald-400/40 text-emerald-300 text-[10px]">Email подтверждён</Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-amber-400/40 text-amber-300 text-[10px]">Email не подтверждён</Badge>
+                    )}
+                  </div>
                   {u.phone && <div className="text-xs mt-0.5">{u.phone}</div>}
                 </td>
                 <td className="px-4 py-3">

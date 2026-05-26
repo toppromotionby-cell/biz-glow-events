@@ -23,13 +23,14 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
 
-    const [{ data: profiles, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
+    const [{ data: profiles, error: pErr }, { data: roles, error: rErr }, authRes] = await Promise.all([
       supabaseAdmin
         .from("profiles")
         .select("id, full_name, email, phone, company, created_at")
         .order("created_at", { ascending: false })
         .limit(500),
       supabaseAdmin.from("user_roles").select("user_id, role"),
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     ]);
 
     if (pErr) throw new Error(pErr.message);
@@ -42,6 +43,11 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       byUser.set(r.user_id, list);
     }
 
+    const confirmedMap = new Map<string, string | null>();
+    for (const u of authRes.data?.users ?? []) {
+      confirmedMap.set(u.id, (u as any).email_confirmed_at ?? (u as any).confirmed_at ?? null);
+    }
+
     return (profiles ?? []).map((p) => ({
       id: p.id,
       full_name: p.full_name,
@@ -50,6 +56,7 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       company: p.company,
       created_at: p.created_at,
       roles: byUser.get(p.id) ?? [],
+      email_confirmed_at: confirmedMap.get(p.id) ?? null,
     }));
   });
 
