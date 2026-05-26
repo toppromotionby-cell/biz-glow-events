@@ -3,6 +3,7 @@ import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
+import { useResolvedUrl } from "@/components/StorageMedia";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { X } from "lucide-react";
