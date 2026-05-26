@@ -283,7 +283,7 @@ function CartPage() {
               {clientType === "company" && (
                 <Field label="Компания *" name="client_company" required defaultValue={draft.client_company} />
               )}
-              <DateField label="Дата мероприятия" name="event_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
+              <DateField label="Дата мероприятия" name="event_date" endName="event_end_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
               <label className="block text-sm">
                 <span className="text-muted-foreground">Комментарий</span>
                 <textarea name="notes" rows={3} defaultValue={draft.notes ?? ""} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
