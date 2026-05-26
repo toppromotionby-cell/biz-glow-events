@@ -138,43 +138,129 @@ export type ClientOrderConfirmedPayload = {
   orderId: string;
   clientName: string;
   clientEmail: string;
+  clientPhone?: string | null;
+  clientCompany?: string | null;
   total: number;
+  paid?: number | null;
+  status?: string | null;
   eventDate?: string | null;
-  items: Array<{ title: string; qty: number; price: number }>;
+  notes?: string | null;
+  items: Array<{
+    title: string;
+    qty: number;
+    price: number;
+    entityType?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+  }>;
 };
+
+const STATUS_LABEL_RU: Record<string, string> = {
+  new: "Новая",
+  consultation: "Консультация",
+  estimate: "Смета",
+  in_progress: "В работе",
+  quoted: "Смета выслана",
+  contract: "Договор",
+  confirmed: "Подтверждён",
+  paid: "Оплачен",
+  completed: "Завершён",
+  cancelled: "Отменён",
+};
+
+function fmtDateRu(d?: string | null): string {
+  if (!d) return "";
+  try { return new Date(d).toLocaleDateString("ru-BY"); } catch { return String(d); }
+}
 
 export async function notifyClientOrderConfirmedEmail(
   p: ClientOrderConfirmedPayload,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!p.clientEmail) return { ok: false, error: "no client email" };
   const subject = `Ваш заказ подтверждён — ${SITE_NAME}`;
-  const itemsHtml = p.items.map(i =>
-    `<tr>
-       <td style="padding:8px 0;border-bottom:1px solid #2a2a35">${escapeHtml(i.title)}</td>
-       <td style="padding:8px 0;border-bottom:1px solid #2a2a35;text-align:right;white-space:nowrap">${i.qty} × ${i.price > 0 ? fmtBYN(i.price) : "по запросу"}</td>
-       <td style="padding:8px 0;border-bottom:1px solid #2a2a35;text-align:right;white-space:nowrap;font-weight:600">${i.price > 0 ? fmtBYN(i.qty * i.price) : "—"}</td>
-     </tr>`
-  ).join("");
+  const statusKey = p.status ?? "confirmed";
+  const statusLabel = STATUS_LABEL_RU[statusKey] ?? "Подтверждён";
+
+  const itemsHtml = p.items.map(i => {
+    const sub = [
+      i.entityType ? escapeHtml(i.entityType) : null,
+      `${i.qty} шт.`,
+      (i.startDate || i.endDate)
+        ? `${fmtDateRu(i.startDate)}${i.endDate && i.endDate !== i.startDate ? ` — ${fmtDateRu(i.endDate)}` : ""}`
+        : null,
+    ].filter(Boolean).join(" · ");
+    return `<tr>
+       <td style="padding:10px 0;border-bottom:1px solid #2a2a35;vertical-align:top">
+         <div style="font-weight:600">${escapeHtml(i.title)}</div>
+         ${sub ? `<div style="font-size:12px;color:#888;margin-top:2px">${sub}</div>` : ""}
+       </td>
+       <td style="padding:10px 0;border-bottom:1px solid #2a2a35;text-align:right;white-space:nowrap;vertical-align:top">${i.price > 0 ? fmtBYN(i.price) : "по запросу"}</td>
+       <td style="padding:10px 0;border-bottom:1px solid #2a2a35;text-align:right;white-space:nowrap;font-weight:600;vertical-align:top">${i.price > 0 ? fmtBYN(i.qty * i.price) : "—"}</td>
+     </tr>`;
+  }).join("");
+
+  const paid = Number(p.paid ?? 0);
+  const remaining = Math.max(0, Number(p.total ?? 0) - paid);
   const orderUrl = `https://${FROM_DOMAIN}/profile`;
+
+  const metaRow = (label: string, value: string) => `
+    <tr>
+      <td style="padding:6px 12px 6px 0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;vertical-align:top">${label}</td>
+      <td style="padding:6px 0;font-size:14px;color:#e5e5e5;vertical-align:top">${value}</td>
+    </tr>`;
+
   const html = `
 <!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px;margin:0">
-<div style="max-width:600px;margin:0 auto;background:#11111a;border-radius:12px;padding:28px">
+<div style="max-width:640px;margin:0 auto;background:#11111a;border-radius:12px;padding:28px">
   <h1 style="color:#a78bfa;margin:0 0 8px;font-size:22px">Заказ подтверждён ✅</h1>
   <p style="margin:0 0 20px;color:#b8b8c8">Здравствуйте, ${escapeHtml(p.clientName)}! Мы подтвердили ваш заказ и приступаем к подготовке.</p>
 
-  <div style="background:#1a1a26;border-radius:8px;padding:16px;margin:0 0 20px">
-    <div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px">Номер заказа</div>
-    <div style="font-size:14px;font-family:monospace;margin:4px 0 12px">${escapeHtml(p.orderId.slice(0, 8))}</div>
-    <div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px">Статус</div>
-    <div style="display:inline-block;margin:4px 0 0;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:13px;font-weight:500">Подтверждён</div>
-    ${p.eventDate ? `<div style="margin-top:12px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px">Дата мероприятия</div><div style="margin-top:4px">${escapeHtml(p.eventDate)}</div>` : ""}
+  <div style="background:#1a1a26;border-radius:8px;padding:16px 18px;margin:0 0 20px">
+    <table style="width:100%;border-collapse:collapse">
+      <tbody>
+        ${metaRow("Номер заказа", `<span style="font-family:monospace">${escapeHtml(p.orderId.slice(0, 8))}</span>`)}
+        ${metaRow("Статус", `<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:13px;font-weight:500">${escapeHtml(statusLabel)}</span>`)}
+        ${p.eventDate ? metaRow("Дата мероприятия", escapeHtml(fmtDateRu(p.eventDate))) : ""}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="background:#1a1a26;border-radius:8px;padding:16px 18px;margin:0 0 20px">
+    <div style="font-size:13px;color:#a78bfa;font-weight:600;margin-bottom:8px">Контактные данные</div>
+    <table style="width:100%;border-collapse:collapse">
+      <tbody>
+        ${metaRow("Имя", escapeHtml(p.clientName))}
+        ${metaRow("Email", escapeHtml(p.clientEmail))}
+        ${p.clientPhone ? metaRow("Телефон", escapeHtml(p.clientPhone)) : ""}
+        ${p.clientCompany ? metaRow("Компания", escapeHtml(p.clientCompany)) : ""}
+      </tbody>
+    </table>
   </div>
 
   <h2 style="font-size:16px;margin:0 0 12px;color:#e5e5e5">Состав заказа</h2>
-  <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
-    <tbody>${itemsHtml}</tbody>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:8px">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:0 0 8px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #2a2a35">Позиция</th>
+        <th style="text-align:right;padding:0 0 8px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #2a2a35">Цена</th>
+        <th style="text-align:right;padding:0 0 8px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #2a2a35">Сумма</th>
+      </tr>
+    </thead>
+    <tbody>${itemsHtml || `<tr><td colspan="3" style="padding:10px 0;color:#888;font-size:13px">Позиций нет</td></tr>`}</tbody>
   </table>
-  <p style="font-size:18px;font-weight:bold;text-align:right;margin:0 0 24px;color:#fff">Итого: ${fmtBYN(p.total)}</p>
+
+  <table style="width:100%;border-collapse:collapse;margin:0 0 24px">
+    <tbody>
+      <tr><td style="padding:8px 0;color:#b8b8c8;font-size:14px">Итого</td><td style="padding:8px 0;text-align:right;font-size:18px;font-weight:bold;color:#fff">${fmtBYN(Number(p.total ?? 0))}</td></tr>
+      ${paid > 0 ? `<tr><td style="padding:4px 0;color:#888;font-size:13px">Оплачено</td><td style="padding:4px 0;text-align:right;color:#34d399;font-size:14px">${fmtBYN(paid)}</td></tr>` : ""}
+      ${paid > 0 && remaining > 0 ? `<tr><td style="padding:4px 0;color:#888;font-size:13px">Осталось доплатить</td><td style="padding:4px 0;text-align:right;color:#fbbf24;font-size:14px;font-weight:600">${fmtBYN(remaining)}</td></tr>` : ""}
+    </tbody>
+  </table>
+
+  ${p.notes ? `<div style="background:#1a1a26;border-left:3px solid #a78bfa;border-radius:6px;padding:12px 14px;margin:0 0 24px">
+    <div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Комментарий</div>
+    <div style="font-size:14px;color:#e5e5e5;white-space:pre-wrap">${escapeHtml(p.notes)}</div>
+  </div>` : ""}
 
   <a href="${orderUrl}" style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:500">Открыть личный кабинет</a>
 
@@ -191,4 +277,5 @@ export async function notifyClientOrderConfirmedEmail(
     messageId: `order-confirmed-${p.orderId}`,
   });
 }
+
 
