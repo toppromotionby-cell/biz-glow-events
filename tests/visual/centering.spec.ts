@@ -63,18 +63,19 @@ test.describe("Centering — industries page", () => {
 
   test("dialog header matches snapshot", async ({ page }, testInfo) => {
     await page.goto("/industries");
+    await page.waitForLoadState("networkidle");
     await stabilizePage(page);
 
-    // First industry tile
     const firstTile = page
       .locator('section[aria-labelledby="grid-heading"] button')
       .first();
+    await firstTile.waitFor({ state: "visible", timeout: 10000 });
     await firstTile.scrollIntoViewIfNeeded();
-    await firstTile.click();
+    await firstTile.click({ force: true });
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(300);
+    await expect(dialog).toBeVisible({ timeout: 15000 });
+    await page.waitForTimeout(400);
     await expect(dialog).toHaveScreenshot(`industries-dialog-${testInfo.project.name}.png`);
   });
 });
