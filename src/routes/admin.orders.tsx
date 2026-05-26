@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip, Plus } from "lucide-react";
+import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2 } from "lucide-react";
 // OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
 const OrderAttachments = lazy(() =>
   import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
@@ -16,6 +16,12 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteOrderAdmin } from "@/lib/orders.functions";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
@@ -108,7 +114,7 @@ function AdminOrders() {
       await supabase.from("order_timeline").insert({
         order_id: id, event: "paid_changed",
         actor_id: u.user?.id ?? null, payload: { from: prevPaid, to: newPaid },
-      });
+  });
     },
     onSuccess: () => {
       toast.success("Оплата обновлена");
@@ -117,6 +123,17 @@ function AdminOrders() {
       qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
     },
     onError: (e: Error) => toast.error(e?.message ?? "Не удалось обновить оплату"),
+  });
+
+  const deleteFn = useServerFn(deleteOrderAdmin);
+  const deleteOrder = useMutation({
+    mutationFn: async (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Заказ удалён");
+      setOpenId(null);
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
+    onError: (e: Error) => toast.error(e?.message ?? "Не удалось удалить заказ"),
   });
 
 
@@ -338,16 +355,47 @@ function AdminOrders() {
                       />
                     </td>
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
-                    <td className="p-3 text-right">
-                      <Link
-                        to="/admin/orders/$id"
-                        params={{ id: o.id }}
-                        aria-label={`Открыть полную страницу заказа ${o.client_name}`}
-                        className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Link>
+                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <div className="inline-flex items-center gap-2">
+                        <Link
+                          to="/admin/orders/$id"
+                          params={{ id: o.id }}
+                          aria-label={`Открыть полную страницу заказа ${o.client_name}`}
+                          className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Удалить заказ ${o.client_name}`}
+                              className="inline-flex items-center text-muted-foreground hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Заказ <b>{o.client_name}</b> от {fmtDate(o.created_at)} будет удалён вместе с позициями,
+                                таймлайном и вложениями. Он также исчезнет из кабинета клиента. Действие необратимо.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction
+                                disabled={deleteOrder.isPending}
+                                onClick={() => deleteOrder.mutate(o.id)}
+                                className="bg-rose-600 hover:bg-rose-700 text-white"
+                              >
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </td>
                   </tr>
                 );

@@ -454,3 +454,48 @@ export const deleteOwnOrder = createServerFn({ method: "POST" })
     await notifyTelegram(text);
     return { ok: true };
   });
+
+// ===== Admin: delete any order =====
+
+export const deleteOrderAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => DeleteOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+
+    // Verify admin role via security-definer has_role RPC
+    const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (roleErr || !isAdmin) throw new Error("Доступ запрещён");
+
+    const { data: existing, error: fetchErr } = await supabaseAdmin
+      .from("orders")
+      .select("id, client_name, client_phone, client_email, client_company, event_date, total")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (fetchErr || !existing) throw new Error("Заявка не найдена");
+
+    // cascade cleanup (no FK cascades defined in DB)
+    await supabaseAdmin.from("order_items").delete().eq("order_id", data.id);
+    await supabaseAdmin.from("availability").delete().eq("order_id", data.id);
+    await supabaseAdmin.from("order_attachments").delete().eq("order_id", data.id);
+    await supabaseAdmin.from("order_timeline").delete().eq("order_id", data.id);
+
+    const { error: delErr } = await supabaseAdmin.from("orders").delete().eq("id", data.id);
+    if (delErr) throw new Error("Не удалось удалить заявку");
+
+    const text =
+      `<b>🗑 Админ удалил заявку</b>\n` +
+      `ID: <code>${tgEsc(existing.id.slice(0, 8))}</code>\n` +
+      `Имя: ${tgEsc(existing.client_name)}\n` +
+      `Тел: ${tgEsc(existing.client_phone)}\n` +
+      `Email: ${tgEsc(existing.client_email)}\n` +
+      (existing.client_company ? `Компания: ${tgEsc(existing.client_company)}\n` : "") +
+      (existing.event_date ? `Дата: ${tgEsc(existing.event_date)}\n` : "") +
+      `Сумма: ${Number(existing.total ?? 0)} BYN`;
+
+    await notifyTelegram(text);
+    return { ok: true };
+  });
