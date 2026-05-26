@@ -138,7 +138,9 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
   const extras = (item as unknown as { extras?: unknown }).extras;
   const hasExtras = Array.isArray(extras) && extras.length > 0;
 
+  const { isAuthenticated } = useAuth();
   function handleOrder() {
+    if (!isAuthenticated) { openAuthPrompt({ reason: "Войдите, чтобы оформить заказ или отправить запрос." }); return; }
     if (needsSelection) return;
     if (isByRequest) {
       try { localStorage.setItem("lead_subject_v1", effectiveTitle); } catch { /* ignore */ }
