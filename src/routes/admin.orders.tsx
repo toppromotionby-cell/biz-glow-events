@@ -351,7 +351,6 @@ function AdminOrders() {
                     </AlertDialogContent>
                   </AlertDialog>
                 </div>
-              )}
             </div>
           );
         })}
