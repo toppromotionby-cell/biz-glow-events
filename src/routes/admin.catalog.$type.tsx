@@ -333,7 +333,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
         short_description: form.short_description, description: form.description,
         requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
         published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
-        pricing: form.pricing ?? {}, features: form.features ?? [], faq: form.faq ?? [],
+        pricing: form.pricing ?? {}, features: form.features ?? [], extras: form.extras ?? [], faq: form.faq ?? [],
       };
       // Handle slug uniqueness in target table
       const { data: existing } = await supabase.from(target).select("id").eq("slug", payload.slug).maybeSingle();
