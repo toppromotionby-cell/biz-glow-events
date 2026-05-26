@@ -5,13 +5,13 @@
 //  - на мобильных управление слайдером через свайп/тап, а не hover;
 //  - autoplay ставится на паузу при касании;
 //  - skeleton удерживает геометрию, пока подписываются URL из Storage;
-//  - для гостей цена скрыта и показывается "Цена по запросу" (PriceGate).
+//  - цена публичная, как в каталоге (без PriceGate).
 import { useEffect, useRef, useState } from "react";
 import { MediaShield } from "@/components/MediaShield";
 import { useResolvedUrl } from "@/components/StorageMedia";
-import { useAuth } from "@/hooks/use-auth";
 import { priceFrom as priceFromUtil } from "@/lib/utils";
 import type { HomeFeatured } from "@/lib/home.functions";
+
 
 function SlidePhoto({
   src, alt, active, onLoaded,
