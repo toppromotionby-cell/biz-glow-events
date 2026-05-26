@@ -57,8 +57,9 @@ function Card({ item, onOpen }: { item: CatalogRow; onOpen: () => void }) {
       <button type="button" onClick={onOpen} className="block w-full text-left" aria-label={`Открыть ${item.title}`}>
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (
-            <img src={item.photo_urls[0]} alt={item.title} loading="lazy"
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <StorageImg path={item.photo_urls[0]} alt={item.title}
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fallbackClassName="h-full w-full" />
           )}
         </div>
         <div className="p-4">
