@@ -102,4 +102,19 @@ export const revokeRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ user_id: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    if (data.user_id === context.userId) {
+      throw new Error("Нельзя удалить самого себя");
+    }
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("profiles").delete().eq("id", data.user_id);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const ALL_ROLES = ROLES;
