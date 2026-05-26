@@ -66,7 +66,7 @@ export function CatalogChoiceModal(props: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid sm:grid-cols-2 gap-3 mt-4">
+        <div className="grid sm:grid-cols-2 gap-3 mt-4 items-stretch">
           {CATALOGS.map((cat) => (
             <Link
               key={cat.id}
