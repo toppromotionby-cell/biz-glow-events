@@ -195,7 +195,7 @@ export async function notifyClientOrderConfirmedEmail(
 
   const itemsHtml = p.items.map(i => {
     const sub = [
-      i.entityType ? escapeHtml(i.entityType) : null,
+      i.entityType ? escapeHtml(ENTITY_LABEL_RU[i.entityType] ?? i.entityType) : null,
       `${i.qty} шт.`,
       (i.startDate || i.endDate)
         ? `${fmtDateRu(i.startDate)}${i.endDate && i.endDate !== i.startDate ? ` — ${fmtDateRu(i.endDate)}` : ""}`
