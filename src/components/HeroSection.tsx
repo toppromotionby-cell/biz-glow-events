@@ -100,7 +100,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
             <span className="hero-accent-text block">
               Всё для вашего
             </span>
-            <span className="block text-white">события —</span>
+            <span className="block text-white">мероприятия —</span>
             <span className="block text-white">в одном месте</span>
           </h1>
 
