@@ -133,6 +133,7 @@ export function CatalogGrid({
                 item={it}
                 category={category}
                 activeTags={activeTags}
+                entityType={entityType}
                 onOpen={() => setOpenSlug(it.slug)}
                 onToggleTag={toggleTag}
               />
