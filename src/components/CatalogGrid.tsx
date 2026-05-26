@@ -4,7 +4,7 @@ import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
-import { AddToCartButton } from "@/components/AddToCartButton";
+
 import { WishlistButton } from "@/components/WishlistButton";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
