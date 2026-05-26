@@ -23,6 +23,9 @@ import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEdit
 import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
+import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
+import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
+import { Info } from "lucide-react";
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
