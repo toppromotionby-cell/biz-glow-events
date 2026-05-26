@@ -39,7 +39,7 @@ export default defineConfig({
     ? undefined
     : {
         command: "bun run dev",
-        url: "http://localhost:3000",
+        url: "http://localhost:8080",
         timeout: 120_000,
         reuseExistingServer: true,
       },
