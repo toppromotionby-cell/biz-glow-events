@@ -11,7 +11,6 @@ export type HomeFeatured = {
   photo_urls: string[] | null;
   basePath: string;
   pricing: JsonValue;
-  tags: string[] | null;
 };
 export type HomeBlogTeaser = {
   id: string;
