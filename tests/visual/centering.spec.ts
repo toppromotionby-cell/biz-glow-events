@@ -71,7 +71,7 @@ test.describe("Centering — industries page", () => {
       .first();
     await firstTile.waitFor({ state: "visible", timeout: 10000 });
     await firstTile.scrollIntoViewIfNeeded();
-    await firstTile.click({ force: true });
+    await firstTile.evaluate((el: HTMLElement) => el.click());
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible({ timeout: 15000 });
