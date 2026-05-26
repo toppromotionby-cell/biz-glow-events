@@ -26,6 +26,8 @@ import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
+import { QuantityStepper } from "@/components/QuantityStepper";
+import { detectQuantityKind, maxQtyFor, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
@@ -60,11 +62,18 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
   const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
   const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
-  const effectivePrice = tierPrice ?? from ?? 0;
-  const effectiveTitle = activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title;
-  const effectiveId = activeTier ? `${item.id}::${selectedTier}` : item.id;
+  const effectiveUnitPrice = tierPrice ?? from ?? 0;
+  const qtyKind = detectQuantityKind(activeTier?.unit);
+  const [qty, setQty] = useState(1);
+  useEffect(() => { setQty(1); }, [selectedTier]);
+  const effectiveQty = qtyKind ? qty : 1;
+  const effectivePrice = effectiveUnitPrice;
+  const effectiveTotal = effectiveUnitPrice * effectiveQty;
+  const qtySuffix = qtyKind ? ` — ${effectiveQty} ${pluralizeUnit(qtyKind, effectiveQty)}` : "";
+  const effectiveTitle = (activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title) + qtySuffix;
+  const effectiveId = activeTier ? `${item.id}::${selectedTier}${qtyKind ? `::${qty}` : ""}` : item.id;
   const needsSelection = hasTiers && selectedTier === null;
-  const isByRequest = !needsSelection && effectivePrice <= 0;
+  const isByRequest = !needsSelection && effectiveUnitPrice <= 0;
 
   const videoSectionEnabled = useSectionEnabled("catalog.video");
   const externalVideosEnabled = useSectionEnabled("catalog.video.external");
@@ -88,7 +97,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       id: effectiveId,
       slug: item.slug,
       title: effectiveTitle,
-      price: effectivePrice,
+      price: effectiveTotal,
       image: item.photo_urls?.[0] ?? null,
       qty: 1,
     });
@@ -96,8 +105,8 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       item_id: effectiveId,
       item_name: effectiveTitle,
       item_category: entityType,
-      price: effectivePrice,
-      quantity: 1,
+      price: effectiveTotal,
+      quantity: effectiveQty,
     });
     toast.success(`«${effectiveTitle}» добавлено в корзину`);
     navigate({ to: "/cart" });
@@ -195,6 +204,28 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               )}
             </PriceGate>
 
+            {qtyKind && !needsSelection && !isByRequest && (
+              <>
+                <QuantityStepper
+                  value={qty}
+                  onChange={setQty}
+                  kind={qtyKind}
+                  min={1}
+                  max={maxQtyFor(qtyKind)}
+                  label={qtyKind === "hour" ? "Часов" : qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
+                />
+                <div className="flex items-baseline justify-between pt-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Итого</span>
+                  <span className="text-lg font-display font-bold tabular-nums">
+                    {formatBYNTotal(effectiveTotal)}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {effectiveQty} × {formatBYNTotal(effectiveUnitPrice)}
+                    </span>
+                  </span>
+                </div>
+              </>
+            )}
+
             {needsSelection ? (
               <button
                 type="button"
@@ -213,7 +244,10 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 {isByRequest ? (
                   <><MessageSquare className="h-4 w-4" /> Запросить смету</>
                 ) : (
-                  <><ShoppingCart className="h-4 w-4" /> Заказать{activeTier?.label ? ` «${activeTier.label}»` : ""}</>
+                  <>
+                    <ShoppingCart className="h-4 w-4" />
+                    Заказать{qtyKind ? ` — ${formatBYNTotal(effectiveTotal)}` : activeTier?.label ? ` «${activeTier.label}»` : ""}
+                  </>
                 )}
               </button>
             )}
