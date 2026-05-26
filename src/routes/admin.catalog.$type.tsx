@@ -309,7 +309,22 @@ function CatalogInner({ table }: { table: Table }) {
         </div>
 
         <div>
-          {selected ? <Editor key={selected.id} table={table} item={selected} onDelete={() => remove.mutate(selected.id)} onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })} /> : (
+          {selected ? (
+            <Editor
+              key={selected.id}
+              table={table}
+              item={selected}
+              onDelete={() => remove.mutate(selected.id)}
+              onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })}
+              onClose={() => setSelected(null)}
+            />
+          ) : preview ? (
+            <PreviewPanel
+              item={preview}
+              onClose={() => setPreview(null)}
+              onEdit={(it) => { setSelected(it); setPreview(null); }}
+            />
+          ) : (
             <AdminEmptyEditor
               title="Запись не выбрана"
               description="Кликните по карточке слева для подробного просмотра, либо добавьте новую — список поддерживает перетаскивание."
@@ -319,11 +334,6 @@ function CatalogInner({ table }: { table: Table }) {
         </div>
       </div>
 
-      <PreviewDialog
-        item={preview}
-        onClose={() => setPreview(null)}
-        onEdit={(it) => { setSelected(it); setPreview(null); }}
-      />
 
       <AlertDialog open={bulkConfirm} onOpenChange={setBulkConfirm}>
         <AlertDialogContent>
