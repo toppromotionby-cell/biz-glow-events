@@ -1,15 +1,12 @@
 import heroBg from "/hero-bg.jpg";
-import { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { ArrowRight, Search, Package, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Suspense, lazy } from "react";
-
-const CatalogChoiceModal = lazy(() => import("@/components/CatalogChoiceModal").then((m) => ({ default: m.CatalogChoiceModal })));
 
 /* ── stagger fade-in via IntersectionObserver + CSS classes ── */
 function useStaggerReveal<T extends HTMLElement>(staggerMs = 120) {
   const ref = useRef<T>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = React.useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -27,7 +24,7 @@ function useStaggerReveal<T extends HTMLElement>(staggerMs = 120) {
     return () => io.disconnect();
   }, []);
 
-  const childClass = (idx: number) =>
+  const childClass = () =>
     visible
       ? `opacity-100 translate-y-0 transition-all duration-700 ease-out`
       : `opacity-0 translate-y-6`;
@@ -35,7 +32,7 @@ function useStaggerReveal<T extends HTMLElement>(staggerMs = 120) {
   const style = (idx: number): React.CSSProperties =>
     visible ? { transitionDelay: `${idx * staggerMs}ms` } : {};
 
-  return { ref, childClass, style, visible };
+  return { ref, childClass, style };
 }
 
 interface HeroSectionProps {
@@ -44,7 +41,6 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
-  const [catalogOpen, setCatalogOpen] = useState(false);
   const { ref, childClass, style } = useStaggerReveal<HTMLElement>(150);
 
   return (
@@ -89,7 +85,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
         <div className="max-w-3xl">
           {/* Badge */}
           <div
-            className={`inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm px-4 py-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-6 md:mb-8 ${childClass(0)}`}
+            className={`inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm px-4 py-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-6 md:mb-8 ${childClass()}`}
             style={style(0)}
           >
             <Sparkles className="h-3 w-3" />
@@ -98,7 +94,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
           {/* H1 */}
           <h1
-            className={`font-display font-black leading-[0.95] tracking-tight text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 md:mb-8 ${childClass(1)}`}
+            className={`font-display font-black leading-[0.95] tracking-tight text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 md:mb-8 ${childClass()}`}
             style={style(1)}
           >
             <span className="hero-accent-text block">
@@ -110,7 +106,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
           {/* Subtitle */}
           <p
-            className={`text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 md:mb-10 leading-relaxed ${childClass(2)}`}
+            className={`text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 md:mb-10 leading-relaxed ${childClass()}`}
             style={style(2)}
           >
             Интерактивные зоны, техническое оснащение, услуги по организации,
@@ -120,12 +116,12 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
           {/* CTA Buttons */}
           <div
-            className={`flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-8 md:mb-10 ${childClass(3)}`}
+            className={`flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-8 md:mb-10 ${childClass()}`}
             style={style(3)}
           >
             <Button
               size="lg"
-              onClick={() => setCatalogOpen(true)}
+              onClick={onOpenCatalog}
               className="rounded-full px-8 h-12 bg-gradient-primary glow-primary-lg text-primary-foreground font-semibold w-full sm:w-auto text-base"
             >
               Перейти в каталог
@@ -139,16 +135,11 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
             >
               Помощь в подборе
             </Button>
-            {catalogOpen && (
-              <Suspense fallback={null}>
-                <CatalogChoiceModal open={catalogOpen} onOpenChange={(v) => { setCatalogOpen(v); if (!v) onOpenCatalog(); }} />
-              </Suspense>
-            )}
           </div>
 
           {/* Hint line */}
           <div
-            className={`flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground/80 ${childClass(4)}`}
+            className={`flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-muted-foreground/80 ${childClass()}`}
             style={style(4)}
           >
             <span className="inline-flex items-center gap-1.5">
