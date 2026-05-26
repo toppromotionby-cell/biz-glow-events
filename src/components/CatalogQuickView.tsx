@@ -372,21 +372,29 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
             label={qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
           />
         )}
-        <button
-          type="button"
-          onClick={handleOrder}
-          disabled={needsSelection}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {needsSelection ? "Выберите позицию" : isByRequest ? (
-            <><MessageSquare className="h-4 w-4" /> Запросить смету</>
-          ) : (
+        <div className="flex items-stretch gap-2">
+          <button
+            type="button"
+            onClick={handleOrder}
+            disabled={needsSelection}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {needsSelection ? "Выберите позицию" : isByRequest ? (
+              <><MessageSquare className="h-4 w-4" /> Запросить смету</>
+            ) : (
+              <>
+                <ShoppingCart className="h-4 w-4" />
+                Заказать — {formatBYNTotal(total || unitPrice)}
+              </>
+            )}
+          </button>
+          {!needsSelection && type !== "services" && (
             <>
-              <ShoppingCart className="h-4 w-4" />
-              Заказать — {formatBYNTotal(total || unitPrice)}
+              <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} compact />
+              <CompareButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} compact />
             </>
           )}
-        </button>
+        </div>
       </div>
     </div>
   );
