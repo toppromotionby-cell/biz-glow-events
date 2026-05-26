@@ -200,8 +200,27 @@ function AdminOrders() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Загрузка...</td></tr>}
-              {!isLoading && sorted.length === 0 && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Нет заказов</td></tr>}
+              {isLoading && Array.from({ length: 6 }).map((_, i) => (
+                <tr key={`sk-${i}`} className="border-t border-border/40">
+                  {Array.from({ length: 11 }).map((__, j) => (
+                    <td key={j} className="p-3"><Skeleton className="h-4 w-full" /></td>
+                  ))}
+                </tr>
+              ))}
+              {!isLoading && sorted.length === 0 && (
+                <tr><td colSpan={11} className="p-10 text-center">
+                  <div className="text-muted-foreground mb-3">
+                    {q || status ? "По текущему фильтру ничего не найдено" : "Заказов пока нет"}
+                  </div>
+                  {(q || status) ? (
+                    <Button variant="outline" size="sm" onClick={() => { setQ(""); setStatus(""); }}>Сбросить фильтры</Button>
+                  ) : (
+                    <Button size="sm" className="btn-primary-gradient" onClick={() => toast.info("Заказы создаются автоматически через форму на сайте")}>
+                      <Plus className="h-4 w-4 mr-1" />Откуда берутся заказы?
+                    </Button>
+                  )}
+                </td></tr>
+              )}
 
               {sorted.map((o: any) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
