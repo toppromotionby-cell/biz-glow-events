@@ -103,59 +103,12 @@ function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
             {featured.map((f) => {
               const type = BASE_TO_TYPE[f.basePath] ?? "tech_equipment";
-              const price = priceFromUtil(f.pricing);
               return (
-                <article
+                <FeaturedCard
                   key={f.id}
-                  className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
-                    aria-label={`Открыть ${f.title}`}
-                    className="block text-left w-full"
-                  >
-                    <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-surface relative">
-                      {f.photo_urls?.[0] ? (
-                        <StorageImg
-                          path={f.photo_urls[0]}
-                          alt={f.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          fallbackClassName="h-full w-full"
-                        />
-                      ) : null}
-                    </div>
-                  </button>
-                  <div className="p-3.5 sm:p-4 lg:p-5 flex-1 flex flex-col">
-                    <h3 className="font-display font-semibold text-base sm:text-lg leading-tight">
-                      <button
-                        type="button"
-                        onClick={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
-                        className="hover:text-primary transition text-left line-clamp-2"
-                      >
-                        {f.title}
-                      </button>
-                    </h3>
-                    {f.short_description && (
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3">
-                        {f.short_description}
-                      </p>
-                    )}
-                    {price !== null && price > 0 && (
-                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40">
-                        <PriceGate>
-                          <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <span className="text-[11px] sm:text-xs text-muted-foreground">от</span>
-                            <span className="text-xl sm:text-2xl font-display font-bold gradient-text">
-                              {price.toLocaleString("ru-BY")}
-                            </span>
-                            <span className="text-xs sm:text-sm text-muted-foreground">BYN</span>
-                          </div>
-                        </PriceGate>
-                      </div>
-                    )}
-                  </div>
-                </article>
+                  item={f}
+                  onOpen={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
+                />
               );
             })}
           </div>
