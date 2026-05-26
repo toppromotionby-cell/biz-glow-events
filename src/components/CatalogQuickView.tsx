@@ -15,7 +15,8 @@ import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { QuantityStepper } from "@/components/QuantityStepper";
-import { detectQuantityKind, maxQtyFor, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
+import { HourPriceSlider } from "@/components/HourPriceSlider";
+import { detectQuantityKind, maxQtyFor, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
 import { toast } from "sonner";
 import { priceFrom } from "@/lib/utils";
@@ -108,20 +109,29 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
 
   const tiers = getTiers(item.pricing);
   const hasTiers = tiers.length > 0;
+  const hourPricing = parseHourTiers(tiers);
+  const isHourMode = hourPricing !== null;
+  const [hours, setHours] = useState<number>(hourPricing?.popularHours ?? hourPricing?.minHours ?? 1);
   const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
   const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
   const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
   const unitPrice = tierPrice ?? from ?? 0;
-  const qtyKind = detectQuantityKind(activeTier?.unit);
+  const qtyKind = !isHourMode ? detectQuantityKind(activeTier?.unit) : null;
   const [qty, setQty] = useState(1);
   useEffect(() => { setQty(1); }, [selectedTier]);
   const effectiveQty = qtyKind ? qty : 1;
-  const total = unitPrice * effectiveQty;
-  const qtySuffix = qtyKind ? ` — ${effectiveQty} ${pluralizeUnit(qtyKind, effectiveQty)}` : "";
-  const effectiveTitle = (activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title) + qtySuffix;
-  const effectiveId = activeTier ? `${item.id}::${selectedTier}${qtyKind ? `::${qty}` : ""}` : item.id;
-  const needsSelection = hasTiers && selectedTier === null;
-  const isByRequest = !needsSelection && unitPrice <= 0;
+  const hourTotal = isHourMode ? priceForHours(hourPricing!, hours) : 0;
+  const total = isHourMode ? hourTotal : unitPrice * effectiveQty;
+  const qtySuffix = isHourMode
+    ? ` — ${hours} ${pluralizeUnit("hour", hours)}`
+    : qtyKind ? ` — ${effectiveQty} ${pluralizeUnit(qtyKind, effectiveQty)}` : "";
+  const effectiveTitle = (!isHourMode && activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title) + qtySuffix;
+  const effectiveId = isHourMode
+    ? `${item.id}::h${hours}`
+    : activeTier ? `${item.id}::${selectedTier}${qtyKind ? `::${qty}` : ""}` : item.id;
+  const needsSelection = !isHourMode && hasTiers && selectedTier === null;
+  const isByRequest = !needsSelection && !isHourMode && unitPrice <= 0;
+
 
   const hasPhotos = photos.length > 0;
   const hasDescription = Boolean(item.description || item.requirements);
@@ -204,24 +214,35 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
             <div className="glass rounded-xl p-4 space-y-3 hidden md:block">
               <div className="text-xs text-muted-foreground">Стоимость актуальна в безналичном расчёте</div>
               <PriceGate>
-                <div className="text-2xl font-display font-bold tabular-nums">
-                  {tierPrice !== null
-                    ? formatBYNTotal(tierPrice)
-                    : from !== null
-                    ? `от ${formatBYNTotal(from)}`
-                    : "По запросу"}
-                </div>
-                {hasTiers && (
+                {isHourMode ? (
+                  <HourPriceSlider
+                    pricing={hourPricing!}
+                    hours={hours}
+                    onChange={setHours}
+                    rawPricing={item.pricing}
+                  />
+                ) : (
                   <>
-                    <div className="text-xs text-muted-foreground">
-                      {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                    <div className="text-2xl font-display font-bold tabular-nums">
+                      {tierPrice !== null
+                        ? formatBYNTotal(tierPrice)
+                        : from !== null
+                        ? `от ${formatBYNTotal(from)}`
+                        : "По запросу"}
                     </div>
-                    <PriceTableView
-                      pricing={item.pricing}
-                      selectable
-                      selectedIndex={selectedTier}
-                      onSelect={(i) => setSelectedTier(i)}
-                    />
+                    {hasTiers && (
+                      <>
+                        <div className="text-xs text-muted-foreground">
+                          {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                        </div>
+                        <PriceTableView
+                          pricing={item.pricing}
+                          selectable
+                          selectedIndex={selectedTier}
+                          onSelect={(i) => setSelectedTier(i)}
+                        />
+                      </>
+                    )}
                   </>
                 )}
               </PriceGate>
@@ -234,7 +255,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                     kind={qtyKind}
                     min={1}
                     max={maxQtyFor(qtyKind)}
-                    label={qtyKind === "hour" ? "Часов" : qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
+                    label={qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
                   />
                   <div className="flex items-baseline justify-between border-t border-border/30 pt-2">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">Итого</span>
@@ -247,6 +268,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                   </div>
                 </>
               )}
+
 
               {needsSelection ? (
                 <button type="button" disabled className="inline-flex w-full justify-center rounded-md bg-muted/40 px-5 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed">
@@ -263,7 +285,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                   ) : (
                     <>
                       <ShoppingCart className="h-4 w-4" />
-                      Заказать{qtyKind ? ` — ${formatBYNTotal(total)}` : ""}
+                      Заказать{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(total)}` : ""}
                     </>
                   )}
                 </button>
@@ -323,10 +345,18 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
 
       {/* Sticky mobile CTA */}
       <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur px-5 py-3 space-y-2">
-        {hasTiers && (
+        {hasTiers && !isHourMode && (
           <div className="text-xs text-muted-foreground">
             {needsSelection ? "Выберите позицию ↑" : `Выбрано: ${activeTier?.label || "—"}`}
           </div>
+        )}
+        {isHourMode && (
+          <HourPriceSlider
+            pricing={hourPricing!}
+            hours={hours}
+            onChange={setHours}
+            rawPricing={item.pricing}
+          />
         )}
         {qtyKind && !needsSelection && !isByRequest && (
           <QuantityStepper
@@ -335,7 +365,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
             kind={qtyKind}
             min={1}
             max={maxQtyFor(qtyKind)}
-            label={qtyKind === "hour" ? "Часов" : qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
+            label={qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
           />
         )}
         <button
