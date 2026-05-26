@@ -213,9 +213,9 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Фотографии ({item.photo_urls.length})</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {item.photo_urls.map((url: string, i: number) => (
-                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block aspect-[4/3] overflow-hidden rounded-lg bg-muted/30">
-                      <img src={url} alt={`${item.title} #${i + 1}`} loading="lazy" className="h-full w-full object-cover hover:scale-105 transition" />
-                    </a>
+                    <div key={i} className="block aspect-[4/3] overflow-hidden rounded-lg bg-muted/30">
+                      <StorageImg path={url} alt={`${item.title} #${i + 1}`} className="h-full w-full object-cover hover:scale-105 transition" fallbackClassName="h-full w-full" />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -226,7 +226,7 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Видео ({item.video_urls.length})</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {item.video_urls.map((url: string, i: number) => (
-                    <video key={i} src={url} controls className="w-full rounded-lg bg-black aspect-video" />
+                    <StorageVideo key={i} path={url} className="w-full rounded-lg bg-black aspect-video" />
                   ))}
                 </div>
               </section>
