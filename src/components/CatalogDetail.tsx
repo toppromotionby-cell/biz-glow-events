@@ -268,7 +268,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 ) : (
                   <>
                     <ShoppingCart className="h-4 w-4" />
-                    Заказать{qtyKind ? ` — ${formatBYNTotal(effectiveTotal)}` : activeTier?.label ? ` «${activeTier.label}»` : ""}
+                    Заказать{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(effectiveTotal)}` : activeTier?.label ? ` «${activeTier.label}»` : ""}
                   </>
                 )}
               </button>
