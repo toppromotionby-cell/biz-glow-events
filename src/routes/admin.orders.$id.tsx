@@ -14,6 +14,13 @@ import { openAuthedDocument } from "@/lib/authed-fetch";
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
+const ENTITY_LABEL: Record<string, string> = {
+  zone: "Зона", service: "Услуга", equipment: "Оборудование",
+  tech_equipment: "Оборудование", production: "Продакшн",
+  production_item: "Продакшн", extras: "Доп. услуга",
+};
+
+
 export const Route = createFileRoute("/admin/orders/$id")({
   component: OrderDetail,
 });
