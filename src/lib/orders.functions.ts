@@ -183,6 +183,15 @@ export const submitOrder = createServerFn({ method: "POST" })
       data.acting_basis ? `Действует на основании: ${data.acting_basis}` : "",
     ].filter(Boolean).join("\n");
 
+    // Внутренние заметки (только для менеджера): период, реквизиты, расхождения.
+    const internalNotes = [
+      data.event_end_date && data.event_end_date !== data.event_date
+        ? `Период мероприятия: ${data.event_date ?? "?"} — ${data.event_end_date}`
+        : "",
+      requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
+      hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
+    ].filter(Boolean).join("\n\n") || null;
+
     // 2. Создаём заказ.
     const { data: order, error } = await supabaseAdmin
       .from("orders")
@@ -192,14 +201,8 @@ export const submitOrder = createServerFn({ method: "POST" })
         client_email: data.client_email,
         client_company: data.client_company ?? data.company_legal_name ?? null,
         event_date: data.event_date ?? null,
-        notes: [
-          data.event_end_date && data.event_end_date !== data.event_date
-            ? `Период мероприятия: ${data.event_date ?? "?"} — ${data.event_end_date}`
-            : "",
-          data.notes ?? "",
-          requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
-          hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
-        ].filter(Boolean).join("\n\n") || null,
+        notes: data.notes?.trim() ? data.notes.trim() : null,
+        internal_notes: internalNotes,
         source: data.source ?? "cart",
         utm_source: data.utm_source ?? null,
         utm_medium: data.utm_medium ?? null,
@@ -211,6 +214,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
+
 
     if (error || !order) {
       console.error("[submitOrder] DB error:", error);
