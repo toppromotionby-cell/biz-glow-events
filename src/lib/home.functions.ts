@@ -8,7 +8,7 @@ export type HomeFeatured = {
   short_description: string | null;
   photo_urls: string[] | null;
   basePath: string;
-  pricing: unknown;
+  pricing: Record<string, unknown> | null;
   tags: string[] | null;
 };
 export type HomeBlogTeaser = {
