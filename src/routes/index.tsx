@@ -13,6 +13,7 @@ import { FeaturedCard, FeaturedCardSkeleton } from "@/components/FeaturedCard";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
+import { InView } from "@/components/InView";
 
 // Тяжёлые модалки/виджеты — ленивая загрузка ради меньшего initial JS.
 const GuestEstimator = lazy(() => import("@/components/GuestEstimator").then((m) => ({ default: m.GuestEstimator })));
@@ -45,7 +46,19 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "VR/AR, LED, фотозоны, BTL, промо-персонал, производство декораций." },
       { property: "og:url", content: "/" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [
+      { rel: "canonical", href: "/" },
+      // Preload LCP hero image (responsive AVIF). Browser matches imagesrcset/imagesizes to the <picture> source.
+      {
+        rel: "preload",
+        as: "image",
+        href: "/hero-bg-1920.avif",
+        imagesrcset: "/hero-bg-828.avif 828w, /hero-bg-1920.avif 1920w",
+        imagesizes: "100vw",
+        type: "image/avif",
+        fetchpriority: "high",
+      } as unknown as { rel: string; href: string },
+    ],
   }),
 });
 
@@ -140,7 +153,7 @@ function HomePage() {
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
             <div key={v.title} className="flex flex-col items-center text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full glass mb-4 animate-pulse-glow pointer-events-none select-none" aria-hidden="true">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full glass mb-4 md:motion-safe:animate-pulse-glow pointer-events-none select-none" aria-hidden="true">
                 <v.icon className="h-6 w-6 text-accent" />
               </div>
               <h3 className="font-display font-semibold text-xl mb-2">{v.title}</h3>
@@ -150,72 +163,80 @@ function HomePage() {
         </div>
       </Toggleable>
 
-      {/* CASES */}
+      {/* CASES — ленивый рендер при подходе к вьюпорту */}
       {cases.length > 0 && (
-        <Toggleable sectionKey="home.cases" as="section" className="container mx-auto px-4 border-t border-border/40">
-          <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold">Наши кейсы</h2>
-              <p className="mt-2 text-muted-foreground">Реализованные мероприятия — от корпоративов до фестивалей.</p>
+        <InView minHeight={420}>
+          <Toggleable sectionKey="home.cases" as="section" className="container mx-auto px-4 border-t border-border/40">
+            <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-display font-bold">Наши кейсы</h2>
+                <p className="mt-2 text-muted-foreground">Реализованные мероприятия — от корпоративов до фестивалей.</p>
+              </div>
+              <Link to="/cases" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+                Все кейсы <ArrowRight className="h-3 w-3" />
+              </Link>
             </div>
-            <Link to="/cases" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
-              Все кейсы <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {cases.map((c) => (
-              <MediaCard
-                key={c.id}
-                cover={c.cover_url}
-                alt={c.title}
-                to="/cases/$slug"
-                params={{ slug: c.slug }}
-              >
-                {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
-                <h3 className="mt-1 font-semibold leading-tight group-hover:text-primary transition">{c.title}</h3>
-                {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
-                {c.guests_count && <div className="mt-2 text-xs text-muted-foreground">{c.guests_count.toLocaleString("ru-BY")} гостей</div>}
-              </MediaCard>
-            ))}
-          </div>
-        </Toggleable>
+            <div className="grid md:grid-cols-3 gap-4">
+              {cases.map((c) => (
+                <MediaCard
+                  key={c.id}
+                  cover={c.cover_url}
+                  alt={c.title}
+                  to="/cases/$slug"
+                  params={{ slug: c.slug }}
+                >
+                  {c.event_type && <div className="text-xs uppercase tracking-wide text-primary">{c.event_type}</div>}
+                  <h3 className="mt-1 font-semibold leading-tight group-hover:text-primary transition">{c.title}</h3>
+                  {c.summary && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{c.summary}</p>}
+                  {c.guests_count && <div className="mt-2 text-xs text-muted-foreground">{c.guests_count.toLocaleString("ru-BY")} гостей</div>}
+                </MediaCard>
+              ))}
+            </div>
+          </Toggleable>
+        </InView>
       )}
 
       {/* GUEST ESTIMATOR */}
-      <Toggleable sectionKey="home.estimator"><Suspense fallback={null}><GuestEstimator /></Suspense></Toggleable>
+      <InView minHeight={400}>
+        <Toggleable sectionKey="home.estimator"><Suspense fallback={null}><GuestEstimator /></Suspense></Toggleable>
+      </InView>
 
       {/* TESTIMONIALS */}
-      <Toggleable sectionKey="home.testimonials"><Suspense fallback={null}><TestimonialsTeaser /></Suspense></Toggleable>
+      <InView minHeight={320}>
+        <Toggleable sectionKey="home.testimonials"><Suspense fallback={null}><TestimonialsTeaser /></Suspense></Toggleable>
+      </InView>
 
       {/* BLOG TEASER */}
       {posts.length > 0 && (
-        <Toggleable sectionKey="home.blog" as="section" className="container mx-auto px-4 border-t border-border/40">
-          <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
-            <h2 className="text-3xl md:text-4xl font-display font-bold">Из блога</h2>
-            <Link to="/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
-              Все материалы <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {posts.map((p) => (
-              <MediaCard
-                key={p.id}
-                cover={p.cover_url}
-                alt={p.title}
-                to="/blog/$slug"
-                params={{ slug: p.slug }}
-              >
-                {p.published_at && (
-                  <div className="text-xs text-muted-foreground mb-1">
-                    {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
-                  </div>
-                )}
-                <h3 className="font-semibold leading-tight group-hover:text-primary transition">{p.title}</h3>
-                {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>}
-              </MediaCard>
-            ))}
-          </div>
-        </Toggleable>
+        <InView minHeight={420}>
+          <Toggleable sectionKey="home.blog" as="section" className="container mx-auto px-4 border-t border-border/40">
+            <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
+              <h2 className="text-3xl md:text-4xl font-display font-bold">Из блога</h2>
+              <Link to="/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
+                Все материалы <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              {posts.map((p) => (
+                <MediaCard
+                  key={p.id}
+                  cover={p.cover_url}
+                  alt={p.title}
+                  to="/blog/$slug"
+                  params={{ slug: p.slug }}
+                >
+                  {p.published_at && (
+                    <div className="text-xs text-muted-foreground mb-1">
+                      {new Date(p.published_at).toLocaleDateString("ru-BY", { day: "numeric", month: "long", year: "numeric" })}
+                    </div>
+                  )}
+                  <h3 className="font-semibold leading-tight group-hover:text-primary transition">{p.title}</h3>
+                  {p.excerpt && <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>}
+                </MediaCard>
+              ))}
+            </div>
+          </Toggleable>
+        </InView>
       )}
 
       {/* CTA */}

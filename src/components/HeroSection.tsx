@@ -1,4 +1,8 @@
 import heroBg from "/hero-bg.jpg";
+import heroAvif828 from "/hero-bg-828.avif";
+import heroAvif1920 from "/hero-bg-1920.avif";
+import heroWebp828 from "/hero-bg-828.webp";
+import heroWebp1920 from "/hero-bg-1920.webp";
 import React, { useEffect, useRef } from "react";
 import { ArrowRight, Search, Package, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,20 +50,32 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden min-h-[92vh] flex items-center"
+      className="relative overflow-hidden min-h-[88svh] md:min-h-[92vh] flex items-center"
     >
       {/* Background image */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={heroBg}
-          alt=""
-          className="h-full w-full object-cover"
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-          width={1920}
-          height={1080}
-        />
+        <picture>
+          <source
+            type="image/avif"
+            srcSet={`${heroAvif828} 828w, ${heroAvif1920} 1920w`}
+            sizes="100vw"
+          />
+          <source
+            type="image/webp"
+            srcSet={`${heroWebp828} 828w, ${heroWebp1920} 1920w`}
+            sizes="100vw"
+          />
+          <img
+            src={heroBg}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            width={1920}
+            height={1080}
+          />
+        </picture>
         {/* Dark gradient overlay for text readability */}
         <div
           className="absolute inset-0"
@@ -78,9 +94,9 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
         />
       </div>
 
-      {/* Decorative light accents */}
-      <div className="absolute top-1/4 -right-20 h-80 w-80 rounded-full bg-primary/10 blur-[100px] pointer-events-none" aria-hidden="true" />
-      <div className="absolute bottom-1/4 -left-20 h-64 w-64 rounded-full bg-accent/8 blur-[80px] pointer-events-none" aria-hidden="true" />
+      {/* Decorative light accents — скрыты на мобильных (дорогой blur compositing) */}
+      <div className="hidden md:block absolute top-1/4 -right-20 h-80 w-80 rounded-full bg-primary/10 blur-[100px] pointer-events-none" aria-hidden="true" />
+      <div className="hidden md:block absolute bottom-1/4 -left-20 h-64 w-64 rounded-full bg-accent/8 blur-[80px] pointer-events-none" aria-hidden="true" />
 
       {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
