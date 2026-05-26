@@ -34,7 +34,7 @@ describe("mobile layout: centering regressions", () => {
     expectAllPresent(
       src,
       [
-        "flex flex-col items-center text-center gap-3",
+        "flex h-full flex-col items-center text-center gap-3",
         "sm:flex-row",
         "sm:items-start",
         "sm:text-left",
