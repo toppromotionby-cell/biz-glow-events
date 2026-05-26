@@ -95,7 +95,7 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
     TABLES.map(async (t) => {
       const { data } = await supabaseAdmin
         .from(t.name)
-        .select("id, slug, title, short_description, photo_urls, updated_at")
+        .select("id, slug, title, short_description, photo_urls, pricing, tags, updated_at")
         .eq("published", true)
         .order("updated_at", { ascending: false })
         .limit(40);
@@ -105,6 +105,8 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
         title: string;
         short_description: string | null;
         photo_urls: string[] | null;
+        pricing: JsonValue;
+        tags: string[] | null;
         updated_at: string;
       }>;
       return rows
