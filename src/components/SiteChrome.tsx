@@ -101,16 +101,16 @@ export function SiteHeader() {
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
+            <Toggleable sectionKey="header.wishlist" as="span">
+              <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+                <Heart className="h-4 w-4" aria-hidden="true" />
+                {wishCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
+                )}
+              </Link>
+            </Toggleable>
             {isAuthenticated && (
               <>
-                <Toggleable sectionKey="header.wishlist" as="span">
-                  <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                    <Heart className="h-4 w-4" aria-hidden="true" />
-                    {wishCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
-                    )}
-                  </Link>
-                </Toggleable>
                 <Toggleable sectionKey="header.compare" as="span">
                   <Link to="/compare" aria-label={cmpCount > 0 ? `Сравнение, ${cmpCount} позиций` : "Сравнение"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
                     <Scale className="h-4 w-4" aria-hidden="true" />
@@ -195,17 +195,17 @@ export function SiteHeader() {
                   </nav>
                 </Toggleable>
 
-                {isAuthenticated && (
-                  <div className="border-t border-border/50 px-2 py-3">
-                    <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
-                    <Toggleable sectionKey="header.wishlist" as="div">
-                      <SheetClose asChild>
-                        <Link to="/wishlist" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                          <span className="flex items-center gap-3"><Heart className="h-4 w-4" /> Избранное</span>
-                          {wishCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{wishCount}</span>}
-                        </Link>
-                      </SheetClose>
-                    </Toggleable>
+                <div className="border-t border-border/50 px-2 py-3">
+                  <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
+                  <Toggleable sectionKey="header.wishlist" as="div">
+                    <SheetClose asChild>
+                      <Link to="/wishlist" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                        <span className="flex items-center gap-3"><Heart className="h-4 w-4" /> Избранное</span>
+                        {wishCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{wishCount}</span>}
+                      </Link>
+                    </SheetClose>
+                  </Toggleable>
+                  {isAuthenticated && (
                     <Toggleable sectionKey="header.compare" as="div">
                       <SheetClose asChild>
                         <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
@@ -214,8 +214,8 @@ export function SiteHeader() {
                         </Link>
                       </SheetClose>
                     </Toggleable>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                   {isAuthenticated ? (

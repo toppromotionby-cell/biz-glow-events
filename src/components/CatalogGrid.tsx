@@ -4,6 +4,8 @@ import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
+import { AddToCartButton } from "@/components/AddToCartButton";
+import { WishlistButton } from "@/components/WishlistButton";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { X } from "lucide-react";
@@ -131,6 +133,7 @@ export function CatalogGrid({
                 item={it}
                 category={category}
                 activeTags={activeTags}
+                entityType={entityType}
                 onOpen={() => setOpenSlug(it.slug)}
                 onToggleTag={toggleTag}
               />
@@ -186,12 +189,14 @@ function CatalogCard({
   item,
   category,
   activeTags,
+  entityType,
   onOpen,
   onToggleTag,
 }: {
   item: CatalogItem;
   category: string;
   activeTags: string[];
+  entityType: CatalogType;
   onOpen: () => void;
   onToggleTag: (t: string) => void;
 }) {
@@ -304,6 +309,29 @@ function CatalogCard({
               <span className="text-xs sm:text-sm text-muted-foreground">BYN</span>
             </div>
           </PriceGate>
+          <div className="mt-3 flex items-stretch gap-2">
+            <div className="flex-1">
+              <AddToCartButton
+                entity_type={entityType}
+                id={item.slug}
+                slug={item.slug}
+                title={item.title}
+                price={item.priceFrom}
+                image={item.image}
+              />
+            </div>
+            <div className="mt-2">
+              <WishlistButton
+                entity_type={entityType}
+                id={item.slug}
+                slug={item.slug}
+                title={item.title}
+                price={item.priceFrom}
+                image={item.image}
+                compact
+              />
+            </div>
+          </div>
         </div>
       </div>
     </article>
