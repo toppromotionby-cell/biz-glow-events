@@ -280,6 +280,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             </div>
           )}
 
+          <ExtrasBlock extras={(item as unknown as { extras?: unknown }).extras} variant="page" />
+
+
           <AvailabilityCalendar entityType={entityType} itemId={item.id} />
         </aside>
       </div>
