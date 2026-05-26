@@ -21,6 +21,7 @@ export const Route = createFileRoute("/admin/orders/$id")({
 function OrderDetail() {
   const { id } = useParams({ from: "/admin/orders/$id" });
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState("");
 
   const { data: order } = useQuery({
