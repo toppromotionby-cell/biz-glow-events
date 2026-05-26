@@ -34,6 +34,7 @@ const COLS = [
   { key: "contacts", label: "Контакты" },
   { key: "roles", label: "Роли" },
   { key: "assign", label: "Назначить", className: "w-72" },
+  { key: "actions", label: "", className: "w-12" },
 ];
 
 export const Route = createFileRoute("/admin/users")({
