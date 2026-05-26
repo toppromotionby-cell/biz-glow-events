@@ -316,14 +316,14 @@ function CatalogInner({ table }: { table: Table }) {
               item={selected}
               onDelete={() => remove.mutate(selected.id)}
               onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })}
-              onClose={() => setSelected(null)}
             />
           ) : preview ? (
             <PreviewPanel
               item={preview}
               onClose={() => setPreview(null)}
-              onEdit={(it) => { setSelected(it); setPreview(null); }}
+              onEdit={(it: any) => { setSelected(it); setPreview(null); }}
             />
+
           ) : (
             <AdminEmptyEditor
               title="Запись не выбрана"
