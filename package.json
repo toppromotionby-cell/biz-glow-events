@@ -14,7 +14,8 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "baseline:update": "playwright install --with-deps chromium && playwright test --update-snapshots",
-    "baseline:verify": "playwright install --with-deps chromium && playwright test --fail-on-flaky-tests"
+    "baseline:verify": "playwright install --with-deps chromium && playwright test --fail-on-flaky-tests",
+    "baseline:update:clean": "rm -rf tests/visual/centering.spec.ts-snapshots/ && playwright uninstall --all && playwright install --with-deps chromium && playwright test --update-snapshots"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
