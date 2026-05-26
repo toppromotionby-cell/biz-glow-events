@@ -15,16 +15,49 @@ export function CatalogGrid({
   category,
   basePath,
   entityType,
+  categories,
 }: {
   items: CatalogItem[];
   category: string;
   basePath: string;
   entityType: CatalogType;
+  /** Категории из админки (таблица catalog_categories) — единый источник истины. */
+  categories?: { id: string; name: string }[];
 }) {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<PerPage>(30);
+
+  // Категории фильтра берём из админского справочника, но показываем
+  // только те, по которым реально есть опубликованные позиции.
+  const usedCategoryNames = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((it) => {
+      if (it.category) set.add(it.category.trim().toLowerCase());
+    });
+    return set;
+  }, [items]);
+
+  const categoryChips = useMemo(() => {
+    const source = categories ?? [];
+    // Сохраняем порядок из админки и оставляем только используемые.
+    const fromAdmin = source
+      .map((c) => c.name)
+      .filter((name) => usedCategoryNames.has(name.trim().toLowerCase()));
+    // Если у позиции есть категория, которой ещё нет в справочнике, всё равно
+    // покажем её — чтобы публичный каталог не «прятал» элементы.
+    const orphans: string[] = [];
+    const known = new Set(fromAdmin.map((n) => n.trim().toLowerCase()));
+    items.forEach((it) => {
+      const key = it.category?.trim().toLowerCase();
+      if (it.category && key && !known.has(key) && !orphans.includes(it.category)) {
+        orphans.push(it.category);
+      }
+    });
+    return [...fromAdmin, ...orphans];
+  }, [categories, usedCategoryNames, items]);
 
   // Top tags by frequency (max 12)
   const topTags = useMemo(() => {
@@ -42,6 +75,8 @@ export function CatalogGrid({
     const params = new URLSearchParams(window.location.search);
     const t = params.get("tags");
     if (t) setActiveTags(t.split(",").filter(Boolean));
+    const cat = params.get("category");
+    if (cat) setActiveCategory(cat);
     const pg = Number(params.get("page"));
     if (pg > 0) setPage(pg);
     const pp = Number(params.get("per"));
@@ -53,23 +88,31 @@ export function CatalogGrid({
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (activeTags.length) params.set("tags", activeTags.join(",")); else params.delete("tags");
+    if (activeCategory) params.set("category", activeCategory); else params.delete("category");
     if (page > 1) params.set("page", String(page)); else params.delete("page");
     if (perPage !== 30) params.set("per", String(perPage)); else params.delete("per");
     const qs = params.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     window.history.replaceState(null, "", url);
-  }, [activeTags, page, perPage]);
+  }, [activeTags, activeCategory, page, perPage]);
 
   // Reset page when filter changes
-  useEffect(() => { setPage(1); }, [activeTags, perPage]);
+  useEffect(() => { setPage(1); }, [activeTags, activeCategory, perPage]);
 
   const toggleTag = (t: string) =>
     setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
   const filtered = useMemo(() => {
-    if (!activeTags.length) return items;
-    return items.filter((it) => activeTags.every((t) => it.tags?.includes(t)));
-  }, [items, activeTags]);
+    let result = items;
+    if (activeCategory) {
+      const key = activeCategory.trim().toLowerCase();
+      result = result.filter((it) => (it.category ?? "").trim().toLowerCase() === key);
+    }
+    if (activeTags.length) {
+      result = result.filter((it) => activeTags.every((t) => it.tags?.includes(t)));
+    }
+    return result;
+  }, [items, activeTags, activeCategory]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const currentPage = Math.min(page, pageCount);
