@@ -120,4 +120,3 @@ export const getCatalogItem = createServerFn({ method: "GET" })
     const signed = await signMediaUrls([row as CatalogRow]);
     return signed[0];
   });
-  });
