@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button";
 import { getCatalogItem, type CatalogType, type CatalogRow } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
-import { StorageImg } from "@/components/StorageMedia";
+import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { WishlistButton } from "@/components/WishlistButton";
