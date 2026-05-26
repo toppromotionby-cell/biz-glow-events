@@ -298,98 +298,6 @@ export type Database = {
         }
         Relationships: []
       }
-      email_campaign_recipients: {
-        Row: {
-          campaign_id: string
-          created_at: string
-          email: string
-          error: string | null
-          id: string
-          name: string | null
-          sent_at: string | null
-          status: string
-        }
-        Insert: {
-          campaign_id: string
-          created_at?: string
-          email: string
-          error?: string | null
-          id?: string
-          name?: string | null
-          sent_at?: string | null
-          status?: string
-        }
-        Update: {
-          campaign_id?: string
-          created_at?: string
-          email?: string
-          error?: string | null
-          id?: string
-          name?: string | null
-          sent_at?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_campaign_recipients_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "email_campaigns"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_campaigns: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          created_by: string | null
-          failed_count: number
-          html_content: string
-          id: string
-          recipient_filter: Json
-          sent_count: number
-          started_at: string | null
-          status: string
-          subject: string
-          suppressed_count: number
-          total_recipients: number
-          updated_at: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          failed_count?: number
-          html_content: string
-          id?: string
-          recipient_filter?: Json
-          sent_count?: number
-          started_at?: string | null
-          status?: string
-          subject: string
-          suppressed_count?: number
-          total_recipients?: number
-          updated_at?: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          created_by?: string | null
-          failed_count?: number
-          html_content?: string
-          id?: string
-          recipient_filter?: Json
-          sent_count?: number
-          started_at?: string | null
-          status?: string
-          subject?: string
-          suppressed_count?: number
-          total_recipients?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       email_send_log: {
         Row: {
           created_at: string
@@ -508,36 +416,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      newsletter_subscribers: {
-        Row: {
-          confirmed: boolean
-          created_at: string
-          email: string
-          id: string
-          source: string | null
-          unsubscribed_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          confirmed?: boolean
-          created_at?: string
-          email: string
-          id?: string
-          source?: string | null
-          unsubscribed_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          confirmed?: boolean
-          created_at?: string
-          email?: string
-          id?: string
-          source?: string | null
-          unsubscribed_at?: string | null
-          updated_at?: string
-        }
-        Relationships: []
       }
       order_attachments: {
         Row: {

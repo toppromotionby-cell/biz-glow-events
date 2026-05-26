@@ -68,12 +68,12 @@ export const SECTION_REGISTRY = [
   { key: "footer.contacts.phone", label: "Подвал → Контакты: Телефон", group: "Подвал" },
   { key: "footer.contacts.telegram", label: "Подвал → Контакты: Telegram", group: "Подвал" },
   { key: "footer.contacts.email", label: "Подвал → Контакты: E-mail", group: "Подвал" },
-  { key: "footer.newsletter", label: "Подвал: Рассылка", group: "Подвал" },
+  
   { key: "footer.copyright", label: "Подвал: Копирайт", group: "Подвал" },
 
   // Глобально
   { key: "global.cookies", label: "Глобально: Cookie-баннер", group: "Глобально" },
-  { key: "global.exit_intent", label: "Глобально: Поп-ап «Подарок/скидка 5%»", group: "Глобально" },
+  
   { key: "global.floating_contacts", label: "Глобально: Плавающий онлайн-помощник", group: "Глобально" },
 
   // Карточки каталога

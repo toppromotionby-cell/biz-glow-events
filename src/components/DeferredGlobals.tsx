@@ -8,7 +8,7 @@ const FloatingContacts = lazy(() => import("@/components/FloatingContacts").then
 const CartSync = lazy(() => import("@/components/CartSync").then((m) => ({ default: m.CartSync })));
 const ScriptInjector = lazy(() => import("@/components/ScriptInjector").then((m) => ({ default: m.ScriptInjector })));
 const CookieConsent = lazy(() => import("@/components/CookieConsent").then((m) => ({ default: m.CookieConsent })));
-const ExitIntentModal = lazy(() => import("@/components/ExitIntentModal").then((m) => ({ default: m.ExitIntentModal })));
+
 
 export function DeferredGlobals() {
   const [ready, setReady] = useState(false);
@@ -40,7 +40,7 @@ export function DeferredGlobals() {
       <FloatingContacts />
       <CartSync />
       <ScriptInjector />
-      <Toggleable sectionKey="global.exit_intent"><ExitIntentModal /></Toggleable>
+      
     </Suspense>
   );
 }

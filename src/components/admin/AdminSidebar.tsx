@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
-  CalendarClock, Mail, Tag, ToggleRight, LogOut, ChevronDown,
+  CalendarClock, Tag, ToggleRight, LogOut, ChevronDown,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -47,7 +47,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
       { to: "/admin/promo", label: "Промокоды", icon: Tag },
-      { to: "/admin/newsletter", label: "Рассылка", icon: Mail },
+      
     ],
   },
   {

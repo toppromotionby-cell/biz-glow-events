@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { NewsletterSignup } from "@/components/NewsletterSignup";
+
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -292,11 +292,6 @@ export function SiteFooter() {
                 <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
                 <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
               </ul>
-              <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
-                <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
-                <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
-                <NewsletterSignup />
-              </Toggleable>
             </Toggleable>
           </div>
 
@@ -349,11 +344,6 @@ export function SiteFooter() {
               </Toggleable>
             </Accordion>
 
-            <Toggleable sectionKey="footer.newsletter" as="div">
-              <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
-              <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
-              <NewsletterSignup />
-            </Toggleable>
           </div>
         </div>
         <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
