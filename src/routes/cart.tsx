@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { trackBeginCheckout, trackPurchase } from "@/lib/analytics";
 import { CartCrossSell } from "@/components/CartCrossSell";
 import { QtyStepper } from "@/components/ui/QtyStepper";
+import { useAuth } from "@/hooks/use-auth";
+import { ensureAuthOrPrompt } from "@/hooks/use-require-auth";
 
 const DRAFT_KEY = "cart_contact_draft_v1";
 
@@ -33,6 +35,7 @@ const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN",
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
@@ -70,6 +73,7 @@ function CartPage() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (items.length === 0) return;
+    if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы оформить заказ.")) return;
     const fd = new FormData(e.currentTarget);
     saveDraft(fd);
     const contact = {
