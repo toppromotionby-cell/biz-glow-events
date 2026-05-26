@@ -97,7 +97,7 @@ export function parseHourTiers(
 
   const minHours = points[0]?.hours ?? 1;
   const baseMax = points[points.length - 1]?.hours ?? minHours;
-  const maxHours = extraPerHour !== null ? Math.max(24, baseMax + 1) : baseMax;
+  const maxHours = extraPerHour !== null ? Math.max(12, baseMax + 1) : baseMax;
   const popularHours = points.length >= 3 ? points[Math.floor(points.length / 2)].hours : null;
 
   return { points, extraPerHour, popularHours, minHours, maxHours };
