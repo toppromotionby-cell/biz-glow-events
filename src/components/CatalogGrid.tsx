@@ -219,15 +219,11 @@ function CatalogCard({
         <MediaShield>
           <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-surface relative">
             {photos.map((src, i) => (
-              <img
+              <SlidePhoto
                 key={src + i}
                 src={src}
                 alt={item.title}
-                loading={i === 0 ? "lazy" : "lazy"}
-                aria-hidden={i !== index}
-                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
-                  i === index ? "opacity-100" : "opacity-0"
-                } group-hover:scale-105 transition-transform [transition-duration:700ms]`}
+                active={i === index}
               />
             ))}
             {item.video ? (
