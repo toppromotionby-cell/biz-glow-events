@@ -183,6 +183,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                     </button>
                   ))}
                 </div>
+              )}
               {hasDescription && (
                 <CatalogProse description={item.description} requirements={item.requirements} variant="modal" />
               )}
