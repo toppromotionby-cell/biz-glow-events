@@ -63,8 +63,8 @@ function RegisterPage() {
     });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Аккаунт создан! Проверьте почту для подтверждения.");
-    navigate({ to: "/login" });
+    setRegisteredEmail(data.email);
+    setConfirmOpen(true);
   };
 
   return (
