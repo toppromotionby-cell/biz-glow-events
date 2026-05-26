@@ -43,21 +43,23 @@ export const Route = createFileRoute("/admin/orders")({
 function AdminOrders() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const dq = useDebouncedValue(q, 300);
   const [status, setStatus] = useState<string>("");
   const [sortBy, setSortBy] = useState<"created_at" | "total" | "event_date">("created_at");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["admin-orders", q, status],
+    queryKey: ["admin-orders", dq, status],
     queryFn: async () => {
       let query = supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(500);
       if (status) query = query.eq("status", status as any);
-      if (q) query = query.or(`client_name.ilike.%${q}%,client_phone.ilike.%${q}%,client_email.ilike.%${q}%,client_company.ilike.%${q}%`);
+      if (dq) query = query.or(`client_name.ilike.%${dq}%,client_phone.ilike.%${dq}%,client_email.ilike.%${dq}%,client_company.ilike.%${dq}%`);
       const { data, error } = await query;
       if (error) throw error;
       return data;
     },
   });
+
 
   // Realtime: обновляем список при любых изменениях в orders
   useEffect(() => {
