@@ -11,6 +11,7 @@ import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
@@ -18,6 +19,21 @@ const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
 const fmtDate = (v: any) => (v ? new Date(v).toLocaleDateString("ru-BY") : "—");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtDateTime = (v: any) => (v ? new Date(v).toLocaleString("ru-BY") : "—");
+
+// Возраст «в статусе» по updated_at: цвет — SLA-подсветка
+function ageInfo(updatedAt: string | null | undefined, status: string) {
+  if (!updatedAt) return { label: "—", cls: "text-muted-foreground" };
+  const ms = Date.now() - new Date(updatedAt).getTime();
+  const h = Math.floor(ms / 3_600_000);
+  const d = Math.floor(h / 24);
+  const label = d >= 1 ? `${d} д` : `${Math.max(h, 0)} ч`;
+  // финальные статусы не подсвечиваем
+  if (["paid", "completed", "cancelled"].includes(status)) return { label, cls: "text-muted-foreground" };
+  if (h >= 72) return { label, cls: "text-rose-400" };
+  if (h >= 24) return { label, cls: "text-amber-300" };
+  return { label, cls: "text-emerald-300" };
+}
+
 
 
 export const Route = createFileRoute("/admin/orders")({
