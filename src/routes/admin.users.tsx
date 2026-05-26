@@ -71,6 +71,12 @@ function UsersAdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const removeUser = useMutation({
+    mutationFn: (user_id: string) => deleteFn({ data: { user_id } }),
+    onSuccess: () => { toast.success("Пользователь удалён"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const filtered = users.filter((u) => {
     if (!search) return true;
     const q = search.toLowerCase();
