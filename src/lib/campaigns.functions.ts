@@ -188,8 +188,8 @@ export const sendTestEmail = createServerFn({ method: "POST" })
       .single();
     if (error || !campaign) throw new Error("Кампания не найдена");
 
-    const { sendViaResend } = await import("./email/resend.server");
-    const { wrapCampaignHtml, htmlToPlainText } = await import("./email/campaign-template.server");
+  
+  
 
     const html = wrapCampaignHtml({
       subject: campaign.subject,
@@ -323,8 +323,8 @@ async function resolveRecipients(cfg: z.infer<typeof RecipientsConfigSchema>): P
 }
 
 async function runCampaignSend(campaignId: string): Promise<void> {
-  const { sendViaResend } = await import("./email/resend.server");
-  const { wrapCampaignHtml, htmlToPlainText } = await import("./email/campaign-template.server");
+
+
 
   const { data: campaign } = await supabaseAdmin
     .from("email_campaigns")
