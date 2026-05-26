@@ -502,27 +502,105 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
 
 // ===== Admin: confirm order (status -> confirmed) + email the client =====
 
+// Грузит заказ+позиции, шлёт письмо клиенту и пишет результат в order_timeline
+// (events: confirmation_email_sent / confirmation_email_failed). Возвращает
+// { ok, error? } чтобы вызывающий код мог показать UI-фидбек и предложить ретрай.
+async function sendOrderConfirmationEmailAndLog(
+  orderId: string,
+  actorId: string | null,
+  trigger: "confirm" | "resend",
+): Promise<{ ok: boolean; error?: string }> {
+  const { data: order, error: fetchErr } = await supabaseAdmin
+    .from("orders")
+    .select("id, status, client_name, client_email, client_phone, client_company, event_date, total, paid, notes")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (fetchErr || !order) {
+    const msg = fetchErr?.message ?? "order not found";
+    console.error("[order-confirm-email] fetch failed", orderId, msg);
+    return { ok: false, error: msg };
+  }
+  if (!order.client_email) {
+    const msg = "У клиента не указан email";
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: orderId,
+      actor_id: actorId,
+      event: "confirmation_email_failed",
+      payload: { trigger, error: msg },
+    });
+    return { ok: false, error: msg };
+  }
+
+  const { data: items = [] } = await supabaseAdmin
+    .from("order_items")
+    .select("title, qty, price, entity_type, start_date, end_date")
+    .eq("order_id", orderId);
+
+  let res: { ok: boolean; error?: string };
+  try {
+    res = await notifyClientOrderConfirmedEmail({
+      orderId: order.id,
+      clientName: order.client_name,
+      clientEmail: order.client_email,
+      clientPhone: order.client_phone,
+      clientCompany: order.client_company,
+      total: Number(order.total ?? 0),
+      paid: Number(order.paid ?? 0),
+      status: order.status ?? "confirmed",
+      eventDate: order.event_date,
+      notes: order.notes,
+      items: (items ?? []).map((i) => ({
+        title: String(i.title),
+        qty: Number(i.qty ?? 1),
+        price: Number(i.price ?? 0),
+        entityType: (i as any).entity_type ?? null,
+        startDate: (i as any).start_date ?? null,
+        endDate: (i as any).end_date ?? null,
+      })),
+    });
+  } catch (e) {
+    res = { ok: false, error: e instanceof Error ? e.message : "send failed" };
+  }
+
+  if (res.ok) {
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: orderId,
+      actor_id: actorId,
+      event: "confirmation_email_sent",
+      payload: { trigger, recipient: order.client_email },
+    });
+  } else {
+    console.error("[order-confirm-email] send failed", orderId, res.error);
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: orderId,
+      actor_id: actorId,
+      event: "confirmation_email_failed",
+      payload: { trigger, recipient: order.client_email, error: res.error ?? "unknown" },
+    });
+  }
+  return res;
+}
+
+async function assertAdminOrManager(
+  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> },
+  userId: string,
+) {
+  const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (isAdmin) return;
+  const { data: isManager } = await supabase.rpc("has_role", { _user_id: userId, _role: "manager" });
+  if (!isManager) throw new Error("Доступ запрещён");
+}
+
 export const confirmOrderAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => DeleteOrderSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId, supabase } = context;
-
-    const { data: isAdminOrManager } = await supabase.rpc("has_role", {
-      _user_id: userId, _role: "admin",
-    });
-    let allowed = !!isAdminOrManager;
-    if (!allowed) {
-      const { data: isManager } = await supabase.rpc("has_role", {
-        _user_id: userId, _role: "manager",
-      });
-      allowed = !!isManager;
-    }
-    if (!allowed) throw new Error("Доступ запрещён");
+    await assertAdminOrManager(supabase, userId);
 
     const { data: order, error: fetchErr } = await supabaseAdmin
       .from("orders")
-      .select("id, status, client_name, client_email, client_phone, client_company, event_date, total, paid, notes")
+      .select("id, status, client_name, client_email, event_date, total")
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !order) throw new Error("Заявка не найдена");
@@ -541,32 +619,7 @@ export const confirmOrderAdmin = createServerFn({ method: "POST" })
       payload: { previous_status: order.status },
     });
 
-    const { data: items = [] } = await supabaseAdmin
-      .from("order_items")
-      .select("title, qty, price, entity_type, start_date, end_date")
-      .eq("order_id", data.id);
-
-    const emailRes = await notifyClientOrderConfirmedEmail({
-      orderId: order.id,
-      clientName: order.client_name,
-      clientEmail: order.client_email,
-      clientPhone: order.client_phone,
-      clientCompany: order.client_company,
-      total: Number(order.total ?? 0),
-      paid: Number(order.paid ?? 0),
-      status: "confirmed",
-      eventDate: order.event_date,
-      notes: order.notes,
-      items: (items ?? []).map((i) => ({
-        title: String(i.title),
-        qty: Number(i.qty ?? 1),
-        price: Number(i.price ?? 0),
-        entityType: (i as any).entity_type ?? null,
-        startDate: (i as any).start_date ?? null,
-        endDate: (i as any).end_date ?? null,
-      })),
-    }).catch((e) => ({ ok: false, error: e instanceof Error ? e.message : "send failed" }));
-
+    const emailRes = await sendOrderConfirmationEmailAndLog(data.id, userId, "confirm");
 
     const tg =
       `<b>✅ Заказ подтверждён</b>\n` +
@@ -574,9 +627,23 @@ export const confirmOrderAdmin = createServerFn({ method: "POST" })
       `Клиент: ${tgEsc(order.client_name)}\n` +
       `Email: ${tgEsc(order.client_email)}\n` +
       (order.event_date ? `Дата: ${tgEsc(order.event_date)}\n` : "") +
-      `Сумма: ${Number(order.total ?? 0)} BYN`;
+      `Сумма: ${Number(order.total ?? 0)} BYN` +
+      (emailRes.ok ? "" : `\n⚠️ Письмо клиенту НЕ отправлено: ${tgEsc(emailRes.error ?? "unknown")}`);
     await notifyTelegram(tg);
 
     return { ok: true, emailSent: emailRes.ok, emailError: emailRes.ok ? null : emailRes.error ?? null };
   });
+
+// ===== Admin: повторная отправка письма-подтверждения (без смены статуса) =====
+
+export const resendOrderConfirmationEmailAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => DeleteOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    await assertAdminOrManager(supabase, userId);
+    const emailRes = await sendOrderConfirmationEmailAndLog(data.id, userId, "resend");
+    return { ok: emailRes.ok, emailSent: emailRes.ok, emailError: emailRes.ok ? null : emailRes.error ?? null };
+  });
+
 
