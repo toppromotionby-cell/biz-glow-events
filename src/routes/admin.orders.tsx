@@ -239,7 +239,11 @@ function AdminOrders() {
                         ))}
                       </select>
                     </td>
+                    <td className={`p-3 whitespace-nowrap text-xs tabular-nums ${age.cls}`} title={`Обновлён: ${fmtDateTime(o.updated_at ?? o.created_at)}`}>
+                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{age.label}</span>
+                    </td>
                     <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
+
                     <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       <PaidCell
                         value={Number(o.paid ?? 0)}
