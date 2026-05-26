@@ -128,6 +128,40 @@ export function CatalogGrid({
 
   return (
     <>
+      {categoryChips.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveCategory(null)}
+            aria-pressed={!activeCategory}
+            className={`text-xs px-3 py-1.5 rounded-full border transition ${
+              !activeCategory
+                ? "bg-primary text-primary-foreground border-primary"
+                : "glass border-primary/20 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+            }`}
+          >
+            Все категории
+          </button>
+          {categoryChips.map((name) => {
+            const active = !!activeCategory && activeCategory.trim().toLowerCase() === name.trim().toLowerCase();
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setActiveCategory(active ? null : name)}
+                aria-pressed={active}
+                className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "glass border-primary/20 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                }`}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {topTags.length > 1 && (
         <div className="mb-6 flex flex-wrap items-center gap-2">
           {topTags.map((t) => {
