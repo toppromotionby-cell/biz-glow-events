@@ -231,11 +231,16 @@ function AdminOrders() {
         {!isLoading && sorted.map((o: any) => {
           const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
           const age = ageInfo(o.updated_at ?? o.created_at, o.status);
+          const canConfirm = o.status === "new" || o.status === "pending";
           return (
-            <button
+            <div
               key={`mc-${o.id}`}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => setOpenId(o.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(o.id); }
+              }}
               className="w-full text-left glass rounded-xl p-3 space-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <div className="flex items-start justify-between gap-2">
@@ -258,7 +263,53 @@ function AdminOrders() {
                   {debt > 0 ? `Долг ${fmtMoney(debt)}` : "Оплачен"}
                 </span>
               </div>
-            </button>
+              {canConfirm && (
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-xs border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                    disabled={confirmOrder.isPending}
+                    onClick={(e) => { e.stopPropagation(); confirmOrder.mutate(o.id); }}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Подтвердить
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs border-rose-500/40 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Заказ <b>{o.client_name}</b> от {fmtDate(o.created_at)} будет удалён вместе с позициями,
+                          таймлайном и вложениями. Он также исчезнет из кабинета клиента. Действие необратимо.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={deleteOrder.isPending}
+                          onClick={() => deleteOrder.mutate(o.id)}
+                          className="bg-rose-600 hover:bg-rose-700 text-white"
+                        >
+                          Удалить
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </div>
           );
         })}
         {!isLoading && sorted.length > 0 && (
@@ -316,6 +367,7 @@ function AdminOrders() {
               {sorted.map((o: any) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
                 const age = ageInfo(o.updated_at ?? o.created_at, o.status);
+                const canConfirm = o.status === "new" || o.status === "pending";
                 return (
 
                   <tr
@@ -374,6 +426,17 @@ function AdminOrders() {
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex items-center gap-2">
+                        {canConfirm && (
+                          <button
+                            type="button"
+                            title="Подтвердить заказ"
+                            disabled={confirmOrder.isPending}
+                            onClick={() => confirmOrder.mutate(o.id)}
+                            className="inline-flex items-center text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </button>
+                        )}
                         <Link
                           to="/admin/orders/$id"
                           params={{ id: o.id }}
