@@ -109,9 +109,8 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
             className={`text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mb-8 md:mb-10 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] ${childClass()}`}
             style={style(2)}
           >
-            Интерактивные зоны, техническое оснащение, услуги по организации,
-            свет, декор и всё что нужно для любых ивентов и корпоративов.
-            Быстрый подбор и доставка по всей Беларуси.
+            От бизнес-презентаций до свадеб и масштабных корпоративов.
+            Интерактивные зоны, техническое оснащение, авторский декор, ведущие и диджеи — подберём всё необходимое за 15 минут
           </p>
 
           {/* CTA Buttons */}
@@ -149,12 +148,12 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
             <span className="hidden sm:inline text-border">|</span>
             <span className="inline-flex items-center gap-1.5">
               <Package className="h-3.5 w-3.5 text-accent" />
-              Отправка в день заказа
+              Смета в день заказа
             </span>
             <span className="hidden sm:inline text-border">|</span>
             <span className="inline-flex items-center gap-1.5">
               <Truck className="h-3.5 w-3.5 text-accent" />
-              Доставка по всей Беларуси
+              Работаем по всей Беларуси
             </span>
           </div>
         </div>
