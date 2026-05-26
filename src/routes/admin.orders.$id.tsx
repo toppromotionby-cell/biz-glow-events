@@ -36,6 +36,14 @@ function OrderDetail() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [internalNotes, setInternalNotes] = useState("");
+  const [emailPreview, setEmailPreview] = useState<{ subject: string; html: string; to: string | null } | null>(null);
+  const previewFn = useServerFn(previewOrderConfirmationEmail);
+  const loadPreview = useMutation({
+    mutationFn: async () => previewFn({ data: { id } }),
+    onSuccess: (res) => setEmailPreview(res),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const { data: order } = useQuery({
     queryKey: ["order", id],
