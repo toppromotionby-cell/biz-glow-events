@@ -10,7 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/forgot-password")({
-  head: () => ({ meta: [{ title: "Восстановление пароля — event-hub.by" }, { name: "robots", content: "noindex,follow" }] }),
+  head: () => ({
+    meta: [
+      { title: "Восстановление пароля — event-hub.by" },
+      { name: "description", content: "Восстановите доступ к личному кабинету event-hub.by: мы отправим ссылку для сброса пароля на ваш email." },
+      { property: "og:title", content: "Восстановление пароля — event-hub.by" },
+      { property: "og:description", content: "Получите письмо со ссылкой для сброса пароля и снова войдите в аккаунт." },
+      { name: "robots", content: "noindex,follow" },
+    ],
+  }),
   component: ForgotPasswordPage,
 });
 
