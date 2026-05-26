@@ -28,6 +28,37 @@ function stripPricing<T extends { pricing?: unknown }>(rows: T[], authed: boolea
   return authed ? rows : rows.map((r) => ({ ...r, pricing: null }));
 }
 
+function isAbsolute(u: string): boolean {
+  return /^(https?:|blob:|data:)/i.test(u);
+}
+
+// Sign relative storage paths in photo_urls/video_urls so anonymous visitors
+// can render private-bucket media on public catalog pages.
+async function signMediaUrls<T extends { photo_urls?: string[] | null; video_urls?: string[] | null }>(
+  rows: T[],
+): Promise<T[]> {
+  const paths = new Set<string>();
+  for (const r of rows) {
+    for (const u of r.photo_urls ?? []) if (u && !isAbsolute(u)) paths.add(u);
+    for (const u of r.video_urls ?? []) if (u && !isAbsolute(u)) paths.add(u);
+  }
+  if (paths.size === 0) return rows;
+  const list = Array.from(paths);
+  const TTL = 60 * 60 * 24 * 7; // 7 days
+  const { data, error } = await supabaseAdmin.storage.from("media").createSignedUrls(list, TTL);
+  if (error || !data) {
+    console.error("[signMediaUrls] failed:", error);
+    return rows;
+  }
+  const map = new Map<string, string>();
+  data.forEach((d, i) => { if (d.signedUrl) map.set(list[i], d.signedUrl); });
+  return rows.map((r) => ({
+    ...r,
+    photo_urls: (r.photo_urls ?? []).map((u) => (u && !isAbsolute(u) ? map.get(u) ?? u : u)),
+    video_urls: (r.video_urls ?? []).map((u) => (u && !isAbsolute(u) ? map.get(u) ?? u : u)),
+  }));
+}
+
 export type CatalogType = "zones" | "tech_equipment" | "services" | "production_items";
 
 const TYPES = ["zones", "tech_equipment", "services", "production_items"] as const;
@@ -69,7 +100,8 @@ export const listCatalog = createServerFn({ method: "GET" })
       throw new Error("Не удалось загрузить каталог.");
     }
     const authed = await isAuthed();
-    return stripPricing((rows ?? []) as CatalogRow[], authed);
+    const signed = await signMediaUrls((rows ?? []) as CatalogRow[]);
+    return stripPricing(signed, authed);
   });
 
 export const getCatalogItem = createServerFn({ method: "GET" })
@@ -87,5 +119,6 @@ export const getCatalogItem = createServerFn({ method: "GET" })
     }
     if (!row) return null;
     const authed = await isAuthed();
-    return stripPricing([row as CatalogRow], authed)[0];
+    const signed = await signMediaUrls([row as CatalogRow]);
+    return stripPricing(signed, authed)[0];
   });

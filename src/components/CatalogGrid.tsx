@@ -3,6 +3,7 @@ import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
+import { useResolvedUrl } from "@/components/StorageMedia";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { X } from "lucide-react";
@@ -158,6 +159,29 @@ export function CatalogGrid({
   );
 }
 
+function SlidePhoto({ src, alt, active }: { src: string; alt: string; active: boolean }) {
+  const url = useResolvedUrl(src);
+  if (!url) {
+    return (
+      <div
+        aria-hidden={!active}
+        className={`absolute inset-0 h-full w-full bg-muted/30 transition-opacity duration-500 ${active ? "opacity-100" : "opacity-0"}`}
+      />
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt={alt}
+      loading="lazy"
+      aria-hidden={!active}
+      className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+        active ? "opacity-100" : "opacity-0"
+      } group-hover:scale-105 transition-transform [transition-duration:700ms]`}
+    />
+  );
+}
+
 function CatalogCard({
   item,
   category,
@@ -218,15 +242,11 @@ function CatalogCard({
         <MediaShield>
           <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-surface relative">
             {photos.map((src, i) => (
-              <img
+              <SlidePhoto
                 key={src + i}
                 src={src}
                 alt={item.title}
-                loading={i === 0 ? "lazy" : "lazy"}
-                aria-hidden={i !== index}
-                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
-                  i === index ? "opacity-100" : "opacity-0"
-                } group-hover:scale-105 transition-transform [transition-duration:700ms]`}
+                active={i === index}
               />
             ))}
             {item.video ? (
