@@ -20,9 +20,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.PW_BASE_URL ?? "http://localhost:3000",
+    baseURL: process.env.PW_BASE_URL ?? "http://localhost:8080",
     trace: "retain-on-failure",
-    // Disable animations to keep snapshots stable
     launchOptions: { args: ["--font-render-hinting=none"] },
   },
   expect: {
