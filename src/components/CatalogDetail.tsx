@@ -192,27 +192,39 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               <PriceFactorsPopup />
             </div>
             <PriceGate fromPrice={from}>
-              <div className="text-2xl font-display font-bold">
-                {tierPrice !== null
-                  ? new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(tierPrice)
-                  : from !== null
-                  ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}`
-                  : "По запросу"}
-              </div>
-              {hasTiers && (
+              {isHourMode ? (
+                <HourPriceSlider
+                  pricing={hourPricing!}
+                  hours={hours}
+                  onChange={setHours}
+                  rawPricing={item.pricing}
+                />
+              ) : (
                 <>
-                  <div className="text-xs text-muted-foreground">
-                    {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                  <div className="text-2xl font-display font-bold">
+                    {tierPrice !== null
+                      ? new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(tierPrice)
+                      : from !== null
+                      ? `от ${new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(from)}`
+                      : "По запросу"}
                   </div>
-                  <PriceTableView
-                    pricing={item.pricing}
-                    selectable
-                    selectedIndex={selectedTier}
-                    onSelect={(i) => setSelectedTier(i)}
-                  />
+                  {hasTiers && (
+                    <>
+                      <div className="text-xs text-muted-foreground">
+                        {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                      </div>
+                      <PriceTableView
+                        pricing={item.pricing}
+                        selectable
+                        selectedIndex={selectedTier}
+                        onSelect={(i) => setSelectedTier(i)}
+                      />
+                    </>
+                  )}
                 </>
               )}
             </PriceGate>
+
 
             {qtyKind && !needsSelection && !isByRequest && (
               <>
