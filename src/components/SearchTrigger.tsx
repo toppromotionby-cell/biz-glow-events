@@ -5,6 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, Clock, X } from "lucide-react";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { globalSearch, type SearchHit } from "@/lib/search.functions";
+import { CatalogQuickView } from "@/components/CatalogQuickView";
+import type { CatalogType } from "@/lib/catalog.functions";
+
+const CATALOG_KINDS: Record<string, CatalogType> = {
+  zones: "zones",
+  tech_equipment: "tech_equipment",
+  services: "services",
+  production_items: "production_items",
+};
 
 const KIND_LABELS: Record<SearchHit["kind"], string> = {
   zones: "Зоны",
