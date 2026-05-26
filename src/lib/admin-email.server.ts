@@ -2,6 +2,7 @@
 // или вернул ошибку. Рендерит простой HTML и пихает напрямую в pgmq-очередь
 // (transactional_emails) через service-role admin клиент.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 
 const SITE_NAME = "event-hub.by";
 const SENDER_DOMAIN = "z.event-hub.by";
