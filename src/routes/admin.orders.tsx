@@ -180,9 +180,66 @@ function AdminOrders() {
         </select>
       </div>
 
-      <div className="glass rounded-xl overflow-hidden">
+      {/* Мобильный карточный вид (< md) */}
+      <div className="md:hidden space-y-2">
+        {isLoading && Array.from({ length: 4 }).map((_, i) => (
+          <div key={`mc-sk-${i}`} className="glass rounded-xl p-4 space-y-2">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-3/4" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        ))}
+        {!isLoading && sorted.length === 0 && (
+          <div className="glass rounded-xl p-8 text-center text-muted-foreground text-sm">
+            {q || status ? "Ничего не найдено" : "Заказов пока нет"}
+          </div>
+        )}
+        {!isLoading && sorted.map((o: any) => {
+          const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
+          const age = ageInfo(o.updated_at ?? o.created_at, o.status);
+          return (
+            <button
+              key={`mc-${o.id}`}
+              type="button"
+              onClick={() => setOpenId(o.id)}
+              className="w-full text-left glass rounded-xl p-3 space-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{o.client_name}</div>
+                  {o.client_company && <div className="text-xs text-muted-foreground truncate">{o.client_company}</div>}
+                </div>
+                <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] border ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}>
+                  {STATUS_LABEL[o.status] ?? o.status}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{fmtDate(o.created_at)}</span>
+                <span className={`inline-flex items-center gap-1 ${age.cls}`}><Clock className="h-3 w-3" />{age.label}</span>
+              </div>
+              <div className="text-xs truncate">{o.client_phone} · {o.client_email}</div>
+              <div className="flex justify-between text-sm pt-1 border-t border-border/40">
+                <span className="text-muted-foreground">Сумма: <span className="text-foreground font-medium">{fmtMoney(o.total)}</span></span>
+                <span className={debt > 0 ? "text-amber-300" : "text-emerald-300"}>
+                  {debt > 0 ? `Долг ${fmtMoney(debt)}` : "Оплачен"}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+        {!isLoading && sorted.length > 0 && (
+          <div className="glass rounded-xl p-3 text-xs flex justify-between sticky bottom-2">
+            <span className="text-muted-foreground">Итого ({sorted.length})</span>
+            <span>{fmtMoney(totals.total)} · <span className="text-emerald-300">{fmtMoney(totals.paid)}</span> · <span className={totals.debt > 0 ? "text-amber-300" : ""}>{fmtMoney(totals.debt)}</span></span>
+          </div>
+        )}
+      </div>
+
+      {/* Десктоп — таблица (md+) */}
+      <div className="glass rounded-xl overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm" aria-label="Список заказов">
+
             <thead className="admin-table-head">
               <tr>
                 <th scope="col" aria-sort={sortBy === "created_at" ? "descending" : "none"} className="text-left p-3">Создан</th>
