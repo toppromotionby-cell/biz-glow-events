@@ -63,6 +63,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
+import { Route as AdminCampaignsRouteImport } from './routes/admin.campaigns'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAvailabilityRouteImport } from './routes/admin.availability'
@@ -349,6 +350,11 @@ const AdminCasesRoute = AdminCasesRouteImport.update({
   path: '/cases',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCampaignsRoute = AdminCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCalendarRoute = AdminCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
@@ -470,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/campaigns': typeof AdminCampaignsRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
@@ -540,6 +547,7 @@ export interface FileRoutesByTo {
   '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/campaigns': typeof AdminCampaignsRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
@@ -612,6 +620,7 @@ export interface FileRoutesById {
   '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
+  '/admin/campaigns': typeof AdminCampaignsRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
@@ -685,6 +694,7 @@ export interface FileRouteTypes {
     | '/admin/availability'
     | '/admin/blog'
     | '/admin/calendar'
+    | '/admin/campaigns'
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/marketing'
@@ -755,6 +765,7 @@ export interface FileRouteTypes {
     | '/admin/availability'
     | '/admin/blog'
     | '/admin/calendar'
+    | '/admin/campaigns'
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/marketing'
@@ -826,6 +837,7 @@ export interface FileRouteTypes {
     | '/admin/availability'
     | '/admin/blog'
     | '/admin/calendar'
+    | '/admin/campaigns'
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/marketing'
@@ -1285,6 +1297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCasesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/campaigns': {
+      id: '/admin/campaigns'
+      path: '/campaigns'
+      fullPath: '/admin/campaigns'
+      preLoaderRoute: typeof AdminCampaignsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/calendar': {
       id: '/admin/calendar'
       path: '/calendar'
@@ -1438,6 +1457,7 @@ interface AdminRouteChildren {
   AdminAvailabilityRoute: typeof AdminAvailabilityRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
+  AdminCampaignsRoute: typeof AdminCampaignsRoute
   AdminCasesRoute: typeof AdminCasesRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminMarketingRoute: typeof AdminMarketingRoute
@@ -1454,6 +1474,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAvailabilityRoute: AdminAvailabilityRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminCalendarRoute: AdminCalendarRoute,
+  AdminCampaignsRoute: AdminCampaignsRoute,
   AdminCasesRoute: AdminCasesRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminMarketingRoute: AdminMarketingRoute,
