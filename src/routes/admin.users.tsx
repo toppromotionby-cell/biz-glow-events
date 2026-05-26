@@ -196,6 +196,32 @@ function UsersAdminPage() {
                     </div>
                   )}
                 </td>
+                <td className="px-4 py-3">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Удалить пользователя">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить пользователя?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Будут удалены аккаунт, профиль и роли пользователя <b>{u.full_name || u.email}</b>. Связанные заказы остаются, но теряют привязку. Действие необратимо.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => removeUser.mutate(u.id)}
+                        >
+                          Удалить
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </td>
               </tr>
             );
           })}
