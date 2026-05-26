@@ -1,0 +1,89 @@
+import { test, expect, type Page } from "@playwright/test";
+
+/**
+ * Visual regression tests for centering across mobile + intermediate widths.
+ *
+ * What we snapshot:
+ *  - CatalogChoiceModal (icon + title + desc cards, grid swaps at sm, layout swaps at md)
+ *  - Industries grid tiles (centered stack on mobile, row-left at md+)
+ *  - Industries dialog header (icon + title + scale)
+ *  - About VALUES cards
+ *
+ * Snapshots are stored per-project (one folder per viewport), so a regression
+ * on any single width fails its dedicated snapshot.
+ */
+
+/** Hide things that are inherently unstable across runs (images, videos, scrollbars). */
+async function stabilizePage(page: Page) {
+  await page.addStyleTag({
+    content: `
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+        caret-color: transparent !important;
+      }
+      /* Replace media with solid placeholders so loading races don't break diffs */
+      img, video { visibility: hidden !important; }
+      ::-webkit-scrollbar { display: none !important; }
+      html { scrollbar-width: none !important; }
+    `,
+  });
+  // Wait for fonts so glyph metrics match
+  await page.evaluate(() => (document as any).fonts?.ready);
+}
+
+test.describe("Centering — catalog choice modal", () => {
+  test("opens and matches snapshot", async ({ page }, testInfo) => {
+    await page.goto("/");
+    await stabilizePage(page);
+
+    // Open the catalog picker. The home page has a "Каталог" trigger that
+    // opens CatalogChoiceModal. We target by accessible name; fall back to text.
+    const trigger = page.getByRole("button", { name: /каталог/i }).first();
+    await trigger.click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(150); // dialog enter animation
+
+    await expect(dialog).toHaveScreenshot(`catalog-choice-${testInfo.project.name}.png`);
+  });
+});
+
+test.describe("Centering — industries page", () => {
+  test("grid tiles match snapshot", async ({ page }, testInfo) => {
+    await page.goto("/industries");
+    await stabilizePage(page);
+
+    const grid = page.locator('section[aria-labelledby="grid-heading"]');
+    await expect(grid).toBeVisible();
+    await expect(grid).toHaveScreenshot(`industries-grid-${testInfo.project.name}.png`);
+  });
+
+  test("dialog header matches snapshot", async ({ page }, testInfo) => {
+    await page.goto("/industries");
+    await stabilizePage(page);
+
+    // First industry tile
+    const firstTile = page
+      .locator('section[aria-labelledby="grid-heading"] button')
+      .first();
+    await firstTile.click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(150);
+    await expect(dialog).toHaveScreenshot(`industries-dialog-${testInfo.project.name}.png`);
+  });
+});
+
+test.describe("Centering — about values cards", () => {
+  test("VALUES grid matches snapshot", async ({ page }, testInfo) => {
+    await page.goto("/about");
+    await stabilizePage(page);
+
+    const section = page.locator('section[aria-labelledby="values-heading"]');
+    await expect(section).toBeVisible();
+    await expect(section).toHaveScreenshot(`about-values-${testInfo.project.name}.png`);
+  });
+});
