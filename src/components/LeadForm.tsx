@@ -29,6 +29,7 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы отправить заявку.")) return;
     const fd = new FormData(e.currentTarget);
     const utm = readUtm() ?? {};
     setLoading(true);
