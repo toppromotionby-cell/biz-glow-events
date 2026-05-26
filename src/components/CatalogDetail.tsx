@@ -372,7 +372,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           <DialogDescription className="sr-only">Просмотр фотографии</DialogDescription>
           {lightbox !== null && photos[lightbox] && (
             <div className="relative">
-              <img src={photos[lightbox]} alt={item.title} className="w-full max-h-[85vh] object-contain rounded-lg" />
+              <StorageImg path={photos[lightbox]} alt={item.title} className="w-full max-h-[85vh] object-contain rounded-lg" fallbackClassName="w-full max-h-[85vh] rounded-lg" />
               {photos.length > 1 && (
                 <>
                   <button type="button" onClick={prev} aria-label="Назад"
