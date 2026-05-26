@@ -133,6 +133,16 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
     .map((x) => x.item);
   const featured = merged.slice(0, 6);
 
+  // Подписываем первую фотку каждой карточки на сервере (bucket приватный, anon не может подписывать).
+  await Promise.all(
+    featured.map(async (f) => {
+      const first = f.photo_urls?.[0];
+      if (!first || /^(https?:|blob:|data:)/i.test(first)) return;
+      const { data } = await supabaseAdmin.storage.from("media").createSignedUrl(first, 900);
+      if (data?.signedUrl) f.photo_urls = [data.signedUrl, ...(f.photo_urls?.slice(1) ?? [])];
+    }),
+  );
+
   const { data: blog } = await supabaseAdmin
     .from("blog_posts")
     .select("id, slug, title, excerpt, cover_url, published_at")
