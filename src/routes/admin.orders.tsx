@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip, Plus } from "lucide-react";
+import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2 } from "lucide-react";
 // OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
 const OrderAttachments = lazy(() =>
   import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
@@ -16,6 +16,12 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteOrderAdmin } from "@/lib/orders.functions";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
