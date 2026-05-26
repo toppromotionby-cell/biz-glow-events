@@ -31,8 +31,8 @@ const GROUPS: NavGroup[] = [
     label: "Операции",
     items: [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
-      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart },
-      { to: "/admin/calendar", label: "Календарь", icon: Calendar },
+      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, badgeKey: "newOrders" },
+      { to: "/admin/calendar", label: "Календарь", icon: Calendar, badgeKey: "todayBookings" },
       { to: "/admin/availability", label: "Занятость", icon: CalendarClock },
     ],
   },
@@ -41,7 +41,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/catalog/zones", label: "Наполнение", icon: Package },
       { to: "/admin/cases", label: "Кейсы", icon: Trophy },
-      { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
+      { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials" },
       { to: "/admin/blog", label: "Блог", icon: Newspaper },
     ],
   },
@@ -62,6 +62,28 @@ const GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+function useSidebarBadges() {
+  return useQuery({
+    queryKey: ["admin-sidebar-badges"],
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    queryFn: async (): Promise<Record<BadgeKey, number>> => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [newOrders, todayBookings, pendingTestimonials] = await Promise.all([
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new" as any),
+        supabase.from("availability").select("id", { count: "exact", head: true }).lte("start_date", today).gte("end_date", today),
+        supabase.from("testimonials").select("id", { count: "exact", head: true }).eq("published", false),
+      ]);
+      return {
+        newOrders: newOrders.count ?? 0,
+        todayBookings: todayBookings.count ?? 0,
+        pendingTestimonials: pendingTestimonials.count ?? 0,
+      };
+    },
+  });
+}
+
 
 function isItemActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.to;
