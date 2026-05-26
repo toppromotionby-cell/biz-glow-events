@@ -285,7 +285,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                   ) : (
                     <>
                       <ShoppingCart className="h-4 w-4" />
-                      Заказать{qtyKind ? ` — ${formatBYNTotal(total)}` : ""}
+                      Заказать{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(total)}` : ""}
                     </>
                   )}
                 </button>
