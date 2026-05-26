@@ -50,4 +50,40 @@ describe("mobile layout: centering regressions", () => {
     // Dialog header text-center on mobile
     expect(src).toMatch(/DialogHeader[^>]*className="[^"]*text-center/);
   });
+
+  it("Industries grid tiles: centered stack on mobile, row-left at md+", () => {
+    const file = "src/routes/industries.tsx";
+    const src = read(file);
+    expectAllPresent(
+      src,
+      [
+        "text-center md:text-left",
+        "items-center md:items-start",
+      ],
+      file,
+    );
+  });
+
+  it("Industries dialog header: centered on mobile, left at md+", () => {
+    const file = "src/routes/industries.tsx";
+    const src = read(file);
+    expect(src).toMatch(
+      /DialogHeader[^>]*className="[^"]*items-center text-center md:items-start md:text-left/,
+    );
+  });
+
+  it("About VALUES cards: centered stack on mobile, row-left at md+", () => {
+    const file = "src/routes/about.tsx";
+    const src = read(file);
+    expectAllPresent(
+      src,
+      [
+        "flex h-full flex-col items-center text-center",
+        "md:flex-row",
+        "md:items-start",
+        "md:text-left",
+      ],
+      file,
+    );
+  });
 });
