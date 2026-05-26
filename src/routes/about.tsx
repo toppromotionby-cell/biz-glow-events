@@ -82,15 +82,15 @@ function AboutPage() {
 
       <section aria-labelledby="values-heading" className="mt-20">
         <h2 id="values-heading" className="text-2xl md:text-3xl font-display font-bold">Что для нас важно</h2>
-        <div className="mt-8 grid md:grid-cols-2 gap-4">
+        <div className="mt-8 grid md:grid-cols-2 gap-4 items-stretch">
           {VALUES.map((v) => (
-            <div key={v.title} className="glass rounded-2xl p-6 flex gap-4">
+            <div key={v.title} className="glass rounded-2xl p-6 flex h-full flex-col items-center text-center gap-3 md:flex-row md:items-start md:text-left md:gap-4">
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <v.icon className="h-5 w-5" />
               </span>
-              <div>
-                <h3 className="font-medium">{v.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{v.desc}</p>
+              <div className="min-w-0 flex flex-1 flex-col items-center md:items-start">
+                <h3 className="font-medium leading-snug text-balance">{v.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty max-w-[34ch] md:max-w-none">{v.desc}</p>
               </div>
             </div>
           ))}
