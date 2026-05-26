@@ -2,13 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listUsersWithRoles, assignRole, revokeRole, ALL_ROLES } from "@/lib/users.functions";
+import { listUsersWithRoles, assignRole, revokeRole, deleteUser, ALL_ROLES } from "@/lib/users.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Plus, X, Search, UserCog } from "lucide-react";
+import { Loader2, Plus, X, Search, UserCog, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/AdminTable";
 
@@ -30,6 +34,7 @@ const COLS = [
   { key: "contacts", label: "Контакты" },
   { key: "roles", label: "Роли" },
   { key: "assign", label: "Назначить", className: "w-72" },
+  { key: "actions", label: "", className: "w-12" },
 ];
 
 export const Route = createFileRoute("/admin/users")({
@@ -42,6 +47,7 @@ function UsersAdminPage() {
   const fetchUsers = useServerFn(listUsersWithRoles);
   const assignFn = useServerFn(assignRole);
   const revokeFn = useServerFn(revokeRole);
+  const deleteFn = useServerFn(deleteUser);
 
   const [search, setSearch] = useState("");
   const [selectedRole, setSelectedRole] = useState<Record<string, string>>({});
@@ -62,6 +68,12 @@ function UsersAdminPage() {
   const revoke = useMutation({
     mutationFn: (input: { user_id: string; role: (typeof ALL_ROLES)[number] }) => revokeFn({ data: input }),
     onSuccess: () => { toast.success("Роль снята"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeUser = useMutation({
+    mutationFn: (user_id: string) => deleteFn({ data: { user_id } }),
+    onSuccess: () => { toast.success("Пользователь удалён"); refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -183,6 +195,32 @@ function UsersAdminPage() {
                       </Button>
                     </div>
                   )}
+                </td>
+                <td className="px-4 py-3">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="Удалить пользователя">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить пользователя?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Будут удалены аккаунт, профиль и роли пользователя <b>{u.full_name || u.email}</b>. Связанные заказы остаются, но теряют привязку. Действие необратимо.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => removeUser.mutate(u.id)}
+                        >
+                          Удалить
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </td>
               </tr>
             );

@@ -1,10 +1,14 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, Trash2 } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument } from "@/lib/authed-fetch";
 
@@ -17,6 +21,7 @@ export const Route = createFileRoute("/admin/orders/$id")({
 function OrderDetail() {
   const { id } = useParams({ from: "/admin/orders/$id" });
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState("");
 
   const { data: order } = useQuery({
@@ -56,6 +61,22 @@ function OrderDetail() {
     toast.success("Сохранено");
   };
 
+  const removeOrder = useMutation({
+    mutationFn: async () => {
+      await supabase.from("order_items").delete().eq("order_id", id);
+      await supabase.from("order_timeline").delete().eq("order_id", id);
+      await supabase.from("order_attachments").delete().eq("order_id", id);
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Заказ удалён");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      navigate({ to: "/admin/orders" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (!order) return <div>Загрузка...</div>;
 
   return (
@@ -71,6 +92,31 @@ function OrderDetail() {
           <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
+                <Trash2 className="h-4 w-4 mr-1" />Удалить заказ
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Удалить заказ #{order.id.slice(0, 8)}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Будут безвозвратно удалены сам заказ, его позиции, таймлайн и вложения. Действие необратимо.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => removeOrder.mutate()}
+                  disabled={removeOrder.isPending}
+                >
+                  Удалить
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </header>
 
