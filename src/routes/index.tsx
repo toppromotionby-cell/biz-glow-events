@@ -9,7 +9,7 @@ import type { CatalogType } from "@/lib/catalog.functions";
 import { HeroSection } from "@/components/HeroSection";
 import { DirectionCard } from "@/components/ui/DirectionCard";
 import { MediaCard } from "@/components/ui/MediaCard";
-import { FeaturedCard } from "@/components/FeaturedCard";
+import { FeaturedCard, FeaturedCardSkeleton } from "@/components/FeaturedCard";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
