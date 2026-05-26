@@ -302,7 +302,7 @@ function ProfilePage() {
                                     <span className="text-muted-foreground tabular-nums shrink-0">
                                       {new Date(t.created_at).toLocaleString("ru-BY", { dateStyle: "short", timeStyle: "short" })}
                                     </span>
-                                    <span>{t.event}</span>
+                                    <span>{TIMELINE_EVENT_LABEL[t.event] ?? t.event}</span>
                                   </li>
                                 ))}
                               </ol>
