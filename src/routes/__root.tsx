@@ -192,6 +192,7 @@ function RootComponent() {
           <SiteFooter />
           <DeferredGlobals />
           <DynamicToaster />
+          <AuthPromptDialog />
         </div>
       </SiteSectionsProvider>
     </QueryClientProvider>
