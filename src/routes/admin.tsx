@@ -9,6 +9,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { AdminCommandPalette, CommandPaletteTrigger } from "@/components/admin/AdminCommandPalette";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Админ-панель — event-hub.by" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -80,12 +81,14 @@ function AdminLayout() {
               <span className="font-medium truncate">{crumb}</span>
             </div>
             <div className="ml-auto flex items-center gap-2">
+              <CommandPaletteTrigger />
               <ThemeToggle />
             </div>
           </header>
           <main className="flex-1 min-w-0 p-3 sm:p-4 md:p-6">
             <Outlet />
           </main>
+          <AdminCommandPalette />
         </div>
       </div>
     </SidebarProvider>
