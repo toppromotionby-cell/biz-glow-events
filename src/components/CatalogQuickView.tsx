@@ -90,9 +90,10 @@ export function CatalogQuickView({
   );
 }
 
-function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: string; type: CatalogType; onClose: () => void }) {
+function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; type: CatalogType; onClose: () => void }) {
   const navigate = useNavigate();
   const photos = item.photo_urls ?? [];
+  const videos = item.video_urls ?? [];
   const features = asArray<string>(item.features);
   const from = priceFrom(item.pricing);
   const [active, setActive] = useState(0);
