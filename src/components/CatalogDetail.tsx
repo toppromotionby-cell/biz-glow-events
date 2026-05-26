@@ -60,21 +60,30 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
   const tiers = getTiers(item.pricing);
   const hasTiers = tiers.length > 0;
+  const hourPricing = parseHourTiers(tiers);
+  const isHourMode = hourPricing !== null;
+  const [hours, setHours] = useState<number>(hourPricing?.popularHours ?? hourPricing?.minHours ?? 1);
   const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
   const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
   const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
   const effectiveUnitPrice = tierPrice ?? from ?? 0;
-  const qtyKind = detectQuantityKind(activeTier?.unit);
+  const qtyKind = !isHourMode ? detectQuantityKind(activeTier?.unit) : null;
   const [qty, setQty] = useState(1);
   useEffect(() => { setQty(1); }, [selectedTier]);
   const effectiveQty = qtyKind ? qty : 1;
   const effectivePrice = effectiveUnitPrice;
-  const effectiveTotal = effectiveUnitPrice * effectiveQty;
-  const qtySuffix = qtyKind ? ` — ${effectiveQty} ${pluralizeUnit(qtyKind, effectiveQty)}` : "";
-  const effectiveTitle = (activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title) + qtySuffix;
-  const effectiveId = activeTier ? `${item.id}::${selectedTier}${qtyKind ? `::${qty}` : ""}` : item.id;
-  const needsSelection = hasTiers && selectedTier === null;
-  const isByRequest = !needsSelection && effectiveUnitPrice <= 0;
+  const hourTotal = isHourMode ? priceForHours(hourPricing!, hours) : 0;
+  const effectiveTotal = isHourMode ? hourTotal : effectiveUnitPrice * effectiveQty;
+  const qtySuffix = isHourMode
+    ? ` — ${hours} ${pluralizeUnit("hour", hours)}`
+    : qtyKind ? ` — ${effectiveQty} ${pluralizeUnit(qtyKind, effectiveQty)}` : "";
+  const effectiveTitle = (!isHourMode && activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title) + qtySuffix;
+  const effectiveId = isHourMode
+    ? `${item.id}::h${hours}`
+    : activeTier ? `${item.id}::${selectedTier}${qtyKind ? `::${qty}` : ""}` : item.id;
+  const needsSelection = !isHourMode && hasTiers && selectedTier === null;
+  const isByRequest = !needsSelection && !isHourMode && effectiveUnitPrice <= 0;
+
 
   const videoSectionEnabled = useSectionEnabled("catalog.video");
   const externalVideosEnabled = useSectionEnabled("catalog.video.external");
