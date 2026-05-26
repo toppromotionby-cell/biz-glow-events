@@ -204,6 +204,28 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
               )}
             </PriceGate>
 
+            {qtyKind && !needsSelection && !isByRequest && (
+              <>
+                <QuantityStepper
+                  value={qty}
+                  onChange={setQty}
+                  kind={qtyKind}
+                  min={1}
+                  max={maxQtyFor(qtyKind)}
+                  label={qtyKind === "hour" ? "Часов" : qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
+                />
+                <div className="flex items-baseline justify-between pt-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Итого</span>
+                  <span className="text-lg font-display font-bold tabular-nums">
+                    {formatBYNTotal(effectiveTotal)}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {effectiveQty} × {formatBYNTotal(effectiveUnitPrice)}
+                    </span>
+                  </span>
+                </div>
+              </>
+            )}
+
             {needsSelection ? (
               <button
                 type="button"
@@ -222,7 +244,10 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 {isByRequest ? (
                   <><MessageSquare className="h-4 w-4" /> Запросить смету</>
                 ) : (
-                  <><ShoppingCart className="h-4 w-4" /> Заказать{activeTier?.label ? ` «${activeTier.label}»` : ""}</>
+                  <>
+                    <ShoppingCart className="h-4 w-4" />
+                    Заказать{qtyKind ? ` — ${formatBYNTotal(effectiveTotal)}` : activeTier?.label ? ` «${activeTier.label}»` : ""}
+                  </>
                 )}
               </button>
             )}
