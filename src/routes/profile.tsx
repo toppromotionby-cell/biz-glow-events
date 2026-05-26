@@ -87,17 +87,38 @@ function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, navigate]);
 
+  // Realtime: keep orders + currently expanded timeline in sync (e.g. after admin confirms)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`profile-orders-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => {
+        reloadOrders();
+        if (expanded) refreshDetails(expanded);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_timeline" }, (payload) => {
+        const oid = (payload.new as any)?.order_id ?? (payload.old as any)?.order_id;
+        if (oid && details[oid]) refreshDetails(oid);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, expanded, details]);
+
+  async function refreshDetails(orderId: string) {
+    const [{ data: items }, { data: timeline }] = await Promise.all([
+      supabase.from("order_items").select("*").eq("order_id", orderId),
+      supabase.from("order_timeline").select("*").eq("order_id", orderId).order("created_at", { ascending: true }),
+    ]);
+    setDetails((d) => ({ ...d, [orderId]: { items: items ?? [], timeline: timeline ?? [] } }));
+  }
+
   async function toggle(orderId: string) {
     if (expanded === orderId) { setExpanded(null); return; }
     setExpanded(orderId);
-    if (!details[orderId]) {
-      const [{ data: items }, { data: timeline }] = await Promise.all([
-        supabase.from("order_items").select("*").eq("order_id", orderId),
-        supabase.from("order_timeline").select("*").eq("order_id", orderId).order("created_at", { ascending: true }),
-      ]);
-      setDetails((d) => ({ ...d, [orderId]: { items: items ?? [], timeline: timeline ?? [] } }));
-    }
+    await refreshDetails(orderId);
   }
+
 
   function openEdit(o: any) {
     setEditing(o);
