@@ -12,6 +12,7 @@ const LeadSchema = z.object({
   client_company: z.string().max(160).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  event_end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   source: z.string().max(80).optional().nullable(),
   utm_source: z.string().max(120).optional().nullable(),
   utm_medium: z.string().max(120).optional().nullable(),
@@ -62,7 +63,12 @@ export const submitLead = createServerFn({ method: "POST" })
         client_phone: payload.client_phone,
         client_email: payload.client_email,
         client_company: payload.client_company ?? null,
-        notes: payload.notes ?? null,
+        notes: [
+          payload.event_end_date && payload.event_end_date !== payload.event_date
+            ? `Период мероприятия: ${payload.event_date ?? "?"} — ${payload.event_end_date}`
+            : "",
+          payload.notes ?? "",
+        ].filter(Boolean).join("\n\n") || null,
         event_date: payload.event_date ?? null,
         source: payload.source ?? "website",
         utm_source: payload.utm_source ?? null,
@@ -92,7 +98,7 @@ export const submitLead = createServerFn({ method: "POST" })
       `Телефон: ${tgEsc(payload.client_phone)}\n` +
       `Email: ${tgEsc(payload.client_email)}\n` +
       (payload.client_company ? `Компания: ${tgEsc(payload.client_company)}\n` : "") +
-      (payload.event_date ? `Дата: ${tgEsc(payload.event_date)}\n` : "") +
+      (payload.event_date ? `Дата: ${tgEsc(payload.event_date)}${payload.event_end_date && payload.event_end_date !== payload.event_date ? ` — ${tgEsc(payload.event_end_date)}` : ""}\n` : "") +
       (payload.notes ? `Сообщение: ${tgEsc(payload.notes)}\n` : "") +
       (payload.utm_source ? `UTM: ${tgEsc(payload.utm_source)}/${tgEsc(payload.utm_medium ?? "-")}/${tgEsc(payload.utm_campaign ?? "-")}` : "");
 

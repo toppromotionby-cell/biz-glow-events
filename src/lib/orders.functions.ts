@@ -27,6 +27,7 @@ const OrderSchema = z.object({
   client_email: z.string().email().max(160),
   client_company: z.string().max(160).optional().nullable(),
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  event_end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   source: z.string().max(80).optional().nullable(),
   promo_code: z.string().min(2).max(40).optional().nullable(),
@@ -138,6 +139,9 @@ export const submitOrder = createServerFn({ method: "POST" })
         throw new Error("Дата мероприятия не может быть в прошлом.");
       }
     }
+    if (data.event_end_date && data.event_date && data.event_end_date < data.event_date) {
+      throw new Error("Дата окончания не может быть раньше даты начала.");
+    }
     for (const i of data.items) {
       if (i.start_date && i.end_date && i.end_date < i.start_date) {
         throw new Error("Некорректные даты позиции.");
@@ -189,6 +193,9 @@ export const submitOrder = createServerFn({ method: "POST" })
         client_company: data.client_company ?? data.company_legal_name ?? null,
         event_date: data.event_date ?? null,
         notes: [
+          data.event_end_date && data.event_end_date !== data.event_date
+            ? `Период мероприятия: ${data.event_date ?? "?"} — ${data.event_end_date}`
+            : "",
           data.notes ?? "",
           requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
           hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
@@ -219,7 +226,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       price: i.price,
       qty: i.qty,
       start_date: i.start_date ?? data.event_date ?? null,
-      end_date: i.end_date ?? data.event_date ?? null,
+      end_date: i.end_date ?? data.event_end_date ?? data.event_date ?? null,
       meta: {
         ...(isUuid(i.entity_id) ? {} : { slug: i.entity_id }),
         ...(i.discrepancy ? { client_price: i.client_price, server_price: i.price } : {}),

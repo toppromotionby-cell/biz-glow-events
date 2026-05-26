@@ -48,6 +48,7 @@ function CartPage() {
     client_email: string;
     client_company: string | null;
     event_date: string | null;
+    event_end_date: string | null;
     notes: string | null;
   }>(null);
   const discount = promo?.discount_amount ?? 0;
@@ -63,7 +64,7 @@ function CartPage() {
   }, []);
   function saveDraft(fd: FormData) {
     const obj: Record<string, string> = {};
-    ["client_name", "client_phone", "client_email", "client_company", "event_date", "notes"].forEach(k => {
+    ["client_name", "client_phone", "client_email", "client_company", "event_date", "event_end_date", "notes"].forEach(k => {
       const v = String(fd.get(k) ?? "").trim();
       if (v) obj[k] = v;
     });
@@ -82,6 +83,7 @@ function CartPage() {
       client_email: String(fd.get("client_email") ?? "").trim(),
       client_company: String(fd.get("client_company") ?? "").trim() || null,
       event_date: String(fd.get("event_date") ?? "") || null,
+      event_end_date: String(fd.get("event_end_date") ?? "") || null,
       notes: String(fd.get("notes") ?? "").trim() || null,
     };
     setContactDraft(contact);
@@ -283,7 +285,7 @@ function CartPage() {
               {clientType === "company" && (
                 <Field label="Компания *" name="client_company" required defaultValue={draft.client_company} />
               )}
-              <DateField label="Дата мероприятия" name="event_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
+              <DateField label="Дата мероприятия" name="event_date" endName="event_end_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
               <label className="block text-sm">
                 <span className="text-muted-foreground">Комментарий</span>
                 <textarea name="notes" rows={3} defaultValue={draft.notes ?? ""} className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2" />
