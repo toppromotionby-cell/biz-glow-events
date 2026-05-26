@@ -11,6 +11,7 @@ import { addToCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
 import { toast } from "sonner";
 import { formatBYN, priceFrom as priceFromUtil } from "@/lib/utils";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 const LABEL: Record<CatalogType, string> = {
   zones: "Зона",
