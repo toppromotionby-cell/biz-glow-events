@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,8 +23,11 @@ export const Route = createFileRoute("/profile")({
 
 const STATUS_LABEL: Record<string, string> = {
   new: "Новая",
+  consultation: "Консультация",
+  estimate: "Смета",
   in_progress: "В работе",
   quoted: "Смета выслана",
+  contract: "Договор",
   confirmed: "Подтверждена",
   paid: "Оплачена",
   completed: "Завершена",
@@ -33,8 +36,11 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_TONE: Record<string, string> = {
   new: "border-primary/40 text-primary",
+  consultation: "border-primary/40 text-primary",
+  estimate: "border-sky-400/40 text-sky-400",
   in_progress: "border-amber-400/40 text-amber-400",
   quoted: "border-sky-400/40 text-sky-400",
+  contract: "border-violet-400/40 text-violet-400",
   confirmed: "border-emerald-400/40 text-emerald-400",
   paid: "border-emerald-500/50 text-emerald-500",
   completed: "border-muted-foreground/40 text-muted-foreground",
@@ -89,23 +95,37 @@ function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, navigate]);
 
-  // Realtime: keep orders + currently expanded timeline in sync (e.g. after admin confirms)
+  // Refs so the realtime subscription stays stable across re-renders
+  // (re-subscribing on every expanded/details change could drop events).
+  const expandedRef = useRef<string | null>(null);
+  const detailsRef = useRef<Record<string, { items: any[]; timeline: any[] }>>({});
+  useEffect(() => { expandedRef.current = expanded; }, [expanded]);
+  useEffect(() => { detailsRef.current = details; }, [details]);
+
+  // Realtime: подхватываем изменения заказов и таймлайна, чтобы подтверждение
+  // менеджером отображалось у клиента моментально (статус + новая запись).
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel(`profile-orders-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, (payload) => {
         reloadOrders();
-        if (expanded) refreshDetails(expanded);
+        const oid = (payload.new as any)?.id ?? (payload.old as any)?.id;
+        if (oid && detailsRef.current[oid]) refreshDetails(oid);
+        const newStatus = (payload.new as any)?.status;
+        const oldStatus = (payload.old as any)?.status;
+        if (newStatus === "confirmed" && oldStatus !== "confirmed") {
+          toast.success("Ваш заказ подтверждён менеджером");
+        }
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "order_timeline" }, (payload) => {
-        const oid = (payload.new as any)?.order_id ?? (payload.old as any)?.order_id;
-        if (oid && details[oid]) refreshDetails(oid);
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "order_timeline" }, (payload) => {
+        const oid = (payload.new as any)?.order_id;
+        if (oid && detailsRef.current[oid]) refreshDetails(oid);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, expanded, details]);
+  }, [user?.id]);
 
   async function refreshDetails(orderId: string) {
     const [{ data: items }, { data: timeline }] = await Promise.all([
