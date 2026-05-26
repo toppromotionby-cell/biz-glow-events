@@ -151,7 +151,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
                   aria-label={`Фото ${i + 1}`}
                   className={`aspect-[4/3] rounded-md overflow-hidden border ${i === active ? "border-primary" : "border-border/40"}`}>
-                  <img src={p} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  <StorageImg path={p} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
                 </button>
               ))}
             </div>
