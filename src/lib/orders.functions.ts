@@ -252,20 +252,17 @@ export const submitOrder = createServerFn({ method: "POST" })
       const { data: upd } = await supabaseAdmin.rpc("increment_promo_usage", { p_code: code });
       if (upd && upd.length > 0) {
         promoApplied = code;
-        // Дописываем промокод в notes для удобства менеджера
+        // Дописываем промокод во внутренние заметки.
         await supabaseAdmin
           .from("orders")
           .update({
-            notes: [
-              data.notes ?? "",
-              requisitesBlock ? `--- Реквизиты ---\n${requisitesBlock}` : "",
-              `Промокод: ${promoApplied}`,
-              hasDiscrepancy ? "⚠ Ценовое расхождение с каталогом — проверить!" : "",
-            ].filter(Boolean).join("\n\n") || null,
+            internal_notes: [internalNotes, `Промокод: ${promoApplied}`]
+              .filter(Boolean).join("\n\n"),
           })
           .eq("id", order.id);
       }
     }
+
 
     await supabaseAdmin.from("order_timeline").insert({
       order_id: order.id,
