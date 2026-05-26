@@ -85,7 +85,9 @@ test.describe("Centering — about values cards", () => {
     const section = page.locator('section[aria-labelledby="values-heading"]');
     await expect(section).toBeVisible();
     await expect(section).toHaveScreenshot(`about-values-${testInfo.project.name}.png`);
+  });
 });
+
 
 test.describe("Centering — catalog landing", () => {
   test("CATALOGS grid matches snapshot", async ({ page }, testInfo) => {
