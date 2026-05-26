@@ -55,7 +55,12 @@ function AdminOrders() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders", dq, status],
     queryFn: async () => {
-      let query = supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(500);
+      // Узкий select — для списка не нужны notes/utm_*, чтобы не тянуть лишний JSON.
+      let query = supabase
+        .from("orders")
+        .select("id,created_at,updated_at,status,client_name,client_company,client_phone,client_email,event_date,source,utm_source,utm_campaign,total,paid")
+        .order("created_at", { ascending: false })
+        .limit(500);
       if (status) query = query.eq("status", status as any);
       if (dq) query = query.or(`client_name.ilike.%${dq}%,client_phone.ilike.%${dq}%,client_email.ilike.%${dq}%,client_company.ilike.%${dq}%`);
       const { data, error } = await query;
