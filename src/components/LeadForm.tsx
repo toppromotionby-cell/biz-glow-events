@@ -42,6 +42,7 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
           client_company: String(fd.get("client_company") ?? "").trim() || null,
           notes: String(fd.get("notes") ?? "").trim() || null,
           event_date: String(fd.get("event_date") ?? "") || null,
+          event_end_date: String(fd.get("event_end_date") ?? "") || null,
           source,
           utm_source: utm.utm_source ?? null,
           utm_medium: utm.utm_medium ?? null,
