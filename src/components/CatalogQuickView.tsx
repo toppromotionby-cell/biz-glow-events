@@ -235,7 +235,7 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
                     className="w-full rounded-xl bg-black aspect-video glass border-0" />
                 );
               }
-              return <video key={url + i} src={url} controls playsInline preload="metadata" className="w-full rounded-xl bg-black aspect-video glass" />;
+              return <StorageVideo key={url + i} path={url} className="w-full rounded-xl bg-black aspect-video glass" />;
             })}
           </div>
         </section>
