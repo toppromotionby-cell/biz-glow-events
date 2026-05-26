@@ -74,8 +74,8 @@ export function CatalogChoiceModal(props: Props) {
               onClick={() => setOpen(false)}
               className="group relative glass rounded-xl p-5 hover:border-primary/50 transition-all duration-200 block"
             >
-              <div className="flex items-start gap-4">
-                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-primary mb-0 group-hover:glow-primary transition">
+              <div className="flex flex-col items-center text-center gap-3 sm:flex-row sm:items-start sm:text-left sm:gap-4">
+                <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-primary group-hover:glow-primary transition">
                   <cat.icon className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div className="min-w-0">
@@ -85,7 +85,7 @@ export function CatalogChoiceModal(props: Props) {
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {cat.desc}
                   </p>
-                  <div className="mt-2 inline-flex items-center text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="mt-2 inline-flex items-center justify-center sm:justify-start text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                     Перейти <ArrowRight className="ml-1 h-3 w-3" />
                   </div>
                 </div>
