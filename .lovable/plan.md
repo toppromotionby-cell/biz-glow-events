@@ -1,34 +1,77 @@
-## Что удаляем
+## Что делаем
 
-Весь функционал email-подписки и рассылок: форма подписки в подвале, exit-intent модалка, страницы админки «Рассылка», «Email-кампании», все серверные функции и связанные таблицы в базе.
+Две независимые задачи, оформляются в одном проходе.
 
-## Изменения по файлам
+---
 
-**Удалить файлы:**
-- `src/components/NewsletterSignup.tsx`
-- `src/components/ExitIntentModal.tsx`
-- `src/routes/admin.newsletter.index.tsx`
-- `src/routes/admin.newsletter.campaigns.tsx`
-- `src/routes/admin.newsletter.campaigns.$id.tsx`
-- `src/lib/newsletter.functions.ts`
-- `src/lib/campaigns.functions.ts`
+### 1. Модуль массовых email-рассылок (через Resend)
 
-**Почистить ссылки:**
-- `src/components/SiteChrome.tsx` — убрать `<NewsletterSignup />` (2 места) и импорт.
-- `src/components/DeferredGlobals.tsx` — убрать `ExitIntentModal` и его lazy-импорт.
-- `src/components/admin/AdminSidebar.tsx` — убрать пункт «Рассылка» (`/admin/newsletter`).
-- `src/routes/admin.tsx` — убрать запись breadcrumbs `^/admin/newsletter`.
-- `src/lib/site-sections.tsx` — убрать секцию `footer.newsletter` и (если есть) `global.exit_intent`.
+Встроенный email Lovable строго для 1-к-1 (подтверждение почты, заказа). Для массовых рассылок по списку — отдельный канал, иначе домен попадёт в спам и сломаются критичные письма. Будем использовать **Resend** через стандартный коннектор Lovable.
 
-## База данных
+#### Что нужно от вас
 
-Дроп таблиц с RLS-политиками и связанными индексами:
-- `public.newsletter_subscribers`
-- `public.email_campaigns`
-- `public.email_campaign_recipients`
+1. **Аккаунт Resend** — бесплатно на resend.com (3 000 писем/мес. в free-тарифе достаточно для старта).
+2. **Верифицированный домен в Resend** — добавьте `event-hub.by` (или поддомен типа `mail.event-hub.by`) в Resend → Domains, и пропишите выданные ими DNS-записи (SPF, DKIM, DMARC) у регистратора домена. Проверка занимает 5–30 минут.
+3. **API-ключ Resend** — Resend → API Keys → Create. Понадобится позже, когда я нажму «Подключить» — выскочит окно, туда вставите ключ.
+4. **Email отправителя** — например `noreply@event-hub.by` или `news@event-hub.by` (любой адрес на верифицированном домене). Скажете его перед запуском.
 
-Записи в `site_sections` с ключами `footer.newsletter` и `global.exit_intent` (если присутствуют) удалить через миграцию вместе с дропом таблиц.
+Я ничего из этого сделать за вас не могу — это ваши учётки и DNS.
 
-## Проверка
+#### Что строю я
 
-После изменений: типы Supabase обновятся автоматически, билд должен проходить без ссылок на удалённые модули.
+**База:**
+- Таблица `email_campaigns` — id, name, subject, body_html, body_text, sender_email, status (draft/scheduled/sending/sent/failed), created_at, sent_at, total_recipients, sent_count, failed_count, created_by.
+- Таблица `email_campaign_recipients` — id, campaign_id, email, status (pending/sent/failed/bounced/unsubscribed), error, sent_at.
+- Таблица `email_unsubscribes` — email, unsubscribed_at, source (для собственного suppression-list поверх Resend).
+- RLS: только админ читает/пишет кампании и получателей; `email_unsubscribes` доступна публично только на insert по токену через server route.
+
+**Server functions / routes:**
+- `src/lib/campaigns.functions.ts` — список кампаний, создание/редактирование черновика, удаление, отправка тестового письма себе, запуск рассылки, статистика.
+- `src/routes/api/public/unsubscribe.$token.ts` — публичный GET для отписки (один токен на email, пишет в `email_unsubscribes`).
+- Отправка через Resend: helper `src/lib/email/resend.server.ts`, авторизация через connector gateway (`X-Connection-Api-Key: $RESEND_API_KEY`, `Authorization: Bearer $LOVABLE_API_KEY`).
+- Чанками по 50 адресов с задержкой, чтобы не упереться в rate-limit. Каждое письмо — отдельный POST на `/emails` (без батча, чтобы был свой unsubscribe-токен у каждого получателя).
+
+**Админ-UI (`/admin/campaigns`, новый пункт в сайдбаре «Рассылки»):**
+- Список кампаний: таблица с фильтром по статусу, кнопки «Редактировать», «Дублировать», «Удалить», «Открыть отчёт».
+- Создание/редактирование кампании в стиле сайта (карточка с оранжевой рамкой, fonts/tokens из `styles.css`):
+  - Поля: Название (внутреннее), Тема письма, From (выбор отправителя), HTML-тело (textarea + превью справа), plain-text fallback (автогенерация + ручная правка).
+  - Блок «Получатели»: чекбоксы — «Все подтверждённые пользователи» (фильтрует по `auth.users.email_confirmed_at`), «По роли» (multi-select из `user_roles`), + textarea для произвольных адресов (валидация + дедуп).
+  - Превью списка с подсчётом «N адресов, из них M в suppression-list — будут пропущены».
+  - Кнопки: «Сохранить черновик», «Отправить тест мне», «Запустить рассылку» (с подтверждением).
+- Страница отчёта кампании: прогресс-бар отправки, таблица получателей со статусами, кнопка повторить failed.
+
+**Защита домена:**
+- В каждое письмо автоматически добавляется футер с ссылкой отписки.
+- Перед отправкой каждому адресу — проверка в `email_unsubscribes` и `suppressed_emails`.
+- Никаких циклов вне кампаний, никакой "отправь всем" из других мест.
+
+---
+
+### 2. Аудит админки — кнопки «Редактировать / Удалить / Сохранить»
+
+Пройдусь по разделам, где не хватает явных действий:
+
+- **`/admin/users`** — сейчас только просмотр. Добавлю:
+  - Кнопку «Изменить роли» в строке (модалка с чекбоксами `admin / manager / content_editor / marketer / user`).
+  - Кнопку «Удалить пользователя» (с подтверждением; удаляет через `supabaseAdmin.auth.admin.deleteUser`).
+  - Server fn `updateUserRoles` и `deleteUser` в `users.functions.ts`.
+- **`/admin/orders/$id`** — явная sticky-кнопка «Сохранить» вверху формы + кнопка «Удалить заказ» (с подтверждением, доступна только admin).
+- **`/admin/sections`** — явная кнопка «Сохранить изменения» (сейчас сохраняется по toggle, неочевидно), индикатор «есть несохранённые изменения».
+- Проверю остальные `admin.*` страницы на единообразие: тулбар действий вверху карточки, оранжевая рамка как договаривались, иконки `Pencil` / `Trash2` / `Save` из `lucide-react`, подтверждения через `AlertDialog`.
+
+---
+
+### Порядок работ (в build-режиме)
+
+1. Жду от вас подтверждения, что аккаунт Resend заведён и домен в нём верифицирован.
+2. Запускаю `standard_connectors--connect resend` — у вас откроется окно для ввода API-ключа.
+3. Применяю миграцию (`email_campaigns`, `email_campaign_recipients`, `email_unsubscribes` + RLS).
+4. Пишу server fns + Resend helper + публичный unsubscribe route.
+5. Делаю UI `/admin/campaigns` и страницу отчёта, добавляю пункт в сайдбар.
+6. Прохожусь по аудиту админки (users, orders, sections + ревизия остальных).
+7. Проверяю отправку тестовой кампании на свой email и публичную страницу отписки.
+
+### Скажите мне сейчас
+
+- Готов ли уже аккаунт Resend и верифицированный домен, **или** мне начать с пункта 3 (схема БД и UI), а коннектор Resend подключим позже когда у вас будет ключ?
+- Какой адрес отправителя ставить по умолчанию (например `news@event-hub.by`)?
