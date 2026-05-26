@@ -19,12 +19,13 @@ export function DirectionCard({ icon: Icon, title, description, to, footer }: Pr
       <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary mb-4 group-hover:glow-primary transition">
         <Icon className="h-6 w-6 text-primary-foreground" />
       </div>
-      <h3 className="font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground flex-1">{description}</p>
-      {footer ? <div className="mt-5">{footer}</div> : null}
+      <h3 className="font-semibold mb-2 leading-snug text-balance">{title}</h3>
+      <p className="text-sm leading-relaxed text-muted-foreground flex-1 text-pretty max-w-[34ch] md:max-w-none">{description}</p>
+      {footer ? <div className="mt-5 w-full">{footer}</div> : null}
     </>
   );
-  const className = "group glass rounded-2xl p-6 flex flex-col h-full hover:border-primary/50 transition";
+  const className =
+    "group glass rounded-2xl p-6 flex flex-col h-full items-center text-center md:items-start md:text-left hover:border-primary/50 transition";
   if (to) {
     return (
       <Link to={to} className={className}>

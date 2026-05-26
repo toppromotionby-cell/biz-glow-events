@@ -59,14 +59,14 @@ function Page() {
 
       <section aria-labelledby="benefits-heading" className="mt-16">
         <h2 id="benefits-heading" className="text-2xl md:text-3xl font-display font-bold">Что вы получаете</h2>
-        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
           {BENEFITS.map((b) => (
-            <div key={b.title} className="glass rounded-2xl p-6">
+            <div key={b.title} className="glass rounded-2xl p-6 flex h-full flex-col items-center text-center md:items-start md:text-left">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <b.icon className="h-5 w-5" />
               </span>
-              <h3 className="mt-4 font-medium">{b.title}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{b.text}</p>
+              <h3 className="mt-4 font-medium leading-snug text-balance">{b.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty max-w-[34ch] md:max-w-none">{b.text}</p>
             </div>
           ))}
         </div>

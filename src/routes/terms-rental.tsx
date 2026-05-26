@@ -62,15 +62,15 @@ function Page() {
         </p>
       </header>
 
-      <section className="mt-12 grid md:grid-cols-2 gap-4">
+      <section className="mt-12 grid md:grid-cols-2 gap-4 items-stretch">
         {BLOCKS.map((b) => (
-          <div key={b.title} className="glass rounded-2xl p-6 flex gap-4">
+          <div key={b.title} className="glass rounded-2xl p-6 flex h-full flex-col items-center text-center gap-3 md:flex-row md:items-start md:text-left md:gap-4">
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <b.icon className="h-5 w-5" />
             </span>
-            <div>
-              <h2 className="font-medium">{b.title}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{b.text}</p>
+            <div className="min-w-0 flex flex-1 flex-col items-center md:items-start">
+              <h2 className="font-medium leading-snug text-balance">{b.title}</h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty max-w-[34ch] md:max-w-none">{b.text}</p>
             </div>
           </div>
         ))}
