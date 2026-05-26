@@ -1,32 +1,10 @@
 // Public catalog reads. Uses supabaseAdmin to bypass auth for public pages
 // (RLS already restricts to published=true, but admin client avoids any
-// reliance on the visitor's session during SSR).
-// SECURITY: pricing is stripped from responses for unauthenticated callers —
-// prices are gated to logged-in users (see PriceGate).
+// reliance on the visitor's session during SSR). Pricing is public.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
-import { getRequestHeader } from "@tanstack/react-start/server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-async function isAuthed(): Promise<boolean> {
-  try {
-    const h = getRequestHeader("authorization");
-    if (!h?.startsWith("Bearer ")) return false;
-    const token = h.slice(7);
-    const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
-      auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
-    });
-    const { data, error } = await sb.auth.getClaims(token);
-    return !error && !!data?.claims?.sub;
-  } catch {
-    return false;
-  }
-}
-
-function stripPricing<T extends { pricing?: unknown }>(rows: T[], authed: boolean): T[] {
-  return authed ? rows : rows.map((r) => ({ ...r, pricing: null }));
-}
 
 function isAbsolute(u: string): boolean {
   return /^(https?:|blob:|data:)/i.test(u);
