@@ -292,11 +292,6 @@ export function SiteFooter() {
                 <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
                 <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
               </ul>
-              <Toggleable sectionKey="footer.newsletter" as="div" className="mt-5">
-                <h4 className="font-medium mb-2 text-foreground">Рассылка</h4>
-                <p className="text-xs text-muted-foreground mb-2">Кейсы, новые зоны и спецпредложения — раз в месяц.</p>
-                <NewsletterSignup />
-              </Toggleable>
             </Toggleable>
           </div>
 
