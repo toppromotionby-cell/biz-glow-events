@@ -7,6 +7,7 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    exclude: ["node_modules/**", "tests/visual/**", "**/.{git,cache}/**"],
     environment: "node",
   },
 });
