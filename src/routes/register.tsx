@@ -40,6 +40,8 @@ type FormData = z.infer<typeof schema>;
 function RegisterPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
