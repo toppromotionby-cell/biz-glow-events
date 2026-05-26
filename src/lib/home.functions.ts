@@ -8,6 +8,8 @@ export type HomeFeatured = {
   short_description: string | null;
   photo_urls: string[] | null;
   basePath: string;
+  pricing: unknown;
+  tags: string[] | null;
 };
 export type HomeBlogTeaser = {
   id: string;
