@@ -100,7 +100,8 @@ export const listCatalog = createServerFn({ method: "GET" })
       throw new Error("Не удалось загрузить каталог.");
     }
     const authed = await isAuthed();
-    return stripPricing((rows ?? []) as CatalogRow[], authed);
+    const signed = await signMediaUrls((rows ?? []) as CatalogRow[]);
+    return stripPricing(signed, authed);
   });
 
 export const getCatalogItem = createServerFn({ method: "GET" })
