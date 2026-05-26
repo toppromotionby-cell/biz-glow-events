@@ -57,8 +57,13 @@ export function AdminCommandPalette() {
         setOpen(true);
       }
     };
+    const onOpenEvent = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("admin-cmdk-open", onOpenEvent);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("admin-cmdk-open", onOpenEvent);
+    };
   }, [open]);
 
   // Сбросить запрос при закрытии.
