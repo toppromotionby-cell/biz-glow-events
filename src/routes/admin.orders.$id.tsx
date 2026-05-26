@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,10 +8,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Clock, Trash2, Mail } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument } from "@/lib/authed-fetch";
+import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
+
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
