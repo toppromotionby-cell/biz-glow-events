@@ -483,24 +483,6 @@ export type Database = {
         }
         Relationships: []
       }
-      email_unsubscribes: {
-        Row: {
-          email: string
-          source: string | null
-          unsubscribed_at: string
-        }
-        Insert: {
-          email: string
-          source?: string | null
-          unsubscribed_at?: string
-        }
-        Update: {
-          email?: string
-          source?: string | null
-          unsubscribed_at?: string
-        }
-        Relationships: []
-      }
       marketing_logs: {
         Row: {
           campaign_id: string | null
@@ -532,27 +514,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      marketing_unsubscribe_tokens: {
-        Row: {
-          created_at: string
-          email: string
-          token: string
-          used_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          token: string
-          used_at?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          token?: string
-          used_at?: string | null
-        }
-        Relationships: []
       }
       order_attachments: {
         Row: {
