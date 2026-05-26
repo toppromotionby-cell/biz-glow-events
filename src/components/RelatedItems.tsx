@@ -3,6 +3,7 @@ import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listCatalog, type CatalogRow, type CatalogType } from "@/lib/catalog.functions";
 import { CATALOG_BASE_ROUTE } from "@/lib/catalog-routes";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
+import { StorageImg } from "@/components/StorageMedia";
 
 const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 });
 
