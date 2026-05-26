@@ -288,7 +288,6 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
             </section>
 
             <DialogFooter className="gap-2 sm:gap-2">
-              <Button variant="outline" onClick={onClose}><X className="h-4 w-4 mr-1" />Закрыть</Button>
               <Button onClick={() => onEdit(item)} className="bg-gradient-primary glow-primary"><Pencil className="h-4 w-4 mr-1" />Редактировать</Button>
             </DialogFooter>
           </>
