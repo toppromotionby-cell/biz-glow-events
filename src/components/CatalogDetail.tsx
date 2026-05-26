@@ -329,8 +329,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                   );
                 }
                 return (
-                  <video key={url + i} src={url} controls playsInline preload="metadata"
-                    className="w-full rounded-xl bg-black aspect-video glass" />
+                  <StorageVideo key={url + i} path={url} className="w-full rounded-xl bg-black aspect-video glass" />
                 );
               })}
             </div>
