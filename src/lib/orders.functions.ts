@@ -522,7 +522,7 @@ export const confirmOrderAdmin = createServerFn({ method: "POST" })
 
     const { data: order, error: fetchErr } = await supabaseAdmin
       .from("orders")
-      .select("id, status, client_name, client_email, client_phone, client_company, event_date, total")
+      .select("id, status, client_name, client_email, client_phone, client_company, event_date, total, paid, notes")
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !order) throw new Error("Заявка не найдена");
@@ -543,21 +543,30 @@ export const confirmOrderAdmin = createServerFn({ method: "POST" })
 
     const { data: items = [] } = await supabaseAdmin
       .from("order_items")
-      .select("title, qty, price")
+      .select("title, qty, price, entity_type, start_date, end_date")
       .eq("order_id", data.id);
 
     const emailRes = await notifyClientOrderConfirmedEmail({
       orderId: order.id,
       clientName: order.client_name,
       clientEmail: order.client_email,
+      clientPhone: order.client_phone,
+      clientCompany: order.client_company,
       total: Number(order.total ?? 0),
+      paid: Number(order.paid ?? 0),
+      status: "confirmed",
       eventDate: order.event_date,
+      notes: order.notes,
       items: (items ?? []).map((i) => ({
         title: String(i.title),
         qty: Number(i.qty ?? 1),
         price: Number(i.price ?? 0),
+        entityType: (i as any).entity_type ?? null,
+        startDate: (i as any).start_date ?? null,
+        endDate: (i as any).end_date ?? null,
       })),
     }).catch((e) => ({ ok: false, error: e instanceof Error ? e.message : "send failed" }));
+
 
     const tg =
       `<b>✅ Заказ подтверждён</b>\n` +
