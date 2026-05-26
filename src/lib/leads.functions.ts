@@ -12,6 +12,7 @@ const LeadSchema = z.object({
   client_company: z.string().max(160).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  event_end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   source: z.string().max(80).optional().nullable(),
   utm_source: z.string().max(120).optional().nullable(),
   utm_medium: z.string().max(120).optional().nullable(),
