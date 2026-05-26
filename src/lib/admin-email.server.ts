@@ -143,6 +143,7 @@ export type ClientOrderConfirmedPayload = {
   total: number;
   paid?: number | null;
   status?: string | null;
+  source?: string | null;
   eventDate?: string | null;
   notes?: string | null;
   items: Array<{
@@ -154,6 +155,17 @@ export type ClientOrderConfirmedPayload = {
     endDate?: string | null;
   }>;
 };
+
+const ENTITY_LABEL_RU: Record<string, string> = {
+  zone: "Зона",
+  service: "Услуга",
+  equipment: "Оборудование",
+  tech_equipment: "Оборудование",
+  production: "Продакшн",
+  production_item: "Продакшн",
+  extras: "Доп. услуга",
+};
+
 
 const STATUS_LABEL_RU: Record<string, string> = {
   new: "Новая",
@@ -183,7 +195,7 @@ export async function notifyClientOrderConfirmedEmail(
 
   const itemsHtml = p.items.map(i => {
     const sub = [
-      i.entityType ? escapeHtml(i.entityType) : null,
+      i.entityType ? escapeHtml(ENTITY_LABEL_RU[i.entityType] ?? i.entityType) : null,
       `${i.qty} шт.`,
       (i.startDate || i.endDate)
         ? `${fmtDateRu(i.startDate)}${i.endDate && i.endDate !== i.startDate ? ` — ${fmtDateRu(i.endDate)}` : ""}`

@@ -653,6 +653,7 @@ export type Database = {
           created_at: string
           event_date: string | null
           id: string
+          internal_notes: string | null
           manager_id: string | null
           notes: string | null
           paid: number | null
@@ -675,6 +676,7 @@ export type Database = {
           created_at?: string
           event_date?: string | null
           id?: string
+          internal_notes?: string | null
           manager_id?: string | null
           notes?: string | null
           paid?: number | null
@@ -697,6 +699,7 @@ export type Database = {
           created_at?: string
           event_date?: string | null
           id?: string
+          internal_notes?: string | null
           manager_id?: string | null
           notes?: string | null
           paid?: number | null

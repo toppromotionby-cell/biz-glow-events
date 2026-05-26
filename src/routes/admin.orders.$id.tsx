@@ -14,6 +14,13 @@ import { openAuthedDocument } from "@/lib/authed-fetch";
 
 const STATUSES = ["new", "consultation", "estimate", "contract", "in_progress", "paid", "completed", "cancelled"];
 
+const ENTITY_LABEL: Record<string, string> = {
+  zone: "Зона", service: "Услуга", equipment: "Оборудование",
+  tech_equipment: "Оборудование", production: "Продакшн",
+  production_item: "Продакшн", extras: "Доп. услуга",
+};
+
+
 export const Route = createFileRoute("/admin/orders/$id")({
   component: OrderDetail,
 });
@@ -22,7 +29,7 @@ function OrderDetail() {
   const { id } = useParams({ from: "/admin/orders/$id" });
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [notes, setNotes] = useState("");
+  const [internalNotes, setInternalNotes] = useState("");
 
   const { data: order } = useQuery({
     queryKey: ["order", id],
@@ -43,7 +50,13 @@ function OrderDetail() {
     queryFn: async () => (await supabase.from("order_timeline").select("*").eq("order_id", id).order("created_at", { ascending: false })).data ?? [],
   });
 
-  useEffect(() => { if (order?.notes) setNotes(order.notes); }, [order?.notes]);
+  useEffect(() => {
+    if (order && typeof (order as any).internal_notes === "string") {
+      setInternalNotes((order as any).internal_notes ?? "");
+    } else if (order) {
+      setInternalNotes("");
+    }
+  }, [(order as any)?.internal_notes]);
 
   const updateStatus = useMutation({
     mutationFn: async (status: string) => {
@@ -55,11 +68,13 @@ function OrderDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const saveNotes = async () => {
-    const { error } = await supabase.from("orders").update({ notes }).eq("id", id);
+  const saveInternalNotes = async () => {
+    const { error } = await supabase.from("orders").update({ internal_notes: internalNotes } as any).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Сохранено");
+    qc.invalidateQueries({ queryKey: ["order", id] });
   };
+
 
   const removeOrder = useMutation({
     mutationFn: async () => {
@@ -147,7 +162,7 @@ function OrderDetail() {
           <div className="space-y-2">
             {items.map((it: any) => (
               <div key={it.id} className="flex items-center justify-between text-sm border-b border-border/30 pb-2">
-                <div><div className="font-medium">{it.title}</div><div className="text-xs text-muted-foreground">{it.entity_type} · {it.qty} шт.</div></div>
+                <div><div className="font-medium">{it.title}</div><div className="text-xs text-muted-foreground">{ENTITY_LABEL[it.entity_type] ?? it.entity_type} · {it.qty} шт.</div></div>
                 <div className="font-medium">{Number(it.price ?? 0).toLocaleString("ru-BY")} BYN</div>
               </div>
             ))}
@@ -157,11 +172,20 @@ function OrderDetail() {
 
       <OrderAttachments orderId={order.id} />
 
+      {order.notes && (
+        <div className="glass rounded-xl p-5">
+          <h3 className="font-semibold mb-3">Комментарий клиента</h3>
+          <p className="text-sm whitespace-pre-wrap text-muted-foreground">{order.notes}</p>
+        </div>
+      )}
+
       <div className="glass rounded-xl p-5">
         <h3 className="font-semibold mb-3">Внутренние заметки</h3>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="w-full bg-input border border-border rounded-md p-3 text-sm" />
-        <Button size="sm" onClick={saveNotes} className="mt-3">Сохранить</Button>
+        <p className="text-xs text-muted-foreground mb-2">Видны только команде — клиенту не отправляются.</p>
+        <textarea value={internalNotes} onChange={(e) => setInternalNotes(e.target.value)} rows={4} className="w-full bg-input border border-border rounded-md p-3 text-sm" />
+        <Button size="sm" onClick={saveInternalNotes} className="mt-3">Сохранить</Button>
       </div>
+
 
       <div className="glass rounded-xl p-5">
         <h3 className="font-semibold mb-3 flex items-center gap-2"><Clock className="h-4 w-4" />Таймлайн</h3>
