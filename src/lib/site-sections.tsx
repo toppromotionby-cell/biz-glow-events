@@ -73,7 +73,7 @@ export const SECTION_REGISTRY = [
 
   // Глобально
   { key: "global.cookies", label: "Глобально: Cookie-баннер", group: "Глобально" },
-  { key: "global.exit_intent", label: "Глобально: Поп-ап «Подарок/скидка 5%»", group: "Глобально" },
+  
   { key: "global.floating_contacts", label: "Глобально: Плавающий онлайн-помощник", group: "Глобально" },
 
   // Карточки каталога
