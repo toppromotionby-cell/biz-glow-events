@@ -220,7 +220,7 @@ export const submitOrder = createServerFn({ method: "POST" })
       price: i.price,
       qty: i.qty,
       start_date: i.start_date ?? data.event_date ?? null,
-      end_date: i.end_date ?? data.event_date ?? null,
+      end_date: i.end_date ?? data.event_end_date ?? data.event_date ?? null,
       meta: {
         ...(isUuid(i.entity_id) ? {} : { slug: i.entity_id }),
         ...(i.discrepancy ? { client_price: i.client_price, server_price: i.price } : {}),
