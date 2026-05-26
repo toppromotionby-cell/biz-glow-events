@@ -73,12 +73,15 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
+import { Route as AdminCampaignsNewRouteImport } from './routes/admin.campaigns.new'
+import { Route as AdminCampaignsIdRouteImport } from './routes/admin.campaigns.$id'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
+import { Route as AdminCampaignsIdReportRouteImport } from './routes/admin.campaigns.$id.report'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -401,6 +404,16 @@ const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const AdminCampaignsNewRoute = AdminCampaignsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminCampaignsRoute,
+} as any)
+const AdminCampaignsIdRoute = AdminCampaignsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminCampaignsRoute,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -433,6 +446,11 @@ const AdminOrdersIdContractRoute = AdminOrdersIdContractRouteImport.update({
   id: '/contract',
   path: '/contract',
   getParentRoute: () => AdminOrdersIdRoute,
+} as any)
+const AdminCampaignsIdReportRoute = AdminCampaignsIdReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => AdminCampaignsIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -476,7 +494,7 @@ export interface FileRoutesByFullPath {
   '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
-  '/admin/campaigns': typeof AdminCampaignsRoute
+  '/admin/campaigns': typeof AdminCampaignsRouteWithChildren
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
@@ -495,11 +513,14 @@ export interface FileRoutesByFullPath {
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
+  '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -547,7 +568,7 @@ export interface FileRoutesByTo {
   '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
-  '/admin/campaigns': typeof AdminCampaignsRoute
+  '/admin/campaigns': typeof AdminCampaignsRouteWithChildren
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
@@ -566,11 +587,14 @@ export interface FileRoutesByTo {
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
+  '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -620,7 +644,7 @@ export interface FileRoutesById {
   '/admin/availability': typeof AdminAvailabilityRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
-  '/admin/campaigns': typeof AdminCampaignsRoute
+  '/admin/campaigns': typeof AdminCampaignsRouteWithChildren
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
@@ -639,11 +663,14 @@ export interface FileRoutesById {
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
+  '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -713,11 +740,14 @@ export interface FileRouteTypes {
     | '/services/$slug'
     | '/zones/$slug'
     | '/admin/'
+    | '/admin/campaigns/$id'
+    | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/campaigns/$id/report'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -784,11 +814,14 @@ export interface FileRouteTypes {
     | '/services/$slug'
     | '/zones/$slug'
     | '/admin'
+    | '/admin/campaigns/$id'
+    | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/campaigns/$id/report'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -856,11 +889,14 @@ export interface FileRouteTypes {
     | '/services/$slug'
     | '/zones/$slug'
     | '/admin/'
+    | '/admin/campaigns/$id'
+    | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/campaigns/$id/report'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -1367,6 +1403,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/admin/campaigns/new': {
+      id: '/admin/campaigns/new'
+      path: '/new'
+      fullPath: '/admin/campaigns/new'
+      preLoaderRoute: typeof AdminCampaignsNewRouteImport
+      parentRoute: typeof AdminCampaignsRoute
+    }
+    '/admin/campaigns/$id': {
+      id: '/admin/campaigns/$id'
+      path: '/$id'
+      fullPath: '/admin/campaigns/$id'
+      preLoaderRoute: typeof AdminCampaignsIdRouteImport
+      parentRoute: typeof AdminCampaignsRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1409,8 +1459,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdContractRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/campaigns/$id/report': {
+      id: '/admin/campaigns/$id/report'
+      path: '/report'
+      fullPath: '/admin/campaigns/$id/report'
+      preLoaderRoute: typeof AdminCampaignsIdReportRouteImport
+      parentRoute: typeof AdminCampaignsIdRoute
+    }
   }
 }
+
+interface AdminCampaignsIdRouteChildren {
+  AdminCampaignsIdReportRoute: typeof AdminCampaignsIdReportRoute
+}
+
+const AdminCampaignsIdRouteChildren: AdminCampaignsIdRouteChildren = {
+  AdminCampaignsIdReportRoute: AdminCampaignsIdReportRoute,
+}
+
+const AdminCampaignsIdRouteWithChildren =
+  AdminCampaignsIdRoute._addFileChildren(AdminCampaignsIdRouteChildren)
+
+interface AdminCampaignsRouteChildren {
+  AdminCampaignsIdRoute: typeof AdminCampaignsIdRouteWithChildren
+  AdminCampaignsNewRoute: typeof AdminCampaignsNewRoute
+}
+
+const AdminCampaignsRouteChildren: AdminCampaignsRouteChildren = {
+  AdminCampaignsIdRoute: AdminCampaignsIdRouteWithChildren,
+  AdminCampaignsNewRoute: AdminCampaignsNewRoute,
+}
+
+const AdminCampaignsRouteWithChildren = AdminCampaignsRoute._addFileChildren(
+  AdminCampaignsRouteChildren,
+)
 
 interface AdminCatalogRouteChildren {
   AdminCatalogTypeRoute: typeof AdminCatalogTypeRoute
@@ -1457,7 +1539,7 @@ interface AdminRouteChildren {
   AdminAvailabilityRoute: typeof AdminAvailabilityRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
-  AdminCampaignsRoute: typeof AdminCampaignsRoute
+  AdminCampaignsRoute: typeof AdminCampaignsRouteWithChildren
   AdminCasesRoute: typeof AdminCasesRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminMarketingRoute: typeof AdminMarketingRoute
@@ -1474,7 +1556,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAvailabilityRoute: AdminAvailabilityRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminCalendarRoute: AdminCalendarRoute,
-  AdminCampaignsRoute: AdminCampaignsRoute,
+  AdminCampaignsRoute: AdminCampaignsRouteWithChildren,
   AdminCasesRoute: AdminCasesRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminMarketingRoute: AdminMarketingRoute,
