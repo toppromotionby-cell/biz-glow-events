@@ -99,9 +99,8 @@ export const listCatalog = createServerFn({ method: "GET" })
       console.error("[listCatalog] DB error:", error);
       throw new Error("Не удалось загрузить каталог.");
     }
-    const authed = await isAuthed();
     const signed = await signMediaUrls((rows ?? []) as CatalogRow[]);
-    return stripPricing(signed, authed);
+    return signed;
   });
 
 export const getCatalogItem = createServerFn({ method: "GET" })
