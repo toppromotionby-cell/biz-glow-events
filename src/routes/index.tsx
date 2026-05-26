@@ -9,6 +9,7 @@ import type { CatalogType } from "@/lib/catalog.functions";
 import { SparkBurst } from "@/components/SparkBurst";
 import { DirectionCard } from "@/components/ui/DirectionCard";
 import { MediaCard } from "@/components/ui/MediaCard";
+import { StorageImg } from "@/components/StorageMedia";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
@@ -138,13 +139,11 @@ function HomePage() {
                 >
                   <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-gradient-primary/10">
                     {f.photo_urls?.[0] ? (
-                      <img
-                        src={f.photo_urls[0]} alt={f.title}
-                        width={640} height={400}
-                        loading={idx === 0 ? "eager" : "lazy"}
-                        fetchPriority={idx === 0 ? "high" : "auto"}
-                        decoding="async"
+                      <StorageImg
+                        path={f.photo_urls[0]}
+                        alt={f.title}
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        fallbackClassName="h-full w-full"
                       />
                     ) : null}
                   </div>
