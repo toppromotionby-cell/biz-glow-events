@@ -32,6 +32,38 @@ export const Route = createFileRoute("/cart")({
 
 const fmt = new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 });
 
+const FIELD_LABELS: Record<string, string> = {
+  client_name: "Имя",
+  client_phone: "Телефон",
+  client_email: "Email",
+  client_company: "Компания",
+  event_date: "Дата мероприятия",
+  notes: "Комментарий",
+  items: "Позиции в корзине",
+};
+
+function humanizeError(err: unknown): string {
+  if (!(err instanceof Error)) return "Ошибка отправки. Попробуйте ещё раз.";
+  const msg = err.message;
+  // Попытка распарсить ZodError, который пришёл в виде JSON-массива.
+  const trimmed = msg.trim();
+  if (trimmed.startsWith("[")) {
+    try {
+      const issues = JSON.parse(trimmed) as Array<{ path?: string[]; message?: string }>;
+      if (Array.isArray(issues) && issues.length > 0) {
+        const first = issues[0];
+        const field = first.path?.[0];
+        const label = field ? (FIELD_LABELS[field] ?? field) : null;
+        const baseMsg = first.message ?? "Проверьте корректность данных";
+        return label ? `${label}: ${baseMsg}` : baseMsg;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return msg || "Ошибка отправки";
+}
+
 function CartPage() {
   const { items, count, total } = useCart();
   const submit = useServerFn(submitOrder);
@@ -75,7 +107,8 @@ function CartPage() {
     e.preventDefault();
     if (items.length === 0) return;
     if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы оформить заказ.")) return;
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     saveDraft(fd);
     const contact = {
       client_name: String(fd.get("client_name") ?? "").trim(),
@@ -86,6 +119,19 @@ function CartPage() {
       event_end_date: String(fd.get("event_end_date") ?? "") || null,
       notes: String(fd.get("notes") ?? "").trim() || null,
     };
+    // Дружелюбная клиентская валидация — чтобы пользователь видел понятную ошибку, а не JSON от zod.
+    const missing: { field: string; label: string }[] = [];
+    if (contact.client_name.length < 2) missing.push({ field: "client_name", label: "Укажите ваше имя (минимум 2 символа)" });
+    if (contact.client_phone.length < 5) missing.push({ field: "client_phone", label: "Укажите корректный телефон" });
+    if (!/.+@.+\..+/.test(contact.client_email)) missing.push({ field: "client_email", label: "Укажите корректный email" });
+    if (clientType === "company" && !contact.client_company) missing.push({ field: "client_company", label: "Укажите название компании" });
+    if (missing.length > 0) {
+      toast.error(missing[0].label);
+      const el = form.querySelector<HTMLInputElement>(`[name="${missing[0].field}"]`);
+      el?.focus();
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setContactDraft(contact);
     if (clientType === "company") {
       setReqOpen(true);
@@ -156,7 +202,7 @@ function CartPage() {
       toast.success("Заказ оформлен");
       navigate({ to: "/order/success/$id", params: { id: res.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Ошибка отправки");
+      toast.error(humanizeError(err));
     } finally {
       setLoading(false);
     }
