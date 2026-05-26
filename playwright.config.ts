@@ -29,11 +29,38 @@ export default defineConfig({
     toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: "disabled" },
   },
   projects: [
-    { name: "mobile-375", use: { ...devices["iPhone SE"], viewport: { width: 375, height: 812 } } },
-    { name: "mobile-414", use: { ...devices["iPhone 11"], viewport: { width: 414, height: 896 } } },
-    { name: "tablet-640", use: { viewport: { width: 640, height: 900 }, deviceScaleFactor: 2 } },
-    { name: "tablet-768", use: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 2 } },
-    { name: "desktop-1024", use: { viewport: { width: 1024, height: 900 }, deviceScaleFactor: 2 } },
+    {
+      name: "mobile-375",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 375, height: 812 },
+        deviceScaleFactor: 2,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
+      name: "mobile-414",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 414, height: 896 },
+        deviceScaleFactor: 2,
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
+      name: "tablet-640",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 640, height: 900 } },
+    },
+    {
+      name: "tablet-768",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 768, height: 1024 } },
+    },
+    {
+      name: "desktop-1024",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1024, height: 900 } },
+    },
   ],
   webServer: process.env.PW_BASE_URL
     ? undefined
