@@ -47,7 +47,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
       { to: "/admin/promo", label: "Промокоды", icon: Tag },
-      { to: "/admin/newsletter", label: "Рассылка", icon: Mail },
+      
     ],
   },
   {
