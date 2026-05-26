@@ -18,7 +18,15 @@ import { addToCart, clearCart, type CartEntityType } from "@/lib/cart";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
-  head: () => ({ meta: [{ title: "Личный кабинет — event-hub.by" }, { name: "robots", content: "noindex,follow" }] }),
+  head: () => ({
+    meta: [
+      { title: "Личный кабинет — event-hub.by" },
+      { name: "description", content: "Личный кабинет event-hub.by: ваши заявки, заказы оборудования, статусы и контактные данные в одном месте." },
+      { property: "og:title", content: "Личный кабинет — event-hub.by" },
+      { property: "og:description", content: "Управляйте заявками и заказами оборудования в личном кабинете event-hub.by." },
+      { name: "robots", content: "noindex,follow" },
+    ],
+  }),
 });
 
 const STATUS_LABEL: Record<string, string> = {
