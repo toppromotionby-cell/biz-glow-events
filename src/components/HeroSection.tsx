@@ -1,9 +1,8 @@
+import heroBg from "/hero-bg.jpg";
 import { useState, useEffect, useRef } from "react";
-import { Link } from "@tanstack/react-router";
 import { ArrowRight, Search, Package, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Suspense, lazy } from "react";
-import heroBg from "@/assets/hero-bg.jpg";
 
 const CatalogChoiceModal = lazy(() => import("@/components/CatalogChoiceModal").then((m) => ({ default: m.CatalogChoiceModal })));
 
