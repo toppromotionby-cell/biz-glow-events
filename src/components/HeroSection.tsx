@@ -94,19 +94,19 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
           {/* H1 */}
           <h1
-            className={`font-display font-black leading-[0.95] tracking-tight text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 md:mb-8 ${childClass()}`}
+            className={`font-display font-black leading-[0.95] tracking-tight text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6 md:mb-8 drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)] ${childClass()}`}
             style={style(1)}
           >
             <span className="hero-accent-text block">
               Всё для вашего
             </span>
-            <span className="block text-foreground">события —</span>
-            <span className="block text-foreground">в одном месте</span>
+            <span className="block text-white">события —</span>
+            <span className="block text-white">в одном месте</span>
           </h1>
 
           {/* Subtitle */}
           <p
-            className={`text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mb-8 md:mb-10 leading-relaxed ${childClass()}`}
+            className={`text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mb-8 md:mb-10 leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] ${childClass()}`}
             style={style(2)}
           >
             Интерактивные зоны, техническое оснащение, услуги по организации,
