@@ -115,6 +115,15 @@ function AdminOrders() {
         order_id: id, event: "paid_changed",
         actor_id: u.user?.id ?? null, payload: { from: prevPaid, to: newPaid },
   });
+    },
+    onSuccess: () => {
+      toast.success("Оплата обновлена");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: Error) => toast.error(e?.message ?? "Не удалось обновить оплату"),
+  });
 
   const deleteFn = useServerFn(deleteOrderAdmin);
   const deleteOrder = useMutation({
@@ -125,15 +134,6 @@ function AdminOrders() {
       qc.invalidateQueries({ queryKey: ["admin-orders"] });
     },
     onError: (e: Error) => toast.error(e?.message ?? "Не удалось удалить заказ"),
-  });
-    },
-    onSuccess: () => {
-      toast.success("Оплата обновлена");
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
-      qc.invalidateQueries({ queryKey: ["order-modal"] });
-      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
-    },
-    onError: (e: Error) => toast.error(e?.message ?? "Не удалось обновить оплату"),
   });
 
 
