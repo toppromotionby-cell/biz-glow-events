@@ -78,7 +78,7 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
         <Field label="Телефон *" name="client_phone" required type="tel" />
         <Field label="Email *" name="client_email" required type="email" />
         <Field label="Компания" name="client_company" />
-        <DateField label="Дата мероприятия" name="event_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
+        <DateField label="Дата мероприятия" name="event_date" endName="event_end_date" minDate={new Date(new Date().setHours(0, 0, 0, 0))} />
       </div>
       <label className="block text-sm">
         <span className="text-muted-foreground">Сообщение</span>
