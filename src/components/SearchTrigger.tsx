@@ -127,6 +127,7 @@ function SearchDialog({ open, onOpenChange, mac }: { open: boolean; onOpenChange
   const [q, setQ] = useState("");
   const [qDebounced, setQDebounced] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
+  const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const navigate = useNavigate();
   const tRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
