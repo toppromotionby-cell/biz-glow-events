@@ -98,7 +98,7 @@ export const submitLead = createServerFn({ method: "POST" })
       `Телефон: ${tgEsc(payload.client_phone)}\n` +
       `Email: ${tgEsc(payload.client_email)}\n` +
       (payload.client_company ? `Компания: ${tgEsc(payload.client_company)}\n` : "") +
-      (payload.event_date ? `Дата: ${tgEsc(payload.event_date)}\n` : "") +
+      (payload.event_date ? `Дата: ${tgEsc(payload.event_date)}${payload.event_end_date && payload.event_end_date !== payload.event_date ? ` — ${tgEsc(payload.event_end_date)}` : ""}\n` : "") +
       (payload.notes ? `Сообщение: ${tgEsc(payload.notes)}\n` : "") +
       (payload.utm_source ? `UTM: ${tgEsc(payload.utm_source)}/${tgEsc(payload.utm_medium ?? "-")}/${tgEsc(payload.utm_campaign ?? "-")}` : "");
 
