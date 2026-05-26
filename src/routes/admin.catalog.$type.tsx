@@ -1,20 +1,21 @@
 // Универсальный CRUD каталогов: zones | tech_equipment | services | production_items.
 import { createFileRoute, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, X, ArrowRightLeft, Search } from "lucide-react";
+import { Plus, Pencil, X, ArrowRightLeft, Search, Copy, Eye, EyeOff, Trash2, AlertTriangle } from "lucide-react";
 import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -26,6 +27,19 @@ import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
 import { Info } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// Признак «черновика»: нет фото / нет цены / нет описания.
+function draftIssues(it: any): string[] {
+  const issues: string[] = [];
+  if (!it.photo_urls?.length) issues.push("нет фото");
+  if (!getTiers(it.pricing).length) issues.push("нет цены");
+  if (!it.short_description && !it.description) issues.push("нет описания");
+  return issues;
+}
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
 type Table = (typeof TABLES)[number];
@@ -51,6 +65,11 @@ function CatalogInner({ table }: { table: Table }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [preview, setPreview] = useState<any | null>(null);
   const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState(false);
+
+  // Сбрасываем выделение при смене таблицы.
+  useEffect(() => { setSelectedIds(new Set()); }, [table]);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["catalog", table],
@@ -79,6 +98,55 @@ function CatalogInner({ table }: { table: Table }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Дублирование карточки: создаём копию с уникальным slug.
+  const duplicate = useMutation({
+    mutationFn: async (src: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, created_at, updated_at, slug, title, ...rest } = src;
+      const newSlug = `${slug ?? "copy"}-${Date.now().toString(36).slice(-4)}`;
+      const { data, error } = await supabase.from(table).insert({
+        ...rest,
+        slug: newSlug,
+        title: `${title ?? "Без названия"} (копия)`,
+        published: false,
+      }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["catalog", table] }); setSelected(row); toast.success("Карточка скопирована"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Bulk-операции: публикация/снятие/удаление выбранных.
+  const bulkPublish = useMutation({
+    mutationFn: async (published: boolean) => {
+      if (selectedIds.size === 0) return;
+      const { error } = await supabase.from(table).update({ published }).in("id", [...selectedIds]);
+      if (error) throw error;
+    },
+    onSuccess: (_d, published) => {
+      qc.invalidateQueries({ queryKey: ["catalog", table] });
+      toast.success(`${selectedIds.size} ${published ? "опубликовано" : "снято с публикации"}`);
+      setSelectedIds(new Set());
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async () => {
+      if (selectedIds.size === 0) return;
+      const { error } = await supabase.from(table).delete().in("id", [...selectedIds]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["catalog", table] });
+      toast.success(`Удалено: ${selectedIds.size}`);
+      setSelectedIds(new Set());
+      setSelected(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // Подсветка строки = «то, что сейчас открыто пользователю» (preview либо editor).
   const activeId = preview?.id ?? selected?.id;
 
@@ -92,6 +160,19 @@ function CatalogInner({ table }: { table: Table }) {
       })
     : (items as any[]);
 
+  const allVisibleSelected = filtered.length > 0 && filtered.every((it: any) => selectedIds.has(it.id));
+  const toggleId = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    if (allVisibleSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((it: any) => it.id)));
+  };
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
@@ -99,6 +180,29 @@ function CatalogInner({ table }: { table: Table }) {
         subtitle={`${items.length} записей · клик по записи открывает подробный просмотр`}
         action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
       />
+
+      {selectedIds.size > 0 && (
+        <div className="glass rounded-xl p-3 flex flex-wrap items-center gap-2 sticky top-2 z-20 border border-primary/40">
+          <span className="text-sm font-medium mr-2">Выбрано: {selectedIds.size}</span>
+          <Button size="sm" variant="outline" onClick={() => bulkPublish.mutate(true)} disabled={bulkPublish.isPending}>
+            <Eye className="h-4 w-4 mr-1" />Опубликовать
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => bulkPublish.mutate(false)} disabled={bulkPublish.isPending}>
+            <EyeOff className="h-4 w-4 mr-1" />Снять с публикации
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            onClick={() => setBulkConfirm(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />Удалить
+          </Button>
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setSelectedIds(new Set())}>
+            Снять выделение
+          </Button>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
         <div className="space-y-3">
@@ -121,51 +225,86 @@ function CatalogInner({ table }: { table: Table }) {
               </button>
             )}
           </div>
-          {q && (
-            <div className="text-xs text-muted-foreground px-1">
-              Найдено: {filtered.length} из {items.length}
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={allVisibleSelected} onCheckedChange={toggleAll} aria-label="Выбрать все" />
+                <span>Выбрать все ({filtered.length})</span>
+              </label>
+              {q && <span>Найдено: {filtered.length} из {items.length}</span>}
             </div>
           )}
         <AdminListPanel
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           items={filtered as any[]}
           isLoading={isLoading}
-          emptyText={q ? "Ничего не найдено" : "Нет записей"}
+          emptyText={q ? "Ничего не найдено" : "Пока нет карточек"}
+          emptyAction={!q && (
+            <Button size="sm" onClick={() => create.mutate()} className="btn-primary-gradient">
+              <Plus className="h-4 w-4 mr-1" />Добавить первую
+            </Button>
+          )}
           onReorder={q ? undefined : async (ids) => {
             try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: ["catalog", table] }); }
             catch (e) { toast.error((e as Error).message); throw e; }
           }}
-          renderItem={(it, handle) => (
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => setPreview(it)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreview(it); } }}
-              className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-2 ${activeId === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
-            >
-              {handle}
-              {it.photo_urls?.[0] ? (
-                <StorageImg path={it.photo_urls[0]} className="h-10 w-10 rounded object-cover shrink-0" fallbackClassName="h-10 w-10 rounded shrink-0" />
-              ) : (
-                <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="font-medium truncate">{it.title}</div>
-                <div className="text-xs opacity-70 flex items-center gap-2">
-                  <span className="truncate">{it.slug}</span>
-                  <StatusPill tone={it.published ? "success" : "muted"}>{it.published ? "опубл." : "черн."}</StatusPill>
+          renderItem={(it, handle) => {
+            const issues = draftIssues(it);
+            const checked = selectedIds.has(it.id);
+            return (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setPreview(it)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreview(it); } }}
+                className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${activeId === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
+              >
+                {handle}
+                <span onClick={(e) => { e.stopPropagation(); toggleId(it.id); }} className="shrink-0">
+                  <Checkbox checked={checked} aria-label={`Выбрать ${it.title}`} />
+                </span>
+                {it.photo_urls?.[0] ? (
+                  <StorageImg path={it.photo_urls[0]} className="h-10 w-10 rounded object-cover shrink-0" fallbackClassName="h-10 w-10 rounded shrink-0" />
+                ) : (
+                  <div className="h-10 w-10 rounded bg-muted/40 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate flex items-center gap-1.5">
+                    <span className="truncate">{it.title}</span>
+                    {issues.length > 0 && (
+                      <span title={`Черновик: ${issues.join(", ")}`} className="shrink-0 text-amber-400">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    <span className="truncate">{it.slug}</span>
+                    <StatusPill tone={it.published ? "success" : "muted"}>{it.published ? "опубл." : "черн."}</StatusPill>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); duplicate.mutate(it); }}
+                    title="Дублировать"
+                    aria-label="Дублировать"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSelected(it); }}
+                    title="Редактировать"
+                    aria-label="Редактировать"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setSelected(it); }}
-                title="Редактировать"
-                className="opacity-0 group-hover:opacity-100 transition inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
+            );
+          }}
         />
         </div>
 
@@ -174,6 +313,7 @@ function CatalogInner({ table }: { table: Table }) {
             <AdminEmptyEditor
               title="Запись не выбрана"
               description="Кликните по карточке слева для подробного просмотра, либо добавьте новую — список поддерживает перетаскивание."
+              action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-1" />Создать карточку</Button>}
             />
           )}
         </div>
@@ -184,6 +324,26 @@ function CatalogInner({ table }: { table: Table }) {
         onClose={() => setPreview(null)}
         onEdit={(it) => { setSelected(it); setPreview(null); }}
       />
+
+      <AlertDialog open={bulkConfirm} onOpenChange={setBulkConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить {selectedIds.size} карточек?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие необратимо. Выбранные карточки будут удалены без возможности восстановления.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => bulkDelete.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -315,12 +475,39 @@ function PreviewDialog({ item, onClose, onEdit }: PreviewDialogProps) {
 }
 
 function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; onSaved: () => void; onDelete: () => void }) {
-  const [form, setForm] = useState({ ...item });
+  const draftKey = `catalog-draft:${table}:${item.id}`;
+  // Восстанавливаем черновик из localStorage (если есть и новее серверного updated_at).
+  const [form, setForm] = useState(() => {
+    if (typeof window === "undefined") return { ...item };
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const cached = JSON.parse(raw) as { savedAt: number; data: any };
+        if (cached?.data && cached.savedAt > new Date(item.updated_at ?? 0).getTime()) {
+          return { ...item, ...cached.data };
+        }
+      }
+    } catch { /* ignore */ }
+    return { ...item };
+  });
   const [saving, setSaving] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
   const [moveTarget, setMoveTarget] = useState<Table | "">("");
   const [moving, setMoving] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
+
+  // Автосохранение черновика (debounce 500ms).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify({ savedAt: Date.now(), data: form }));
+        setHasDraft(true);
+      } catch { /* quota */ }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [form, draftKey]);
 
   const save = async () => {
     setSaving(true);
@@ -333,6 +520,8 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
     }).eq("id", item.id);
     setSaving(false);
     if (error) return toast.error(error.message);
+    try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+    setHasDraft(false);
     toast.success("Сохранено");
     onSaved();
   };
@@ -380,6 +569,11 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
             <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
             {form.published ? "Опубликовано" : "Черновик"}
           </label>
+          {hasDraft && (
+            <span className="text-xs text-amber-300/90 inline-flex items-center gap-1" title="Есть несохранённые изменения, восстановятся после перезагрузки">
+              <AlertTriangle className="h-3 w-3" />черновик не сохранён</span>
+          )}
+          <span className="hidden">{/* placeholder */}</span>
           <div className="flex items-center gap-1">
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
             <Select value={moveTarget} onValueChange={(v) => { setMoveTarget(v as Table); moveTo(v as Table); }} disabled={moving}>

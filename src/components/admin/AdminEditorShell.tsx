@@ -1,8 +1,12 @@
 // Унифицированная обёртка редактора в админке: glass-карточка,
 // шапка с переключателями (publish/featured/active) и кнопками удалить/сохранить.
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, Trash2, Inbox } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function AdminEditorShell({
   title, switches, onDelete, onSave, saving, children, deleteLabel = "Удалить", confirmDelete = true,
@@ -16,6 +20,7 @@ export function AdminEditorShell({
   confirmDelete?: boolean;
   children: ReactNode;
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <div className="glass rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -25,9 +30,12 @@ export function AdminEditorShell({
         </div>
         <div className="flex gap-2">
           {onDelete && (
-            <Button variant="outline" size="sm" onClick={() => {
-              if (!confirmDelete || confirm("Удалить?")) onDelete();
-            }}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              onClick={() => { if (confirmDelete) setConfirmOpen(true); else onDelete(); }}
+            >
               <Trash2 className="h-4 w-4 mr-1" />{deleteLabel}
             </Button>
           )}
@@ -39,9 +47,32 @@ export function AdminEditorShell({
         </div>
       </div>
       {children}
+
+      {onDelete && (
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Удалить запись?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Это действие необратимо. Запись будет удалена без возможности восстановления.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => onDelete()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Удалить
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }
+
 
 /**
  * Универсальное пустое состояние для admin-редакторов и таблиц.

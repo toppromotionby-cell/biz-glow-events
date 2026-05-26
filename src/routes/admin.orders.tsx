@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip } from "lucide-react";
-import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { Download, Search, ExternalLink, Clock, Paperclip, Plus } from "lucide-react";
+// OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
+const OrderAttachments = lazy(() =>
+  import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
+);
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
@@ -51,7 +55,12 @@ function AdminOrders() {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders", dq, status],
     queryFn: async () => {
-      let query = supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(500);
+      // Узкий select — для списка не нужны notes/utm_*, чтобы не тянуть лишний JSON.
+      let query = supabase
+        .from("orders")
+        .select("id,created_at,updated_at,status,client_name,client_company,client_phone,client_email,event_date,source,utm_source,utm_campaign,total,paid")
+        .order("created_at", { ascending: false })
+        .limit(500);
       if (status) query = query.eq("status", status as any);
       if (dq) query = query.or(`client_name.ilike.%${dq}%,client_phone.ilike.%${dq}%,client_email.ilike.%${dq}%,client_company.ilike.%${dq}%`);
       const { data, error } = await query;
@@ -191,8 +200,27 @@ function AdminOrders() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Загрузка...</td></tr>}
-              {!isLoading && sorted.length === 0 && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Нет заказов</td></tr>}
+              {isLoading && Array.from({ length: 6 }).map((_, i) => (
+                <tr key={`sk-${i}`} className="border-t border-border/40">
+                  {Array.from({ length: 11 }).map((__, j) => (
+                    <td key={j} className="p-3"><Skeleton className="h-4 w-full" /></td>
+                  ))}
+                </tr>
+              ))}
+              {!isLoading && sorted.length === 0 && (
+                <tr><td colSpan={11} className="p-10 text-center">
+                  <div className="text-muted-foreground mb-3">
+                    {q || status ? "По текущему фильтру ничего не найдено" : "Заказов пока нет"}
+                  </div>
+                  {(q || status) ? (
+                    <Button variant="outline" size="sm" onClick={() => { setQ(""); setStatus(""); }}>Сбросить фильтры</Button>
+                  ) : (
+                    <Button size="sm" className="btn-primary-gradient" onClick={() => toast.info("Заказы создаются автоматически через форму на сайте")}>
+                      <Plus className="h-4 w-4 mr-1" />Откуда берутся заказы?
+                    </Button>
+                  )}
+                </td></tr>
+              )}
 
               {sorted.map((o: any) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
@@ -254,7 +282,13 @@ function AdminOrders() {
                     </td>
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right">
-                      <Link to="/admin/orders/$id" params={{ id: o.id }} className="inline-flex items-center text-muted-foreground hover:text-primary" onClick={(e) => e.stopPropagation()}>
+                      <Link
+                        to="/admin/orders/$id"
+                        params={{ id: o.id }}
+                        aria-label={`Открыть полную страницу заказа ${o.client_name}`}
+                        className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <ExternalLink className="h-4 w-4" />
                       </Link>
                     </td>
@@ -262,6 +296,19 @@ function AdminOrders() {
                 );
               })}
             </tbody>
+            {!isLoading && sorted.length > 0 && (
+              <tfoot className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border/60">
+                <tr className="text-sm font-medium">
+                  <td colSpan={7} className="p-3 text-right text-muted-foreground">
+                    Итого по фильтру ({sorted.length}):
+                  </td>
+                  <td className="p-3 text-right whitespace-nowrap">{fmtMoney(totals.total)}</td>
+                  <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(totals.paid)}</td>
+                  <td className={`p-3 text-right whitespace-nowrap ${totals.debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(totals.debt)}</td>
+                  <td className="p-3" />
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>
@@ -389,7 +436,9 @@ function OrderDialog({ id, onClose }: { id: string | null; onClose: () => void }
             )}
 
             <InfoCard title={<span className="flex items-center gap-2"><Paperclip className="h-4 w-4" />Вложения ({attachCount})</span>}>
-              <OrderAttachments orderId={order.id} />
+              <Suspense fallback={<div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div>}>
+                <OrderAttachments orderId={order.id} />
+              </Suspense>
             </InfoCard>
 
             <InfoCard title={<span className="flex items-center gap-2"><Clock className="h-4 w-4" />Таймлайн ({timeline.length})</span>}>
