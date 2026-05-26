@@ -199,6 +199,8 @@ function Body({ item, basePath, type, onClose }: { item: CatalogRow; basePath: s
               </ul>
             </div>
           )}
+
+          <ExtrasBlock extras={(item as unknown as { extras?: unknown }).extras} variant="modal" />
         </aside>
       </div>
 
