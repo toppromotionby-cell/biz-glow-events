@@ -82,7 +82,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
 
       {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
-        <div className="max-w-3xl">
+        <div className="max-w-3xl text-center md:text-left">
           {/* Badge */}
           <div
             className={`inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm px-4 py-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-accent mb-6 md:mb-8 ${childClass()}`}
