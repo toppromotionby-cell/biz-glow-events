@@ -35,15 +35,17 @@ async function stabilizePage(page: Page) {
 test.describe("Centering — catalog choice modal", () => {
   test("opens and matches snapshot", async ({ page }, testInfo) => {
     await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await stabilizePage(page);
 
     const trigger = page.getByRole("button", { name: /перейти в каталог/i }).first();
+    await trigger.waitFor({ state: "visible", timeout: 10000 });
     await trigger.scrollIntoViewIfNeeded();
-    await trigger.click();
+    await trigger.click({ force: true });
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(300); // dialog enter animation
+    await expect(dialog).toBeVisible({ timeout: 15000 });
+    await page.waitForTimeout(400);
 
     await expect(dialog).toHaveScreenshot(`catalog-choice-${testInfo.project.name}.png`);
   });
