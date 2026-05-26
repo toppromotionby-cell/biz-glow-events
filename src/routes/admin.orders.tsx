@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
 // OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
 const OrderAttachments = lazy(() =>
   import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
@@ -17,7 +17,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteOrderAdmin, confirmOrderAdmin } from "@/lib/orders.functions";
+import { deleteOrderAdmin, confirmOrderAdmin, resendOrderConfirmationEmailAdmin } from "@/lib/orders.functions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -137,14 +137,43 @@ function AdminOrders() {
   });
 
   const confirmFn = useServerFn(confirmOrderAdmin);
+  const resendFn = useServerFn(resendOrderConfirmationEmailAdmin);
+
+  const resendEmail = useMutation({
+    mutationFn: async (id: string) => resendFn({ data: { id } }),
+    onSuccess: (res, id) => {
+      if (res?.emailSent) {
+        toast.success("Письмо клиенту отправлено повторно");
+      } else {
+        toast.error(`Не удалось отправить письмо: ${res?.emailError ?? "неизвестная ошибка"}`, {
+          duration: 8000,
+          action: { label: "Повторить", onClick: () => resendEmail.mutate(id) },
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: Error, id) =>
+      toast.error(e?.message ?? "Не удалось отправить письмо", {
+        duration: 8000,
+        action: { label: "Повторить", onClick: () => resendEmail.mutate(id) },
+      }),
+  });
+
   const confirmOrder = useMutation({
     mutationFn: async (id: string) => confirmFn({ data: { id } }),
-    onSuccess: (res) => {
-      toast.success(
-        res?.emailSent
-          ? "Заказ подтверждён — клиенту отправлено письмо"
-          : "Заказ подтверждён (письмо не отправлено)",
-      );
+    onSuccess: (res, id) => {
+      if (res?.emailSent) {
+        toast.success("Заказ подтверждён — клиенту отправлено письмо");
+      } else {
+        toast.warning(
+          `Заказ подтверждён, но письмо не доставлено: ${res?.emailError ?? "неизвестная ошибка"}`,
+          {
+            duration: 10000,
+            action: { label: "Отправить повторно", onClick: () => resendEmail.mutate(id) },
+          },
+        );
+      }
       qc.invalidateQueries({ queryKey: ["admin-orders"] });
       qc.invalidateQueries({ queryKey: ["order-modal"] });
       qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
@@ -263,8 +292,8 @@ function AdminOrders() {
                   {debt > 0 ? `Долг ${fmtMoney(debt)}` : "Оплачен"}
                 </span>
               </div>
-              {canConfirm && (
-                <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-1">
+                {canConfirm ? (
                   <Button
                     type="button"
                     size="sm"
@@ -275,6 +304,20 @@ function AdminOrders() {
                   >
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Подтвердить
                   </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 h-8 text-xs border-primary/40 text-primary hover:bg-primary/10"
+                    disabled={resendEmail.isPending || !o.client_email}
+                    title={o.client_email ? "Отправить письмо клиенту повторно" : "У клиента не указан email"}
+                    onClick={(e) => { e.stopPropagation(); resendEmail.mutate(o.id); }}
+                  >
+                    <Mail className="h-3.5 w-3.5 mr-1" />
+                    {resendEmail.isPending && resendEmail.variables === o.id ? "Отправка…" : "Письмо ещё раз"}
+                  </Button>
+                )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -308,7 +351,6 @@ function AdminOrders() {
                     </AlertDialogContent>
                   </AlertDialog>
                 </div>
-              )}
             </div>
           );
         })}
@@ -426,7 +468,7 @@ function AdminOrders() {
                     <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
                     <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex items-center gap-2">
-                        {canConfirm && (
+                        {canConfirm ? (
                           <button
                             type="button"
                             title="Подтвердить заказ"
@@ -435,6 +477,16 @@ function AdminOrders() {
                             className="inline-flex items-center text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
                           >
                             <CheckCircle2 className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            title={o.client_email ? "Отправить письмо клиенту повторно" : "У клиента не указан email"}
+                            disabled={resendEmail.isPending || !o.client_email}
+                            onClick={() => resendEmail.mutate(o.id)}
+                            className="inline-flex items-center text-primary hover:text-primary/80 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                          >
+                            <Mail className="h-4 w-4" />
                           </button>
                         )}
                         <Link
