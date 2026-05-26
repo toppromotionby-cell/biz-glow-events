@@ -101,16 +101,16 @@ export function SiteHeader() {
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
+            <Toggleable sectionKey="header.wishlist" as="span">
+              <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
+                <Heart className="h-4 w-4" aria-hidden="true" />
+                {wishCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
+                )}
+              </Link>
+            </Toggleable>
             {isAuthenticated && (
               <>
-                <Toggleable sectionKey="header.wishlist" as="span">
-                  <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                    <Heart className="h-4 w-4" aria-hidden="true" />
-                    {wishCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
-                    )}
-                  </Link>
-                </Toggleable>
                 <Toggleable sectionKey="header.compare" as="span">
                   <Link to="/compare" aria-label={cmpCount > 0 ? `Сравнение, ${cmpCount} позиций` : "Сравнение"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
                     <Scale className="h-4 w-4" aria-hidden="true" />
