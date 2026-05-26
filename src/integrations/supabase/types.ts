@@ -1372,7 +1372,9 @@ export type Database = {
         | "estimate"
         | "contract"
         | "in_progress"
+        | "quoted"
         | "completed"
+        | "confirmed"
         | "paid"
         | "cancelled"
     }
@@ -1510,7 +1512,9 @@ export const Constants = {
         "estimate",
         "contract",
         "in_progress",
+        "quoted",
         "completed",
+        "confirmed",
         "paid",
         "cancelled",
       ],
