@@ -182,10 +182,12 @@ function AdminOrders() {
                 <th scope="col" aria-sort={sortBy === "event_date" ? "descending" : "none"} className="text-left p-3">Мероприятие</th>
                 <th scope="col" className="text-left p-3">Источник</th>
                 <th scope="col" className="text-left p-3">Статус</th>
+                <th scope="col" className="text-left p-3" title="Время в текущем статусе (по updated_at)">В статусе</th>
                 <th scope="col" aria-sort={sortBy === "total" ? "descending" : "none"} className="text-right p-3">Сумма</th>
                 <th scope="col" className="text-right p-3">Оплачено</th>
                 <th scope="col" className="text-right p-3">Долг</th>
                 <th scope="col" className="p-3"><span className="sr-only">Действия</span></th>
+
               </tr>
             </thead>
             <tbody>
