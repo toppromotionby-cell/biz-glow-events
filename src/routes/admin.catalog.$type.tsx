@@ -163,6 +163,7 @@ function CatalogInner({ table }: { table: Table }) {
             </div>
           )}
         />
+        </div>
 
         <div>
           {selected ? <Editor key={selected.id} table={table} item={selected} onDelete={() => remove.mutate(selected.id)} onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })} /> : (
