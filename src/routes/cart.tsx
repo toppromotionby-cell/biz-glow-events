@@ -48,6 +48,7 @@ function CartPage() {
     client_email: string;
     client_company: string | null;
     event_date: string | null;
+    event_end_date: string | null;
     notes: string | null;
   }>(null);
   const discount = promo?.discount_amount ?? 0;
