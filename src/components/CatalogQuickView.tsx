@@ -109,20 +109,29 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
 
   const tiers = getTiers(item.pricing);
   const hasTiers = tiers.length > 0;
+  const hourPricing = parseHourTiers(tiers);
+  const isHourMode = hourPricing !== null;
+  const [hours, setHours] = useState<number>(hourPricing?.popularHours ?? hourPricing?.minHours ?? 1);
   const [selectedTier, setSelectedTier] = useState<number | null>(tiers.length === 1 ? 0 : null);
   const activeTier = selectedTier !== null ? tiers[selectedTier] : null;
   const tierPrice = activeTier && Number(activeTier.price) > 0 ? Number(activeTier.price) : null;
   const unitPrice = tierPrice ?? from ?? 0;
-  const qtyKind = detectQuantityKind(activeTier?.unit);
+  const qtyKind = !isHourMode ? detectQuantityKind(activeTier?.unit) : null;
   const [qty, setQty] = useState(1);
   useEffect(() => { setQty(1); }, [selectedTier]);
   const effectiveQty = qtyKind ? qty : 1;
-  const total = unitPrice * effectiveQty;
-  const qtySuffix = qtyKind ? ` — ${effectiveQty} ${pluralizeUnit(qtyKind, effectiveQty)}` : "";
-  const effectiveTitle = (activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title) + qtySuffix;
-  const effectiveId = activeTier ? `${item.id}::${selectedTier}${qtyKind ? `::${qty}` : ""}` : item.id;
-  const needsSelection = hasTiers && selectedTier === null;
-  const isByRequest = !needsSelection && unitPrice <= 0;
+  const hourTotal = isHourMode ? priceForHours(hourPricing!, hours) : 0;
+  const total = isHourMode ? hourTotal : unitPrice * effectiveQty;
+  const qtySuffix = isHourMode
+    ? ` — ${hours} ${pluralizeUnit("hour", hours)}`
+    : qtyKind ? ` — ${effectiveQty} ${pluralizeUnit(qtyKind, effectiveQty)}` : "";
+  const effectiveTitle = (!isHourMode && activeTier?.label ? `${item.title} — ${activeTier.label}` : item.title) + qtySuffix;
+  const effectiveId = isHourMode
+    ? `${item.id}::h${hours}`
+    : activeTier ? `${item.id}::${selectedTier}${qtyKind ? `::${qty}` : ""}` : item.id;
+  const needsSelection = !isHourMode && hasTiers && selectedTier === null;
+  const isByRequest = !needsSelection && !isHourMode && unitPrice <= 0;
+
 
   const hasPhotos = photos.length > 0;
   const hasDescription = Boolean(item.description || item.requirements);
