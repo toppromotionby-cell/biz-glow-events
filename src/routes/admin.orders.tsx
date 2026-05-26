@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2 } from "lucide-react";
+import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2, CheckCircle2 } from "lucide-react";
 // OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
 const OrderAttachments = lazy(() =>
   import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
@@ -17,7 +17,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteOrderAdmin } from "@/lib/orders.functions";
+import { deleteOrderAdmin, confirmOrderAdmin } from "@/lib/orders.functions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -135,6 +135,23 @@ function AdminOrders() {
     },
     onError: (e: Error) => toast.error(e?.message ?? "Не удалось удалить заказ"),
   });
+
+  const confirmFn = useServerFn(confirmOrderAdmin);
+  const confirmOrder = useMutation({
+    mutationFn: async (id: string) => confirmFn({ data: { id } }),
+    onSuccess: (res) => {
+      toast.success(
+        res?.emailSent
+          ? "Заказ подтверждён — клиенту отправлено письмо"
+          : "Заказ подтверждён (письмо не отправлено)",
+      );
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["order-modal"] });
+      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
+    },
+    onError: (e: Error) => toast.error(e?.message ?? "Не удалось подтвердить заказ"),
+  });
+
 
 
   const sorted = useMemo(() => {

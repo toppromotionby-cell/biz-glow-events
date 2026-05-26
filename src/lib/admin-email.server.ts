@@ -131,3 +131,64 @@ export async function notifyAdminLeadEmail(p: AdminLeadPayload): Promise<{ ok: b
 </div></body></html>`;
   return enqueue({ to, subject, html, label: "admin-lead", messageId: `lead-${p.leadId}` });
 }
+
+// ===== Client-facing: order confirmation email =====
+
+export type ClientOrderConfirmedPayload = {
+  orderId: string;
+  clientName: string;
+  clientEmail: string;
+  total: number;
+  eventDate?: string | null;
+  items: Array<{ title: string; qty: number; price: number }>;
+};
+
+export async function notifyClientOrderConfirmedEmail(
+  p: ClientOrderConfirmedPayload,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!p.clientEmail) return { ok: false, error: "no client email" };
+  const subject = `Ваш заказ подтверждён — ${SITE_NAME}`;
+  const itemsHtml = p.items.map(i =>
+    `<tr>
+       <td style="padding:8px 0;border-bottom:1px solid #2a2a35">${escapeHtml(i.title)}</td>
+       <td style="padding:8px 0;border-bottom:1px solid #2a2a35;text-align:right;white-space:nowrap">${i.qty} × ${i.price > 0 ? fmtBYN(i.price) : "по запросу"}</td>
+       <td style="padding:8px 0;border-bottom:1px solid #2a2a35;text-align:right;white-space:nowrap;font-weight:600">${i.price > 0 ? fmtBYN(i.qty * i.price) : "—"}</td>
+     </tr>`
+  ).join("");
+  const orderUrl = `https://${FROM_DOMAIN}/profile`;
+  const html = `
+<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px;margin:0">
+<div style="max-width:600px;margin:0 auto;background:#11111a;border-radius:12px;padding:28px">
+  <h1 style="color:#a78bfa;margin:0 0 8px;font-size:22px">Заказ подтверждён ✅</h1>
+  <p style="margin:0 0 20px;color:#b8b8c8">Здравствуйте, ${escapeHtml(p.clientName)}! Мы подтвердили ваш заказ и приступаем к подготовке.</p>
+
+  <div style="background:#1a1a26;border-radius:8px;padding:16px;margin:0 0 20px">
+    <div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px">Номер заказа</div>
+    <div style="font-size:14px;font-family:monospace;margin:4px 0 12px">${escapeHtml(p.orderId.slice(0, 8))}</div>
+    <div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px">Статус</div>
+    <div style="display:inline-block;margin:4px 0 0;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:13px;font-weight:500">Подтверждён</div>
+    ${p.eventDate ? `<div style="margin-top:12px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.5px">Дата мероприятия</div><div style="margin-top:4px">${escapeHtml(p.eventDate)}</div>` : ""}
+  </div>
+
+  <h2 style="font-size:16px;margin:0 0 12px;color:#e5e5e5">Состав заказа</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px">
+    <tbody>${itemsHtml}</tbody>
+  </table>
+  <p style="font-size:18px;font-weight:bold;text-align:right;margin:0 0 24px;color:#fff">Итого: ${fmtBYN(p.total)}</p>
+
+  <a href="${orderUrl}" style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:500">Открыть личный кабинет</a>
+
+  <p style="margin:24px 0 0;font-size:13px;color:#888;line-height:1.5">
+    Если у вас есть вопросы — ответьте на это письмо или напишите нам в чат на сайте.<br/>
+    С уважением, команда ${SITE_NAME}.
+  </p>
+</div></body></html>`;
+  return enqueue({
+    to: p.clientEmail,
+    subject,
+    html,
+    label: "client-order-confirmed",
+    messageId: `order-confirmed-${p.orderId}`,
+  });
+}
+

@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { notifyAdminOrderEmail } from "@/lib/admin-email.server";
+import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail } from "@/lib/admin-email.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const EntityType = z.enum(["zones", "tech_equipment", "services", "production_items"]);
@@ -499,3 +499,75 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
     await notifyTelegram(text);
     return { ok: true };
   });
+
+// ===== Admin: confirm order (status -> confirmed) + email the client =====
+
+export const confirmOrderAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => DeleteOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+
+    const { data: isAdminOrManager } = await supabase.rpc("has_role", {
+      _user_id: userId, _role: "admin",
+    });
+    let allowed = !!isAdminOrManager;
+    if (!allowed) {
+      const { data: isManager } = await supabase.rpc("has_role", {
+        _user_id: userId, _role: "manager",
+      });
+      allowed = !!isManager;
+    }
+    if (!allowed) throw new Error("Доступ запрещён");
+
+    const { data: order, error: fetchErr } = await supabaseAdmin
+      .from("orders")
+      .select("id, status, client_name, client_email, client_phone, client_company, event_date, total")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (fetchErr || !order) throw new Error("Заявка не найдена");
+    if (order.status === "cancelled") throw new Error("Отменённый заказ нельзя подтвердить");
+
+    const { error: updErr } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "confirmed" as never })
+      .eq("id", data.id);
+    if (updErr) throw new Error("Не удалось обновить статус");
+
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: data.id,
+      actor_id: userId,
+      event: "order_confirmed_by_admin",
+      payload: { previous_status: order.status },
+    });
+
+    const { data: items = [] } = await supabaseAdmin
+      .from("order_items")
+      .select("title, qty, price")
+      .eq("order_id", data.id);
+
+    const emailRes = await notifyClientOrderConfirmedEmail({
+      orderId: order.id,
+      clientName: order.client_name,
+      clientEmail: order.client_email,
+      total: Number(order.total ?? 0),
+      eventDate: order.event_date,
+      items: (items ?? []).map((i) => ({
+        title: String(i.title),
+        qty: Number(i.qty ?? 1),
+        price: Number(i.price ?? 0),
+      })),
+    }).catch((e) => ({ ok: false, error: e instanceof Error ? e.message : "send failed" }));
+
+    const tg =
+      `<b>✅ Заказ подтверждён</b>\n` +
+      `ID: <code>${tgEsc(order.id.slice(0, 8))}</code>\n` +
+      `Клиент: ${tgEsc(order.client_name)}\n` +
+      `Email: ${tgEsc(order.client_email)}\n` +
+      (order.event_date ? `Дата: ${tgEsc(order.event_date)}\n` : "") +
+      `Сумма: ${Number(order.total ?? 0)} BYN`;
+    await notifyTelegram(tg);
+
+    return { ok: true, emailSent: emailRes.ok, emailError: emailRes.ok ? null : emailRes.error ?? null };
+  });
+
