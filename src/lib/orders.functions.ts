@@ -581,10 +581,7 @@ async function sendOrderConfirmationEmailAndLog(
   return res;
 }
 
-async function assertAdminOrManager(
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> },
-  userId: string,
-) {
+async function assertAdminOrManager(supabase: any, userId: string) {
   const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (isAdmin) return;
   const { data: isManager } = await supabase.rpc("has_role", { _user_id: userId, _role: "manager" });
