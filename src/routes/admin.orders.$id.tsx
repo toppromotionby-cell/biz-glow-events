@@ -165,11 +165,20 @@ function OrderDetail() {
 
       <OrderAttachments orderId={order.id} />
 
+      {order.notes && (
+        <div className="glass rounded-xl p-5">
+          <h3 className="font-semibold mb-3">Комментарий клиента</h3>
+          <p className="text-sm whitespace-pre-wrap text-muted-foreground">{order.notes}</p>
+        </div>
+      )}
+
       <div className="glass rounded-xl p-5">
         <h3 className="font-semibold mb-3">Внутренние заметки</h3>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="w-full bg-input border border-border rounded-md p-3 text-sm" />
-        <Button size="sm" onClick={saveNotes} className="mt-3">Сохранить</Button>
+        <p className="text-xs text-muted-foreground mb-2">Видны только команде — клиенту не отправляются.</p>
+        <textarea value={internalNotes} onChange={(e) => setInternalNotes(e.target.value)} rows={4} className="w-full bg-input border border-border rounded-md p-3 text-sm" />
+        <Button size="sm" onClick={saveInternalNotes} className="mt-3">Сохранить</Button>
       </div>
+
 
       <div className="glass rounded-xl p-5">
         <h3 className="font-semibold mb-3 flex items-center gap-2"><Clock className="h-4 w-4" />Таймлайн</h3>
