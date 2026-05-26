@@ -9,6 +9,7 @@ import type { CatalogType } from "@/lib/catalog.functions";
 import { SparkBurst } from "@/components/SparkBurst";
 import { DirectionCard } from "@/components/ui/DirectionCard";
 import { MediaCard } from "@/components/ui/MediaCard";
+import { StorageImg } from "@/components/StorageMedia";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
