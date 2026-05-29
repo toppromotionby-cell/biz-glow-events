@@ -28,6 +28,7 @@ import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
+import { safeJsonLd } from "@/lib/seo-jsonld";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
 import { detectQuantityKind, maxQtyFor, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
