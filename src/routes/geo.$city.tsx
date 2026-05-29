@@ -2,6 +2,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
+import { safeJsonLd } from "@/lib/seo-jsonld";
 
 type City = {
   slug: string;
