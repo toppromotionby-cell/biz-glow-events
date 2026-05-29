@@ -44,7 +44,7 @@ export function itemListJsonLd(opts: {
       url: `${BASE_URL}${opts.basePath}/${i.slug}`,
     }));
 
-  return JSON.stringify({
+  return safeJsonLd({
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: opts.name,
