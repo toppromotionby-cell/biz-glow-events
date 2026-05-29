@@ -415,7 +415,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonLd({
               "@context": "https://schema.org",
               "@type": "FAQPage",
               mainEntity: faq
