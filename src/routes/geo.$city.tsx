@@ -2,6 +2,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
+import { safeJsonLd } from "@/lib/seo-jsonld";
 
 type City = {
   slug: string;
@@ -86,7 +87,7 @@ export const Route = createFileRoute("/geo/$city")({
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             name: `event-hub.by — ${c.name}`,
@@ -159,7 +160,7 @@ function GeoCityPage() {
         </div>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          dangerouslySetInnerHTML={{ __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "FAQPage",
             mainEntity: [

@@ -3,6 +3,7 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { Heart, Briefcase, Mic, Check, ArrowRight, Star } from "lucide-react";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
+import { safeJsonLd } from "@/lib/seo-jsonld";
 
 type LP = {
   slug: string;
@@ -177,7 +178,7 @@ function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "FAQPage",
             mainEntity: lp.faq.map((f) => ({

@@ -128,8 +128,10 @@ async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: stri
 }
 
 export const submitOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => OrderSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
     // 0. Серверная валидация даты — не позволяем прошлые даты.
     if (data.event_date) {
       const today = new Date();
@@ -196,6 +198,7 @@ export const submitOrder = createServerFn({ method: "POST" })
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .insert({
+        user_id: userId,
         client_name: data.client_name,
         client_phone: data.client_phone,
         client_email: data.client_email,

@@ -28,6 +28,7 @@ import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
+import { safeJsonLd } from "@/lib/seo-jsonld";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
 import { detectQuantityKind, maxQtyFor, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
@@ -415,7 +416,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonLd({
               "@context": "https://schema.org",
               "@type": "FAQPage",
               mainEntity: faq
@@ -517,7 +518,7 @@ export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseL
     url: itemUrl ?? "https://event-hub.by/contacts",
   } : undefined);
 
-  return JSON.stringify({
+  return safeJsonLd({
     "@context": "https://schema.org",
     "@graph": [
       {
