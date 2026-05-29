@@ -87,7 +87,7 @@ export const Route = createFileRoute("/geo/$city")({
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             name: `event-hub.by — ${c.name}`,
