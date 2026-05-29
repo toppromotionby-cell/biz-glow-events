@@ -1,5 +1,19 @@
 // Helpers for category-level JSON-LD (ItemList).
 
+/**
+ * Escapes a JSON string for safe embedding inside a <script type="application/ld+json"> block.
+ * Prevents stored XSS where attacker-controlled content contains "</script>" or HTML comment
+ * sequences that would break out of the script element.
+ */
+export function safeJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
 const BASE_URL = "https://event-hub.by";
 
 type ItemListInput = {
