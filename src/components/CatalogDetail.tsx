@@ -518,7 +518,7 @@ export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseL
     url: itemUrl ?? "https://event-hub.by/contacts",
   } : undefined);
 
-  return JSON.stringify({
+  return safeJsonLd({
     "@context": "https://schema.org",
     "@graph": [
       {
