@@ -92,8 +92,29 @@ type SectionsMap = Record<string, boolean>;
 
 const SectionsCtx = createContext<SectionsMap>({});
 
+const SECTIONS_CACHE_KEY = "site-sections-v1";
+
+function readCache(): SectionsMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(SECTIONS_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as SectionsMap) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeCache(map: SectionsMap) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(SECTIONS_CACHE_KEY, JSON.stringify(map)); } catch { /* quota */ }
+}
+
 export function SiteSectionsProvider({ children }: { children: ReactNode }) {
-  const [map, setMap] = useState<SectionsMap>({});
+  // Гидратация из localStorage синхронно — устраняет CLS:
+  // отключённые секции не успевают мелькнуть и исчезнуть.
+  const [map, setMap] = useState<SectionsMap>(() => readCache());
 
   useEffect(() => {
     let cancelled = false;
@@ -105,24 +126,43 @@ export function SiteSectionsProvider({ children }: { children: ReactNode }) {
         next[r.key] = r.enabled;
       });
       setMap(next);
+      writeCache(next);
     })();
 
-    const ch = supabase
-      .channel("site_sections_rt")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "site_sections" },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as { key: string; enabled?: boolean } | null;
-          if (!row?.key) return;
-          setMap((prev) => ({ ...prev, [row.key]: payload.eventType === "DELETE" ? true : !!row.enabled }));
-        },
-      )
-      .subscribe();
+    // Realtime-подписку откладываем на простой браузера: на проде она не нужна
+    // для первого экрана и съедает JS-время старта.
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    const start = () => {
+      if (cancelled) return;
+      ch = supabase
+        .channel("site_sections_rt")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "site_sections" },
+          (payload) => {
+            const row = (payload.new ?? payload.old) as { key: string; enabled?: boolean } | null;
+            if (!row?.key) return;
+            setMap((prev) => {
+              const upd = { ...prev, [row.key]: payload.eventType === "DELETE" ? true : !!row.enabled };
+              writeCache(upd);
+              return upd;
+            });
+          },
+        )
+        .subscribe();
+    };
+    const w = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+    const handle = w.requestIdleCallback
+      ? w.requestIdleCallback(start, { timeout: 3000 })
+      : window.setTimeout(start, 1500);
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(ch);
+      if (typeof handle === "number") {
+        const cw = window as unknown as { cancelIdleCallback?: (h: number) => void };
+        cw.cancelIdleCallback ? cw.cancelIdleCallback(handle) : clearTimeout(handle);
+      }
+      if (ch) supabase.removeChannel(ch);
     };
   }, []);
 
