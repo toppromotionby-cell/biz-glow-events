@@ -7,26 +7,12 @@ import React, { useEffect, useRef } from "react";
 import { ArrowRight, Search, Package, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/* ── stagger fade-in via IntersectionObserver + CSS classes ── */
+/* ── stagger fade-in: видим сразу, плавно «оседает» один раз после первого пейнта ── */
 function useStaggerReveal<T extends HTMLElement>(staggerMs = 120) {
   const ref = useRef<T>(null);
-  const [visible, setVisible] = React.useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+  // Стартуем как visible=true, чтобы SSR/первый пейнт сразу показывал H1 — это LCP-кандидат.
+  // Анимация лишь украшает, но не блокирует первый кадр.
+  const [visible] = React.useState(true);
 
   const childClass = () =>
     visible
