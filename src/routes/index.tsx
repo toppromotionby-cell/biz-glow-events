@@ -32,7 +32,8 @@ const BASE_TO_TYPE: Record<string, CatalogType> = {
 const homeQueryOptions = queryOptions({
   queryKey: ["home-data"],
   queryFn: () => getHomeData(),
-  staleTime: 60_000,
+  staleTime: 5 * 60_000,
+  gcTime: 30 * 60_000,
 });
 
 export const Route = createFileRoute("/")({
