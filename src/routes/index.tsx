@@ -81,10 +81,6 @@ function HomePage() {
   const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const [orderTopic, setOrderTopic] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
-  // На первом клиентском рендере держим скелеты, пока подписываются URL из Storage
-  // и стабилизируется UI — это устраняет visual shift при гидратации.
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setHydrated(true); }, []);
 
   return (
     <div>
