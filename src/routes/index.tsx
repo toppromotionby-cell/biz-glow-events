@@ -3,13 +3,13 @@ import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, Calendar
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { HeroSection } from "@/components/HeroSection";
 import { DirectionCard } from "@/components/ui/DirectionCard";
 import { MediaCard } from "@/components/ui/MediaCard";
-import { FeaturedCard, FeaturedCardSkeleton } from "@/components/FeaturedCard";
+import { FeaturedCard } from "@/components/FeaturedCard";
 
 import { Toggleable } from "@/lib/site-sections";
 import { getHomeData } from "@/lib/home.functions";
@@ -32,7 +32,8 @@ const BASE_TO_TYPE: Record<string, CatalogType> = {
 const homeQueryOptions = queryOptions({
   queryKey: ["home-data"],
   queryFn: () => getHomeData(),
-  staleTime: 60_000,
+  staleTime: 5 * 60_000,
+  gcTime: 30 * 60_000,
 });
 
 export const Route = createFileRoute("/")({
@@ -81,10 +82,6 @@ function HomePage() {
   const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const [orderTopic, setOrderTopic] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
-  // На первом клиентском рендере держим скелеты, пока подписываются URL из Storage
-  // и стабилизируется UI — это устраняет visual shift при гидратации.
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setHydrated(true); }, []);
 
   return (
     <div>
@@ -118,20 +115,16 @@ function HomePage() {
             <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
-            {!hydrated
-              ? Array.from({ length: featured.length }).map((_, i) => (
-                  <FeaturedCardSkeleton key={`sk-${i}`} />
-                ))
-              : featured.map((f) => {
-                  const type = BASE_TO_TYPE[f.basePath] ?? "tech_equipment";
-                  return (
-                    <FeaturedCard
-                      key={f.id}
-                      item={f}
-                      onOpen={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
-                    />
-                  );
-                })}
+            {featured.map((f) => {
+              const type = BASE_TO_TYPE[f.basePath] ?? "tech_equipment";
+              return (
+                <FeaturedCard
+                  key={f.id}
+                  item={f}
+                  onOpen={() => setQuick({ type, slug: f.slug, basePath: f.basePath })}
+                />
+              );
+            })}
           </div>
           {quick && (
             <Suspense fallback={null}>
