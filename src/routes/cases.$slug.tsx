@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { getCase } from "@/lib/cases.functions";
+import { buildCaseEventJsonLd, safeJsonLd } from "@/lib/seo-jsonld";
 import { MediaShield } from "@/components/MediaShield";
 import { MapPin, Users, Calendar, Building2 } from "lucide-react";
 
