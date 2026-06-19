@@ -333,8 +333,9 @@ function ProfilePage() {
                                 {d.timeline.map((t) => (
                                   <li key={t.id} className="flex gap-3">
                                     <span className="text-muted-foreground tabular-nums shrink-0">
-                                      {new Date(t.created_at).toLocaleString("ru-BY", { dateStyle: "short", timeStyle: "short" })}
+                                      {fmtDateTimeShort(t.created_at)}
                                     </span>
+
                                     <span>{TIMELINE_EVENT_LABEL[t.event] ?? t.event}</span>
                                   </li>
                                 ))}
