@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ItemSchema = z.object({
   title: z.string().min(1).max(240),
@@ -49,8 +50,11 @@ async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: stri
 }
 
 export const notifyAbandonedCart = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => Schema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // Принудительно используем user_id из проверенной сессии, игнорируем клиентский.
+    const authedUserId = context.userId;
     // Дедуп: если для этого cart_hash уже было уведомление за последние 24 часа — игнор.
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: prev } = await supabaseAdmin
@@ -79,7 +83,7 @@ export const notifyAbandonedCart = createServerFn({ method: "POST" })
     await supabaseAdmin.from("telegram_logs").insert({
       status: tg.ok ? "sent" : "skipped",
       error: tg.error ?? null,
-      payload: { kind: "abandoned_cart", cart_hash: data.cart_hash, text, user_id: data.user_id ?? null },
+      payload: { kind: "abandoned_cart", cart_hash: data.cart_hash, text, user_id: authedUserId },
     });
 
     return { ok: tg.ok };
