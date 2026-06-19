@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MediaShield } from "@/components/MediaShield";
 import { useResolvedUrl } from "@/components/StorageMedia";
+import { useClampedText } from "@/components/ui/ClampedTitle";
 import { priceFrom as priceFromUtil } from "@/lib/utils";
 import type { HomeFeatured } from "@/lib/home.functions";
 
