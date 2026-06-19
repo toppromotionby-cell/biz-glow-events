@@ -9,9 +9,29 @@
  * Все цвета в oklch. Семантические токены — никаких хардкод-цветов в компонентах.
  */
 
+/* Fallback-метрики веб-шрифтов: рендер до и после swap занимает одну и ту же
+ * высоту/ширину → font-swap не вызывает CLS (главная и каталог).
+ * Значения подобраны для Arial-fallback по методу next/font (capsize). */
+@font-face {
+  font-family: "Space Grotesk Fallback";
+  src: local("Arial");
+  size-adjust: 100.74%;
+  ascent-override: 102.51%;
+  descent-override: 30.45%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial");
+  size-adjust: 107.4%;
+  ascent-override: 90.2%;
+  descent-override: 22.48%;
+  line-gap-override: 0%;
+}
+
 @theme inline {
-  --font-display: "Space Grotesk", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Space Grotesk Fallback", system-ui, sans-serif;
+  --font-body: "Inter", "Inter Fallback", system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
