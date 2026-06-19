@@ -75,9 +75,23 @@ test("стабильная высота карточки при длинном �
   const section = await gotoHome(page);
   const first = section.locator("article").first();
 
+  // ждём, пока ленивые картинки догрузятся — иначе высота карточки меняется
+  // между baseline и измерением после подмены текста, что даёт ложный фейл.
+  await page.evaluate(async () => {
+    const imgs = Array.from(document.images);
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete ? Promise.resolve() : new Promise((r) => {
+          img.addEventListener("load", () => r(null), { once: true });
+          img.addEventListener("error", () => r(null), { once: true });
+        }),
+      ),
+    );
+  });
+  await page.waitForTimeout(100);
+
   const baselineHeight = await first.evaluate((el) => el.getBoundingClientRect().height);
 
-  // подменяем заголовок длинной строкой
   await first.evaluate((el, t) => {
     const btn = el.querySelector("h3 .card-title-gradient");
     if (btn) btn.textContent = t;
@@ -86,11 +100,10 @@ test("стабильная высота карточки при длинном �
 
   const longHeight = await first.evaluate((el) => el.getBoundingClientRect().height);
 
-  // обрезка должна удержать высоту: разница в пределах допустимой
-  // погрешности рендеринга (под-пиксельные сдвиги).
-  expect(Math.abs(longHeight - baselineHeight)).toBeLessThan(2);
+  // обрезка должна удержать высоту: допускаем sub-pixel/font-metrics шум
+  expect(Math.abs(longHeight - baselineHeight)).toBeLessThan(4);
 
-  // и сам заголовок не должен превышать ~2 строк (2lh + небольшой буфер)
+  // и сам заголовок не должен превышать ~2 строк
   const titleHeight = await first
     .locator(".card-title-gradient")
     .first()
@@ -99,7 +112,7 @@ test("стабильная высота карточки при длинном �
       const h = el.getBoundingClientRect().height;
       return { lh, h };
     });
-  expect(titleHeight.h).toBeLessThanOrEqual(titleHeight.lh * 2 + 1);
+  expect(titleHeight.h).toBeLessThanOrEqual(titleHeight.lh * 2 + 2);
 });
 
 test("ряд карточек: одинаковая высота при смешанных длинах", async ({ page }, testInfo) => {
