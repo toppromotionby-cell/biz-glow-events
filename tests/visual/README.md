@@ -55,6 +55,11 @@ tolerance fails the test and writes a `*-diff.png` next to the actual.
 - `CatalogChoiceModal` — catalog picker dialog cards
 - `routes/industries.tsx` — industry tile grid + detail dialog header
 - `routes/about.tsx` — VALUES cards
+- **Cards (`cards.spec.ts`)** — `FeaturedCard` on the home, `CatalogCard` in
+  `/equipment`, both with real short titles and an injected ultra-long title
+  to verify `card-title-gradient` + word-aware ellipsis + 2-line height stay
+  stable. Includes a desktop-only hover snapshot and a mixed-length row to
+  catch height drift between cards.
 
 Add new specs under `tests/visual/` following the same pattern: navigate,
 call `stabilizePage(page)`, locate the section, call

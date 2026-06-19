@@ -356,6 +356,8 @@ function CatalogCard({
           <button
             type="button"
             onClick={onOpen}
+            title={item.title}
+            aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient text-left line-clamp-2 w-full"
           >
             {item.title}
