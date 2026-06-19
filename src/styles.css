@@ -448,6 +448,7 @@
     overflow-wrap: anywhere;
     word-break: normal;
     /* зарезервированная высота (CLS = 0) если контент пуст */
+    min-height: calc(var(--card-title-lines) * 1.3em); /* fallback для браузеров без 1lh */
     min-height: calc(var(--card-title-lines) * 1lh);
 
     /* Градиентный текст */
