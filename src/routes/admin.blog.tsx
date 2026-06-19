@@ -22,8 +22,7 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { blogPostSchema, type BlogPostInput } from "@/lib/admin/schemas";
 import { useSlugUnique } from "@/lib/admin/use-slug-unique";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
-import { slugify } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { slugify, cn } from "@/lib/utils";
 
 type Post = BlogPostInput & { id: string };
 
