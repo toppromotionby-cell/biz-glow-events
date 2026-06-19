@@ -122,7 +122,7 @@ test.describe("Cards — CatalogCard в каталоге", () => {
 
 test.describe("Cards — стабильность высоты при разных длинах", () => {
   test("ряд карточек: смешанные короткие и длинные названия", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "mobile-375" || testInfo.project.name === "mobile-414", "одна колонка — высоту строки сравнивать не нужно");
+    test.skip(testInfo.project.name === "mobile-375", "одна узкая колонка — высоту строки сравнивать не нужно");
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     await stabilizePage(page);
