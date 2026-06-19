@@ -12,7 +12,7 @@ import { CatalogSkeleton } from "@/components/CatalogSkeleton";
 import { CatalogSocialProof } from "@/components/CatalogSocialProof";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
-import { CompareButton } from "@/components/CompareButton";
+
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
 import { trackView } from "@/lib/recent";
