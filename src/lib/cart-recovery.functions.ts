@@ -50,8 +50,11 @@ async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: stri
 }
 
 export const notifyAbandonedCart = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => Schema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // Принудительно используем user_id из проверенной сессии, игнорируем клиентский.
+    const authedUserId = context.userId;
     // Дедуп: если для этого cart_hash уже было уведомление за последние 24 часа — игнор.
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: prev } = await supabaseAdmin
