@@ -1,4 +1,6 @@
 // Универсальный CRUD каталогов: zones | tech_equipment | services | production_items.
+// Типы строк взяты из supabase types; все 4 таблицы делят одинаковый набор колонок,
+// поэтому единый `CatalogRow` работает структурно без `any`.
 import { createFileRoute, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -11,12 +13,11 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
-// Dialog removed: preview moved to split-view panel.
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, X, ArrowRightLeft, Search, Copy, Eye, EyeOff, Trash2, AlertTriangle } from "lucide-react";
-import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
+import { Plus, Pencil, X, ArrowRightLeft, Search, Copy, Eye, EyeOff, Trash2, AlertTriangle, Info } from "lucide-react";
+import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers, type PricingValue } from "@/components/PriceTable";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminListPanel } from "@/components/admin/AdminListPanel";
@@ -26,14 +27,30 @@ import { StatusPill } from "@/components/admin/StatusPill";
 import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
-import { Info } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  CATALOG_TABLES, CATALOG_LABELS, isCatalogTable,
+  type CatalogTable, type CatalogRow, type CatalogInsert, type CatalogUpdate,
+} from "@/lib/admin/catalog-types";
+import type { Json } from "@/integrations/supabase/types";
+
+// Все 4 таблицы каталога имеют идентичный набор колонок — один Row покрывает все.
+type Row = CatalogRow<CatalogTable>;
+
+// Сужения для json-полей с произвольной структурой.
+type ExtraItem = { label?: string; value?: string };
+type FaqItem = { q?: string; question?: string; a?: string; answer?: string };
+type FeatureItem = string | { label?: string; value?: string };
+
+function asArray<T>(value: Json | null | undefined): T[] {
+  return Array.isArray(value) ? (value as unknown as T[]) : [];
+}
 
 // Признак «черновика»: нет фото / нет цены / нет описания.
-function draftIssues(it: any): string[] {
+function draftIssues(it: Row): string[] {
   const issues: string[] = [];
   if (!it.photo_urls?.length) issues.push("нет фото");
   if (!getTiers(it.pricing).length) issues.push("нет цены");
@@ -41,29 +58,20 @@ function draftIssues(it: any): string[] {
   return issues;
 }
 
-const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
-type Table = (typeof TABLES)[number];
-
-const LABELS: Record<Table, string> = {
-  zones: "Зоны", tech_equipment: "Оборудование", services: "Услуги", production_items: "Производство",
-};
-
 export const Route = createFileRoute("/admin/catalog/$type")({
   component: CatalogAdmin,
 });
 
 function CatalogAdmin() {
   const { type } = useParams({ from: "/admin/catalog/$type" });
-  if (!TABLES.includes(type as Table)) return <div>Неизвестный тип каталога</div>;
-  return <CatalogInner table={type as Table} />;
+  if (!isCatalogTable(type)) return <div>Неизвестный тип каталога</div>;
+  return <CatalogInner table={type} />;
 }
 
-function CatalogInner({ table }: { table: Table }) {
+function CatalogInner({ table }: { table: CatalogTable }) {
   const qc = useQueryClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selected, setSelected] = useState<any | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [preview, setPreview] = useState<any | null>(null);
+  const [selected, setSelected] = useState<Row | null>(null);
+  const [preview, setPreview] = useState<Row | null>(null);
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState(false);
@@ -71,19 +79,23 @@ function CatalogInner({ table }: { table: Table }) {
   // Сбрасываем выделение при смене таблицы.
   useEffect(() => { setSelectedIds(new Set()); }, [table]);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading } = useQuery<Row[]>({
     queryKey: ["catalog", table],
-    queryFn: async () => (await supabase.from(table).select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data } = await supabase.from(table).select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      return (data ?? []) as Row[];
+    },
   });
 
   const create = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<Row> => {
       const slug = `new-${Date.now()}`;
-      const { data, error } = await supabase.from(table).insert({ title: "Новая запись", slug, published: false }).select().single();
+      const payload: CatalogInsert = { title: "Новая запись", slug, published: false };
+      const { data, error } = await supabase.from(table).insert(payload).select().single();
       if (error) throw error;
-      return data;
+      return data as Row;
     },
     onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["catalog", table] }); setSelected(row); },
     onError: (e: Error) => toast.error(e.message),
@@ -100,28 +112,30 @@ function CatalogInner({ table }: { table: Table }) {
 
   // Дублирование карточки: создаём копию с уникальным slug.
   const duplicate = useMutation({
-    mutationFn: async (src: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id, created_at, updated_at, slug, title, ...rest } = src;
+    mutationFn: async (src: Row): Promise<Row> => {
+      const { id: _id, created_at: _c, updated_at: _u, slug, title, ...rest } = src;
+      void _id; void _c; void _u;
       const newSlug = `${slug ?? "copy"}-${Date.now().toString(36).slice(-4)}`;
-      const { data, error } = await supabase.from(table).insert({
+      const payload: CatalogInsert = {
         ...rest,
         slug: newSlug,
         title: `${title ?? "Без названия"} (копия)`,
         published: false,
-      }).select().single();
+      };
+      const { data, error } = await supabase.from(table).insert(payload).select().single();
       if (error) throw error;
-      return data;
+      return data as Row;
     },
     onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["catalog", table] }); setSelected(row); toast.success("Карточка скопирована"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Bulk-операции: публикация/снятие/удаление выбранных.
+  // Bulk-операции.
   const bulkPublish = useMutation({
     mutationFn: async (published: boolean) => {
       if (selectedIds.size === 0) return;
-      const { error } = await supabase.from(table).update({ published }).in("id", [...selectedIds]);
+      const patch: CatalogUpdate = { published };
+      const { error } = await supabase.from(table).update(patch).in("id", [...selectedIds]);
       if (error) throw error;
     },
     onSuccess: (_d, published) => {
@@ -147,20 +161,19 @@ function CatalogInner({ table }: { table: Table }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Подсветка строки = «то, что сейчас открыто пользователю» (preview либо editor).
   const activeId = preview?.id ?? selected?.id;
 
-  // Локальный поиск по карточкам (название, slug, категория, описание).
+  // Локальный поиск по карточкам.
   const q = search.trim().toLowerCase();
   const filtered = q
-    ? (items as any[]).filter((it) => {
+    ? items.filter((it) => {
         const hay = [it.title, it.slug, it.category, it.short_description, it.description]
           .filter(Boolean).join(" ").toLowerCase();
         return hay.includes(q);
       })
-    : (items as any[]);
+    : items;
 
-  const allVisibleSelected = filtered.length > 0 && filtered.every((it: any) => selectedIds.has(it.id));
+  const allVisibleSelected = filtered.length > 0 && filtered.every((it) => selectedIds.has(it.id));
   const toggleId = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -170,13 +183,13 @@ function CatalogInner({ table }: { table: Table }) {
   };
   const toggleAll = () => {
     if (allVisibleSelected) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filtered.map((it: any) => it.id)));
+    else setSelectedIds(new Set(filtered.map((it) => it.id)));
   };
 
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        title={LABELS[table]}
+        title={CATALOG_LABELS[table]}
         subtitle={`${items.length} записей · клик по записи открывает подробный просмотр`}
         action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
       />
@@ -234,9 +247,8 @@ function CatalogInner({ table }: { table: Table }) {
               {q && <span>Найдено: {filtered.length} из {items.length}</span>}
             </div>
           )}
-        <AdminListPanel
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          items={filtered as any[]}
+        <AdminListPanel<Row>
+          items={filtered}
           isLoading={isLoading}
           emptyText={q ? "Ничего не найдено" : "Пока нет карточек"}
           emptyAction={!q && (
@@ -321,9 +333,8 @@ function CatalogInner({ table }: { table: Table }) {
             <PreviewPanel
               item={preview}
               onClose={() => setPreview(null)}
-              onEdit={(it: any) => { setSelected(it); setPreview(null); }}
+              onEdit={(it) => { setSelected(it); setPreview(null); }}
             />
-
           ) : (
             <AdminEmptyEditor
               title="Запись не выбрана"
@@ -333,7 +344,6 @@ function CatalogInner({ table }: { table: Table }) {
           )}
         </div>
       </div>
-
 
       <AlertDialog open={bulkConfirm} onOpenChange={setBulkConfirm}>
         <AlertDialogContent>
@@ -358,12 +368,13 @@ function CatalogInner({ table }: { table: Table }) {
   );
 }
 
-
-type PreviewPanelProps = { item: any; onClose: () => void; onEdit: (it: any) => void };
+type PreviewPanelProps = { item: Row; onClose: () => void; onEdit: (it: Row) => void };
 function PreviewPanel({ item, onClose, onEdit }: PreviewPanelProps) {
+  const features = asArray<FeatureItem>(item.features);
+  const extras = asArray<ExtraItem>(item.extras);
+  const faq = asArray<FaqItem>(item.faq);
   return (
     <div className="glass rounded-xl border border-border/40 overflow-hidden">
-      {/* Sticky toolbar */}
       <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-background/85 backdrop-blur">
         <Eye className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs uppercase tracking-wide text-muted-foreground">Превью карточки</span>
@@ -398,9 +409,9 @@ function PreviewPanel({ item, onClose, onEdit }: PreviewPanelProps) {
 
         {(item.photo_urls?.length ?? 0) > 0 && (
           <section className="space-y-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фотографии ({item.photo_urls.length})</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Фотографии ({item.photo_urls!.length})</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {item.photo_urls.map((url: string, i: number) => (
+              {item.photo_urls!.map((url, i) => (
                 <div key={i} className="block aspect-[4/3] overflow-hidden rounded-lg bg-muted/30">
                   <StorageImg path={url} alt={`${item.title} #${i + 1}`} className="h-full w-full object-cover hover:scale-105 transition" fallbackClassName="h-full w-full" />
                 </div>
@@ -411,9 +422,9 @@ function PreviewPanel({ item, onClose, onEdit }: PreviewPanelProps) {
 
         {(item.video_urls?.length ?? 0) > 0 && (
           <section className="space-y-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Видео ({item.video_urls.length})</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Видео ({item.video_urls!.length})</h3>
             <div className="grid sm:grid-cols-2 gap-3">
-              {item.video_urls.map((url: string, i: number) => (
+              {item.video_urls!.map((url, i) => (
                 <StorageVideo key={i} path={url} className="w-full rounded-lg bg-black aspect-video" />
               ))}
             </div>
@@ -434,22 +445,22 @@ function PreviewPanel({ item, onClose, onEdit }: PreviewPanelProps) {
           </section>
         )}
 
-        {Array.isArray(item.features) && item.features.length > 0 && (
+        {features.length > 0 && (
           <section className="space-y-2">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Что входит</h3>
             <ul className="list-disc list-inside text-sm space-y-1">
-              {item.features.map((f: any, i: number) => (
+              {features.map((f, i) => (
                 <li key={i}>{typeof f === "string" ? f : JSON.stringify(f)}</li>
               ))}
             </ul>
           </section>
         )}
 
-        {Array.isArray(item.extras) && item.extras.length > 0 && (
+        {extras.length > 0 && (
           <section className="space-y-2">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2"><Info className="h-3.5 w-3.5" />Дополнительно</h3>
             <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-              {item.extras.map((r: any, i: number) => (
+              {extras.map((r, i) => (
                 <div key={i} className="flex justify-between gap-3 border-b border-border/30 py-1">
                   <dt className="text-muted-foreground">{r?.label ?? ""}</dt>
                   <dd className="font-medium text-right">{r?.value ?? ""}</dd>
@@ -466,11 +477,11 @@ function PreviewPanel({ item, onClose, onEdit }: PreviewPanelProps) {
           </section>
         )}
 
-        {Array.isArray(item.faq) && item.faq.length > 0 && (
+        {faq.length > 0 && (
           <section className="space-y-2">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">FAQ</h3>
             <div className="space-y-2">
-              {item.faq.map((q: any, i: number) => (
+              {faq.map((q, i) => (
                 <div key={i} className="rounded-lg border border-border/50 p-3">
                   <div className="font-medium text-sm">{q.q ?? q.question ?? `Вопрос ${i + 1}`}</div>
                   <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{q.a ?? q.answer ?? ""}</div>
@@ -493,16 +504,17 @@ function PreviewPanel({ item, onClose, onEdit }: PreviewPanelProps) {
   );
 }
 
+// Локальный form-state — подмножество Row + dynamic JSON-блоки.
+type FormState = Partial<Row>;
 
-function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; onSaved: () => void; onDelete: () => void }) {
+function Editor({ table, item, onSaved, onDelete }: { table: CatalogTable; item: Row; onSaved: () => void; onDelete: () => void }) {
   const draftKey = `catalog-draft:${table}:${item.id}`;
-  // Восстанавливаем черновик из localStorage (если есть и новее серверного updated_at).
-  const [form, setForm] = useState(() => {
+  const [form, setForm] = useState<FormState>(() => {
     if (typeof window === "undefined") return { ...item };
     try {
       const raw = localStorage.getItem(draftKey);
       if (raw) {
-        const cached = JSON.parse(raw) as { savedAt: number; data: any };
+        const cached = JSON.parse(raw) as { savedAt: number; data: FormState };
         if (cached?.data && cached.savedAt > new Date(item.updated_at ?? 0).getTime()) {
           return { ...item, ...cached.data };
         }
@@ -512,7 +524,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
   });
   const [saving, setSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<Table | "">("");
+  const [moveTarget, setMoveTarget] = useState<CatalogTable | "">("");
   const [moving, setMoving] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -529,15 +541,17 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
     return () => clearTimeout(t);
   }, [form, draftKey]);
 
+  const buildPatch = (): CatalogUpdate => ({
+    title: form.title, slug: form.slug, category: form.category,
+    short_description: form.short_description, description: form.description,
+    requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
+    published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
+    pricing: form.pricing ?? {}, features: form.features ?? [], extras: form.extras ?? [], faq: form.faq ?? [],
+  });
+
   const save = async () => {
     setSaving(true);
-    const { error } = await supabase.from(table).update({
-      title: form.title, slug: form.slug, category: form.category,
-      short_description: form.short_description, description: form.description,
-      requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
-      published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
-      pricing: form.pricing ?? {}, features: form.features ?? [], extras: form.extras ?? [], faq: form.faq ?? [],
-    }).eq("id", item.id);
+    const { error } = await supabase.from(table).update(buildPatch()).eq("id", item.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
@@ -546,19 +560,18 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
     onSaved();
   };
 
-  const moveTo = async (target: Table) => {
+  const moveTo = async (target: CatalogTable) => {
     if (target === table) return;
     setMoving(true);
     try {
-      // Build payload with shared columns only (no id/created_at/updated_at).
-      const payload: any = {
-        title: form.title, slug: form.slug, category: form.category,
-        short_description: form.short_description, description: form.description,
-        requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
-        published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
-        pricing: form.pricing ?? {}, features: form.features ?? [], extras: form.extras ?? [], faq: form.faq ?? [],
+      const patch = buildPatch();
+      const payload: CatalogInsert = {
+        ...patch,
+        // Insert требует title и slug как обязательные.
+        title: patch.title ?? "Без названия",
+        slug: patch.slug ?? `moved-${Date.now()}`,
       };
-      // Handle slug uniqueness in target table
+      // Уникальность slug в целевой таблице.
       const { data: existing } = await supabase.from(target).select("id").eq("slug", payload.slug).maybeSingle();
       if (existing) payload.slug = `${payload.slug}-${Date.now().toString(36).slice(-4)}`;
 
@@ -567,7 +580,7 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
       const { error: delErr } = await supabase.from(table).delete().eq("id", item.id);
       if (delErr) throw delErr;
 
-      toast.success(`Перемещено в «${LABELS[target]}»`);
+      toast.success(`Перемещено в «${CATALOG_LABELS[target]}»`);
       qc.invalidateQueries({ queryKey: ["catalog", table] });
       qc.invalidateQueries({ queryKey: ["catalog", target] });
       navigate({ to: "/admin/catalog/$type", params: { type: target } });
@@ -579,7 +592,9 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
     }
   };
 
-  const otherTables = TABLES.filter((t) => t !== table);
+  const otherTables = CATALOG_TABLES.filter((t) => t !== table);
+  const featuresValue = asArray<FeatureItem>(form.features);
+  const extrasValue = asArray<ExtraItem>(form.extras);
 
   return (
     <AdminEditorShell
@@ -593,13 +608,12 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
             <span className="text-xs text-amber-300/90 inline-flex items-center gap-1" title="Есть несохранённые изменения, восстановятся после перезагрузки">
               <AlertTriangle className="h-3 w-3" />черновик не сохранён</span>
           )}
-          <span className="hidden">{/* placeholder */}</span>
           <div className="flex items-center gap-1">
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
-            <Select value={moveTarget} onValueChange={(v) => { setMoveTarget(v as Table); moveTo(v as Table); }} disabled={moving}>
+            <Select value={moveTarget} onValueChange={(v) => { const next = v as CatalogTable; setMoveTarget(next); moveTo(next); }} disabled={moving}>
               <SelectTrigger className="h-9 w-[200px]"><SelectValue placeholder={moving ? "Перемещение..." : "Переместить в..."} /></SelectTrigger>
               <SelectContent>
-                {otherTables.map((t) => <SelectItem key={t} value={t}>{LABELS[t]}</SelectItem>)}
+                {otherTables.map((t) => <SelectItem key={t} value={t}>{CATALOG_LABELS[t]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -616,8 +630,8 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
       </div>
 
       <PriceTableEditor
-        value={form.pricing ?? {}}
-        onChange={(next) => setForm({ ...form, pricing: next })}
+        value={(form.pricing as PricingValue | null | undefined) ?? {}}
+        onChange={(next) => setForm({ ...form, pricing: next as unknown as Json })}
       />
       <div className="text-xs text-muted-foreground -mt-1">
         Цена «от» автоматически: {(() => {
@@ -632,10 +646,10 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="glass rounded-xl p-4">
-          <FeaturesEditor value={form.features} onChange={(next) => setForm({ ...form, features: next })} />
+          <FeaturesEditor value={featuresValue} onChange={(next) => setForm({ ...form, features: next as Json })} />
         </div>
         <div className="glass rounded-xl p-4">
-          <ExtrasEditor value={form.extras} onChange={(next) => setForm({ ...form, extras: next })} />
+          <ExtrasEditor value={extrasValue} onChange={(next) => setForm({ ...form, extras: next as Json })} />
         </div>
       </div>
 
@@ -657,4 +671,3 @@ function Editor({ table, item, onSaved, onDelete }: { table: Table; item: any; o
     </AdminEditorShell>
   );
 }
-
