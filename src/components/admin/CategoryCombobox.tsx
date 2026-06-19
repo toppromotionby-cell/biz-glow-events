@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/command";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 
 type CategoryRow = { id: string; name: string; sort_order: number };
 
