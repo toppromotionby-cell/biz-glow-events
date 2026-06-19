@@ -216,7 +216,7 @@ function OrderDetail() {
           <ol className="space-y-2">
             {timeline.map((t: any) => (
               <li key={t.id} className="text-sm flex gap-3">
-                <span className="text-xs text-muted-foreground whitespace-nowrap w-32">{new Date(t.created_at).toLocaleString("ru-BY")}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap w-32">{fmtDateTime(t.created_at)}</span>
                 <span className="font-medium">{t.event}</span>
                 {t.payload && <span className="text-xs text-muted-foreground">{JSON.stringify(t.payload)}</span>}
               </li>
