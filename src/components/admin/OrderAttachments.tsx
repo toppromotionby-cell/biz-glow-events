@@ -157,7 +157,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
               </div>
               <div className="flex gap-1.5 shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => download(it)} title="Скачать"><Download className="h-4 w-4" /></Button>
-                <Button size="sm" variant="ghost" onClick={async () => { if (await confirm({ title: "Удалить файл?", description: it.title ?? undefined, confirmText: "Удалить", destructive: true })) del.mutate(it); }} title="Удалить">
+                <Button size="sm" variant="ghost" onClick={async () => { if (await confirm({ title: "Удалить файл?", description: it.file_name, confirmText: "Удалить", destructive: true })) del.mutate(it); }} title="Удалить">
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
