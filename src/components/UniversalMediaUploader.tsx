@@ -2,16 +2,25 @@
 // Превью через signed URL (bucket `media` приватный). Кнопка удаления — сверху.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, X, Image as ImageIcon, Video, AlertCircle } from "lucide-react";
+import imageCompression from "browser-image-compression";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const MAX_PHOTOS = 5;
 const MAX_VIDEOS = 5;
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024;       // 5 MB
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024;      // 10 MB до сжатия
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;      // 50 MB
 const PHOTO_MIMES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_MIMES = ["video/mp4", "video/webm"];
+
+const COMPRESS_OPTS = {
+  maxSizeMB: 1.2,
+  maxWidthOrHeight: 2000,
+  useWebWorker: true,
+  fileType: "image/webp" as const,
+  initialQuality: 0.82,
+};
 
 export interface MediaUploaderProps {
   entity: string;
