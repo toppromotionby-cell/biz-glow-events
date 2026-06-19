@@ -17,6 +17,8 @@ import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
+import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
+
 
 
 // Единый список статусов и их подписи берём из ORDER_STATUS_LABEL,
@@ -117,7 +119,7 @@ function OrderDetail() {
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="admin-h1">Заказ #{order.id.slice(0, 8)}</h1>
-          <p className="text-sm text-muted-foreground">Создан {new Date(order.created_at).toLocaleString("ru-BY")}</p>
+          <p className="text-sm text-muted-foreground">Создан {fmtDateTime(order.created_at)}</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => openAuthedDocument(`/admin/orders/${order.id}/quote`).catch((e) => toast.error((e as Error).message))} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-accent/10">Скачать КП</button>
@@ -163,15 +165,16 @@ function OrderDetail() {
             <dt className="text-muted-foreground">Телефон</dt><dd>{order.client_phone}</dd>
             <dt className="text-muted-foreground">Email</dt><dd>{order.client_email}</dd>
             <dt className="text-muted-foreground">Компания</dt><dd>{order.client_company ?? "—"}</dd>
-            <dt className="text-muted-foreground">Дата мероприятия</dt><dd>{order.event_date ? new Date(order.event_date).toLocaleDateString("ru-BY") : "—"}</dd>
+            <dt className="text-muted-foreground">Дата мероприятия</dt><dd>{fmtDate(order.event_date)}</dd>
             <dt className="text-muted-foreground">UTM</dt><dd className="text-xs">{[order.utm_source, order.utm_campaign].filter(Boolean).join(" / ") || "—"}</dd>
           </dl>
         </div>
         <div className="glass rounded-xl p-5 space-y-3">
           <h3 className="font-semibold">Финансы</h3>
           <dl className="text-sm space-y-1.5">
-            <div className="flex justify-between"><dt className="text-muted-foreground">Сумма</dt><dd className="font-medium">{Number(order.total ?? 0).toLocaleString("ru-BY")} BYN</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Оплачено</dt><dd>{Number(order.paid ?? 0).toLocaleString("ru-BY")} BYN</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">Сумма</dt><dd className="font-medium">{fmtMoney(order.total)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">Оплачено</dt><dd>{fmtMoney(order.paid)}</dd></div>
+
           </dl>
         </div>
       </div>
@@ -183,7 +186,7 @@ function OrderDetail() {
             {items.map((it: any) => (
               <div key={it.id} className="flex items-center justify-between text-sm border-b border-border/30 pb-2">
                 <div><div className="font-medium">{it.title}</div><div className="text-xs text-muted-foreground">{ENTITY_LABEL[it.entity_type] ?? it.entity_type} · {it.qty} шт.</div></div>
-                <div className="font-medium">{Number(it.price ?? 0).toLocaleString("ru-BY")} BYN</div>
+                <div className="font-medium">{fmtMoney(it.price)}</div>
               </div>
             ))}
           </div>
@@ -213,7 +216,7 @@ function OrderDetail() {
           <ol className="space-y-2">
             {timeline.map((t: any) => (
               <li key={t.id} className="text-sm flex gap-3">
-                <span className="text-xs text-muted-foreground whitespace-nowrap w-32">{new Date(t.created_at).toLocaleString("ru-BY")}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap w-32">{fmtDateTime(t.created_at)}</span>
                 <span className="font-medium">{t.event}</span>
                 {t.payload && <span className="text-xs text-muted-foreground">{JSON.stringify(t.payload)}</span>}
               </li>

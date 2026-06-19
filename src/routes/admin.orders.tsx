@@ -23,12 +23,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fmtMoney = (v: any) => `${Number(v ?? 0).toLocaleString("ru-BY")} BYN`;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fmtDate = (v: any) => (v ? new Date(v).toLocaleDateString("ru-BY") : "—");
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fmtDateTime = (v: any) => (v ? new Date(v).toLocaleString("ru-BY") : "—");
+import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
+
 
 // Возраст «в статусе» по updated_at: цвет — SLA-подсветка
 function ageInfo(updatedAt: string | null | undefined, status: string) {
