@@ -193,14 +193,6 @@ export function SiteHeader() {
                       </Link>
                     </SheetClose>
                   </Toggleable>
-                  <Toggleable sectionKey="header.compare" as="div">
-                    <SheetClose asChild>
-                      <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                        <span className="flex items-center gap-3"><Scale className="h-4 w-4" /> Сравнение</span>
-                        {cmpCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{cmpCount}</span>}
-                      </Link>
-                    </SheetClose>
-                  </Toggleable>
 
                 </div>
 
