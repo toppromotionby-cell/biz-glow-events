@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, X, ArrowRightLeft, Search, Copy, Eye, EyeOff, Trash2, AlertTriangle, Info } from "lucide-react";
-import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers } from "@/components/PriceTable";
+import { PriceTableEditor, PriceTableView, minPriceFromTiers, getTiers, type PricingValue } from "@/components/PriceTable";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminListPanel } from "@/components/admin/AdminListPanel";
@@ -630,8 +630,8 @@ function Editor({ table, item, onSaved, onDelete }: { table: CatalogTable; item:
       </div>
 
       <PriceTableEditor
-        value={form.pricing ?? {}}
-        onChange={(next) => setForm({ ...form, pricing: next as Json })}
+        value={(form.pricing as PricingValue | null | undefined) ?? {}}
+        onChange={(next) => setForm({ ...form, pricing: next as unknown as Json })}
       />
       <div className="text-xs text-muted-foreground -mt-1">
         Цена «от» автоматически: {(() => {
