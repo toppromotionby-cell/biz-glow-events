@@ -230,6 +230,7 @@ export function CategoryCombobox({
           </CommandList>
         </Command>
       </PopoverContent>
+      {dialog}
     </Popover>
   );
 }
