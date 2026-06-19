@@ -72,6 +72,7 @@ export function FeaturedCard({
   const [firstImageReady, setFirstImageReady] = useState(false);
   const price = priceFromUtil(item.pricing);
 
+
   // Autoplay: пауза при hover (desktop) или активном касании (mobile).
   useEffect(() => {
     if (!hasMultiple || paused) return;
@@ -182,6 +183,8 @@ export function FeaturedCard({
           <button
             type="button"
             onClick={onOpen}
+            title={item.title}
+            aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient text-left line-clamp-2 w-full"
           >
             {item.title}
@@ -191,7 +194,7 @@ export function FeaturedCard({
         <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3 break-words hyphens-auto min-h-[2.25rem] sm:min-h-[3.75rem]">
           {item.short_description ?? "\u00A0"}
         </p>
-        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40">
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40 min-h-[3.25rem] sm:min-h-[3.5rem]">
           <PriceBlock price={price} />
         </div>
       </div>
