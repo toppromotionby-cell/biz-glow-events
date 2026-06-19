@@ -71,6 +71,8 @@ export function FeaturedCard({
   const [paused, setPaused] = useState(false);
   const [firstImageReady, setFirstImageReady] = useState(false);
   const price = priceFromUtil(item.pricing);
+  const titleRef = useRef<HTMLButtonElement>(null);
+  const clampedTitle = useClampedText(titleRef, item.title, 2);
 
 
   // Autoplay: пауза при hover (desktop) или активном касании (mobile).
