@@ -10,7 +10,7 @@ import { MediaShield } from "@/components/MediaShield";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
 import { WishlistButton } from "@/components/WishlistButton";
-import { CompareButton } from "@/components/CompareButton";
+
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
