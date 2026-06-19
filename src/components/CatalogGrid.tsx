@@ -318,9 +318,6 @@ function CatalogCard({
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
       <button
         type="button"
         onClick={onOpen}
