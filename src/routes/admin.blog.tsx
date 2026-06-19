@@ -385,8 +385,6 @@ function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
       <button type="submit" className="hidden" aria-hidden tabIndex={-1}>submit</button>
 
       {dialog}
-      <input type="hidden" {...register("published_at")} />
-      <FormDebugBlocker disabled={!getValues} />
     </form>
   );
 }
