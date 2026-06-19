@@ -7,17 +7,23 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
 
 export function AdminEditorShell({
   title, switches, onDelete, onSave, saving, children, deleteLabel = "Удалить", confirmDelete = true,
+  saveState, draftSavedAt, errorMessage, saveDisabled,
 }: {
   title?: ReactNode;
   switches?: ReactNode;
   onDelete?: () => void;
   onSave?: () => void;
   saving?: boolean;
+  saveDisabled?: boolean;
   deleteLabel?: string;
   confirmDelete?: boolean;
+  saveState?: SaveState;
+  draftSavedAt?: Date | null;
+  errorMessage?: string | null;
   children: ReactNode;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -28,22 +34,27 @@ export function AdminEditorShell({
           {title && <h2 className="text-xl font-semibold">{title}</h2>}
           {switches}
         </div>
-        <div className="flex gap-2">
-          {onDelete && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-              onClick={() => { if (confirmDelete) setConfirmOpen(true); else onDelete(); }}
-            >
-              <Trash2 className="h-4 w-4 mr-1" />{deleteLabel}
-            </Button>
+        <div className="flex items-center gap-3">
+          {saveState && (
+            <SaveStatus state={saveState} draftSavedAt={draftSavedAt} errorMessage={errorMessage} />
           )}
-          {onSave && (
-            <Button size="sm" onClick={onSave} disabled={saving} className="btn-primary-gradient">
-              <Save className="h-4 w-4 mr-1" />{saving ? "..." : "Сохранить"}
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                onClick={() => { if (confirmDelete) setConfirmOpen(true); else onDelete(); }}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />{deleteLabel}
+              </Button>
+            )}
+            {onSave && (
+              <Button size="sm" onClick={onSave} disabled={saving || saveDisabled} className="btn-primary-gradient">
+                <Save className="h-4 w-4 mr-1" />{saving ? "..." : "Сохранить"}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       {children}

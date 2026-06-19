@@ -2,16 +2,25 @@
 // Превью через signed URL (bucket `media` приватный). Кнопка удаления — сверху.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, X, Image as ImageIcon, Video, AlertCircle } from "lucide-react";
+import imageCompression from "browser-image-compression";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const MAX_PHOTOS = 5;
 const MAX_VIDEOS = 5;
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024;       // 5 MB
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024;      // 10 MB до сжатия
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;      // 50 MB
 const PHOTO_MIMES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_MIMES = ["video/mp4", "video/webm"];
+
+const COMPRESS_OPTS = {
+  maxSizeMB: 1.2,
+  maxWidthOrHeight: 2000,
+  useWebWorker: true,
+  fileType: "image/webp" as const,
+  initialQuality: 0.82,
+};
 
 export interface MediaUploaderProps {
   entity: string;
@@ -50,11 +59,26 @@ export function UniversalMediaUploader({
           toast.error(`Файл слишком большой: ${file.name}`);
           continue;
         }
-        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        let payload: Blob = file;
+        let uploadName = file.name;
+        let contentType = file.type;
+        if (kind === "photo") {
+          try {
+            const compressed = await imageCompression(file, COMPRESS_OPTS);
+            if (compressed.size < file.size) {
+              payload = compressed;
+              contentType = compressed.type || "image/webp";
+              uploadName = file.name.replace(/\.(jpe?g|png|webp)$/i, "") + ".webp";
+            }
+          } catch {
+            // Fallback to original on compression error
+          }
+        }
+        const safeName = uploadName.replace(/[^\w.\-]+/g, "_");
         const path = `${entity}/${slug || "untitled"}/${kind}-${Date.now()}-${safeName}`;
-        const { error } = await supabase.storage.from("media").upload(path, file, {
+        const { error } = await supabase.storage.from("media").upload(path, payload, {
           upsert: false,
-          contentType: file.type,
+          contentType,
         });
         if (error) {
           toast.error(`Ошибка загрузки ${file.name}: ${error.message}`);
@@ -208,7 +232,7 @@ function DropZone({
           {full ? <><AlertCircle className="inline h-4 w-4 mr-1" />Достигнут лимит</> : "Перетащите файлы или нажмите"}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          {kind === "photo" ? "JPEG/PNG/WebP, ≤5MB" : "MP4/WebM, ≤50MB"}
+          {kind === "photo" ? "JPEG/PNG/WebP, ≤10MB · авто-сжатие до WebP ~1.2MB" : "MP4/WebM, ≤50MB"}
         </p>
       </label>
       {items.length > 0 && (
