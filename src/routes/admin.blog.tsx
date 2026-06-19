@@ -168,7 +168,7 @@ function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
     mode: "onBlur",
   });
 
-  const { register, control, handleSubmit, watch, setValue, formState, getValues } = form;
+  const { register, control, handleSubmit, watch, setValue, formState } = form;
   const values = watch();
   const slugValue = values.slug;
   const titleValue = values.title;
@@ -389,16 +389,7 @@ function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
   );
 }
 
-function FormDebugBlocker({ disabled }: { disabled: boolean }) {
-  // Перехватываем закрытие вкладки при наличии несохранённых изменений.
-  useEffect(() => {
-    if (disabled) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [disabled]);
-  return null;
-}
+
 
 function SlugHintLine({ status }: { status: ReturnType<typeof useSlugUnique> }) {
   if (status === "checking") return <span className="inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Проверка…</span>;
