@@ -1,16 +1,16 @@
 # CLS Report — каталог карточек
 
-Сгенерирован: 2026-06-19T22:29:26.503Z
+Сгенерирован: 2026-06-19T22:33:12.335Z
 Цель: CLS < 0.1 (good), идеал < 0.02 для каталога.
 
 | Device | Page | CLS | Verdict |
 |---|---|---:|---|
 | mobile | home | 0.9975 | 🔴 poor |
-| mobile | equipment | 0.0290 | 🟢 good |
+| mobile | equipment | 0.0293 | 🟢 good |
 | mobile | services | 0.0022 | ✅ excellent |
 | desktop | home | 1.0242 | 🔴 poor |
 | desktop | equipment | 0.0122 | ✅ excellent |
-| desktop | services | 0.0164 | ✅ excellent |
+| desktop | services | 0.0000 | ✅ excellent |
 
 ## Топ-источники сдвигов
 
@@ -21,8 +21,8 @@
 
 ### mobile — equipment
 
-1. **0.0145** — article.glass.rounded-xl, div.mb-4.flex
-2. **0.0145** — article.glass.rounded-xl, div.mb-4.flex
+1. **0.0146** — article.glass.rounded-xl, div.grid.grid-cols-1, div.mb-4.flex
+2. **0.0146** — article.glass.rounded-xl, div.grid.grid-cols-1, div.mb-4.flex
 
 ### mobile — services
 
@@ -43,6 +43,4 @@
 
 ### desktop — services
 
-1. **0.0055** — (unknown), span.flex-1, button.hidden.md:inline-flex, button.text-xs.px-3, button.text-xs.px-3
-2. **0.0055** — (unknown), span.flex-1, button.hidden.md:inline-flex, button.text-xs.px-3, button.text-xs.px-3
-3. **0.0055** — (unknown), span.flex-1, button.hidden.md:inline-flex, button.text-xs.px-3, button.text-xs.px-3
+_нет сдвигов_
