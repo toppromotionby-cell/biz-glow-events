@@ -298,7 +298,6 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
               {!needsSelection && type !== "services" && (
                 <div className="flex gap-2 pt-1">
                   <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} />
-                  <CompareButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} />
                 </div>
               )}
             </div>
