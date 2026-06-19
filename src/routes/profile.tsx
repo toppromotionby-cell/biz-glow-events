@@ -15,6 +15,8 @@ import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { updateOwnOrder, deleteOwnOrder } from "@/lib/orders.functions";
 import { addToCart, clearCart, type CartEntityType } from "@/lib/cart";
+import { fmtDate, fmtDateTimeShort } from "@/lib/formatters";
+
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
