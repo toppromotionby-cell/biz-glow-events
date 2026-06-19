@@ -170,17 +170,17 @@ export function CategoryCombobox({
                           </span>
                           <button
                             type="button"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               if (remove.isPending) return;
-                              if (
-                                confirm(
-                                  `Удалить категорию «${c.name}» из справочника? Позиции с этим текстом не изменятся.`,
-                                )
-                              ) {
-                                remove.mutate(c);
-                              }
+                              const ok = await confirm({
+                                title: `Удалить категорию «${c.name}»?`,
+                                description: "Позиции с этим текстом не изменятся.",
+                                confirmText: "Удалить",
+                                destructive: true,
+                              });
+                              if (ok) remove.mutate(c);
                             }}
                             className="opacity-60 hover:opacity-100 hover:text-destructive transition-opacity"
                             aria-label={`Удалить ${c.name}`}
