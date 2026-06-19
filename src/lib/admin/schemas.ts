@@ -1,5 +1,5 @@
 // Zod-схемы для админ-форм раздела «Наполнение».
-// SEO-лимиты: title ≤ 60, description ≤ 160 (best practice Google).
+// Не используем .default() — input/output типы совпадают, форма всегда передаёт значения.
 import { z } from "zod";
 
 const slug = z
@@ -17,13 +17,13 @@ export const blogPostSchema = z.object({
   excerpt: z.string().max(500).optional().or(z.literal("")),
   body: z.string().optional().or(z.literal("")),
   cover_url: z.string().url("Некорректный URL").optional().or(z.literal("")),
-  tags: z.array(z.string()).default([]),
-  published: z.boolean().default(false),
+  tags: z.array(z.string()),
+  published: z.boolean(),
   published_at: z.string().nullable().optional(),
   seo_title: seoTitle,
   seo_description: seoDescription,
 });
-export type BlogPostInput = z.input<typeof blogPostSchema>;
+export type BlogPostInput = z.infer<typeof blogPostSchema>;
 
 export const testimonialSchema = z.object({
   client_name: z.string().min(1, "Имя клиента обязательно").max(120),
@@ -33,11 +33,11 @@ export const testimonialSchema = z.object({
   rating: z.coerce.number().int().min(1).max(5),
   text: z.string().min(1, "Текст обязателен").max(2000),
   event_date: z.string().nullable().optional(),
-  published: z.boolean().default(false),
-  featured: z.boolean().default(false),
-  sort_order: z.coerce.number().int().default(0),
+  published: z.boolean(),
+  featured: z.boolean(),
+  sort_order: z.coerce.number().int(),
 });
-export type TestimonialInput = z.input<typeof testimonialSchema>;
+export type TestimonialInput = z.infer<typeof testimonialSchema>;
 
 export const caseSchema = z.object({
   title: z.string().min(1, "Заголовок обязателен").max(200),
@@ -52,7 +52,7 @@ export const caseSchema = z.object({
   cover_url: z.string().optional().or(z.literal("")),
   seo_title: seoTitle,
   seo_description: seoDescription,
-  published: z.boolean().default(false),
-  featured: z.boolean().default(false),
+  published: z.boolean(),
+  featured: z.boolean(),
 });
-export type CaseInput = z.input<typeof caseSchema>;
+export type CaseInput = z.infer<typeof caseSchema>;
