@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getBlogPostBySlug } from "@/lib/blog.functions";
+import { buildBlogPostJsonLd, safeJsonLd } from "@/lib/seo-jsonld";
 
 export const Route = createFileRoute("/blog/$slug")({
   loader: async ({ params }) => {
@@ -34,23 +35,14 @@ export const Route = createFileRoute("/blog/$slug")({
       scripts: post
         ? [{
             type: "application/ld+json",
-            children: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Article",
-              headline: post.title,
-              description: post.excerpt ?? post.seo_description ?? undefined,
-              image: post.cover_url ?? undefined,
-              datePublished: post.published_at ?? undefined,
-              dateModified: post.published_at ?? undefined,
-              author: { "@type": "Organization", name: "event-hub.by", url: "https://event-hub.by" },
-              publisher: {
-                "@type": "Organization",
-                name: "event-hub.by",
-                logo: { "@type": "ImageObject", url: "https://event-hub.by/og-image.png" },
-              },
-              mainEntityOfPage: { "@type": "WebPage", "@id": url },
-              inLanguage: "ru-BY",
-            }),
+            children: safeJsonLd(buildBlogPostJsonLd({
+              title: post.title,
+              slug: post.slug,
+              excerpt: post.excerpt,
+              seo_description: post.seo_description,
+              cover_url: post.cover_url,
+              published_at: post.published_at,
+            })),
           }]
         : [],
     };
