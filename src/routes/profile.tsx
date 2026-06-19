@@ -292,9 +292,10 @@ function ProfilePage() {
                     <div className="min-w-0">
                       <div className="font-medium">Заявка #{o.id.slice(0, 8)}</div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(o.created_at).toLocaleDateString("ru-BY")}
-                        {o.event_date && ` · мероприятие ${new Date(o.event_date).toLocaleDateString("ru-BY")}`}
+                        {fmtDate(o.created_at)}
+                        {o.event_date && ` · мероприятие ${fmtDate(o.event_date)}`}
                       </div>
+
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       {o.total > 0 && <div className="text-sm tabular-nums">{formatBYN(o.total)}</div>}
