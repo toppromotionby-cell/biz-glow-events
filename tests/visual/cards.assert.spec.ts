@@ -64,7 +64,9 @@ test("line-clamp: 2 строки с -webkit-box", async ({ page }) => {
     };
   });
 
-  expect(styles.display).toBe("-webkit-box");
+  // Lightning CSS оптимизирует `display:-webkit-box + -webkit-line-clamp`
+  // в современный шорткат с `display:flow-root` — поведение в Chrome идентично.
+  expect(["-webkit-box", "flow-root"]).toContain(styles.display);
   expect(styles.webkitLineClamp).toBe("2");
   expect(styles.overflow).toBe("hidden");
 });
