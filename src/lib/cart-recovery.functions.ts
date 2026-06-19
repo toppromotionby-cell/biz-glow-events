@@ -83,7 +83,7 @@ export const notifyAbandonedCart = createServerFn({ method: "POST" })
     await supabaseAdmin.from("telegram_logs").insert({
       status: tg.ok ? "sent" : "skipped",
       error: tg.error ?? null,
-      payload: { kind: "abandoned_cart", cart_hash: data.cart_hash, text, user_id: data.user_id ?? null },
+      payload: { kind: "abandoned_cart", cart_hash: data.cart_hash, text, user_id: authedUserId },
     });
 
     return { ok: tg.ok };
