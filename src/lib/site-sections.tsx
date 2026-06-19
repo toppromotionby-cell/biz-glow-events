@@ -34,7 +34,7 @@ export const SECTION_REGISTRY = [
   { key: "header.nav.contacts", label: "Шапка: Пункт «Контакты»", group: "Шапка" },
   { key: "header.search", label: "Шапка: Поиск", group: "Шапка" },
   { key: "header.wishlist", label: "Шапка: Избранное", group: "Шапка" },
-  { key: "header.compare", label: "Шапка: Сравнение", group: "Шапка" },
+  
   { key: "header.cart", label: "Шапка: Корзина", group: "Шапка" },
   { key: "header.account", label: "Шапка: Кабинет (для авторизованных)", group: "Шапка" },
   { key: "header.logout", label: "Шапка: Кнопка «Выйти»", group: "Шапка" },

@@ -9,7 +9,7 @@ const BODY = [
   "Disallow: /profile",
   "Disallow: /cart",
   "Disallow: /wishlist",
-  "Disallow: /compare",
+  
   "Disallow: /login",
   "Disallow: /register",
   "Disallow: /reset-password",

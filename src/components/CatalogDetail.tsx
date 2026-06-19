@@ -12,7 +12,7 @@ import { CatalogSkeleton } from "@/components/CatalogSkeleton";
 import { CatalogSocialProof } from "@/components/CatalogSocialProof";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
-import { CompareButton } from "@/components/CompareButton";
+
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
 import { trackView } from "@/lib/recent";
@@ -281,7 +281,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
             {needsSelection ? (
               <div className="mt-2 text-center text-xs text-muted-foreground">
-                Добавление в корзину и сравнение станут доступны после выбора позиции
+                Добавление в корзину станет доступно после выбора позиции
               </div>
             ) : (
               <>
@@ -296,14 +296,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                   />
                 )}
                 <WishlistButton
-                  entity_type={entityType}
-                  id={effectiveId}
-                  slug={item.slug}
-                  title={effectiveTitle}
-                  price={effectivePrice}
-                  image={item.photo_urls?.[0] ?? null}
-                />
-                <CompareButton
                   entity_type={entityType}
                   id={effectiveId}
                   slug={item.slug}

@@ -3,10 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Heart, Scale, Menu } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Heart, Menu } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
-import { useCompare } from "@/lib/compare";
 import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
@@ -42,7 +41,6 @@ export function SiteHeader() {
   const { isAuthenticated } = useAuth();
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
-  const { count: cmpCount } = useCompare();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrolling, setScrolling] = useState(false);
@@ -109,14 +107,7 @@ export function SiteHeader() {
                 )}
               </Link>
             </Toggleable>
-            <Toggleable sectionKey="header.compare" as="span">
-              <Link to="/compare" aria-label={cmpCount > 0 ? `Сравнение, ${cmpCount} позиций` : "Сравнение"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                <Scale className="h-4 w-4" aria-hidden="true" />
-                {cmpCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{cmpCount}</span>
-                )}
-              </Link>
-            </Toggleable>
+
 
             <Toggleable sectionKey="header.cart" as="span">
               <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
@@ -199,14 +190,6 @@ export function SiteHeader() {
                       <Link to="/wishlist" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
                         <span className="flex items-center gap-3"><Heart className="h-4 w-4" /> Избранное</span>
                         {wishCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{wishCount}</span>}
-                      </Link>
-                    </SheetClose>
-                  </Toggleable>
-                  <Toggleable sectionKey="header.compare" as="div">
-                    <SheetClose asChild>
-                      <Link to="/compare" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                        <span className="flex items-center gap-3"><Scale className="h-4 w-4" /> Сравнение</span>
-                        {cmpCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{cmpCount}</span>}
                       </Link>
                     </SheetClose>
                   </Toggleable>
