@@ -401,7 +401,7 @@
        --card-title-from   — начальный цвет градиента
        --card-title-to     — конечный цвет градиента
        --card-title-glow   — цвет свечения (drop-shadow) */
-  :where(.card-title-gradient) {
+  .card-title-gradient {
     --card-title-lines: 2;
     --card-title-from: oklch(1 0 0);
     --card-title-to: var(--color-primary);
@@ -424,7 +424,6 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: var(--card-title-lines);
-    line-clamp: var(--card-title-lines);
     overflow: hidden;
     overflow-wrap: anywhere;
     word-break: normal;
