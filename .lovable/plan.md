@@ -1,97 +1,114 @@
-# План: CLS-аудит и регрессионная защита карточек каталога
+## Этап 1. Аудит — что есть сейчас
 
-Задача состоит из 5 связанных подзадач. Разобью их так, чтобы каждая давала измеримый эффект и не сломала уже зафиксированный градиент `card-title-gradient`.
+**Маршруты раздела «Наполнение»** (под `/admin`, гейт по ролям admin/manager/marketer/content_editor в `src/routes/admin.tsx`):
 
-## 1. Lighthouse + web-vitals аудит CLS для каталога
+| Маршрут | Файл | LOC | Сущность |
+|---|---|---|---|
+| `/admin/catalog` | `admin.catalog.tsx` | 78 | Layout (4 вкладки, счётчики) |
+| `/admin/catalog/$type` | `admin.catalog.$type.tsx` | 660 | CRUD zones/tech_equipment/services/production_items |
+| `/admin/blog` | `admin.blog.tsx` | 186 | Статьи |
+| `/admin/cases` | `admin.cases.tsx` | 196 | Кейсы |
+| `/admin/testimonials` | `admin.testimonials.tsx` | 154 | Отзывы |
 
-**Что делаю:**
-- Запускаю Lighthouse CLI против локального `http://localhost:8080/equipment`, `/services`, `/` (раздел «Наши рекомендации») для desktop и mobile presets, с эмуляцией медленного шрифта (network throttling), сохраняю JSON-отчёт в `/tmp/lh/`.
-- Параллельно вшиваю в dev-сборку лёгкий web-vitals профайлер (только если `?vitals=1`), который логирует CLS-shifts с указанием `node`, `prevRect`, `currentRect`, `value` — для точечной диагностики, какие именно элементы прыгают.
-- Свожу результаты в краткий отчёт: топ источников CLS, current/target (target = < 0.02 для каталога).
+**Общие компоненты:** `AdminPageHeader`, `AdminListPanel`, `AdminEditorShell`, `AdminTable`, `Field`, `StatusPill`, `SortableList`, `CategoryCombobox`, `FeaturesEditor`, `ExtrasEditor`, `UniversalMediaUploader`, `PriceTableEditor`, `AdminCommandPalette`. Состояние — TanStack Query + локальный `useState`. Уведомления — `sonner`. Доступ — `useAuth` + `useRoles`. БД — прямой `supabase` клиент из браузера (RLS).
 
-**Артефакт:** комментарий в чате с цифрами + `tests/perf/cls-report.md`.
+**Таблица находок (по приоритету):**
 
-## 2. Фикс CLS: шрифты, контейнеры, сетка
+| # | Компонент | Баг / риск | Крит. | Решение |
+|---|---|---|---|---|
+| 1 | `admin.blog.tsx` (`save`) | Сохранение пустого `slug` падает в БД, нет проверки уникальности, slug не пересчитывается при правке заголовка после первого ввода. `confirm()` для удаления — нативный, не a11y | H | RHF + Zod, проверка уникальности через `.select('id').eq('slug', …).maybeSingle()` с debounce 400 мс, замена `confirm` на `AlertDialog` |
+| 2 | `admin.blog.tsx` | Нет `useQuery` — каждый `load()` — гонка с `setEditing`. После save модалка может закрыться, но список ещё не обновлён | H | Переезд на `useQuery`/`useMutation` как в cases/testimonials |
+| 3 | `admin.cases.tsx` Editor | `metrics` валится в `toast.error` если JSON битый, но пользователь видит только тост — нет подсветки поля. `services_used` парсится только при save (нет валидации формата) | M | Подсветка поля + ошибка под textarea; перенос на RHF |
+| 4 | Все формы | Нет RHF+Zod, нет валидации `onBlur`/`onChange`, нет счётчиков символов (slug 80, seo_title 60, seo_description 160) | M | Единый `useFormWithSchema(zodSchema)` hook, `<FieldHint>` с лимитами |
+| 5 | Все формы | Нет автосохранения черновика (localStorage) | M | `useAutoSaveDraft(key, values, 1500)` — сохраняет в `localStorage`, при открытии того же id предлагает восстановить |
+| 6 | `admin.catalog.$type.tsx` | `any` повсеместно, `eslint-disable` 6 раз. Типобезопасность нулевая | M | Сгенерировать тип из `Database["public"]["Tables"][T]["Row"]`, дискриминированный union по `table` |
+| 7 | `admin.catalog.$type.tsx` Editor | `cover_url` рассчитывается дважды (в форме и при save) — рассинхрон при пустой строке | L | Единая функция `computeCover(form)` |
+| 8 | `admin.blog.tsx` Editor (Textarea body) | Plain textarea для тела статьи. Markdown/HTML — на усмотрение редактора, без preview | M | Tiptap (опционально, см. ниже) или хотя бы Markdown preview |
+| 9 | Все списки | Нет пагинации/виртуализации. Сейчас при >200 записях рендер тормозит | M | `@tanstack/react-virtual` на `AdminListPanel`, серверная пагинация для блога/кейсов от 100+ |
+| 10 | Все формы | Нет sticky-панели «Сохранено / Сохраняю… / Ошибка» — индикатор только в кнопке | L | `<SaveStatus state="saved|saving|dirty|error" />` в `AdminEditorShell` |
+| 11 | UniversalMediaUploader | Нет client-side компрессии, нет проверки разрешения/типа до отправки на сервер | M | Подключить `browser-image-compression`, валидация MIME + max 10 MB, preview thumbnails |
+| 12 | Все формы | Нет генерации SEO description из первого абзаца | L | Кнопка «Сгенерировать» в SEO-блоке (берёт первые 155 симв. `excerpt`/`summary`/`description`) |
+| 13 | Все формы | Нет hotkeys (Cmd/Ctrl+S, Esc) | L | `useHotkeys` через существующий `AdminCommandPalette` или новый `useEditorHotkeys` |
+| 14 | Все формы | Нет contextual help (tooltip «?») у неочевидных полей (slug, sort_order, featured, metrics JSON) | M | Добавить `hint`/`tooltip` пропс в `Field` + `<HelpTip>` |
+| 15 | Все списки | Нет «empty state» с иллюстрацией и CTA — только текст. (Частично есть в catalog через `emptyAction`) | L | Унифицировать `<EmptyState icon, title, description, action>` |
+| 16 | XSS | `excerpt`, `body`, `description` рендерятся как plain text (не `dangerouslySetInnerHTML`) — XSS-риска **нет** в админке. На публичных страницах проверить отдельно | OK | — |
+| 17 | A11y | `onClick` на `div` с `role=button` и keydown — OK; иконки-кнопки имеют `aria-label`. Нет skip-link, focus-visible покрыт. Заголовки h1 ок | L | Добавить `<main>` landmark (сейчас есть), оставить как есть |
+| 18 | Race conditions | Двойной клик «Сохранить» не блокируется в blog (нет `useMutation`). В cases/testimonials блокируется | M | См. #2 |
+| 19 | Onboarding | Отсутствует | L | Отдельная задача; в этот рефакторинг включать опционально |
+| 20 | Unit tests | Отсутствуют для slug/валидации/автосохранения | M | Vitest: `slugify`, `zodSchema.parse`, `useAutoSaveDraft` |
 
-**Шрифты (главный источник CLS при swap):**
-- Проверяю текущий `<link>` в `__root.tsx`. Если используется Google Fonts без `font-display: optional`/`swap` с `size-adjust`, переключаю на self-host через `vite-imagetools`-стиль (или оставляю Google Fonts, но добавляю `<link rel="preload" as="font" crossorigin>` для основных весов).
-- Добавляю в `@theme` fallback-метрики: `@font-face` с `size-adjust`, `ascent-override`, `descent-override`, `line-gap-override` для системного fallback так, чтобы рендер до и после загрузки шрифта занимал одну и ту же высоту (CSS Font Loading metric overrides — поддержка Chrome 87+, Safari 17+, Firefox 89+).
-- На `<html>` ставлю `font-display: swap` через `@font-face` (для self-hosted) либо параметр `&display=swap` в Google Fonts URL.
+**Что НЕ войдёт в этот рефакторинг (вне разумного scope, предлагаю как отдельные задачи):**
+- driver.js / intro.js onboarding-туры — отдельная фича на 4-6 часов
+- Полноценный Tiptap WYSIWYG с Markdown-переключением и таблицами — отдельная задача (~6 часов; сейчас Markdown preview хватит)
+- Undo/Redo для 20 действий через паттерн event-sourcing
+- Offline queue с retry (Service Worker)
+- Проверка битых ссылок в контенте (нужен фоновый job)
+- Полный Lighthouse > 90 с прогонами CI и LCP/FID/CLS таргетами для админки — админка noindex, оптимизация перформанса оправдана только при реальной деградации
+- Сборка `audit_log` для UI (запись в БД уже идёт через `audit_log` таблицу) — отдельный UI на этап
 
-**Контейнеры карточки:**
-- В `FeaturedCard` и `CatalogCard` фиксирую `aspect-ratio` для области изображения (она уже есть, перепроверяю), даю изображению `width`/`height` атрибуты или `aspect-ratio` через CSS, чтобы при загрузке картинки не происходило reflow.
-- Блоку цены и блоку описания подтверждаю `min-h` (уже есть в FeaturedCard, добавляю в CatalogCard, если отсутствует).
-- Заголовку — уже стоит `min-height: calc(var(--card-title-lines) * 1lh)` через `.card-title-gradient`. Дополнительно фиксирую `contain: layout style` на самой карточке, чтобы её содержимое не вытесняло соседей при асинхронной перерисовке.
+---
 
-**Сетка:**
-- В `CatalogGrid` и секции главной «Наши рекомендации» — `grid-auto-rows: 1fr` уже стоит, перепроверяю. Добавляю `min-h` на сам грид-контейнер, рассчитанный по skeleton-карточкам, чтобы при первом рендере (до загрузки данных) высота секции уже была закреплена → переход skeleton → реальные карточки не вызывает shift.
-- Skeleton-карточки приводятся к точному размеру реальных: те же `min-h` заголовка/описания/цены.
+## Этап 2-5. План работ (4 фазы, каждая отдельный заход)
 
-## 3. Интеграция `useClampedText` с сохранением clip:text градиента
+### Фаза A — Безопасность и стабильность форм (H+M)
 
-Это самый рискованный пункт (предыдущая попытка ломала градиент). Подход — **не трогать структуру кнопки**, делать словарную обрезку на уровне текстового содержимого, оставляя CSS `-webkit-line-clamp` как safety net.
+- `src/lib/admin/schemas.ts` — Zod-схемы для blog/cases/testimonials/catalog (slug regex, длины, обязательные)
+- `src/lib/admin/use-form-with-schema.ts` — RHF + zodResolver обёртка, `dirty/saving/saved/error` статус
+- `src/lib/admin/use-slug-unique.ts` — debounce-проверка уникальности slug через supabase
+- `src/lib/admin/use-autosave-draft.ts` — localStorage, debounce 1500 мс, восстановление при reopen
+- Перевод `admin.blog.tsx` на `useQuery` + `useMutation` (фикс #1, #2, #18)
+- Замена `confirm()` на `AlertDialog` во всех админках
+- В `Field` добавить `hint`, `tooltip`, `error`, `counter` пропсы — единый шаблон вывода ошибок и счётчиков
 
-**Что делаю:**
-- В `useClampedText` (уже есть в `src/components/ui/ClampedTitle.tsx`) выношу публичный хук, который возвращает только строку — без своего DOM-узла.
-- В `FeaturedCard` и `CatalogGrid` вызываю хук на уровне карточки, передавая `item.title` и реф самой кнопки. Хук:
-  1. Измеряет доступную ширину кнопки + computed `line-height`.
-  2. Через offscreen-клон (тот же шрифт/вес/трекинг, `visibility: hidden; position: absolute`) бинарным поиском по словам находит максимальную подстроку, помещающуюся в 2 строки, добавляет `…`.
-  3. Чистит «висячие» предлоги/союзы по словарю (`в`, `на`, `и`, `для`, `по`, `от`, `до`, `с`, `у`, `о`, `об`, `при`, `как`).
-- Возвращённую строку рендерю как **прямой текстовый узел внутри той же `<button class="card-title-gradient">`** — никаких новых `<span>`, никаких изменений display/clip. CSS `-webkit-line-clamp: 2` остаётся как fallback на случай, если хук не успел отработать (SSR, первый рендер).
-- В `aria-label`/`title` остаётся **полное** название — доступность не страдает.
-- ResizeObserver на кнопке: при изменении ширины контейнера перепересчёт.
+### Фаза B — UX/UI: layout, навигация, help-система (Этап 3 + 4)
 
-**Проверка отсутствия конфликта с line-clamp:** обрезанная строка по построению ≤ 2 строки, поэтому `-webkit-line-clamp` не активируется и не «дорезает» текст повторно. Эллипсис рисуется из JS, а не CSS — стабильно во всех браузерах (Firefox тоже).
+- `AdminCatalogLayout` (`admin.catalog.tsx`) и каждый раздел получают единый header: **Breadcrumbs** (есть в `admin.tsx`, расширить до 2-3 уровней) → **Action bar** (Поиск / Фильтры / + Создать) → контент → пагинация
+- Sticky action bar внизу в `AdminEditorShell`: `[Черновик] [Предпросмотр] [Опубликовать]`
+- `<HelpTip text="…" link="…" />` рядом со slug, sort_order, featured, published_at, metrics JSON, pricing tiers, SEO-полями
+- `<EmptyState>` компонент + единая иллюстрация
+- Hotkeys: Cmd/Ctrl+S сохранить, Esc закрыть превью/редактор, Cmd/Ctrl+N — создать (через CommandPalette)
 
-## 4. Фиксация высоты заголовков без изменения clip:text
+### Фаза C — Real-time валидация, медиа, автоматизация (Этап 5)
 
-Уже сделано на уровне `.card-title-gradient` (`min-height: calc(var(--card-title-lines) * 1lh)`). Добавлю две доработки:
+- Live-валидация в `useFormWithSchema` (onBlur + onChange debounce 300 мс), подсветка `border-destructive`, сообщение под полем
+- `UniversalMediaUploader`: добавить `browser-image-compression` (target 1600px / 200 KB), drag&drop уже есть, проверка MIME/size на клиенте, прогресс-бар
+- SEO-блок: кнопка «Сгенерировать description» (slice первого абзаца до 155 симв.)
+- `SaveStatus` индикатор в `AdminEditorShell`: dirty → «Изменения не сохранены», saving → «Сохраняю…», saved → «Сохранено · 12:34», error → красный + retry
+- `useAutoSaveDraft` интеграция во все 4 редактора (blog/cases/testimonials/catalog)
+- Серверная пагинация для блога (limit 50) и виртуализация списков от 100 элементов
 
-- `1lh` зависит от загруженного шрифта → если fallback-метрики из п. 2 настроены корректно, `1lh` совпадает до и после swap, и shift исчезает.
-- Для совсем старых браузеров без `lh` — fallback `min-height: 2.6em` через `@supports not (height: 1lh)`.
-- На сам `<h3>` ставлю `min-block-size` равный высоте кнопки, чтобы блок акцент-линии (`.card-title-accent`) не сдвигался.
+### Фаза D — Тесты, типы, чистка (Этап 6)
 
-## 5. CI: визуальные тесты + fail on diff
+- Vitest: `slugify`, `zodSchema.safeParse` на корректных/невалидных кейсах, `useAutoSaveDraft` сохраняет/восстанавливает
+- Удалить `any` в `admin.catalog.$type.tsx`, использовать `Database["public"]["Tables"][T]["Row"]` + дискриминированный union
+- Прогон `bun run build` + проверка console.error/warn в Playwright по 4 страницам админки на 320/768/1024/1440 px
+- Самопроверка по чек-листу Этапа 6 — отчёт в чате
 
-CI воркфлоу `visual.yml` уже запускает `bunx playwright test` (fail on snapshot diff — поведение Playwright по умолчанию). Дополняю:
+---
 
-**Новые сценарии в `tests/visual/cards.spec.ts`:**
-- **Hover на всех брейкпоинтах** — сейчас hover тестируется только на desktop, добавлю tablet-768 и tablet-1024 (mobile-* пропускаются — нет hover на touch).
-- **Один ряд, разные длины** — карточка 1: коротко, 2: длинно, 3: средне → снапшот ряда. Уже есть в одном виде, расширю на mobile-414 (одноколоночный режим — проверка чередования высот).
-- **Загрузка шрифта** — два снапшота той же карточки: (а) с заблокированной загрузкой шрифта (`route.abort()` для font-файлов) → рендер на fallback с size-adjust; (б) после полной загрузки. Сравнение высоты должно быть < 1px разницы.
-- **Переключение языка** — если в проекте есть i18n-переключатель, найду его и сниму карточки до/после переключения. Если i18n ещё нет, оставлю TODO с явным `test.fixme()` и заметкой в README, чтобы не вводить в заблуждение.
+## Технические решения
 
-**Сам CI:**
-- Воркфлоу уже падает при snapshot diff. Добавляю явный шаг `Verify no untracked snapshot changes`, чтобы PR'ы не могли пройти, забыв обновить эталоны.
-- Артефакт `playwright-report` уже грузится при failure.
+- TypeScript strict — без `any` в новом коде
+- Формы: `react-hook-form` + `zod` + `@hookform/resolvers` (все три уже есть в проекте)
+- Состояние: TanStack Query для серверного, локальный `useState` для UI — Zustand не нужен (нет глобального админ-стейта)
+- Таблицы: оставляем текущий `AdminListPanel` + `SortableList`, виртуализация через `@tanstack/react-virtual` (новая зависимость) только в Фазе C при необходимости
+- Медиа: `browser-image-compression` — новая зависимость в Фазе C
+- WYSIWYG: **не подключаю** Tiptap в этот рефакторинг — Markdown preview достаточен; если нужен полноценный редактор, заведу отдельной задачей
+- Onboarding: **не подключаю** driver.js — отдельная задача
 
-## Что НЕ трогаю
-- Pricing, корзину, server functions, миграции, RLS.
-- Структуру `.card-title-gradient` (только добавления, без удаления свойств clip:text).
-- Routing.
+## Порядок исполнения
 
-## Файлы
+Предлагаю стартовать с **Фазы A** (безопасность форм + стабильность blog). После апрува плана:
+1. Делаю Фазу A → показываю diff → жду «ок»
+2. Фаза B → diff → «ок»
+3. Фаза C → diff → «ок»
+4. Фаза D → финальный отчёт по чек-листу
 
-**Создаю:**
-- `tests/perf/cls-report.md` — отчёт по аудиту.
-- `tests/perf/run-lighthouse.sh` — скрипт-обёртка для запуска LH локально и в CI.
-- `src/lib/web-vitals-dev.ts` — dev-only CLS-логгер, подключается только при `?vitals=1`.
+Каждая фаза самодостаточна и не ломает соседние разделы. Если хочется быстрее — можно объединить A+B и C+D, но риск регрессий растёт.
 
-**Редактирую:**
-- `src/styles.css` — fallback-метрики шрифта, `@supports not (height: 1lh)`, `contain: layout style` на карточке.
-- `src/routes/__root.tsx` — preload шрифтов, `display=swap`.
-- `src/components/ui/ClampedTitle.tsx` — публичный `useClampedText` (строковый API).
-- `src/components/FeaturedCard.tsx` — интеграция хука, `min-block-size` на `h3`.
-- `src/components/CatalogGrid.tsx` — то же, плюс `min-h` для skeleton.
-- `tests/visual/cards.spec.ts` — новые сценарии.
-- `.github/workflows/visual.yml` — verify-step для эталонов.
+## Вопросы
 
-## Порядок выполнения
-
-1. Аудит (LH + web-vitals) → понять текущий CLS числом.
-2. Фиксы шрифтов/контейнеров/сетки (п. 2 + п. 4) → измерить дельту, цель < 0.02.
-3. Интеграция `useClampedText` (п. 3) — отдельным шагом, со скриншот-проверками после каждого компонента, чтобы поймать любой регресс градиента сразу.
-4. Расширение visual-тестов (п. 5) → апдейт эталонов под новый, стабильный рендер.
-5. Финальный прогон LH → запись «before/after» в `cls-report.md`.
-
-Подход к рискам: после п. 3 делаю явный визуальный смок-чек через Playwright (скриншот desktop+mobile) перед тем, как обновлять snapshot-эталоны — если градиент сломался, откатываю интеграцию хука и оставляю в режиме «только CSS clamp + min-height».
+1. **WYSIWYG для тела статьи блога** — нужен Tiptap сейчас (добавит ~150 KB, отдельный этап +4-6 часов), или достаточно Markdown с preview?
+2. **Onboarding-тур (driver.js)** — включать или отложить?
+3. **Серверная пагинация** — у вас сейчас сколько максимум записей в blog/cases? Если <100 — виртуализация и пагинация лишние.
+4. **Старт** — иду по Фазе A, или хочется сначала точечно что-то критичное (например, только фикс blog save)?
