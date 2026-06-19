@@ -147,7 +147,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
           >
             <span className="inline-flex items-center gap-1.5">
               <Search className="h-3.5 w-3.5 text-accent" />
-              Более 500 товаров в наличии
+              Более 500 услуг в наличии
             </span>
             <span className="hidden sm:inline text-border">|</span>
             <span className="inline-flex items-center gap-1.5">
