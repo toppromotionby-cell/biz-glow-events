@@ -137,7 +137,7 @@ function Page() {
                       {r.status === "booked" ? "Занято" : "Обслуживание"}
                     </StatusPill>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => { if (confirm("Удалить?")) remove.mutate(r.id); }}>
+                  <Button variant="ghost" size="sm" onClick={async () => { if (await confirmDelete({ title: "Удалить запись?", confirmText: "Удалить", destructive: true })) remove.mutate(r.id); }}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </li>
