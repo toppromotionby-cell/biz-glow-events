@@ -165,7 +165,7 @@ function OrderDetail() {
             <dt className="text-muted-foreground">Телефон</dt><dd>{order.client_phone}</dd>
             <dt className="text-muted-foreground">Email</dt><dd>{order.client_email}</dd>
             <dt className="text-muted-foreground">Компания</dt><dd>{order.client_company ?? "—"}</dd>
-            <dt className="text-muted-foreground">Дата мероприятия</dt><dd>{order.event_date ? new Date(order.event_date).toLocaleDateString("ru-BY") : "—"}</dd>
+            <dt className="text-muted-foreground">Дата мероприятия</dt><dd>{fmtDate(order.event_date)}</dd>
             <dt className="text-muted-foreground">UTM</dt><dd className="text-xs">{[order.utm_source, order.utm_campaign].filter(Boolean).join(" / ") || "—"}</dd>
           </dl>
         </div>
