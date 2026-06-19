@@ -310,10 +310,36 @@ function CatalogCard({
 
 
   return (
-    <article
-      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col"
+    <CatalogCardInner
+      item={item}
+      onOpen={onOpen}
+      photos={photos}
+      index={index}
+      videoRef={videoRef}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
+    />
+  );
+}
+
+function CatalogCardInner({
+  item, onOpen, photos, index, videoRef, onMouseEnter, onMouseLeave,
+}: {
+  item: CatalogItem;
+  onOpen: () => void;
+  photos: string[];
+  index: number;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
+  const titleRef = useRef<HTMLButtonElement>(null);
+  const clamped = useClampedText(titleRef, item.title, 2);
+  return (
+    <article
+      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col [contain:layout_style]"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <button
         type="button"
@@ -354,13 +380,14 @@ function CatalogCard({
       <div className="p-3.5 sm:p-4 lg:p-5 flex-1 flex flex-col">
         <h3 className="font-display font-bold text-lg sm:text-xl leading-tight tracking-tight">
           <button
+            ref={titleRef}
             type="button"
             onClick={onOpen}
             title={item.title}
             aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient"
           >
-            {item.title}
+            {clamped}
           </button>
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />
