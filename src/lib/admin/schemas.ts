@@ -23,7 +23,7 @@ export const blogPostSchema = z.object({
   seo_title: seoTitle,
   seo_description: seoDescription,
 });
-export type BlogPostInput = z.infer<typeof blogPostSchema>;
+export type BlogPostInput = z.input<typeof blogPostSchema>;
 
 export const testimonialSchema = z.object({
   client_name: z.string().min(1, "Имя клиента обязательно").max(120),
@@ -37,7 +37,7 @@ export const testimonialSchema = z.object({
   featured: z.boolean().default(false),
   sort_order: z.coerce.number().int().default(0),
 });
-export type TestimonialInput = z.infer<typeof testimonialSchema>;
+export type TestimonialInput = z.input<typeof testimonialSchema>;
 
 export const caseSchema = z.object({
   title: z.string().min(1, "Заголовок обязателен").max(200),
@@ -55,4 +55,4 @@ export const caseSchema = z.object({
   published: z.boolean().default(false),
   featured: z.boolean().default(false),
 });
-export type CaseInput = z.infer<typeof caseSchema>;
+export type CaseInput = z.input<typeof caseSchema>;
