@@ -41,7 +41,6 @@ export function SiteHeader() {
   const { isAuthenticated } = useAuth();
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
-  const { count: cmpCount } = useCompare();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrolling, setScrolling] = useState(false);
