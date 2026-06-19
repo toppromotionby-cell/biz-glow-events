@@ -7,17 +7,23 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
 
 export function AdminEditorShell({
   title, switches, onDelete, onSave, saving, children, deleteLabel = "Удалить", confirmDelete = true,
+  saveState, draftSavedAt, errorMessage, saveDisabled,
 }: {
   title?: ReactNode;
   switches?: ReactNode;
   onDelete?: () => void;
   onSave?: () => void;
   saving?: boolean;
+  saveDisabled?: boolean;
   deleteLabel?: string;
   confirmDelete?: boolean;
+  saveState?: SaveState;
+  draftSavedAt?: Date | null;
+  errorMessage?: string | null;
   children: ReactNode;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
