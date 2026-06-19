@@ -391,24 +391,83 @@
     color: transparent;
   }
   /* Заголовок карточки каталога: белый → оранжевый градиент с мягким свечением.
-     Применяется к <span> внутри h3 в CatalogCard и FeaturedCard. */
-  .card-title-gradient {
-    background: linear-gradient(135deg, oklch(1 0 0) 40%, var(--color-primary) 100%);
+     Самодостаточный утилитарный класс: работает на любом теге-обёртке
+     (h3, span, button, a), сам сбрасывает дефолты <button>/<a>, сам задаёт
+     line-clamp и собственный hover-glow — не зависит от .group и не
+     конфликтует с line-clamp/flex/grid у родителей.
+
+     Конфигурация через CSS-переменные:
+       --card-title-lines  — число строк до обрезки (по умолчанию 2)
+       --card-title-from   — начальный цвет градиента
+       --card-title-to     — конечный цвет градиента
+       --card-title-glow   — цвет свечения (drop-shadow) */
+  :where(.card-title-gradient) {
+    --card-title-lines: 2;
+    --card-title-from: oklch(1 0 0);
+    --card-title-to: var(--color-primary);
+    --card-title-glow: oklch(0.72 0.20 50 / 0.28);
+    --card-title-glow-hover: oklch(0.72 0.20 50 / 0.5);
+
+    /* Сброс дефолтов button/a, чтобы класс работал на любом теге */
+    appearance: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    font: inherit;
+    text-align: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    width: 100%;
+
+    /* line-clamp: единое поведение независимо от обёртки */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--card-title-lines);
+    line-clamp: var(--card-title-lines);
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    /* зарезервированная высота (CLS = 0) если контент пуст */
+    min-height: calc(var(--card-title-lines) * 1lh);
+
+    /* Градиентный текст */
+    background-image: linear-gradient(135deg, var(--card-title-from) 40%, var(--card-title-to) 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
     -webkit-background-clip: text;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
     color: transparent;
-    filter: drop-shadow(0 0 14px oklch(0.72 0.20 50 / 0.28));
+
+    /* Свечение и собственный hover (работает и без .group) */
+    filter: drop-shadow(0 0 14px var(--card-title-glow));
     transition: filter 300ms ease;
+    /* изолируем эффекты от родительского stacking-контекста */
+    isolation: isolate;
   }
-  .group:hover .card-title-gradient {
-    filter: drop-shadow(0 0 22px oklch(0.72 0.20 50 / 0.5));
+  :where(.card-title-gradient):hover,
+  :where(.group:hover) .card-title-gradient,
+  :where(.group:focus-visible) .card-title-gradient {
+    filter: drop-shadow(0 0 22px var(--card-title-glow-hover));
   }
-  .theme-light .card-title-gradient {
-    background: linear-gradient(135deg, oklch(0.12 0 0) 40%, oklch(0.65 0.20 70) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 0 10px oklch(0.70 0.19 70 / 0.2));
+  :where(.card-title-gradient):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  :where(.theme-light .card-title-gradient) {
+    --card-title-from: oklch(0.12 0 0);
+    --card-title-to: oklch(0.65 0.20 70);
+    --card-title-glow: oklch(0.70 0.19 70 / 0.2);
+    --card-title-glow-hover: oklch(0.70 0.19 70 / 0.35);
+  }
+  /* Firefox / браузеры без поддержки -webkit-box: graceful fallback */
+  @supports not (-webkit-line-clamp: 2) {
+    :where(.card-title-gradient) {
+      display: block;
+      max-height: calc(var(--card-title-lines) * 1lh);
+    }
   }
   /* Анимированная акцентная линия под заголовком карточки. */
   .card-title-accent {

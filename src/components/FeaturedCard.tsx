@@ -185,7 +185,7 @@ export function FeaturedCard({
             onClick={onOpen}
             title={item.title}
             aria-label={`Открыть: ${item.title}`}
-            className="card-title-gradient text-left line-clamp-2 w-full"
+            className="card-title-gradient"
           >
             {item.title}
           </button>
