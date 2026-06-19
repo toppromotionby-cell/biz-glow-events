@@ -4,6 +4,7 @@ import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
+import { useClampedText } from "@/components/ui/ClampedTitle";
 
 import { WishlistButton } from "@/components/WishlistButton";
 import type { CatalogItem } from "@/lib/catalog-mock";
@@ -129,7 +130,7 @@ export function CatalogGrid({
   return (
     <>
       {categoryChips.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2 min-h-[2.25rem]">
           <button
             type="button"
             onClick={() => setActiveCategory(null)}
@@ -309,9 +310,12 @@ function CatalogCard({
 
 
 
+  const titleRef = useRef<HTMLButtonElement>(null);
+  const clamped = useClampedText(titleRef, item.title, 2);
+
   return (
     <article
-      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col"
+      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col [contain:layout_style]"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
@@ -354,13 +358,14 @@ function CatalogCard({
       <div className="p-3.5 sm:p-4 lg:p-5 flex-1 flex flex-col">
         <h3 className="font-display font-bold text-lg sm:text-xl leading-tight tracking-tight">
           <button
+            ref={titleRef}
             type="button"
             onClick={onOpen}
             title={item.title}
             aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient"
           >
-            {item.title}
+            {clamped}
           </button>
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />

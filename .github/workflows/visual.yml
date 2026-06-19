@@ -1,10 +1,11 @@
-name: Visual regression
+name: Visual regression & CLS
 
 on:
   pull_request:
     paths:
       - "src/**"
       - "tests/visual/**"
+      - "tests/perf/**"
       - "playwright.config.ts"
       - "package.json"
       - ".github/workflows/visual.yml"
@@ -13,7 +14,7 @@ on:
 jobs:
   playwright:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -22,15 +23,42 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
 
-      # Детерминированные ассерты для карточек: градиент, line-clamp, высота.
-      # Запускаем первым шагом — если падает, сразу видна суть регрессии,
-      # без необходимости разглядывать диффы скриншотов.
-      - name: Cards — CSS assertions (gradient / line-clamp / height)
+      # Запускаем dev-сервер в фоне для CLS-замера (нужен запущенный сайт).
+      # visual-тесты сами стартуют сервер через webServer-команду в конфиге,
+      # CLS-скрипт идёт отдельно и переиспользует тот же localhost:8080.
+      - name: Start dev server
+        run: bun run dev &
+        env: { PORT: "8080" }
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8080 >/dev/null && exit 0
+            sleep 1
+          done
+          echo "dev server did not start" && exit 1
+
+      # 1) Детерминированные ассерты для карточек: gradient / line-clamp / height
+      - name: Cards — CSS assertions
         run: bunx playwright test tests/visual/cards.assert.spec.ts --workers=2
 
-      # Пиксельные снапшоты (карточки + центрирование).
+      # 2) Пиксельные снапшоты (fail on diff — Playwright default)
       - name: Visual snapshots
-        run: bunx playwright test --workers=2 --ignore-snapshots=false
+        run: bunx playwright test --workers=2
+
+      # 3) CLS budget для каталога (< 0.1 good; в CI требуем не хуже 0.1)
+      - name: CLS budget
+        env: { CI: "true" }
+        run: bun run tests/perf/measure-cls.ts
+
+      # 4) Защита от забытых эталонов: после прогона рабочая копия должна быть чистой
+      - name: Verify no untracked snapshot changes
+        run: |
+          if [ -n "$(git status --porcelain tests/)" ]; then
+            echo "::error::Visual snapshots changed but were not committed:"
+            git status --porcelain tests/
+            git diff --stat tests/
+            exit 1
+          fi
 
       - name: Upload diff artifacts on failure
         if: failure()
@@ -40,4 +68,5 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            tests/perf/cls-report.md
           retention-days: 14

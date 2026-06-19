@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MediaShield } from "@/components/MediaShield";
 import { useResolvedUrl } from "@/components/StorageMedia";
+import { useClampedText } from "@/components/ui/ClampedTitle";
 import { priceFrom as priceFromUtil } from "@/lib/utils";
 import type { HomeFeatured } from "@/lib/home.functions";
 
@@ -71,6 +72,8 @@ export function FeaturedCard({
   const [paused, setPaused] = useState(false);
   const [firstImageReady, setFirstImageReady] = useState(false);
   const price = priceFromUtil(item.pricing);
+  const titleRef = useRef<HTMLButtonElement>(null);
+  const clampedTitle = useClampedText(titleRef, item.title, 2);
 
 
   // Autoplay: пауза при hover (desktop) или активном касании (mobile).
@@ -127,7 +130,7 @@ export function FeaturedCard({
 
   return (
     <article
-      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col"
+      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col [contain:layout_style]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -181,13 +184,14 @@ export function FeaturedCard({
       <div className="p-3 sm:p-4 lg:p-5 flex-1 flex flex-col min-w-0">
         <h3 className="font-display font-bold text-base sm:text-lg lg:text-xl leading-snug tracking-tight break-words hyphens-auto">
           <button
+            ref={titleRef}
             type="button"
             onClick={onOpen}
             title={item.title}
             aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient"
           >
-            {item.title}
+            {clampedTitle}
           </button>
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />
@@ -208,13 +212,20 @@ export function FeaturedCard({
 
 export function FeaturedCardSkeleton() {
   return (
-    <article className="glass rounded-xl sm:rounded-2xl overflow-hidden flex flex-col" aria-hidden>
+    <article className="glass rounded-xl sm:rounded-2xl overflow-hidden flex flex-col [contain:layout_style]" aria-hidden>
       <div className="aspect-[16/10] sm:aspect-[4/3] bg-muted/30 animate-pulse" />
-      <div className="p-3 sm:p-4 lg:p-5 flex-1 flex flex-col gap-2">
-        <div className="h-4 sm:h-5 w-3/4 rounded bg-muted/40 animate-pulse" />
-        <div className="h-3 sm:h-4 w-full rounded bg-muted/30 animate-pulse" />
-        <div className="h-3 sm:h-4 w-5/6 rounded bg-muted/30 animate-pulse" />
-        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40">
+      <div className="p-3 sm:p-4 lg:p-5 flex-1 flex flex-col">
+        {/* Те же min-h, что у живой карточки — переход skeleton→data без shift'a */}
+        <div className="min-h-[calc(2*1lh)] flex flex-col justify-center gap-1">
+          <div className="h-3 sm:h-4 w-3/4 rounded bg-muted/40 animate-pulse" />
+          <div className="h-3 sm:h-4 w-2/4 rounded bg-muted/40 animate-pulse" />
+        </div>
+        <span className="block mt-2 h-0.5 w-10 rounded-full bg-muted/40" />
+        <div className="mt-1.5 sm:mt-2 flex-1 min-h-[2.25rem] sm:min-h-[3.75rem] flex flex-col gap-1">
+          <div className="h-3 w-full rounded bg-muted/30 animate-pulse" />
+          <div className="h-3 w-5/6 rounded bg-muted/30 animate-pulse" />
+        </div>
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40 min-h-[3.25rem] sm:min-h-[3.5rem]">
           <div className="h-6 sm:h-7 w-1/3 rounded bg-muted/40 animate-pulse" />
         </div>
       </div>

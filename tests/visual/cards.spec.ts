@@ -73,7 +73,7 @@ test.describe("Cards — FeaturedCard на главной", () => {
     await expect(card).toHaveScreenshot(`featured-long-${testInfo.project.name}.png`);
   });
 
-  test("hover-состояние не ломает градиент (только desktop)", async ({ page }, testInfo) => {
+  test("hover-состояние не ломает градиент (все breakpoints с pointer)", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name.startsWith("mobile-"), "hover не релевантен на тач-устройствах");
     await page.goto("/");
     await page.waitForLoadState("networkidle");
@@ -85,6 +85,24 @@ test.describe("Cards — FeaturedCard на главной", () => {
     await card.hover();
     await page.waitForTimeout(350); // ждём конец transition filter (300ms)
     await expect(card).toHaveScreenshot(`featured-hover-${testInfo.project.name}.png`);
+  });
+
+  test("шрифт не загружен → fallback-метрики удерживают высоту", async ({ browser }, testInfo) => {
+    // отдельный контекст, чтобы заблокировать загрузку шрифтов до первого рендера
+    const ctx = await browser.newContext({
+      viewport: { width: testInfo.project.use.viewport!.width, height: testInfo.project.use.viewport!.height },
+    });
+    await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+    const page = await ctx.newPage();
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await page.addStyleTag({ content: `*,*::before,*::after{transition:none!important;animation:none!important;} img,video{visibility:hidden!important;}` });
+    const card = page.locator("section").filter({ hasText: "Наши рекомендации" }).locator("article").first();
+    await card.waitFor({ state: "visible", timeout: 15000 });
+    await card.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    await expect(card).toHaveScreenshot(`featured-no-font-${testInfo.project.name}.png`);
+    await ctx.close();
   });
 });
 
@@ -104,7 +122,7 @@ test.describe("Cards — CatalogCard в каталоге", () => {
 
 test.describe("Cards — стабильность высоты при разных длинах", () => {
   test("ряд карточек: смешанные короткие и длинные названия", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "mobile-375" || testInfo.project.name === "mobile-414", "одна колонка — высоту строки сравнивать не нужно");
+    test.skip(testInfo.project.name === "mobile-375", "одна узкая колонка — высоту строки сравнивать не нужно");
     await page.goto("/");
     await page.waitForLoadState("networkidle");
     await stabilizePage(page);
