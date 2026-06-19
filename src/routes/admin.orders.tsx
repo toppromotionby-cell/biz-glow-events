@@ -1,46 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Paperclip, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
-// OrderAttachments — тяжёлый компонент с upload-логикой, нужен только при открытом диалоге.
-const OrderAttachments = lazy(() =>
-  import("@/components/admin/OrderAttachments").then((m) => ({ default: m.OrderAttachments }))
-);
+import { Download, Search, ExternalLink, Clock, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useServerFn } from "@tanstack/react-start";
-import { deleteOrderAdmin, confirmOrderAdmin, resendOrderConfirmationEmailAdmin } from "@/lib/orders.functions";
+import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
+import { useOrderMutations } from "@/hooks/use-order-mutations";
+import { ageInfo } from "@/components/admin/orders/order-age";
+import { PaidCell } from "@/components/admin/orders/PaidCell";
+import { OrderDialog } from "@/components/admin/orders/OrderDialog";
+import type { OrderListRow, OrderStatus } from "@/components/admin/orders/types";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
-
-
-// Возраст «в статусе» по updated_at: цвет — SLA-подсветка
-function ageInfo(updatedAt: string | null | undefined, status: string) {
-  if (!updatedAt) return { label: "—", cls: "text-muted-foreground" };
-  const ms = Date.now() - new Date(updatedAt).getTime();
-  const h = Math.floor(ms / 3_600_000);
-  const d = Math.floor(h / 24);
-  const label = d >= 1 ? `${d} д` : `${Math.max(h, 0)} ч`;
-  // финальные статусы не подсвечиваем
-  if (["paid", "completed", "cancelled"].includes(status)) return { label, cls: "text-muted-foreground" };
-  if (h >= 72) return { label, cls: "text-rose-400" };
-  if (h >= 24) return { label, cls: "text-amber-300" };
-  return { label, cls: "text-emerald-300" };
-}
-
-
+type SortBy = "created_at" | "total" | "event_date";
 
 export const Route = createFileRoute("/admin/orders")({
   component: AdminOrders,
@@ -51,26 +33,25 @@ function AdminOrders() {
   const [q, setQ] = useState("");
   const dq = useDebouncedValue(q, 300);
   const [status, setStatus] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"created_at" | "total" | "event_date">("created_at");
+  const [sortBy, setSortBy] = useState<SortBy>("created_at");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders", dq, status],
-    queryFn: async () => {
+    queryFn: async (): Promise<OrderListRow[]> => {
       // Узкий select — для списка не нужны notes/utm_*, чтобы не тянуть лишний JSON.
       let query = supabase
         .from("orders")
         .select("id,created_at,updated_at,status,client_name,client_company,client_phone,client_email,event_date,source,utm_source,utm_campaign,total,paid")
         .order("created_at", { ascending: false })
         .limit(500);
-      if (status) query = query.eq("status", status as any);
+      if (status) query = query.eq("status", status as OrderStatus);
       if (dq) query = query.or(`client_name.ilike.%${dq}%,client_phone.ilike.%${dq}%,client_email.ilike.%${dq}%,client_company.ilike.%${dq}%`);
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return (data ?? []) as OrderListRow[];
     },
   });
-
 
   // Realtime: обновляем список при любых изменениях в orders
   useEffect(() => {
@@ -83,105 +64,11 @@ function AdminOrders() {
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, newStatus }: { id: string; newStatus: string }) => {
-      const { error } = await supabase.from("orders").update({ status: newStatus as any }).eq("id", id);
-      if (error) throw error;
-      const { data: u } = await supabase.auth.getUser();
-      await supabase.from("order_timeline").insert({
-        order_id: id, event: `status_changed:${newStatus}`,
-        actor_id: u.user?.id ?? null, payload: { status: newStatus },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Статус обновлён");
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
-      qc.invalidateQueries({ queryKey: ["order-modal"] });
-      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
-    },
-    onError: (e: Error) => toast.error(e?.message ?? "Не удалось изменить статус"),
-  });
-
-  const updatePaid = useMutation({
-    mutationFn: async ({ id, newPaid, prevPaid }: { id: string; newPaid: number; prevPaid: number }) => {
-      const { error } = await supabase.from("orders").update({ paid: newPaid }).eq("id", id);
-      if (error) throw error;
-      const { data: u } = await supabase.auth.getUser();
-      await supabase.from("order_timeline").insert({
-        order_id: id, event: "paid_changed",
-        actor_id: u.user?.id ?? null, payload: { from: prevPaid, to: newPaid },
-  });
-    },
-    onSuccess: () => {
-      toast.success("Оплата обновлена");
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
-      qc.invalidateQueries({ queryKey: ["order-modal"] });
-      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
-    },
-    onError: (e: Error) => toast.error(e?.message ?? "Не удалось обновить оплату"),
-  });
-
-  const deleteFn = useServerFn(deleteOrderAdmin);
-  const deleteOrder = useMutation({
-    mutationFn: async (id: string) => deleteFn({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Заказ удалён");
-      setOpenId(null);
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
-    },
-    onError: (e: Error) => toast.error(e?.message ?? "Не удалось удалить заказ"),
-  });
-
-  const confirmFn = useServerFn(confirmOrderAdmin);
-  const resendFn = useServerFn(resendOrderConfirmationEmailAdmin);
-
-  const resendEmail = useMutation({
-    mutationFn: async (id: string) => resendFn({ data: { id } }),
-    onSuccess: (res, id) => {
-      if (res?.emailSent) {
-        toast.success("Письмо клиенту отправлено повторно");
-      } else {
-        toast.error(`Не удалось отправить письмо: ${res?.emailError ?? "неизвестная ошибка"}`, {
-          duration: 8000,
-          action: { label: "Повторить", onClick: () => resendEmail.mutate(id) },
-        });
-      }
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
-      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
-    },
-    onError: (e: Error, id) =>
-      toast.error(e?.message ?? "Не удалось отправить письмо", {
-        duration: 8000,
-        action: { label: "Повторить", onClick: () => resendEmail.mutate(id) },
-      }),
-  });
-
-  const confirmOrder = useMutation({
-    mutationFn: async (id: string) => confirmFn({ data: { id } }),
-    onSuccess: (res, id) => {
-      if (res?.emailSent) {
-        toast.success("Заказ подтверждён — клиенту отправлено письмо");
-      } else {
-        toast.warning(
-          `Заказ подтверждён, но письмо не доставлено: ${res?.emailError ?? "неизвестная ошибка"}`,
-          {
-            duration: 10000,
-            action: { label: "Отправить повторно", onClick: () => resendEmail.mutate(id) },
-          },
-        );
-      }
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
-      qc.invalidateQueries({ queryKey: ["order-modal"] });
-      qc.invalidateQueries({ queryKey: ["order-modal-timeline"] });
-    },
-    onError: (e: Error) => toast.error(e?.message ?? "Не удалось подтвердить заказ"),
-  });
-
-
+  const { updateStatus, updatePaid, deleteOrder, resendEmail, confirmOrder } = useOrderMutations();
 
   const sorted = useMemo(() => {
     const arr = [...orders];
-    arr.sort((a: any, b: any) => {
+    arr.sort((a, b) => {
       if (sortBy === "total") return Number(b.total ?? 0) - Number(a.total ?? 0);
       if (sortBy === "event_date") return (b.event_date ?? "").localeCompare(a.event_date ?? "");
       return (b.created_at ?? "").localeCompare(a.created_at ?? "");
@@ -190,20 +77,19 @@ function AdminOrders() {
   }, [orders, sortBy]);
 
   const totals = useMemo(() => {
-    const total = orders.reduce((s: number, o: any) => s + Number(o.total ?? 0), 0);
-    const paid = orders.reduce((s: number, o: any) => s + Number(o.paid ?? 0), 0);
+    const total = orders.reduce((s, o) => s + Number(o.total ?? 0), 0);
+    const paid = orders.reduce((s, o) => s + Number(o.paid ?? 0), 0);
     return { total, paid, debt: total - paid };
   }, [orders]);
 
   const exportCsv = () => {
-    const rows = orders.map((o: any) => ({
+    const rows = orders.map((o) => ({
       id: o.id, created: o.created_at, status: STATUS_LABEL[o.status] ?? o.status,
       client: o.client_name, phone: o.client_phone, email: o.client_email,
       company: o.client_company ?? "", event_date: o.event_date ?? "",
       total: o.total, paid: o.paid, debt: Number(o.total ?? 0) - Number(o.paid ?? 0),
-      source: o.source ?? "", utm_source: o.utm_source ?? "", utm_medium: o.utm_medium ?? "",
-      utm_campaign: o.utm_campaign ?? "", utm_term: o.utm_term ?? "", utm_content: o.utm_content ?? "",
-      notes: (o.notes ?? "").replace(/\s+/g, " "),
+      source: o.source ?? "", utm_source: o.utm_source ?? "",
+      utm_campaign: o.utm_campaign ?? "",
     }));
     downloadCsv(`orders-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
   };
@@ -232,7 +118,7 @@ function AdminOrders() {
           <option value="">Все статусы</option>
           {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="rounded-md border border-border bg-input px-3 text-sm">
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)} className="rounded-md border border-border bg-input px-3 text-sm">
           <option value="created_at">Сначала новые</option>
           <option value="event_date">По дате мероприятия</option>
           <option value="total">По сумме</option>
@@ -253,7 +139,7 @@ function AdminOrders() {
             {q || status ? "Ничего не найдено" : "Заказов пока нет"}
           </div>
         )}
-        {!isLoading && sorted.map((o: any) => {
+        {!isLoading && sorted.map((o) => {
           const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
           const age = ageInfo(o.updated_at ?? o.created_at, o.status);
           const canConfirm = o.status === "new" || o.status === "pending";
@@ -314,39 +200,39 @@ function AdminOrders() {
                     {resendEmail.isPending && resendEmail.variables === o.id ? "Отправка…" : "Письмо ещё раз"}
                   </Button>
                 )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs border-rose-500/40 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
-                        onClick={(e) => e.stopPropagation()}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs border-rose-500/40 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Заказ <b>{o.client_name}</b> от {fmtDate(o.created_at)} будет удалён вместе с позициями,
+                        таймлайном и вложениями. Он также исчезнет из кабинета клиента. Действие необратимо.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Отмена</AlertDialogCancel>
+                      <AlertDialogAction
+                        disabled={deleteOrder.isPending}
+                        onClick={() => deleteOrder.mutate(o.id)}
+                        className="bg-rose-600 hover:bg-rose-700 text-white"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Заказ <b>{o.client_name}</b> от {fmtDate(o.created_at)} будет удалён вместе с позициями,
-                          таймлайном и вложениями. Он также исчезнет из кабинета клиента. Действие необратимо.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Отмена</AlertDialogCancel>
-                        <AlertDialogAction
-                          disabled={deleteOrder.isPending}
-                          onClick={() => deleteOrder.mutate(o.id)}
-                          className="bg-rose-600 hover:bg-rose-700 text-white"
-                        >
-                          Удалить
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                        Удалить
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           );
         })}
@@ -362,7 +248,6 @@ function AdminOrders() {
       <div className="glass rounded-xl overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm" aria-label="Список заказов">
-
             <thead className="admin-table-head">
               <tr>
                 <th scope="col" aria-sort={sortBy === "created_at" ? "descending" : "none"} className="text-left p-3">Создан</th>
@@ -376,7 +261,6 @@ function AdminOrders() {
                 <th scope="col" className="text-right p-3">Оплачено</th>
                 <th scope="col" className="text-right p-3">Долг</th>
                 <th scope="col" className="p-3"><span className="sr-only">Действия</span></th>
-
               </tr>
             </thead>
             <tbody>
@@ -402,12 +286,11 @@ function AdminOrders() {
                 </td></tr>
               )}
 
-              {sorted.map((o: any) => {
+              {sorted.map((o) => {
                 const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
                 const age = ageInfo(o.updated_at ?? o.created_at, o.status);
                 const canConfirm = o.status === "new" || o.status === "pending";
                 return (
-
                   <tr
                     key={o.id}
                     onClick={() => setOpenId(o.id)}
@@ -440,7 +323,7 @@ function AdminOrders() {
                       <select
                         value={o.status}
                         disabled={updateStatus.isPending}
-                        onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value })}
+                        onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value as OrderStatus })}
                         className={`px-2 py-1 rounded-full text-xs border bg-transparent outline-none cursor-pointer ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}
                       >
                         {Object.entries(STATUS_LABEL).map(([k, v]) => (
@@ -452,7 +335,6 @@ function AdminOrders() {
                       <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{age.label}</span>
                     </td>
                     <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
-
                     <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       <PaidCell
                         value={Number(o.paid ?? 0)}
@@ -557,201 +439,5 @@ function Stat({ label, value, accent = "" }: { label: string; value: string; acc
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className={`text-xl font-semibold mt-1 ${accent}`}>{value}</div>
     </div>
-  );
-}
-
-function OrderDialog({ id, onClose }: { id: string | null; onClose: () => void }) {
-  const enabled = !!id;
-
-  const { data: order } = useQuery({
-    queryKey: ["order-modal", id],
-    enabled,
-    queryFn: async () => (await supabase.from("orders").select("*").eq("id", id!).single()).data,
-  });
-  const { data: items = [] } = useQuery({
-    queryKey: ["order-modal-items", id],
-    enabled,
-    queryFn: async () => (await supabase.from("order_items").select("*").eq("order_id", id!)).data ?? [],
-  });
-  const { data: timeline = [] } = useQuery({
-    queryKey: ["order-modal-timeline", id],
-    enabled,
-    queryFn: async () => (await supabase.from("order_timeline").select("*").eq("order_id", id!).order("created_at", { ascending: false })).data ?? [],
-  });
-  const { data: attachCount = 0 } = useQuery({
-    queryKey: ["order-modal-attachments-count", id],
-    enabled,
-    queryFn: async () => {
-      const { count } = await supabase.from("order_attachments").select("id", { count: "exact", head: true }).eq("order_id", id!);
-      return count ?? 0;
-    },
-  });
-
-  return (
-    <Dialog open={enabled} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 flex-wrap">
-            <span>Заказ #{id?.slice(0, 8)}</span>
-            {order && (
-              <span className={`px-2 py-1 rounded-full text-xs border ${STATUS_COLOR[order.status] ?? "border-primary/30"}`}>
-                {STATUS_LABEL[order.status] ?? order.status}
-              </span>
-            )}
-            {id && (
-              <Link to="/admin/orders/$id" params={{ id }} className="ml-auto text-xs inline-flex items-center gap-1 text-muted-foreground hover:text-primary">
-                <ExternalLink className="h-3 w-3" />Открыть полную страницу
-              </Link>
-            )}
-          </DialogTitle>
-          <DialogDescription className="sr-only">Детали и управление заказом</DialogDescription>
-        </DialogHeader>
-
-        {!order ? <div className="text-sm text-muted-foreground p-6">Загрузка...</div> : (
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-3 text-sm">
-              <InfoCard title="Клиент">
-                <Row k="Имя" v={order.client_name} />
-                <Row k="Телефон" v={<span className="hover:text-primary">{order.client_phone}</span>} />
-                <Row k="Email" v={<a href={`mailto:${order.client_email}`} className="hover:text-primary">{order.client_email}</a>} />
-                <Row k="Компания" v={order.client_company || "—"} />
-              </InfoCard>
-              <InfoCard title="Мероприятие">
-                <Row k="Дата" v={fmtDate(order.event_date)} />
-                <Row k="Создан" v={fmtDateTime(order.created_at)} />
-                <Row k="Обновлён" v={fmtDateTime(order.updated_at)} />
-              </InfoCard>
-              <InfoCard title="Финансы">
-                <Row k="Сумма" v={<span className="font-semibold">{fmtMoney(order.total)}</span>} />
-                <Row k="Оплачено" v={<span className="text-emerald-300">{fmtMoney(order.paid)}</span>} />
-                <Row k="Долг" v={<span className="text-amber-300">{fmtMoney(Number(order.total ?? 0) - Number(order.paid ?? 0))}</span>} />
-              </InfoCard>
-            </div>
-
-            <InfoCard title={`Позиции (${items.length})`}>
-              {items.length === 0 ? <p className="text-sm text-muted-foreground">Позиций нет</p> : (
-                <table className="w-full text-sm">
-                  <thead className="text-xs text-muted-foreground">
-                    <tr><th className="text-left py-1">Название</th><th className="text-left py-1">Тип</th><th className="text-right py-1">Кол-во</th><th className="text-right py-1">Цена</th><th className="text-right py-1">Итого</th></tr>
-                  </thead>
-                  <tbody>
-                    {items.map((it: any) => (
-                      <tr key={it.id} className="border-t border-border/30">
-                        <td className="py-1.5">{it.title}</td>
-                        <td className="py-1.5 text-muted-foreground text-xs">{it.entity_type}</td>
-                        <td className="py-1.5 text-right">{it.qty}</td>
-                        <td className="py-1.5 text-right">{fmtMoney(it.price)}</td>
-                        <td className="py-1.5 text-right font-medium">{fmtMoney(Number(it.price ?? 0) * Number(it.qty ?? 1))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </InfoCard>
-
-            {(order.utm_source || order.utm_campaign || order.utm_medium || order.source) && (
-              <InfoCard title="Источник и UTM">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-1.5 text-sm">
-                  <Row k="Источник" v={order.source || "—"} />
-                  <Row k="utm_source" v={order.utm_source || "—"} />
-                  <Row k="utm_medium" v={order.utm_medium || "—"} />
-                  <Row k="utm_campaign" v={order.utm_campaign || "—"} />
-                  <Row k="utm_term" v={order.utm_term || "—"} />
-                  <Row k="utm_content" v={order.utm_content || "—"} />
-                </div>
-              </InfoCard>
-            )}
-
-            {order.notes && (
-              <InfoCard title="Заметки / Реквизиты">
-                <pre className="text-sm whitespace-pre-wrap font-sans text-foreground/90">{order.notes}</pre>
-              </InfoCard>
-            )}
-
-            <InfoCard title={<span className="flex items-center gap-2"><Paperclip className="h-4 w-4" />Вложения ({attachCount})</span>}>
-              <Suspense fallback={<div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-3/4" /></div>}>
-                <OrderAttachments orderId={order.id} />
-              </Suspense>
-            </InfoCard>
-
-            <InfoCard title={<span className="flex items-center gap-2"><Clock className="h-4 w-4" />Таймлайн ({timeline.length})</span>}>
-              {timeline.length === 0 ? <p className="text-sm text-muted-foreground">Событий пока нет</p> : (
-                <ol className="space-y-2">
-                  {timeline.map((t: any) => (
-                    <li key={t.id} className="text-sm flex gap-3">
-                      <span className="text-xs text-muted-foreground whitespace-nowrap w-36">{fmtDateTime(t.created_at)}</span>
-                      <span className="font-medium">{t.event}</span>
-                      {t.payload && Object.keys(t.payload).length > 0 && <span className="text-xs text-muted-foreground">{JSON.stringify(t.payload)}</span>}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </InfoCard>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function InfoCard({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-border/50 bg-muted/10 p-4">
-      <h3 className="font-semibold mb-3 text-sm">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return (
-    <div className="flex justify-between gap-3 py-0.5">
-      <span className="text-muted-foreground text-xs">{k}</span>
-      <span className="text-right">{v}</span>
-    </div>
-  );
-}
-
-function PaidCell({ value, total, disabled, onSave }: { value: number; total: number; disabled?: boolean; onSave: (v: number) => void }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(value));
-  useEffect(() => { setDraft(String(value)); }, [value]);
-
-  const commit = () => {
-    const n = Number(draft.replace(",", "."));
-    setEditing(false);
-    if (Number.isFinite(n) && n >= 0 && n !== value) onSave(n);
-    else setDraft(String(value));
-  };
-
-  if (editing) {
-    return (
-      <input
-        autoFocus
-        type="number"
-        min={0}
-        step="0.01"
-        value={draft}
-        disabled={disabled}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          if (e.key === "Escape") { setDraft(String(value)); setEditing(false); }
-        }}
-        className="w-28 text-right px-2 py-1 rounded border border-primary/40 bg-input outline-none text-sm"
-      />
-    );
-  }
-  const full = value >= total && total > 0;
-  return (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      title="Клик — изменить оплату"
-      className={`px-2 py-0.5 rounded hover:bg-muted/40 cursor-text ${full ? "text-emerald-300" : "text-emerald-300/80"}`}
-    >
-      {`${Number(value ?? 0).toLocaleString("ru-BY")} BYN`}
-    </button>
   );
 }
