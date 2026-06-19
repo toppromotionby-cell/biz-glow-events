@@ -142,7 +142,8 @@ function AdminOrders() {
         {!isLoading && sorted.map((o) => {
           const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
           const age = ageInfo(o.updated_at ?? o.created_at, o.status);
-          const canConfirm = o.status === "new" || o.status === "pending";
+          const canConfirm = (o.status as string) === "new" || (o.status as string) === "pending";
+
           return (
             <div
               key={`mc-${o.id}`}
