@@ -309,35 +309,15 @@ function CatalogCard({
 
 
 
-  return (
-    <CatalogCardInner
-      item={item}
-      onOpen={onOpen}
-      photos={photos}
-      index={index}
-      videoRef={videoRef}
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
-    />
-  );
-}
-
-function CatalogCardInner({
-  item, onOpen, photos, index, videoRef, onMouseEnter, onMouseLeave,
-}: {
-  item: CatalogItem;
-  onOpen: () => void;
-  photos: string[];
-  index: number;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-}) {
   const titleRef = useRef<HTMLButtonElement>(null);
   const clamped = useClampedText(titleRef, item.title, 2);
+
   return (
     <article
       className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col [contain:layout_style]"
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+    >
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
