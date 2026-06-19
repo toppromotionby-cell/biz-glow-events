@@ -38,6 +38,7 @@ export function CategoryCombobox({
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const { confirm, dialog } = useConfirm();
 
   const cacheKey = ["catalog-categories", entityType] as const;
 
