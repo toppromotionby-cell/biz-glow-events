@@ -172,8 +172,9 @@ function OrderDetail() {
         <div className="glass rounded-xl p-5 space-y-3">
           <h3 className="font-semibold">Финансы</h3>
           <dl className="text-sm space-y-1.5">
-            <div className="flex justify-between"><dt className="text-muted-foreground">Сумма</dt><dd className="font-medium">{Number(order.total ?? 0).toLocaleString("ru-BY")} BYN</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Оплачено</dt><dd>{Number(order.paid ?? 0).toLocaleString("ru-BY")} BYN</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">Сумма</dt><dd className="font-medium">{fmtMoney(order.total)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">Оплачено</dt><dd>{fmtMoney(order.paid)}</dd></div>
+
           </dl>
         </div>
       </div>
