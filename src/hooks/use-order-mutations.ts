@@ -23,29 +23,21 @@ export function useOrderMutations() {
     qc.invalidateQueries({ queryKey: ORDER_TIMELINE_KEY });
   };
 
+  // Запись событий status_changed:* и paid_changed выполняет триггер БД
+  // public.log_order_status_change (см. миграцию Stage 5).
   const updateStatus = useMutation({
     mutationFn: async ({ id, newStatus }: { id: string; newStatus: OrderStatus }) => {
       const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", id);
       if (error) throw error;
-      const { data: u } = await supabase.auth.getUser();
-      await supabase.from("order_timeline").insert({
-        order_id: id, event: `status_changed:${newStatus}`,
-        actor_id: u.user?.id ?? null, payload: { status: newStatus },
-      });
     },
     onSuccess: () => { toast.success("Статус обновлён"); invalidateAll(); },
     onError: (e: Error) => toast.error(e?.message ?? "Не удалось изменить статус"),
   });
 
   const updatePaid = useMutation({
-    mutationFn: async ({ id, newPaid, prevPaid }: { id: string; newPaid: number; prevPaid: number }) => {
+    mutationFn: async ({ id, newPaid }: { id: string; newPaid: number; prevPaid: number }) => {
       const { error } = await supabase.from("orders").update({ paid: newPaid }).eq("id", id);
       if (error) throw error;
-      const { data: u } = await supabase.auth.getUser();
-      await supabase.from("order_timeline").insert({
-        order_id: id, event: "paid_changed",
-        actor_id: u.user?.id ?? null, payload: { from: prevPaid, to: newPaid },
-      });
     },
     onSuccess: () => { toast.success("Оплата обновлена"); invalidateAll(); },
     onError: (e: Error) => toast.error(e?.message ?? "Не удалось обновить оплату"),
