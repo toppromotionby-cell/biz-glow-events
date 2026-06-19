@@ -232,7 +232,7 @@ function DropZone({
           {full ? <><AlertCircle className="inline h-4 w-4 mr-1" />Достигнут лимит</> : "Перетащите файлы или нажмите"}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          {kind === "photo" ? "JPEG/PNG/WebP, ≤5MB" : "MP4/WebM, ≤50MB"}
+          {kind === "photo" ? "JPEG/PNG/WebP, ≤10MB · авто-сжатие до WebP ~1.2MB" : "MP4/WebM, ≤50MB"}
         </p>
       </label>
       {items.length > 0 && (
