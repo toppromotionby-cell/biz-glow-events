@@ -115,17 +115,56 @@ function CasesAdmin() {
 }
 
 function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => void; onDelete: () => void }) {
-  const [form, setForm] = useState<CaseRow>({ ...item });
+  const draftKey = `cases:${item.id}`;
+  const [form, setForm] = useState<CaseRow>(() => {
+    const draft = readDraft<CaseRow>(draftKey);
+    return draft ? { ...item, ...draft } : { ...item };
+  });
   const [saving, setSaving] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [servicesInput, setServicesInput] = useState((item.services_used ?? []).join(", "));
   const [metricsInput, setMetricsInput] = useState(JSON.stringify(item.metrics ?? {}, null, 2));
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  // Живая валидация
+  const validation = useMemo(() => {
+    const result = caseSchema.safeParse({
+      title: form.title ?? "",
+      slug: form.slug ?? "",
+      client: form.client ?? "",
+      event_type: form.event_type ?? "",
+      event_date: form.event_date ?? null,
+      location: form.location ?? "",
+      guests_count: form.guests_count === "" || form.guests_count == null ? null : Number(form.guests_count),
+      summary: form.summary ?? "",
+      description: form.description ?? "",
+      cover_url: form.cover_url ?? "",
+      seo_title: form.seo_title ?? "",
+      seo_description: form.seo_description ?? "",
+      published: !!form.published,
+      featured: !!form.featured,
+    });
+    if (result.success) return { ok: true as const, errors: {} as Record<string, string> };
+    const errors: Record<string, string> = {};
+    for (const issue of result.error.issues) errors[issue.path.join(".")] = issue.message;
+    return { ok: false as const, errors };
+  }, [form]);
+
+  // JSON-валидация метрик в реальном времени
+  useEffect(() => {
+    try { JSON.parse(metricsInput || "{}"); setMetricsError(null); }
+    catch { setMetricsError("Невалидный JSON"); }
+  }, [metricsInput]);
+
+  // Автосохранение черновика
+  const { savedAt: draftSavedAt } = useAutoSaveDraft(draftKey, { form, servicesInput, metricsInput });
 
   const save = async () => {
-    setSaving(true);
-    let metrics: Record<string, unknown> = {};
-    try { metrics = JSON.parse(metricsInput || "{}") as Record<string, unknown>; }
-    catch { setSaving(false); return toast.error("Метрики: невалидный JSON"); }
-
+    if (!validation.ok) { toast.error("Исправьте ошибки в форме"); setSaveState("error"); setErrorMessage("Невалидные поля"); return; }
+    if (metricsError) { toast.error("Метрики: невалидный JSON"); setSaveState("error"); setErrorMessage(metricsError); return; }
+    setSaving(true); setSaveState("saving"); setErrorMessage(null);
+    const metrics = JSON.parse(metricsInput || "{}") as Record<string, unknown>;
     const services_used = servicesInput.split(",").map((s: string) => s.trim()).filter(Boolean);
     const patch = {
       title: form.title, slug: form.slug, client: form.client, event_type: form.event_type,
@@ -141,9 +180,19 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
     } as any;
     const { error } = await supabase.from("cases").update(patch).eq("id", item.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { setSaveState("error"); setErrorMessage(error.message); return toast.error(error.message); }
+    clearDraft(draftKey);
+    setSaveState("saved");
     toast.success("Сохранено");
     onSaved();
+  };
+
+  useEditorHotkeys({ onSave: save });
+
+  const errors = validation.errors;
+  const fillSeoDesc = () => {
+    const value = generateSeoDescription(form.summary, form.description);
+    if (value) setForm({ ...form, seo_description: value });
   };
 
   return (
@@ -163,27 +212,60 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
       onDelete={onDelete}
       onSave={save}
       saving={saving}
+      saveState={saveState === "idle" && draftSavedAt ? "dirty" : saveState}
+      draftSavedAt={draftSavedAt}
+      errorMessage={errorMessage}
+      saveDisabled={!validation.ok || !!metricsError}
     >
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Заголовок"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
-        <Field label="Slug"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
-        <Field label="Клиент"><Input value={form.client ?? ""} onChange={(e) => setForm({ ...form, client: e.target.value })} /></Field>
-        <Field label="Тип события"><Input value={form.event_type ?? ""} onChange={(e) => setForm({ ...form, event_type: e.target.value })} placeholder="Корпоратив / Конференция / Фестиваль" /></Field>
+        <Field label="Заголовок" required error={errors["title"]} counter={{ value: (form.title ?? "").length, max: 200 }}>
+          <Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </Field>
+        <Field label="Slug" required error={errors["slug"]} tooltip="Только латиница, цифры и дефис. Используется в URL.">
+          <Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+        </Field>
+        <Field label="Клиент" error={errors["client"]}><Input value={form.client ?? ""} onChange={(e) => setForm({ ...form, client: e.target.value })} /></Field>
+        <Field label="Тип события" error={errors["event_type"]}><Input value={form.event_type ?? ""} onChange={(e) => setForm({ ...form, event_type: e.target.value })} placeholder="Корпоратив / Конференция / Фестиваль" /></Field>
         <Field label="Дата"><Input type="date" value={form.event_date ?? ""} onChange={(e) => setForm({ ...form, event_date: e.target.value })} /></Field>
-        <Field label="Локация"><Input value={form.location ?? ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></Field>
-        <Field label="Число гостей"><Input type="number" value={form.guests_count ?? ""} onChange={(e) => setForm({ ...form, guests_count: e.target.value })} /></Field>
+        <Field label="Локация" error={errors["location"]}><Input value={form.location ?? ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></Field>
+        <Field label="Число гостей" error={errors["guests_count"]}><Input type="number" value={form.guests_count ?? ""} onChange={(e) => setForm({ ...form, guests_count: e.target.value })} /></Field>
         <Field label="URL обложки (опц.)" hint="Иначе берём первое фото"><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></Field>
       </div>
 
-      <Field label="Краткое описание"><Textarea rows={2} value={form.summary ?? ""} onChange={(e) => setForm({ ...form, summary: e.target.value })} /></Field>
-      <Field label="Полное описание"><Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+      <Field label="Краткое описание" error={errors["summary"]} counter={{ value: (form.summary ?? "").length, max: 500 }}>
+        <Textarea rows={2} value={form.summary ?? ""} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
+      </Field>
+      <Field label="Полное описание">
+        <Textarea rows={6} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+      </Field>
 
-      <Field label="Услуги (через запятую)"><Input value={servicesInput} onChange={(e) => setServicesInput(e.target.value)} placeholder="Сцена и свет, VR-арена, LED-экран" /></Field>
-      <Field label="Метрики (JSON)"><Textarea rows={4} value={metricsInput} onChange={(e) => setMetricsInput(e.target.value)} className="font-mono text-xs" /></Field>
+      <Field label="Услуги (через запятую)" hint="Будут сохранены как массив тегов">
+        <Input value={servicesInput} onChange={(e) => setServicesInput(e.target.value)} placeholder="Сцена и свет, VR-арена, LED-экран" />
+      </Field>
+      <Field
+        label="Метрики (JSON)"
+        tooltip='Объект ключ-значение, например {"гостей": 500, "часов": 8}'
+        error={metricsError}
+      >
+        <Textarea rows={4} value={metricsInput} onChange={(e) => setMetricsInput(e.target.value)} className="font-mono text-xs" />
+      </Field>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="SEO title"><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></Field>
-        <Field label="SEO description"><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></Field>
+        <Field label="SEO title" error={errors["seo_title"]} counter={{ value: (form.seo_title ?? "").length, max: 60 }}>
+          <Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} />
+        </Field>
+        <Field
+          label="SEO description"
+          error={errors["seo_description"]}
+          counter={{ value: (form.seo_description ?? "").length, max: 160 }}
+          hint={
+            <button type="button" onClick={fillSeoDesc} className="inline-flex items-center gap-1 text-primary hover:underline">
+              <Sparkles className="h-3 w-3" /> Сгенерировать из описания
+            </button>
+          }
+        >
+          <Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} />
+        </Field>
       </div>
 
       <div>
