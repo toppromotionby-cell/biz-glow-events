@@ -129,7 +129,7 @@ export function CatalogGrid({
   return (
     <>
       {categoryChips.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2 min-h-[2.25rem]">
           <button
             type="button"
             onClick={() => setActiveCategory(null)}
