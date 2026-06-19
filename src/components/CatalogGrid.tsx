@@ -356,9 +356,9 @@ function CatalogCard({
           <button
             type="button"
             onClick={onOpen}
-            className="text-left line-clamp-2 w-full"
+            className="card-title-gradient text-left line-clamp-2 w-full"
           >
-            <span className="card-title-gradient">{item.title}</span>
+            {item.title}
           </button>
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />
