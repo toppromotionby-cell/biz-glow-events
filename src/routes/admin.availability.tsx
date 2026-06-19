@@ -11,6 +11,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/availability")({ component: Page });
 
@@ -28,6 +29,7 @@ function Page() {
   const [entityType, setEntityType] = useState<EntityType>("zones");
   const [itemId, setItemId] = useState<string>("");
   const [form, setForm] = useState({ start_date: "", end_date: "", status: "booked" as "booked" | "maintenance" });
+  const { confirm: confirmDelete, dialog: confirmDialog } = useConfirm();
 
   const { data: items = [] } = useQuery({
     queryKey: ["admin-availability-items", entityType],
