@@ -130,7 +130,7 @@ export function FeaturedCard({
 
   return (
     <article
-      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col"
+      className="glass rounded-xl sm:rounded-2xl overflow-hidden group hover:border-primary/50 transition flex flex-col [contain:layout_style]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
