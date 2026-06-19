@@ -148,6 +148,7 @@ function Page() {
           </div>
         </>
       )}
+      {confirmDialog}
     </div>
   );
 }
