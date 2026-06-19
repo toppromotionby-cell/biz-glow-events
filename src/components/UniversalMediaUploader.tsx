@@ -59,11 +59,26 @@ export function UniversalMediaUploader({
           toast.error(`Файл слишком большой: ${file.name}`);
           continue;
         }
-        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        let payload: Blob = file;
+        let uploadName = file.name;
+        let contentType = file.type;
+        if (kind === "photo") {
+          try {
+            const compressed = await imageCompression(file, COMPRESS_OPTS);
+            if (compressed.size < file.size) {
+              payload = compressed;
+              contentType = compressed.type || "image/webp";
+              uploadName = file.name.replace(/\.(jpe?g|png|webp)$/i, "") + ".webp";
+            }
+          } catch {
+            // Fallback to original on compression error
+          }
+        }
+        const safeName = uploadName.replace(/[^\w.\-]+/g, "_");
         const path = `${entity}/${slug || "untitled"}/${kind}-${Date.now()}-${safeName}`;
-        const { error } = await supabase.storage.from("media").upload(path, file, {
+        const { error } = await supabase.storage.from("media").upload(path, payload, {
           upsert: false,
-          contentType: file.type,
+          contentType,
         });
         if (error) {
           toast.error(`Ошибка загрузки ${file.name}: ${error.message}`);
