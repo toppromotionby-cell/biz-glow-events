@@ -6,8 +6,8 @@ import type { CatalogItem } from "@/lib/catalog-mock";
 
 interface CatalogListPageProps {
   config: CatalogPageConfig;
-  items: CatalogItem[] | unknown[];
-  categories: { value: string; label: string }[];
+  items: CatalogItem[];
+  categories?: { id: string; name: string }[];
 }
 
 export function CatalogListPage({ config, items, categories }: CatalogListPageProps) {
@@ -18,11 +18,11 @@ export function CatalogListPage({ config, items, categories }: CatalogListPagePr
         <p className="mt-4 text-muted-foreground">{config.lead}</p>
       </header>
       <CatalogGrid
-        items={items as never}
+        items={items}
         category={config.category}
         basePath={config.basePath}
         entityType={config.type}
-        categories={categories as never}
+        categories={categories}
       />
     </div>
   );
