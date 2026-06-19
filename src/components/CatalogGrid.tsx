@@ -4,6 +4,7 @@ import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
+import { useClampedText } from "@/components/ui/ClampedTitle";
 
 import { WishlistButton } from "@/components/WishlistButton";
 import type { CatalogItem } from "@/lib/catalog-mock";
