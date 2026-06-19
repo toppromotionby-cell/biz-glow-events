@@ -281,7 +281,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
             {needsSelection ? (
               <div className="mt-2 text-center text-xs text-muted-foreground">
-                Добавление в корзину и сравнение станут доступны после выбора позиции
+                Добавление в корзину станет доступно после выбора позиции
               </div>
             ) : (
               <>
