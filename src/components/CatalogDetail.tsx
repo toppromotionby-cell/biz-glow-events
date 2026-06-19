@@ -303,14 +303,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                   price={effectivePrice}
                   image={item.photo_urls?.[0] ?? null}
                 />
-                <CompareButton
-                  entity_type={entityType}
-                  id={effectiveId}
-                  slug={item.slug}
-                  title={effectiveTitle}
-                  price={effectivePrice}
-                  image={item.photo_urls?.[0] ?? null}
-                />
                 {!isByRequest && (
                   <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в корзину →</Link>
                 )}
