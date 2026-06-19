@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Download, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { openAuthedDocument, fetchAuthedDocument } from "@/lib/authed-fetch";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 
 const BUCKET = "order-attachments";
 const KIND_LABEL: Record<string, string> = { invoice: "Счёт", contract: "Договор", custom: "Файл" };
@@ -22,6 +23,8 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const { confirm, dialog } = useConfirm();
+
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["order-attachments", orderId],
@@ -154,7 +157,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
               </div>
               <div className="flex gap-1.5 shrink-0">
                 <Button size="sm" variant="ghost" onClick={() => download(it)} title="Скачать"><Download className="h-4 w-4" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => { if (confirm("Удалить файл?")) del.mutate(it); }} title="Удалить">
+                <Button size="sm" variant="ghost" onClick={async () => { if (await confirm({ title: "Удалить файл?", description: it.file_name, confirmText: "Удалить", destructive: true })) del.mutate(it); }} title="Удалить">
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
@@ -162,6 +165,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
           ))}
         </ul>
       )}
+      {dialog}
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/command";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 
 type CategoryRow = { id: string; name: string; sort_order: number };
 
@@ -37,6 +38,7 @@ export function CategoryCombobox({
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const { confirm, dialog } = useConfirm();
 
   const cacheKey = ["catalog-categories", entityType] as const;
 
@@ -168,17 +170,17 @@ export function CategoryCombobox({
                           </span>
                           <button
                             type="button"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               if (remove.isPending) return;
-                              if (
-                                confirm(
-                                  `Удалить категорию «${c.name}» из справочника? Позиции с этим текстом не изменятся.`,
-                                )
-                              ) {
-                                remove.mutate(c);
-                              }
+                              const ok = await confirm({
+                                title: `Удалить категорию «${c.name}»?`,
+                                description: "Позиции с этим текстом не изменятся.",
+                                confirmText: "Удалить",
+                                destructive: true,
+                              });
+                              if (ok) remove.mutate(c);
                             }}
                             className="opacity-60 hover:opacity-100 hover:text-destructive transition-opacity"
                             aria-label={`Удалить ${c.name}`}
@@ -228,6 +230,7 @@ export function CategoryCombobox({
           </CommandList>
         </Command>
       </PopoverContent>
+      {dialog}
     </Popover>
   );
 }
