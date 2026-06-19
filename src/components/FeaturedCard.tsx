@@ -184,13 +184,14 @@ export function FeaturedCard({
       <div className="p-3 sm:p-4 lg:p-5 flex-1 flex flex-col min-w-0">
         <h3 className="font-display font-bold text-base sm:text-lg lg:text-xl leading-snug tracking-tight break-words hyphens-auto">
           <button
+            ref={titleRef}
             type="button"
             onClick={onOpen}
             title={item.title}
             aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient"
           >
-            {item.title}
+            {clampedTitle}
           </button>
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />
