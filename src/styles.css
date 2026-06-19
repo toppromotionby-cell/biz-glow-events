@@ -424,7 +424,6 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: var(--card-title-lines);
-    line-clamp: var(--card-title-lines);
     overflow: hidden;
     overflow-wrap: anywhere;
     word-break: normal;
