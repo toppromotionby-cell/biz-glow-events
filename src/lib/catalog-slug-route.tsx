@@ -33,13 +33,13 @@ export function catalogSlugRouteOptions(basePath: CatalogBasePath) {
       context,
     }: {
       params: { slug: string };
-      // Тип контекста сужает только то, что реально используем.
-      context: { queryClient: { ensureQueryData: <T>(opts: { queryKey: unknown; queryFn: () => Promise<T> }) => Promise<T> } };
+      context: { queryClient: import("@tanstack/react-query").QueryClient };
     }) => {
       const item = await context.queryClient.ensureQueryData(itemQuery(params.slug));
       if (!item) throw notFound();
       return { item };
     },
+
     head: ({
       loaderData,
       params,
