@@ -81,7 +81,7 @@ function OrderDetail() {
     mutationFn: async (status: string) => {
       const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", id);
       if (error) throw error;
-      await supabase.from("order_timeline").insert({ order_id: id, event: "status_changed", payload: { to: status } });
+      // Событие status_changed:* пишется триггером public.log_order_status_change.
     },
     onSuccess: () => { toast.success("Статус обновлён"); qc.invalidateQueries({ queryKey: ["order", id] }); qc.invalidateQueries({ queryKey: ["order-timeline", id] }); },
     onError: (e: Error) => toast.error(e.message),
