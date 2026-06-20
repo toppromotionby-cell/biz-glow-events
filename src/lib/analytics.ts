@@ -101,6 +101,8 @@ export type SocialPlacement = "footer" | "contacts_page" | "floating_widget";
  */
 export function trackSocialClick(network: SocialNetwork, placement: SocialPlacement, url?: string | null) {
   if (!isBrowser()) return;
+  // Без согласия на маркетинговую аналитику события не отправляем — ни в GA4/Метрику, ни в серверный лог.
+  if (!hasAnalyticsConsent()) return;
   const payload = { network, placement, url: url ?? null };
   // GA4 — рекомендуемое имя для outbound social-click
   gtagEvent("social_click", payload);
@@ -122,4 +124,5 @@ export function trackSocialClick(network: SocialNetwork, placement: SocialPlacem
     }
   } catch {}
 }
+
 
