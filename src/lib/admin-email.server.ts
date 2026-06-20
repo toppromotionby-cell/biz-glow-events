@@ -507,6 +507,7 @@ export async function notifyClientInquiryReceivedEmail(
 
 export type ClientOrderConfirmedPayload = {
   orderId: string;
+  orderNumber?: string | null;
   clientName: string;
   clientEmail: string;
   clientPhone?: string | null;
