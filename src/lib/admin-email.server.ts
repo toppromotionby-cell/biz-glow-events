@@ -64,6 +64,29 @@ function htmlToPlainText(html: string): string {
     .trim();
 }
 
+// Полностью убирает активные ссылки из тела письма:
+//   • разворачивает <a href="...">текст</a> в <span style="..."> текст </span>
+//   • стирает href/src на других тегах
+//   • удаляет голые http(s)://... URL из текста (вне тегов)
+//   • вычищает mailto:/tel: подстроки
+// Используется для всех клиентских писем перед отправкой/предпросмотром.
+export function stripActiveLinks(html: string): string {
+  // 1) <a ...>inner</a> → <span style="...">inner</span> (сохраняем style для визуального CTA)
+  let out = html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_m, attrs: string, inner: string) => {
+    const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
+    const style = styleMatch ? styleMatch[1] : "";
+    const cleanInner = inner.replace(/<a\b[^>]*>|<\/a>/gi, "");
+    return `<span${style ? ` style="${style};cursor:default"` : ""}>${cleanInner}</span>`;
+  });
+  // 2) Удаляем href/src/action на всех оставшихся тегах (защита от data-URI ссылок)
+  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*"[^"]*"/gi, "");
+  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*'[^']*'/gi, "");
+  // 3) Голые URL в текстовых нодах вне тегов → пусто
+  out = out.replace(/<[^>]+>|(https?:\/\/[^\s<"']+|mailto:[^\s<"']+|tel:[^\s<"']+)/gi,
+    (m, url) => (url ? "" : m));
+  return out;
+}
+
 // Кодируем Uint8Array → base64 без лишних аллокаций (worker-friendly).
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
