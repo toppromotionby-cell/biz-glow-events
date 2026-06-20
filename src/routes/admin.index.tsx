@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import type { Database } from "@/integrations/supabase/types";
 import { fmtCurrency, fmtDateTimeShort } from "@/lib/formatters";
+import { ProdHealthBanner } from "@/components/admin/ProdHealthBanner";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -100,6 +101,8 @@ function AdminDashboard() {
         <h1 className="admin-h1">Дашборд</h1>
         <p className="text-sm text-muted-foreground">Обзор операционных метрик в реальном времени.</p>
       </header>
+
+      <ProdHealthBanner />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (

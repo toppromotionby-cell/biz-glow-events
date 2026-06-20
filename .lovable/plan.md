@@ -1,35 +1,24 @@
-## Что меняем в разделе «Контент → Наполнение»
+## Цель
+Починить 500 ошибку на event-hub.by и добавить автоматический мониторинг.
 
-### 1. Сайдбар: разворачиваем подразделы
-В `AdminSidebar.tsx` группа «Контент» вместо одной строки «Наполнение» получает 4 подссылки:
-Зоны (Package) · Оборудование (Wrench) · Услуги (Sparkles) · Производство (Factory). Плюс «Кейсы», «Отзывы», «Блог».
+## Шаги
 
-### 2. Убираем верхние табы каталога
-`admin.catalog.tsx` становится тонкой обёрткой с `<Outlet />` — навигация переехала в сайдбар.
+1. **`src/lib/error-capture.ts`** — добавить экспорт `formatError(err)` возвращающий `{ name, message, stack, cause }` чтобы Workers логировал полный stack trace вместо `[object Object]`.
 
-### 3. Список (`admin.catalog.$type.tsx`)
-- Удаляем состояние `preview` и панель превью. Клик по карточке открывает редактор сразу.
-- Шапка: убираем подсказку «клик по записи открывает подробный просмотр» — оставляем «N записей».
-- Поиск, чекбокс «Выбрать все» и счётчик находок — в одну строку.
+2. **`src/server.ts`** — логировать через `console.error('[ssr-error]', method, url, formatError(err))` с контекстом запроса, чтобы в production logs появилась точная причина падения.
 
-### 4. Редактор (`CatalogEditor.tsx`)
-- **Collapsible-секции**: «Основное» (Заголовок, Категория, Цены, Краткое/Полное описание, Медиа) — раскрыто; «Доп. поля» (Требования, Фичи, Доп. услуги) и «SEO и URL» (Slug, SEO title/description) — свернуты.
-- **Автосейв**: debounce 1.2 с пишет в БД, индикатор статуса через существующий `SaveStatus` (`saving`/`saved`/`dirty`/`error`). Кнопку «Сохранить» убираем.
-- **Kebab-меню** в шапке: «Открыть на сайте ↗» (по типу → `/zones/$slug`, `/equipment/$slug`, `/services/$slug`, `/production/$slug`), «Дублировать», «Переместить в → …», «Удалить». Постоянный `Select` переноса убираем.
-- **Авто-slug** через существующий `slugify(title)` — только если slug пустой или начинается с `new-` (созданный по умолчанию). Ручное редактирование slug — внутри секции SEO.
+3. **`src/routes/api/public/health.ts`** — новый публичный route, делающий self-check (`fetch(new URL("/", request.url))`) и возвращающий `{ ok, status, ms }`.
 
-### 5. Карточка списка (`CatalogListItem.tsx`)
-Клик по карточке = редактирование. Убираем `onPreview` и кнопку-«карандаш» (избыточны), оставляем «Дублировать».
+4. **`scripts/smoke-prod.mjs`** — скрипт для ручного прогона всех ключевых страниц (`/`, `/zones`, `/equipment`, `/services`, `/production`, `/cases`, `/blog`, `/contacts`); exit 1 при любом 5xx.
 
-### 6. Удаляем
-`src/components/admin/catalog/PreviewPanel.tsx` — больше не используется.
+5. **`src/components/admin/ProdHealthBanner.tsx`** — виджет в админке, опрашивает `/api/public/health` каждые 60 сек, показывает красный alert при 500 с кнопками "Открыть прод" и "Логи".
 
-### Файлы
-- edit: `src/components/admin/AdminSidebar.tsx`
-- edit: `src/routes/admin.catalog.tsx`
-- edit: `src/routes/admin.catalog.$type.tsx`
-- rewrite: `src/components/admin/catalog/CatalogEditor.tsx`
-- edit: `src/components/admin/catalog/CatalogListItem.tsx`
-- delete: `src/components/admin/catalog/PreviewPanel.tsx`
+6. **`src/routes/admin.index.tsx`** — встроить `ProdHealthBanner` в дашборд админки.
 
-Публичная часть и схема БД не меняются.
+## Технические детали
+- Шаги 1–2 дают точный stack в `stack_modern--server-function-logs` — после первого деплоя можно будет сделать прицельный фикс (1–2 строки) реальной причины 500.
+- Никакого слепого «автофикса» SSR-краша без понимания причины — это опасно. Health-баннер + smoke-скрипт = система раннего обнаружения для будущих регрессий.
+- Health route публичный (`/api/public/`) — обходит auth, безопасен (только GET, без PII).
+
+## После деплоя
+Открыть прод → получить настоящий stack из логов → точечный фикс root cause отдельным шагом.

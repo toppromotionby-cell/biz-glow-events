@@ -75,6 +75,7 @@ import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
 import { Route as ApiPublicSocialClickRouteImport } from './routes/api/public/social-click'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AdminSettingsSocialRouteImport } from './routes/admin.settings.social'
 import { Route as AdminSettingsEmailsRouteImport } from './routes/admin.settings.emails'
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
@@ -422,6 +423,11 @@ const ApiPublicSocialClickRoute = ApiPublicSocialClickRouteImport.update({
   path: '/api/public/social-click',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSettingsSocialRoute = AdminSettingsSocialRouteImport.update({
   id: '/settings/social',
   path: '/settings/social',
@@ -568,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -649,6 +656,7 @@ export interface FileRoutesByTo {
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -733,6 +741,7 @@ export interface FileRoutesById {
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -818,6 +827,7 @@ export interface FileRouteTypes {
     | '/admin/settings/documents'
     | '/admin/settings/emails'
     | '/admin/settings/social'
+    | '/api/public/health'
     | '/api/public/social-click'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
@@ -899,6 +909,7 @@ export interface FileRouteTypes {
     | '/admin/settings/documents'
     | '/admin/settings/emails'
     | '/admin/settings/social'
+    | '/api/public/health'
     | '/api/public/social-click'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
@@ -982,6 +993,7 @@ export interface FileRouteTypes {
     | '/admin/settings/documents'
     | '/admin/settings/emails'
     | '/admin/settings/social'
+    | '/api/public/health'
     | '/api/public/social-click'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
@@ -1040,6 +1052,7 @@ export interface RootRouteChildren {
   GeoCityRoute: typeof GeoCityRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
   LpSlugRoute: typeof LpSlugRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSocialClickRoute: typeof ApiPublicSocialClickRoute
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1516,6 +1529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSocialClickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/settings/social': {
       id: '/admin/settings/social'
       path: '/settings/social'
@@ -1819,6 +1839,7 @@ const rootRouteChildren: RootRouteChildren = {
   GeoCityRoute: GeoCityRoute,
   InquiryTokenRoute: InquiryTokenRoute,
   LpSlugRoute: LpSlugRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSocialClickRoute: ApiPublicSocialClickRoute,
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
