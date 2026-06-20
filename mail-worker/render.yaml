@@ -2,7 +2,7 @@ services:
   - type: web
     name: event-hub-mail-worker
     runtime: docker
-    rootDir: mail-worker
+    
     plan: free
     region: frankfurt
     healthCheckPath: /health
