@@ -90,6 +90,7 @@ function OrderDetail() {
   const navigate = useNavigate();
   const [internalNotes, setInternalNotes] = useState("");
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const previewFn = useServerFn(previewOrderConfirmationEmail);
   const loadPreview = useMutation({
     mutationFn: async () => previewFn({ data: { id } }),
