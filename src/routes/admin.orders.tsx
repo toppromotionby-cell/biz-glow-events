@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
 import { useOrderMutations } from "@/hooks/use-order-mutations";
 import { ageInfo } from "@/components/admin/orders/order-age";
@@ -53,16 +54,20 @@ function AdminOrders() {
     },
   });
 
-  // Realtime: обновляем список при любых изменениях в orders
+  // Realtime: обновляем список при любых изменениях в orders.
+  // Debounce — массовое обновление статусов/оплаты не должно вызывать рефетч на каждое событие.
+  const invalidateOrders = useDebouncedCallback(() => {
+    qc.invalidateQueries({ queryKey: ["admin-orders"] });
+  }, 500);
   useEffect(() => {
     const ch = supabase
       .channel("admin-orders-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        qc.invalidateQueries({ queryKey: ["admin-orders"] });
+        invalidateOrders();
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [qc]);
+  }, [invalidateOrders]);
 
   const { updateStatus, updatePaid, deleteOrder, resendEmail, confirmOrder } = useOrderMutations();
 

@@ -29,7 +29,7 @@ export function CartItemsPanel({
       {items.map((i) => (
         <article key={`${i.entity_type}:${i.id}`} className="glass rounded-xl p-4 flex flex-wrap gap-3 items-center">
           {i.image ? (
-            <img src={i.image} alt="" className="h-16 w-16 rounded-md object-cover" />
+            <img src={i.image} alt="" loading="lazy" decoding="async" width={64} height={64} className="h-16 w-16 rounded-md object-cover" />
           ) : (
             <div className="h-16 w-16 rounded-md bg-surface" />
           )}
