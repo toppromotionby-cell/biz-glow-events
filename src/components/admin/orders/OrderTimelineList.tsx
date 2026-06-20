@@ -24,7 +24,7 @@ function resolve(t: OrderTimelineRow): Resolved {
 
   if (ev.startsWith("status_changed")) {
     const from = String(p.from ?? "");
-    const to = String(p.to ?? ev.split(":")[1] ?? "");
+    const to = String(p.to ?? (ev.split(":")[1] || ""));
     return {
       Icon: ArrowRight,
       label: "Статус изменён",
