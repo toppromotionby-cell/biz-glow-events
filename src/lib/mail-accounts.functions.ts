@@ -23,12 +23,13 @@ export const createMailAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => accountCreateSchema.parse(input))
   .handler(async ({ data, context }) => {
+    const { encryptMailPassword } = await import("@/lib/mail-crypto.server");
     const row = {
       owner_id: context.userId,
       email: data.email,
       username: data.username ?? data.email,
       display_name: data.display_name ?? null,
-      password_encrypted: data.password ?? null,
+      password_encrypted: data.password ? encryptMailPassword(data.password) : null,
       provider: data.provider,
       imap_host: data.imap_host,
       imap_port: data.imap_port,
@@ -58,7 +59,10 @@ export const updateMailAccount = createServerFn({ method: "POST" })
     if (p.email !== undefined) update.email = p.email;
     if (p.username !== undefined) update.username = p.username;
     if (p.display_name !== undefined) update.display_name = p.display_name;
-    if (p.password) update.password_encrypted = p.password; // не перетираем пустой
+    if (p.password) {
+      const { encryptMailPassword } = await import("@/lib/mail-crypto.server");
+      update.password_encrypted = encryptMailPassword(p.password); // не перетираем пустой
+    }
     if (p.provider !== undefined) update.provider = p.provider;
     if (p.imap_host !== undefined) update.imap_host = p.imap_host;
     if (p.imap_port !== undefined) update.imap_port = p.imap_port;

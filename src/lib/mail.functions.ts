@@ -46,10 +46,11 @@ async function loadAccountCfg(supabase: SbClient, accountId: string): Promise<Ma
   const row = data as Record<string, unknown>;
   if (!row.imap_host || !row.smtp_host) throw new Error("Account is missing IMAP/SMTP host");
   if (!row.password_encrypted) throw new Error("Account password is not set");
+  const { decryptMailPassword } = await import("@/lib/mail-crypto.server");
   return {
     email: String(row.email),
     username: String(row.username ?? row.email),
-    password: String(row.password_encrypted),
+    password: decryptMailPassword(String(row.password_encrypted)),
     display_name: (row.display_name as string | null) ?? null,
     imap_host: String(row.imap_host),
     imap_port: Number(row.imap_port ?? 993),
