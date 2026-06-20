@@ -477,6 +477,9 @@ function OrderDetail() {
               <Progress value={paidPct} className="h-1.5" />
               <p className="text-[11px] text-muted-foreground mt-1">{paidPct}% оплачено</p>
             </div>
+            <Button size="sm" className="w-full gap-1" onClick={() => setPaymentOpen(true)}>
+              <Plus className="h-3.5 w-3.5" />Внести оплату
+            </Button>
           </section>
 
           {/* Документы — чек-лист */}
