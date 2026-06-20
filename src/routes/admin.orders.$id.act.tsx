@@ -20,6 +20,9 @@ export const Route = createFileRoute("/admin/orders/$id/act")({
         ]);
         if (error || !order) return new Response("Not found", { status: 404 });
 
+        const pdf = await maybePdfResponse("act", request, order, items ?? [], settings);
+        if (pdf) return pdf;
+
         const rows = (items ?? []).map((it, i) => `
           <tr>
             <td class="num">${i + 1}</td>
