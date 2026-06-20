@@ -3,6 +3,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
+import { renderWithOverride } from '@/lib/email-templates/render-with-override'
 
 const STATUS_TO_TEMPLATE: Record<string, string> = {
   confirmed: 'order-confirmed',
@@ -11,13 +12,16 @@ const STATUS_TO_TEMPLATE: Record<string, string> = {
   cancelled: 'order-cancelled',
 }
 
+const FROM_ADDRESS = 'event-hub.by <noreply@event-hub.by>'
+const REPLY_TO = 'noreply@event-hub.by'
+const SENDER_DOMAIN = 'notify.event-hub.by'
+
 export const notifyOrderStatus = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({ orderId: z.string().uuid(), status: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    // Staff-only
     const { data: roles } = await context.supabase
       .from('user_roles')
       .select('role')
@@ -41,34 +45,65 @@ export const notifyOrderStatus = createServerFn({ method: 'POST' })
       return { ok: false, skipped: true, reason: 'no client_email' }
     }
 
-    // Reuse the transactional send route via internal fetch to keep all the
-    // logging/suppression/queueing logic in one place.
-    const headers = new Headers()
-    headers.set('Content-Type', 'application/json')
-    // Pass through the caller's bearer so the staff check passes inside /send.
-    headers.set('Authorization', `Bearer ${context.claims?.token ?? ''}`)
+    // Skip if recipient is suppressed
+    const recipient = String(order.client_email).toLowerCase()
+    const { data: suppressed } = await supabaseAdmin
+      .from('suppressed_emails')
+      .select('id')
+      .eq('email', recipient)
+      .maybeSingle()
+    if (suppressed) return { ok: false, skipped: true, reason: 'suppressed' }
 
-    const url = `${process.env.SUPABASE_URL ? '' : ''}/lovable/email/transactional/send`
-    // In server-fn handler we can call the same-origin route via fetch on the request host.
-    // TanStack server fns run on the same Worker as the route, so a relative URL works.
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        templateName: templateKey,
-        recipientEmail: order.client_email,
-        idempotencyKey: `${templateKey}-${order.id}`,
-        templateData: {
-          clientName: order.client_name ?? 'клиент',
-          orderId: String(order.id).slice(0, 8),
-          total: Number(order.total ?? 0),
-          eventDate: order.event_date,
-        },
-      }),
-    })
-    const json = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      return { ok: false, status: res.status, error: (json as any)?.error ?? 'send failed' }
+    const templateData = {
+      clientName: order.client_name ?? 'клиент',
+      orderId: String(order.id).slice(0, 8),
+      total: Number(order.total ?? 0),
+      eventDate: order.event_date,
     }
-    return { ok: true, queued: true }
+
+    const rendered = await renderWithOverride(templateKey, templateData, async (key) => {
+      const { data: row } = await supabaseAdmin
+        .from('email_templates')
+        .select('template_key, subject, preheader, html_body, enabled')
+        .eq('template_key', key)
+        .maybeSingle()
+      return row as any
+    })
+
+    const messageId = crypto.randomUUID()
+    await supabaseAdmin.from('email_send_log').insert({
+      message_id: messageId,
+      template_name: templateKey,
+      recipient_email: recipient,
+      status: 'pending',
+    })
+
+    const { error: enqueueErr } = await supabaseAdmin.rpc('enqueue_email', {
+      queue_name: 'transactional_emails',
+      payload: {
+        message_id: messageId,
+        to: recipient,
+        from: FROM_ADDRESS,
+        reply_to: REPLY_TO,
+        sender_domain: SENDER_DOMAIN,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        purpose: 'transactional',
+        label: templateKey,
+        idempotency_key: `${templateKey}-${order.id}`,
+        queued_at: new Date().toISOString(),
+      },
+    })
+    if (enqueueErr) {
+      await supabaseAdmin.from('email_send_log').insert({
+        message_id: messageId,
+        template_name: templateKey,
+        recipient_email: recipient,
+        status: 'failed',
+        error_message: enqueueErr.message,
+      })
+      throw new Error('Не удалось поставить письмо в очередь')
+    }
+    return { ok: true, messageId }
   })
