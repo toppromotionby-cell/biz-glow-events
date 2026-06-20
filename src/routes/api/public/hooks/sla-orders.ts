@@ -1,6 +1,9 @@
 // SLA-уведомление: раз в час ищем заказы в статусе 'new' старше 72 часов,
 // и шлём одно Telegram-уведомление администратору с дедупом 24ч через telegram_logs.
-// Вызывается pg_cron через apikey-заголовок (anon key), бизнес-логика проверяет валидность ключа.
+//
+// Вызывается pg_cron. Авторизация — server-only секрет CRON_SECRET, переданный
+// в заголовке `x-cron-secret`. Публичный anon-ключ для аутентификации НЕ
+// используется, потому что он бандлится в клиентский JS и доступен всем.
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
