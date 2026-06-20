@@ -323,6 +323,7 @@ const metaRow = (label: string, value: string) => `
 
 export type AdminOrderPayload = {
   orderId: string;
+  orderNumber?: string | null;
   clientName: string;
   clientPhone: string;
   clientEmail: string;
@@ -333,6 +334,11 @@ export type AdminOrderPayload = {
   notes?: string | null;
   items: Array<{ title: string; qty: number; price: number }>;
 };
+
+function orderDisplayId(orderId: string, orderNumber?: string | null): string {
+  const n = (orderNumber ?? "").trim();
+  return n || orderId.slice(0, 8);
+}
 
 export async function notifyAdminOrderEmail(p: AdminOrderPayload): Promise<{ ok: boolean; error?: string }> {
   const to = adminEmail();
