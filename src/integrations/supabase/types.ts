@@ -301,6 +301,9 @@ export type Database = {
       document_settings: {
         Row: {
           accent_color: string
+          act_footer: string
+          act_intro: string
+          act_validity_days: number
           bank_account: string
           bank_bic: string
           bank_name: string
@@ -332,6 +335,9 @@ export type Database = {
         }
         Insert: {
           accent_color?: string
+          act_footer?: string
+          act_intro?: string
+          act_validity_days?: number
           bank_account?: string
           bank_bic?: string
           bank_name?: string
@@ -363,6 +369,9 @@ export type Database = {
         }
         Update: {
           accent_color?: string
+          act_footer?: string
+          act_intro?: string
+          act_validity_days?: number
           bank_account?: string
           bank_bic?: string
           bank_name?: string
