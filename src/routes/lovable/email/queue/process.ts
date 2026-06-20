@@ -134,7 +134,7 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
                     ? m.message.message_id
                     : null;
                 })
-                .filter((id): id is string => Boolean(id))
+                .filter((id: string | null): id is string => Boolean(id))
             )
           )
           const failedAttemptsByMessageId = new Map<string, number>()

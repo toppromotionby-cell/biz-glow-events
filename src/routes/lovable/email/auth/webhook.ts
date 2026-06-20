@@ -58,7 +58,8 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         }
 
         // Verify signature + timestamp, then parse payload.
-        let payload: Awaited<ReturnType<typeof parseEmailWebhookPayload>>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let payload: any
         let run_id = ''
         try {
           const verified = await verifyWebhookRequest({
