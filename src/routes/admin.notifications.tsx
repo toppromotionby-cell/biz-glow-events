@@ -97,8 +97,8 @@ function NotificationsPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="История уведомлений"
-        description="Последние письма, автосохранения и связанные ошибки в одном окне."
-        actions={
+        subtitle="Последние письма, автосохранения и связанные ошибки в одном окне."
+        action={
           <Button variant="outline" size="sm" onClick={refresh} disabled={emails.isFetching || actions.isFetching}>
             <RefreshCw className={`h-4 w-4 mr-2 ${emails.isFetching || actions.isFetching ? "animate-spin" : ""}`} />
             Обновить
