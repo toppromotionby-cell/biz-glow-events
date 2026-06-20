@@ -1,76 +1,75 @@
-## Цель
-1. Переработать дизайн КП, счёта и договора в едином стиле сайта (фирменный градиент-заголовок, типографика, лого, моно-номер).
-2. Добавить страницу «Настройки документов» в админке, где можно один раз ввести юр. реквизиты, банк, подпись директора, текст оферты и параметры (предоплата, срок действия и т. д.) — без правок в коде.
+## Контекст и диагноз
 
-## Что появится у пользователя
+Письма «не доходят», хотя в истории видно «Письмо отправлено». В `email_send_log` все записи `client-order-confirmed` уходят в `dlq` с ошибкой:
 
-### Новая страница `/admin/settings/documents`
-Раздел «Система» в сайдбаре. Карточки-вкладки:
-- **Компания и бренд** — название юрлица, бренд, УНП, юр. адрес, телефон, e-mail, сайт, URL логотипа, акцентный цвет.
-- **Банковские реквизиты** — наименование банка, БИК, расчётный счёт.
-- **Подписант** — ФИО, должность, основание («действующего на основании Устава»).
-- **Параметры КП** — срок действия (дней), произвольный текст футера, примечание об НДС.
-- **Параметры счёта** — срок оплаты, текст футера.
-- **Параметры договора** — % предоплаты, срок предоплаты, дней до мероприятия без возврата, % пени за просрочку, город юрисдикции.
-- **Тело договора** — редактор разделов (заголовок + список абзацев), можно добавлять/удалять/менять порядок. По умолчанию загружаются текущие 5 разделов.
+```
+Email API error: 403 no_matching_sender — "No sender domain matches the requested sender domain"
+```
 
-Сохранение через `notify.autosaved` (используем уже существующий хелпер из прошлого этапа), валидация Zod, поле «Предпросмотр» — кнопка открывает КП/счёт/договор по последнему заказу для проверки.
+Причина: в проекте верифицирован отправитель `notify.event-hub.by`, но в коде (`admin-email.server.ts`, `lovable/email/transactional/send.ts`, `lovable/email/auth/webhook.ts`) жёстко прописан `SENDER_DOMAIN = "z.event-hub.by"`. После 5 попыток сообщения улетают в DLQ → клиент не получает письмо. UI при этом честно показывает «отправлено в очередь», но провайдер отбивает 403.
 
-### Новый дизайн документов
-- Шапка: тонкая полоса акцентного градиента сверху, слева — лого (если задано) + бренд, справа — мета-блок с моно-номером документа.
-- Карточки сторон (исполнитель/заказчик) — лёгкая рамка, мягкий фон без фиолетовой заливки.
-- Таблица — зебра, моно-цифры, sticky-итог.
-- Подписи — две колонки с местом под подпись/печать.
-- Подвал — мелкий текст из настроек.
-- Печать (`@media print`) — без кнопки, корректные поля A4, hairline-разделители.
-- Все цвета — из `accent_color` настроек (CSS-переменная `--accent`), без хардкода `#6d28d9`.
+Параллельно пользователь хочет:
+1. Чтобы после подтверждения заказа клиенту приходили КП, Счёт, Договор и Акт оказанных услуг.
+2. Чтобы рядом с КП/Счётом/Договором появился «Акт выполненных услуг» с тем же функционалом, что и Договор (отдельная страница рендера + блок настроек в `/admin/settings/documents`).
 
-## Технические детали
+## Что делаем
 
-### Миграция БД
-Таблица `public.document_settings` — единственная строка с `singleton boolean primary key default true`:
-- Колонки: `company_legal_name`, `company_brand`, `company_unp`, `company_address`, `company_phone`, `company_email`, `company_website`, `logo_url`, `accent_color` (default `#6d28d9`),
-- `bank_name`, `bank_bic`, `bank_account`,
-- `signer_name`, `signer_title`, `signer_basis`,
-- `quote_validity_days int` default 14, `quote_footer text`, `vat_note text`,
-- `invoice_validity_days int` default 5, `invoice_footer text`,
-- `contract_prepayment_pct numeric` default 50, `contract_prepayment_days int` default 3, `contract_cancel_days int` default 7, `contract_late_fee_pct numeric` default 0.1, `contract_jurisdiction_city text` default 'Минск',
-- `contract_sections jsonb` default = массив 5 текущих разделов,
-- `updated_at`, `updated_by`.
+### 1. Чиним отправку писем (корневая причина «не доходят»)
 
-GRANT: `authenticated SELECT/UPDATE`, `service_role ALL`. RLS: чтение `authenticated`, изменение только админам через `public.has_role(auth.uid(), 'admin')`. Триггер `touch_updated_at` + сидинг одной строки `INSERT ... ON CONFLICT DO NOTHING`.
+- В трёх файлах меняем константу `SENDER_DOMAIN` с `z.event-hub.by` на `notify.event-hub.by`:
+  - `src/lib/admin-email.server.ts`
+  - `src/routes/lovable/email/transactional/send.ts`
+  - `src/routes/lovable/email/auth/webhook.ts`
+- `FROM_DOMAIN` оставляем `event-hub.by` (это From-заголовок).
+- После фикса очередь сама перестанет ронять сообщения; чтобы старые «застрявшие» письма не висели как DLQ навсегда, ничего дополнительно делать не нужно — новые отправки пойдут с новыми `message_id` (per `resend`/`confirm`).
 
-### Серверные функции
-Новый файл `src/lib/document-settings.functions.ts`:
-- `getDocumentSettings` — публичная (для документов) и админская — через `requireSupabaseAuth`.
-- `updateDocumentSettings` — `requireSupabaseAuth` + проверка `has_role('admin')`, валидация Zod.
+### 2. Новый документ «Акт оказанных услуг»
 
-### Рендер документов
-Один общий хелпер `src/lib/documents/render.server.ts`:
-- `renderDocumentShell({ title, settings, body })` — общая HEAD/CSS/header/footer.
-- Подфункции `renderQuote(order, items, settings)`, `renderInvoice(...)`, `renderContract(...)`.
+**Миграция БД** — расширяем существующий singleton `document_settings`:
 
-Существующие три роута (`admin.orders.$id.quote/invoice/contract.tsx`) переписать на использование общего шаблона + чтение настроек из БД. Если строки настроек нет — берётся встроенный дефолт.
+- `act_validity_days int default 5`
+- `act_footer text default '…'`
+- `act_intro text default 'Настоящий Акт составлен о том, что Исполнитель оказал, а Заказчик принял услуги в полном объёме и надлежащего качества. Стороны претензий друг к другу не имеют.'`
 
-### UI «Настройки документов»
-- Файл `src/routes/admin.settings.documents.tsx` (+ обновить `AdminSidebar.tsx` — пункт «Документы» в группе «Система», иконка `FileCog`).
-- Подкомпоненты в `src/components/admin/settings/`: `CompanySection`, `BankSection`, `SignerSection`, `QuoteSection`, `InvoiceSection`, `ContractParamsSection`, `ContractBodyEditor` (DnD-список разделов).
-- Загрузка через `useSuspenseQuery`, сохранение `useMutation` → `updateDocumentSettings` с дебаунсом 800 мс и `notify.autosaved`.
-- Кнопка «Открыть пример» рядом с каждой секцией — открывает соответствующий документ для последнего заказа.
+Дефолты прописываются в `DEFAULT_DOCUMENT_SETTINGS` и схеме Zod в `src/lib/document-settings.functions.ts`.
 
-### Безопасность
-- Все правки настроек — только админ (`has_role`).
-- Документы по-прежнему за `requireStaff`.
-- Никаких секретов в реквизитах — только публичные данные юрлица.
+**Новый серверный маршрут** `src/routes/admin.orders.$id.act.tsx`:
 
-### Вне scope
-- PDF-генерация на сервере (остаётся print-to-PDF браузера).
-- Загрузка логотипа в Storage (пока только URL; можно расширить позже).
-- Версионирование шаблонов договора.
+- Структура 1:1 как у `admin.orders.$id.contract.tsx`/`invoice.tsx`: `requireStaff` + загрузка `orders`+`order_items`+`document_settings`, рендер через общий `renderShell` из `src/lib/documents/render.server.ts`.
+- Шапка: «Акт оказанных услуг №<id> от <date>», город, реквизиты Исполнителя/Заказчика (через `partyCard`).
+- Таблица позиций с итогом (как в счёте, но без блока «к оплате»).
+- Текст из `settings.act_intro`, footer из `settings.act_footer`, упоминание срока приёмки `act_validity_days`.
+- Подписи сторон (как в договоре/счёте).
 
-## Порядок выполнения
-1. Миграция `document_settings` + сидинг дефолтов.
-2. Серверные функции `get/updateDocumentSettings`.
-3. Общий рендер-хелпер + переписанные quote/invoice/contract в новом стиле.
-4. Страница `/admin/settings/documents` + пункт в сайдбаре.
-5. Smoke-test через Playwright: открыть документы, изменить настройки, перепроверить отображение.
+**Кнопка в `OrderDialog.tsx`** — расширяем `openDoc` тип до `"quote" | "invoice" | "contract" | "act"` и добавляем четвёртую кнопку «Акт».
+
+**Настройки `/admin/settings/documents`** — добавляем таб «Акт» с теми же контролами, что у «Договор»/«Счёт»: дни приёмки, вступительный текст, footer, кнопка «Открыть пример» (передаёт `kind="act"` в `openPreview`).
+
+### 3. Документы в письме подтверждения
+
+Поскольку SaaS-провайдер не поддерживает вложения, прикладывать будем ссылки. Чтобы клиент мог открыть документы без авторизации, делаем подписанные публичные URL:
+
+- Расширяем `sendOrderConfirmationEmailAndLog` (`src/lib/orders.functions.ts`): перед отправкой генерируем 4 HTML-документа (`quote/invoice/contract/act`) теми же функциями, что используют серверные роуты (рефакторим render-логику в `src/lib/documents/render.server.ts` так, чтобы её можно было вызвать и из роута, и из server fn), сохраняем каждый в bucket `order-attachments` под путём `orders/<order_id>/<kind>-<yyyymmdd>.html` через `supabaseAdmin.storage`, получаем `createSignedUrl` на 30 дней.
+- В `buildClientOrderConfirmedEmail` (`src/lib/admin-email.server.ts`) добавляем секцию «Документы» с четырьмя кнопками-ссылками (КП, Счёт, Договор, Акт) в едином стиле письма; передаём URLs через `ClientOrderConfirmedPayload.documents`.
+- Если документ не удалось сгенерировать/загрузить — конкретная ссылка просто скрывается; письмо всё равно уходит, ошибка пишется в `order_timeline` как `documents_attach_failed` с деталями.
+
+### 4. Проверка
+
+- `tsc --noEmit` зелёный.
+- Запуск Playwright против `localhost`: открываем `/admin/orders/<id>` под админом (restore session из env), жмём «Акт» — открывается HTML страница, скриншот.
+- На странице `/admin/settings/documents` переключаемся на таб «Акт», правим значение, ждём автосейв, жмём «Открыть пример» — проверяем что изменение появилось.
+- Подтверждаем заказ → в `email_send_log` ожидаем `status='sent'` (не `dlq`) и `error_message IS NULL`; проверяем что в письме рендерятся 4 ссылки.
+
+## Технические детали (не для пользователя)
+
+- `renderShell`/`esc`/`money`/`partyCard` уже общие — для Акта используем их же; новых стилей не вводим.
+- Сторадж `order-attachments` уже существует и приватный; используем `createSignedUrl(path, 60*60*24*30)`.
+- В Zod-схему `SettingsSchema` добавляем три новых поля; в `normalize()` правок не нужно.
+- `OrderTimelineList` уже отображает любые event'ы — отдельной локализации `documents_attach_failed` не делаем (fallback на сырое имя).
+- Поскольку `email_send_log` теперь будет иметь `sent`/`dlq` корректно, страница `/admin/notifications` сразу начнёт показывать реальный статус без правок.
+
+## Вне scope
+
+- Реальная PDF-генерация (остаёмся на HTML + print-to-PDF в браузере клиента — кнопка печати уже в `renderShell`).
+- Версионность шаблонов/история правок.
+- Перевыпуск ранее «DLQ-нутых» писем — можно нажать «Отправить повторно» в карточке заказа после фикса.
