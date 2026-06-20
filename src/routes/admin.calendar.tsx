@@ -7,6 +7,9 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { ClientOnly } from "@tanstack/react-router";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import type { Database } from "@/integrations/supabase/types";
+
+type AvailabilityRow = Database["public"]["Tables"]["availability"]["Row"];
 
 export const Route = createFileRoute("/admin/calendar")({
   component: CalendarPage,
@@ -21,7 +24,7 @@ function CalendarPage() {
     queryKey: ["availability"],
     queryFn: async () => {
       const { data } = await supabase.from("availability").select("*").limit(500);
-      return (data ?? []).map((a: any) => ({
+      return (data ?? []).map((a: AvailabilityRow) => ({
         id: a.id,
         title: `${a.entity_type} · ${a.status}`,
         start: a.start_date,

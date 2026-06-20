@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Download, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { openAuthedDocument, fetchAuthedDocument } from "@/lib/authed-fetch";
+import { fmtDateTime } from "@/lib/formatters";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 
 const BUCKET = "order-attachments";
@@ -151,7 +152,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{it.file_name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {KIND_LABEL[it.kind] ?? it.kind} · {formatSize(it.file_size)} · {new Date(it.created_at).toLocaleString("ru-BY")}
+                    {KIND_LABEL[it.kind] ?? it.kind} · {formatSize(it.file_size)} · {fmtDateTime(it.created_at)}
                   </div>
                 </div>
               </div>
