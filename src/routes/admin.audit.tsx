@@ -55,25 +55,58 @@ function AuditPage() {
 
   const rows = data?.pages.flat() ?? [];
 
+  // Виртуализация: рендерим только видимые строки в окне просмотра,
+  // чтобы тысячи записей аудита не топили DOM при использовании «Показать ещё».
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => 44,
+    overscan: 10,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
+    getItemKey: (i) => rows[i]?.id ?? i,
+  });
+  const items = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+  const scrollMargin = virtualizer.options.scrollMargin;
+  const paddingTop = items.length > 0 ? Math.max(0, items[0].start - scrollMargin) : 0;
+  const paddingBottom = items.length > 0 ? Math.max(0, totalSize - (items[items.length - 1].end - scrollMargin)) : 0;
+  const showVirtual = !isLoading && rows.length > 0;
+
   return (
     <div className="space-y-5">
       <AdminPageHeader title="Журнал аудита" />
-      <AdminTable
-        columns={COLS}
-        textSize="xs"
-        isLoading={isLoading}
-        isEmpty={!isLoading && rows.length === 0}
-      >
-        {rows.map((r) => (
-          <tr key={r.id} className="border-t border-border/40">
-            <td className="p-3 whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
-            <td className="p-3 font-medium">{r.action}</td>
-            <td className="p-3">{r.table_name}</td>
-            <td className="p-3 font-mono text-[10px]">{r.record_id?.slice(0, 8)}</td>
-            <td className="p-3 font-mono text-[10px]">{r.user_id?.slice(0, 8)}</td>
-          </tr>
-        ))}
-      </AdminTable>
+      <div ref={parentRef}>
+        <AdminTable
+          columns={COLS}
+          textSize="xs"
+          isLoading={isLoading}
+          isEmpty={!isLoading && rows.length === 0}
+        >
+          {showVirtual && paddingTop > 0 && (
+            <tr aria-hidden="true"><td colSpan={COLS.length} style={{ height: paddingTop, padding: 0, border: 0 }} /></tr>
+          )}
+          {showVirtual && items.map((vi) => {
+            const r = rows[vi.index];
+            return (
+              <tr
+                key={r.id}
+                data-index={vi.index}
+                ref={virtualizer.measureElement}
+                className="border-t border-border/40"
+              >
+                <td className="p-3 whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
+                <td className="p-3 font-medium">{r.action}</td>
+                <td className="p-3">{r.table_name}</td>
+                <td className="p-3 font-mono text-[10px]">{r.record_id?.slice(0, 8)}</td>
+                <td className="p-3 font-mono text-[10px]">{r.user_id?.slice(0, 8)}</td>
+              </tr>
+            );
+          })}
+          {showVirtual && paddingBottom > 0 && (
+            <tr aria-hidden="true"><td colSpan={COLS.length} style={{ height: paddingBottom, padding: 0, border: 0 }} /></tr>
+          )}
+        </AdminTable>
+      </div>
       {hasNextPage && (
         <div className="flex justify-center">
           <Button
@@ -89,3 +122,4 @@ function AuditPage() {
     </div>
   );
 }
+
