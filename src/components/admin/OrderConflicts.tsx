@@ -77,7 +77,7 @@ export function OrderConflicts({ orderId, eventDate, items }: Props) {
                   params={{ id: o.id }}
                   className="text-amber-100 hover:underline"
                 >
-                  #{o.id.slice(0, 8)} — {o.client_name} ({o.status})
+                  {displayOrderNumber(o)} — {o.client_name} ({o.status})
                 </Link>
               </li>
             ))}
