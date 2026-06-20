@@ -16,6 +16,29 @@ export async function openAuthedDocument(url: string): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
 }
 
+// Открыть произвольный blob (HTML/PDF/…) в новой вкладке как полную страницу.
+// Используется для превью писем и PDF — data: URL ненадёжно открывается через window.open
+// (особенно крупные base64-PDF). Blob URL работает стабильно во всех браузерах.
+export function openInlineBlob(bytes: Uint8Array | string, mime: string): void {
+  const blob = typeof bytes === "string"
+    ? new Blob([bytes], { type: mime })
+    : new Blob([bytes as BlobPart], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) {
+    URL.revokeObjectURL(url);
+    throw new Error("Браузер заблокировал окно");
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+export function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 export async function fetchAuthedDocument(url: string): Promise<string> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
