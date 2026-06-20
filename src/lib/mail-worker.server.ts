@@ -73,8 +73,12 @@ export async function callMailWorker<T = unknown>(
       // not JSON
     }
     if (!res.ok) {
+      const errFromJson =
+        json && typeof json === "object" && "error" in json
+          ? String((json as { error: unknown }).error)
+          : "";
       const msg =
-        (json && typeof json === "object" && "error" in json && String((json as { error: unknown }).error)) ||
+        errFromJson ||
         text ||
         `HTTP ${res.status}`;
       throw new MailWorkerError(msg, res.status, path);
