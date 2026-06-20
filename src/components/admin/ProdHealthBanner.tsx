@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, ExternalLink, RefreshCw } from "lucide-react";
 
+type Check = { path: string; status: number; ms: number; ok: boolean; error?: string };
 type HealthData = {
   ok: boolean;
   status: number;
@@ -8,6 +9,8 @@ type HealthData = {
   checkedUrl?: string;
   checkedAt: string;
   error?: string;
+  checks?: Check[];
+  failedCount?: number;
 };
 
 const PROD_URL = "https://event-hub.by";
@@ -49,7 +52,7 @@ export function ProdHealthBanner() {
       <div className="glass rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          Прод работает · {data.status} · {data.ms}ms
+          Прод работает · {data.checks?.length ?? 0} страниц · {data.ms}ms
         </span>
         <button onClick={check} disabled={loading} className="hover:text-foreground inline-flex items-center gap-1">
           <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
@@ -59,17 +62,31 @@ export function ProdHealthBanner() {
     );
   }
 
+  const failed = (data.checks ?? []).filter((c) => !c.ok);
+
   return (
     <div className="rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <div className="font-semibold text-destructive">Прод недоступен</div>
+            <div className="font-semibold text-destructive">
+              Прод недоступен{failed.length > 0 ? ` · ${failed.length} страниц с ошибкой` : ""}
+            </div>
             <div className="text-xs text-muted-foreground mt-0.5">
-              Статус {data.status || "ERR"} · проверено {new Date(data.checkedAt).toLocaleTimeString("ru")}
+              Проверено {new Date(data.checkedAt).toLocaleTimeString("ru")}
               {data.error && ` · ${data.error}`}
             </div>
+            {failed.length > 0 && (
+              <ul className="mt-1.5 text-xs text-destructive/90 space-y-0.5">
+                {failed.slice(0, 6).map((c) => (
+                  <li key={c.path}>
+                    <code className="font-mono">{c.path}</code> → {c.status || "ERR"}
+                    {c.error ? ` · ${c.error}` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
