@@ -65,6 +65,9 @@ function timelineEventLabel(ev: string): string {
   if (ev === "attachment_removed") return "Удалён файл";
   if (ev === "email_sent") return "Письмо отправлено клиенту";
   if (ev === "payment_added") return "Платёж зафиксирован";
+  if (ev === "paid_changed") return "Изменена сумма оплаты";
+  if (ev === "assignee_changed") return "Назначен ответственный";
+  if (ev === "assignee_cleared") return "Снят ответственный";
   if (ev === "created") return "Заказ создан";
   return ev;
 }
