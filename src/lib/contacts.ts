@@ -4,6 +4,7 @@ export const CONTACT = {
   phoneTel: "+375447099122",
   telegram: "+375447099122",
   telegramUrl: "https://t.me/+375447099122",
+  telegramLabel: "event-hub.by",
   email: "hello@event-hub.by",
   address: "Минск, Беларусь",
   hours: "Пн–Сб, 10:00–20:00",

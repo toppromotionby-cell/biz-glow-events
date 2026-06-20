@@ -33,7 +33,7 @@ function ContactsPage() {
         <a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="glass rounded-xl p-6 hover:glow-primary transition">
           <Send className="h-5 w-5 text-primary" />
           <div className="mt-3 text-sm text-muted-foreground">Telegram</div>
-          <div className="font-medium">{CONTACT.phoneDisplay}</div>
+          <div className="font-medium">{CONTACT.telegramLabel}</div>
         </a>
         <a href={`mailto:${CONTACT.email}`} className="glass rounded-xl p-6 hover:glow-primary transition">
           <Mail className="h-5 w-5 text-primary" />

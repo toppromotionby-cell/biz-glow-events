@@ -270,7 +270,7 @@ export function SiteFooter() {
               <ul className="space-y-2 text-muted-foreground">
                 <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
                 <Toggleable sectionKey="footer.contacts.phone" as="li"><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></Toggleable>
-                <Toggleable sectionKey="footer.contacts.telegram" as="li"><a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram: {CONTACT.phoneDisplay}</a></Toggleable>
+                <Toggleable sectionKey="footer.contacts.telegram" as="li"><a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram: {CONTACT.telegramLabel}</a></Toggleable>
                 <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
               </ul>
               <SocialIcons variant="footer" className="mt-4" />
@@ -320,7 +320,7 @@ export function SiteFooter() {
                     <ul className="space-y-2 text-muted-foreground pb-2">
                       <Toggleable sectionKey="footer.contacts.address" as="li">{CONTACT.address}</Toggleable>
                       <Toggleable sectionKey="footer.contacts.phone" as="li"><a href={`tel:${CONTACT.phoneTel}`} className="hover:text-foreground">{CONTACT.phoneDisplay}</a></Toggleable>
-                      <Toggleable sectionKey="footer.contacts.telegram" as="li"><a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram: {CONTACT.phoneDisplay}</a></Toggleable>
+                      <Toggleable sectionKey="footer.contacts.telegram" as="li"><a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram: {CONTACT.telegramLabel}</a></Toggleable>
                       <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
                     </ul>
                     <SocialIcons variant="footer" className="pb-2" />
