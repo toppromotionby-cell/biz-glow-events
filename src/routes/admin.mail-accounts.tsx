@@ -12,6 +12,7 @@ import {
   updateMailAccount,
   deleteMailAccount,
 } from "@/lib/mail-accounts.functions";
+import { accountCreateSchema, accountUpdateSchema } from "@/lib/mail-accounts.schema";
 import { testMailAccount } from "@/lib/mail.functions";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
