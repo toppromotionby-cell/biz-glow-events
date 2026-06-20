@@ -596,7 +596,7 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
 
     <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
-        ${metaRow("Номер заказа", `<span style="font-family:ui-monospace,monospace;color:${BRAND.text}">${escapeHtml(p.orderId.slice(0, 8))}</span>`)}
+        ${metaRow("Номер заказа", `<span style="font-family:ui-monospace,monospace;color:${BRAND.text}">${escapeHtml(orderDisplayId(p.orderId, p.orderNumber))}</span>`)}
         ${metaRow("Статус", `<span style="display:inline-block;padding:4px 12px;border-radius:999px;background:${BRAND.accentSoft};color:${BRAND.accent};border:1px solid ${BRAND.accentBorder};font-size:12px;font-weight:600;letter-spacing:0.02em">${escapeHtml(statusLabel)}</span>`)}
         ${p.eventDate ? metaRow("Дата мероприятия", escapeHtml(fmtDateRu(p.eventDate))) : ""}
       </tbody></table>
