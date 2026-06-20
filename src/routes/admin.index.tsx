@@ -6,10 +6,16 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from "recharts";
+import type { Database } from "@/integrations/supabase/types";
+import { fmtCurrency, fmtDateTimeShort } from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
+
+type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
+type StatsOrder = Pick<OrderRow, "id" | "status" | "total" | "source" | "created_at">;
+type RecentOrder = Pick<OrderRow, "id" | "client_name" | "total" | "status" | "created_at">;
 
 const STATUS_LABEL: Record<string, string> = {
   new: "Новые", consultation: "Консультация", estimate: "Смета", contract: "Договор",
@@ -17,10 +23,6 @@ const STATUS_LABEL: Record<string, string> = {
   paid: "Оплачено", completed: "Завершено", cancelled: "Отменено",
 };
 const PIE_COLORS = ["#7c3aed", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#3b82f6", "#84cc16"];
-
-function fmtBYN(n: number) {
-  return new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(n);
-}
 
 function AdminDashboard() {
   const { data } = useQuery({
@@ -34,7 +36,7 @@ function AdminDashboard() {
         supabase.from("availability").select("id", { count: "exact", head: true }),
       ]);
 
-      const orders = (allOrders.data ?? []) as any[];
+      const orders = (allOrders.data ?? []) as StatsOrder[];
       const last30 = orders.filter((o) => o.created_at >= since);
       const revenue = orders.reduce((s, o) => s + Number(o.total ?? 0), 0);
       const revenue30 = last30.reduce((s, o) => s + Number(o.total ?? 0), 0);
@@ -56,7 +58,7 @@ function AdminDashboard() {
         days[d] = { orders: 0, revenue: 0 };
       }
       last30.forEach((o) => {
-        const d = o.created_at.slice(0, 10);
+        const d = (o.created_at ?? "").slice(0, 10);
         if (days[d]) {
           days[d].orders += 1;
           days[d].revenue += Number(o.total ?? 0);
@@ -80,7 +82,7 @@ function AdminDashboard() {
         statusData,
         sourceData,
         timeline,
-        recent: (recent.data ?? []) as any[],
+        recent: (recent.data ?? []) as RecentOrder[],
       };
     },
   });
@@ -88,7 +90,7 @@ function AdminDashboard() {
   const cards = [
     { label: "Всего заявок", value: data?.ordersTotal ?? "—", icon: ShoppingCart, sub: `${data?.last30Count ?? 0} за 30 дн` },
     { label: "Активных", value: data?.ordersActive ?? "—", icon: Users, sub: `${data?.ordersNew ?? 0} новых` },
-    { label: "Сумма (всё)", value: data ? fmtBYN(data.revenue) : "—", icon: BadgeDollarSign, sub: data ? `${fmtBYN(data.revenue30)} / 30 дн` : "" },
+    { label: "Сумма (всё)", value: data ? fmtCurrency(data.revenue) : "—", icon: BadgeDollarSign, sub: data ? `${fmtCurrency(data.revenue30)} / 30 дн` : "" },
     { label: "Бронирований", value: data?.bookings ?? "—", icon: CalendarDays, sub: `${data?.posts ?? 0} постов в блоге` },
   ];
 
@@ -180,11 +182,11 @@ function AdminDashboard() {
                 >
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{o.client_name} <span className="text-xs text-muted-foreground">#{o.id.slice(0, 8)}</span></div>
-                    <div className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("ru-BY", { dateStyle: "short", timeStyle: "short" })}</div>
+                    <div className="text-xs text-muted-foreground">{fmtDateTimeShort(o.created_at)}</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-xs px-2 py-0.5 rounded-full border border-border/50">{STATUS_LABEL[o.status] ?? o.status}</span>
-                    <span className="text-sm tabular-nums w-24 text-right">{fmtBYN(Number(o.total ?? 0))}</span>
+                    <span className="text-sm tabular-nums w-24 text-right">{fmtCurrency(o.total)}</span>
                   </div>
                 </Link>
               ))}
