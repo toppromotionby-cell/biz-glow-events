@@ -1,8 +1,9 @@
 import * as React from 'react';
-import {
-  Body, Container, Head, Heading, Hr, Html, Preview, Section, Text, Link,
-} from '@react-email/components';
+import { Section, Hr } from '@react-email/components';
 import type { TemplateEntry } from './registry';
+import {
+  EmailShell, EmailH1, EmailH2, EmailText, EmailSection, EmailInfoCard, EmailField, EmailLink, EMAIL_TOKENS,
+} from './_shared';
 
 interface AdminOrderProps {
   orderId?: string;
@@ -26,39 +27,43 @@ export function AdminOrderEmail(props: AdminOrderProps) {
     clientCompany, total = 0, eventDate, source = '—', notes, items = [],
   } = props;
   return (
-    <Html>
-      <Head />
-      <Preview>Новый заказ от {clientName} — {fmt(total)}</Preview>
-      <Body style={{ backgroundColor: '#0a0a0f', color: '#e5e5e5', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
-        <Container style={{ padding: '24px', maxWidth: '600px' }}>
-          <Heading style={{ color: '#a78bfa' }}>Новый заказ</Heading>
-          <Text>ID: <strong>{orderId}</strong></Text>
-          <Text>Источник: {source}</Text>
-          <Hr />
-          <Section>
-            <Heading as="h2" style={{ fontSize: '18px' }}>Клиент</Heading>
-            <Text>{clientName}{clientCompany ? ` · ${clientCompany}` : ''}</Text>
-            <Text>
-              Тел: {clientPhone}
-              {' · '}Email: <Link href={`mailto:${clientEmail}`}>{clientEmail}</Link>
-            </Text>
-            {eventDate && <Text>Дата мероприятия: {eventDate}</Text>}
-            {notes && <Text>Комментарий: {notes}</Text>}
-          </Section>
-          <Hr />
-          <Section>
-            <Heading as="h2" style={{ fontSize: '18px' }}>Позиции ({items.length})</Heading>
-            {items.map((it, i) => (
-              <Text key={i} style={{ margin: '4px 0' }}>
-                • {it.title} — {it.qty} × {it.price > 0 ? fmt(it.price) : 'по запросу'}
-              </Text>
-            ))}
-            <Hr />
-            <Text style={{ fontSize: '18px', fontWeight: 'bold' }}>Итого: {fmt(total)}</Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailShell preview={`Новый заказ от ${clientName} — ${fmt(total)}`}>
+      <EmailSection top={20}>
+        <EmailH1>Новый заказ</EmailH1>
+        <EmailText muted small>Уведомление для команды event-hub.by</EmailText>
+      </EmailSection>
+
+      <EmailInfoCard>
+        <EmailField label="ID заказа" value={<strong>{orderId}</strong>} />
+        <EmailField label="Источник" value={source} />
+        {eventDate && <EmailField label="Дата мероприятия" value={eventDate} />}
+      </EmailInfoCard>
+
+      <EmailSection>
+        <EmailH2>Клиент</EmailH2>
+        <EmailField label="Имя" value={`${clientName}${clientCompany ? ` · ${clientCompany}` : ''}`} />
+        <EmailField label="Телефон" value={clientPhone} />
+        <EmailField label="Email" value={<EmailLink href={`mailto:${clientEmail}`}>{clientEmail}</EmailLink>} />
+        {notes && <EmailField label="Комментарий" value={notes} />}
+      </EmailSection>
+
+      <EmailSection>
+        <EmailH2>Позиции ({items.length})</EmailH2>
+      </EmailSection>
+      <EmailInfoCard>
+        {items.map((it, i) => (
+          <EmailText key={i}>
+            • {it.title} — {it.qty} × {it.price > 0 ? fmt(it.price) : 'по запросу'}
+          </EmailText>
+        ))}
+        <Hr style={{ borderColor: EMAIL_TOKENS.BORDER, margin: '12px 0' }} />
+        <EmailText>
+          <strong style={{ fontSize: '17px' }}>Итого: {fmt(total)}</strong>
+        </EmailText>
+      </EmailInfoCard>
+
+      <Section style={{ height: 8 }} />
+    </EmailShell>
   );
 }
 

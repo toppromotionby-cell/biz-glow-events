@@ -1,8 +1,9 @@
 import * as React from 'react';
-import {
-  Body, Container, Head, Heading, Hr, Html, Preview, Section, Text, Link,
-} from '@react-email/components';
+import { Section } from '@react-email/components';
 import type { TemplateEntry } from './registry';
+import {
+  EmailShell, EmailH1, EmailH2, EmailText, EmailSection, EmailInfoCard, EmailField, EmailLink,
+} from './_shared';
 
 interface AdminLeadProps {
   leadId?: string;
@@ -16,26 +17,39 @@ interface AdminLeadProps {
 export function AdminLeadEmail(props: AdminLeadProps) {
   const { leadId = '—', clientName = '—', clientPhone = '—', clientEmail = '—', source = '—', notes } = props;
   return (
-    <Html>
-      <Head />
-      <Preview>Новая заявка от {clientName}</Preview>
-      <Body style={{ backgroundColor: '#0a0a0f', color: '#e5e5e5', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
-        <Container style={{ padding: '24px', maxWidth: '600px' }}>
-          <Heading style={{ color: '#a78bfa' }}>Новая заявка</Heading>
-          <Text>ID: <strong>{leadId}</strong></Text>
-          <Text>Источник: {source}</Text>
-          <Hr />
-          <Section>
-            <Text>{clientName}</Text>
-            <Text>
-              Тел: {clientPhone}
-              {clientEmail !== '—' && <> · Email: <Link href={`mailto:${clientEmail}`}>{clientEmail}</Link></>}
-            </Text>
-            {notes && <Text>Комментарий: {notes}</Text>}
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+    <EmailShell preview={`Новая заявка от ${clientName}`}>
+      <EmailSection top={20}>
+        <EmailH1>Новая заявка</EmailH1>
+        <EmailText muted small>Уведомление для команды event-hub.by</EmailText>
+      </EmailSection>
+
+      <EmailInfoCard>
+        <EmailField label="ID заявки" value={<strong>{leadId}</strong>} />
+        <EmailField label="Источник" value={source} />
+      </EmailInfoCard>
+
+      <EmailSection>
+        <EmailH2>Клиент</EmailH2>
+        <EmailField label="Имя" value={clientName} />
+        <EmailField label="Телефон" value={clientPhone} />
+        {clientEmail && clientEmail !== '—' && (
+          <EmailField label="Email" value={<EmailLink href={`mailto:${clientEmail}`}>{clientEmail}</EmailLink>} />
+        )}
+      </EmailSection>
+
+      {notes && (
+        <>
+          <EmailSection>
+            <EmailH2>Комментарий</EmailH2>
+          </EmailSection>
+          <EmailInfoCard>
+            <EmailText>{notes}</EmailText>
+          </EmailInfoCard>
+        </>
+      )}
+
+      <Section style={{ height: 8 }} />
+    </EmailShell>
   );
 }
 

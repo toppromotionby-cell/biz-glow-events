@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Body, Container, Head, Heading, Html, Preview, Text, Hr } from '@react-email/components';
 import type { TemplateEntry } from './registry';
+import {
+  EmailShell, EmailH1, EmailText, EmailSection, EmailInfoCard, EmailField,
+} from './_shared';
 
 interface Props {
   clientName?: string;
@@ -13,20 +15,26 @@ const fmt = (n: number) =>
 
 export function OrderPaidEmail({ clientName = 'клиент', orderId = '—', total = 0 }: Props) {
   return (
-    <Html>
-      <Head />
-      <Preview>Оплата по заказу #{orderId} получена</Preview>
-      <Body style={{ backgroundColor: '#ffffff', fontFamily: 'system-ui,sans-serif', color: '#1f2937', margin: 0 }}>
-        <Container style={{ maxWidth: 600, padding: '24px' }}>
-          <Heading style={{ color: '#16a34a' }}>Оплата получена</Heading>
-          <Text>Спасибо, {clientName}!</Text>
-          <Text>Мы получили оплату по заказу <strong>#{orderId}</strong>{total > 0 ? <> на сумму <strong>{fmt(total)}</strong></> : null}.</Text>
-          <Hr />
-          <Text>Мы свяжемся с вами по деталям мероприятия в ближайшее время.</Text>
-          <Text style={{ marginTop: 24, fontSize: 12, color: '#6b7280' }}>event-hub.by</Text>
-        </Container>
-      </Body>
-    </Html>
+    <EmailShell preview={`Оплата по заказу #${orderId} получена`} variant="success">
+      <EmailSection top={20}>
+        <EmailH1>Оплата получена</EmailH1>
+        <EmailText>Спасибо, {clientName}!</EmailText>
+        <EmailText>
+          Мы получили оплату по заказу <strong>#{orderId}</strong>
+          {total > 0 ? <> на сумму <strong>{fmt(total)}</strong></> : null}.
+        </EmailText>
+      </EmailSection>
+
+      <EmailInfoCard variant="success">
+        <EmailField label="Заказ" value={<strong>#{orderId}</strong>} />
+        {total > 0 && <EmailField label="Сумма оплаты" value={<strong>{fmt(total)}</strong>} />}
+        <EmailField label="Статус" value={<strong style={{ color: '#22c55e' }}>Оплачен</strong>} />
+      </EmailInfoCard>
+
+      <EmailSection>
+        <EmailText>Мы свяжемся с вами по деталям мероприятия в ближайшее время.</EmailText>
+      </EmailSection>
+    </EmailShell>
   );
 }
 
