@@ -12,7 +12,7 @@ interface Props {
   items: Array<{ entity_type: string; entity_id: string | null; title: string }>;
 }
 
-const ACTIVE_STATUSES = ["confirmed", "paid", "in_progress", "completed"];
+const ACTIVE_STATUSES = ["confirmed", "paid", "in_progress", "completed"] as const;
 
 export function OrderConflicts({ orderId, eventDate, items }: Props) {
   const { data } = useQuery({
