@@ -129,6 +129,24 @@ function AdminOrders() {
         <Stat label="Долг" value={fmtMoney(totals.debt)} accent={totals.debt > 0 ? "text-amber-300" : ""} />
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 -mb-1" role="tablist" aria-label="Тип записей">
+        {([
+          { k: "all", label: "Все" },
+          { k: "orders", label: "Заказы" },
+          { k: "inquiries", label: "🟡 Запросы" },
+        ] as const).map((t) => (
+          <button
+            key={t.k}
+            role="tab"
+            aria-selected={kind === t.k}
+            onClick={() => setKind(t.k)}
+            className={`px-3 py-1.5 rounded-md text-sm border transition ${kind === t.k ? "bg-primary/15 border-primary/40 text-primary" : "border-border hover:bg-muted"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
