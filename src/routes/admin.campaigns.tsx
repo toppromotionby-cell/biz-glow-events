@@ -21,8 +21,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare, Filter, Search } from "lucide-react";
+import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare, Filter, Search, Gauge, X } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { fmtDateTime } from "@/lib/formatters";
 
