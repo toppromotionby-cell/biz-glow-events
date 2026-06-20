@@ -258,27 +258,47 @@ function OrderDetail() {
                 ))}
               </TabsList>
               <TabsContent value="email" className="flex-1 overflow-hidden bg-background mt-3">
+                <div className="flex items-center justify-end px-5 pb-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try { openInlineBlob(emailPreview.html, "text/html;charset=utf-8"); }
+                      catch (e) { toast.error((e as Error).message); }
+                    }}
+                    className="text-primary hover:underline"
+                  >Открыть на полной странице ↗</button>
+                </div>
                 <iframe
                   title="email-preview"
                   srcDoc={emailPreview.html}
                   sandbox=""
-                  className="w-full h-[70vh] border-0 bg-white"
+                  className="w-full h-[66vh] border-0 bg-white"
                 />
               </TabsContent>
               {emailPreview.attachments.map((a) => (
                 <TabsContent key={a.kind} value={a.kind} className="flex-1 overflow-hidden bg-background mt-3">
                   <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground">
                     <span>Имя вложения: <span className="text-foreground font-mono">{a.filename}</span></span>
-                    <a
-                      href={`data:application/pdf;base64,${a.base64}`}
-                      download={a.filename}
-                      className="text-primary hover:underline"
-                    >Скачать</a>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          try { openInlineBlob(base64ToBytes(a.base64), "application/pdf"); }
+                          catch (e) { toast.error((e as Error).message); }
+                        }}
+                        className="text-primary hover:underline"
+                      >Открыть на полной странице ↗</button>
+                      <a
+                        href={`data:application/pdf;base64,${a.base64}`}
+                        download={a.filename}
+                        className="text-primary hover:underline"
+                      >Скачать</a>
+                    </div>
                   </div>
                   <iframe
                     title={`pdf-${a.kind}`}
                     src={`data:application/pdf;base64,${a.base64}`}
-                    className="w-full h-[68vh] border-0 bg-white"
+                    className="w-full h-[64vh] border-0 bg-white"
                   />
                 </TabsContent>
               ))}
