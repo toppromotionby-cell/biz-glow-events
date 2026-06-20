@@ -76,3 +76,35 @@ export function trackLead(source: string, value?: number) {
   gtagEvent("generate_lead", { currency: "BYN", value: value ?? 0, source });
   ymGoal("lead", { source, value: value ?? 0 });
 }
+
+export type SocialNetwork = "instagram" | "tiktok";
+export type SocialPlacement = "footer" | "contacts_page" | "floating_widget";
+
+/**
+ * Клик по иконке соцсети.
+ * Логирует событие в GA4, Яндекс.Метрику и серверный лог (marketing_logs).
+ */
+export function trackSocialClick(network: SocialNetwork, placement: SocialPlacement, url?: string | null) {
+  if (!isBrowser()) return;
+  const payload = { network, placement, url: url ?? null };
+  // GA4 — рекомендуемое имя для outbound social-click
+  gtagEvent("social_click", payload);
+  // Яндекс.Метрика — общая цель + цель по сети
+  ymGoal("social_click", payload);
+  ymGoal(`social_click_${network}`, { placement });
+  // Серверный лог через sendBeacon (не блокирует переход по ссылке)
+  try {
+    const body = new Blob([JSON.stringify(payload)], { type: "application/json" });
+    const ok = navigator.sendBeacon?.("/api/public/social-click", body);
+    if (!ok) {
+      // Фолбэк, если sendBeacon недоступен
+      fetch("/api/public/social-click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {}
+}
+
