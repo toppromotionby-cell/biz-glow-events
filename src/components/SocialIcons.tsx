@@ -5,6 +5,7 @@ import { TikTokIcon } from "@/components/icons/TikTokIcon";
 import { Toggleable } from "@/lib/site-sections";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { cn } from "@/lib/utils";
+import { trackSocialClick } from "@/lib/analytics";
 
 type Variant = "footer" | "card";
 
