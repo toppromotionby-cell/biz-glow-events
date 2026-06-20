@@ -53,16 +53,20 @@ function AdminOrders() {
     },
   });
 
-  // Realtime: обновляем список при любых изменениях в orders
+  // Realtime: обновляем список при любых изменениях в orders.
+  // Debounce — массовое обновление статусов/оплаты не должно вызывать рефетч на каждое событие.
+  const invalidateOrders = useDebouncedCallback(() => {
+    qc.invalidateQueries({ queryKey: ["admin-orders"] });
+  }, 500);
   useEffect(() => {
     const ch = supabase
       .channel("admin-orders-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        qc.invalidateQueries({ queryKey: ["admin-orders"] });
+        invalidateOrders();
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [qc]);
+  }, [invalidateOrders]);
 
   const { updateStatus, updatePaid, deleteOrder, resendEmail, confirmOrder } = useOrderMutations();
 
