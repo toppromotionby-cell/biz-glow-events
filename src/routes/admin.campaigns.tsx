@@ -97,6 +97,15 @@ function InvitationsPage() {
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Rate-limit настройки рассылки
+  const [batchSize, setBatchSize] = useState(2); // адресов за один запрос
+  const [pauseSec, setPauseSec] = useState(2); // пауза между батчами, сек
+  const [progress, setProgress] = useState<{
+    total: number; sent: number; queued: number; failed: number; suppressed: number;
+    running: boolean; paused: boolean; batchIdx: number; batchCount: number;
+  } | null>(null);
+  const cancelRef = useRef(false);
+
   const emails = useMemo(() => parseEmails(emailsRaw), [emailsRaw]);
   const canSend = emails.length >= 1 && emails.length <= MAX;
   const tooMany = emails.length > MAX;
