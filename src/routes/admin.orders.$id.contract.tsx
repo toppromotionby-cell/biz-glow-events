@@ -25,7 +25,7 @@ export const Route = createFileRoute("/admin/orders/$id/contract")({
 
         const total = (items ?? []).reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
         const date = fmtDate(new Date());
-        const num = String(order.id).slice(0, 8).toUpperCase();
+        const num = (order.order_number ?? "").trim() ? (order.order_number as string).replaceAll("/", ".") : String(order.id).slice(0, 8).toUpperCase();
         const eventDate = order.event_date ? fmtDate(order.event_date) : "по согласованию сторон";
 
         const itemsList =
