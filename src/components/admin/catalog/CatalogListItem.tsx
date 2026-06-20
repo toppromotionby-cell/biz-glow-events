@@ -1,4 +1,4 @@
-import { AlertTriangle, Copy, Pencil } from "lucide-react";
+import { AlertTriangle, Copy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StorageImg } from "@/components/StorageMedia";
 import { StatusPill } from "@/components/admin/StatusPill";
@@ -9,7 +9,6 @@ export function CatalogListItem({
   handle,
   active,
   checked,
-  onPreview,
   onToggleCheck,
   onEdit,
   onDuplicate,
@@ -18,7 +17,6 @@ export function CatalogListItem({
   handle: React.ReactNode;
   active: boolean;
   checked: boolean;
-  onPreview: () => void;
   onToggleCheck: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -28,8 +26,8 @@ export function CatalogListItem({
     <div
       role="button"
       tabIndex={0}
-      onClick={onPreview}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPreview(); } }}
+      onClick={onEdit}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEdit(); } }}
       className={`group relative w-full text-left p-3 rounded-lg text-sm transition cursor-pointer flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}
     >
       {handle}
@@ -55,26 +53,15 @@ export function CatalogListItem({
           <StatusPill tone={item.published ? "success" : "muted"}>{item.published ? "опубл." : "черн."}</StatusPill>
         </div>
       </div>
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-          title="Дублировать"
-          aria-label="Дублировать"
-          className="inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
-        >
-          <Copy className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          title="Редактировать"
-          aria-label="Редактировать"
-          className="inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+        title="Дублировать"
+        aria-label="Дублировать"
+        className="inline-flex h-7 w-7 items-center justify-center rounded hover:bg-background/30 opacity-0 group-hover:opacity-100 transition"
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
