@@ -25,3 +25,21 @@ export function consumeLastCapturedError(): unknown {
   lastCapturedError = undefined;
   return error;
 }
+
+// Serializes Error into a plain object so console.error in Workers logs
+// a full stack trace instead of "[object Object]" or just the message.
+export function formatError(err: unknown): Record<string, unknown> {
+  if (err instanceof Error) {
+    const out: Record<string, unknown> = {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    };
+    if ((err as Error & { cause?: unknown }).cause !== undefined) {
+      out.cause = formatError((err as Error & { cause?: unknown }).cause);
+    }
+    return out;
+  }
+  if (err && typeof err === "object") return err as Record<string, unknown>;
+  return { message: String(err) };
+}
