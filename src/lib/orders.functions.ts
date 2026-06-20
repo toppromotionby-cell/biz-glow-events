@@ -508,9 +508,13 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
 
 // ===== Admin: confirm order (status -> confirmed) + email the client =====
 
+type DocKind = "quote" | "invoice" | "contract" | "act";
+type DocStatus = { kind: DocKind; label: string; ok: boolean; stage?: "build" | "upload" | "sign"; error?: string; url?: string };
+
 async function generateAndUploadOrderDocuments(
   orderId: string,
-): Promise<Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; url: string }>> {
+): Promise<{ docs: Array<{ kind: DocKind; label: string; url: string }>; statuses: DocStatus[] }> {
+  const statuses: DocStatus[] = [];
   try {
     const [{ buildQuoteHtml, buildInvoiceHtml, buildContractHtml, buildActHtml, DOC_LABELS }, { loadDocumentSettings }] = await Promise.all([
       import("@/lib/documents/build.server"),
@@ -526,7 +530,12 @@ async function generateAndUploadOrderDocuments(
       supabaseAdmin.from("order_items").select("title, qty, price").eq("order_id", orderId),
       loadDocumentSettings(supabaseAdmin as never),
     ]);
-    if (!order) return [];
+    if (!order) {
+      for (const kind of ["quote", "invoice", "contract", "act"] as const) {
+        statuses.push({ kind, label: DOC_LABELS[kind], ok: false, stage: "build", error: "Заявка не найдена" });
+      }
+      return { docs: [], statuses };
+    }
 
     const itemRows = (items ?? []).map((i) => ({
       title: String(i.title),
@@ -534,44 +543,66 @@ async function generateAndUploadOrderDocuments(
       price: Number(i.price ?? 0),
     }));
 
-    const builders: Record<"quote" | "invoice" | "contract" | "act", string> = {
-      quote: buildQuoteHtml(order, itemRows, settings),
-      invoice: buildInvoiceHtml(order, itemRows, settings),
-      contract: buildContractHtml(order, itemRows, settings),
-      act: buildActHtml(order, itemRows, settings),
+    const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+    const docs: Array<{ kind: DocKind; label: string; url: string }> = [];
+
+    const buildOne = (kind: DocKind): string => {
+      if (kind === "quote") return buildQuoteHtml(order, itemRows, settings);
+      if (kind === "invoice") return buildInvoiceHtml(order, itemRows, settings);
+      if (kind === "contract") return buildContractHtml(order, itemRows, settings);
+      return buildActHtml(order, itemRows, settings);
     };
 
-    const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    const result: Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; url: string }> = [];
-
     for (const kind of ["quote", "invoice", "contract", "act"] as const) {
+      const label = DOC_LABELS[kind];
       try {
+        let html: string;
+        try {
+          html = buildOne(kind);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "build error";
+          console.error("[order-docs] build failed", kind, msg);
+          statuses.push({ kind, label, ok: false, stage: "build", error: msg });
+          continue;
+        }
         const path = `orders/${orderId}/${kind}-${datePart}.html`;
-        const html = builders[kind];
         const blob = new Blob([html], { type: "text/html; charset=utf-8" });
         const up = await supabaseAdmin.storage
           .from("order-attachments")
           .upload(path, blob, { upsert: true, contentType: "text/html; charset=utf-8" });
         if (up.error) {
           console.error("[order-docs] upload failed", kind, up.error.message);
+          statuses.push({ kind, label, ok: false, stage: "upload", error: up.error.message });
           continue;
         }
         const signed = await supabaseAdmin.storage
           .from("order-attachments")
           .createSignedUrl(path, 60 * 60 * 24 * 30);
         if (signed.error || !signed.data?.signedUrl) {
-          console.error("[order-docs] sign failed", kind, signed.error?.message);
+          const msg = signed.error?.message ?? "no signed url";
+          console.error("[order-docs] sign failed", kind, msg);
+          statuses.push({ kind, label, ok: false, stage: "sign", error: msg });
           continue;
         }
-        result.push({ kind, label: DOC_LABELS[kind], url: signed.data.signedUrl });
+        docs.push({ kind, label, url: signed.data.signedUrl });
+        statuses.push({ kind, label, ok: true, url: signed.data.signedUrl });
       } catch (e) {
-        console.error("[order-docs] build failed", kind, e);
+        const msg = e instanceof Error ? e.message : "unknown error";
+        console.error("[order-docs] failed", kind, e);
+        statuses.push({ kind, label, ok: false, error: msg });
       }
     }
-    return result;
+    return { docs, statuses };
   } catch (e) {
+    const msg = e instanceof Error ? e.message : "fatal";
     console.error("[order-docs] fatal", e);
-    return [];
+    if (statuses.length === 0) {
+      const fallback: Record<DocKind, string> = { quote: "КП", invoice: "Счёт", contract: "Договор", act: "Акт" };
+      for (const kind of ["quote", "invoice", "contract", "act"] as const) {
+        statuses.push({ kind, label: fallback[kind], ok: false, error: msg });
+      }
+    }
+    return { docs: [], statuses };
   }
 }
 
