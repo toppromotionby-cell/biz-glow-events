@@ -4,8 +4,10 @@
 // from the registry when no enabled override exists.
 import * as React from 'react'
 import { render } from '@react-email/components'
-import DOMPurify from 'isomorphic-dompurify'
 import { TEMPLATES, AUTH_TEMPLATE_META } from './registry'
+import { sanitizeEmailHtml } from './sanitize'
+
+export { sanitizeEmailHtml }
 
 export interface RenderResult {
   subject: string
@@ -43,33 +45,6 @@ export function applyPlaceholders(template: string, data: Record<string, unknown
     }
     return escapeHtml(value)
   })
-}
-
-const SANITIZE_OPTS = {
-  ALLOWED_TAGS: [
-    'html', 'head', 'body', 'meta', 'title', 'style',
-    'div', 'span', 'p', 'br', 'hr', 'a', 'img',
-    'strong', 'b', 'em', 'i', 'u', 'small', 'sub', 'sup',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li',
-    'table', 'thead', 'tbody', 'tr', 'td', 'th',
-    'blockquote', 'pre', 'code',
-    'center', 'font',
-  ] as string[],
-  ALLOWED_ATTR: [
-    'href', 'src', 'alt', 'title', 'style', 'class', 'id',
-    'width', 'height', 'border', 'align', 'valign',
-    'cellpadding', 'cellspacing', 'bgcolor', 'color', 'face', 'size',
-    'target', 'rel', 'name', 'role',
-  ] as string[],
-  ALLOWED_URI_REGEXP: /^(https?:|mailto:|tel:|cid:|#|\/)/i,
-  WHOLE_DOCUMENT: true,
-  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'] as string[],
-  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onsubmit'] as string[],
-}
-
-export function sanitizeEmailHtml(html: string): string {
-  return DOMPurify.sanitize(html, SANITIZE_OPTS) as unknown as string
 }
 
 interface OverrideRow {
