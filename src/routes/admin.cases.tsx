@@ -136,7 +136,7 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
       event_type: form.event_type ?? "",
       event_date: form.event_date ?? null,
       location: form.location ?? "",
-      guests_count: form.guests_count === "" || form.guests_count == null ? null : Number(form.guests_count),
+      guests_count: form.guests_count == null ? null : Number(form.guests_count),
       summary: form.summary ?? "",
       description: form.description ?? "",
       cover_url: form.cover_url ?? "",
@@ -228,7 +228,7 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
         <Field label="Тип события" error={errors["event_type"]}><Input value={form.event_type ?? ""} onChange={(e) => setForm({ ...form, event_type: e.target.value })} placeholder="Корпоратив / Конференция / Фестиваль" /></Field>
         <Field label="Дата"><Input type="date" value={form.event_date ?? ""} onChange={(e) => setForm({ ...form, event_date: e.target.value })} /></Field>
         <Field label="Локация" error={errors["location"]}><Input value={form.location ?? ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></Field>
-        <Field label="Число гостей" error={errors["guests_count"]}><Input type="number" value={form.guests_count ?? ""} onChange={(e) => setForm({ ...form, guests_count: e.target.value })} /></Field>
+        <Field label="Число гостей" error={errors["guests_count"]}><Input type="number" value={form.guests_count ?? ""} onChange={(e) => setForm({ ...form, guests_count: e.target.value ? Number(e.target.value) : null })} /></Field>
         <Field label="URL обложки (опц.)" hint="Иначе берём первое фото"><Input value={form.cover_url ?? ""} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} /></Field>
       </div>
 
