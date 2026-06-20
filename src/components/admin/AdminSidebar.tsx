@@ -98,8 +98,6 @@ function useSidebarBadges() {
 
 function isItemActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.to;
-  // catalog/zones is one of variants — активен любой catalog подпуть
-  if (item.to.startsWith("/admin/catalog/")) return pathname.startsWith("/admin/catalog");
   return pathname === item.to || pathname.startsWith(item.to + "/");
 }
 
