@@ -303,7 +303,85 @@ function MailAccountsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ChecksHistoryDialog accountId={historyId} onClose={() => setHistoryId(null)} />
     </div>
+  );
+}
+
+function ChecksHistoryDialog({ accountId, onClose }: { accountId: string | null; onClose: () => void }) {
+  const fetchChecks = useServerFn(listMailAccountChecks);
+  const q = useQuery({
+    queryKey: ["admin", "mail-account-checks", accountId],
+    queryFn: () => fetchChecks({ data: { accountId: accountId!, limit: 50 } }),
+    enabled: !!accountId,
+  });
+  const checks = (q.data?.checks ?? []) as Array<{
+    id: string;
+    ok: boolean;
+    status_code: number | null;
+    message: string | null;
+    duration_ms: number | null;
+    created_at: string;
+  }>;
+  return (
+    <Dialog open={!!accountId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Журнал проверок</DialogTitle>
+          <DialogDescription>Последние 50 запусков «Проверить» для этого ящика.</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto rounded-md border">
+          {q.isLoading && <div className="p-6 text-center text-muted-foreground text-sm">Загрузка…</div>}
+          {!q.isLoading && checks.length === 0 && (
+            <div className="p-6 text-center text-muted-foreground text-sm">Проверок ещё не было</div>
+          )}
+          {checks.length > 0 && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[170px]">Когда</TableHead>
+                  <TableHead className="w-[90px]">Статус</TableHead>
+                  <TableHead className="w-[70px]">Код</TableHead>
+                  <TableHead>Сообщение</TableHead>
+                  <TableHead className="w-[70px] text-right">мс</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {checks.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {new Date(c.created_at).toLocaleString("ru-RU")}
+                    </TableCell>
+                    <TableCell>
+                      {c.ok ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-600 text-xs">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> OK
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-destructive text-xs">
+                          <XCircle className="h-3.5 w-3.5" /> Ошибка
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs tabular-nums">{c.status_code ?? "—"}</TableCell>
+                    <TableCell className="text-xs break-words max-w-[320px]">
+                      {c.message ?? ""}
+                    </TableCell>
+                    <TableCell className="text-xs tabular-nums text-right">
+                      {c.duration_ms ?? "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Закрыть</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
