@@ -508,6 +508,73 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
 
 // ===== Admin: confirm order (status -> confirmed) + email the client =====
 
+async function generateAndUploadOrderDocuments(
+  orderId: string,
+): Promise<Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; url: string }>> {
+  try {
+    const [{ buildQuoteHtml, buildInvoiceHtml, buildContractHtml, buildActHtml, DOC_LABELS }, { loadDocumentSettings }] = await Promise.all([
+      import("@/lib/documents/build.server"),
+      import("@/lib/documents/render.server"),
+    ]);
+
+    const [{ data: order }, { data: items }, settings] = await Promise.all([
+      supabaseAdmin
+        .from("orders")
+        .select("id, client_name, client_company, client_phone, client_email, event_date, notes, paid")
+        .eq("id", orderId)
+        .maybeSingle(),
+      supabaseAdmin.from("order_items").select("title, qty, price").eq("order_id", orderId),
+      loadDocumentSettings(supabaseAdmin as never),
+    ]);
+    if (!order) return [];
+
+    const itemRows = (items ?? []).map((i) => ({
+      title: String(i.title),
+      qty: Number(i.qty ?? 1),
+      price: Number(i.price ?? 0),
+    }));
+
+    const builders: Record<"quote" | "invoice" | "contract" | "act", string> = {
+      quote: buildQuoteHtml(order, itemRows, settings),
+      invoice: buildInvoiceHtml(order, itemRows, settings),
+      contract: buildContractHtml(order, itemRows, settings),
+      act: buildActHtml(order, itemRows, settings),
+    };
+
+    const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+    const result: Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; url: string }> = [];
+
+    for (const kind of ["quote", "invoice", "contract", "act"] as const) {
+      try {
+        const path = `orders/${orderId}/${kind}-${datePart}.html`;
+        const html = builders[kind];
+        const blob = new Blob([html], { type: "text/html; charset=utf-8" });
+        const up = await supabaseAdmin.storage
+          .from("order-attachments")
+          .upload(path, blob, { upsert: true, contentType: "text/html; charset=utf-8" });
+        if (up.error) {
+          console.error("[order-docs] upload failed", kind, up.error.message);
+          continue;
+        }
+        const signed = await supabaseAdmin.storage
+          .from("order-attachments")
+          .createSignedUrl(path, 60 * 60 * 24 * 30);
+        if (signed.error || !signed.data?.signedUrl) {
+          console.error("[order-docs] sign failed", kind, signed.error?.message);
+          continue;
+        }
+        result.push({ kind, label: DOC_LABELS[kind], url: signed.data.signedUrl });
+      } catch (e) {
+        console.error("[order-docs] build failed", kind, e);
+      }
+    }
+    return result;
+  } catch (e) {
+    console.error("[order-docs] fatal", e);
+    return [];
+  }
+}
+
 // Грузит заказ+позиции, шлёт письмо клиенту и пишет результат в order_timeline
 // (events: confirmation_email_sent / confirmation_email_failed). Возвращает
 // { ok, error? } чтобы вызывающий код мог показать UI-фидбек и предложить ретрай.
@@ -542,6 +609,18 @@ async function sendOrderConfirmationEmailAndLog(
     .select("title, qty, price, entity_type, start_date, end_date")
     .eq("order_id", orderId);
 
+  // Параллельно генерим документы и кладём в bucket — даже если не получится,
+  // письмо всё равно отправим без блока «Документы».
+  const documents = await generateAndUploadOrderDocuments(orderId);
+  if (documents.length === 0) {
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: orderId,
+      actor_id: actorId,
+      event: "documents_attach_failed",
+      payload: { trigger },
+    });
+  }
+
   let res: { ok: boolean; error?: string };
   try {
     res = await notifyClientOrderConfirmedEmail({
@@ -563,6 +642,7 @@ async function sendOrderConfirmationEmailAndLog(
         startDate: i.start_date ?? null,
         endDate: i.end_date ?? null,
       })),
+      documents,
     });
   } catch (e) {
     res = { ok: false, error: e instanceof Error ? e.message : "send failed" };
