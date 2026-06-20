@@ -21,8 +21,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare, Filter, Search } from "lucide-react";
+import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare, Filter, Search, Gauge, X } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { fmtDateTime } from "@/lib/formatters";
 
@@ -95,6 +97,15 @@ function InvitationsPage() {
   const [sortMode, setSortMode] = useState<SortMode>("alpha");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Rate-limit настройки рассылки
+  const [batchSize, setBatchSize] = useState(2); // адресов за один запрос
+  const [pauseSec, setPauseSec] = useState(2); // пауза между батчами, сек
+  const [progress, setProgress] = useState<{
+    total: number; sent: number; queued: number; failed: number; suppressed: number;
+    running: boolean; paused: boolean; batchIdx: number; batchCount: number;
+  } | null>(null);
+  const cancelRef = useRef(false);
+
   const emails = useMemo(() => parseEmails(emailsRaw), [emailsRaw]);
   const canSend = emails.length >= 1 && emails.length <= MAX;
   const tooMany = emails.length > MAX;
@@ -145,23 +156,71 @@ function InvitationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const send = useMutation({
-    mutationFn: () => sendFn({
-      data: {
-        emails,
-        recipient_name: emails.length === 1 ? recipientName.trim() || undefined : undefined,
-        personal_message: personalMessage.trim() || undefined,
-      },
-    }),
-    onSuccess: (r) => {
-      toast.success(`Поставлено в очередь: ${r.queued} из ${r.total}` + (r.suppressed ? ` · отписаны: ${r.suppressed}` : "") + (r.failed ? ` · ошибки: ${r.failed}` : ""));
-      setEmailsRaw("");
-      setRecipientName("");
-      setPersonalMessage("");
+  const runBatchedSend = async () => {
+    if (progress?.running) return;
+    cancelRef.current = false;
+    const list = emails.slice(0, MAX);
+    const size = Math.max(1, Math.min(MAX, batchSize));
+    const batches: string[][] = [];
+    for (let i = 0; i < list.length; i += size) batches.push(list.slice(i, i + size));
+    setProgress({
+      total: list.length, sent: 0, queued: 0, failed: 0, suppressed: 0,
+      running: true, paused: false, batchIdx: 0, batchCount: batches.length,
+    });
+    let agg = { queued: 0, failed: 0, suppressed: 0, sent: 0 };
+    try {
+      for (let i = 0; i < batches.length; i++) {
+        if (cancelRef.current) break;
+        const batch = batches[i];
+        setProgress((p) => p ? { ...p, batchIdx: i + 1, paused: false } : p);
+        try {
+          const r = await sendFn({
+            data: {
+              emails: batch,
+              recipient_name: list.length === 1 ? recipientName.trim() || undefined : undefined,
+              personal_message: personalMessage.trim() || undefined,
+            },
+          });
+          agg.queued += r.queued ?? 0;
+          agg.failed += r.failed ?? 0;
+          agg.suppressed += r.suppressed ?? 0;
+        } catch (e) {
+          agg.failed += batch.length;
+          toast.error(`Батч ${i + 1}: ${(e as Error).message}`);
+        }
+        agg.sent += batch.length;
+        setProgress((p) => p ? { ...p, ...agg } : p);
+
+        // Пауза между батчами (не после последнего)
+        if (i < batches.length - 1 && pauseSec > 0 && !cancelRef.current) {
+          setProgress((p) => p ? { ...p, paused: true } : p);
+          const stepMs = 100;
+          const totalMs = pauseSec * 1000;
+          for (let t = 0; t < totalMs; t += stepMs) {
+            if (cancelRef.current) break;
+            await new Promise((res) => setTimeout(res, stepMs));
+          }
+        }
+      }
+      const cancelled = cancelRef.current;
+      toast.success(
+        (cancelled ? "Остановлено. " : "Готово. ") +
+        `В очереди: ${agg.queued} из ${list.length}` +
+        (agg.suppressed ? ` · отписаны: ${agg.suppressed}` : "") +
+        (agg.failed ? ` · ошибки: ${agg.failed}` : "")
+      );
+      if (!cancelled) {
+        setEmailsRaw("");
+        setRecipientName("");
+        setPersonalMessage("");
+      }
       qc.invalidateQueries({ queryKey: ["admin", "invites", "log"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+    } finally {
+      setProgress((p) => p ? { ...p, running: false, paused: false } : p);
+    }
+  };
+
+  const cancelSend = () => { cancelRef.current = true; };
 
   const sendTest = useMutation({
     mutationFn: () => {
@@ -268,6 +327,75 @@ function InvitationsPage() {
             <div className="text-xs text-muted-foreground text-right">{personalMessage.length}/500</div>
           </div>
 
+          {/* Настройки скорости рассылки (rate limit) */}
+          <div className="rounded-lg border border-border/40 bg-muted/20 p-3 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Gauge className="h-4 w-4 text-primary" />
+              Скорость рассылки
+              <span className="text-xs text-muted-foreground font-normal ml-auto">
+                {batchSize} адр./запрос · пауза {pauseSec}с
+              </span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs flex justify-between">
+                  <span>Адресов за запрос</span>
+                  <span className="text-muted-foreground">{batchSize}</span>
+                </Label>
+                <Slider
+                  min={1} max={MAX} step={1}
+                  value={[batchSize]}
+                  onValueChange={(v) => setBatchSize(v[0] ?? 1)}
+                  disabled={progress?.running}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs flex justify-between">
+                  <span>Пауза между запросами</span>
+                  <span className="text-muted-foreground">{pauseSec} с</span>
+                </Label>
+                <Slider
+                  min={0} max={30} step={1}
+                  value={[pauseSec]}
+                  onValueChange={(v) => setPauseSec(v[0] ?? 0)}
+                  disabled={progress?.running}
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Используйте небольшие батчи и паузы, чтобы снизить нагрузку и риск попадания в спам-фильтры.
+            </p>
+          </div>
+
+          {/* Индикатор прогресса */}
+          {progress && (
+            <div className="rounded-lg border border-border/40 bg-background p-3 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">
+                  {progress.running
+                    ? (progress.paused ? "Пауза между батчами…" : `Отправка батча ${progress.batchIdx}/${progress.batchCount}`)
+                    : "Готово"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {progress.sent}/{progress.total}
+                </span>
+              </div>
+              <Progress value={progress.total ? Math.round((progress.sent / progress.total) * 100) : 0} />
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                  <span>В очереди: <b className="text-foreground">{progress.queued}</b></span>
+                  {progress.suppressed > 0 && <span>Отписаны: <b className="text-foreground">{progress.suppressed}</b></span>}
+                  {progress.failed > 0 && <span className="text-destructive">Ошибки: <b>{progress.failed}</b></span>}
+                </div>
+                {progress.running && (
+                  <Button type="button" variant="outline" size="sm" onClick={cancelSend}>
+                    <X className="h-3.5 w-3.5 mr-1" /> Остановить
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2 pt-2">
             <Button variant="outline" onClick={() => preview.mutate()} disabled={preview.isPending}>
               {preview.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
@@ -276,7 +404,7 @@ function InvitationsPage() {
             <Button
               variant="outline"
               onClick={() => sendTest.mutate()}
-              disabled={sendTest.isPending || !user?.email}
+              disabled={sendTest.isPending || !user?.email || progress?.running}
               title={user?.email ? `Отправить тест на ${user.email}` : "Сначала войдите"}
             >
               {sendTest.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
@@ -284,8 +412,8 @@ function InvitationsPage() {
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="btn-primary-gradient" disabled={!canSend || send.isPending}>
-                  {send.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                <Button className="btn-primary-gradient" disabled={!canSend || !!progress?.running}>
+                  {progress?.running ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                   Отправить приглашения
                 </Button>
               </AlertDialogTrigger>
@@ -293,12 +421,13 @@ function InvitationsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Отправить приглашения?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Письмо уйдёт на {emails.length} адрес(ов). Отменить после запуска нельзя.
+                    Письмо уйдёт на {emails.length} адрес(ов) батчами по {Math.min(batchSize, emails.length)}
+                    {pauseSec > 0 ? ` с паузой ${pauseSec} с` : ""}. Рассылку можно остановить во время выполнения.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Отмена</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => send.mutate()}>Отправить</AlertDialogAction>
+                  <AlertDialogAction onClick={() => { void runBatchedSend(); }}>Отправить</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
