@@ -56,7 +56,7 @@ export const notifyOrderStatus = createServerFn({ method: 'POST' })
 
     const templateData = {
       clientName: order.client_name ?? 'клиент',
-      orderId: String(order.id).slice(0, 8),
+      orderId: (order.order_number ?? '').trim() || String(order.id).slice(0, 8),
       total: Number(order.total ?? 0),
       eventDate: order.event_date,
     }
