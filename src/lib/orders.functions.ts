@@ -344,7 +344,7 @@ export const updateOwnOrder = createServerFn({ method: "POST" })
 
     const { data: existing, error: fetchErr } = await supabaseAdmin
       .from("orders")
-      .select("id, user_id, status, client_name, client_phone, client_email, client_company, event_date, notes, total")
+      .select("id, order_number, user_id, status, client_name, client_phone, client_email, client_company, event_date, notes, total")
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !existing) throw new Error("Заявка не найдена");
@@ -400,7 +400,7 @@ export const updateOwnOrder = createServerFn({ method: "POST" })
 
     const text =
       `<b>✏ Клиент изменил заявку</b>\n` +
-      `ID: <code>${tgEsc(data.id.slice(0, 8))}</code>\n` +
+      `ID: <code>${tgEsc(existing.order_number ?? data.id.slice(0, 8))}</code>\n` +
       `Имя: ${tgEsc(data.client_name)}\n` +
       `Тел: ${tgEsc(data.client_phone)}\n` +
       `Email: ${tgEsc(data.client_email)}\n` +
@@ -430,7 +430,7 @@ export const deleteOwnOrder = createServerFn({ method: "POST" })
 
     const { data: existing, error: fetchErr } = await supabaseAdmin
       .from("orders")
-      .select("id, user_id, status, client_name, client_phone, client_email, client_company, event_date, total")
+      .select("id, order_number, user_id, status, client_name, client_phone, client_email, client_company, event_date, total")
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !existing) throw new Error("Заявка не найдена");
@@ -450,7 +450,7 @@ export const deleteOwnOrder = createServerFn({ method: "POST" })
 
     const text =
       `<b>🗑 Клиент удалил заявку</b>\n` +
-      `ID: <code>${tgEsc(existing.id.slice(0, 8))}</code>\n` +
+      `ID: <code>${tgEsc(existing.order_number ?? existing.id.slice(0, 8))}</code>\n` +
       `Имя: ${tgEsc(existing.client_name)}\n` +
       `Тел: ${tgEsc(existing.client_phone)}\n` +
       `Email: ${tgEsc(existing.client_email)}\n` +
@@ -479,7 +479,7 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
 
     const { data: existing, error: fetchErr } = await supabaseAdmin
       .from("orders")
-      .select("id, client_name, client_phone, client_email, client_company, event_date, total")
+      .select("id, order_number, client_name, client_phone, client_email, client_company, event_date, total")
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !existing) throw new Error("Заявка не найдена");
@@ -495,7 +495,7 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
 
     const text =
       `<b>🗑 Админ удалил заявку</b>\n` +
-      `ID: <code>${tgEsc(existing.id.slice(0, 8))}</code>\n` +
+      `ID: <code>${tgEsc(existing.order_number ?? existing.id.slice(0, 8))}</code>\n` +
       `Имя: ${tgEsc(existing.client_name)}\n` +
       `Тел: ${tgEsc(existing.client_phone)}\n` +
       `Email: ${tgEsc(existing.client_email)}\n` +
@@ -531,7 +531,7 @@ async function generateAndUploadOrderDocuments(
     const [{ data: order }, { data: items }, settings] = await Promise.all([
       supabaseAdmin
         .from("orders")
-        .select("id, client_name, client_company, client_phone, client_email, event_date, notes, paid")
+        .select("id, order_number, client_name, client_company, client_phone, client_email, event_date, notes, paid")
         .eq("id", orderId)
         .maybeSingle(),
       supabaseAdmin.from("order_items").select("title, qty, price").eq("order_id", orderId),
@@ -620,7 +620,7 @@ async function sendOrderConfirmationEmailAndLog(
 ): Promise<{ ok: boolean; error?: string }> {
   const { data: order, error: fetchErr } = await supabaseAdmin
     .from("orders")
-    .select("id, status, client_name, client_email, client_phone, client_company, event_date, total, paid, notes")
+    .select("id, order_number, status, client_name, client_email, client_phone, client_company, event_date, total, paid, notes")
     .eq("id", orderId)
     .maybeSingle();
   if (fetchErr || !order) {
@@ -729,7 +729,7 @@ export const confirmOrderAdmin = createServerFn({ method: "POST" })
 
     const { data: order, error: fetchErr } = await supabaseAdmin
       .from("orders")
-      .select("id, status, client_name, client_email, event_date, total")
+      .select("id, order_number, status, client_name, client_email, event_date, total")
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !order) throw new Error("Заявка не найдена");
@@ -752,7 +752,7 @@ export const confirmOrderAdmin = createServerFn({ method: "POST" })
 
     const tg =
       `<b>✅ Заказ подтверждён</b>\n` +
-      `ID: <code>${tgEsc(order.id.slice(0, 8))}</code>\n` +
+      `ID: <code>${tgEsc(order.order_number ?? order.id.slice(0, 8))}</code>\n` +
       `Клиент: ${tgEsc(order.client_name)}\n` +
       `Email: ${tgEsc(order.client_email)}\n` +
       (order.event_date ? `Дата: ${tgEsc(order.event_date)}\n` : "") +
@@ -795,7 +795,7 @@ export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
 
     const { data: order, error: fetchErr } = await supabaseAdmin
       .from("orders")
-      .select("id, status, client_name, client_email, client_phone, client_company, event_date, total, paid, notes")
+      .select("id, order_number, status, client_name, client_email, client_phone, client_company, event_date, total, paid, notes")
       .eq("id", data.id)
       .maybeSingle();
     if (fetchErr || !order) throw new Error("Заявка не найдена");
