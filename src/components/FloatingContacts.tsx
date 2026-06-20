@@ -7,6 +7,7 @@ import { useSectionEnabled } from "@/lib/site-sections";
 import { useAuth } from "@/hooks/use-auth";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { SupportChat } from "@/components/SupportChat";
+import { trackSocialClick } from "@/lib/analytics";
 
 export function FloatingContacts() {
   const enabled = useSectionEnabled("global.floating_contacts");
