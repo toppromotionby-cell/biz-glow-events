@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
-  Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
+  Newspaper, UserCog, Trophy, MessageSquareQuote,
   CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog,
 } from "lucide-react";
 import {
@@ -49,7 +49,6 @@ const GROUPS: NavGroup[] = [
   {
     label: "Маркетинг",
     items: [
-      { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
       { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail },
       { to: "/admin/promo", label: "Промокоды", icon: Tag },
     ],

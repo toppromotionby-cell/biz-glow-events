@@ -10,7 +10,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
-  Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
+  Newspaper, UserCog, Trophy, MessageSquareQuote,
   CalendarClock, Tag, ToggleRight, Mail, Search, Box,
   type LucideIcon,
 } from "lucide-react";
@@ -27,7 +27,7 @@ const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin/cases", label: "Кейсы", icon: Trophy },
   { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
   { to: "/admin/blog", label: "Блог", icon: Newspaper },
-  { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
+  
   { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail },
   { to: "/admin/promo", label: "Промокоды", icon: Tag },
   { to: "/admin/users", label: "Пользователи", icon: UserCog },
