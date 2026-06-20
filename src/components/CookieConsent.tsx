@@ -17,8 +17,10 @@ export function CookieConsent() {
 
   const decide = (v: "accept" | "reject") => {
     localStorage.setItem(KEY, v);
+    try { window.dispatchEvent(new CustomEvent("eh:consent-change", { detail: v })); } catch {}
     setVisible(false);
   };
+
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 glass-strong rounded-2xl p-5 shadow-elegant animate-in fade-in slide-in-from-bottom-4">
