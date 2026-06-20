@@ -9,9 +9,9 @@ export const Route = createFileRoute("/about")({
       { name: "description", content: "event-hub.by — команда event-инженеров и продюсеров в Минске. Зоны, техника, продакшн под ключ с 2016 года." },
       { property: "og:title", content: "О компании event-hub.by" },
       { property: "og:description", content: "10 лет на рынке event-технологий. Более 600 проектов в Беларуси и СНГ." },
-      { property: "og:url", content: "/about" },
+      { property: "og:url", content: "https://event-hub.by/about" },
     ],
-    links: [{ rel: "canonical", href: "/about" }],
+    links: [{ rel: "canonical", href: "https://event-hub.by/about" }],
   }),
   component: AboutPage,
 });
