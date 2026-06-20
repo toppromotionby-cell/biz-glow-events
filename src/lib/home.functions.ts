@@ -30,6 +30,14 @@ export type HomeCaseTeaser = {
   guests_count: number | null;
 };
 
+export type HomeData = {
+  featured: HomeFeatured[];
+  posts: HomeBlogTeaser[];
+  cases: HomeCaseTeaser[];
+};
+
+const EMPTY_HOME: HomeData = { featured: [], posts: [], cases: [] };
+
 type EntityType = "zones" | "tech_equipment" | "services" | "production_items";
 const TABLES: { name: EntityType; base: string }[] = [
   { name: "zones", base: "/zones" },
@@ -42,6 +50,16 @@ const TABLES: { name: EntityType; base: string }[] = [
 const WEIGHT_ORDER = 3;
 const WEIGHT_CART = 1;
 
+// fail-soft: любая ошибка одного запроса не должна валить SSR главной.
+async function safe<T>(label: string, fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error(`[home.${label}] failed:`, err);
+    return fallback;
+  }
+}
+
 async function buildPopularityScores(): Promise<Map<string, number>> {
   const scores = new Map<string, number>();
   const bump = (entity_type: string, entity_id: string, w: number) => {
@@ -50,30 +68,38 @@ async function buildPopularityScores(): Promise<Map<string, number>> {
     scores.set(k, (scores.get(k) ?? 0) + w);
   };
 
-  // 1) Заказы зарегистрированных пользователей за последние 180 дней.
   const since = new Date(Date.now() - 180 * 86_400_000).toISOString();
-  const { data: orderRows } = await supabaseAdmin
-    .from("order_items")
-    .select("entity_type, entity_id, qty, orders!inner(user_id, created_at)")
-    .gte("orders.created_at", since)
-    .not("orders.user_id", "is", null)
-    .limit(2000);
-  for (const r of (orderRows ?? []) as Array<{
-    entity_type: string;
-    entity_id: string | null;
-    qty: number | null;
-  }>) {
+  const orderRows = await safe(
+    "popularity.orders",
+    async () => {
+      const { data } = await supabaseAdmin
+        .from("order_items")
+        .select("entity_type, entity_id, qty, orders!inner(user_id, created_at)")
+        .gte("orders.created_at", since)
+        .not("orders.user_id", "is", null)
+        .limit(2000);
+      return (data ?? []) as Array<{ entity_type: string; entity_id: string | null; qty: number | null }>;
+    },
+    [],
+  );
+  for (const r of orderRows) {
     if (!r.entity_id) continue;
     bump(r.entity_type, r.entity_id, WEIGHT_ORDER * Math.max(1, r.qty ?? 1));
   }
 
-  // 2) Активные корзины зарегистрированных пользователей.
-  const { data: drafts } = await supabaseAdmin
-    .from("cart_drafts")
-    .select("items, user_id")
-    .not("user_id", "is", null)
-    .limit(2000);
-  for (const d of (drafts ?? []) as Array<{ items: unknown }>) {
+  const drafts = await safe(
+    "popularity.carts",
+    async () => {
+      const { data } = await supabaseAdmin
+        .from("cart_drafts")
+        .select("items, user_id")
+        .not("user_id", "is", null)
+        .limit(2000);
+      return (data ?? []) as Array<{ items: unknown }>;
+    },
+    [],
+  );
+  for (const d of drafts) {
     const arr = Array.isArray(d.items) ? (d.items as Array<Record<string, unknown>>) : [];
     for (const it of arr) {
       const et = String(it?.entity_type ?? "");
@@ -86,72 +112,73 @@ async function buildPopularityScores(): Promise<Map<string, number>> {
   return scores;
 }
 
-export const getHomeData = createServerFn({ method: "GET" }).handler(async () => {
-  const scores = await buildPopularityScores();
+export const getHomeData = createServerFn({ method: "GET" }).handler(async (): Promise<HomeData> => {
+  try {
+    const scores = await safe("popularity", () => buildPopularityScores(), new Map<string, number>());
 
-  // Тянем опубликованные карточки каждого типа, сортируем по score, fallback — updated_at.
-  const featuredResults = await Promise.all(
-    TABLES.map(async (t) => {
-      const { data } = await supabaseAdmin
-        .from(t.name)
-        .select("id, slug, title, short_description, photo_urls, pricing, updated_at")
-        .eq("published", true)
-        .order("updated_at", { ascending: false })
-        .limit(40);
-      const rows = (data ?? []) as Array<{
-        id: string;
-        slug: string;
-        title: string;
-        short_description: string | null;
-        photo_urls: string[] | null;
-        pricing: JsonValue;
-        updated_at: string;
-      }>;
-      return rows
-        .map((row) => ({
-          row,
-          score: scores.get(`${t.name}:${row.id}`) ?? 0,
-          basePath: t.base,
-        }))
-        .sort((a, b) => {
-          if (b.score !== a.score) return b.score - a.score;
-          return (b.row.updated_at ?? "").localeCompare(a.row.updated_at ?? "");
-        })
-        .slice(0, 2)
-        .map(({ row, basePath }) => {
-          const { updated_at: _u, ...rest } = row;
-          return { ...rest, basePath } as HomeFeatured;
-        });
-    }),
-  );
+    const featuredResults = await Promise.all(
+      TABLES.map((t) =>
+        safe(
+          `featured.${t.name}`,
+          async () => {
+            const { data } = await supabaseAdmin
+              .from(t.name)
+              .select("id, slug, title, short_description, photo_urls, pricing, updated_at")
+              .eq("published", true)
+              .order("updated_at", { ascending: false })
+              .limit(40);
+            const rows = (data ?? []) as Array<{
+              id: string;
+              slug: string;
+              title: string;
+              short_description: string | null;
+              photo_urls: string[] | null;
+              pricing: JsonValue;
+              updated_at: string;
+            }>;
+            return rows
+              .map((row) => ({
+                row,
+                score: scores.get(`${t.name}:${row.id}`) ?? 0,
+                basePath: t.base,
+              }))
+              .sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return (b.row.updated_at ?? "").localeCompare(a.row.updated_at ?? "");
+              })
+              .slice(0, 2)
+              .map(({ row, basePath }) => {
+                const { updated_at: _u, ...rest } = row;
+                return { ...rest, basePath } as HomeFeatured;
+              });
+          },
+          [] as HomeFeatured[],
+        ),
+      ),
+    );
 
-  // Сводим вместе и финально пересортируем по score, чтобы топовые шли первыми.
-  const merged = featuredResults
-    .flat()
-    .map((item) => ({ item, score: scores.get(`${detectType(item.basePath)}:${item.id}`) ?? 0 }))
-    .sort((a, b) => b.score - a.score)
-    .map((x) => x.item);
-  const featured = merged.slice(0, 6);
+    const merged = featuredResults
+      .flat()
+      .map((item) => ({ item, score: scores.get(`${detectType(item.basePath)}:${item.id}`) ?? 0 }))
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.item);
+    const featured = merged.slice(0, 6);
 
-  // Подписываем ВСЕ фото каждой featured-карточки одним батчем
-  // (bucket приватный — anon не может подписывать на клиенте, иначе
-  //  слайды 2..N в автоскролинге останутся пульсирующим скелетом).
-  {
-    const paths = new Set<string>();
-    for (const f of featured) {
-      for (const u of f.photo_urls ?? []) {
-        if (u && !/^(https?:|blob:|data:)/i.test(u)) paths.add(u);
-      }
-    }
-    if (paths.size > 0) {
-      const list = Array.from(paths);
-      const TTL = 60 * 60 * 24 * 7; // 7 дней
-      const { data, error } = await supabaseAdmin.storage
-        .from("media")
-        .createSignedUrls(list, TTL);
-      if (error) {
-        console.error("[home.featured] createSignedUrls failed:", error);
-      } else if (data) {
+    // Подписываем фото featured (приватный bucket). Любая ошибка — оставляем как есть.
+    await safe(
+      "featured.signUrls",
+      async () => {
+        const paths = new Set<string>();
+        for (const f of featured) {
+          for (const u of f.photo_urls ?? []) {
+            if (u && !/^(https?:|blob:|data:)/i.test(u)) paths.add(u);
+          }
+        }
+        if (paths.size === 0) return;
+        const list = Array.from(paths);
+        const TTL = 60 * 60 * 24 * 7;
+        const { data, error } = await supabaseAdmin.storage.from("media").createSignedUrls(list, TTL);
+        if (error || !data) return;
         const map = new Map<string, string>();
         data.forEach((d, i) => { if (d.signedUrl) map.set(list[i], d.signedUrl); });
         for (const f of featured) {
@@ -159,29 +186,45 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
             u && !/^(https?:|blob:|data:)/i.test(u) ? map.get(u) ?? u : u,
           );
         }
-      }
-    }
+      },
+      undefined,
+    );
+
+    const posts = await safe<HomeBlogTeaser[]>(
+      "posts",
+      async () => {
+        const { data } = await supabaseAdmin
+          .from("blog_posts")
+          .select("id, slug, title, excerpt, cover_url, published_at")
+          .eq("published", true)
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .limit(3);
+        return (data ?? []) as HomeBlogTeaser[];
+      },
+      [],
+    );
+
+    const cases = await safe<HomeCaseTeaser[]>(
+      "cases",
+      async () => {
+        const { data } = await supabaseAdmin
+          .from("cases")
+          .select("id, slug, title, summary, cover_url, event_type, guests_count")
+          .eq("published", true)
+          .order("event_date", { ascending: false, nullsFirst: false })
+          .limit(3);
+        return (data ?? []) as HomeCaseTeaser[];
+      },
+      [],
+    );
+
+    return { featured, posts, cases };
+  } catch (err) {
+    // Никогда не валим SSR главной — лучше отрендерить без рекомендаций,
+    // чем показать "Страница не загрузилась".
+    console.error("[home.getHomeData] catastrophic failure:", err);
+    return EMPTY_HOME;
   }
-
-  const { data: blog } = await supabaseAdmin
-    .from("blog_posts")
-    .select("id, slug, title, excerpt, cover_url, published_at")
-    .eq("published", true)
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .limit(3);
-
-  const { data: cs } = await supabaseAdmin
-    .from("cases")
-    .select("id, slug, title, summary, cover_url, event_type, guests_count")
-    .eq("published", true)
-    .order("event_date", { ascending: false, nullsFirst: false })
-    .limit(3);
-
-  return {
-    featured,
-    posts: (blog ?? []) as HomeBlogTeaser[],
-    cases: (cs ?? []) as HomeCaseTeaser[],
-  };
 });
 
 function detectType(base: string): EntityType {
