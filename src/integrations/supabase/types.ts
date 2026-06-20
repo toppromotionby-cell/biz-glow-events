@@ -490,6 +490,358 @@ export type Database = {
         }
         Relationships: []
       }
+      mail_accounts: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          last_sync_at: string | null
+          last_sync_cursor: string | null
+          nylas_grant_id: string | null
+          owner_id: string
+          provider: string
+          status: string
+          sync_error: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id?: string
+          last_sync_at?: string | null
+          last_sync_cursor?: string | null
+          nylas_grant_id?: string | null
+          owner_id: string
+          provider?: string
+          status?: string
+          sync_error?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          last_sync_at?: string | null
+          last_sync_cursor?: string | null
+          nylas_grant_id?: string | null
+          owner_id?: string
+          provider?: string
+          status?: string
+          sync_error?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mail_attachments: {
+        Row: {
+          content_id: string | null
+          created_at: string
+          filename: string
+          id: string
+          is_inline: boolean
+          message_id: string
+          mime_type: string | null
+          nylas_attachment_id: string | null
+          size_bytes: number | null
+          storage_path: string | null
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string
+          filename: string
+          id?: string
+          is_inline?: boolean
+          message_id: string
+          mime_type?: string | null
+          nylas_attachment_id?: string | null
+          size_bytes?: number | null
+          storage_path?: string | null
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string
+          filename?: string
+          id?: string
+          is_inline?: boolean
+          message_id?: string
+          mime_type?: string | null
+          nylas_attachment_id?: string | null
+          size_bytes?: number | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "mail_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_drafts: {
+        Row: {
+          account_id: string
+          attachments: Json
+          bcc_addrs: Json
+          body_html: string | null
+          cc_addrs: Json
+          created_at: string
+          id: string
+          in_reply_to: string | null
+          nylas_draft_id: string | null
+          owner_id: string
+          reply_to_message_id: string | null
+          subject: string | null
+          to_addrs: Json
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          attachments?: Json
+          bcc_addrs?: Json
+          body_html?: string | null
+          cc_addrs?: Json
+          created_at?: string
+          id?: string
+          in_reply_to?: string | null
+          nylas_draft_id?: string | null
+          owner_id: string
+          reply_to_message_id?: string | null
+          subject?: string | null
+          to_addrs?: Json
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          attachments?: Json
+          bcc_addrs?: Json
+          body_html?: string | null
+          cc_addrs?: Json
+          created_at?: string
+          id?: string
+          in_reply_to?: string | null
+          nylas_draft_id?: string | null
+          owner_id?: string
+          reply_to_message_id?: string | null
+          subject?: string | null
+          to_addrs?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_drafts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "mail_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_drafts_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "mail_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_folders: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          nylas_folder_id: string
+          parent_id: string | null
+          total_count: number
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          nylas_folder_id: string
+          parent_id?: string | null
+          total_count?: number
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          nylas_folder_id?: string
+          parent_id?: string | null
+          total_count?: number
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_folders_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "mail_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "mail_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_messages: {
+        Row: {
+          account_id: string
+          bcc_addrs: Json
+          body_html: string | null
+          body_text: string | null
+          cc_addrs: Json
+          created_at: string
+          folder_id: string | null
+          from_addr: string | null
+          from_name: string | null
+          has_attachments: boolean
+          id: string
+          nylas_message_id: string
+          nylas_thread_id: string | null
+          raw_headers: Json | null
+          received_at: string
+          reply_to: Json
+          seen: boolean
+          sent_at: string | null
+          size_bytes: number | null
+          snippet: string | null
+          starred: boolean
+          subject: string | null
+          to_addrs: Json
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          bcc_addrs?: Json
+          body_html?: string | null
+          body_text?: string | null
+          cc_addrs?: Json
+          created_at?: string
+          folder_id?: string | null
+          from_addr?: string | null
+          from_name?: string | null
+          has_attachments?: boolean
+          id?: string
+          nylas_message_id: string
+          nylas_thread_id?: string | null
+          raw_headers?: Json | null
+          received_at?: string
+          reply_to?: Json
+          seen?: boolean
+          sent_at?: string | null
+          size_bytes?: number | null
+          snippet?: string | null
+          starred?: boolean
+          subject?: string | null
+          to_addrs?: Json
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          bcc_addrs?: Json
+          body_html?: string | null
+          body_text?: string | null
+          cc_addrs?: Json
+          created_at?: string
+          folder_id?: string | null
+          from_addr?: string | null
+          from_name?: string | null
+          has_attachments?: boolean
+          id?: string
+          nylas_message_id?: string
+          nylas_thread_id?: string | null
+          raw_headers?: Json | null
+          received_at?: string
+          reply_to?: Json
+          seen?: boolean
+          sent_at?: string | null
+          size_bytes?: number | null
+          snippet?: string | null
+          starred?: boolean
+          subject?: string | null
+          to_addrs?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "mail_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_messages_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "mail_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_rules: {
+        Row: {
+          account_id: string
+          action: Json
+          conditions: Json
+          created_at: string
+          enabled: boolean
+          id: string
+          name: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          action?: Json
+          conditions?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          action?: Json
+          conditions?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "mail_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_logs: {
         Row: {
           campaign_id: string | null
