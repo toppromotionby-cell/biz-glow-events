@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Instagram } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
+import { useSiteSettings } from "@/hooks/use-site-settings";
+import { TikTokIcon } from "@/components/icons/TikTokIcon";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({
