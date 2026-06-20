@@ -7,6 +7,7 @@ import { esc, money, renderShell, partyCard } from "@/lib/documents/render.serve
 
 export type DocOrder = {
   id: string;
+  order_number?: string | null;
   client_name: string;
   client_company: string | null;
   client_phone: string | null;
@@ -21,8 +22,9 @@ export type DocItem = { title: string; qty: number | string; price: number | str
 export type DocKind = "quote" | "invoice" | "contract" | "act";
 
 function header(order: DocOrder) {
+  const numFromDb = (order.order_number ?? "").trim();
   return {
-    num: String(order.id).slice(0, 8).toUpperCase(),
+    num: numFromDb ? numFromDb.replaceAll("/", ".") : String(order.id).slice(0, 8).toUpperCase(),
     date: fmtDate(new Date()),
   };
 }
