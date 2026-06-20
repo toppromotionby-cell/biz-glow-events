@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { displayOrderNumber } from "@/lib/order-number";
 
 interface Props {
   orderId: string;
