@@ -1,9 +1,10 @@
 // Admin layout: проверка роли admin/manager/marketer/content_editor.
 // Сайдбар сворачивается (cookie от SidebarProvider), на мобильных — off-canvas.
-import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useLocation, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useRoles } from "@/hooks/use-roles";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -11,10 +12,34 @@ import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AdminCommandPalette, CommandPaletteTrigger } from "@/components/admin/AdminCommandPalette";
 
+const STAFF_ROLES = ["admin", "manager", "marketer", "content_editor"] as const;
+
 export const Route = createFileRoute("/admin")({
+  // Сессия Supabase хранится в localStorage — на сервере её нет, поэтому
+  // гейт делается клиентом до рендера UI. Это убирает «вспышку» оболочки
+  // админки для неавторизованных и не-staff пользователей.
+  ssr: false,
+  beforeLoad: async ({ location }) => {
+    const { data: userRes } = await supabase.auth.getUser();
+    const user = userRes?.user;
+    if (!user) {
+      throw redirect({ to: "/login", search: { redirect: location.href } });
+    }
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+    const isStaff = (roles ?? []).some((r) =>
+      (STAFF_ROLES as readonly string[]).includes(r.role as string),
+    );
+    if (!isStaff) {
+      throw redirect({ to: "/profile" });
+    }
+  },
   head: () => ({ meta: [{ title: "Админ-панель — event-hub.by" }, { name: "robots", content: "noindex,nofollow" }] }),
   component: AdminLayout,
 });
+
 
 const CRUMBS: { match: RegExp; label: string }[] = [
   { match: /^\/admin\/?$/, label: "Дашборд" },
