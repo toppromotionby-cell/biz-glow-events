@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { notify } from "@/lib/notify";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -21,9 +22,14 @@ export function InternalNotesEditor({ orderId, initial }: { orderId: string; ini
     if (next === lastSaved.current) return;
     setState("saving");
     const { error } = await supabase.from("orders").update({ internal_notes: next }).eq("id", orderId);
-    if (error) { setState("error"); return; }
+    if (error) {
+      setState("error");
+      notify.error("Не удалось сохранить заметку", { description: error.message });
+      return;
+    }
     lastSaved.current = next;
     setState("saved");
+    notify.autosaved();
     setTimeout(() => setState((s) => (s === "saved" ? "idle" : s)), 1500);
   }, 800);
 
