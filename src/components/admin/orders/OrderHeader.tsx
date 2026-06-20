@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/order-status";
+import { displayOrderNumber } from "@/lib/order-number";
 import { ageInfo } from "./order-age";
 import type { OrderRow, OrderStatus } from "./types";
 
