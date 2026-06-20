@@ -166,7 +166,7 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
     setSaving(true); setSaveState("saving"); setErrorMessage(null);
     const metrics = JSON.parse(metricsInput || "{}") as Record<string, unknown>;
     const services_used = servicesInput.split(",").map((s: string) => s.trim()).filter(Boolean);
-    const patch = {
+    const patch: Database["public"]["Tables"]["cases"]["Update"] = {
       title: form.title, slug: form.slug, client: form.client, event_type: form.event_type,
       event_date: form.event_date || null, location: form.location,
       guests_count: form.guests_count ? Number(form.guests_count) : null,
@@ -176,8 +176,7 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
       services_used, metrics,
       seo_title: form.seo_title, seo_description: form.seo_description,
       published: !!form.published, featured: !!form.featured,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
+    };
     const { error } = await supabase.from("cases").update(patch).eq("id", item.id);
     setSaving(false);
     if (error) { setSaveState("error"); setErrorMessage(error.message); return toast.error(error.message); }
