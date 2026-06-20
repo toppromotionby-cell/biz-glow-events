@@ -303,11 +303,9 @@ function AccountDialog({
   saving: boolean;
 }) {
   const [form, setForm] = useState<FormState>(value ?? EMPTY);
-  // sync при открытии
-  if (value && value !== valueRef.current) {
-    valueRef.current = value;
-    queueMicrotask(() => setForm(value));
-  }
+  useEffect(() => {
+    if (value) setForm(value);
+  }, [value]);
 
   return (
     <Dialog open={!!value} onOpenChange={(o) => !o && onClose()}>
