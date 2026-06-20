@@ -306,8 +306,7 @@ function InvitationsPage() {
             <DialogDescription>
               {previewSource?.type === "csv"
                 ? `Адреса из файла «${previewSource.fileName}». Снимите галочки с лишних строк и нажмите «Применить».`
-                : "Снимите галочки с лишних строк и нажмите «Применить».")
-              }
+                : "Снимите галочки с лишних строк и нажмите «Применить»."}
             </DialogDescription>
           </DialogHeader>
 
