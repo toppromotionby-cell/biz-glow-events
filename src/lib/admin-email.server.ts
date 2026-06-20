@@ -660,7 +660,7 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
 
   const html = brandShell({
     title: subject,
-    previewText: `Заказ ${p.orderId.slice(0, 8)} подтверждён. Итого ${fmtBYN(Number(p.total ?? 0))}.`,
+    previewText: `Заказ ${orderDisplayId(p.orderId, p.orderNumber)} подтверждён. Итого ${fmtBYN(Number(p.total ?? 0))}.`,
     body,
   });
   return { subject, html };
