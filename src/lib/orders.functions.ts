@@ -521,7 +521,7 @@ async function generateAndUploadOrderDocuments(
   const pdfs: OrderPdfAttachment[] = [];
   const fallbackLabels: Record<DocKind, string> = { quote: "КП", invoice: "Счёт", contract: "Договор", act: "Акт" };
   try {
-    const [{ DOC_LABELS }, { loadDocumentSettings }, { buildOrderDocPdf, DOC_PDF_FILENAMES }] = await Promise.all([
+    const [{ DOC_LABELS }, { loadDocumentSettings }, { buildOrderDocPdf, buildAttachmentFilename }] = await Promise.all([
       import("@/lib/documents/build.server"),
       import("@/lib/documents/render.server"),
       import("@/lib/documents/pdf.server"),
@@ -564,7 +564,7 @@ async function generateAndUploadOrderDocuments(
           statuses.push({ kind, label, ok: false, stage: "build", error: msg });
           continue;
         }
-        const filename = `${DOC_PDF_FILENAMES[kind]}_${orderShort}.pdf`;
+        const filename = buildAttachmentFilename(kind, order as never);
         const path = `orders/${orderId}/${kind}-${datePart}.pdf`;
         // pdf-lib иногда возвращает Uint8Array поверх большего буфера; берём slice
         // чтобы Blob получил ровно нужные байты.
