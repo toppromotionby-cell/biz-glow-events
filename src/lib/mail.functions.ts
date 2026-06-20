@@ -179,19 +179,21 @@ export const sendMailMessage = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<Json> => {
     await assertStaff(context.supabase, context.userId);
     const cfg = await loadAccountCfg(context.supabase, data.accountId);
     const { accountId: _ignored, append_to_sent, sent_folder, ...message } = data;
     void _ignored;
-    return callMailWorker(
-      "/send",
-      {
-        account: cfg,
-        message,
-        append_to_sent: append_to_sent ?? true,
-        sent_folder: sent_folder ?? "Sent",
-      },
-      { timeoutMs: 60_000 },
+    return toJson(
+      await callMailWorker(
+        "/send",
+        {
+          account: cfg,
+          message,
+          append_to_sent: append_to_sent ?? true,
+          sent_folder: sent_folder ?? "Sent",
+        },
+        { timeoutMs: 60_000 },
+      ),
     );
   });
