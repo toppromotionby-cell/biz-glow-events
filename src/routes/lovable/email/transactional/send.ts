@@ -266,16 +266,18 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           return Response.json({ success: false, reason: 'email_suppressed' })
         }
 
-        // 4. Render React Email template to HTML and plain text
-        const element = React.createElement(template.component, templateData)
-        const html = await render(element)
-        const plainText = await render(element, { plainText: true })
-
-        // Resolve subject — supports static string or dynamic function
-        const resolvedSubject =
-          typeof template.subject === 'function'
-            ? template.subject(templateData)
-            : template.subject
+        // 4. Render template (admin-editable override or default React Email)
+        const rendered = await renderWithOverride(templateName, templateData, async (key) => {
+          const { data: row } = await supabase
+            .from('email_templates')
+            .select('template_key, subject, preheader, html_body, enabled')
+            .eq('template_key', key)
+            .maybeSingle()
+          return (row as any) ?? null
+        })
+        const html = rendered.html
+        const plainText = rendered.text
+        const resolvedSubject = rendered.subject
 
         // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
         // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
