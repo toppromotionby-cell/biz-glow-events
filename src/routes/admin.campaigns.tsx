@@ -200,7 +200,7 @@ function InvitationsPage() {
                     const existing = parseEmails(emailsRaw);
                     const mergedRaw = Array.from(new Set([...existing, ...found])).join(", ");
                     setEmailsRaw(mergedRaw);
-                    openPreview("csv", fileName);
+                    openPreview("csv", fileName, mergedRaw);
                   }}
                 />
               </div>
