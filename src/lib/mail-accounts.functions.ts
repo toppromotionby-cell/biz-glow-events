@@ -4,20 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const accountInput = z.object({
-  email: z.string().email(),
-  username: z.string().min(1).nullable().optional(),
-  display_name: z.string().nullable().optional(),
-  password: z.string().min(1).nullable().optional(),
-  provider: z.string().default("imap"),
-  imap_host: z.string().min(1),
-  imap_port: z.number().int().positive().default(993),
-  imap_secure: z.boolean().default(true),
-  smtp_host: z.string().min(1),
-  smtp_port: z.number().int().positive().default(465),
-  smtp_secure: z.boolean().default(true),
-});
+import { accountCreateSchema, accountUpdateSchema } from "@/lib/mail-accounts.schema";
 
 export const listMailAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -34,7 +21,7 @@ export const listMailAccounts = createServerFn({ method: "GET" })
 
 export const createMailAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => accountInput.parse(input))
+  .inputValidator((input: unknown) => accountCreateSchema.parse(input))
   .handler(async ({ data, context }) => {
     const row = {
       owner_id: context.userId,
@@ -63,7 +50,7 @@ export const createMailAccount = createServerFn({ method: "POST" })
 export const updateMailAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid(), patch: accountInput.partial() }).parse(input),
+    z.object({ id: z.string().uuid(), patch: accountUpdateSchema }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const p = data.patch;

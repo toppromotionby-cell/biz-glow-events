@@ -12,6 +12,7 @@ import {
   updateMailAccount,
   deleteMailAccount,
 } from "@/lib/mail-accounts.functions";
+import { accountCreateSchema, accountUpdateSchema } from "@/lib/mail-accounts.schema";
 import { testMailAccount } from "@/lib/mail.functions";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -303,9 +304,56 @@ function AccountDialog({
   saving: boolean;
 }) {
   const [form, setForm] = useState<FormState>(value ?? EMPTY);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   useEffect(() => {
-    if (value) setForm(value);
+    if (value) {
+      setForm(value);
+      setErrors({});
+    }
   }, [value]);
+
+  function update<K extends keyof FormState>(k: K, v: FormState[K]) {
+    setForm((f) => ({ ...f, [k]: v }));
+    if (errors[k as string]) {
+      setErrors((e) => {
+        const n = { ...e };
+        delete n[k as string];
+        return n;
+      });
+    }
+  }
+
+  function handleSave() {
+    // Для edit пароль может быть пустой — не валидируем его при патче.
+    const isEdit = !!value?.id;
+    const payload = {
+      email: form.email,
+      display_name: form.display_name || null,
+      username: form.username || null,
+      ...(isEdit && !form.password ? {} : { password: form.password }),
+      provider: "imap",
+      imap_host: form.imap_host,
+      imap_port: form.imap_port,
+      imap_secure: form.imap_secure,
+      smtp_host: form.smtp_host,
+      smtp_port: form.smtp_port,
+      smtp_secure: form.smtp_secure,
+    };
+    const schema = isEdit ? accountUpdateSchema : accountCreateSchema;
+    const r = schema.safeParse(payload);
+    if (!r.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of r.error.issues) {
+        const key = String(issue.path[0] ?? "_");
+        if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      toast.error("Проверьте поля формы");
+      return;
+    }
+    setErrors({});
+    onSave(form);
+  }
 
   return (
     <Dialog open={!!value} onOpenChange={(o) => !o && onClose()}>
@@ -318,52 +366,64 @@ function AccountDialog({
         </DialogHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Email">
-            <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="info@event-hub.by" />
+          <Field label="Email" error={errors.email}>
+            <Input value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="info@event-hub.by" />
           </Field>
-          <Field label="Имя отправителя">
-            <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="Event Hub" />
+          <Field label="Имя отправителя" error={errors.display_name}>
+            <Input value={form.display_name} onChange={(e) => update("display_name", e.target.value)} placeholder="Event Hub" />
           </Field>
 
-          <Field label="Логин (если отличается)">
-            <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="по умолчанию = email" />
+          <Field label="Логин (если отличается)" error={errors.username}>
+            <Input value={form.username} onChange={(e) => update("username", e.target.value)} placeholder="по умолчанию = email" />
           </Field>
-          <Field label={value?.id ? "Новый пароль (если меняется)" : "Пароль"}>
+          <Field label={value?.id ? "Новый пароль (если меняется)" : "Пароль"} error={errors.password}>
             <Input
               type="password"
               autoComplete="new-password"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              onChange={(e) => update("password", e.target.value)}
               placeholder={value?.id ? "оставьте пустым, чтобы не менять" : ""}
             />
           </Field>
 
           <div className="sm:col-span-2 mt-2 text-xs uppercase tracking-wider text-muted-foreground">IMAP (входящие)</div>
-          <Field label="Хост">
-            <Input value={form.imap_host} onChange={(e) => setForm({ ...form, imap_host: e.target.value })} placeholder="imap.example.com" />
+          <Field label="Хост" error={errors.imap_host}>
+            <Input value={form.imap_host} onChange={(e) => update("imap_host", e.target.value.trim())} placeholder="imap.example.com" />
           </Field>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Порт">
-              <Input type="number" value={form.imap_port} onChange={(e) => setForm({ ...form, imap_port: Number(e.target.value) || 0 })} />
+            <Field label="Порт" error={errors.imap_port}>
+              <Input
+                type="number"
+                min={1}
+                max={65535}
+                value={form.imap_port}
+                onChange={(e) => update("imap_port", Number(e.target.value) || 0)}
+              />
             </Field>
-            <Field label="SSL">
+            <Field label="SSL" error={errors.imap_secure}>
               <div className="h-10 flex items-center">
-                <Switch checked={form.imap_secure} onCheckedChange={(v) => setForm({ ...form, imap_secure: v })} />
+                <Switch checked={form.imap_secure} onCheckedChange={(v) => update("imap_secure", v)} />
               </div>
             </Field>
           </div>
 
           <div className="sm:col-span-2 mt-2 text-xs uppercase tracking-wider text-muted-foreground">SMTP (исходящие)</div>
-          <Field label="Хост">
-            <Input value={form.smtp_host} onChange={(e) => setForm({ ...form, smtp_host: e.target.value })} placeholder="smtp.example.com" />
+          <Field label="Хост" error={errors.smtp_host}>
+            <Input value={form.smtp_host} onChange={(e) => update("smtp_host", e.target.value.trim())} placeholder="smtp.example.com" />
           </Field>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Порт">
-              <Input type="number" value={form.smtp_port} onChange={(e) => setForm({ ...form, smtp_port: Number(e.target.value) || 0 })} />
+            <Field label="Порт" error={errors.smtp_port}>
+              <Input
+                type="number"
+                min={1}
+                max={65535}
+                value={form.smtp_port}
+                onChange={(e) => update("smtp_port", Number(e.target.value) || 0)}
+              />
             </Field>
-            <Field label="SSL">
+            <Field label="SSL" error={errors.smtp_secure}>
               <div className="h-10 flex items-center">
-                <Switch checked={form.smtp_secure} onCheckedChange={(v) => setForm({ ...form, smtp_secure: v })} />
+                <Switch checked={form.smtp_secure} onCheckedChange={(v) => update("smtp_secure", v)} />
               </div>
             </Field>
           </div>
@@ -371,7 +431,7 @@ function AccountDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Отмена</Button>
-          <Button onClick={() => onSave(form)} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Сохранить
           </Button>
@@ -383,11 +443,12 @@ function AccountDialog({
 
 
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
       {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
