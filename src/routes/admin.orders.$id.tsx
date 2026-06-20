@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ArrowLeft, Clock, Trash2, Mail, FileText } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
-import { openAuthedDocument } from "@/lib/authed-fetch";
+import { openAuthedDocument, openInlineBlob, base64ToBytes } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
