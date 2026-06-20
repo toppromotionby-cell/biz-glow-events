@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { NotFoundView, ErrorView } from "@/components/ErrorBoundaries";
 
 export const getRouter = () => {
   // staleTime 30s по умолчанию — справочники/каталоги не дёргают БД на каждом монтировании.
@@ -19,7 +20,12 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
+    // Единые fallback'и: любой route без своих errorComponent/notFoundComponent
+    // получит брендированный экран и не сломает навигацию.
+    defaultErrorComponent: ({ error, reset }) => <ErrorView error={error} reset={reset} />,
+    defaultNotFoundComponent: () => <NotFoundView />,
   });
 
   return router;
 };
+
