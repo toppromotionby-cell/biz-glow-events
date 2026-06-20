@@ -21,9 +21,13 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Clock, Trash2, Mail, FileText, MoreHorizontal, Phone, Copy,
   Send, Download, ChevronDown, CheckCircle2, Circle, MessageSquare, Paperclip,
-  CalendarDays, Building2, User as UserIcon, Link2,
+  CalendarDays, Building2, User as UserIcon, Link2, Plus,
 } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { OrderAssignee } from "@/components/admin/OrderAssignee";
+import { OrderPaymentDialog } from "@/components/admin/OrderPaymentDialog";
+import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
+import { OrderConflicts } from "@/components/admin/OrderConflicts";
 import { openAuthedDocument, openInlineBlob, base64ToBytes } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { notifyOrderStatus } from "@/lib/order-notifications.functions";
@@ -38,12 +42,6 @@ type EmailPreview = { subject: string; html: string; to: string | null; attachme
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 type OrderItemRow = Database["public"]["Tables"]["order_items"]["Row"];
 type OrderTimelineRow = Database["public"]["Tables"]["order_timeline"]["Row"];
-
-const ENTITY_LABEL: Record<string, string> = {
-  zone: "Зона", service: "Услуга", equipment: "Оборудование",
-  tech_equipment: "Оборудование", production: "Продакшн",
-  production_item: "Продакшн", extras: "Доп. услуга",
-};
 
 const DOC_KINDS: { kind: "quote" | "contract" | "invoice" | "act"; label: string }[] = [
   { kind: "quote", label: "КП" },
@@ -61,6 +59,9 @@ function timelineEventLabel(ev: string): string {
   if (ev === "attachment_removed") return "Удалён файл";
   if (ev === "email_sent") return "Письмо отправлено клиенту";
   if (ev === "payment_added") return "Платёж зафиксирован";
+  if (ev === "paid_changed") return "Изменена сумма оплаты";
+  if (ev === "assignee_changed") return "Назначен ответственный";
+  if (ev === "assignee_cleared") return "Снят ответственный";
   if (ev === "created") return "Заказ создан";
   return ev;
 }
@@ -83,6 +84,7 @@ function OrderDetail() {
   const navigate = useNavigate();
   const [internalNotes, setInternalNotes] = useState("");
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const previewFn = useServerFn(previewOrderConfirmationEmail);
   const loadPreview = useMutation({
     mutationFn: async () => previewFn({ data: { id } }),
@@ -197,7 +199,8 @@ function OrderDetail() {
           <h1 className="admin-h1">Заказ #{order.id.slice(0, 8)}</h1>
           <p className="text-sm text-muted-foreground">Создан {fmtDateTime(order.created_at)}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <OrderAssignee orderId={order.id} managerId={order.manager_id ?? null} />
           {/* Кликабельный badge статуса */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -302,6 +305,18 @@ function OrderDetail() {
         />
       </div>
 
+      {/* Предупреждения о конфликтах на дату */}
+      <OrderConflicts
+        orderId={order.id}
+        eventDate={order.event_date as string | null}
+        items={(items as OrderItemRow[]).map((i) => ({
+          entity_type: i.entity_type,
+          entity_id: i.entity_id,
+          title: i.title,
+        }))}
+      />
+
+
       {/* Двухколоночная компоновка */}
       <div className="grid lg:grid-cols-3 gap-4 items-start">
         {/* ОСНОВНАЯ КОЛОНКА */}
@@ -353,27 +368,8 @@ function OrderDetail() {
             </div>
           </section>
 
-          {/* Позиции */}
-          <section className="glass rounded-xl p-5">
-            <h3 className="font-semibold mb-3">Позиции ({items.length})</h3>
-            {items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Позиций нет</p>
-            ) : (
-              <div className="space-y-2">
-                {(items as OrderItemRow[]).map((it) => (
-                  <div key={it.id} className="flex items-center justify-between text-sm border-b border-border/30 pb-2 last:border-0">
-                    <div>
-                      <div className="font-medium">{it.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {ENTITY_LABEL[it.entity_type] ?? it.entity_type} · {it.qty} шт.
-                      </div>
-                    </div>
-                    <div className="font-medium">{fmtMoney(it.price)}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          {/* Позиции — редактируемые */}
+          <OrderItemsEditor orderId={order.id} items={items as OrderItemRow[]} />
 
           {order.notes && (
             <section className="glass rounded-xl p-5">
@@ -475,6 +471,9 @@ function OrderDetail() {
               <Progress value={paidPct} className="h-1.5" />
               <p className="text-[11px] text-muted-foreground mt-1">{paidPct}% оплачено</p>
             </div>
+            <Button size="sm" className="w-full gap-1" onClick={() => setPaymentOpen(true)}>
+              <Plus className="h-3.5 w-3.5" />Внести оплату
+            </Button>
           </section>
 
           {/* Документы — чек-лист */}
@@ -514,6 +513,15 @@ function OrderDetail() {
           </section>
         </aside>
       </div>
+
+      {/* Диалог внесения оплаты */}
+      <OrderPaymentDialog
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        orderId={order.id}
+        currentPaid={paid}
+        total={total}
+      />
 
       {/* Модалка предпросмотра письма */}
       <Dialog open={!!emailPreview} onOpenChange={(o) => !o && setEmailPreview(null)}>
