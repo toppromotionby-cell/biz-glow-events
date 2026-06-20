@@ -166,6 +166,8 @@ function MailAccountsPage() {
       };
       const detail = `${r.status_code ?? "—"} · ${r.message ?? r.error ?? ""}`.trim();
       if (r.ok) toast.success(`Соединение OK · ${detail}`);
+      else if (r.status_code === 504)
+        toast.error("Воркер просыпается — попробуйте ещё раз через 10–20 секунд");
       else toast.error(`Ошибка: ${detail}`);
     } catch (e) {
       toast.error("Ошибка: " + (e instanceof Error ? e.message : String(e)));
