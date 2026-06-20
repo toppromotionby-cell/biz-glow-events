@@ -7,7 +7,11 @@ import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 const SITE_NAME = "event-hub.by";
 const SENDER_DOMAIN = "notify.event-hub.by";
 const FROM_DOMAIN = "event-hub.by";
-const FROM_ADDRESS = `${SITE_NAME} <noreply@${FROM_DOMAIN}>`;
+// Единый отправитель для всех писем (админ-уведомления, клиентские письма, авто-письма).
+// Менять только здесь — все шаблоны и пути отправки используют этот адрес.
+const FROM_EMAIL = `noreply@${FROM_DOMAIN}`;
+const FROM_ADDRESS = `${SITE_NAME} <${FROM_EMAIL}>`;
+const REPLY_TO_ADDRESS = FROM_EMAIL;
 
 function adminEmail(): string | null {
   return process.env.ADMIN_EMAIL ?? null;
