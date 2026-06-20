@@ -31,10 +31,13 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "biz-glow-events"
+const SITE_NAME = "event-hub.by"
 const SENDER_DOMAIN = "notify.event-hub.by"
 const ROOT_DOMAIN = "event-hub.by"
 const FROM_DOMAIN = "event-hub.by"
+const FROM_EMAIL = `noreply@${FROM_DOMAIN}`
+const FROM_ADDRESS = `${SITE_NAME} <${FROM_EMAIL}>`
+const REPLY_TO_ADDRESS = FROM_EMAIL
 
 function redactEmail(email: string | null | undefined): string {
   if (!email) return '***'
@@ -178,7 +181,8 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
             run_id,
             message_id: messageId,
             to: payload.data.email,
-            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            from: FROM_ADDRESS,
+            reply_to: REPLY_TO_ADDRESS,
             sender_domain: SENDER_DOMAIN,
             subject: EMAIL_SUBJECTS[emailType] || 'Notification',
             html,

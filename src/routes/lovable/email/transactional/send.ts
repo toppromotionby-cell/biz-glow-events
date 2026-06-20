@@ -5,13 +5,17 @@ import { createFileRoute } from '@tanstack/react-router'
 import { TEMPLATES } from '@/lib/email-templates/registry'
 
 // Configuration baked in at scaffold time
-const SITE_NAME = "biz-glow-events"
+const SITE_NAME = "event-hub.by"
 // SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
 // It MUST match the subdomain delegated to Lovable's nameservers. NEVER use the root domain.
 const SENDER_DOMAIN = "notify.event-hub.by"
 // FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
 // Can be the root domain when display_from_root is enabled — this is cosmetic only.
 const FROM_DOMAIN = "event-hub.by"
+// Единый отправитель/Reply-To для всех писем сайта.
+const FROM_EMAIL = `noreply@${FROM_DOMAIN}`
+const FROM_ADDRESS = `${SITE_NAME} <${FROM_EMAIL}>`
+const REPLY_TO_ADDRESS = FROM_EMAIL
 
 function redactEmail(email: string | null | undefined): string {
   if (!email) return '***'
@@ -290,7 +294,8 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           payload: {
             message_id: messageId,
             to: effectiveRecipient,
-            from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+            from: FROM_ADDRESS,
+            reply_to: REPLY_TO_ADDRESS,
             sender_domain: SENDER_DOMAIN,
             subject: resolvedSubject,
             html,
