@@ -28,7 +28,7 @@ export function OrderHeader({ order, onStatusChange, onConfirm, onResendEmail, o
     <div className="sticky top-0 z-20 -mx-6 -mt-6 px-6 pt-5 pb-4 bg-card/85 backdrop-blur border-b border-border/60">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="font-mono text-base sm:text-lg">
-          Заказ <span className="text-muted-foreground">#</span>{order.id.slice(0, 8)}
+          Заказ {displayOrderNumber(order)}
         </span>
 
         <Select value={order.status} onValueChange={(v) => onStatusChange(v as OrderStatus)} disabled={busy}>
