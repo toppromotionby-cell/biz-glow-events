@@ -11,14 +11,18 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, Clock, Trash2, Mail } from "lucide-react";
+import { ArrowLeft, Clock, Trash2, Mail, FileText } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
 import type { Database } from "@/integrations/supabase/types";
+
+type EmailPreviewAttachment = { kind: string; label: string; filename: string; base64: string; size: number };
+type EmailPreview = { subject: string; html: string; to: string | null; attachments: EmailPreviewAttachment[] };
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 type OrderItemRow = Database["public"]["Tables"]["order_items"]["Row"];
@@ -46,11 +50,11 @@ function OrderDetail() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [internalNotes, setInternalNotes] = useState("");
-  const [emailPreview, setEmailPreview] = useState<{ subject: string; html: string; to: string | null } | null>(null);
+  const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null);
   const previewFn = useServerFn(previewOrderConfirmationEmail);
   const loadPreview = useMutation({
     mutationFn: async () => previewFn({ data: { id } }),
-    onSuccess: (res) => setEmailPreview(res),
+    onSuccess: (res) => setEmailPreview(res as EmailPreview),
     onError: (e: Error) => toast.error(e.message),
   });
 
