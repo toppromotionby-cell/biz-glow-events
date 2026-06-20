@@ -55,6 +55,18 @@ export function FloatingContacts() {
               <Phone className="h-5 w-5 text-primary" aria-hidden="true" />
               <span className="text-sm font-medium">{CONTACT.phoneDisplay}</span>
             </a>
+            {instagram_url && (
+              <a
+                href={instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Мы в Instagram"
+                className="group inline-flex items-center gap-2 rounded-full bg-card/90 backdrop-blur border border-border text-foreground pl-3 pr-4 py-2 shadow-lg hover:scale-105 hover:border-primary/50 transition"
+              >
+                <Instagram className="h-5 w-5 text-primary" aria-hidden="true" />
+                <span className="text-sm font-medium">Instagram</span>
+              </a>
+            )}
           </div>
         )}
         {!chatOpen && (
