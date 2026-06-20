@@ -298,3 +298,56 @@ function InvitationsPage() {
     </div>
   );
 }
+
+function extractEmailsFromText(text: string): string[] {
+  // Глобальный regex по всему содержимому файла — работает и для CSV
+  // с заголовками/несколькими колонками, и для простого списка построчно.
+  const re = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
+  const matches = text.match(re) ?? [];
+  const set = new Set<string>();
+  for (const m of matches) {
+    const v = m.trim().toLowerCase();
+    if (EMAIL_RE.test(v)) set.add(v);
+  }
+  return Array.from(set);
+}
+
+function CsvUploadButton({ onEmails }: { onEmails: (emails: string[], fileName: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={ref}
+        type="file"
+        accept=".csv,.txt,text/csv,text/plain"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          // Сбрасываем сразу, чтобы можно было повторно выбрать тот же файл.
+          if (ref.current) ref.current.value = "";
+          if (!file) return;
+          if (file.size > 1_000_000) {
+            toast.error("Файл слишком большой (максимум 1 МБ)");
+            return;
+          }
+          try {
+            const text = await file.text();
+            onEmails(extractEmailsFromText(text), file.name);
+          } catch {
+            toast.error("Не удалось прочитать файл");
+          }
+        }}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => ref.current?.click()}
+        title="Загрузить адреса из CSV или текстового файла"
+      >
+        <Upload className="h-4 w-4 mr-1" />
+        Загрузить CSV
+      </Button>
+    </>
+  );
+}
