@@ -11,6 +11,7 @@ import { SupportChat } from "@/components/SupportChat";
 export function FloatingContacts() {
   const enabled = useSectionEnabled("global.floating_contacts");
   const { isAuthenticated } = useAuth();
+  const { instagram_url } = useSiteSettings();
   const [open, setOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   if (!enabled) return null;
