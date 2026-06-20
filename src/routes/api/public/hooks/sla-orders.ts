@@ -1,6 +1,9 @@
 // SLA-уведомление: раз в час ищем заказы в статусе 'new' старше 72 часов,
 // и шлём одно Telegram-уведомление администратору с дедупом 24ч через telegram_logs.
-// Вызывается pg_cron через apikey-заголовок (anon key), бизнес-логика проверяет валидность ключа.
+//
+// Вызывается pg_cron. Авторизация — server-only секрет CRON_SECRET, переданный
+// в заголовке `x-cron-secret`. Публичный anon-ключ для аутентификации НЕ
+// используется, потому что он бандлится в клиентский JS и доступен всем.
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
@@ -38,10 +41,28 @@ export const Route = createFileRoute("/api/public/hooks/sla-orders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Проверяем, что вызов идёт с валидным anon-ключом (apikey-заголовок от pg_cron).
-        const apiKey = request.headers.get("apikey");
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
-        if (!apiKey || !expected || apiKey !== expected) {
+        // Проверяем, что вызов идёт с валидным cron-секретом (server-only).
+        const expected = process.env.CRON_SECRET;
+        if (!expected) {
+          // Без секрета не пускаем никого — лучше 503, чем открытый эндпоинт.
+          return new Response(JSON.stringify({ error: "Cron secret not configured" }), {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        const provided = request.headers.get("x-cron-secret");
+        if (!provided || provided.length !== expected.length) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        // Timing-safe сравнение, чтобы не утекало через тайминги.
+        let diff = 0;
+        for (let i = 0; i < expected.length; i += 1) {
+          diff |= provided.charCodeAt(i) ^ expected.charCodeAt(i);
+        }
+        if (diff !== 0) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },
