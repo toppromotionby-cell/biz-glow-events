@@ -74,7 +74,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
     qc.invalidateQueries({ queryKey: ["order-modal", id] });
     qc.invalidateQueries({ queryKey: ["order-modal-items", id] });
     qc.invalidateQueries({ queryKey: ["order-modal-timeline", id] });
-    qc.invalidateQueries({ queryKey: ["order-modal-attachments-count", id] });
+    qc.invalidateQueries({ queryKey: ["order-attachments", id] });
   }, 350);
 
   useEffect(() => {
