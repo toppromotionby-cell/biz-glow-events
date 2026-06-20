@@ -63,6 +63,7 @@ export function FloatingContacts() {
                 rel="noopener noreferrer"
                 aria-label="Мы в Instagram"
                 className="group inline-flex items-center gap-2 rounded-full bg-card/90 backdrop-blur border border-border text-foreground pl-3 pr-4 py-2 shadow-lg hover:scale-105 hover:border-primary/50 transition"
+                onClick={() => trackSocialClick("instagram", "floating_widget", instagram_url)}
               >
                 <Instagram className="h-5 w-5 text-primary" aria-hidden="true" />
                 <span className="text-sm font-medium">Instagram</span>
