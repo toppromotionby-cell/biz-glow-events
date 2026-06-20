@@ -20,6 +20,9 @@ export const Route = createFileRoute("/admin/orders/$id/quote")({
         ]);
         if (error || !order) return new Response("Not found", { status: 404 });
 
+        const pdf = await maybePdfResponse("quote", request, order, items ?? [], settings);
+        if (pdf) return pdf;
+
         const rows = (items ?? []).map((it) => `
           <tr>
             <td>${esc(it.title)}</td>
