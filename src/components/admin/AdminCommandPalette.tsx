@@ -12,9 +12,10 @@ import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
   CalendarClock, Tag, ToggleRight, Mail, Search, Box,
+  type LucideIcon,
 } from "lucide-react";
 
-const NAV: { to: string; label: string; icon: any; hint?: string }[] = [
+const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard, hint: "g d" },
   { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, hint: "g o" },
   { to: "/admin/calendar", label: "Календарь", icon: Calendar },
@@ -51,8 +52,8 @@ export function AdminCommandPalette() {
         e.preventDefault();
         setOpen((v) => !v);
       } else if (e.key === "/" && !open) {
-        const t = e.target as HTMLElement | null;
-        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t as any).isContentEditable)) return;
+        const t = e.target as (HTMLElement & { isContentEditable?: boolean }) | null;
+        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
         e.preventDefault();
         setOpen(true);
       }
@@ -102,7 +103,7 @@ export function AdminCommandPalette() {
             .select("id,title,slug")
             .or(`title.ilike.${like},slug.ilike.${like}`)
             .limit(5);
-          return (data ?? []).map((r: any) => ({ ...r, table: t }));
+          return (data ?? []).map((r) => ({ ...r, table: t }));
         }),
       );
       return lists.flat();
@@ -117,7 +118,8 @@ export function AdminCommandPalette() {
 
   const go = (to: string, params?: Record<string, string>) => {
     setOpen(false);
-    setTimeout(() => navigate({ to, params: params as any }), 0);
+    // navigate signature is typed; loose params from search results
+    setTimeout(() => navigate({ to, params } as Parameters<typeof navigate>[0]), 0);
   };
 
   return (
@@ -153,7 +155,7 @@ export function AdminCommandPalette() {
           <>
             <CommandSeparator />
             <CommandGroup heading="Заказы">
-              {orders.map((o: any) => (
+              {orders.map((o) => (
                 <CommandItem
                   key={o.id}
                   value={`order ${o.client_name} ${o.client_email} ${o.id}`}
@@ -174,7 +176,7 @@ export function AdminCommandPalette() {
           <>
             <CommandSeparator />
             <CommandGroup heading="Каталог">
-              {catalog.map((c: any) => (
+              {catalog.map((c) => (
                 <CommandItem
                   key={`${c.table}-${c.id}`}
                   value={`cat ${c.title} ${c.slug}`}
