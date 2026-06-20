@@ -8,6 +8,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   callMailWorker,
   mailWorkerHealth,
+  MailWorkerError,
   type MailAccountCfg,
 } from "@/lib/mail-worker.server";
 
