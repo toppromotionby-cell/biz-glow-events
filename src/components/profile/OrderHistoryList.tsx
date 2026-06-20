@@ -44,7 +44,7 @@ export function OrderHistoryList({
                 className="w-full p-4 flex items-center justify-between gap-4 text-left hover:bg-foreground/5 transition"
               >
                 <div className="min-w-0">
-                  <div className="font-medium">Заявка #{o.id.slice(0, 8)}</div>
+                  <div className="font-medium">Заявка {displayOrderNumber(o)}</div>
                   <div className="text-xs text-muted-foreground">
                     {fmtDate(o.created_at)}
                     {o.event_date && ` · мероприятие ${fmtDate(o.event_date)}`}
