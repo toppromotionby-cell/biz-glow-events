@@ -1,410 +1,241 @@
-// Server functions для админ-модуля email-кампаний.
-// Все доступно только admin. Отправка через Resend connector gateway.
-// Каждое письмо отправляется индивидуально — у каждого получателя свой unsubscribe-токен.
+// Server functions для блока «Приглашения новым клиентам».
+// Заменили старый полноценный CRUD кампаний на простой сценарий:
+// staff (admin/manager) отправляет фирменное письмо-приглашение
+// на 1–10 email одной кнопкой через инфраструктуру Lovable Emails.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import * as React from "react";
+import { render } from "@react-email/components";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendViaResend } from "@/lib/email/resend.server";
-import { wrapCampaignHtml, htmlToPlainText } from "@/lib/email/campaign-template.server";
+import { TEMPLATES } from "@/lib/email-templates/registry";
 
-async function assertAdmin(userId: string): Promise<void> {
-  const { data, error } = await supabaseAdmin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (error || !data) throw new Error("Доступ запрещён: требуется роль admin");
-}
+const TEMPLATE_NAME = "client-invite";
+const FROM_DOMAIN = "event-hub.by";
+const SENDER_DOMAIN = "notify.event-hub.by";
+const SITE_NAME = "event-hub.by";
+const FROM_EMAIL = `noreply@${FROM_DOMAIN}`;
+const FROM_ADDRESS = `${SITE_NAME} <${FROM_EMAIL}>`;
+const REPLY_TO_ADDRESS = FROM_EMAIL;
 
-const RecipientsConfigSchema = z.object({
-  all_confirmed: z.boolean().default(false),
-  roles: z.array(z.enum(["admin", "manager", "marketer", "content_editor"])).default([]),
-  manual_emails: z.array(z.string().email()).default([]),
-});
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const CampaignInputSchema = z.object({
-  name: z.string().min(1).max(200),
-  subject: z.string().min(1).max(255),
-  body_html: z.string().max(200_000).default(""),
-  body_text: z.string().max(200_000).default(""),
-  sender_email: z.string().email().max(255),
-  sender_name: z.string().max(120).nullable().optional(),
-  recipients_config: RecipientsConfigSchema,
-});
-
-// ─── Список и CRUD ──────────────────────────────────────────────
-
-export const listCampaigns = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
-    const { data, error } = await supabaseAdmin
-      .from("email_campaigns")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  });
-
-export const getCampaign = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-    const { data: c, error } = await supabaseAdmin
-      .from("email_campaigns")
-      .select("*")
-      .eq("id", data.id)
-      .single();
-    if (error) throw new Error(error.message);
-    return c;
-  });
-
-export const createCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => CampaignInputSchema.parse(input))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-    const { data: row, error } = await supabaseAdmin
-      .from("email_campaigns")
-      .insert({
-        name: data.name,
-        subject: data.subject,
-        body_html: data.body_html,
-        body_text: data.body_text,
-        sender_email: data.sender_email,
-        sender_name: data.sender_name ?? null,
-        recipients_config: data.recipients_config,
-        status: "draft",
-        created_by: context.userId,
-      })
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
-  });
-
-export const updateCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    CampaignInputSchema.extend({ id: z.string().uuid() }).parse(input),
-  )
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-    const { id, ...rest } = data;
-    // Запрещаем редактировать после отправки.
-    const { data: existing } = await supabaseAdmin
-      .from("email_campaigns")
-      .select("status")
-      .eq("id", id)
-      .single();
-    if (existing && (existing.status === "sending" || existing.status === "sent")) {
-      throw new Error("Нельзя редактировать кампанию после отправки");
-    }
-    const { data: row, error } = await supabaseAdmin
-      .from("email_campaigns")
-      .update({
-        name: rest.name,
-        subject: rest.subject,
-        body_html: rest.body_html,
-        body_text: rest.body_text,
-        sender_email: rest.sender_email,
-        sender_name: rest.sender_name ?? null,
-        recipients_config: rest.recipients_config,
-      })
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
-  });
-
-export const deleteCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-    const { error } = await supabaseAdmin.from("email_campaigns").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-// ─── Превью получателей ────────────────────────────────────────
-
-export const previewRecipients = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => RecipientsConfigSchema.parse(input))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-    const emails = await resolveRecipients(data);
-    const { data: suppressed } = await supabaseAdmin
-      .from("suppressed_emails")
-      .select("email");
-    const suppressedSet = new Set((suppressed ?? []).map((s) => s.email.toLowerCase()));
-    const willSend = emails.filter((e) => !suppressedSet.has(e.toLowerCase()));
-    return {
-      total: emails.length,
-      suppressed: emails.length - willSend.length,
-      will_send: willSend.length,
-      sample: willSend.slice(0, 20),
-    };
-  });
-
-// ─── Отчёт по кампании ────────────────────────────────────────
-
-export const getCampaignReport = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-    const [{ data: campaign }, { data: recipients }] = await Promise.all([
-      supabaseAdmin.from("email_campaigns").select("*").eq("id", data.id).single(),
-      supabaseAdmin
-        .from("email_campaign_recipients")
-        .select("*")
-        .eq("campaign_id", data.id)
-        .order("created_at", { ascending: true })
-        .limit(2000),
-    ]);
-    return { campaign, recipients: recipients ?? [] };
-  });
-
-// ─── Тестовая отправка себе ────────────────────────────────────
-
-export const sendTestEmail = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid(), to: z.string().email() }).parse(input),
-  )
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-    const { data: campaign, error } = await supabaseAdmin
-      .from("email_campaigns")
-      .select("*")
-      .eq("id", data.id)
-      .single();
-    if (error || !campaign) throw new Error("Кампания не найдена");
-
-  
-  
-
-    const html = wrapCampaignHtml({
-      subject: campaign.subject,
-      bodyHtml: campaign.body_html,
-      unsubscribeUrl: "https://event-hub.by/unsubscribe?token=test",
-    });
-    const text = campaign.body_text || htmlToPlainText(campaign.body_html);
-
-    const result = await sendViaResend({
-      from: campaign.sender_name
-        ? `${campaign.sender_name} <${campaign.sender_email}>`
-        : campaign.sender_email,
-      to: data.to,
-      subject: `[TEST] ${campaign.subject}`,
-      html,
-      text,
-    });
-
-    if (!result.ok) throw new Error(`Не удалось отправить тест: ${result.error}`);
-    return { ok: true, message_id: result.id };
-  });
-
-// ─── Запуск массовой рассылки ──────────────────────────────────
-
-export const sendCampaign = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ context, data }) => {
-    await assertAdmin(context.userId);
-
-    const { data: campaign, error: cErr } = await supabaseAdmin
-      .from("email_campaigns")
-      .select("*")
-      .eq("id", data.id)
-      .single();
-    if (cErr || !campaign) throw new Error("Кампания не найдена");
-    if (campaign.status === "sending") throw new Error("Кампания уже отправляется");
-    if (campaign.status === "sent") throw new Error("Кампания уже отправлена");
-
-    const recipientsCfg = RecipientsConfigSchema.parse(campaign.recipients_config ?? {});
-    const allEmails = await resolveRecipients(recipientsCfg);
-
-    // Фильтр по suppression-list.
-    const { data: suppressed } = await supabaseAdmin
-      .from("suppressed_emails")
-      .select("email");
-    const suppressedSet = new Set((suppressed ?? []).map((s) => s.email.toLowerCase()));
-    const toSend = allEmails.filter((e) => !suppressedSet.has(e.toLowerCase()));
-
-    if (toSend.length === 0) throw new Error("Нет получателей для отправки");
-
-    // Помечаем кампанию как sending и засеиваем строки получателей.
-    await supabaseAdmin
-      .from("email_campaigns")
-      .update({
-        status: "sending",
-        total_recipients: toSend.length,
-        sent_count: 0,
-        failed_count: 0,
-      })
-      .eq("id", data.id);
-
-    // Удаляем старые записи (на случай повторного запуска) и засеиваем pending.
-    await supabaseAdmin.from("email_campaign_recipients").delete().eq("campaign_id", data.id);
-    await supabaseAdmin.from("email_campaign_recipients").insert(
-      toSend.map((email) => ({
-        campaign_id: data.id,
-        email: email.toLowerCase(),
-        status: "pending" as const,
-      })),
-    );
-
-    // Запускаем отправку асинхронно (не ждём завершения).
-    // На Cloudflare Workers ctx.waitUntil недоступен напрямую в server-fn,
-    // поэтому делаем fire-and-forget с маленьким делеем между чанками.
-    void runCampaignSend(data.id).catch((err) => {
-      console.error("[campaigns] runCampaignSend failed", err);
-    });
-
-    return {
-      ok: true,
-      total: toSend.length,
-      skipped_suppressed: allEmails.length - toSend.length,
-    };
-  });
-
-// ─── helpers ───────────────────────────────────────────────────
-
-async function resolveRecipients(cfg: z.infer<typeof RecipientsConfigSchema>): Promise<string[]> {
+function parseEmails(raw: string[]): string[] {
   const set = new Set<string>();
-
-  if (cfg.all_confirmed) {
-    // Все подтверждённые пользователи из auth.users.
-    let page = 1;
-    // perPage limit на Supabase admin API.
-    while (page <= 10) {
-      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
-      if (error) throw new Error(error.message);
-      const users = data?.users ?? [];
-      for (const u of users) {
-        const confirmed = u.email_confirmed_at ?? u.confirmed_at;
-        if (confirmed && u.email) set.add(u.email.toLowerCase());
-      }
-      if (users.length < 1000) break;
-      page += 1;
-    }
+  for (const e of raw) {
+    const v = (e ?? "").trim().toLowerCase();
+    if (EMAIL_RE.test(v)) set.add(v);
   }
-
-  if (cfg.roles.length > 0) {
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .in("role", cfg.roles);
-    const userIds = (roles ?? []).map((r) => r.user_id);
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabaseAdmin
-        .from("profiles")
-        .select("email")
-        .in("id", userIds);
-      for (const p of profiles ?? []) {
-        if (p.email) set.add(p.email.toLowerCase());
-      }
-    }
-  }
-
-  for (const e of cfg.manual_emails) {
-    if (e) set.add(e.toLowerCase());
-  }
-
   return Array.from(set);
 }
 
-async function runCampaignSend(campaignId: string): Promise<void> {
-
-
-
-  const { data: campaign } = await supabaseAdmin
-    .from("email_campaigns")
-    .select("*")
-    .eq("id", campaignId)
-    .single();
-  if (!campaign) return;
-
-  const { data: pending } = await supabaseAdmin
-    .from("email_campaign_recipients")
-    .select("id, email")
-    .eq("campaign_id", campaignId)
-    .eq("status", "pending");
-
-  const list = pending ?? [];
-  let sent = 0;
-  let failed = 0;
-  const fromAddr = campaign.sender_name
-    ? `${campaign.sender_name} <${campaign.sender_email}>`
-    : campaign.sender_email;
-
-  for (const r of list) {
-    // Генерируем уникальный unsubscribe-токен для адреса.
-    const token = crypto.randomUUID().replace(/-/g, "");
-    await supabaseAdmin.from("email_unsubscribe_tokens").insert({
-      email: r.email,
-      token,
-    });
-
-    const unsubscribeUrl = `https://event-hub.by/unsubscribe?token=${token}`;
-    const html = wrapCampaignHtml({
-      subject: campaign.subject,
-      bodyHtml: campaign.body_html,
-      unsubscribeUrl,
-    });
-    const text = campaign.body_text || htmlToPlainText(campaign.body_html);
-
-    const result = await sendViaResend({
-      from: fromAddr,
-      to: r.email,
-      subject: campaign.subject,
-      html,
-      text,
-      headers: {
-        "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:unsubscribe@event-hub.by?subject=unsubscribe>`,
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-      },
-    });
-
-    if (result.ok) {
-      sent += 1;
-      await supabaseAdmin
-        .from("email_campaign_recipients")
-        .update({
-          status: "sent",
-          message_id: result.id,
-          sent_at: new Date().toISOString(),
-        })
-        .eq("id", r.id);
-    } else {
-      failed += 1;
-      await supabaseAdmin
-        .from("email_campaign_recipients")
-        .update({ status: "failed", error: result.error })
-        .eq("id", r.id);
-    }
-
-    // Throttle ~5 req/sec.
-    await new Promise((res) => setTimeout(res, 200));
-  }
-
-  await supabaseAdmin
-    .from("email_campaigns")
-    .update({
-      status: failed === list.length ? "failed" : "sent",
-      sent_count: sent,
-      failed_count: failed,
-      sent_at: new Date().toISOString(),
-    })
-    .eq("id", campaignId);
+function generateToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export const STAFF_ROLES = ["admin", "manager", "content_editor", "marketer"] as const;
+async function assertStaff(supabase: any, userId: string): Promise<void> {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  const ok = (data ?? []).some((r: { role: string }) =>
+    ["admin", "manager"].includes(r.role),
+  );
+  if (!ok) throw new Error("Доступ запрещён: требуется роль admin или manager");
+}
+
+// ── Превью HTML ───────────────────────────────────────────────────
+export const previewInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        recipient_name: z.string().max(120).optional(),
+        personal_message: z.string().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertStaff(context.supabase, context.userId);
+    const tpl = TEMPLATES[TEMPLATE_NAME];
+    const element = React.createElement(tpl.component, {
+      recipientName: data.recipient_name,
+      personalMessage: data.personal_message,
+    });
+    const html = await render(element);
+    const subject =
+      typeof tpl.subject === "function"
+        ? tpl.subject({ recipientName: data.recipient_name })
+        : tpl.subject;
+    return { html, subject };
+  });
+
+// ── Последние отправленные приглашения (для лога) ────────────────
+export const listRecentInvites = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("email_send_log")
+      .select("id, message_id, recipient_email, status, error_message, created_at")
+      .eq("template_name", TEMPLATE_NAME)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    // Дедуп по message_id — оставляем последнюю запись (она первая после сортировки DESC).
+    const seen = new Set<string>();
+    const out: typeof data = [];
+    for (const row of data ?? []) {
+      const key = row.message_id ?? row.id;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(row);
+      if (out.length >= 20) break;
+    }
+    return out;
+  });
+
+// ── Отправка приглашений (1–10 адресов за раз) ───────────────────
+export const sendClientInvitations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        emails: z.array(z.string()).min(1).max(10),
+        recipient_name: z.string().max(120).optional(),
+        personal_message: z.string().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const emails = parseEmails(data.emails);
+    if (emails.length === 0) throw new Error("Не распознано ни одного email");
+    if (emails.length > 10) throw new Error("Максимум 10 адресов за раз");
+
+    const tpl = TEMPLATES[TEMPLATE_NAME];
+    if (!tpl) throw new Error("Шаблон client-invite не найден");
+
+    // Если адресов больше одного — индивидуальное обращение по имени теряет смысл.
+    const recipientName = emails.length === 1 ? data.recipient_name : undefined;
+
+    const element = React.createElement(tpl.component, {
+      recipientName,
+      personalMessage: data.personal_message,
+    });
+    const html = await render(element);
+    const text = await render(element, { plainText: true });
+    const subject =
+      typeof tpl.subject === "function"
+        ? tpl.subject({ recipientName })
+        : tpl.subject;
+
+    // Проверяем suppression одним запросом.
+    const { data: suppressed } = await supabaseAdmin
+      .from("suppressed_emails")
+      .select("email")
+      .in("email", emails);
+    const suppressedSet = new Set((suppressed ?? []).map((s) => s.email.toLowerCase()));
+
+    const results: Array<{ email: string; status: "queued" | "suppressed" | "failed"; error?: string }> = [];
+
+    for (const email of emails) {
+      if (suppressedSet.has(email)) {
+        const messageId = crypto.randomUUID();
+        await supabaseAdmin.from("email_send_log").insert({
+          message_id: messageId,
+          template_name: TEMPLATE_NAME,
+          recipient_email: email,
+          status: "suppressed",
+        });
+        results.push({ email, status: "suppressed" });
+        continue;
+      }
+
+      // Unsubscribe-токен: один на адрес. Берём существующий или создаём.
+      let unsubscribeToken: string;
+      const { data: existingToken } = await supabaseAdmin
+        .from("email_unsubscribe_tokens")
+        .select("token, used_at")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existingToken && !existingToken.used_at) {
+        unsubscribeToken = existingToken.token;
+      } else if (!existingToken) {
+        unsubscribeToken = generateToken();
+        await supabaseAdmin
+          .from("email_unsubscribe_tokens")
+          .upsert(
+            { token: unsubscribeToken, email },
+            { onConflict: "email", ignoreDuplicates: true },
+          );
+        const { data: stored } = await supabaseAdmin
+          .from("email_unsubscribe_tokens")
+          .select("token")
+          .eq("email", email)
+          .maybeSingle();
+        unsubscribeToken = stored?.token ?? unsubscribeToken;
+      } else {
+        // Токен использован — адрес уже отписался, но не попал в suppressed_emails (редкий кейс).
+        results.push({ email, status: "suppressed" });
+        continue;
+      }
+
+      const messageId = crypto.randomUUID();
+      const idempotencyKey = `client-invite-${email}-${new Date().toISOString().slice(0, 10)}`;
+
+      // Лог pending до enqueue.
+      await supabaseAdmin.from("email_send_log").insert({
+        message_id: messageId,
+        template_name: TEMPLATE_NAME,
+        recipient_email: email,
+        status: "pending",
+      });
+
+      const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email", {
+        queue_name: "transactional_emails",
+        payload: {
+          message_id: messageId,
+          to: email,
+          from: FROM_ADDRESS,
+          reply_to: REPLY_TO_ADDRESS,
+          sender_domain: SENDER_DOMAIN,
+          subject,
+          html,
+          text,
+          purpose: "transactional",
+          label: TEMPLATE_NAME,
+          idempotency_key: idempotencyKey,
+          unsubscribe_token: unsubscribeToken,
+          queued_at: new Date().toISOString(),
+        },
+      });
+
+      if (enqErr) {
+        await supabaseAdmin.from("email_send_log").insert({
+          message_id: messageId,
+          template_name: TEMPLATE_NAME,
+          recipient_email: email,
+          status: "failed",
+          error_message: enqErr.message,
+        });
+        results.push({ email, status: "failed", error: enqErr.message });
+      } else {
+        results.push({ email, status: "queued" });
+      }
+    }
+
+    return {
+      total: emails.length,
+      queued: results.filter((r) => r.status === "queued").length,
+      suppressed: results.filter((r) => r.status === "suppressed").length,
+      failed: results.filter((r) => r.status === "failed").length,
+      results,
+    };
+  });
