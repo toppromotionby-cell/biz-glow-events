@@ -69,6 +69,7 @@ import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAvailabilityRouteImport } from './routes/admin.availability'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
@@ -389,6 +390,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminOrdersIndexRoute = AdminOrdersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminOrdersRoute,
+} as any)
 const OrderSuccessIdRoute = OrderSuccessIdRouteImport.update({
   id: '/order/success/$id',
   path: '/order/success/$id',
@@ -558,6 +564,7 @@ export interface FileRoutesByFullPath {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -614,7 +621,6 @@ export interface FileRoutesByTo {
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
   '/admin/notifications': typeof AdminNotificationsRoute
-  '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
@@ -638,6 +644,7 @@ export interface FileRoutesByTo {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/orders': typeof AdminOrdersIndexRoute
   '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -720,6 +727,7 @@ export interface FileRoutesById {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -803,6 +811,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/orders/'
     | '/admin/campaigns/$id/report'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -859,7 +868,6 @@ export interface FileRouteTypes {
     | '/admin/catalog'
     | '/admin/marketing'
     | '/admin/notifications'
-    | '/admin/orders'
     | '/admin/promo'
     | '/admin/sections'
     | '/admin/testimonials'
@@ -883,6 +891,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/orders'
     | '/admin/campaigns/$id/report'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -964,6 +973,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/orders/'
     | '/admin/campaigns/$id/report'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -1450,6 +1460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/orders/': {
+      id: '/admin/orders/'
+      path: '/'
+      fullPath: '/admin/orders/'
+      preLoaderRoute: typeof AdminOrdersIndexRouteImport
+      parentRoute: typeof AdminOrdersRoute
+    }
     '/order/success/$id': {
       id: '/order/success/$id'
       path: '/order/success/$id'
@@ -1643,10 +1660,12 @@ const AdminOrdersIdRouteWithChildren = AdminOrdersIdRoute._addFileChildren(
 
 interface AdminOrdersRouteChildren {
   AdminOrdersIdRoute: typeof AdminOrdersIdRouteWithChildren
+  AdminOrdersIndexRoute: typeof AdminOrdersIndexRoute
 }
 
 const AdminOrdersRouteChildren: AdminOrdersRouteChildren = {
   AdminOrdersIdRoute: AdminOrdersIdRouteWithChildren,
+  AdminOrdersIndexRoute: AdminOrdersIndexRoute,
 }
 
 const AdminOrdersRouteWithChildren = AdminOrdersRoute._addFileChildren(
