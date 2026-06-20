@@ -235,24 +235,60 @@ function OrderDetail() {
       </div>
 
       <Dialog open={!!emailPreview} onOpenChange={(o) => !o && setEmailPreview(null)}>
-        <DialogContent className="max-w-3xl p-0 gap-0 max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-4xl p-0 gap-0 max-h-[92vh] flex flex-col">
           <DialogHeader className="p-5 pb-3 border-b border-border">
             <DialogTitle>Предпросмотр письма клиенту</DialogTitle>
             <DialogDescription className="space-y-0.5">
-              <div><span className="text-muted-foreground">Кому:</span> {emailPreview?.to ?? "— email клиента не указан"}</div>
-              <div><span className="text-muted-foreground">Тема:</span> {emailPreview?.subject}</div>
+              <span className="block"><span className="text-muted-foreground">Кому:</span> {emailPreview?.to ?? "— email клиента не указан"}</span>
+              <span className="block"><span className="text-muted-foreground">Тема:</span> {emailPreview?.subject}</span>
+              <span className="block text-xs text-muted-foreground">
+                Это превью соответствует тому, что получит клиент: тело письма очищено от активных ссылок, PDF будут вложены.
+              </span>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden bg-background">
-            {emailPreview && (
-              <iframe
-                title="email-preview"
-                srcDoc={emailPreview.html}
-                sandbox=""
-                className="w-full h-[70vh] border-0 bg-white"
-              />
-            )}
-          </div>
+          {emailPreview && (
+            <Tabs defaultValue="email" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="mx-5 mt-3 self-start">
+                <TabsTrigger value="email" className="gap-1.5"><Mail className="h-3.5 w-3.5" />Письмо</TabsTrigger>
+                {emailPreview.attachments.map((a) => (
+                  <TabsTrigger key={a.kind} value={a.kind} className="gap-1.5">
+                    <FileText className="h-3.5 w-3.5" />{a.label}
+                    <span className="ml-1 text-[10px] text-muted-foreground">{Math.round(a.size / 1024)} КБ</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsContent value="email" className="flex-1 overflow-hidden bg-background mt-3">
+                <iframe
+                  title="email-preview"
+                  srcDoc={emailPreview.html}
+                  sandbox=""
+                  className="w-full h-[70vh] border-0 bg-white"
+                />
+              </TabsContent>
+              {emailPreview.attachments.map((a) => (
+                <TabsContent key={a.kind} value={a.kind} className="flex-1 overflow-hidden bg-background mt-3">
+                  <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground">
+                    <span>Имя вложения: <span className="text-foreground font-mono">{a.filename}</span></span>
+                    <a
+                      href={`data:application/pdf;base64,${a.base64}`}
+                      download={a.filename}
+                      className="text-primary hover:underline"
+                    >Скачать</a>
+                  </div>
+                  <iframe
+                    title={`pdf-${a.kind}`}
+                    src={`data:application/pdf;base64,${a.base64}`}
+                    className="w-full h-[68vh] border-0 bg-white"
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+          {emailPreview && emailPreview.attachments.length === 0 && (
+            <div className="p-5 text-sm text-muted-foreground">
+              Для статуса «{ORDER_STATUS_LABEL[order.status] ?? order.status}» PDF-документы не формируются.
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
