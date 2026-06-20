@@ -87,11 +87,19 @@ function OrderDetail() {
     }
   }, [order?.internal_notes]);
 
+  const notifyStatusFn = useServerFn(notifyOrderStatus);
   const updateStatus = useMutation({
     mutationFn: async (status: OrderStatus) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
       // Событие status_changed:* пишется триггером public.log_order_status_change.
+      // Дополнительно шлём клиенту письмо для известных статусов (best-effort).
+      try {
+        const res = await notifyStatusFn({ data: { orderId: id, status: String(status) } });
+        if (res?.ok) toast.message("Клиенту отправлено уведомление");
+      } catch (e) {
+        console.warn("notifyOrderStatus failed", e);
+      }
     },
     onSuccess: () => { toast.success("Статус обновлён"); qc.invalidateQueries({ queryKey: ["order", id] }); qc.invalidateQueries({ queryKey: ["order-timeline", id] }); },
     onError: (e: Error) => toast.error(e.message),
