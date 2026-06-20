@@ -311,6 +311,18 @@ function OrderDetail() {
         />
       </div>
 
+      {/* Предупреждения о конфликтах на дату */}
+      <OrderConflicts
+        orderId={order.id}
+        eventDate={order.event_date as string | null}
+        items={(items as OrderItemRow[]).map((i) => ({
+          entity_type: i.entity_type,
+          entity_id: i.entity_id,
+          title: i.title,
+        }))}
+      />
+
+
       {/* Двухколоночная компоновка */}
       <div className="grid lg:grid-cols-3 gap-4 items-start">
         {/* ОСНОВНАЯ КОЛОНКА */}
