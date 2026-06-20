@@ -158,13 +158,21 @@ function MailAccountsPage() {
   async function handleTest(id: string) {
     setTestingId(id);
     try {
-      const r = (await test({ data: { accountId: id } })) as { ok: boolean; error?: string };
-      if (r.ok) toast.success("Соединение OK: IMAP + SMTP отвечают");
-      else toast.error("Ошибка: " + (r.error ?? "unknown"));
+      const r = (await test({ data: { accountId: id } })) as {
+        ok: boolean;
+        status_code?: number | null;
+        message?: string;
+        error?: string;
+      };
+      const detail = `${r.status_code ?? "—"} · ${r.message ?? r.error ?? ""}`.trim();
+      if (r.ok) toast.success(`Соединение OK · ${detail}`);
+      else toast.error(`Ошибка: ${detail}`);
     } catch (e) {
       toast.error("Ошибка: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setTestingId(null);
+      qc.invalidateQueries({ queryKey: ["admin", "mail-accounts"] });
+      qc.invalidateQueries({ queryKey: ["admin", "mail-account-checks", id] });
     }
   }
 
