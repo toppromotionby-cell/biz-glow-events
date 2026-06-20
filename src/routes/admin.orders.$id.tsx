@@ -362,27 +362,8 @@ function OrderDetail() {
             </div>
           </section>
 
-          {/* Позиции */}
-          <section className="glass rounded-xl p-5">
-            <h3 className="font-semibold mb-3">Позиции ({items.length})</h3>
-            {items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Позиций нет</p>
-            ) : (
-              <div className="space-y-2">
-                {(items as OrderItemRow[]).map((it) => (
-                  <div key={it.id} className="flex items-center justify-between text-sm border-b border-border/30 pb-2 last:border-0">
-                    <div>
-                      <div className="font-medium">{it.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {ENTITY_LABEL[it.entity_type] ?? it.entity_type} · {it.qty} шт.
-                      </div>
-                    </div>
-                    <div className="font-medium">{fmtMoney(it.price)}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          {/* Позиции — редактируемые */}
+          <OrderItemsEditor orderId={order.id} items={items as OrderItemRow[]} />
 
           {order.notes && (
             <section className="glass rounded-xl p-5">
