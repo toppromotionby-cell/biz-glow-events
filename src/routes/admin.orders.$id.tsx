@@ -33,6 +33,7 @@ import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { notifyOrderStatus } from "@/lib/order-notifications.functions";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
+import { displayOrderNumber } from "@/lib/order-number";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
