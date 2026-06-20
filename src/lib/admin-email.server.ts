@@ -668,18 +668,9 @@ export async function notifyClientOrderConfirmedEmail(
   const salt = Date.now().toString(36);
   const messageId = `order-confirmed-${p.orderId}-${salt}`;
 
-  // Если есть PDF-вложения — идём напрямую через Resend (Lovable Email API
-  // вложения не поддерживает). Иначе — обычный pgmq-путь.
-  if (p.attachments && p.attachments.length > 0) {
-    return sendWithAttachments({
-      to: p.clientEmail,
-      subject,
-      html,
-      label: "client-order-confirmed",
-      messageId,
-      attachments: p.attachments,
-    });
-  }
+  // PDF-документы передаются в письме как ссылки на скачивание из приватного Storage
+  // (см. p.documents). Это позволяет отправлять через верифицированный Lovable Emails
+  // и не зависеть от верификации домена в Resend для вложений.
   return enqueue({
     to: p.clientEmail,
     subject,
