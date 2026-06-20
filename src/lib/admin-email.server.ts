@@ -71,16 +71,23 @@ function htmlToPlainText(html: string): string {
 //   • вычищает mailto:/tel: подстроки
 // Используется для всех клиентских писем перед отправкой/предпросмотром.
 export function stripActiveLinks(html: string): string {
-  // 1) <a ...>inner</a> → <span style="...">inner</span> (сохраняем style для визуального CTA)
-  let out = html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_m, attrs: string, inner: string) => {
+  // 1) <a ...>inner</a> → <span style="...">inner</span>.
+  //    Исключение: <a data-doc-link="1"> (ссылки скачивания PDF клиенту) сохраняем активными.
+  let out = html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (full, attrs: string, inner: string) => {
+    if (/data-doc-link\s*=\s*"1"/i.test(attrs)) return full;
     const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
     const style = styleMatch ? styleMatch[1] : "";
     const cleanInner = inner.replace(/<a\b[^>]*>|<\/a>/gi, "");
     return `<span${style ? ` style="${style};cursor:default"` : ""}>${cleanInner}</span>`;
   });
-  // 2) Удаляем href/src/action на всех оставшихся тегах (защита от data-URI ссылок)
-  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*"[^"]*"/gi, "");
-  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*'[^']*'/gi, "");
+  // 2) Удаляем href/src/action на всех тегах, КРОМЕ <a data-doc-link="1">.
+  out = out.replace(/<([a-zA-Z0-9]+)\b([^>]*)>/g, (_m, tag: string, attrs: string) => {
+    if (tag.toLowerCase() === "a" && /data-doc-link\s*=\s*"1"/i.test(attrs)) return `<${tag}${attrs}>`;
+    const cleaned = attrs
+      .replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*"[^"]*"/gi, "")
+      .replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*'[^']*'/gi, "");
+    return `<${tag}${cleaned}>`;
+  });
   // 3) Голые URL в текстовых нодах вне тегов → пусто
   out = out.replace(/<[^>]+>|(https?:\/\/[^\s<"']+|mailto:[^\s<"']+|tel:[^\s<"']+)/gi,
     (m, url) => (url ? "" : m));
@@ -512,8 +519,8 @@ export type ClientOrderConfirmedPayload = {
     startDate?: string | null;
     endDate?: string | null;
   }>;
-  // Прикрепляемые к письму PDF-файлы (КП/Счёт/Договор/Акт).
-  attachments?: Array<{ filename: string; bytes: Uint8Array }>;
+  // Документы клиента — отображаются в письме как ссылки на скачивание из приватного Storage.
+  documents?: Array<{ label: string; filename: string; url: string }>;
 };
 
 const ENTITY_LABEL_RU: Record<string, string> = {
@@ -557,7 +564,19 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
   const paid = Number(p.paid ?? 0);
   const remaining = Math.max(0, Number(p.total ?? 0) - paid);
   const orderUrl = `https://${FROM_DOMAIN}/profile`;
-  const hasAttachments = Boolean(p.attachments && p.attachments.length > 0);
+  const documents = p.documents ?? [];
+  const hasDocuments = documents.length > 0;
+  const documentsHtml = hasDocuments
+    ? documents.map((d) => `
+        <a href="${escapeHtml(d.url)}" data-doc-link="1" target="_blank" rel="noopener noreferrer"
+           style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:6px 0;background:${BRAND.bg};border:1px solid ${BRAND.border};border-radius:10px;text-decoration:none;color:${BRAND.text};font-size:14px">
+          <span style="display:flex;align-items:center;gap:10px;min-width:0">
+            <span style="display:inline-block;padding:4px 8px;border-radius:6px;background:${BRAND.accentSoft};color:${BRAND.accent};font-size:11px;font-weight:600;letter-spacing:0.04em">PDF</span>
+            <span style="font-weight:600;color:${BRAND.text};overflow:hidden;text-overflow:ellipsis">${escapeHtml(d.label)}</span>
+          </span>
+          <span style="color:${BRAND.accent};font-size:13px;font-weight:600;white-space:nowrap">Скачать ↓</span>
+        </a>`).join("")
+    : "";
 
   const body = `
     ${sectionLabel("Заказ подтверждён")}
@@ -618,11 +637,12 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
       <div style="font-size:14px;color:${BRAND.text};white-space:pre-wrap;line-height:1.55">${escapeHtml(p.notes)}</div>
     </div>` : ""}
 
-    ${hasAttachments ? `<div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:16px 18px;margin:0 0 24px">
-      <div style="font-family:${FONT_DISPLAY};font-size:13px;font-weight:600;color:${BRAND.accent};margin-bottom:6px">Документы во вложении</div>
-      <div style="font-size:13px;color:${BRAND.textSoft};line-height:1.55">
-        К письму приложены коммерческое предложение, счёт, договор и акт в формате PDF.
+    ${hasDocuments ? `<div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:16px 18px;margin:0 0 24px">
+      <div style="font-family:${FONT_DISPLAY};font-size:13px;font-weight:600;color:${BRAND.accent};margin-bottom:8px">Документы по заказу</div>
+      <div style="font-size:13px;color:${BRAND.textSoft};line-height:1.55;margin-bottom:4px">
+        Нажмите на нужный документ — он откроется в браузере или сохранится на устройство.
       </div>
+      ${documentsHtml}
     </div>` : ""}
 
     <a href="${orderUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND.accent},#f5c97a);color:#1a1208;text-decoration:none;padding:13px 26px;border-radius:10px;font-weight:600;font-size:14px;font-family:${FONT_DISPLAY}">Открыть личный кабинет</a>
@@ -648,18 +668,9 @@ export async function notifyClientOrderConfirmedEmail(
   const salt = Date.now().toString(36);
   const messageId = `order-confirmed-${p.orderId}-${salt}`;
 
-  // Если есть PDF-вложения — идём напрямую через Resend (Lovable Email API
-  // вложения не поддерживает). Иначе — обычный pgmq-путь.
-  if (p.attachments && p.attachments.length > 0) {
-    return sendWithAttachments({
-      to: p.clientEmail,
-      subject,
-      html,
-      label: "client-order-confirmed",
-      messageId,
-      attachments: p.attachments,
-    });
-  }
+  // PDF-документы передаются в письме как ссылки на скачивание из приватного Storage
+  // (см. p.documents). Это позволяет отправлять через верифицированный Lovable Emails
+  // и не зависеть от верификации домена в Resend для вложений.
   return enqueue({
     to: p.clientEmail,
     subject,
