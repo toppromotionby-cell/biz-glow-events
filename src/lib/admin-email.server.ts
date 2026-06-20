@@ -307,12 +307,15 @@ export async function notifyClientOrderConfirmedEmail(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!p.clientEmail) return { ok: false, error: "no client email" };
   const { subject, html } = buildClientOrderConfirmedEmail(p);
+  // Включаем timestamp в message_id, чтобы повторная отправка не отбивалась
+  // провайдером по идемпотентности (например, после починки sender-домена).
+  const salt = Date.now().toString(36);
   return enqueue({
     to: p.clientEmail,
     subject,
     html,
     label: "client-order-confirmed",
-    messageId: `order-confirmed-${p.orderId}`,
+    messageId: `order-confirmed-${p.orderId}-${salt}`,
   });
 }
 
