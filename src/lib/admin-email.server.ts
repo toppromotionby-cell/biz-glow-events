@@ -64,6 +64,29 @@ function htmlToPlainText(html: string): string {
     .trim();
 }
 
+// Полностью убирает активные ссылки из тела письма:
+//   • разворачивает <a href="...">текст</a> в <span style="..."> текст </span>
+//   • стирает href/src на других тегах
+//   • удаляет голые http(s)://... URL из текста (вне тегов)
+//   • вычищает mailto:/tel: подстроки
+// Используется для всех клиентских писем перед отправкой/предпросмотром.
+export function stripActiveLinks(html: string): string {
+  // 1) <a ...>inner</a> → <span style="...">inner</span> (сохраняем style для визуального CTA)
+  let out = html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_m, attrs: string, inner: string) => {
+    const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
+    const style = styleMatch ? styleMatch[1] : "";
+    const cleanInner = inner.replace(/<a\b[^>]*>|<\/a>/gi, "");
+    return `<span${style ? ` style="${style};cursor:default"` : ""}>${cleanInner}</span>`;
+  });
+  // 2) Удаляем href/src/action на всех оставшихся тегах (защита от data-URI ссылок)
+  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*"[^"]*"/gi, "");
+  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*'[^']*'/gi, "");
+  // 3) Голые URL в текстовых нодах вне тегов → пусто
+  out = out.replace(/<[^>]+>|(https?:\/\/[^\s<"']+|mailto:[^\s<"']+|tel:[^\s<"']+)/gi,
+    (m, url) => (url ? "" : m));
+  return out;
+}
+
 // Кодируем Uint8Array → base64 без лишних аллокаций (worker-friendly).
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -131,6 +154,9 @@ async function enqueue(opts: {
     return { ok: false, error: "unsubscribe token failed" };
   }
 
+  // Клиентские письма — без активных ссылок.
+  const html = opts.label.startsWith("client-") ? stripActiveLinks(opts.html) : opts.html;
+
   const payload = {
     message_id: opts.messageId,
     to,
@@ -138,8 +164,8 @@ async function enqueue(opts: {
     reply_to: REPLY_TO_ADDRESS,
     sender_domain: SENDER_DOMAIN,
     subject: opts.subject,
-    html: opts.html,
-    text: htmlToPlainText(opts.html),
+    html,
+    text: htmlToPlainText(html),
     label: opts.label,
     idempotency_key: opts.messageId,
     unsubscribe_token: unsubscribeToken,
@@ -205,16 +231,17 @@ async function sendWithAttachments(opts: {
     status: "pending",
   });
 
+  // Клиентские письма — без активных ссылок.
+  const html = opts.label.startsWith("client-") ? stripActiveLinks(opts.html) : opts.html;
+
   const resendRes = await sendViaResend({
     from: FROM_ADDRESS,
     to,
     subject: opts.subject,
-    html: opts.html,
-    text: htmlToPlainText(opts.html),
+    html,
+    text: htmlToPlainText(html),
     reply_to: REPLY_TO_ADDRESS,
     headers: { "X-Entity-Ref-ID": opts.messageId },
-    // Resend принимает attachments как { filename, content } — content в base64.
-    // sendViaResend пробрасывает все доп. поля через JSON.stringify(args).
     attachments: opts.attachments.map((a) => ({
       filename: a.filename,
       content: bytesToBase64(a.bytes),
@@ -304,27 +331,33 @@ export async function notifyAdminOrderEmail(p: AdminOrderPayload): Promise<{ ok:
   const to = adminEmail();
   if (!to) return { ok: false, error: "ADMIN_EMAIL not set" };
   const subject = `Новый заказ от ${p.clientName} — ${fmtBYN(p.total)}`;
-  const itemsHtml = p.items.map(i =>
-    `<li>${escapeHtml(i.title)} — ${i.qty} × ${i.price > 0 ? fmtBYN(i.price) : "по запросу"}</li>`
-  ).join("");
-  const html = `
-<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px">
-<div style="max-width:600px;margin:0 auto">
-  <h1 style="color:${BRAND.accent};margin:0 0 16px">Новый заказ</h1>
-  <p><strong>ID:</strong> ${escapeHtml(p.orderId)}</p>
-  <p><strong>Источник:</strong> ${escapeHtml(p.source ?? "—")}</p>
-  <hr style="border-color:#333"/>
-  <h2 style="font-size:18px">Клиент</h2>
-  <p>${escapeHtml(p.clientName)}${p.clientCompany ? " · " + escapeHtml(p.clientCompany) : ""}</p>
-  <p>Тел: ${escapeHtml(p.clientPhone)}
-     · Email: <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent}">${escapeHtml(p.clientEmail)}</a></p>
-  ${p.eventDate ? `<p>Дата: ${escapeHtml(p.eventDate)}</p>` : ""}
-  ${p.notes ? `<p>Комментарий: ${escapeHtml(p.notes)}</p>` : ""}
-  <hr style="border-color:#333"/>
-  <h2 style="font-size:18px">Позиции (${p.items.length})</h2>
-  <ul>${itemsHtml}</ul>
-  <p style="font-size:18px;font-weight:bold">Итого: ${fmtBYN(p.total)}</p>
-</div></body></html>`;
+  const itemsHtml = p.items.map(i => `<tr>
+    <td style="padding:10px 0;border-bottom:1px solid ${BRAND.border};color:${BRAND.text};font-size:14px">${escapeHtml(i.title)}</td>
+    <td style="padding:10px 0;border-bottom:1px solid ${BRAND.border};text-align:right;color:${BRAND.textSoft};font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums">${i.qty} × ${i.price > 0 ? fmtBYN(i.price) : "по запросу"}</td>
+  </tr>`).join("");
+  const body = `
+    ${sectionLabel("Новый заказ")}
+    <h1 style="font-family:${FONT_DISPLAY};margin:0 0 16px;font-size:24px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text}">Поступил новый заказ</h1>
+    <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
+        ${metaRow("ID", `<span style="font-family:ui-monospace,monospace">${escapeHtml(p.orderId.slice(0, 8))}</span>`)}
+        ${metaRow("Источник", escapeHtml(p.source ?? "—"))}
+        ${metaRow("Клиент", escapeHtml(p.clientName) + (p.clientCompany ? ` · ${escapeHtml(p.clientCompany)}` : ""))}
+        ${metaRow("Телефон", `<a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientPhone)}</a>`)}
+        ${metaRow("Email", `<a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientEmail)}</a>`)}
+        ${p.eventDate ? metaRow("Дата мероприятия", escapeHtml(p.eventDate)) : ""}
+      </tbody></table>
+    </div>
+    ${p.notes ? `<div style="background:${BRAND.surfaceAlt};border-left:3px solid ${BRAND.accent};border-radius:0 10px 10px 0;padding:14px 16px;margin:0 0 18px">
+      ${sectionLabel("Комментарий клиента")}
+      <div style="font-size:14px;color:${BRAND.text};white-space:pre-wrap;line-height:1.55">${escapeHtml(p.notes)}</div>
+    </div>` : ""}
+    ${sectionLabel(`Позиции (${p.items.length})`)}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px">
+      <tbody>${itemsHtml || `<tr><td style="padding:12px 0;color:${BRAND.muted};font-size:13px">Позиций нет</td></tr>`}</tbody>
+    </table>
+    <div style="text-align:right;font-family:${FONT_DISPLAY};font-size:20px;font-weight:700;color:${BRAND.accent};font-variant-numeric:tabular-nums">Итого: ${fmtBYN(p.total)}</div>`;
+  const html = brandShell({ title: subject, previewText: `Новый заказ от ${p.clientName}`, body });
   return enqueue({ to, subject, html, label: "admin-order", messageId: `order-${p.orderId}` });
 }
 
@@ -341,18 +374,23 @@ export async function notifyAdminLeadEmail(p: AdminLeadPayload): Promise<{ ok: b
   const to = adminEmail();
   if (!to) return { ok: false, error: "ADMIN_EMAIL not set" };
   const subject = `Новая заявка от ${p.clientName}`;
-  const html = `
-<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px">
-<div style="max-width:600px;margin:0 auto">
-  <h1 style="color:${BRAND.accent};margin:0 0 16px">Новая заявка</h1>
-  <p><strong>ID:</strong> ${escapeHtml(p.leadId)}</p>
-  <p><strong>Источник:</strong> ${escapeHtml(p.source ?? "—")}</p>
-  <hr style="border-color:#333"/>
-  <p>${escapeHtml(p.clientName)}</p>
-  <p>Тел: ${escapeHtml(p.clientPhone)}
-  ${p.clientEmail ? ` · Email: <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent}">${escapeHtml(p.clientEmail)}</a>` : ""}</p>
-  ${p.notes ? `<p>Комментарий: ${escapeHtml(p.notes)}</p>` : ""}
-</div></body></html>`;
+  const body = `
+    ${sectionLabel("Новая заявка")}
+    <h1 style="font-family:${FONT_DISPLAY};margin:0 0 16px;font-size:24px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text}">Новая заявка с сайта</h1>
+    <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
+        ${metaRow("ID", `<span style="font-family:ui-monospace,monospace">${escapeHtml(p.leadId.slice(0, 8))}</span>`)}
+        ${metaRow("Источник", escapeHtml(p.source ?? "—"))}
+        ${metaRow("Клиент", escapeHtml(p.clientName))}
+        ${metaRow("Телефон", `<a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientPhone)}</a>`)}
+        ${p.clientEmail ? metaRow("Email", `<a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientEmail)}</a>`) : ""}
+      </tbody></table>
+    </div>
+    ${p.notes ? `<div style="background:${BRAND.surfaceAlt};border-left:3px solid ${BRAND.accent};border-radius:0 10px 10px 0;padding:14px 16px">
+      ${sectionLabel("Комментарий")}
+      <div style="font-size:14px;color:${BRAND.text};white-space:pre-wrap;line-height:1.55">${escapeHtml(p.notes)}</div>
+    </div>` : ""}`;
+  const html = brandShell({ title: subject, previewText: `Заявка от ${p.clientName}`, body });
   return enqueue({ to, subject, html, label: "admin-lead", messageId: `lead-${p.leadId}` });
 }
 
@@ -374,23 +412,26 @@ export async function notifyAdminInquiryEmail(p: AdminInquiryPayload): Promise<{
   if (!to) return { ok: false, error: "ADMIN_EMAIL not set" };
   const subject = `🟡 ЗАПРОС от ${p.clientName} — нужно связаться`;
   const adminUrl = `https://${FROM_DOMAIN}/admin/orders`;
-  const html = `
-<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px;margin:0">
-<div style="max-width:600px;margin:0 auto;background:#11111a;border-radius:12px;padding:28px">
-  <div style="display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(251,191,36,0.15);color:${BRAND.warning};border:1px solid rgba(251,191,36,0.35);font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px">ЗАПРОС · требуется связаться</div>
-  <h1 style="color:${BRAND.warning};margin:0 0 8px;font-size:22px">Новый запрос на консультацию</h1>
-  <p style="margin:0 0 20px;color:#b8b8c8">Клиент оставил запрос — не оформленный заказ. Нужно перезвонить и уточнить, что именно ему нужно.</p>
-  <p><strong>ID:</strong> <span style="font-family:monospace">${escapeHtml(p.inquiryId.slice(0, 8))}</span></p>
-  <p><strong>Источник:</strong> ${escapeHtml(p.source ?? "—")}</p>
-  <hr style="border-color:#2a2a35"/>
-  <h2 style="font-size:16px;color:#e5e5e5">Контакты клиента</h2>
-  <p style="margin:6px 0">${escapeHtml(p.clientName)}${p.clientCompany ? " · " + escapeHtml(p.clientCompany) : ""}</p>
-  <p style="margin:6px 0">📞 <a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.warning}">${escapeHtml(p.clientPhone)}</a>
-     · ✉ <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.warning}">${escapeHtml(p.clientEmail)}</a></p>
-  ${p.eventDate ? `<p style="margin:6px 0">📅 Дата: ${escapeHtml(p.eventDate)}</p>` : ""}
-  ${p.notes ? `<div style="background:#1a1a26;border-left:3px solid ${BRAND.warning};border-radius:6px;padding:12px 14px;margin:16px 0"><div style="font-size:12px;color:#888;text-transform:uppercase;margin-bottom:6px">Сообщение клиента</div><div style="white-space:pre-wrap">${escapeHtml(p.notes)}</div></div>` : ""}
-  <a href="${adminUrl}" style="display:inline-block;margin-top:16px;background:linear-gradient(135deg,${BRAND.warning},#f59e0b);color:#0a0a0f;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600">Открыть в админке</a>
-</div></body></html>`;
+  const body = `
+    <div style="display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(251,191,36,0.15);color:${BRAND.warning};border:1px solid rgba(251,191,36,0.35);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 14px">Запрос · требуется связаться</div>
+    <h1 style="font-family:${FONT_DISPLAY};margin:0 0 10px;font-size:24px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text}">Новый запрос на консультацию</h1>
+    <p style="margin:0 0 18px;color:${BRAND.textSoft};font-size:14px;line-height:1.55">Клиент оставил запрос — не оформленный заказ. Нужно перезвонить и уточнить, что именно ему нужно.</p>
+    <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
+        ${metaRow("ID", `<span style="font-family:ui-monospace,monospace">${escapeHtml(p.inquiryId.slice(0, 8))}</span>`)}
+        ${metaRow("Источник", escapeHtml(p.source ?? "—"))}
+        ${metaRow("Клиент", escapeHtml(p.clientName) + (p.clientCompany ? ` · ${escapeHtml(p.clientCompany)}` : ""))}
+        ${metaRow("Телефон", `<a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.warning};text-decoration:none">${escapeHtml(p.clientPhone)}</a>`)}
+        ${metaRow("Email", `<a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.warning};text-decoration:none">${escapeHtml(p.clientEmail)}</a>`)}
+        ${p.eventDate ? metaRow("Дата", escapeHtml(p.eventDate)) : ""}
+      </tbody></table>
+    </div>
+    ${p.notes ? `<div style="background:${BRAND.surfaceAlt};border-left:3px solid ${BRAND.warning};border-radius:0 10px 10px 0;padding:14px 16px;margin:0 0 18px">
+      ${sectionLabel("Сообщение клиента")}
+      <div style="font-size:14px;color:${BRAND.text};white-space:pre-wrap;line-height:1.55">${escapeHtml(p.notes)}</div>
+    </div>` : ""}
+    <a href="${adminUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND.warning},#f59e0b);color:#1a1208;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px;font-family:${FONT_DISPLAY}">Открыть в админке</a>`;
+  const html = brandShell({ title: subject, previewText: `Запрос от ${p.clientName}`, body });
   return enqueue({ to, subject, html, label: "admin-inquiry", messageId: `inquiry-${p.inquiryId}` });
 }
 

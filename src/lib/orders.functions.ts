@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail, buildClientOrderConfirmedEmail } from "@/lib/admin-email.server";
+import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail, buildClientOrderConfirmedEmail, stripActiveLinks } from "@/lib/admin-email.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -521,7 +521,7 @@ async function generateAndUploadOrderDocuments(
   const pdfs: OrderPdfAttachment[] = [];
   const fallbackLabels: Record<DocKind, string> = { quote: "КП", invoice: "Счёт", contract: "Договор", act: "Акт" };
   try {
-    const [{ DOC_LABELS }, { loadDocumentSettings }, { buildOrderDocPdf, DOC_PDF_FILENAMES }] = await Promise.all([
+    const [{ DOC_LABELS }, { loadDocumentSettings }, { buildOrderDocPdf, buildAttachmentFilename }] = await Promise.all([
       import("@/lib/documents/build.server"),
       import("@/lib/documents/render.server"),
       import("@/lib/documents/pdf.server"),
@@ -550,7 +550,6 @@ async function generateAndUploadOrderDocuments(
     }));
 
     const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    const orderShort = String(order.id).slice(0, 8).toUpperCase();
 
     for (const kind of ["quote", "invoice", "contract", "act"] as const) {
       const label = DOC_LABELS[kind] ?? fallbackLabels[kind];
@@ -564,7 +563,7 @@ async function generateAndUploadOrderDocuments(
           statuses.push({ kind, label, ok: false, stage: "build", error: msg });
           continue;
         }
-        const filename = `${DOC_PDF_FILENAMES[kind]}_${orderShort}.pdf`;
+        const filename = buildAttachmentFilename(kind, order as never);
         const path = `orders/${orderId}/${kind}-${datePart}.pdf`;
         // pdf-lib иногда возвращает Uint8Array поверх большего буфера; берём slice
         // чтобы Blob получил ровно нужные байты.
@@ -769,7 +768,16 @@ export const resendOrderConfirmationEmailAdmin = createServerFn({ method: "POST"
     return { ok: emailRes.ok, emailSent: emailRes.ok, emailError: emailRes.ok ? null : emailRes.error ?? null };
   });
 
-// ===== Admin: предпросмотр клиентского письма подтверждения =====
+// ===== Admin: предпросмотр клиентского письма подтверждения + PDF-вложения =====
+
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
 
 export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -790,6 +798,47 @@ export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
       .select("title, qty, price, entity_type, start_date, end_date")
       .eq("order_id", data.id);
 
+    const itemRows = (items ?? []).map((i) => ({
+      title: String(i.title),
+      qty: Number(i.qty ?? 1),
+      price: Number(i.price ?? 0),
+      entityType: i.entity_type ?? null,
+      startDate: i.start_date ?? null,
+      endDate: i.end_date ?? null,
+    }));
+
+    // Соберём те же PDF-вложения, что отправятся клиенту (без записи в Storage).
+    type PreviewAttachment = { kind: string; label: string; filename: string; base64: string; size: number };
+    const attachments: PreviewAttachment[] = [];
+    const isInquiry = order.status === "consultation";
+    if (!isInquiry) {
+      try {
+        const [{ loadDocumentSettings }, { buildOrderDocPdf, buildAttachmentFilename }, { DOC_LABELS }] = await Promise.all([
+          import("@/lib/documents/render.server"),
+          import("@/lib/documents/pdf.server"),
+          import("@/lib/documents/build.server"),
+        ]);
+        const settings = await loadDocumentSettings(supabaseAdmin as never);
+        const buildItems = itemRows.map((i) => ({ title: i.title, qty: i.qty, price: i.price }));
+        for (const kind of ["quote", "invoice", "contract", "act"] as const) {
+          try {
+            const bytes = await buildOrderDocPdf(kind, order as never, buildItems, settings);
+            attachments.push({
+              kind,
+              label: DOC_LABELS[kind] ?? kind,
+              filename: buildAttachmentFilename(kind, order as never),
+              base64: uint8ToBase64(bytes),
+              size: bytes.byteLength,
+            });
+          } catch (e) {
+            console.error("[email-preview] pdf build failed", kind, e);
+          }
+        }
+      } catch (e) {
+        console.error("[email-preview] pdf pipeline failed", e);
+      }
+    }
+
     const { subject, html } = buildClientOrderConfirmedEmail({
       orderId: order.id,
       clientName: order.client_name,
@@ -801,17 +850,17 @@ export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
       status: order.status ?? "confirmed",
       eventDate: order.event_date,
       notes: order.notes,
-      items: (items ?? []).map((i) => ({
-        title: String(i.title),
-        qty: Number(i.qty ?? 1),
-        price: Number(i.price ?? 0),
-        entityType: i.entity_type ?? null,
-        startDate: i.start_date ?? null,
-        endDate: i.end_date ?? null,
-      })),
+      items: itemRows,
+      // Передаём пустые attachments — нам нужен текст «во вложении …» в превью.
+      attachments: attachments.length
+        ? attachments.map((a) => ({ filename: a.filename, bytes: new Uint8Array() }))
+        : undefined,
     });
 
-    return { subject, html, to: order.client_email ?? null };
+    // Чистим тело письма от активных ссылок ровно так же, как при отправке.
+    const sanitized = stripActiveLinks(html);
+
+    return { subject, html: sanitized, to: order.client_email ?? null, attachments };
   });
 
 
