@@ -77,6 +77,9 @@ function InvitationsPage() {
   const [recipientName, setRecipientName] = useState("");
   const [personalMessage, setPersonalMessage] = useState("");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewItems, setPreviewItems] = useState<PreviewItem[] | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSource, setPreviewSource] = useState<{ type: "manual" | "csv"; fileName?: string } | null>(null);
 
   const emails = useMemo(() => parseEmails(emailsRaw), [emailsRaw]);
   const canSend = emails.length >= 1 && emails.length <= MAX;
