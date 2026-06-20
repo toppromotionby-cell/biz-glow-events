@@ -496,42 +496,63 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          imap_host: string | null
+          imap_port: number
+          imap_secure: boolean
           last_sync_at: string | null
           last_sync_cursor: string | null
-          nylas_grant_id: string | null
           owner_id: string
+          password_encrypted: string | null
           provider: string
+          smtp_host: string | null
+          smtp_port: number
+          smtp_secure: boolean
           status: string
           sync_error: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           email: string
           id?: string
+          imap_host?: string | null
+          imap_port?: number
+          imap_secure?: boolean
           last_sync_at?: string | null
           last_sync_cursor?: string | null
-          nylas_grant_id?: string | null
           owner_id: string
+          password_encrypted?: string | null
           provider?: string
+          smtp_host?: string | null
+          smtp_port?: number
+          smtp_secure?: boolean
           status?: string
           sync_error?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           created_at?: string
           display_name?: string | null
           email?: string
           id?: string
+          imap_host?: string | null
+          imap_port?: number
+          imap_secure?: boolean
           last_sync_at?: string | null
           last_sync_cursor?: string | null
-          nylas_grant_id?: string | null
           owner_id?: string
+          password_encrypted?: string | null
           provider?: string
+          smtp_host?: string | null
+          smtp_port?: number
+          smtp_secure?: boolean
           status?: string
           sync_error?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -544,7 +565,7 @@ export type Database = {
           is_inline: boolean
           message_id: string
           mime_type: string | null
-          nylas_attachment_id: string | null
+          remote_id: string | null
           size_bytes: number | null
           storage_path: string | null
         }
@@ -556,7 +577,7 @@ export type Database = {
           is_inline?: boolean
           message_id: string
           mime_type?: string | null
-          nylas_attachment_id?: string | null
+          remote_id?: string | null
           size_bytes?: number | null
           storage_path?: string | null
         }
@@ -568,7 +589,7 @@ export type Database = {
           is_inline?: boolean
           message_id?: string
           mime_type?: string | null
-          nylas_attachment_id?: string | null
+          remote_id?: string | null
           size_bytes?: number | null
           storage_path?: string | null
         }
@@ -592,8 +613,8 @@ export type Database = {
           created_at: string
           id: string
           in_reply_to: string | null
-          nylas_draft_id: string | null
           owner_id: string
+          remote_id: string | null
           reply_to_message_id: string | null
           subject: string | null
           to_addrs: Json
@@ -608,8 +629,8 @@ export type Database = {
           created_at?: string
           id?: string
           in_reply_to?: string | null
-          nylas_draft_id?: string | null
           owner_id: string
+          remote_id?: string | null
           reply_to_message_id?: string | null
           subject?: string | null
           to_addrs?: Json
@@ -624,8 +645,8 @@ export type Database = {
           created_at?: string
           id?: string
           in_reply_to?: string | null
-          nylas_draft_id?: string | null
           owner_id?: string
+          remote_id?: string | null
           reply_to_message_id?: string | null
           subject?: string | null
           to_addrs?: Json
@@ -655,9 +676,11 @@ export type Database = {
           id: string
           kind: string
           name: string
-          nylas_folder_id: string
           parent_id: string | null
+          remote_id: string
           total_count: number
+          uidnext: number | null
+          uidvalidity: number | null
           unread_count: number
           updated_at: string
         }
@@ -667,9 +690,11 @@ export type Database = {
           id?: string
           kind?: string
           name: string
-          nylas_folder_id: string
           parent_id?: string | null
+          remote_id: string
           total_count?: number
+          uidnext?: number | null
+          uidvalidity?: number | null
           unread_count?: number
           updated_at?: string
         }
@@ -679,9 +704,11 @@ export type Database = {
           id?: string
           kind?: string
           name?: string
-          nylas_folder_id?: string
           parent_id?: string | null
+          remote_id?: string
           total_count?: number
+          uidnext?: number | null
+          uidvalidity?: number | null
           unread_count?: number
           updated_at?: string
         }
@@ -710,15 +737,17 @@ export type Database = {
           body_text: string | null
           cc_addrs: Json
           created_at: string
+          flags: string[]
           folder_id: string | null
           from_addr: string | null
           from_name: string | null
           has_attachments: boolean
           id: string
-          nylas_message_id: string
-          nylas_thread_id: string | null
+          imap_uid: number | null
           raw_headers: Json | null
           received_at: string
+          remote_id: string
+          remote_thread_id: string | null
           reply_to: Json
           seen: boolean
           sent_at: string | null
@@ -736,15 +765,17 @@ export type Database = {
           body_text?: string | null
           cc_addrs?: Json
           created_at?: string
+          flags?: string[]
           folder_id?: string | null
           from_addr?: string | null
           from_name?: string | null
           has_attachments?: boolean
           id?: string
-          nylas_message_id: string
-          nylas_thread_id?: string | null
+          imap_uid?: number | null
           raw_headers?: Json | null
           received_at?: string
+          remote_id: string
+          remote_thread_id?: string | null
           reply_to?: Json
           seen?: boolean
           sent_at?: string | null
@@ -762,15 +793,17 @@ export type Database = {
           body_text?: string | null
           cc_addrs?: Json
           created_at?: string
+          flags?: string[]
           folder_id?: string | null
           from_addr?: string | null
           from_name?: string | null
           has_attachments?: boolean
           id?: string
-          nylas_message_id?: string
-          nylas_thread_id?: string | null
+          imap_uid?: number | null
           raw_headers?: Json | null
           received_at?: string
+          remote_id?: string
+          remote_thread_id?: string | null
           reply_to?: Json
           seen?: boolean
           sent_at?: string | null

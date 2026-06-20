@@ -1,0 +1,20 @@
+{
+  "name": "event-hub-mail-worker",
+  "version": "1.0.0",
+  "description": "IMAP/SMTP bridge for Event Hub admin mail",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "imapflow": "^1.0.182",
+    "mailparser": "^3.7.2",
+    "nodemailer": "^6.9.16"
+  }
+}
