@@ -156,23 +156,71 @@ function InvitationsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const send = useMutation({
-    mutationFn: () => sendFn({
-      data: {
-        emails,
-        recipient_name: emails.length === 1 ? recipientName.trim() || undefined : undefined,
-        personal_message: personalMessage.trim() || undefined,
-      },
-    }),
-    onSuccess: (r) => {
-      toast.success(`Поставлено в очередь: ${r.queued} из ${r.total}` + (r.suppressed ? ` · отписаны: ${r.suppressed}` : "") + (r.failed ? ` · ошибки: ${r.failed}` : ""));
-      setEmailsRaw("");
-      setRecipientName("");
-      setPersonalMessage("");
+  const runBatchedSend = async () => {
+    if (progress?.running) return;
+    cancelRef.current = false;
+    const list = emails.slice(0, MAX);
+    const size = Math.max(1, Math.min(MAX, batchSize));
+    const batches: string[][] = [];
+    for (let i = 0; i < list.length; i += size) batches.push(list.slice(i, i + size));
+    setProgress({
+      total: list.length, sent: 0, queued: 0, failed: 0, suppressed: 0,
+      running: true, paused: false, batchIdx: 0, batchCount: batches.length,
+    });
+    let agg = { queued: 0, failed: 0, suppressed: 0, sent: 0 };
+    try {
+      for (let i = 0; i < batches.length; i++) {
+        if (cancelRef.current) break;
+        const batch = batches[i];
+        setProgress((p) => p ? { ...p, batchIdx: i + 1, paused: false } : p);
+        try {
+          const r = await sendFn({
+            data: {
+              emails: batch,
+              recipient_name: list.length === 1 ? recipientName.trim() || undefined : undefined,
+              personal_message: personalMessage.trim() || undefined,
+            },
+          });
+          agg.queued += r.queued ?? 0;
+          agg.failed += r.failed ?? 0;
+          agg.suppressed += r.suppressed ?? 0;
+        } catch (e) {
+          agg.failed += batch.length;
+          toast.error(`Батч ${i + 1}: ${(e as Error).message}`);
+        }
+        agg.sent += batch.length;
+        setProgress((p) => p ? { ...p, ...agg } : p);
+
+        // Пауза между батчами (не после последнего)
+        if (i < batches.length - 1 && pauseSec > 0 && !cancelRef.current) {
+          setProgress((p) => p ? { ...p, paused: true } : p);
+          const stepMs = 100;
+          const totalMs = pauseSec * 1000;
+          for (let t = 0; t < totalMs; t += stepMs) {
+            if (cancelRef.current) break;
+            await new Promise((res) => setTimeout(res, stepMs));
+          }
+        }
+      }
+      const cancelled = cancelRef.current;
+      toast.success(
+        (cancelled ? "Остановлено. " : "Готово. ") +
+        `В очереди: ${agg.queued} из ${list.length}` +
+        (agg.suppressed ? ` · отписаны: ${agg.suppressed}` : "") +
+        (agg.failed ? ` · ошибки: ${agg.failed}` : "")
+      );
+      if (!cancelled) {
+        setEmailsRaw("");
+        setRecipientName("");
+        setPersonalMessage("");
+      }
       qc.invalidateQueries({ queryKey: ["admin", "invites", "log"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+    } finally {
+      setProgress((p) => p ? { ...p, running: false, paused: false } : p);
+    }
+  };
+
+  const cancelSend = () => { cancelRef.current = true; };
 
   const sendTest = useMutation({
     mutationFn: () => {
