@@ -171,10 +171,10 @@ function MailAccountsPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        icon={Mail}
+        icon={<Mail className="h-5 w-5 text-primary" />}
         title="Почтовые ящики"
-        description="IMAP/SMTP-аккаунты для работы внутри админки. Соединение идёт через внешний mail-worker."
-        actions={
+        subtitle="IMAP/SMTP-аккаунты для работы внутри админки. Соединение идёт через внешний mail-worker."
+        action={
           <Button onClick={() => setEditing({ ...EMPTY })}>
             <Plus className="h-4 w-4 mr-2" /> Добавить ящик
           </Button>
