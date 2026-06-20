@@ -9,6 +9,7 @@ import {
 import type { Database } from "@/integrations/supabase/types";
 import { fmtCurrency, fmtDateTimeShort } from "@/lib/formatters";
 import { ProdHealthBanner } from "@/components/admin/ProdHealthBanner";
+import { DEV_OVERLAYS_ENABLED } from "@/lib/debug-flags";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -102,7 +103,7 @@ function AdminDashboard() {
         <p className="text-sm text-muted-foreground">Обзор операционных метрик в реальном времени.</p>
       </header>
 
-      <ProdHealthBanner />
+      {DEV_OVERLAYS_ENABLED && <ProdHealthBanner />}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
