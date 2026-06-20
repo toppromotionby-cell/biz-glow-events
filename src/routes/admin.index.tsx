@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin/")({
 
 type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
 type StatsOrder = Pick<OrderRow, "id" | "status" | "total" | "source" | "created_at">;
-type RecentOrder = Pick<OrderRow, "id" | "client_name" | "total" | "status" | "created_at">;
+type RecentOrder = Pick<OrderRow, "id" | "order_number" | "client_name" | "total" | "status" | "created_at">;
 
 const STATUS_LABEL: Record<string, string> = {
   new: "Новые", consultation: "Консультация", estimate: "Смета", contract: "Договор",
