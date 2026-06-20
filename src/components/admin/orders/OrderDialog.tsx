@@ -137,8 +137,8 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
                         const { promoteInquiryToOrder } = await import("@/lib/leads.functions");
                         await promoteInquiryToOrder({ data: { id: order.id } });
                         toast.success("Запрос превращён в заказ");
-                        queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-                        queryClient.invalidateQueries({ queryKey: ["admin-order", order.id] });
+                        qc.invalidateQueries({ queryKey: ["admin-orders"] });
+                        qc.invalidateQueries({ queryKey: ["admin-order", order.id] });
                       } catch (e) {
                         toast.error((e as Error).message);
                       }
