@@ -154,6 +154,9 @@ async function enqueue(opts: {
     return { ok: false, error: "unsubscribe token failed" };
   }
 
+  // Клиентские письма — без активных ссылок.
+  const html = opts.label.startsWith("client-") ? stripActiveLinks(opts.html) : opts.html;
+
   const payload = {
     message_id: opts.messageId,
     to,
@@ -161,8 +164,8 @@ async function enqueue(opts: {
     reply_to: REPLY_TO_ADDRESS,
     sender_domain: SENDER_DOMAIN,
     subject: opts.subject,
-    html: opts.html,
-    text: htmlToPlainText(opts.html),
+    html,
+    text: htmlToPlainText(html),
     label: opts.label,
     idempotency_key: opts.messageId,
     unsubscribe_token: unsubscribeToken,
@@ -228,16 +231,17 @@ async function sendWithAttachments(opts: {
     status: "pending",
   });
 
+  // Клиентские письма — без активных ссылок.
+  const html = opts.label.startsWith("client-") ? stripActiveLinks(opts.html) : opts.html;
+
   const resendRes = await sendViaResend({
     from: FROM_ADDRESS,
     to,
     subject: opts.subject,
-    html: opts.html,
-    text: htmlToPlainText(opts.html),
+    html,
+    text: htmlToPlainText(html),
     reply_to: REPLY_TO_ADDRESS,
     headers: { "X-Entity-Ref-ID": opts.messageId },
-    // Resend принимает attachments как { filename, content } — content в base64.
-    // sendViaResend пробрасывает все доп. поля через JSON.stringify(args).
     attachments: opts.attachments.map((a) => ({
       filename: a.filename,
       content: bytesToBase64(a.bytes),
