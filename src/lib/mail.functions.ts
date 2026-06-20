@@ -178,7 +178,6 @@ export const testMailAccount = createServerFn({ method: "POST" })
       };
     }
   });
-  });
 
 // ───── Журнал проверок ─────
 export const listMailAccountChecks = createServerFn({ method: "POST" })
