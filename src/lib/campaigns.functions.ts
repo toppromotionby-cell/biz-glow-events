@@ -302,7 +302,7 @@ async function resolveRecipients(cfg: z.infer<typeof RecipientsConfigSchema>): P
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")
-      .in("role", cfg.roles as any);
+      .in("role", cfg.roles);
     const userIds = (roles ?? []).map((r) => r.user_id);
     if (userIds.length > 0) {
       const { data: profiles } = await supabaseAdmin
