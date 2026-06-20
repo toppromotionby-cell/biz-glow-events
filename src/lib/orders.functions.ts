@@ -857,10 +857,13 @@ export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
       eventDate: order.event_date,
       notes: order.notes,
       items: itemRows,
-      // Передаём пустые attachments — нам нужен текст «во вложении …» в превью.
-      attachments: attachments.length
-        ? attachments.map((a) => ({ filename: a.filename, bytes: new Uint8Array() }))
-        : undefined,
+      // В превью показываем тот же блок «Документы по заказу» со ссылками-плейсхолдерами,
+      // чтобы админ видел финальный вид письма. Реальные подписанные URL генерируются при отправке.
+      documents: attachments.map((a) => ({
+        label: a.label,
+        filename: a.filename,
+        url: `#preview-${a.kind}`,
+      })),
     });
 
     // Чистим тело письма от активных ссылок ровно так же, как при отправке.
