@@ -49,6 +49,7 @@ import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
+import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as GeoCityRouteImport } from './routes/geo.$city'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
@@ -286,6 +287,11 @@ const ProductionSlugRoute = ProductionSlugRouteImport.update({
 const LpSlugRoute = LpSlugRouteImport.update({
   id: '/lp/$slug',
   path: '/lp/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InquiryTokenRoute = InquiryTokenRouteImport.update({
+  id: '/inquiry/$token',
+  path: '/inquiry/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GeoCityRoute = GeoCityRouteImport.update({
@@ -538,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
+  '/inquiry/$token': typeof InquiryTokenRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -617,6 +624,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
+  '/inquiry/$token': typeof InquiryTokenRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -698,6 +706,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
+  '/inquiry/$token': typeof InquiryTokenRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -780,6 +789,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
+    | '/inquiry/$token'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -859,6 +869,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
+    | '/inquiry/$token'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -939,6 +950,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
+    | '/inquiry/$token'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -1003,6 +1015,7 @@ export interface RootRouteChildren {
   ZonesRoute: typeof ZonesRouteWithChildren
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   GeoCityRoute: typeof GeoCityRoute
+  InquiryTokenRoute: typeof InquiryTokenRoute
   LpSlugRoute: typeof LpSlugRoute
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1295,6 +1308,13 @@ declare module '@tanstack/react-router' {
       path: '/lp/$slug'
       fullPath: '/lp/$slug'
       preLoaderRoute: typeof LpSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inquiry/$token': {
+      id: '/inquiry/$token'
+      path: '/inquiry/$token'
+      fullPath: '/inquiry/$token'
+      preLoaderRoute: typeof InquiryTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/geo/$city': {
@@ -1777,6 +1797,7 @@ const rootRouteChildren: RootRouteChildren = {
   ZonesRoute: ZonesRouteWithChildren,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   GeoCityRoute: GeoCityRoute,
+  InquiryTokenRoute: InquiryTokenRoute,
   LpSlugRoute: LpSlugRoute,
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
