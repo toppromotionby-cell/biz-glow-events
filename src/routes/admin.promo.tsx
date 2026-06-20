@@ -19,8 +19,8 @@ import { persistSortOrder } from "@/lib/sort-order";
 
 export const Route = createFileRoute("/admin/promo")({ component: Page });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Row = any;
+import type { Database } from "@/integrations/supabase/types";
+type Row = Database["public"]["Tables"]["promo_codes"]["Row"];
 
 function Page() {
   const qc = useQueryClient();
@@ -155,11 +155,11 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => setF({ ...f, discount_value: e.target.value })} /></Field>
-        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => setF({ ...f, min_order_total: e.target.value })} /></Field>
+        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => setF({ ...f, discount_value: Number(e.target.value) || 0 })} /></Field>
+        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => setF({ ...f, min_order_total: Number(e.target.value) || 0 })} /></Field>
         <Field label="Действует с"><Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => setF({ ...f, valid_from: e.target.value })} /></Field>
         <Field label="Действует до"><Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => setF({ ...f, valid_to: e.target.value })} /></Field>
-        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => setF({ ...f, max_uses: e.target.value })} /></Field>
+        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => setF({ ...f, max_uses: e.target.value ? Number(e.target.value) : null })} /></Field>
         <Field label="Использовано"><Input value={f.used_count ?? 0} readOnly className="opacity-70" /></Field>
       </div>
 

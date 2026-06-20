@@ -13,12 +13,14 @@ import { AdminEditorShell } from "@/components/admin/AdminEditorShell";
 import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
 
+import type { Database } from "@/integrations/supabase/types";
+import { fmtCurrency } from "@/lib/formatters";
+
 export const Route = createFileRoute("/admin/marketing")({
   component: MarketingPage,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Row = any;
+type Row = Database["public"]["Tables"]["campaigns"]["Row"];
 
 function MarketingPage() {
   const qc = useQueryClient();
@@ -78,7 +80,7 @@ function MarketingPage() {
                 >
                   <td className="p-3 font-medium">{c.name}</td>
                   <td className="p-3">{c.source ?? "—"}</td>
-                  <td className="p-3 text-right">{Number(c.budget ?? 0).toLocaleString("ru-BY")} BYN</td>
+                  <td className="p-3 text-right">{fmtCurrency(c.budget)}</td>
                   <td className="p-3 text-right">{c.goal_conversions ?? 0}</td>
                   <td className="p-3">
                     <StatusPill tone={c.active ? "success" : "muted"}>{c.active ? "активна" : "выключена"}</StatusPill>
@@ -127,8 +129,8 @@ function CampaignEditor({ item, onSaved, onDelete }: { item: Row; onSaved: () =>
       <Field label="Название"><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
       <Field label="Источник (utm_source)"><Input value={form.source ?? ""} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="google, instagram..." /></Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Бюджет, BYN"><Input type="number" value={form.budget ?? 0} onChange={(e) => setForm({ ...form, budget: e.target.value })} /></Field>
-        <Field label="Цель, конверсий"><Input type="number" value={form.goal_conversions ?? 0} onChange={(e) => setForm({ ...form, goal_conversions: e.target.value })} /></Field>
+        <Field label="Бюджет, BYN"><Input type="number" value={form.budget ?? 0} onChange={(e) => setForm({ ...form, budget: Number(e.target.value) || 0 })} /></Field>
+        <Field label="Цель, конверсий"><Input type="number" value={form.goal_conversions ?? 0} onChange={(e) => setForm({ ...form, goal_conversions: Number(e.target.value) || 0 })} /></Field>
         <Field label="Старт"><Input type="date" value={form.start_date ?? ""} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></Field>
         <Field label="Финиш"><Input type="date" value={form.end_date ?? ""} onChange={(e) => setForm({ ...form, end_date: e.target.value })} /></Field>
       </div>

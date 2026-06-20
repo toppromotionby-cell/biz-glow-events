@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 import { AdminTable } from "@/components/admin/AdminTable";
+import { fmtDateTime } from "@/lib/formatters";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   pending: { label: "Ожидает", variant: "outline" },
@@ -28,7 +29,7 @@ function ReportPage() {
     queryKey: ["admin", "campaign-report", id],
     queryFn: () => fetchReport({ data: { id } }),
     refetchInterval: (q) => {
-      const status = (q.state.data as any)?.campaign?.status;
+      const status = q.state.data?.campaign?.status;
       return status === "sending" ? 3000 : false;
     },
   });
@@ -87,7 +88,7 @@ function ReportPage() {
             <tr key={r.id} className="border-t border-border/40 align-top">
               <td className="px-4 py-2 text-sm">{r.email}</td>
               <td className="px-4 py-2"><Badge variant={s.variant}>{s.label}</Badge></td>
-              <td className="px-4 py-2 text-xs text-muted-foreground">{r.sent_at ? new Date(r.sent_at).toLocaleString("ru-BY") : "—"}</td>
+              <td className="px-4 py-2 text-xs text-muted-foreground">{r.sent_at ? fmtDateTime(r.sent_at) : "—"}</td>
               <td className="px-4 py-2 text-xs text-destructive truncate max-w-xs">{r.error ?? ""}</td>
             </tr>
           );

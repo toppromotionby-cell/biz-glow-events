@@ -3,6 +3,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireStaff } from "@/lib/admin-route-guard";
+import { fmtDate } from "@/lib/formatters";
 
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/admin/orders/$id/invoice")({
           </tr>`).join("");
 
         const total = (items ?? []).reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
-        const date = new Date().toLocaleDateString("ru-BY");
+        const date = fmtDate(new Date());
         const num = String(order.id).slice(0, 8).toUpperCase();
 
         const html = `<!doctype html>
