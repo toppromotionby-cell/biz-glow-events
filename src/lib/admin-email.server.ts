@@ -71,16 +71,23 @@ function htmlToPlainText(html: string): string {
 //   • вычищает mailto:/tel: подстроки
 // Используется для всех клиентских писем перед отправкой/предпросмотром.
 export function stripActiveLinks(html: string): string {
-  // 1) <a ...>inner</a> → <span style="...">inner</span> (сохраняем style для визуального CTA)
-  let out = html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_m, attrs: string, inner: string) => {
+  // 1) <a ...>inner</a> → <span style="...">inner</span>.
+  //    Исключение: <a data-doc-link="1"> (ссылки скачивания PDF клиенту) сохраняем активными.
+  let out = html.replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (full, attrs: string, inner: string) => {
+    if (/data-doc-link\s*=\s*"1"/i.test(attrs)) return full;
     const styleMatch = attrs.match(/style\s*=\s*"([^"]*)"/i);
     const style = styleMatch ? styleMatch[1] : "";
     const cleanInner = inner.replace(/<a\b[^>]*>|<\/a>/gi, "");
     return `<span${style ? ` style="${style};cursor:default"` : ""}>${cleanInner}</span>`;
   });
-  // 2) Удаляем href/src/action на всех оставшихся тегах (защита от data-URI ссылок)
-  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*"[^"]*"/gi, "");
-  out = out.replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*'[^']*'/gi, "");
+  // 2) Удаляем href/src/action на всех тегах, КРОМЕ <a data-doc-link="1">.
+  out = out.replace(/<([a-zA-Z0-9]+)\b([^>]*)>/g, (_m, tag: string, attrs: string) => {
+    if (tag.toLowerCase() === "a" && /data-doc-link\s*=\s*"1"/i.test(attrs)) return `<${tag}${attrs}>`;
+    const cleaned = attrs
+      .replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*"[^"]*"/gi, "")
+      .replace(/\s(?:href|src|action|formaction|background|ping)\s*=\s*'[^']*'/gi, "");
+    return `<${tag}${cleaned}>`;
+  });
   // 3) Голые URL в текстовых нодах вне тегов → пусто
   out = out.replace(/<[^>]+>|(https?:\/\/[^\s<"']+|mailto:[^\s<"']+|tel:[^\s<"']+)/gi,
     (m, url) => (url ? "" : m));
