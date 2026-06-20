@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 
 const SITE_NAME = "event-hub.by";
-const SENDER_DOMAIN = "z.event-hub.by";
+const SENDER_DOMAIN = "notify.event-hub.by";
 const FROM_DOMAIN = "event-hub.by";
 const FROM_ADDRESS = `${SITE_NAME} <noreply@${FROM_DOMAIN}>`;
 
