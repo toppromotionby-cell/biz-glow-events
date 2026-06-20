@@ -127,14 +127,14 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           // Retry budget is based on real send failures, not pgmq read_ct.
           const messageIds = Array.from(
             new Set(
-              messages
-                .map((msg: unknown) => {
+              (messages as unknown[])
+                .map((msg) => {
                   const m = msg as { message?: { message_id?: unknown } } | null;
                   return m?.message?.message_id && typeof m.message.message_id === "string"
                     ? m.message.message_id
                     : null;
                 })
-                .filter((id: string | null): id is string => Boolean(id))
+                .filter((id): id is string => Boolean(id))
             )
           )
           const failedAttemptsByMessageId = new Map<string, number>()
