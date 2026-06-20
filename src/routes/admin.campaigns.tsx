@@ -298,6 +298,76 @@ function InvitationsPage() {
         </div>
       </div>
 
+      {/* Диалог предпросмотра и редактирования распарсенных адресов */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Проверка адресов</DialogTitle>
+            <DialogDescription>
+              {previewSource?.type === "csv"
+                ? `Адреса из файла «${previewSource.fileName}». Снимите галочки с лишних строк и нажмите «Применить».`
+                : "Снимите галочки с лишних строк и нажмите «Применить».")
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewItems && previewItems.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div className="text-muted-foreground">
+                  Всего: <b>{previewItems.length}</b> · выбрано: <b>{previewItems.filter((i) => i.selected).length}</b>
+                  {previewItems.length > MAX && (
+                    <span className="text-destructive ml-2">(лишние не будут отправлены)</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => toggleAll(true)}>
+                    <CheckSquare className="h-4 w-4 mr-1" /> Все
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => toggleAll(false)}>
+                    <XSquare className="h-4 w-4 mr-1" /> Ни одного
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={removeUnselected}>
+                    <Trash2 className="h-4 w-4 mr-1" /> Убрать снятые
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border/50 divide-y divide-border/30 max-h-[360px] overflow-y-auto">
+                {previewItems.map((item, idx) => (
+                  <label
+                    key={`${item.email}-${idx}`}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={item.selected}
+                      onCheckedChange={(checked) => {
+                        setPreviewItems((prev) => {
+                          if (!prev) return null;
+                          const next = [...prev];
+                          next[idx] = { ...next[idx], selected: checked === true };
+                          return next;
+                        });
+                      }}
+                    />
+                    <span className={`text-sm ${item.selected ? "" : "text-muted-foreground line-through"}`}>
+                      {item.email}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)}>Отмена</Button>
+            <Button type="button" className="btn-primary-gradient" onClick={applyPreview}>
+              Применить ({previewItems?.filter((i) => i.selected).length ?? 0})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Лог последних отправок */}
       <div className="glass rounded-xl p-5 space-y-3">
         <h3 className="font-semibold">Последние отправленные приглашения</h3>
