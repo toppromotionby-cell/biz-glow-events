@@ -18,6 +18,11 @@ import { openAuthedDocument } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
+import type { Database } from "@/integrations/supabase/types";
+
+type OrderStatus = Database["public"]["Enums"]["order_status"];
+type OrderItemRow = Database["public"]["Tables"]["order_items"]["Row"];
+type OrderTimelineRow = Database["public"]["Tables"]["order_timeline"]["Row"];
 
 
 
@@ -70,16 +75,16 @@ function OrderDetail() {
   });
 
   useEffect(() => {
-    if (order && typeof (order as any).internal_notes === "string") {
-      setInternalNotes((order as any).internal_notes ?? "");
+    if (order && typeof order.internal_notes === "string") {
+      setInternalNotes(order.internal_notes ?? "");
     } else if (order) {
       setInternalNotes("");
     }
-  }, [(order as any)?.internal_notes]);
+  }, [order?.internal_notes]);
 
   const updateStatus = useMutation({
-    mutationFn: async (status: string) => {
-      const { error } = await supabase.from("orders").update({ status: status as any }).eq("id", id);
+    mutationFn: async (status: OrderStatus) => {
+      const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
       // Событие status_changed:* пишется триггером public.log_order_status_change.
     },
@@ -88,7 +93,7 @@ function OrderDetail() {
   });
 
   const saveInternalNotes = async () => {
-    const { error } = await supabase.from("orders").update({ internal_notes: internalNotes } as any).eq("id", id);
+    const { error } = await supabase.from("orders").update({ internal_notes: internalNotes }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Сохранено");
     qc.invalidateQueries({ queryKey: ["order", id] });
@@ -126,7 +131,7 @@ function OrderDetail() {
           <Button variant="outline" size="sm" onClick={() => loadPreview.mutate()} disabled={loadPreview.isPending}>
             <Mail className="h-4 w-4 mr-1" />{loadPreview.isPending ? "Загрузка…" : "Предпросмотр письма"}
           </Button>
-          <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
+          <select value={order.status} onChange={(e) => updateStatus.mutate(e.target.value as OrderStatus)} className="rounded-md border border-border bg-input px-3 py-2 text-sm">
             {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <AlertDialog>
@@ -183,7 +188,7 @@ function OrderDetail() {
         <h3 className="font-semibold mb-3">Позиции ({items.length})</h3>
         {items.length === 0 ? <p className="text-sm text-muted-foreground">Позиций нет</p> : (
           <div className="space-y-2">
-            {items.map((it: any) => (
+            {(items as OrderItemRow[]).map((it) => (
               <div key={it.id} className="flex items-center justify-between text-sm border-b border-border/30 pb-2">
                 <div><div className="font-medium">{it.title}</div><div className="text-xs text-muted-foreground">{ENTITY_LABEL[it.entity_type] ?? it.entity_type} · {it.qty} шт.</div></div>
                 <div className="font-medium">{fmtMoney(it.price)}</div>
@@ -214,7 +219,7 @@ function OrderDetail() {
         <h3 className="font-semibold mb-3 flex items-center gap-2"><Clock className="h-4 w-4" />Таймлайн</h3>
         {timeline.length === 0 ? <p className="text-sm text-muted-foreground">Событий пока нет</p> : (
           <ol className="space-y-2">
-            {timeline.map((t: any) => (
+            {(timeline as OrderTimelineRow[]).map((t) => (
               <li key={t.id} className="text-sm flex gap-3">
                 <span className="text-xs text-muted-foreground whitespace-nowrap w-32">{fmtDateTime(t.created_at)}</span>
                 <span className="font-medium">{t.event}</span>
