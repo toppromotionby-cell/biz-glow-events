@@ -44,7 +44,7 @@ function OrderSuccess() {
             <Send className="h-5 w-5 text-primary" />
             <div>
               <div className="text-xs text-muted-foreground">Telegram</div>
-              <div className="text-sm font-medium">{CONTACT.phoneDisplay}</div>
+              <div className="text-sm font-medium">{CONTACT.telegramLabel}</div>
             </div>
           </a>
           <a href={`mailto:${CONTACT.email}`} className="glass rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 border border-transparent transition sm:col-span-2">
