@@ -1,26 +1,28 @@
-# Что упало
+# Что меняем
 
-В `handleTest` (`src/routes/admin.mail-accounts.tsx`) `await test({ data: { accountId } })` вернул `undefined`, и обращение к `r.status_code` уронило обработчик: «undefined is not an object (evaluating 'r.status_code')».
+Сейчас в Telegram-ссылках в качестве подписи показывается номер `+375 44 709-91-22`. По всему сайту нужно показывать текст **«event-hub.by»**, а кликом — открывать существующую Telegram-ссылку (`CONTACT.telegramUrl` → `https://t.me/+375447099122`).
 
-Причина — серверная функция `testMailAccount` после правки таймаута/прогрева в некоторых ветках может вернуть `void` (или TanStack RPC отдаёт `undefined`, если воркер кинул в той части, что не покрывается локальным try/catch — например, при сбое логирования или валидации после try-блока). Сейчас `handleTest` верит, что `r` всегда объект.
+# Один источник правды
 
-# Что делаем
+`src/lib/contacts.ts` — добавить поле `telegramLabel: "event-hub.by"` к `CONTACT`. Сам `telegramUrl` не трогаем — переадресация в Telegram продолжит работать на тот же номер, что и сейчас.
 
-1. **`src/routes/admin.mail-accounts.tsx` → `handleTest`** (только защита и сообщения, без UI):
-   - Привести `r` к узкому типу и сделать его опциональным: `r ?? {}`.
-   - Достать поля через optional chaining: `r?.ok`, `r?.status_code`, `r?.message`, `r?.error`.
-   - Если `r` пустой/undefined — показать toast «Не удалось получить ответ от сервера» вместо краша.
-   - Сохранить уже добавленную ветку про `status_code === 504` («Воркер просыпается…»).
+# Где поменять подпись на `CONTACT.telegramLabel`
 
-2. **`src/lib/mail.functions.ts` → `testMailAccount`**: убедиться, что хендлер всегда `return { ok, status_code, message, duration_ms, error }` по любой ветке (включая случай, когда `accountId` отсутствует или логирование падает). Сейчас `return` есть, но обернём весь хендлер в общий try/finally, чтобы при любой непойманной ошибке вернуть `{ ok: false, status_code: 0, message: <текст>, duration_ms, error: <текст> }`, а не дать TanStack отдать `undefined`.
+Меняем только видимый текст возле Telegram-иконки/блока. Сам `href={CONTACT.telegramUrl}` остаётся.
 
-# Что НЕ трогаем
+1. **`src/routes/contacts.tsx`** (стр. 36) — карточка «Telegram», заменить `{CONTACT.phoneDisplay}` под подписью «Telegram» на `{CONTACT.telegramLabel}`.
+2. **`src/routes/order.success.$id.tsx`** (стр. 47) — то же самое в карточке «Telegram».
+3. **`src/components/SiteChrome.tsx`** (стр. 273 и 323) — в футере вместо `Telegram: {CONTACT.phoneDisplay}` показывать `Telegram: {CONTACT.telegramLabel}` (две одинаковые правки — desktop и mobile футеры).
+4. **`src/routes/index.tsx`** (стр. 336) — в массиве контактов: `{ label: "Telegram", value: CONTACT.telegramLabel, href: CONTACT.telegramUrl, external: true }`.
 
-- Воркер, схемы, БД, миграции, UI таблицы/диалогов — без изменений.
-- Логика прогрева/таймаута/ретрая `/test` остаётся как в прошлой правке.
+# Где НЕ меняем
+
+- `src/components/FloatingContacts.tsx` — там Telegram-кнопка без видимой подписи (только иконка), правок не требуется.
+- `src/lib/email-templates/client-invite.tsx` — уже показывает `@event-hub.by`, оставляем.
+- `CONTACT.phoneDisplay` в карточках «Телефон» — это телефонный канал, его не трогаем.
+- Серверные функции / админка / Telegram-вебхуки и поддержка — это техническая интеграция, к UI-ссылке отношения не имеет.
 
 # Проверка
 
-- Нажать «Проверить» при разогретом воркере → toast «Соединение OK · …» либо «Ошибка: <код> · <текст>», без падения.
-- Спровоцировать ошибку (несуществующий хост) → нормальный toast c сообщением, журнал проверок пополняется.
-- Симулировать таймаут (быстро дёрнуть на холодном) → toast «Воркер просыпается…», без краша.
+- `/contacts`, `/`, футер на любой странице, страница успеха заказа — под иконкой Telegram отображается «event-hub.by», клик ведёт на `https://t.me/+375447099122` и открывает чат с тем же номером, что и сейчас.
+- В письмах ничего не меняется.
