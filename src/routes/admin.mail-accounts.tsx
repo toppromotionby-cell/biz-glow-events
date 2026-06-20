@@ -158,17 +158,24 @@ function MailAccountsPage() {
   async function handleTest(id: string) {
     setTestingId(id);
     try {
-      const r = (await test({ data: { accountId: id } })) as {
-        ok: boolean;
-        status_code?: number | null;
-        message?: string;
-        error?: string;
-      };
-      const detail = `${r.status_code ?? "—"} · ${r.message ?? r.error ?? ""}`.trim();
-      if (r.ok) toast.success(`Соединение OK · ${detail}`);
-      else if (r.status_code === 504)
-        toast.error("Воркер просыпается — попробуйте ещё раз через 10–20 секунд");
-      else toast.error(`Ошибка: ${detail}`);
+      const raw = (await test({ data: { accountId: id } })) as
+        | {
+            ok?: boolean;
+            status_code?: number | null;
+            message?: string;
+            error?: string;
+          }
+        | undefined;
+      const r = raw ?? {};
+      if (!raw) {
+        toast.error("Не удалось получить ответ от сервера");
+      } else {
+        const detail = `${r.status_code ?? "—"} · ${r.message ?? r.error ?? ""}`.trim();
+        if (r.ok) toast.success(`Соединение OK · ${detail}`);
+        else if (r.status_code === 504)
+          toast.error("Воркер просыпается — попробуйте ещё раз через 10–20 секунд");
+        else toast.error(`Ошибка: ${detail}`);
+      }
     } catch (e) {
       toast.error("Ошибка: " + (e instanceof Error ? e.message : String(e)));
     } finally {
