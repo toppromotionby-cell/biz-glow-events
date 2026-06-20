@@ -1,7 +1,7 @@
 // Плавающий виджет связи: Онлайн-помощник (для авторизованных) + Telegram + Звонок.
 // Видим на всех страницах, уважает настройку секции global.floating_contacts.
 import { useState } from "react";
-import { MessageCircle, X, Headphones } from "lucide-react";
+import { MessageCircle, X, Headphones, Phone, Send } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
 import { useSectionEnabled } from "@/lib/site-sections";
 import { useAuth } from "@/hooks/use-auth";
@@ -12,8 +12,7 @@ export function FloatingContacts() {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  // Онлайн-помощник доступен только зарегистрированным пользователям.
-  if (!enabled || !isAuthenticated) return null;
+  if (!enabled) return null;
 
   return (
     <>
@@ -36,6 +35,24 @@ export function FloatingContacts() {
                 <span className="text-sm font-medium">Онлайн-помощник</span>
               </button>
             )}
+            <a
+              href={CONTACT.telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Написать в Telegram"
+              className="group inline-flex items-center gap-2 rounded-full bg-card/90 backdrop-blur border border-border text-foreground pl-3 pr-4 py-2 shadow-lg hover:scale-105 hover:border-primary/50 transition"
+            >
+              <Send className="h-5 w-5 text-primary" aria-hidden="true" />
+              <span className="text-sm font-medium">Telegram</span>
+            </a>
+            <a
+              href={`tel:${CONTACT.phoneTel}`}
+              aria-label={`Позвонить ${CONTACT.phoneDisplay}`}
+              className="group inline-flex items-center gap-2 rounded-full bg-card/90 backdrop-blur border border-border text-foreground pl-3 pr-4 py-2 shadow-lg hover:scale-105 hover:border-primary/50 transition"
+            >
+              <Phone className="h-5 w-5 text-primary" aria-hidden="true" />
+              <span className="text-sm font-medium">{CONTACT.phoneDisplay}</span>
+            </a>
           </div>
         )}
         {!chatOpen && (
