@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Loader2, Mail, Plus, Pencil, Trash2, BarChart3 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/AdminTable";
+import { fmtDateTime } from "@/lib/formatters";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   draft: { label: "Черновик", variant: "outline" },
@@ -100,7 +101,7 @@ function CampaignsListPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {new Date(c.created_at).toLocaleString("ru-BY")}
+                  {fmtDateTime(c.created_at)}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex gap-1">

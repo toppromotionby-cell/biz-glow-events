@@ -13,12 +13,14 @@ import { AdminEditorShell } from "@/components/admin/AdminEditorShell";
 import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
 
+import type { Database } from "@/integrations/supabase/types";
+import { fmtCurrency } from "@/lib/formatters";
+
 export const Route = createFileRoute("/admin/marketing")({
   component: MarketingPage,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Row = any;
+type Row = Database["public"]["Tables"]["campaigns"]["Row"];
 
 function MarketingPage() {
   const qc = useQueryClient();
@@ -78,7 +80,7 @@ function MarketingPage() {
                 >
                   <td className="p-3 font-medium">{c.name}</td>
                   <td className="p-3">{c.source ?? "—"}</td>
-                  <td className="p-3 text-right">{Number(c.budget ?? 0).toLocaleString("ru-BY")} BYN</td>
+                  <td className="p-3 text-right">{fmtCurrency(c.budget)}</td>
                   <td className="p-3 text-right">{c.goal_conversions ?? 0}</td>
                   <td className="p-3">
                     <StatusPill tone={c.active ? "success" : "muted"}>{c.active ? "активна" : "выключена"}</StatusPill>
