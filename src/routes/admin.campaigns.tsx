@@ -22,7 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare } from "lucide-react";
+import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare, Filter, Search } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { fmtDateTime } from "@/lib/formatters";
 
@@ -48,11 +48,22 @@ function parseEmails(raw: string): string[] {
   return Array.from(set);
 }
 
-interface PreviewItem { email: string; selected: boolean; }
+interface PreviewItem { email: string; selected: boolean; valid: boolean; }
 
-function buildPreviewItems(raw: string): PreviewItem[] {
-  const emails = parseEmails(raw);
-  return emails.map((email) => ({ email, selected: true }));
+type SortMode = "alpha" | "selected-first" | "valid-first";
+
+function parseAllItems(raw: string): PreviewItem[] {
+  const seen = new Set<string>();
+  const items: PreviewItem[] = [];
+  for (const piece of raw.split(/[\s,;\n]+/)) {
+    const v = piece.trim().toLowerCase();
+    if (!v) continue;
+    if (seen.has(v)) continue;
+    seen.add(v);
+    const valid = EMAIL_RE.test(v);
+    items.push({ email: v, selected: valid, valid });
+  }
+  return items;
 }
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -80,6 +91,9 @@ function InvitationsPage() {
   const [previewItems, setPreviewItems] = useState<PreviewItem[] | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewSource, setPreviewSource] = useState<{ type: "manual" | "csv"; fileName?: string } | null>(null);
+  const [filterTab, setFilterTab] = useState<"all" | "valid" | "invalid">("all");
+  const [sortMode, setSortMode] = useState<SortMode>("alpha");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const emails = useMemo(() => parseEmails(emailsRaw), [emailsRaw]);
   const canSend = emails.length >= 1 && emails.length <= MAX;
@@ -87,9 +101,12 @@ function InvitationsPage() {
 
   const openPreview = (type: "manual" | "csv", fileName?: string, raw?: string) => {
     const sourceRaw = raw ?? emailsRaw;
-    const items = buildPreviewItems(sourceRaw);
+    const items = parseAllItems(sourceRaw);
     setPreviewItems(items);
     setPreviewSource({ type, fileName });
+    setFilterTab("all");
+    setSortMode("alpha");
+    setSearchQuery("");
     setPreviewOpen(true);
   };
 
@@ -106,6 +123,10 @@ function InvitationsPage() {
 
   const removeUnselected = () => {
     setPreviewItems((prev) => prev?.filter((i) => i.selected) ?? null);
+  };
+
+  const removeItem = (email: string) => {
+    setPreviewItems((prev) => prev?.filter((i) => i.email !== email) ?? null);
   };
 
   const { data: log = [], isLoading: logLoading } = useQuery({
@@ -306,21 +327,83 @@ function InvitationsPage() {
             <DialogTitle>Проверка адресов</DialogTitle>
             <DialogDescription>
               {previewSource?.type === "csv"
-                ? `Адреса из файла «${previewSource.fileName}». Снимите галочки с лишних строк и нажмите «Применить».`
-                : "Снимите галочки с лишних строк и нажмите «Применить»."}
+                ? `Адреса из файла «${previewSource.fileName}». Отфильтруйте, отсортируйте и удалите лишние строки.`
+                : "Отфильтруйте, отсортируйте и удалите лишние строки."}
             </DialogDescription>
           </DialogHeader>
 
           {previewItems && previewItems.length > 0 && (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <div className="text-muted-foreground">
-                  Всего: <b>{previewItems.length}</b> · выбрано: <b>{previewItems.filter((i) => i.selected).length}</b>
-                  {previewItems.length > MAX && (
-                    <span className="text-destructive ml-2">(лишние не будут отправлены)</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span>Всего: <b>{previewItems.length}</b></span>
+                <span>Валидных: <b>{previewItems.filter((i) => i.valid).length}</b></span>
+                <span>Невалидных: <b>{previewItems.filter((i) => !i.valid).length}</b></span>
+                <span>Выбрано: <b>{previewItems.filter((i) => i.selected).length}</b></span>
+                {previewItems.length > MAX && (
+                  <span className="text-destructive">(лишние не будут отправлены)</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск по адресу…"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      ×
+                    </button>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant={filterTab === "all" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setFilterTab("all")}
+                    >
+                      <Filter className="h-3.5 w-3.5 mr-1" /> Все
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={filterTab === "valid" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setFilterTab("valid")}
+                    >
+                      Валидные
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={filterTab === "invalid" ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setFilterTab("invalid")}
+                    >
+                      Невалидные
+                    </Button>
+                  </div>
+
+                  <select
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value as SortMode)}
+                    className="text-xs border rounded-md px-2 py-1 bg-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="alpha">А–Я</option>
+                    <option value="selected-first">Выбранные сверху</option>
+                    <option value="valid-first">Валидные сверху</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-1 text-sm">
                   <Button type="button" variant="ghost" size="sm" onClick={() => toggleAll(true)}>
                     <CheckSquare className="h-4 w-4 mr-1" /> Все
                   </Button>
@@ -333,28 +416,66 @@ function InvitationsPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-border/50 divide-y divide-border/30 max-h-[360px] overflow-y-auto">
-                {previewItems.map((item, idx) => (
-                  <label
-                    key={`${item.email}-${idx}`}
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={item.selected}
-                      onCheckedChange={(checked) => {
-                        setPreviewItems((prev) => {
-                          if (!prev) return null;
-                          const next = [...prev];
-                          next[idx] = { ...next[idx], selected: checked === true };
-                          return next;
-                        });
-                      }}
-                    />
-                    <span className={`text-sm ${item.selected ? "" : "text-muted-foreground line-through"}`}>
-                      {item.email}
-                    </span>
-                  </label>
-                ))}
+              <div className="rounded-lg border border-border/50 divide-y divide-border/30 max-h-[320px] overflow-y-auto">
+                {(() => {
+                  let result = [...previewItems];
+                  if (filterTab === "valid") result = result.filter((i) => i.valid);
+                  if (filterTab === "invalid") result = result.filter((i) => !i.valid);
+                  if (searchQuery.trim()) {
+                    const q = searchQuery.toLowerCase();
+                    result = result.filter((i) => i.email.includes(q));
+                  }
+                  if (sortMode === "alpha") {
+                    result.sort((a, b) => a.email.localeCompare(b.email));
+                  } else if (sortMode === "selected-first") {
+                    result.sort((a, b) => Number(b.selected) - Number(a.selected) || a.email.localeCompare(b.email));
+                  } else if (sortMode === "valid-first") {
+                    result.sort((a, b) => Number(b.valid) - Number(a.valid) || a.email.localeCompare(b.email));
+                  }
+                  if (result.length === 0) {
+                    return (
+                      <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                        Ничего не найдено
+                      </div>
+                    );
+                  }
+                  return result.map((item) => (
+                    <div
+                      key={item.email}
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 group"
+                    >
+                      <Checkbox
+                        checked={item.selected}
+                        onCheckedChange={(checked) => {
+                          setPreviewItems((prev) =>
+                            prev?.map((i) => (i.email === item.email ? { ...i, selected: checked === true } : i)) ?? null
+                          );
+                        }}
+                      />
+                      <span
+                        className={`text-sm flex-1 ${item.selected ? "" : "text-muted-foreground line-through"} ${!item.valid ? "text-destructive" : ""}`}
+                        title={!item.valid ? "Невалидный формат email" : undefined}
+                      >
+                        {item.email}
+                      </span>
+                      {!item.valid && (
+                        <Badge variant="outline" className="text-[10px] h-5 px-1 border-destructive/40 text-destructive">
+                          невалиден
+                        </Badge>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                        onClick={() => removeItem(item.email)}
+                        title="Удалить"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           )}
