@@ -878,14 +878,13 @@ const DOC_SHORT_LABEL: Record<DocKind, string> = {
 };
 export function buildAttachmentFilename(
   kind: DocKind,
-  order: { id: string; client_name?: string | null; client_company?: string | null },
+  order: { id: string; order_number?: string | null; client_name?: string | null; client_company?: string | null },
 ): string {
-  const orderShort = String(order.id).slice(0, 8).toUpperCase();
+  const numFromDb = (order.order_number ?? "").trim();
+  const orderShort = numFromDb ? numFromDb.replaceAll("/", ".") : String(order.id).slice(0, 8).toUpperCase();
   const owner = (order.client_company || order.client_name || "").trim();
-  // Берём фамилию (первое слово), для компаний — целиком (но коротко).
   let suffix = owner;
   if (!order.client_company && owner) suffix = owner.split(/\s+/)[0];
-  // Чистим символы, недопустимые в именах файлов на разных OS / в почтовиках.
   suffix = suffix.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").slice(0, 48).trim();
   const base = `${DOC_SHORT_LABEL[kind]} №${orderShort}${suffix ? ` ${suffix}` : ""}`;
   return `${base}.pdf`;
