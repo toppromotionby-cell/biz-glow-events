@@ -26,7 +26,7 @@ import {
 
 type SortBy = "created_at" | "total" | "event_date";
 
-export const Route = createFileRoute("/admin/orders")({
+export const Route = createFileRoute("/admin/orders/")({
   component: AdminOrders,
 });
 
