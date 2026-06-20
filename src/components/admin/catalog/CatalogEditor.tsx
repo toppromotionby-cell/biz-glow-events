@@ -1,6 +1,7 @@
 // Редактор карточки каталога: общий для zones / tech_equipment / services / production_items.
-// Авто-сохранение черновика в localStorage, перенос карточки между типами, save через supabase.
-import { useEffect, useState } from "react";
+// Автосохранение (debounce 1.2s) + резервный черновик в localStorage.
+// Действия (открыть на сайте / дублировать / переместить / удалить) — в kebab-меню.
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent,
+  DropdownMenuSubTrigger, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowRightLeft } from "lucide-react";
+import { ChevronDown, Copy, ExternalLink, MoreHorizontal, Trash2 } from "lucide-react";
 import { AdminEditorShell } from "@/components/admin/AdminEditorShell";
 import { Field } from "@/components/admin/Field";
 import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
@@ -19,6 +32,8 @@ import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
 import { PriceTableEditor, minPriceFromTiers, getTiers, type PricingValue } from "@/components/PriceTable";
 import { fmtCurrency } from "@/lib/formatters";
+import { slugify } from "@/lib/utils";
+import type { SaveState } from "@/components/admin/SaveStatus";
 import {
   CATALOG_TABLES, CATALOG_LABELS,
   type CatalogTable, type CatalogInsert, type CatalogUpdate,
@@ -28,16 +43,25 @@ import { asArray, type ExtraItem, type FeatureItem, type Row } from "./shared";
 
 type FormState = Partial<Row>;
 
+const PUBLIC_PATH: Record<CatalogTable, string> = {
+  zones: "/zones",
+  tech_equipment: "/equipment",
+  services: "/services",
+  production_items: "/production",
+};
+
 export function CatalogEditor({
   table,
   item,
   onSaved,
   onDelete,
+  onDuplicate,
 }: {
   table: CatalogTable;
   item: Row;
   onSaved: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
 }) {
   const draftKey = `catalog-draft:${table}:${item.id}`;
   const [form, setForm] = useState<FormState>(() => {
@@ -53,49 +77,93 @@ export function CatalogEditor({
     } catch { /* ignore */ }
     return { ...item };
   });
-  const [saving, setSaving] = useState(false);
-  const [hasDraft, setHasDraft] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<CatalogTable | "">("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [moving, setMoving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const dirtyRef = useRef(false);
+  const skipNextAutosaveRef = useRef(true);
 
-  // Автосохранение черновика (debounce 500ms).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(draftKey, JSON.stringify({ savedAt: Date.now(), data: form }));
-        setHasDraft(true);
-      } catch { /* quota */ }
-    }, 500);
-    return () => clearTimeout(t);
-  }, [form, draftKey]);
-
-  const buildPatch = (): CatalogUpdate => ({
-    title: form.title, slug: form.slug, category: form.category,
-    short_description: form.short_description, description: form.description,
-    requirements: form.requirements, seo_title: form.seo_title, seo_description: form.seo_description,
-    published: form.published, photo_urls: form.photo_urls ?? [], video_urls: form.video_urls ?? [],
-    pricing: form.pricing ?? {}, features: form.features ?? [], extras: form.extras ?? [], faq: form.faq ?? [],
+  const buildPatch = (state: FormState): CatalogUpdate => ({
+    title: state.title, slug: state.slug, category: state.category,
+    short_description: state.short_description, description: state.description,
+    requirements: state.requirements, seo_title: state.seo_title, seo_description: state.seo_description,
+    published: state.published, photo_urls: state.photo_urls ?? [], video_urls: state.video_urls ?? [],
+    pricing: state.pricing ?? {}, features: state.features ?? [], extras: state.extras ?? [], faq: state.faq ?? [],
   });
 
-  const save = async () => {
-    setSaving(true);
-    const { error } = await supabase.from(table).update(buildPatch()).eq("id", item.id);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
-    setHasDraft(false);
-    toast.success("Сохранено");
-    onSaved();
+  // Автосохранение: debounce 1.2с после изменения формы.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return;
+    }
+    dirtyRef.current = true;
+    setSaveState("dirty");
+    // Локальный черновик — мгновенно (страховка).
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({ savedAt: Date.now(), data: form }));
+    } catch { /* quota */ }
+
+    const t = setTimeout(async () => {
+      setSaveState("saving");
+      const { error } = await supabase.from(table).update(buildPatch(form)).eq("id", item.id);
+      if (error) {
+        setSaveState("error");
+        setErrorMessage(error.message);
+        return;
+      }
+      try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+      dirtyRef.current = false;
+      setErrorMessage(null);
+      setDraftSavedAt(new Date());
+      setSaveState("saved");
+      onSaved();
+    }, 1200);
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
+  // Сброс «Сохранено» через 2с до idle.
+  useEffect(() => {
+    if (saveState !== "saved") return;
+    const t = setTimeout(() => setSaveState("idle"), 2000);
+    return () => clearTimeout(t);
+  }, [saveState]);
+
+  // Подсказать перед закрытием при несохранённых изменениях.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirtyRef.current) { e.preventDefault(); e.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  const onTitleChange = (value: string) => {
+    setForm((prev) => {
+      const next: FormState = { ...prev, title: value };
+      // Авто-slug, только если slug по умолчанию или пуст.
+      const currentSlug = prev.slug ?? "";
+      const isAutoSlug = !currentSlug || currentSlug.startsWith("new-");
+      if (isAutoSlug) {
+        const generated = slugify(value).slice(0, 80);
+        if (generated) next.slug = generated;
+      }
+      return next;
+    });
   };
 
   const moveTo = async (target: CatalogTable) => {
     if (target === table) return;
     setMoving(true);
     try {
-      const patch = buildPatch();
+      const patch = buildPatch(form);
       const payload: CatalogInsert = {
         ...patch,
         title: patch.title ?? "Без названия",
@@ -117,7 +185,6 @@ export function CatalogEditor({
       toast.error(e instanceof Error ? e.message : "Не удалось переместить");
     } finally {
       setMoving(false);
-      setMoveTarget("");
     }
   };
 
@@ -125,38 +192,73 @@ export function CatalogEditor({
   const featuresValue = asArray<FeatureItem>(form.features);
   const extrasValue = asArray<ExtraItem>(form.extras);
   const minPrice = minPriceFromTiers(getTiers(form.pricing));
+  const publicHref = useMemo(() => {
+    if (!form.published || !form.slug) return null;
+    return `${PUBLIC_PATH[table]}/${form.slug}`;
+  }, [form.published, form.slug, table]);
 
   return (
     <AdminEditorShell
+      saveState={saveState}
+      draftSavedAt={draftSavedAt}
+      errorMessage={errorMessage}
       switches={
         <>
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={!!form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
             {form.published ? "Опубликовано" : "Черновик"}
           </label>
-          {hasDraft && (
-            <span className="text-xs text-amber-300/90 inline-flex items-center gap-1" title="Есть несохранённые изменения, восстановятся после перезагрузки">
-              <AlertTriangle className="h-3 w-3" />черновик не сохранён</span>
-          )}
-          <div className="flex items-center gap-1">
-            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
-            <Select value={moveTarget} onValueChange={(v) => { const next = v as CatalogTable; setMoveTarget(next); moveTo(next); }} disabled={moving}>
-              <SelectTrigger className="h-9 w-[200px]"><SelectValue placeholder={moving ? "Перемещение..." : "Переместить в..."} /></SelectTrigger>
-              <SelectContent>
-                {otherTables.map((t) => <SelectItem key={t} value={t}>{CATALOG_LABELS[t]}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 w-9 p-0" aria-label="Действия" disabled={moving}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Действия</DropdownMenuLabel>
+              <DropdownMenuItem
+                disabled={!publicHref}
+                onClick={() => { if (publicHref) window.open(publicHref, "_blank", "noopener"); }}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Открыть на сайте
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDuplicate}>
+                <Copy className="h-4 w-4 mr-2" />Дублировать
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <ChevronDown className="h-4 w-4 mr-2 -rotate-90" />Переместить в…
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {otherTables.map((t) => (
+                    <DropdownMenuItem key={t} onClick={() => moveTo(t)}>
+                      {CATALOG_LABELS[t]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setConfirmDelete(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />Удалить
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </>
       }
-      onDelete={onDelete}
-      onSave={save}
-      saving={saving}
     >
-      <div className="grid sm:grid-cols-3 gap-3">
-        <Field label="Заголовок"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
-        <Field label="Slug"><Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></Field>
-        <Field label="Категория"><CategoryCombobox entityType={table} value={form.category ?? null} onChange={(v) => setForm({ ...form, category: v })} /></Field>
+      {/* === Основное === */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Заголовок">
+          <Input value={form.title ?? ""} onChange={(e) => onTitleChange(e.target.value)} />
+        </Field>
+        <Field label="Категория">
+          <CategoryCombobox entityType={table} value={form.category ?? null} onChange={(v) => setForm({ ...form, category: v })} />
+        </Field>
       </div>
 
       <PriceTableEditor
@@ -167,23 +269,22 @@ export function CatalogEditor({
         Цена «от» автоматически: {minPrice !== null ? fmtCurrency(minPrice) : "по запросу"}
       </div>
 
-      <Field label="Краткое описание"><Textarea rows={2} className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30" value={form.short_description ?? ""} onChange={(e) => setForm({ ...form, short_description: e.target.value })} /></Field>
-      <Field label="Описание"><Textarea rows={6} className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
-      <Field label="Требования"><Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} /></Field>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className="glass rounded-xl p-4">
-          <FeaturesEditor value={featuresValue} onChange={(next) => setForm({ ...form, features: next as Json })} />
-        </div>
-        <div className="glass rounded-xl p-4">
-          <ExtrasEditor value={extrasValue} onChange={(next) => setForm({ ...form, extras: next as Json })} />
-        </div>
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="SEO title"><Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} /></Field>
-        <Field label="SEO description"><Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} /></Field>
-      </div>
+      <Field label="Краткое описание">
+        <Textarea
+          rows={2}
+          className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30"
+          value={form.short_description ?? ""}
+          onChange={(e) => setForm({ ...form, short_description: e.target.value })}
+        />
+      </Field>
+      <Field label="Описание">
+        <Textarea
+          rows={6}
+          className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30"
+          value={form.description ?? ""}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+      </Field>
 
       <div>
         <Label className="mb-2 block">Медиа</Label>
@@ -195,6 +296,71 @@ export function CatalogEditor({
           onChange={({ photoUrls, videoUrls }) => setForm({ ...form, photo_urls: photoUrls, video_urls: videoUrls })}
         />
       </div>
+
+      {/* === Доп. поля === */}
+      <CollapsibleSection title="Доп. поля">
+        <Field label="Требования">
+          <Textarea rows={3} value={form.requirements ?? ""} onChange={(e) => setForm({ ...form, requirements: e.target.value })} />
+        </Field>
+        <div className="grid lg:grid-cols-2 gap-4">
+          <div className="glass rounded-xl p-4">
+            <FeaturesEditor value={featuresValue} onChange={(next) => setForm({ ...form, features: next as Json })} />
+          </div>
+          <div className="glass rounded-xl p-4">
+            <ExtrasEditor value={extrasValue} onChange={(next) => setForm({ ...form, extras: next as Json })} />
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      {/* === SEO и URL === */}
+      <CollapsibleSection title="SEO и URL">
+        <Field label="Slug (URL)">
+          <Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+        </Field>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <Field label="SEO title">
+            <Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} />
+          </Field>
+          <Field label="SEO description">
+            <Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} />
+          </Field>
+        </div>
+      </CollapsibleSection>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить запись?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие необратимо. Запись будет удалена без возможности восстановления.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDelete()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminEditorShell>
+  );
+}
+
+function CollapsibleSection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="border border-border/50 rounded-xl">
+      <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/30 rounded-xl">
+        <span>{title}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="px-4 pb-4 pt-1 space-y-4">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
