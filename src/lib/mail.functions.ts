@@ -127,19 +127,21 @@ export const listMailMessages = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<Json> => {
     await assertStaff(context.supabase, context.userId);
     const cfg = await loadAccountCfg(context.supabase, data.accountId);
-    return callMailWorker(
-      "/messages",
-      {
-        account: cfg,
-        folder: data.folder,
-        since_uid: data.since_uid ?? null,
-        limit: data.limit ?? 50,
-        fetch_bodies: data.fetch_bodies ?? false,
-      },
-      { timeoutMs: 120_000 },
+    return toJson(
+      await callMailWorker(
+        "/messages",
+        {
+          account: cfg,
+          folder: data.folder,
+          since_uid: data.since_uid ?? null,
+          limit: data.limit ?? 50,
+          fetch_bodies: data.fetch_bodies ?? false,
+        },
+        { timeoutMs: 120_000 },
+      ),
     );
   });
 
