@@ -81,7 +81,7 @@ export const updateMailAccount = createServerFn({ method: "POST" })
     if (p.smtp_secure !== undefined) update.smtp_secure = p.smtp_secure;
     const { error } = await context.supabase
       .from("mail_accounts")
-      .update(update)
+      .update(update as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
