@@ -98,7 +98,9 @@ export function ScriptInjector() {
     };
     tryLoad();
     const onStorage = (e: StorageEvent) => { if (e.key === KEY) tryLoad(); };
+    const onConsent = () => tryLoad();
     window.addEventListener("storage", onStorage);
+    window.addEventListener("eh:consent-change", onConsent);
     const interval = window.setInterval(tryLoad, 2000);
     window.setTimeout(() => window.clearInterval(interval), 10000);
 
@@ -109,8 +111,10 @@ export function ScriptInjector() {
 
     return () => {
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("eh:consent-change", onConsent);
       unsub();
     };
+
   }, [router]);
   return null;
 }
