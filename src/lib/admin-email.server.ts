@@ -564,7 +564,19 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
   const paid = Number(p.paid ?? 0);
   const remaining = Math.max(0, Number(p.total ?? 0) - paid);
   const orderUrl = `https://${FROM_DOMAIN}/profile`;
-  const hasAttachments = Boolean(p.attachments && p.attachments.length > 0);
+  const documents = p.documents ?? [];
+  const hasDocuments = documents.length > 0;
+  const documentsHtml = hasDocuments
+    ? documents.map((d) => `
+        <a href="${escapeHtml(d.url)}" data-doc-link="1" target="_blank" rel="noopener noreferrer"
+           style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:6px 0;background:${BRAND.bg};border:1px solid ${BRAND.border};border-radius:10px;text-decoration:none;color:${BRAND.text};font-size:14px">
+          <span style="display:flex;align-items:center;gap:10px;min-width:0">
+            <span style="display:inline-block;padding:4px 8px;border-radius:6px;background:${BRAND.accentSoft};color:${BRAND.accent};font-size:11px;font-weight:600;letter-spacing:0.04em">PDF</span>
+            <span style="font-weight:600;color:${BRAND.text};overflow:hidden;text-overflow:ellipsis">${escapeHtml(d.label)}</span>
+          </span>
+          <span style="color:${BRAND.accent};font-size:13px;font-weight:600;white-space:nowrap">Скачать ↓</span>
+        </a>`).join("")
+    : "";
 
   const body = `
     ${sectionLabel("Заказ подтверждён")}
