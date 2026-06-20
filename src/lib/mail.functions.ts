@@ -13,6 +13,9 @@ import {
 
 type SbClient = SupabaseClient<any, any, any>;
 
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
+type WorkerResult = { ok: boolean; [k: string]: Json | undefined };
+
 const STAFF_ROLES = ["admin", "manager", "marketer", "content_editor"] as const;
 
 async function assertStaff(supabase: SbClient, userId: string) {
