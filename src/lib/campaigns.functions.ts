@@ -290,7 +290,7 @@ async function resolveRecipients(cfg: z.infer<typeof RecipientsConfigSchema>): P
       if (error) throw new Error(error.message);
       const users = data?.users ?? [];
       for (const u of users) {
-        const confirmed = (u as any).email_confirmed_at ?? (u as any).confirmed_at;
+        const confirmed = u.email_confirmed_at ?? u.confirmed_at;
         if (confirmed && u.email) set.add(u.email.toLowerCase());
       }
       if (users.length < 1000) break;

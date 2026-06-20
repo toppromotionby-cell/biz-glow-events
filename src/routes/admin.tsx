@@ -44,7 +44,7 @@ function AdminLayout() {
   useEffect(() => {
     if (authLoading || loading) return;
     if (!user) {
-      navigate({ to: "/login", search: { redirect: "/admin" } as any });
+      navigate({ to: "/login", search: { redirect: "/admin" } });
       return;
     }
     if (!isStaff) {

@@ -557,9 +557,9 @@ async function sendOrderConfirmationEmailAndLog(
         title: String(i.title),
         qty: Number(i.qty ?? 1),
         price: Number(i.price ?? 0),
-        entityType: (i as any).entity_type ?? null,
-        startDate: (i as any).start_date ?? null,
-        endDate: (i as any).end_date ?? null,
+        entityType: i.entity_type ?? null,
+        startDate: i.start_date ?? null,
+        endDate: i.end_date ?? null,
       })),
     });
   } catch (e) {
@@ -683,9 +683,9 @@ export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
         title: String(i.title),
         qty: Number(i.qty ?? 1),
         price: Number(i.price ?? 0),
-        entityType: (i as any).entity_type ?? null,
-        startDate: (i as any).start_date ?? null,
-        endDate: (i as any).end_date ?? null,
+        entityType: i.entity_type ?? null,
+        startDate: i.start_date ?? null,
+        endDate: i.end_date ?? null,
       })),
     });
 

@@ -54,7 +54,7 @@ function LoginPage() {
         .select("role")
         .eq("user_id", signIn.user.id);
       const staffRoles = ["admin", "manager", "marketer", "content_editor"];
-      if ((roles ?? []).some((r: any) => staffRoles.includes(r.role))) {
+      if ((roles ?? []).some((r) => staffRoles.includes(r.role))) {
         target = "/admin";
       }
     }

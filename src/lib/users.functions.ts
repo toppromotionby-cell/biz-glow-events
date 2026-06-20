@@ -45,7 +45,7 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
 
     const confirmedMap = new Map<string, string | null>();
     for (const u of authRes.data?.users ?? []) {
-      confirmedMap.set(u.id, (u as any).email_confirmed_at ?? (u as any).confirmed_at ?? null);
+      confirmedMap.set(u.id, u.email_confirmed_at ?? u.confirmed_at ?? null);
     }
 
     return (profiles ?? []).map((p) => ({

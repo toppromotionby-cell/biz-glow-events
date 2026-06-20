@@ -24,7 +24,7 @@ export function useRoles() {
         console.error("[useRoles] fetch error", error);
         throw error;
       }
-      return (data ?? []).map((r: any) => r.role as AppRole);
+      return (data ?? []).map((r) => r.role as AppRole);
     },
   });
 
