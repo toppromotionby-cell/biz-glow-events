@@ -8,6 +8,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail, buildClientOrderConfirmedEmail } from "@/lib/admin-email.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const EntityType = z.enum(["zones", "tech_equipment", "services", "production_items"]);
 
@@ -585,11 +587,7 @@ async function sendOrderConfirmationEmailAndLog(
   return res;
 }
 
-type AuthedSupabase = Awaited<ReturnType<typeof requireSupabaseAuth>> extends never ? never : Parameters<Parameters<typeof createServerFn>[0] extends never ? never : never>;
-async function assertAdminOrManager(
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: boolean | null }> },
-  userId: string,
-) {
+async function assertAdminOrManager(supabase: SupabaseClient<Database>, userId: string) {
   const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (isAdmin) return;
   const { data: isManager } = await supabase.rpc("has_role", { _user_id: userId, _role: "manager" });

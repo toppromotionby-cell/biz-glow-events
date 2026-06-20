@@ -20,7 +20,7 @@ async function assertAdmin(userId: string): Promise<void> {
 
 const RecipientsConfigSchema = z.object({
   all_confirmed: z.boolean().default(false),
-  roles: z.array(z.string()).default([]),
+  roles: z.array(z.enum(["admin", "manager", "marketer", "content_editor"])).default([]),
   manual_emails: z.array(z.string().email()).default([]),
 });
 
