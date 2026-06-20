@@ -327,6 +327,75 @@ function InvitationsPage() {
             <div className="text-xs text-muted-foreground text-right">{personalMessage.length}/500</div>
           </div>
 
+          {/* Настройки скорости рассылки (rate limit) */}
+          <div className="rounded-lg border border-border/40 bg-muted/20 p-3 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Gauge className="h-4 w-4 text-primary" />
+              Скорость рассылки
+              <span className="text-xs text-muted-foreground font-normal ml-auto">
+                {batchSize} адр./запрос · пауза {pauseSec}с
+              </span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs flex justify-between">
+                  <span>Адресов за запрос</span>
+                  <span className="text-muted-foreground">{batchSize}</span>
+                </Label>
+                <Slider
+                  min={1} max={MAX} step={1}
+                  value={[batchSize]}
+                  onValueChange={(v) => setBatchSize(v[0] ?? 1)}
+                  disabled={progress?.running}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs flex justify-between">
+                  <span>Пауза между запросами</span>
+                  <span className="text-muted-foreground">{pauseSec} с</span>
+                </Label>
+                <Slider
+                  min={0} max={30} step={1}
+                  value={[pauseSec]}
+                  onValueChange={(v) => setPauseSec(v[0] ?? 0)}
+                  disabled={progress?.running}
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Используйте небольшие батчи и паузы, чтобы снизить нагрузку и риск попадания в спам-фильтры.
+            </p>
+          </div>
+
+          {/* Индикатор прогресса */}
+          {progress && (
+            <div className="rounded-lg border border-border/40 bg-background p-3 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">
+                  {progress.running
+                    ? (progress.paused ? "Пауза между батчами…" : `Отправка батча ${progress.batchIdx}/${progress.batchCount}`)
+                    : "Готово"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {progress.sent}/{progress.total}
+                </span>
+              </div>
+              <Progress value={progress.total ? Math.round((progress.sent / progress.total) * 100) : 0} />
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                  <span>В очереди: <b className="text-foreground">{progress.queued}</b></span>
+                  {progress.suppressed > 0 && <span>Отписаны: <b className="text-foreground">{progress.suppressed}</b></span>}
+                  {progress.failed > 0 && <span className="text-destructive">Ошибки: <b>{progress.failed}</b></span>}
+                </div>
+                {progress.running && (
+                  <Button type="button" variant="outline" size="sm" onClick={cancelSend}>
+                    <X className="h-3.5 w-3.5 mr-1" /> Остановить
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2 pt-2">
             <Button variant="outline" onClick={() => preview.mutate()} disabled={preview.isPending}>
               {preview.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
@@ -335,7 +404,7 @@ function InvitationsPage() {
             <Button
               variant="outline"
               onClick={() => sendTest.mutate()}
-              disabled={sendTest.isPending || !user?.email}
+              disabled={sendTest.isPending || !user?.email || progress?.running}
               title={user?.email ? `Отправить тест на ${user.email}` : "Сначала войдите"}
             >
               {sendTest.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
@@ -343,8 +412,8 @@ function InvitationsPage() {
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="btn-primary-gradient" disabled={!canSend || send.isPending}>
-                  {send.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                <Button className="btn-primary-gradient" disabled={!canSend || !!progress?.running}>
+                  {progress?.running ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                   Отправить приглашения
                 </Button>
               </AlertDialogTrigger>
@@ -352,12 +421,13 @@ function InvitationsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Отправить приглашения?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Письмо уйдёт на {emails.length} адрес(ов). Отменить после запуска нельзя.
+                    Письмо уйдёт на {emails.length} адрес(ов) батчами по {Math.min(batchSize, emails.length)}
+                    {pauseSec > 0 ? ` с паузой ${pauseSec} с` : ""}. Рассылку можно остановить во время выполнения.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Отмена</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => send.mutate()}>Отправить</AlertDialogAction>
+                  <AlertDialogAction onClick={() => { void runBatchedSend(); }}>Отправить</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
