@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Instagram } from "lucide-react";
 import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
+import { useSiteSettings } from "@/hooks/use-site-settings";
+import { TikTokIcon } from "@/components/icons/TikTokIcon";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({
@@ -16,6 +18,7 @@ export const Route = createFileRoute("/contacts")({
 });
 
 function ContactsPage() {
+  const { instagram_url, tiktok_url } = useSiteSettings();
   return (
     <div className="container mx-auto px-4 py-16 max-w-3xl">
       <h1 className="text-4xl font-display font-bold gradient-text">Контакты</h1>
@@ -41,6 +44,32 @@ function ContactsPage() {
           <div className="mt-3 text-sm text-muted-foreground">Адрес</div>
           <div className="font-medium">{CONTACT.address}</div>
         </div>
+        {instagram_url && (
+          <a
+            href={instagram_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass rounded-xl p-6 hover:glow-primary transition"
+            aria-label="Мы в Instagram"
+          >
+            <Instagram className="h-5 w-5 text-primary" />
+            <div className="mt-3 text-sm text-muted-foreground">Instagram</div>
+            <div className="font-medium truncate">{instagram_url.replace(/^https?:\/\//, "")}</div>
+          </a>
+        )}
+        {tiktok_url && (
+          <a
+            href={tiktok_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass rounded-xl p-6 hover:glow-primary transition"
+            aria-label="Мы в TikTok"
+          >
+            <TikTokIcon size={20} className="text-primary" />
+            <div className="mt-3 text-sm text-muted-foreground">TikTok</div>
+            <div className="font-medium truncate">{tiktok_url.replace(/^https?:\/\//, "")}</div>
+          </a>
+        )}
       </div>
       <div className="mt-12">
         <h2 className="text-2xl font-display font-semibold mb-4">Оставьте заявку</h2>

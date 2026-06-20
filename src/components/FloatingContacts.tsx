@@ -1,15 +1,17 @@
-// Плавающий виджет связи: Онлайн-помощник (для авторизованных) + Telegram + Звонок.
+// Плавающий виджет связи: Онлайн-помощник (для авторизованных) + Telegram + Звонок + Instagram (если задан).
 // Видим на всех страницах, уважает настройку секции global.floating_contacts.
 import { useState } from "react";
-import { MessageCircle, X, Headphones, Phone, Send } from "lucide-react";
+import { MessageCircle, X, Headphones, Phone, Send, Instagram } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
 import { useSectionEnabled } from "@/lib/site-sections";
 import { useAuth } from "@/hooks/use-auth";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 import { SupportChat } from "@/components/SupportChat";
 
 export function FloatingContacts() {
   const enabled = useSectionEnabled("global.floating_contacts");
   const { isAuthenticated } = useAuth();
+  const { instagram_url } = useSiteSettings();
   const [open, setOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   if (!enabled) return null;
@@ -53,6 +55,18 @@ export function FloatingContacts() {
               <Phone className="h-5 w-5 text-primary" aria-hidden="true" />
               <span className="text-sm font-medium">{CONTACT.phoneDisplay}</span>
             </a>
+            {instagram_url && (
+              <a
+                href={instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Мы в Instagram"
+                className="group inline-flex items-center gap-2 rounded-full bg-card/90 backdrop-blur border border-border text-foreground pl-3 pr-4 py-2 shadow-lg hover:scale-105 hover:border-primary/50 transition"
+              >
+                <Instagram className="h-5 w-5 text-primary" aria-hidden="true" />
+                <span className="text-sm font-medium">Instagram</span>
+              </a>
+            )}
           </div>
         )}
         {!chatOpen && (

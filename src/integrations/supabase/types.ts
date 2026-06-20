@@ -966,6 +966,30 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          id: boolean
+          instagram_url: string | null
+          tiktok_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          instagram_url?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          instagram_url?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           content: string

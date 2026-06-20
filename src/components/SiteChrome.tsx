@@ -11,6 +11,7 @@ import { Toggleable } from "@/lib/site-sections";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CONTACT } from "@/lib/contacts";
+import { SocialIcons } from "@/components/SocialIcons";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -271,6 +272,7 @@ export function SiteFooter() {
                 <Toggleable sectionKey="footer.contacts.telegram" as="li"><a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram: {CONTACT.phoneDisplay}</a></Toggleable>
                 <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
               </ul>
+              <SocialIcons variant="footer" className="mt-4" />
             </Toggleable>
           </div>
 
@@ -320,6 +322,7 @@ export function SiteFooter() {
                       <Toggleable sectionKey="footer.contacts.telegram" as="li"><a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram: {CONTACT.phoneDisplay}</a></Toggleable>
                       <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
                     </ul>
+                    <SocialIcons variant="footer" className="pb-2" />
                   </AccordionContent>
                 </AccordionItem>
               </Toggleable>
