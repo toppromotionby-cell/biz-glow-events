@@ -102,7 +102,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
     catch { toast.error("Не удалось скопировать"); }
   };
 
-  const openDoc = (kind: "quote" | "invoice" | "contract") => {
+  const openDoc = (kind: "quote" | "invoice" | "contract" | "act") => {
     if (!id) return;
     openAuthedDocument(`/admin/orders/${id}/${kind}`).catch((e) => toast.error((e as Error).message));
   };
@@ -136,6 +136,9 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
               </Button>
               <Button variant="outline" size="sm" onClick={() => openDoc("contract")}>
                 <FileSignature className="h-4 w-4 mr-1.5" />Договор
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => openDoc("act")}>
+                <FileSignature className="h-4 w-4 mr-1.5" />Акт
               </Button>
               <Button variant="outline" size="sm"
                 onClick={() => resendEmail.mutate(order.id)}
