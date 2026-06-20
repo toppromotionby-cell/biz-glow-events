@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,23 +74,27 @@ function ProfilePage() {
   const detailsRef = useRef<Record<string, OrderDetails>>({});
   useEffect(() => { detailsRef.current = details; }, [details]);
 
+  // Debounce: при шквале realtime-событий (пакетная правка заказа админом) обновляем один раз.
+  const debouncedReloadOrders = useDebouncedCallback(() => { reloadOrders(); }, 400);
+  const debouncedRefreshDetails = useDebouncedCallback((oid: string) => { refreshDetails(oid); }, 300);
+
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel(`profile-orders-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, (payload) => {
-        reloadOrders();
+        debouncedReloadOrders();
         const newRow = payload.new as Partial<OrderRow> | null;
         const oldRow = payload.old as Partial<OrderRow> | null;
         const oid = newRow?.id ?? oldRow?.id;
-        if (oid && detailsRef.current[oid]) refreshDetails(oid);
+        if (oid && detailsRef.current[oid]) debouncedRefreshDetails(oid);
         if (newRow?.status === "confirmed" && oldRow?.status !== "confirmed") {
           toast.success("Ваш заказ подтверждён менеджером");
         }
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "order_timeline" }, (payload) => {
         const oid = (payload.new as { order_id?: string } | null)?.order_id;
-        if (oid && detailsRef.current[oid]) refreshDetails(oid);
+        if (oid && detailsRef.current[oid]) debouncedRefreshDetails(oid);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
