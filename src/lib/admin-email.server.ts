@@ -331,27 +331,33 @@ export async function notifyAdminOrderEmail(p: AdminOrderPayload): Promise<{ ok:
   const to = adminEmail();
   if (!to) return { ok: false, error: "ADMIN_EMAIL not set" };
   const subject = `Новый заказ от ${p.clientName} — ${fmtBYN(p.total)}`;
-  const itemsHtml = p.items.map(i =>
-    `<li>${escapeHtml(i.title)} — ${i.qty} × ${i.price > 0 ? fmtBYN(i.price) : "по запросу"}</li>`
-  ).join("");
-  const html = `
-<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px">
-<div style="max-width:600px;margin:0 auto">
-  <h1 style="color:${BRAND.accent};margin:0 0 16px">Новый заказ</h1>
-  <p><strong>ID:</strong> ${escapeHtml(p.orderId)}</p>
-  <p><strong>Источник:</strong> ${escapeHtml(p.source ?? "—")}</p>
-  <hr style="border-color:#333"/>
-  <h2 style="font-size:18px">Клиент</h2>
-  <p>${escapeHtml(p.clientName)}${p.clientCompany ? " · " + escapeHtml(p.clientCompany) : ""}</p>
-  <p>Тел: ${escapeHtml(p.clientPhone)}
-     · Email: <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent}">${escapeHtml(p.clientEmail)}</a></p>
-  ${p.eventDate ? `<p>Дата: ${escapeHtml(p.eventDate)}</p>` : ""}
-  ${p.notes ? `<p>Комментарий: ${escapeHtml(p.notes)}</p>` : ""}
-  <hr style="border-color:#333"/>
-  <h2 style="font-size:18px">Позиции (${p.items.length})</h2>
-  <ul>${itemsHtml}</ul>
-  <p style="font-size:18px;font-weight:bold">Итого: ${fmtBYN(p.total)}</p>
-</div></body></html>`;
+  const itemsHtml = p.items.map(i => `<tr>
+    <td style="padding:10px 0;border-bottom:1px solid ${BRAND.border};color:${BRAND.text};font-size:14px">${escapeHtml(i.title)}</td>
+    <td style="padding:10px 0;border-bottom:1px solid ${BRAND.border};text-align:right;color:${BRAND.textSoft};font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums">${i.qty} × ${i.price > 0 ? fmtBYN(i.price) : "по запросу"}</td>
+  </tr>`).join("");
+  const body = `
+    ${sectionLabel("Новый заказ")}
+    <h1 style="font-family:${FONT_DISPLAY};margin:0 0 16px;font-size:24px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text}">Поступил новый заказ</h1>
+    <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
+        ${metaRow("ID", `<span style="font-family:ui-monospace,monospace">${escapeHtml(p.orderId.slice(0, 8))}</span>`)}
+        ${metaRow("Источник", escapeHtml(p.source ?? "—"))}
+        ${metaRow("Клиент", escapeHtml(p.clientName) + (p.clientCompany ? ` · ${escapeHtml(p.clientCompany)}` : ""))}
+        ${metaRow("Телефон", `<a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientPhone)}</a>`)}
+        ${metaRow("Email", `<a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientEmail)}</a>`)}
+        ${p.eventDate ? metaRow("Дата мероприятия", escapeHtml(p.eventDate)) : ""}
+      </tbody></table>
+    </div>
+    ${p.notes ? `<div style="background:${BRAND.surfaceAlt};border-left:3px solid ${BRAND.accent};border-radius:0 10px 10px 0;padding:14px 16px;margin:0 0 18px">
+      ${sectionLabel("Комментарий клиента")}
+      <div style="font-size:14px;color:${BRAND.text};white-space:pre-wrap;line-height:1.55">${escapeHtml(p.notes)}</div>
+    </div>` : ""}
+    ${sectionLabel(`Позиции (${p.items.length})`)}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px">
+      <tbody>${itemsHtml || `<tr><td style="padding:12px 0;color:${BRAND.muted};font-size:13px">Позиций нет</td></tr>`}</tbody>
+    </table>
+    <div style="text-align:right;font-family:${FONT_DISPLAY};font-size:20px;font-weight:700;color:${BRAND.accent};font-variant-numeric:tabular-nums">Итого: ${fmtBYN(p.total)}</div>`;
+  const html = brandShell({ title: subject, previewText: `Новый заказ от ${p.clientName}`, body });
   return enqueue({ to, subject, html, label: "admin-order", messageId: `order-${p.orderId}` });
 }
 
@@ -368,18 +374,23 @@ export async function notifyAdminLeadEmail(p: AdminLeadPayload): Promise<{ ok: b
   const to = adminEmail();
   if (!to) return { ok: false, error: "ADMIN_EMAIL not set" };
   const subject = `Новая заявка от ${p.clientName}`;
-  const html = `
-<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px">
-<div style="max-width:600px;margin:0 auto">
-  <h1 style="color:${BRAND.accent};margin:0 0 16px">Новая заявка</h1>
-  <p><strong>ID:</strong> ${escapeHtml(p.leadId)}</p>
-  <p><strong>Источник:</strong> ${escapeHtml(p.source ?? "—")}</p>
-  <hr style="border-color:#333"/>
-  <p>${escapeHtml(p.clientName)}</p>
-  <p>Тел: ${escapeHtml(p.clientPhone)}
-  ${p.clientEmail ? ` · Email: <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent}">${escapeHtml(p.clientEmail)}</a>` : ""}</p>
-  ${p.notes ? `<p>Комментарий: ${escapeHtml(p.notes)}</p>` : ""}
-</div></body></html>`;
+  const body = `
+    ${sectionLabel("Новая заявка")}
+    <h1 style="font-family:${FONT_DISPLAY};margin:0 0 16px;font-size:24px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text}">Новая заявка с сайта</h1>
+    <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
+        ${metaRow("ID", `<span style="font-family:ui-monospace,monospace">${escapeHtml(p.leadId.slice(0, 8))}</span>`)}
+        ${metaRow("Источник", escapeHtml(p.source ?? "—"))}
+        ${metaRow("Клиент", escapeHtml(p.clientName))}
+        ${metaRow("Телефон", `<a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientPhone)}</a>`)}
+        ${p.clientEmail ? metaRow("Email", `<a href="mailto:${escapeHtml(p.clientEmail)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientEmail)}</a>`) : ""}
+      </tbody></table>
+    </div>
+    ${p.notes ? `<div style="background:${BRAND.surfaceAlt};border-left:3px solid ${BRAND.accent};border-radius:0 10px 10px 0;padding:14px 16px">
+      ${sectionLabel("Комментарий")}
+      <div style="font-size:14px;color:${BRAND.text};white-space:pre-wrap;line-height:1.55">${escapeHtml(p.notes)}</div>
+    </div>` : ""}`;
+  const html = brandShell({ title: subject, previewText: `Заявка от ${p.clientName}`, body });
   return enqueue({ to, subject, html, label: "admin-lead", messageId: `lead-${p.leadId}` });
 }
 
