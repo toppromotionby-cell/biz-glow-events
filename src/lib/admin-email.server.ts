@@ -519,8 +519,8 @@ export type ClientOrderConfirmedPayload = {
     startDate?: string | null;
     endDate?: string | null;
   }>;
-  // Прикрепляемые к письму PDF-файлы (КП/Счёт/Договор/Акт).
-  attachments?: Array<{ filename: string; bytes: Uint8Array }>;
+  // Документы клиента — отображаются в письме как ссылки на скачивание из приватного Storage.
+  documents?: Array<{ label: string; filename: string; url: string }>;
 };
 
 const ENTITY_LABEL_RU: Record<string, string> = {
