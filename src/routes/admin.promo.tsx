@@ -19,8 +19,8 @@ import { persistSortOrder } from "@/lib/sort-order";
 
 export const Route = createFileRoute("/admin/promo")({ component: Page });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Row = any;
+import type { Database } from "@/integrations/supabase/types";
+type Row = Database["public"]["Tables"]["promo_codes"]["Row"];
 
 function Page() {
   const qc = useQueryClient();

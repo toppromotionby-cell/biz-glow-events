@@ -22,8 +22,8 @@ import type { SaveState } from "@/components/admin/SaveStatus";
 
 export const Route = createFileRoute("/admin/testimonials")({ component: Page });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Row = any;
+import type { Database } from "@/integrations/supabase/types";
+type Row = Database["public"]["Tables"]["testimonials"]["Row"];
 
 function Page() {
   const qc = useQueryClient();

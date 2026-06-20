@@ -27,8 +27,8 @@ export const Route = createFileRoute("/admin/cases")({
   component: CasesAdmin,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type CaseRow = any;
+import type { Database } from "@/integrations/supabase/types";
+type CaseRow = Database["public"]["Tables"]["cases"]["Row"];
 
 function CasesAdmin() {
   const qc = useQueryClient();
