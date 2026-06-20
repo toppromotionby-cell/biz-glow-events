@@ -353,7 +353,7 @@ export async function notifyAdminOrderEmail(p: AdminOrderPayload): Promise<{ ok:
     <h1 style="font-family:${FONT_DISPLAY};margin:0 0 16px;font-size:24px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text}">Поступил новый заказ</h1>
     <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
-        ${metaRow("ID", `<span style="font-family:ui-monospace,monospace">${escapeHtml(p.orderId.slice(0, 8))}</span>`)}
+        ${metaRow("Номер", `<span style="font-family:ui-monospace,monospace">${escapeHtml(orderDisplayId(p.orderId, p.orderNumber))}</span>`)}
         ${metaRow("Источник", escapeHtml(p.source ?? "—"))}
         ${metaRow("Клиент", escapeHtml(p.clientName) + (p.clientCompany ? ` · ${escapeHtml(p.clientCompany)}` : ""))}
         ${metaRow("Телефон", `<a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientPhone)}</a>`)}
