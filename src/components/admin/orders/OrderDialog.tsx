@@ -22,6 +22,7 @@ import {
   ChevronDown, Calendar,
 } from "lucide-react";
 import { fmtDate, fmtDateTime } from "@/lib/formatters";
+import { displayOrderNumber } from "@/lib/order-number";
 import { openAuthedDocument } from "@/lib/authed-fetch";
 import { useOrderMutations } from "@/hooks/use-order-mutations";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
