@@ -642,15 +642,14 @@ async function sendOrderConfirmationEmailAndLog(
 
   // Параллельно генерим документы и кладём в bucket — даже если не получится,
   // письмо всё равно отправим без блока «Документы».
-  const documents = await generateAndUploadOrderDocuments(orderId);
-  if (documents.length === 0) {
-    await supabaseAdmin.from("order_timeline").insert({
-      order_id: orderId,
-      actor_id: actorId,
-      event: "documents_attach_failed",
-      payload: { trigger },
-    });
-  }
+  const { docs: documents, statuses: docStatuses } = await generateAndUploadOrderDocuments(orderId);
+  const docsAllOk = docStatuses.length > 0 && docStatuses.every((s) => s.ok);
+  await supabaseAdmin.from("order_timeline").insert({
+    order_id: orderId,
+    actor_id: actorId,
+    event: docsAllOk ? "documents_attached" : "documents_attach_failed",
+    payload: { trigger, statuses: docStatuses },
+  });
 
   let res: { ok: boolean; error?: string };
   try {
