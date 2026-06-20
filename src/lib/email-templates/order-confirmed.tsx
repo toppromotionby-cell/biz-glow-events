@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Body, Container, Head, Heading, Html, Preview, Section, Text, Button, Hr } from '@react-email/components';
 import type { TemplateEntry } from './registry';
+import {
+  EmailShell, EmailH1, EmailText, EmailSection, EmailInfoCard, EmailField, EmailButton,
+} from './_shared';
 
 interface OrderConfirmedProps {
   clientName?: string;
@@ -21,28 +23,23 @@ export function OrderConfirmedEmail({
   manageUrl = 'https://event-hub.by/profile',
 }: OrderConfirmedProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Заказ #{orderId} подтверждён</Preview>
-      <Body style={{ backgroundColor: '#ffffff', fontFamily: 'system-ui,sans-serif', color: '#1f2937', margin: 0 }}>
-        <Container style={{ maxWidth: 600, padding: '24px' }}>
-          <Heading style={{ color: '#d97706' }}>Заказ подтверждён</Heading>
-          <Text>Здравствуйте, {clientName}!</Text>
-          <Text>Ваш заказ <strong>#{orderId}</strong> принят и подтверждён нашей командой.</Text>
-          <Hr />
-          <Section>
-            {eventDate && <Text>Дата мероприятия: <strong>{eventDate}</strong></Text>}
-            <Text>Сумма: <strong>{total > 0 ? fmt(total) : 'по запросу'}</strong></Text>
-          </Section>
-          <Button href={manageUrl} style={{ backgroundColor: '#d97706', color: '#fff', padding: '12px 20px', borderRadius: 8, textDecoration: 'none' }}>
-            Открыть личный кабинет
-          </Button>
-          <Text style={{ marginTop: 24, fontSize: 12, color: '#6b7280' }}>
-            event-hub.by — площадки и сервисы для мероприятий
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+    <EmailShell preview={`Заказ #${orderId} подтверждён`} variant="success">
+      <EmailSection top={20}>
+        <EmailH1>Заказ подтверждён</EmailH1>
+        <EmailText>Здравствуйте, {clientName}!</EmailText>
+        <EmailText>
+          Ваш заказ <strong>#{orderId}</strong> принят и подтверждён нашей командой.
+        </EmailText>
+      </EmailSection>
+
+      <EmailInfoCard variant="success">
+        <EmailField label="Заказ" value={<strong>#{orderId}</strong>} />
+        {eventDate && <EmailField label="Дата мероприятия" value={<strong>{eventDate}</strong>} />}
+        <EmailField label="Сумма" value={<strong>{total > 0 ? fmt(total) : 'по запросу'}</strong>} />
+      </EmailInfoCard>
+
+      <EmailButton href={manageUrl}>Открыть личный кабинет</EmailButton>
+    </EmailShell>
   );
 }
 
