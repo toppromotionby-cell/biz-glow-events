@@ -4,6 +4,7 @@ import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { TikTokIcon } from "@/components/icons/TikTokIcon";
+import { trackSocialClick } from "@/lib/analytics";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({
