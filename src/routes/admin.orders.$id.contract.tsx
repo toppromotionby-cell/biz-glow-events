@@ -20,6 +20,9 @@ export const Route = createFileRoute("/admin/orders/$id/contract")({
         ]);
         if (error || !order) return new Response("Not found", { status: 404 });
 
+        const pdf = await maybePdfResponse("contract", request, order, items ?? [], settings);
+        if (pdf) return pdf;
+
         const total = (items ?? []).reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
         const date = fmtDate(new Date());
         const num = String(order.id).slice(0, 8).toUpperCase();
