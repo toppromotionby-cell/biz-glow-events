@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Mail, Plus, Pencil, Trash2, PlugZap, Loader2 } from "lucide-react";
+import { Mail, Plus, Pencil, Trash2, PlugZap, Loader2, History, CheckCircle2, XCircle } from "lucide-react";
 
 import {
   listMailAccounts,
@@ -13,7 +13,7 @@ import {
   deleteMailAccount,
 } from "@/lib/mail-accounts.functions";
 import { accountCreateSchema, accountUpdateSchema } from "@/lib/mail-accounts.schema";
-import { testMailAccount } from "@/lib/mail.functions";
+import { testMailAccount, listMailAccountChecks } from "@/lib/mail.functions";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
