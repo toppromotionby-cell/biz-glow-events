@@ -75,7 +75,6 @@ import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/publi
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
-import { Route as AdminCampaignsNewRouteImport } from './routes/admin.campaigns.new'
 import { Route as AdminCampaignsIdRouteImport } from './routes/admin.campaigns.$id'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -420,11 +419,6 @@ const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
-const AdminCampaignsNewRoute = AdminCampaignsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AdminCampaignsRoute,
-} as any)
 const AdminCampaignsIdRoute = AdminCampaignsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -550,7 +544,6 @@ export interface FileRoutesByFullPath {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
-  '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
@@ -629,7 +622,6 @@ export interface FileRoutesByTo {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
-  '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
@@ -711,7 +703,6 @@ export interface FileRoutesById {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/campaigns/$id': typeof AdminCampaignsIdRouteWithChildren
-  '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
@@ -794,7 +785,6 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/admin/campaigns/$id'
-    | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
     | '/admin/settings/documents'
@@ -873,7 +863,6 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin'
     | '/admin/campaigns/$id'
-    | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
     | '/admin/settings/documents'
@@ -954,7 +943,6 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/admin/campaigns/$id'
-    | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
     | '/admin/settings/documents'
@@ -1490,13 +1478,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
-    '/admin/campaigns/new': {
-      id: '/admin/campaigns/new'
-      path: '/new'
-      fullPath: '/admin/campaigns/new'
-      preLoaderRoute: typeof AdminCampaignsNewRouteImport
-      parentRoute: typeof AdminCampaignsRoute
-    }
     '/admin/campaigns/$id': {
       id: '/admin/campaigns/$id'
       path: '/$id'
@@ -1597,12 +1578,10 @@ const AdminCampaignsIdRouteWithChildren =
 
 interface AdminCampaignsRouteChildren {
   AdminCampaignsIdRoute: typeof AdminCampaignsIdRouteWithChildren
-  AdminCampaignsNewRoute: typeof AdminCampaignsNewRoute
 }
 
 const AdminCampaignsRouteChildren: AdminCampaignsRouteChildren = {
   AdminCampaignsIdRoute: AdminCampaignsIdRouteWithChildren,
-  AdminCampaignsNewRoute: AdminCampaignsNewRoute,
 }
 
 const AdminCampaignsRouteWithChildren = AdminCampaignsRoute._addFileChildren(
