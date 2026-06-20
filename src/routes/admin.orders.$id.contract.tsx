@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireStaff } from "@/lib/admin-route-guard";
 import { fmtDate } from "@/lib/formatters";
 import { esc, money, renderShell, loadDocumentSettings } from "@/lib/documents/render.server";
+import { maybePdfResponse } from "@/lib/documents/pdf-response.server";
 
 export const Route = createFileRoute("/admin/orders/$id/contract")({
   server: {
@@ -18,6 +19,9 @@ export const Route = createFileRoute("/admin/orders/$id/contract")({
           loadDocumentSettings(supabaseAdmin as never),
         ]);
         if (error || !order) return new Response("Not found", { status: 404 });
+
+        const pdf = await maybePdfResponse("contract", request, order, items ?? [], settings);
+        if (pdf) return pdf;
 
         const total = (items ?? []).reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
         const date = fmtDate(new Date());

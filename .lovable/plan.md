@@ -1,41 +1,23 @@
-## Что проверяем
+# Скачивание реального PDF вместо окна печати
 
-В админке заказа (`/admin/orders/$id`) и в диалоге «Предпросмотр письма» используются несколько способов открыть документ во весь экран. Нужно убедиться, что каждый сценарий открывает корректную полную страницу (а не пустую вкладку, не 401 и не «битый» blob).
+Сейчас на страницах `/admin/orders/$id/quote|invoice|contract|act` кнопка «Сохранить PDF» вызывает `window.print()` (вкладка «Печать» браузера). Заменим её на скачивание настоящего PDF-файла — генератор `buildOrderDocPdf` (pdf-lib + Roboto) уже есть и используется для писем.
 
-## Точки, которые сейчас претендуют на «полную страницу»
+## Изменения
 
-1. Кнопка **«Скачать КП»** в шапке заказа — `openAuthedDocument('/admin/orders/<id>/quote')` (открывает HTML-КП в новой вкладке через blob URL с bearer-токеном).
-2. Кнопки документов в `OrderAttachments` (КП/счёт/договор/акт) — те же server-routes `/admin/orders/$id/{quote|invoice|contract|act}` через `openAuthedDocument` + `fetchAuthedDocument`.
-3. Тот же путь используется из `OrderDialog` (быстрый просмотр из списка заказов) и из `admin.settings.documents.tsx` (превью на тестовом заказе через `window.open(..., "_blank")`).
-4. В диалоге «Предпросмотр письма»:
-   - Превью email — `<iframe srcDoc>` с `sandbox=""`. Полноэкранной ссылки нет.
-   - Превью PDF — `<iframe src="data:application/pdf;base64,...">` + ссылка **«Скачать»** (`<a download>` с тем же data URL).
+1. **`src/lib/documents/render.server.ts`**
+   - Кнопка `.print-btn` становится ссылкой `<a class="print-btn" href="?format=pdf">Скачать PDF</a>` (относительный URL — работает на всех 4 маршрутах).
+   - CSS остаётся (тот же скрытый-в-печати класс).
 
-## План проверки (через Playwright в headless Chromium)
+2. **`src/routes/admin.orders.$id.quote.tsx`** (и аналогично `invoice`, `contract`, `act`)
+   - В начале GET-хендлера: `const wantsPdf = new URL(request.url).searchParams.get("format") === "pdf";`
+   - Если `wantsPdf` — после загрузки `order/items/settings` вызвать `buildOrderDocPdf(kind, order, items, settings)` и вернуть Response с заголовками:
+     ```
+     content-type: application/pdf
+     content-disposition: attachment; filename="<buildAttachmentFilename(kind, order)>"
+     ```
+     (для filename используем `filename*=UTF-8''<encoded>` чтобы кириллица не ломалась).
+   - Иначе — текущая ветка с HTML-превью (как сейчас).
 
-1. Поднять сессию админа из `LOVABLE_BROWSER_SUPABASE_*`, открыть `/admin/orders/<последний заказ>`.
-2. Кликнуть «Скачать КП»:
-   - Перехватить `window.open`, проверить, что открылся blob-URL и ответ содержит ожидаемый HTML (`<h1 class="section">Клиент</h1>`, шапку «Коммерческое предложение»).
-   - Проверить статус fetch: 200, content-type `text/html`.
-3. Открыть «Предпросмотр письма», убедиться:
-   - В email-iframe нет активных `<a href>` (sanitizer работает).
-   - Для каждого PDF-вложения iframe рендерит документ (заголовок «PDF document» в HTTP-ответе data URL — проверим, что base64 декодируется в валидный PDF: первые 4 байта `%PDF`).
-   - Кнопка «Скачать» содержит корректный `download` и `data:application/pdf;base64,…` (без обрезаний).
-4. Открыть `/admin/orders/<id>/quote` напрямую без авторизации — должен вернуться 401 (что и ожидаем, документы приватные). Через `openAuthedDocument` — 200.
-5. Из списка заказов открыть `OrderDialog`, нажать «Скачать <док>» — повторить проверку п.2 для каждого типа.
+3. Превью внутри `admin.orders.$id.tsx` (вкладки с iframe `data:application/pdf;base64,…`) и отправка PDF в письмах **не меняются** — там уже настоящий PDF.
 
-## Возможные правки, если что-то не работает
-
-- Если blob-URL открывается, но вкладка пустая → переключить `openAuthedDocument` на `Blob` с `type: "text/html"` уже корректный; в этом случае добавим `target` через `<base>` или fallback `document.write`.
-- Если в `OrderAttachments` для PDF (а не HTML) тоже используется тот же путь, заменим content-type/download-имя.
-- Если в превью email появляются активные ссылки → доработаем `stripActiveLinks` (текущий уже конвертирует `<a>` в `<span>`; проверим на edge cases — `area`, `link`, `form action`).
-- Для PDF-превью добавим кнопку **«Открыть на полной странице»** рядом со «Скачать» (откроет тот же base64 PDF в новой вкладке через blob URL — data: URL крупного PDF часть браузеров блокирует в `window.open`).
-- Для email-превью добавим аналогичную кнопку (откроет очищенный HTML в новой вкладке через blob URL).
-
-Правки делаем точечно, только в:
-- `src/lib/authed-fetch.ts` (при необходимости — общий helper `openInlineBlob(bytes, mime)`),
-- `src/routes/admin.orders.$id.tsx` (кнопки «Открыть на полной странице» в диалоге превью).
-
-## Результат
-
-Краткий отчёт по каждому из 5 пунктов: ✅/❌, что именно сломано, и список применённых правок (если потребовались). Никаких изменений бизнес-логики, только проверка и при необходимости — мелкие UX-правки ссылок открытия.
+Никаких изменений БД, схем, дизайна.
