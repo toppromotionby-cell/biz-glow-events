@@ -648,8 +648,8 @@ async function sendOrderConfirmationEmailAndLog(
   // Для статуса `consultation` (запрос на консультацию) их не генерируем —
   // нечего выставлять, пока менеджер не уточнил детали.
   const isInquiry = order.status === "consultation";
-  const { docs: documents, statuses: docStatuses } = isInquiry
-    ? { docs: [] as Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; url: string }>, statuses: [] as Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; ok: boolean; error?: string; url?: string }> }
+  const { pdfs: documentPdfs, statuses: docStatuses } = isInquiry
+    ? { pdfs: [] as Array<{ kind: DocKind; label: string; filename: string; bytes: Uint8Array }>, statuses: [] as DocStatus[] }
     : await generateAndUploadOrderDocuments(orderId);
   if (!isInquiry) {
     const docsAllOk = docStatuses.length > 0 && docStatuses.every((s) => s.ok);
@@ -682,7 +682,7 @@ async function sendOrderConfirmationEmailAndLog(
         startDate: i.start_date ?? null,
         endDate: i.end_date ?? null,
       })),
-      documents,
+      attachments: documentPdfs.map((d) => ({ filename: d.filename, bytes: d.bytes })),
     });
   } catch (e) {
     res = { ok: false, error: e instanceof Error ? e.message : "send failed" };
