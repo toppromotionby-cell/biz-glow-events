@@ -381,8 +381,7 @@ function AccountDialog({
   );
 }
 
-// чтобы синхронизировать форму при смене редактируемой записи
-const valueRef: { current: FormState | null } = { current: null };
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
