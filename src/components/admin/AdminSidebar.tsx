@@ -60,6 +60,7 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
       { to: "/admin/notifications", label: "Уведомления", icon: Bell },
       { to: "/admin/settings/documents", label: "Документы", icon: FileCog },
+      { to: "/admin/settings/social", label: "Соцсети", icon: Share2 },
       { to: "/admin/audit", label: "Аудит", icon: FileText },
     ],
   },
