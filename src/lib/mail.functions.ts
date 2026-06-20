@@ -96,68 +96,87 @@ export const testMailAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => testInput.parse(input))
   .handler(async ({ data, context }) => {
-    await assertStaff(context.supabase, context.userId);
-    const accountId = "accountId" in data ? data.accountId : null;
-    const cfg: MailAccountCfg =
-      "accountId" in data ? await loadAccountCfg(context.supabase, data.accountId) : data;
-
     const started = Date.now();
-    let ok = false;
-    let status: number | null = null;
-    let message = "";
-    let details: unknown = null;
-    let result: { ok: boolean; error?: string } = { ok: false };
-
     try {
-      result = await callMailWorker<{ ok: boolean; error?: string }>("/test", cfg, {
-        timeoutMs: 90_000,
-      });
-      ok = result.ok === true;
-      status = 200;
-      message = ok ? "OK" : (result.error ?? "Unknown error");
-      details = result;
-    } catch (err) {
-      ok = false;
-      if (err instanceof MailWorkerError) {
-        status = err.status || null;
-        message = err.message;
-      } else {
-        message = err instanceof Error ? err.message : String(err);
+      await assertStaff(context.supabase, context.userId);
+      const accountId = "accountId" in data ? data.accountId : null;
+      const cfg: MailAccountCfg =
+        "accountId" in data ? await loadAccountCfg(context.supabase, data.accountId) : data;
+
+      let ok = false;
+      let status: number | null = null;
+      let message = "";
+      let details: unknown = null;
+      let result: { ok: boolean; error?: string } = { ok: false };
+
+      try {
+        result = await callMailWorker<{ ok: boolean; error?: string }>("/test", cfg, {
+          timeoutMs: 90_000,
+        });
+        ok = result.ok === true;
+        status = 200;
+        message = ok ? "OK" : (result.error ?? "Unknown error");
+        details = result;
+      } catch (err) {
+        ok = false;
+        if (err instanceof MailWorkerError) {
+          status = err.status || null;
+          message = err.message;
+        } else {
+          message = err instanceof Error ? err.message : String(err);
+        }
+        details = { error: message, status };
+        result = { ok: false, error: message };
       }
-      details = { error: message, status };
-      result = { ok: false, error: message };
-    }
 
-    const duration = Date.now() - started;
+      const duration = Date.now() - started;
 
-    if (accountId) {
-      // Журнал и поля status/last_sync_at в mail_accounts.
-      const logRow = {
-        account_id: accountId,
-        checked_by: context.userId,
+      if (accountId) {
+        const logRow = {
+          account_id: accountId,
+          checked_by: context.userId,
+          ok,
+          status_code: status,
+          message: message.slice(0, 2000),
+          details: toJson(details),
+          duration_ms: duration,
+        };
+        try {
+          const [logRes, updRes] = await Promise.all([
+            context.supabase.from("mail_account_checks").insert(logRow as never),
+            context.supabase
+              .from("mail_accounts")
+              .update({
+                status: ok ? "active" : "error",
+                sync_error: ok ? null : message.slice(0, 1000),
+                last_sync_at: ok ? new Date().toISOString() : undefined,
+              } as never)
+              .eq("id", accountId),
+          ]);
+          if (logRes.error) console.error("mail check log insert failed:", logRes.error.message);
+          if (updRes.error) console.error("mail account status update failed:", updRes.error.message);
+        } catch (logErr) {
+          console.error("mail check logging crashed:", logErr);
+        }
+      }
+
+      return {
         ok,
         status_code: status,
-        message: message.slice(0, 2000),
-        details: toJson(details),
+        message,
         duration_ms: duration,
+        error: result.error ?? null,
       };
-      const [logRes, updRes] = await Promise.all([
-        context.supabase.from("mail_account_checks").insert(logRow as never),
-        context.supabase
-          .from("mail_accounts")
-          .update({
-            status: ok ? "active" : "error",
-            sync_error: ok ? null : message.slice(0, 1000),
-            last_sync_at: ok ? new Date().toISOString() : undefined,
-          } as never)
-          .eq("id", accountId),
-      ]);
-      // не валим саму проверку, если логирование не удалось
-      if (logRes.error) console.error("mail check log insert failed:", logRes.error.message);
-      if (updRes.error) console.error("mail account status update failed:", updRes.error.message);
+    } catch (fatal) {
+      const msg = fatal instanceof Error ? fatal.message : String(fatal);
+      return {
+        ok: false,
+        status_code: 0,
+        message: msg,
+        duration_ms: Date.now() - started,
+        error: msg,
+      };
     }
-
-    return { ok, status_code: status, message, duration_ms: duration, error: result.error };
   });
 
 // ───── Журнал проверок ─────
