@@ -50,7 +50,7 @@ export const createMailAccount = createServerFn({ method: "POST" })
 export const updateMailAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid(), patch: accountInput.partial() }).parse(input),
+    z.object({ id: z.string().uuid(), patch: accountUpdateSchema }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const p = data.patch;
