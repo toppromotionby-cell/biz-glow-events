@@ -27,7 +27,7 @@ const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin/cases", label: "Кейсы", icon: Trophy },
   { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
   { to: "/admin/blog", label: "Блог", icon: Newspaper },
-  { to: "/admin/marketing", label: "Маркетинг", icon: Megaphone },
+  
   { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail },
   { to: "/admin/promo", label: "Промокоды", icon: Tag },
   { to: "/admin/users", label: "Пользователи", icon: UserCog },
