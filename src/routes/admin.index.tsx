@@ -33,7 +33,7 @@ function AdminDashboard() {
       const since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
       const [allOrders, recent, posts, bookings] = await Promise.all([
         supabase.from("orders").select("id, status, total, source, created_at"),
-        supabase.from("orders").select("id, client_name, total, status, created_at").order("created_at", { ascending: false }).limit(8),
+        supabase.from("orders").select("id, order_number, client_name, total, status, created_at").order("created_at", { ascending: false }).limit(8),
         supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("published", true),
         supabase.from("availability").select("id", { count: "exact", head: true }),
       ]);
