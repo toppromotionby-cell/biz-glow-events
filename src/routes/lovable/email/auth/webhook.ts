@@ -58,7 +58,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         }
 
         // Verify signature + timestamp, then parse payload.
-        let payload: any
+        let payload: Awaited<ReturnType<typeof parseEmailWebhookPayload>>
         let run_id = ''
         try {
           const verified = await verifyWebhookRequest({

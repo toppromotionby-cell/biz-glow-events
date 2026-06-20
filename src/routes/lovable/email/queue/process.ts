@@ -128,12 +128,13 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           const messageIds = Array.from(
             new Set(
               messages
-                .map((msg: any) =>
-                  msg?.message?.message_id && typeof msg.message.message_id === 'string'
-                    ? msg.message.message_id
-                    : null
-                )
-                .filter((id: string | null): id is string => Boolean(id))
+                .map((msg) => {
+                  const m = msg as { message?: { message_id?: unknown } } | null;
+                  return m?.message?.message_id && typeof m.message.message_id === "string"
+                    ? m.message.message_id
+                    : null;
+                })
+                .filter((id): id is string => Boolean(id))
             )
           )
           const failedAttemptsByMessageId = new Map<string, number>()
