@@ -30,6 +30,9 @@ export type DocumentSettings = {
   contract_late_fee_pct: number;
   contract_jurisdiction_city: string;
   contract_sections: { title: string; paragraphs: string[] }[];
+  act_validity_days: number;
+  act_intro: string;
+  act_footer: string;
 };
 
 export const DEFAULT_DOCUMENT_SETTINGS: DocumentSettings = {
@@ -61,6 +64,11 @@ export const DEFAULT_DOCUMENT_SETTINGS: DocumentSettings = {
   contract_late_fee_pct: 0.1,
   contract_jurisdiction_city: "Минск",
   contract_sections: [],
+  act_validity_days: 5,
+  act_intro:
+    "Настоящий Акт составлен о том, что Исполнитель оказал, а Заказчик принял услуги в полном объёме и надлежащего качества. Стороны претензий друг к другу не имеют.",
+  act_footer:
+    "Акт подлежит подписанию обеими сторонами в течение 5 рабочих дней. При отсутствии мотивированных возражений в указанный срок услуги считаются принятыми.",
 };
 
 const SectionSchema = z.object({
@@ -95,6 +103,9 @@ const SettingsSchema = z.object({
   contract_late_fee_pct: z.coerce.number().min(0).max(100),
   contract_jurisdiction_city: z.string().trim().min(1).max(100),
   contract_sections: z.array(SectionSchema).max(20),
+  act_validity_days: z.coerce.number().int().min(1).max(365),
+  act_intro: z.string().trim().max(2000),
+  act_footer: z.string().trim().max(1000),
 });
 
 export const getDocumentSettings = createServerFn({ method: "GET" })
