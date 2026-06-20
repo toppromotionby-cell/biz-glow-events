@@ -85,6 +85,28 @@ function InvitationsPage() {
   const canSend = emails.length >= 1 && emails.length <= MAX;
   const tooMany = emails.length > MAX;
 
+  const openPreview = (type: "manual" | "csv", fileName?: string) => {
+    const items = buildPreviewItems(emailsRaw);
+    setPreviewItems(items);
+    setPreviewSource({ type, fileName });
+    setPreviewOpen(true);
+  };
+
+  const applyPreview = () => {
+    if (!previewItems) return;
+    const selected = previewItems.filter((i) => i.selected).map((i) => i.email).slice(0, MAX);
+    setEmailsRaw(selected.join(", "));
+    setPreviewOpen(false);
+  };
+
+  const toggleAll = (selected: boolean) => {
+    setPreviewItems((prev) => prev?.map((i) => ({ ...i, selected })) ?? null);
+  };
+
+  const removeUnselected = () => {
+    setPreviewItems((prev) => prev?.filter((i) => i.selected) ?? null);
+  };
+
   const { data: log = [], isLoading: logLoading } = useQuery({
     queryKey: ["admin", "invites", "log"],
     queryFn: () => logFn(),
