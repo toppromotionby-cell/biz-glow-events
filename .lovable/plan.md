@@ -1,67 +1,41 @@
-## Что меняем
+## Что проверяем
 
-Клиентские письма (`client-order-confirmed`, `client-inquiry-received`) сейчас:
-- покрашены в фиолетовый (`#a78bfa`), а сайт — чёрный фон + оранжевый primary;
-- прикладывают документы как ссылки на signed URL в Supabase Storage (HTML-файлы, активные кнопки в письме).
+В админке заказа (`/admin/orders/$id`) и в диалоге «Предпросмотр письма» используются несколько способов открыть документ во весь экран. Нужно убедиться, что каждый сценарий открывает корректную полную страницу (а не пустую вкладку, не 401 и не «битый» blob).
 
-Нужно:
-1. Перерисовать письма в фирменном стиле сайта (чёрный фон, оранжевый акцент `#f0a040`, Space Grotesk/Inter с fallback на system, тонкие границы, без «фиолета»).
-2. Документы (КП, Счёт, Договор, Акт) генерировать как PDF и прикладывать к письму как вложения; убрать блок «Документы по заказу» со ссылками из тела письма.
+## Точки, которые сейчас претендуют на «полную страницу»
 
-## Реализация
+1. Кнопка **«Скачать КП»** в шапке заказа — `openAuthedDocument('/admin/orders/<id>/quote')` (открывает HTML-КП в новой вкладке через blob URL с bearer-токеном).
+2. Кнопки документов в `OrderAttachments` (КП/счёт/договор/акт) — те же server-routes `/admin/orders/$id/{quote|invoice|contract|act}` через `openAuthedDocument` + `fetchAuthedDocument`.
+3. Тот же путь используется из `OrderDialog` (быстрый просмотр из списка заказов) и из `admin.settings.documents.tsx` (превью на тестовом заказе через `window.open(..., "_blank")`).
+4. В диалоге «Предпросмотр письма»:
+   - Превью email — `<iframe srcDoc>` с `sandbox=""`. Полноэкранной ссылки нет.
+   - Превью PDF — `<iframe src="data:application/pdf;base64,...">` + ссылка **«Скачать»** (`<a download>` с тем же data URL).
 
-### 1. PDF вместо HTML в `generateAndUploadOrderDocuments`
-- Текущий `buildQuoteHtml/...` возвращает HTML, который грузится в `order-attachments` как `.html` и подписывается signed URL'ом.
-- В Cloudflare Workers нельзя Puppeteer/sharp. Добавляем `pdf-lib` (чистый JS, работает в workerd) и пишем `buildOrderDocPdf(kind, order, items, settings): Promise<Uint8Array>` — отрисовывает шапку (название компании + реквизиты), мета (номер/дата/клиент), таблицу позиций, итог и подпись. Стили близкие к существующему `renderShell` (акцентная полоса, моно-цифры), но средствами pdf-lib.
-- В `generateAndUploadOrderDocuments` меняем: путь `orders/${orderId}/${kind}-${date}.pdf`, contentType `application/pdf`, signed URL по-прежнему сохраняем в `order_timeline` (для админки/повторного скачивания), но **в письмо больше не передаём**.
+## План проверки (через Playwright в headless Chromium)
 
-### 2. Вложения в письме клиенту
-- Расширяем тип очереди и сам процессор:
-  - В payload в `enqueue()` добавляем `attachments?: Array<{ filename: string; content_base64: string; content_type: string }>`.
-  - В `src/routes/lovable/email/queue/process.ts` пробрасываем `attachments` в `sendLovableEmail`. Если Lovable Email API не поддержит вложения — для `label === 'client-order-confirmed'` отправляем напрямую через уже существующий `sendViaResend` (Resend поддерживает `attachments: [{ filename, content }]`), минуя upstream, но сохраняя запись в `email_send_log` и suppression-чек. Решение примем по первому прогону; код напишем так, чтобы свитч на Resend был локальным.
-- `notifyClientOrderConfirmedEmail` принимает `documentsPdf: Array<{ filename: string; bytes: Uint8Array }>` (вместо `documents` со ссылками) и кладёт их в payload в base64.
+1. Поднять сессию админа из `LOVABLE_BROWSER_SUPABASE_*`, открыть `/admin/orders/<последний заказ>`.
+2. Кликнуть «Скачать КП»:
+   - Перехватить `window.open`, проверить, что открылся blob-URL и ответ содержит ожидаемый HTML (`<h1 class="section">Клиент</h1>`, шапку «Коммерческое предложение»).
+   - Проверить статус fetch: 200, content-type `text/html`.
+3. Открыть «Предпросмотр письма», убедиться:
+   - В email-iframe нет активных `<a href>` (sanitizer работает).
+   - Для каждого PDF-вложения iframe рендерит документ (заголовок «PDF document» в HTTP-ответе data URL — проверим, что base64 декодируется в валидный PDF: первые 4 байта `%PDF`).
+   - Кнопка «Скачать» содержит корректный `download` и `data:application/pdf;base64,…` (без обрезаний).
+4. Открыть `/admin/orders/<id>/quote` напрямую без авторизации — должен вернуться 401 (что и ожидаем, документы приватные). Через `openAuthedDocument` — 200.
+5. Из списка заказов открыть `OrderDialog`, нажать «Скачать <док>» — повторить проверку п.2 для каждого типа.
 
-### 3. Редизайн HTML писем под сайт
-В `buildClientOrderConfirmedEmail` и `notifyClientInquiryReceivedEmail`:
-- фон `#000000`, карточка `#0c0c10` с border `1px solid #1a1a1f`, радиус 16px;
-- заголовки и акценты — оранжевый `#f0a040` (или градиент `linear-gradient(135deg,#f0a040,#f5c97a)` для кнопок);
-- текст `#e8e8ec`, вторичный `#9a9aa3`;
-- шрифт `'Space Grotesk', system-ui, sans-serif` для заголовков, `'Inter', system-ui, sans-serif` для body (всё inline, без `@import` — email-клиенты деградируют в system-ui);
-- убрать блок «Документы по заказу» — заменить одной строкой «КП, счёт, договор и акт во вложении к этому письму (PDF)»;
-- сохранить структуру: статус-пилюля, мета заказа, таблица позиций, итог/оплачено/осталось, кнопка «Личный кабинет», подпись.
-- В `notifyClientInquiryReceivedEmail` — те же токены цвета и шрифтов; вложений нет, ссылка на уточняющую анкету остаётся (это не документ, а сам CTA письма).
+## Возможные правки, если что-то не работает
 
-### 4. Что не трогаем
-- Админские письма (`admin-order`, `admin-lead`, `admin-inquiry`) — у них своя логика и роль, дизайн остаётся.
-- `src/lib/documents/render.server.ts` (HTML-документы для админки/печати) — продолжает использоваться для просмотра в админке.
-- Authentication-письма, очередь pgmq, suppression, unsubscribe — без изменений.
+- Если blob-URL открывается, но вкладка пустая → переключить `openAuthedDocument` на `Blob` с `type: "text/html"` уже корректный; в этом случае добавим `target` через `<base>` или fallback `document.write`.
+- Если в `OrderAttachments` для PDF (а не HTML) тоже используется тот же путь, заменим content-type/download-имя.
+- Если в превью email появляются активные ссылки → доработаем `stripActiveLinks` (текущий уже конвертирует `<a>` в `<span>`; проверим на edge cases — `area`, `link`, `form action`).
+- Для PDF-превью добавим кнопку **«Открыть на полной странице»** рядом со «Скачать» (откроет тот же base64 PDF в новой вкладке через blob URL — data: URL крупного PDF часть браузеров блокирует в `window.open`).
+- Для email-превью добавим аналогичную кнопку (откроет очищенный HTML в новой вкладке через blob URL).
 
-## Технические детали
+Правки делаем точечно, только в:
+- `src/lib/authed-fetch.ts` (при необходимости — общий helper `openInlineBlob(bytes, mime)`),
+- `src/routes/admin.orders.$id.tsx` (кнопки «Открыть на полной странице» в диалоге превью).
 
-- Новый пакет: `bun add pdf-lib`.
-- PDF-шрифты: используем встроенный `StandardFonts.Helvetica` + bold — кириллица в Standard 14 шрифтах PDF **не поддерживается**. Поэтому встраиваем TTF: кладём `Inter-Regular.ttf` и `Inter-Bold.ttf` в `src/assets/fonts/` (через `lovable-assets`), грузим их в `pdf-lib` через `pdfDoc.embedFont(bytes, { subset: true })`. Это критично — без этого русский текст в PDF превратится в крякозябры.
-- Размер вложения: 4 PDF × ~30–60 КБ ≈ 200 КБ — в пределах лимитов Resend (40 МБ) и pgmq payload (1 МБ).
-- В `email_send_log` отдельно не логируем размер вложений; статусы `sent/failed` остаются.
+## Результат
 
-```text
-orders.functions.ts
-  └─ generateAndUploadOrderDocumentsPdf()   ← новое, отдаёт {pdfBytes, signedUrl}
-        ├─ buildOrderDocPdf(kind, ...)      ← новое, pdf-lib
-        └─ upload .pdf + signed URL (для админки)
-  └─ sendOrderConfirmationEmailAndLog()
-        └─ notifyClientOrderConfirmedEmail({ ..., attachments: pdfs })
-
-admin-email.server.ts
-  └─ buildClientOrderConfirmedEmail()       ← новые цвета/шрифты, без блока документов
-  └─ notifyClientInquiryReceivedEmail()     ← новые цвета/шрифты
-  └─ enqueue() пробрасывает attachments в payload
-
-routes/lovable/email/queue/process.ts
-  └─ передаёт attachments в send; для client-order-confirmed — fallback на sendViaResend
-```
-
-## Проверка после реализации
-
-1. Подтвердить заказ в админке → проверить в `email_send_log` статус `sent`.
-2. Открыть письмо в почте: фон чёрный, акценты оранжевые, нет блока «Документы по заказу», 4 PDF вложения, кириллица читается.
-3. Открыть `inquiry-received` — стиль обновился, ссылка на анкету работает.
+Краткий отчёт по каждому из 5 пунктов: ✅/❌, что именно сломано, и список применённых правок (если потребовались). Никаких изменений бизнес-логики, только проверка и при необходимости — мелкие UX-правки ссылок открытия.
