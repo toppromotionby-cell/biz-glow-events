@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Clock, Paperclip, FileText, FileSignature, MailCheck, Copy, Phone, Mail,
+  Clock, FileText, FileSignature, MailCheck, Copy, Phone, Mail,
   ChevronDown, Calendar,
 } from "lucide-react";
 import { fmtDate, fmtDateTime } from "@/lib/formatters";
