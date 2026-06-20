@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: event-hub-mail-worker
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    envVars:
+      - key: MAIL_WORKER_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
