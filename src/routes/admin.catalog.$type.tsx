@@ -1,5 +1,4 @@
 // Универсальный CRUD каталогов: zones | tech_equipment | services | production_items.
-// Тонкая обвязка над списком, превью и редактором — вся логика карточки в @/components/admin/catalog/*.
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -22,7 +21,6 @@ import {
   type CatalogTable, type CatalogInsert, type CatalogUpdate,
 } from "@/lib/admin/catalog-types";
 import { CatalogEditor } from "@/components/admin/catalog/CatalogEditor";
-import { PreviewPanel } from "@/components/admin/catalog/PreviewPanel";
 import { CatalogListItem } from "@/components/admin/catalog/CatalogListItem";
 import type { Row } from "@/components/admin/catalog/shared";
 
@@ -39,13 +37,12 @@ function CatalogAdmin() {
 function CatalogInner({ table }: { table: CatalogTable }) {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<Row | null>(null);
-  const [preview, setPreview] = useState<Row | null>(null);
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState(false);
 
-  // Сбрасываем выделение при смене таблицы.
-  useEffect(() => { setSelectedIds(new Set()); }, [table]);
+  // Сбрасываем выделение и редактируемую запись при смене таблицы.
+  useEffect(() => { setSelectedIds(new Set()); setSelected(null); }, [table]);
 
   const { data: items = [], isLoading } = useQuery<Row[]>({
     queryKey: ["catalog", table],
@@ -128,8 +125,6 @@ function CatalogInner({ table }: { table: CatalogTable }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const activeId = preview?.id ?? selected?.id;
-
   // Локальный поиск по карточкам.
   const q = search.trim().toLowerCase();
   const filtered = q
@@ -157,7 +152,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
     <div className="space-y-5">
       <AdminPageHeader
         title={CATALOG_LABELS[table]}
-        subtitle={`${items.length} записей · клик по записи открывает подробный просмотр`}
+        subtitle={`${items.length} ${pluralRecords(items.length)}`}
         action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
       />
 
@@ -227,13 +222,12 @@ function CatalogInner({ table }: { table: CatalogTable }) {
               try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: ["catalog", table] }); }
               catch (e) { toast.error((e as Error).message); throw e; }
             }}
-            renderItem={(it, handle) => (
+            renderItem={(it: Row, handle) => (
               <CatalogListItem
                 item={it}
                 handle={handle}
-                active={activeId === it.id}
+                active={selected?.id === it.id}
                 checked={selectedIds.has(it.id)}
-                onPreview={() => setPreview(it)}
                 onToggleCheck={() => toggleId(it.id)}
                 onEdit={() => setSelected(it)}
                 onDuplicate={() => duplicate.mutate(it)}
@@ -249,18 +243,13 @@ function CatalogInner({ table }: { table: CatalogTable }) {
               table={table}
               item={selected}
               onDelete={() => remove.mutate(selected.id)}
+              onDuplicate={() => duplicate.mutate(selected)}
               onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })}
-            />
-          ) : preview ? (
-            <PreviewPanel
-              item={preview}
-              onClose={() => setPreview(null)}
-              onEdit={(it) => { setSelected(it); setPreview(null); }}
             />
           ) : (
             <AdminEmptyEditor
               title="Запись не выбрана"
-              description="Кликните по карточке слева для подробного просмотра, либо добавьте новую — список поддерживает перетаскивание."
+              description="Кликните по карточке слева, чтобы начать редактирование. Изменения сохраняются автоматически."
               action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-1" />Создать карточку</Button>}
             />
           )}
@@ -288,4 +277,12 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       </AlertDialog>
     </div>
   );
+}
+
+function pluralRecords(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "запись";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "записи";
+  return "записей";
 }
