@@ -28,7 +28,7 @@ function resolve(t: OrderTimelineRow): Resolved {
     return {
       Icon: ArrowRight,
       label: "Статус изменён",
-      detail: `${ORDER_STATUS_LABEL[from] ?? from || "—"} → ${ORDER_STATUS_LABEL[to] ?? to}`,
+      detail: `${ORDER_STATUS_LABEL[from] ?? (from || "—")} → ${ORDER_STATUS_LABEL[to] ?? to}`,
       tone: "text-violet-300",
     };
   }
