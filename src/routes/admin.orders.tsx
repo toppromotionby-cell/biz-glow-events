@@ -33,7 +33,7 @@ export const Route = createFileRoute("/admin/orders")({
 function AdminOrders() {
   const qc = useQueryClient();
   const loc = useLocation();
-  const kindFromUrl = (new URLSearchParams(loc.searchStr ?? "").get("kind") ?? "all") as "all" | "orders" | "inquiries";
+  const kindFromUrl = new URLSearchParams(loc.searchStr ?? "").get("kind");
   const [kind, setKind] = useState<"all" | "orders" | "inquiries">(
     kindFromUrl === "inquiry" || kindFromUrl === "inquiries" ? "inquiries" : kindFromUrl === "orders" ? "orders" : "all",
   );
