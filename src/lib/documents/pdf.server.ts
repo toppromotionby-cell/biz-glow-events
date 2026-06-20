@@ -486,8 +486,9 @@ function drawSignatures(
 
 // === Утилиты ===
 function header(order: DocOrder) {
+  const numFromDb = ((order as { order_number?: string | null }).order_number ?? "").trim();
   return {
-    num: String(order.id).slice(0, 8).toUpperCase(),
+    num: numFromDb ? numFromDb.replaceAll("/", ".") : String(order.id).slice(0, 8).toUpperCase(),
     date: fmtDate(new Date()),
   };
 }
