@@ -108,6 +108,7 @@ async function enqueue(opts: {
     message_id: opts.messageId,
     to,
     from: FROM_ADDRESS,
+    reply_to: REPLY_TO_ADDRESS,
     sender_domain: SENDER_DOMAIN,
     subject: opts.subject,
     html: opts.html,
