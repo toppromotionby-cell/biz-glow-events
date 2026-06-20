@@ -5,6 +5,7 @@ import { TikTokIcon } from "@/components/icons/TikTokIcon";
 import { Toggleable } from "@/lib/site-sections";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { cn } from "@/lib/utils";
+import { trackSocialClick } from "@/lib/analytics";
 
 type Variant = "footer" | "card";
 
@@ -35,6 +36,7 @@ export function SocialIcons({
             aria-label="Мы в Instagram"
             title="Instagram"
             className={baseBtn}
+            onClick={() => trackSocialClick("instagram", variant === "footer" ? "footer" : "contacts_page", instagram_url)}
           >
             <Instagram className="h-4 w-4" />
           </a>
@@ -49,6 +51,7 @@ export function SocialIcons({
             aria-label="Мы в TikTok"
             title="TikTok"
             className={baseBtn}
+            onClick={() => trackSocialClick("tiktok", variant === "footer" ? "footer" : "contacts_page", tiktok_url)}
           >
             <TikTokIcon size={16} />
           </a>

@@ -72,6 +72,7 @@ import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.inde
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
+import { Route as ApiPublicSocialClickRouteImport } from './routes/api/public/social-click'
 import { Route as AdminSettingsSocialRouteImport } from './routes/admin.settings.social'
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
@@ -403,6 +404,11 @@ const ApiPublicTelegramSupportRoute =
     path: '/api/public/telegram-support',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSocialClickRoute = ApiPublicSocialClickRouteImport.update({
+  id: '/api/public/social-click',
+  path: '/api/public/social-click',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSettingsSocialRoute = AdminSettingsSocialRouteImport.update({
   id: '/settings/social',
   path: '/settings/social',
@@ -541,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
+  '/api/public/social-click': typeof ApiPublicSocialClickRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
@@ -618,6 +625,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
+  '/api/public/social-click': typeof ApiPublicSocialClickRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
@@ -698,6 +706,7 @@ export interface FileRoutesById {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
+  '/api/public/social-click': typeof ApiPublicSocialClickRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
@@ -779,6 +788,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/social'
+    | '/api/public/social-click'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
@@ -856,6 +866,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/social'
+    | '/api/public/social-click'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
@@ -935,6 +946,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/social'
+    | '/api/public/social-click'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
@@ -991,6 +1003,7 @@ export interface RootRouteChildren {
   GeoCityRoute: typeof GeoCityRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
   LpSlugRoute: typeof LpSlugRoute
+  ApiPublicSocialClickRoute: typeof ApiPublicSocialClickRoute
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
@@ -1445,6 +1458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramSupportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/social-click': {
+      id: '/api/public/social-click'
+      path: '/api/public/social-click'
+      fullPath: '/api/public/social-click'
+      preLoaderRoute: typeof ApiPublicSocialClickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/settings/social': {
       id: '/admin/settings/social'
       path: '/settings/social'
@@ -1736,6 +1756,7 @@ const rootRouteChildren: RootRouteChildren = {
   GeoCityRoute: GeoCityRoute,
   InquiryTokenRoute: InquiryTokenRoute,
   LpSlugRoute: LpSlugRoute,
+  ApiPublicSocialClickRoute: ApiPublicSocialClickRoute,
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,

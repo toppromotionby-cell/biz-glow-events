@@ -4,6 +4,7 @@ import { LeadForm } from "@/components/LeadForm";
 import { CONTACT } from "@/lib/contacts";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { TikTokIcon } from "@/components/icons/TikTokIcon";
+import { trackSocialClick } from "@/lib/analytics";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({
@@ -51,6 +52,7 @@ function ContactsPage() {
             rel="noopener noreferrer"
             className="glass rounded-xl p-6 hover:glow-primary transition"
             aria-label="Мы в Instagram"
+            onClick={() => trackSocialClick("instagram", "contacts_page", instagram_url)}
           >
             <Instagram className="h-5 w-5 text-primary" />
             <div className="mt-3 text-sm text-muted-foreground">Instagram</div>
@@ -64,6 +66,7 @@ function ContactsPage() {
             rel="noopener noreferrer"
             className="glass rounded-xl p-6 hover:glow-primary transition"
             aria-label="Мы в TikTok"
+            onClick={() => trackSocialClick("tiktok", "contacts_page", tiktok_url)}
           >
             <TikTokIcon size={20} className="text-primary" />
             <div className="mt-3 text-sm text-muted-foreground">TikTok</div>
