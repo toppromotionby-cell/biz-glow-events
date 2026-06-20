@@ -65,15 +65,8 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
       ((await supabase.from("order_timeline").select("*").eq("order_id", id!)
         .order("created_at", { ascending: false })).data ?? []) as OrderTimelineRow[],
   });
-  const { data: attachCount = 0 } = useQuery({
-    queryKey: ["order-modal-attachments-count", id],
-    enabled,
-    queryFn: async () => {
-      const { count } = await supabase.from("order_attachments")
-        .select("id", { count: "exact", head: true }).eq("order_id", id!);
-      return count ?? 0;
-    },
-  });
+
+
 
   // Realtime: дёргаем перечитывание модальных запросов при изменениях по этому заказу.
   const refresh = useDebouncedCallback(() => {
