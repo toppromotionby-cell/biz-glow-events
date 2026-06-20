@@ -262,7 +262,7 @@ function OrderDetail() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Удалить заказ #{order.id.slice(0, 8)}?</AlertDialogTitle>
+                    <AlertDialogTitle>Удалить заказ {displayOrderNumber(order)}?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Будут безвозвратно удалены сам заказ, его позиции, таймлайн и вложения. Действие необратимо.
                     </AlertDialogDescription>
