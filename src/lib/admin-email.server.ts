@@ -42,6 +42,25 @@ function htmlToPlainText(html: string): string {
     .trim();
 }
 
+async function resolveUnsubscribeToken(email: string): Promise<string | null> {
+  // Reuse an existing unused token for this address, otherwise create one.
+  const { data: existing } = await supabaseAdmin
+    .from("email_unsubscribe_tokens")
+    .select("token, used_at")
+    .eq("email", email)
+    .is("used_at", null)
+    .limit(1)
+    .maybeSingle();
+  if (existing?.token) return existing.token;
+
+  const token = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/-/g, "");
+  const { error } = await supabaseAdmin
+    .from("email_unsubscribe_tokens")
+    .insert({ email, token });
+  if (error) return null;
+  return token;
+}
+
 async function enqueue(opts: {
   to: string;
   subject: string;
@@ -49,23 +68,56 @@ async function enqueue(opts: {
   label: string;
   messageId: string;
 }) {
+  const to = opts.to.trim().toLowerCase();
+
+  // Suppression check: don't enqueue for bounced/complained/unsubscribed recipients.
+  const { data: suppressed } = await supabaseAdmin
+    .from("suppressed_emails")
+    .select("email")
+    .eq("email", to)
+    .limit(1)
+    .maybeSingle();
+  if (suppressed) {
+    await supabaseAdmin.from("email_send_log").insert({
+      message_id: opts.messageId,
+      template_name: opts.label,
+      recipient_email: to,
+      status: "suppressed",
+      error_message: "Recipient is on the suppression list",
+    });
+    return { ok: false, error: "suppressed" };
+  }
+
+  const unsubscribeToken = await resolveUnsubscribeToken(to);
+  if (!unsubscribeToken) {
+    await supabaseAdmin.from("email_send_log").insert({
+      message_id: opts.messageId,
+      template_name: opts.label,
+      recipient_email: to,
+      status: "failed",
+      error_message: "Failed to provision unsubscribe token",
+    });
+    return { ok: false, error: "unsubscribe token failed" };
+  }
+
   const payload = {
-    to: opts.to,
+    message_id: opts.messageId,
+    to,
     from: FROM_ADDRESS,
     sender_domain: SENDER_DOMAIN,
     subject: opts.subject,
     html: opts.html,
     text: htmlToPlainText(opts.html),
     label: opts.label,
-    message_id: opts.messageId,
     idempotency_key: opts.messageId,
+    unsubscribe_token: unsubscribeToken,
     purpose: "transactional",
     queued_at: new Date().toISOString(),
   };
   await supabaseAdmin.from("email_send_log").insert({
     message_id: opts.messageId,
     template_name: opts.label,
-    recipient_email: opts.to,
+    recipient_email: to,
     status: "pending",
   });
   const { error } = await supabaseAdmin.rpc("enqueue_email", {
@@ -76,7 +128,7 @@ async function enqueue(opts: {
     await supabaseAdmin.from("email_send_log").insert({
       message_id: opts.messageId,
       template_name: opts.label,
-      recipient_email: opts.to,
+      recipient_email: to,
       status: "failed",
       error_message: error.message ?? "enqueue failed",
     });
