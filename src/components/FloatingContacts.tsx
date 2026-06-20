@@ -1,10 +1,11 @@
-// Плавающий виджет связи: Онлайн-помощник (для авторизованных) + Telegram + Звонок.
+// Плавающий виджет связи: Онлайн-помощник (для авторизованных) + Telegram + Звонок + Instagram (если задан).
 // Видим на всех страницах, уважает настройку секции global.floating_contacts.
 import { useState } from "react";
-import { MessageCircle, X, Headphones, Phone, Send } from "lucide-react";
+import { MessageCircle, X, Headphones, Phone, Send, Instagram } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
 import { useSectionEnabled } from "@/lib/site-sections";
 import { useAuth } from "@/hooks/use-auth";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 import { SupportChat } from "@/components/SupportChat";
 
 export function FloatingContacts() {
