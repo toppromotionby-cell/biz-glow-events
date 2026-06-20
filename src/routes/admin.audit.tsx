@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRef } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/button";
 import { fmtDateTime } from "@/lib/formatters";
+
 
 export const Route = createFileRoute("/admin/audit")({
   component: AuditPage,
