@@ -1,8 +1,9 @@
 // Централизованные контактные данные. Меняются здесь — обновляются по всему сайту.
 export const CONTACT = {
-  phoneDisplay: "",
-  phoneTel: "",
-  telegram: "",
+  phoneDisplay: "+375 44 709-91-22",
+  phoneTel: "+375447099122",
+  telegram: "+375447099122",
+  telegramUrl: "https://t.me/+375447099122",
   email: "hello@event-hub.by",
   address: "Минск, Беларусь",
   hours: "Пн–Сб, 10:00–20:00",
