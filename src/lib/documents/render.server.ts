@@ -103,7 +103,8 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   p { margin: 4px 0; text-align: justify; }
   .print-btn { position: fixed; top: 14px; right: 14px; padding: 9px 16px;
     background: var(--accent); color: #fff; border: 0; border-radius: 8px; cursor: pointer;
-    font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+    font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,.18);
+    text-decoration: none; display: inline-block; }
   .print-btn:hover { filter: brightness(1.05); }
   @media print { .print-btn { display: none; } body { font-size: 11.5px; } }
 </style></head><body>
