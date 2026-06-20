@@ -10,7 +10,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
-  Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
+  Newspaper, UserCog, Trophy, MessageSquareQuote,
   CalendarClock, Tag, ToggleRight, Mail, Search, Box,
   type LucideIcon,
 } from "lucide-react";
