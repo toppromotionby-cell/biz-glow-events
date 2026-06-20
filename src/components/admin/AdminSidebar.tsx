@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
-  CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog,
+  CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
