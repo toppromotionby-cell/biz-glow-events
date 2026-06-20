@@ -305,6 +305,7 @@ export const submitOrder = createServerFn({ method: "POST" })
     if (!tg.ok) {
       await notifyAdminOrderEmail({
         orderId: order.id,
+        orderNumber: order.order_number,
         clientName: data.client_name,
         clientPhone: data.client_phone,
         clientEmail: data.client_email,
