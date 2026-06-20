@@ -9,7 +9,7 @@ export type OrderTimelineRow = Database["public"]["Tables"]["order_timeline"]["R
 /** Набор колонок, которые тянет список заказов (узкий select). */
 export type OrderListRow = Pick<
   OrderRow,
-  | "id" | "created_at" | "updated_at" | "status"
+  | "id" | "order_number" | "created_at" | "updated_at" | "status"
   | "client_name" | "client_company" | "client_phone" | "client_email"
   | "event_date" | "source" | "utm_source" | "utm_campaign"
   | "total" | "paid"
