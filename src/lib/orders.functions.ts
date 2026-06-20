@@ -510,15 +510,21 @@ export const deleteOrderAdmin = createServerFn({ method: "POST" })
 
 type DocKind = "quote" | "invoice" | "contract" | "act";
 type DocStatus = { kind: DocKind; label: string; ok: boolean; stage?: "build" | "upload" | "sign"; error?: string; url?: string };
+type OrderPdfAttachment = { kind: DocKind; label: string; filename: string; bytes: Uint8Array };
 
+// Возвращает PDF-байты документов (для приложения к письму клиенту) +
+// статусы загрузки в Storage (для админской истории / повторного скачивания).
 async function generateAndUploadOrderDocuments(
   orderId: string,
-): Promise<{ docs: Array<{ kind: DocKind; label: string; url: string }>; statuses: DocStatus[] }> {
+): Promise<{ pdfs: OrderPdfAttachment[]; statuses: DocStatus[] }> {
   const statuses: DocStatus[] = [];
+  const pdfs: OrderPdfAttachment[] = [];
+  const fallbackLabels: Record<DocKind, string> = { quote: "КП", invoice: "Счёт", contract: "Договор", act: "Акт" };
   try {
-    const [{ buildQuoteHtml, buildInvoiceHtml, buildContractHtml, buildActHtml, DOC_LABELS }, { loadDocumentSettings }] = await Promise.all([
+    const [{ DOC_LABELS }, { loadDocumentSettings }, { buildOrderDocPdf, DOC_PDF_FILENAMES }] = await Promise.all([
       import("@/lib/documents/build.server"),
       import("@/lib/documents/render.server"),
+      import("@/lib/documents/pdf.server"),
     ]);
 
     const [{ data: order }, { data: items }, settings] = await Promise.all([
@@ -534,7 +540,7 @@ async function generateAndUploadOrderDocuments(
       for (const kind of ["quote", "invoice", "contract", "act"] as const) {
         statuses.push({ kind, label: DOC_LABELS[kind], ok: false, stage: "build", error: "Заявка не найдена" });
       }
-      return { docs: [], statuses };
+      return { pdfs: [], statuses };
     }
 
     const itemRows = (items ?? []).map((i) => ({
@@ -544,35 +550,33 @@ async function generateAndUploadOrderDocuments(
     }));
 
     const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    const docs: Array<{ kind: DocKind; label: string; url: string }> = [];
-
-    const buildOne = (kind: DocKind): string => {
-      if (kind === "quote") return buildQuoteHtml(order, itemRows, settings);
-      if (kind === "invoice") return buildInvoiceHtml(order, itemRows, settings);
-      if (kind === "contract") return buildContractHtml(order, itemRows, settings);
-      return buildActHtml(order, itemRows, settings);
-    };
+    const orderShort = String(order.id).slice(0, 8).toUpperCase();
 
     for (const kind of ["quote", "invoice", "contract", "act"] as const) {
-      const label = DOC_LABELS[kind];
+      const label = DOC_LABELS[kind] ?? fallbackLabels[kind];
       try {
-        let html: string;
+        let bytes: Uint8Array;
         try {
-          html = buildOne(kind);
+          bytes = await buildOrderDocPdf(kind, order as never, itemRows, settings);
         } catch (e) {
           const msg = e instanceof Error ? e.message : "build error";
           console.error("[order-docs] build failed", kind, msg);
           statuses.push({ kind, label, ok: false, stage: "build", error: msg });
           continue;
         }
-        const path = `orders/${orderId}/${kind}-${datePart}.html`;
-        const blob = new Blob([html], { type: "text/html; charset=utf-8" });
+        const filename = `${DOC_PDF_FILENAMES[kind]}_${orderShort}.pdf`;
+        const path = `orders/${orderId}/${kind}-${datePart}.pdf`;
+        // pdf-lib иногда возвращает Uint8Array поверх большего буфера; берём slice
+        // чтобы Blob получил ровно нужные байты.
+        const blob = new Blob([bytes.slice()], { type: "application/pdf" });
         const up = await supabaseAdmin.storage
           .from("order-attachments")
-          .upload(path, blob, { upsert: true, contentType: "text/html; charset=utf-8" });
+          .upload(path, blob, { upsert: true, contentType: "application/pdf" });
         if (up.error) {
           console.error("[order-docs] upload failed", kind, up.error.message);
           statuses.push({ kind, label, ok: false, stage: "upload", error: up.error.message });
+          // Письмо клиенту приложим даже если в Storage не записалось.
+          pdfs.push({ kind, label, filename, bytes });
           continue;
         }
         const signed = await supabaseAdmin.storage
@@ -582,9 +586,10 @@ async function generateAndUploadOrderDocuments(
           const msg = signed.error?.message ?? "no signed url";
           console.error("[order-docs] sign failed", kind, msg);
           statuses.push({ kind, label, ok: false, stage: "sign", error: msg });
+          pdfs.push({ kind, label, filename, bytes });
           continue;
         }
-        docs.push({ kind, label, url: signed.data.signedUrl });
+        pdfs.push({ kind, label, filename, bytes });
         statuses.push({ kind, label, ok: true, url: signed.data.signedUrl });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown error";
@@ -592,17 +597,16 @@ async function generateAndUploadOrderDocuments(
         statuses.push({ kind, label, ok: false, error: msg });
       }
     }
-    return { docs, statuses };
+    return { pdfs, statuses };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "fatal";
     console.error("[order-docs] fatal", e);
     if (statuses.length === 0) {
-      const fallback: Record<DocKind, string> = { quote: "КП", invoice: "Счёт", contract: "Договор", act: "Акт" };
       for (const kind of ["quote", "invoice", "contract", "act"] as const) {
-        statuses.push({ kind, label: fallback[kind], ok: false, error: msg });
+        statuses.push({ kind, label: fallbackLabels[kind], ok: false, error: msg });
       }
     }
-    return { docs: [], statuses };
+    return { pdfs: [], statuses };
   }
 }
 
