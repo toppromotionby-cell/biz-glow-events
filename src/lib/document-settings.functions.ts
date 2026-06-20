@@ -111,6 +111,13 @@ const SettingsSchema = z.object({
 export const getDocumentSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<DocumentSettings> => {
+    const { data: isAdmin, error: rErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (rErr) throw new Error(rErr.message);
+    if (!isAdmin) throw new Error("Доступ запрещён: требуется роль admin");
+
     const { data, error } = await context.supabase
       .from("document_settings")
       .select("*")
