@@ -112,7 +112,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
     <Dialog open={enabled} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto p-6 gap-0 bg-card">
         <DialogHeader className="sr-only">
-          <DialogTitle>Заказ {order ? `#${order.id.slice(0, 8)}` : ""}</DialogTitle>
+          <DialogTitle>Заказ {order ? displayOrderNumber(order) : ""}</DialogTitle>
           <DialogDescription>Детали и управление заказом</DialogDescription>
         </DialogHeader>
 
