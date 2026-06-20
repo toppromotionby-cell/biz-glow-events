@@ -47,16 +47,29 @@ function workerEnv() {
   return { base: base.replace(/\/+$/, ""), secret };
 }
 
-export async function callMailWorker<T = unknown>(
+async function warmupWorker(base: string): Promise<void> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 5_000);
+  try {
+    await fetch(`${base}/health`, { signal: ctrl.signal });
+  } catch {
+    // прогрев best-effort: не валим основной запрос
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function doFetch(
+  base: string,
+  secret: string,
   path: WorkerPath,
   payload: unknown,
-  opts?: { timeoutMs?: number },
-): Promise<T> {
-  const { base, secret } = workerEnv();
+  timeoutMs: number,
+): Promise<Response> {
   const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? 60_000);
+  const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(`${base}${path}`, {
+    return await fetch(`${base}${path}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -65,6 +78,40 @@ export async function callMailWorker<T = unknown>(
       body: JSON.stringify(payload ?? {}),
       signal: ctrl.signal,
     });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function callMailWorker<T = unknown>(
+  path: WorkerPath,
+  payload: unknown,
+  opts?: { timeoutMs?: number; warmup?: boolean; retryOnTimeout?: boolean },
+): Promise<T> {
+  const { base, secret } = workerEnv();
+  const timeoutMs = opts?.timeoutMs ?? 60_000;
+  const wantWarmup = opts?.warmup ?? path === "/test";
+  const wantRetry = opts?.retryOnTimeout ?? path === "/test";
+
+  if (wantWarmup) await warmupWorker(base);
+
+  const runOnce = async (): Promise<T> => {
+    let res: Response;
+    try {
+      res = await doFetch(base, secret, path, payload, timeoutMs);
+    } catch (err) {
+      const isAbort =
+        (err instanceof Error && (err.name === "AbortError" || /abort/i.test(err.message)));
+      if (isAbort) {
+        throw new MailWorkerError(
+          `Воркер не ответил за ${Math.round(timeoutMs / 1000)} сек (возможно, холодный старт). Повторите попытку через 10–20 секунд.`,
+          504,
+          path,
+        );
+      }
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new MailWorkerError(msg, 0, path);
+    }
     const text = await res.text();
     let json: unknown = null;
     try {
@@ -77,19 +124,24 @@ export async function callMailWorker<T = unknown>(
         json && typeof json === "object" && "error" in json
           ? String((json as { error: unknown }).error)
           : "";
-      const msg =
-        errFromJson ||
-        text ||
-        `HTTP ${res.status}`;
+      const msg = errFromJson || text || `HTTP ${res.status}`;
       throw new MailWorkerError(msg, res.status, path);
     }
     return (json ?? {}) as T;
+  };
+
+  try {
+    return await runOnce();
   } catch (err) {
-    if (err instanceof MailWorkerError) throw err;
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new MailWorkerError(msg, 0, path);
-  } finally {
-    clearTimeout(timeout);
+    if (
+      wantRetry &&
+      err instanceof MailWorkerError &&
+      (err.status === 504 || err.status === 0)
+    ) {
+      // Один повтор после прогрева — инстанс мог уже подняться.
+      return await runOnce();
+    }
+    throw err;
   }
 }
 
