@@ -681,7 +681,13 @@ async function sendOrderConfirmationEmailAndLog(
         startDate: i.start_date ?? null,
         endDate: i.end_date ?? null,
       })),
-      attachments: documentPdfs.map((d) => ({ filename: d.filename, bytes: d.bytes })),
+      documents: docStatuses
+        .filter((s): s is DocStatus & { url: string } => Boolean(s.ok && s.url))
+        .map((s) => ({
+          label: s.label,
+          filename: documentPdfs.find((p) => p.kind === s.kind)?.filename ?? `${s.kind}.pdf`,
+          url: s.url,
+        })),
     });
   } catch (e) {
     res = { ok: false, error: e instanceof Error ? e.message : "send failed" };
