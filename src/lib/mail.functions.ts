@@ -14,7 +14,11 @@ import {
 type SbClient = SupabaseClient<any, any, any>;
 
 type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
-type WorkerResult = { ok: boolean; [k: string]: Json | undefined };
+
+// TanStack server fns serialize results, поэтому возвращаем уже-чистый JSON.
+function toJson(value: unknown): Json {
+  return JSON.parse(JSON.stringify(value ?? null)) as Json;
+}
 
 const STAFF_ROLES = ["admin", "manager", "marketer", "content_editor"] as const;
 
