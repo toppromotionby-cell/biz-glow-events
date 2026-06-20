@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireStaff } from "@/lib/admin-route-guard";
+import { fmtDate } from "@/lib/formatters";
 
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -25,9 +26,9 @@ export const Route = createFileRoute("/admin/orders/$id/contract")({
           .from("order_items").select("*").eq("order_id", params.id);
 
         const total = (items ?? []).reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
-        const date = new Date().toLocaleDateString("ru-BY");
+        const date = fmtDate(new Date());
         const num = String(order.id).slice(0, 8).toUpperCase();
-        const eventDate = order.event_date ? new Date(order.event_date).toLocaleDateString("ru-BY") : "по согласованию сторон";
+        const eventDate = order.event_date ? fmtDate(order.event_date) : "по согласованию сторон";
 
         const itemsList = (items ?? []).map((it, i) =>
           `<li>${esc(it.title)} — ${esc(it.qty)} шт. × ${money(Number(it.price))} = <b>${money(Number(it.price) * Number(it.qty))}</b></li>`
