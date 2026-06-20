@@ -3,6 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   callMailWorker,
@@ -10,34 +11,22 @@ import {
   type MailAccountCfg,
 } from "@/lib/mail-worker.server";
 
+type SbClient = SupabaseClient<any, any, any>;
+
 const STAFF_ROLES = ["admin", "manager", "marketer", "content_editor"] as const;
 
-async function assertStaff(
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> },
-  userId: string,
-) {
+async function assertStaff(supabase: SbClient, userId: string) {
   for (const role of STAFF_ROLES) {
-    const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: role });
+    const { data, error } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: role,
+    } as never);
     if (!error && data === true) return;
   }
   throw new Error("Forbidden: staff role required");
 }
 
-// ───── account loader ─────
-// Загружает аккаунт по id + расшифровывает пароль (поле password_encrypted
-// сейчас хранит plaintext до подключения шифрования — это TODO, согласовано).
-async function loadAccountCfg(
-  supabase: {
-    from: (table: string) => {
-      select: (cols: string) => {
-        eq: (col: string, val: string) => {
-          single: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
-        };
-      };
-    };
-  },
-  accountId: string,
-): Promise<MailAccountCfg> {
+async function loadAccountCfg(supabase: SbClient, accountId: string): Promise<MailAccountCfg> {
   const { data, error } = await supabase
     .from("mail_accounts")
     .select(
