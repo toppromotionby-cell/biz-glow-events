@@ -272,6 +272,7 @@ export function SiteFooter() {
                 <Toggleable sectionKey="footer.contacts.telegram" as="li"><a href={CONTACT.telegramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">Telegram: {CONTACT.phoneDisplay}</a></Toggleable>
                 <Toggleable sectionKey="footer.contacts.email" as="li"><a href={`mailto:${CONTACT.email}`} className="hover:text-foreground">{CONTACT.email}</a></Toggleable>
               </ul>
+              <SocialIcons variant="footer" className="mt-4" />
             </Toggleable>
           </div>
 
