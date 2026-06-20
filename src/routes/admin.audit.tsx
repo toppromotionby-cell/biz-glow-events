@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/AdminTable";
+import { Button } from "@/components/ui/button";
+import { fmtDateTime } from "@/lib/formatters";
 
 export const Route = createFileRoute("/admin/audit")({
   component: AuditPage,
@@ -16,11 +18,39 @@ const COLS = [
   { key: "user", label: "User" },
 ];
 
+const PAGE_SIZE = 50;
+
+type AuditRow = {
+  id: string;
+  created_at: string;
+  action: string;
+  table_name: string;
+  record_id: string | null;
+  user_id: string | null;
+};
+
 function AuditPage() {
-  const { data = [], isLoading } = useQuery({
+  // Курсорная пагинация по created_at: дешевле, чем .range() на больших таблицах
+  // (избегаем COUNT(*) и сканов нарастающих смещений).
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ["audit"],
-    queryFn: async () => (await supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(200)).data ?? [],
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam }) => {
+      let q = supabase
+        .from("audit_log")
+        .select("id, created_at, action, table_name, record_id, user_id")
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+      if (pageParam) q = q.lt("created_at", pageParam);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as AuditRow[];
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.length < PAGE_SIZE ? undefined : lastPage[lastPage.length - 1].created_at,
   });
+
+  const rows = data?.pages.flat() ?? [];
 
   return (
     <div className="space-y-5">
@@ -29,11 +59,11 @@ function AuditPage() {
         columns={COLS}
         textSize="xs"
         isLoading={isLoading}
-        isEmpty={!isLoading && data.length === 0}
+        isEmpty={!isLoading && rows.length === 0}
       >
-        {data.map((r: any) => (
+        {rows.map((r) => (
           <tr key={r.id} className="border-t border-border/40">
-            <td className="p-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString("ru-BY")}</td>
+            <td className="p-3 whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
             <td className="p-3 font-medium">{r.action}</td>
             <td className="p-3">{r.table_name}</td>
             <td className="p-3 font-mono text-[10px]">{r.record_id?.slice(0, 8)}</td>
@@ -41,6 +71,18 @@ function AuditPage() {
           </tr>
         ))}
       </AdminTable>
+      {hasNextPage && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? "Загрузка…" : "Показать ещё"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
