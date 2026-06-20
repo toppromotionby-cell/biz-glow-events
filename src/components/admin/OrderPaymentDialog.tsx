@@ -99,7 +99,7 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
 
   const validate = useCallback((): boolean => {
     const nextErrors: typeof errors = {};
-    const amountError = validateAmount(amount, remaining);
+    const amountError = validateAmount(amount);
     if (amountError) nextErrors.amount = amountError;
     if (!METHODS.some((m) => m.value === method)) nextErrors.method = "Выберите метод оплаты";
     const dateError = validateDate(paidAt);
@@ -109,7 +109,7 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
     }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
-  }, [amount, method, paidAt, comment, remaining]);
+  }, [amount, method, paidAt, comment]);
 
   const addPayment = useMutation({
     mutationFn: async () => {
@@ -121,7 +121,12 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
         comment: comment.trim() || null,
         paid_at: paidAt,
       };
-      paymentSchema.parse({ ...payload, amount: value });
+      paymentSchema.parse({
+        amount: value,
+        method,
+        paidAt,
+        comment: comment.trim() || undefined,
+      });
 
       const newPaid = currentPaid + value;
 
@@ -158,7 +163,7 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
   const handleAmountChange = (raw: string) => {
     setAmount(raw);
     if (touched.amount) {
-      const err = validateAmount(raw, remaining);
+      const err = validateAmount(raw);
       setErrors((prev) => ({ ...prev, amount: err || undefined }));
     }
   };
@@ -202,7 +207,7 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
               onChange={(e) => handleAmountChange(e.target.value)}
               onBlur={() => {
                 setTouched((prev) => ({ ...prev, amount: true }));
-                const err = validateAmount(amount, remaining);
+                const err = validateAmount(amount);
                 setErrors((prev) => ({ ...prev, amount: err || undefined }));
               }}
               className={errors.amount ? "border-destructive focus-visible:ring-destructive" : ""}
