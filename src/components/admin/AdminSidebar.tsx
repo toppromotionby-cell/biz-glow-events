@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Megaphone, Newspaper, UserCog, Trophy, MessageSquareQuote,
-  CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail,
+  CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -58,6 +58,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/users", label: "Пользователи", icon: UserCog },
       { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
+      { to: "/admin/notifications", label: "Уведомления", icon: Bell },
       { to: "/admin/audit", label: "Аудит", icon: FileText },
     ],
   },

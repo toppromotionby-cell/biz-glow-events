@@ -59,6 +59,7 @@ import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonia
 import { Route as AdminSectionsRouteImport } from './routes/admin.sections'
 import { Route as AdminPromoRouteImport } from './routes/admin.promo'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
@@ -335,6 +336,11 @@ const AdminOrdersRoute = AdminOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMarketingRoute = AdminMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
@@ -509,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
@@ -585,6 +592,7 @@ export interface FileRoutesByTo {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
@@ -663,6 +671,7 @@ export interface FileRoutesById {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
@@ -742,6 +751,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/marketing'
+    | '/admin/notifications'
     | '/admin/orders'
     | '/admin/promo'
     | '/admin/sections'
@@ -818,6 +828,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/marketing'
+    | '/admin/notifications'
     | '/admin/orders'
     | '/admin/promo'
     | '/admin/sections'
@@ -895,6 +906,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/marketing'
+    | '/admin/notifications'
     | '/admin/orders'
     | '/admin/promo'
     | '/admin/sections'
@@ -1331,6 +1343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/marketing': {
       id: '/admin/marketing'
       path: '/marketing'
@@ -1583,6 +1602,7 @@ interface AdminRouteChildren {
   AdminCasesRoute: typeof AdminCasesRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminMarketingRoute: typeof AdminMarketingRoute
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
   AdminPromoRoute: typeof AdminPromoRoute
   AdminSectionsRoute: typeof AdminSectionsRoute
@@ -1600,6 +1620,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCasesRoute: AdminCasesRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminMarketingRoute: AdminMarketingRoute,
+  AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
   AdminPromoRoute: AdminPromoRoute,
   AdminSectionsRoute: AdminSectionsRoute,
