@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Mail, FileText, Phone, Send } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
+import { supabase } from "@/integrations/supabase/client";
+import { displayOrderNumber } from "@/lib/order-number";
 
 export const Route = createFileRoute("/order/success/$id")({
   component: OrderSuccess,
@@ -14,7 +17,14 @@ export const Route = createFileRoute("/order/success/$id")({
 
 function OrderSuccess() {
   const { id } = Route.useParams();
-  const short = id.slice(0, 8).toUpperCase();
+  const { data } = useQuery({
+    queryKey: ["order-success-number", id],
+    queryFn: async () => {
+      const { data } = await supabase.from("orders").select("id, order_number").eq("id", id).maybeSingle();
+      return data;
+    },
+  });
+  const label = displayOrderNumber(data ?? { id });
   return (
     <div className="container mx-auto px-4 py-16 max-w-2xl">
       <div className="glass-strong rounded-2xl p-8 text-center space-y-6">
@@ -24,7 +34,7 @@ function OrderSuccess() {
         <div>
           <h1 className="text-3xl font-display font-bold gradient-text">Заявка принята</h1>
           <p className="mt-2 text-muted-foreground">
-            Номер заявки: <span className="font-mono text-foreground">#{short}</span>
+            Номер заявки: <span className="font-mono text-foreground">{label}</span>
           </p>
         </div>
         <p className="text-sm text-muted-foreground">
