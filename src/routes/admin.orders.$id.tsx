@@ -17,6 +17,7 @@ import { ArrowLeft, Clock, Trash2, Mail, FileText } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument, openInlineBlob, base64ToBytes } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
+import { notifyOrderStatus } from "@/lib/order-notifications.functions";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
 import type { Database } from "@/integrations/supabase/types";
