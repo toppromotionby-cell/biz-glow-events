@@ -298,6 +298,102 @@ export type Database = {
         }
         Relationships: []
       }
+      document_settings: {
+        Row: {
+          accent_color: string
+          bank_account: string
+          bank_bic: string
+          bank_name: string
+          company_address: string
+          company_brand: string
+          company_email: string
+          company_legal_name: string
+          company_phone: string
+          company_unp: string
+          company_website: string
+          contract_cancel_days: number
+          contract_jurisdiction_city: string
+          contract_late_fee_pct: number
+          contract_prepayment_days: number
+          contract_prepayment_pct: number
+          contract_sections: Json
+          invoice_footer: string
+          invoice_validity_days: number
+          logo_url: string | null
+          quote_footer: string
+          quote_validity_days: number
+          signer_basis: string
+          signer_name: string
+          signer_title: string
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+          vat_note: string
+        }
+        Insert: {
+          accent_color?: string
+          bank_account?: string
+          bank_bic?: string
+          bank_name?: string
+          company_address?: string
+          company_brand?: string
+          company_email?: string
+          company_legal_name?: string
+          company_phone?: string
+          company_unp?: string
+          company_website?: string
+          contract_cancel_days?: number
+          contract_jurisdiction_city?: string
+          contract_late_fee_pct?: number
+          contract_prepayment_days?: number
+          contract_prepayment_pct?: number
+          contract_sections?: Json
+          invoice_footer?: string
+          invoice_validity_days?: number
+          logo_url?: string | null
+          quote_footer?: string
+          quote_validity_days?: number
+          signer_basis?: string
+          signer_name?: string
+          signer_title?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          vat_note?: string
+        }
+        Update: {
+          accent_color?: string
+          bank_account?: string
+          bank_bic?: string
+          bank_name?: string
+          company_address?: string
+          company_brand?: string
+          company_email?: string
+          company_legal_name?: string
+          company_phone?: string
+          company_unp?: string
+          company_website?: string
+          contract_cancel_days?: number
+          contract_jurisdiction_city?: string
+          contract_late_fee_pct?: number
+          contract_prepayment_days?: number
+          contract_prepayment_pct?: number
+          contract_sections?: Json
+          invoice_footer?: string
+          invoice_validity_days?: number
+          logo_url?: string | null
+          quote_footer?: string
+          quote_validity_days?: number
+          signer_basis?: string
+          signer_name?: string
+          signer_title?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          vat_note?: string
+        }
+        Relationships: []
+      }
       email_campaign_recipients: {
         Row: {
           campaign_id: string

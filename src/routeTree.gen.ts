@@ -71,6 +71,7 @@ import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
+import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminCampaignsNewRouteImport } from './routes/admin.campaigns.new'
@@ -397,6 +398,11 @@ const ApiPublicTelegramSupportRoute =
     path: '/api/public/telegram-support',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminSettingsDocumentsRoute = AdminSettingsDocumentsRouteImport.update({
+  id: '/settings/documents',
+  path: '/settings/documents',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -535,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
@@ -612,6 +619,7 @@ export interface FileRoutesByTo {
   '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
@@ -691,6 +699,7 @@ export interface FileRoutesById {
   '/admin/campaigns/new': typeof AdminCampaignsNewRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
+  '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
@@ -771,6 +780,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/settings/documents'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
@@ -848,6 +858,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/settings/documents'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
@@ -926,6 +937,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns/new'
     | '/admin/catalog/$type'
     | '/admin/orders/$id'
+    | '/admin/settings/documents'
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
@@ -1427,6 +1439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramSupportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/settings/documents': {
+      id: '/admin/settings/documents'
+      path: '/settings/documents'
+      fullPath: '/admin/settings/documents'
+      preLoaderRoute: typeof AdminSettingsDocumentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders/$id': {
       id: '/admin/orders/$id'
       path: '/$id'
@@ -1609,6 +1628,7 @@ interface AdminRouteChildren {
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1627,6 +1647,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
