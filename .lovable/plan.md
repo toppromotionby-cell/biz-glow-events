@@ -1,84 +1,82 @@
-## Краткий вывод
 
-Проект в хорошем состоянии: ~32k строк, файловая структура чистая, есть базовые reusable-компоненты в `src/components/admin/*`, типы из `Database` подключены, тесты на критичных утилитах. Нет `console.log`/`TODO`-мусора, нет «мёртвых» страниц. Основные точки роста — крупные «жирные» роуты, повторы в каталоге (4 типа × 2 страницы), отсутствие edge-функций и cron, отсутствие точечной мемоизации и широкие realtime-инвалидации.
+## Что меняем
 
-Работаем итерациями. Каждый этап — отдельный PR с проверкой: типы → unit → e2e smoke (каталог / карточка / меню / мобайл) → ручная проверка ключевых экранов. Без поломок UI и бизнес-логики.
+Окно на скриншоте — `src/components/admin/orders/OrderDialog.tsx`. Сейчас оно выглядит «сыро»: плоские `bg-muted/10` блоки, UTM-сетка с накладывающимся текстом (`cart` + `utm_source` слипаются), таблица позиций без зебры, кнопки в «Документах» разнородные (две прозрачные + оранжевая), а действий над заказом (смена статуса, оплата, удаление, КП, письмо) внутри модалки нет вовсе — нужно уходить на полную страницу.
 
----
+## Цели
 
-## 1. Архитектура и DRY
+1. Единый визуальный язык с остальной админкой (glass-карточки, токены `--background/--card/--primary/--accent`, тонкие бордеры `border-border/50`, mono-шрифт для ID).
+2. Все ключевые действия по заказу — прямо в модалке, без перехода.
+3. Никаких накладок, всё читаемо на desktop/tablet/mobile.
 
-**Что нашлось**
-- `src/routes/{zones,equipment,services,production}.tsx` — 4 файла по 54 строки, отличаются только строкой типа, заголовком и meta. То же для `*.$slug.tsx` (4 × 48).
-- Форматтеры (`fmtMoney`, `fmtDate`, `fmtDateTime`) повторяются в нескольких админ-роутах (`admin.orders.tsx`, `admin.orders.$id.*`).
-- В `admin.orders.tsx` локальные мини-компоненты `Stat`, `InfoCard`, `Row`, `PaidCell` дублируют паттерн «лейбл-значение», уже частично закрытый `Field` и `StatusPill`.
-- `CatalogDetail.tsx` (545 строк) совмещает рендер, SEO JSON-LD, бизнес-логику выбора варианта и CTA.
+## Структура после редизайна
 
-**Что выносим**
-- `src/lib/catalog-routes.ts` уже существует — расширим до фабрики `makeCatalogListRoute(type)` и `makeCatalogDetailRoute(type)`, чтобы 8 файлов превратились в 8 тонких 5-строчных конфигов.
-- `src/lib/formatters.ts` — единый источник `fmtMoney/Date/DateTime/Phone/Age`.
-- `src/components/admin/InfoCard.tsx`, `KeyValueRow.tsx` — заменят локальные дубли в `admin.orders.*`.
-- Из `CatalogDetail` выделим `CatalogDetailHeader`, `CatalogVariantPicker`, `CatalogDetailCTA`, оставив контейнер тонким.
+```text
+┌─ Sticky header ────────────────────────────────────────────┐
+│ #b9f0f849  [Подтв.▾ статус-select]  · создан · обновлён    │
+│                                       [⋯ меню]  [Открыть ↗]│
+├─ Quick actions bar ────────────────────────────────────────┤
+│ [Скачать КП] [Счёт] [Договор] [✉ Письмо] [📞] [✉] [🗑]      │
+├─ 3 InfoCard: Клиент · Мероприятие · Финансы ───────────────┤
+│  Финансы: Сумма / Оплачено / Долг + прогресс-бар оплаты    │
+│           поле «внести оплату» (inline)                    │
+├─ Позиции (таблица с зеброй, иконкой типа, суммой снизу)    │
+├─ Источник и UTM (collapsible, по умолчанию свернут)        │
+├─ Заметки клиента (read-only) | Внутренние заметки (edit)   │
+├─ Документы и файлы (OrderAttachments, единый стиль кнопок) │
+└─ Таймлайн (иконки по типу события, форматированный payload)│
+```
 
-## 2. Сложность (декомпозиция)
+## Конкретные правки UI
 
-| Файл | Строки | Что делать |
-|---|---|---|
-| `src/routes/admin.orders.tsx` | 761 | Разнести: список (`AdminOrdersTable`), диалог-карточку (`OrderDialog` уже отдельная функция — вынести в `components/admin/orders/OrderDialog.tsx`), мутации в `useOrderMutations` хук |
-| `src/routes/admin.catalog.$type.tsx` | 673 | Выделить `CatalogEditorForm`, `CatalogList` в `components/admin/catalog/*` |
-| `src/routes/cart.tsx` | 539 | Разделить «корзина», «расчёт стоимости/промо», «форма оформления» |
-| `src/components/CatalogDetail.tsx` | 545 | См. п.1 |
-| `src/routes/profile.tsx` | 420 | Вкладки в отдельные компоненты (`ProfileOrders`, `ProfileDetails`, `ProfileSecurity`) |
-| `src/routes/admin.blog.tsx` | 414 | Аналогично catalog: списочная панель + редактор |
+- Хедер: липкий, `bg-card/80 backdrop-blur`, моно-шрифт для ID, статус — `Select` (shadcn) вместо статичного бейджа, рядом `DropdownMenu` «⋯» с действиями «Подтвердить», «Отметить оплаченным», «Дублировать», «Удалить».
+- Карточки: общий `glass rounded-xl` класс (как на `admin.orders.$id.tsx`), `p-5`, заголовок `text-xs uppercase tracking-wider text-muted-foreground`.
+- Финансы: добавляем `Progress` от shadcn (paid/total), цветовая семантика — `text-emerald-400` оплачено, `text-amber-400` долг, без хардкоженых hex. Inline-поле «внести оплату» с кнопкой `+`.
+- Позиции: таблица с `divide-y divide-border/30`, зебра `odd:bg-muted/5`, иконка по `entity_type` (zone/service/equipment/production), строка «Итого» снизу `sticky bottom-0`.
+- UTM: `Collapsible` (свёрнут по умолчанию), фикс верстки — `grid grid-cols-2 md:grid-cols-3` с явным `min-w-0` и `truncate`, чтобы не было наложений как на скриншоте.
+- Документы: убираем разнобой — единый ряд из 5 кнопок `variant="outline" size="sm"` + одна `variant="default"` для «Загрузить файл». Иконки одного размера.
+- Таймлайн: иконка по событию (`status_changed:*` → стрелка, `confirmation_email_sent` → ✉, `order_edited_by_client` → ✏), payload рендерим человекочитаемо (diff `from → to` для статуса/оплаты), не JSON.
+- Mobile: 3 карточки → 1 колонка, sticky-хедер с action-меню в `Sheet` снизу.
 
-Цель — ни один роут > ~250 строк, ни один компонент не отвечает за две зоны UI.
+## Что добавляем для удобства (UX)
 
-## 3. Автоматизация
+1. **Действия в модалке** (главное): смена статуса, отметка оплаты, скачать КП/счёт/договор, предпросмотр письма, удалить. Сейчас всего этого нет — только «Открыть полную страницу».
+2. **Inline-редактирование** внутренних заметок (autosave с debounce 800мс + индикатор «Сохранено»).
+3. **Копирование контактов**: клик по телефону/email — копирует в буфер + тост; иконки `tel:`/`mailto:`/`Copy`.
+4. **Прогресс оплаты** + быстрый ввод суммы оплаты.
+5. **Бейдж SLA**: возраст заказа (`order-age.ts` уже есть) — например «5 ч назад» / «⚠ просрочен >72ч».
+6. **Горячие клавиши**: `Esc` закрыть (есть), `E` — фокус на внутренние заметки, `D` — скачать КП, `?` — список шорткатов.
+7. **Скелетоны** вместо текста «Загрузка…».
+8. **Realtime**: подписка на `order_timeline` и `orders` для открытого `id` — таймлайн и статус обновляются без F5.
 
-**Что есть сейчас:** TanStack server functions для всего; нет ни одной Supabase Edge Function, нет настроенного pg_cron (миграции этого не содержат), есть очередь писем `src/routes/lovable/email/queue/process.ts`, но без расписания.
+## Технические детали
 
-**Что автоматизируем (через server routes под `/api/public/hooks/*` + pg_cron):**
-1. **Обработка очереди писем** — `process.ts` уже есть, добавим cron «каждые 5 мин» на `/api/public/hooks/email-queue`.
-2. **Брошенные корзины** — переводим клиентский вызов `notifyAbandonedCart` (защищённый, для авторизованных) в cron-сканер: раз в час пробегаем `cart_drafts` старше 60 мин без заказа.
-3. **Очистка `suppressed_emails`, `email_unsubscribe_tokens`, истёкших `promo_codes`** — еженочный cron.
-4. **SLA по заказам** — раз в час пометка просроченных заявок (>72ч в статусе `new`) и одно уведомление в Telegram админу.
-5. **БД-триггеры:**
-   - `audit_log` для `orders/cases/blog_posts/testimonials` (триггер пишет diff на UPDATE).
-   - `order_timeline` авто-запись при смене `status`/`paid` (сейчас руками в коде каждой мутации).
-   - Авто-`updated_at` уже есть через `touch_updated_at` — проверим, что навешен везде.
-6. **Webhook от Resend** — есть `lovable/email/auth/webhook.ts`, добавим валидацию подписи и unit-тест.
+Файлы:
+- `src/components/admin/orders/OrderDialog.tsx` — переписать (≈350 строк, разнесём на подкомпоненты).
+- `src/components/admin/orders/OrderHeader.tsx` — sticky header + actions menu.
+- `src/components/admin/orders/OrderFinanceCard.tsx` — финансы + progress + inline-оплата.
+- `src/components/admin/orders/OrderItemsTable.tsx` — таблица позиций с итогом.
+- `src/components/admin/orders/OrderTimelineList.tsx` — человекочитаемый таймлайн.
+- `src/components/admin/orders/InternalNotesEditor.tsx` — autosave (использует существующий `use-debounced-callback`).
+- `src/hooks/use-order-mutations.ts` — переиспользовать (уже есть updateStatus/updatePaid).
 
-## 4. Производительность
+Серверная логика **не меняется**: всё через существующие server functions и `supabase` клиент. Триггеры `log_order_status_change` / `write_audit_log` (этап 5) автоматически зафиксируют изменения статуса/оплаты в `order_timeline` и `audit_log` — ручные записи не нужны.
 
-- **`admin.orders.tsx` realtime**: подписка инвалидирует весь список на любую запись в `orders`. Сделаем дебаунс 500мс + узкий фильтр по событию (UPDATE/INSERT) и сравнение `payload.new.id` с открытым диалогом.
-- **Селект 500 строк заказов**: добавим серверную пагинацию (limit/offset через `useInfiniteQuery`).
-- **Мемоизация**: только 6 `useMemo` в `CatalogGrid` — добавим в `CatalogDetail`, `cart.tsx` (расчёт итогов), `admin.orders.tsx` (фильтры, отсортированный список).
-- **Lazy-импорты**: применяется только в 3 местах. Кандидаты — тяжёлые админ-страницы целиком (`admin.campaigns.$id`, `admin.marketing`, `admin.calendar`, `OrderAttachments` уже лениво — расширим).
-- **Изображения каталога**: проверим `loading="lazy"` и `decoding="async"` в `StorageMedia`, добавим явные `width/height` для уменьшения CLS.
-- **Запросы в sitemap.xml**: 6 параллельных `select * where published=true` — ок, но добавим `Cache-Control: s-maxage=3600` (уже есть) и в индексные сайтмапы агрегацию `updated_at` для `lastmod`.
+Используем только семантические токены (`bg-card`, `text-emerald-400` заменим на `text-[hsl(var(--success))]` если такой токен есть, иначе оставим Tailwind-цвет как сейчас в проекте — посмотрю по факту). Никаких `bg-[#...]`.
 
-## 5. Чистота кода
+## Проверка
 
-- **`any` в коде**: 17 в `admin.orders.tsx`, 12 в `profile.tsx`, 8 в `orders.functions.ts`, 7 в `admin.orders.$id.tsx`. Заменим на типы из `Database["public"]["Tables"][...]["Row"]` + узкие DTO.
-- **`console.*`**: 25 вызовов. Оставим только осознанные `console.warn/error` в server-функциях (логи воркера), уберём отладочные `console.log`.
-- **Дубли импорта `Database` типов** — заведём `src/lib/types.ts` с re-export алиасами `OrderRow`, `BlogPostRow`, …
-- **Tailwind**: пройдёмся утилитой `tailwindcss --content` сборки → отчёт неиспользуемых произвольных значений (`bg-[#…]`), сожмём повторяющиеся «glass / gradient-text» классы в `@apply` в `styles.css`.
-- **`catalog-mock.ts`** — используется как fallback в каталоге, оставим, но пометим как dev-fallback и вынесем в `lib/__mocks__/`.
+1. `tsc --noEmit` — чисто.
+2. Playwright-smoke: открыть `/admin/orders`, кликнуть строку, проверить:
+   - модалка открывается, hero/карточки/таблица/таймлайн рендерятся без накладок;
+   - смена статуса через select → тост + новая запись в таймлайне (триггер);
+   - отметка оплаты → progress обновился;
+   - «Скачать КП» открывает PDF;
+   - удаление → редирект/закрытие;
+   - mobile (375px) — карточки в столбик, кнопки не вылезают.
+3. Скриншоты до/после.
 
----
+## Что вне scope
 
-## Дорожная карта (по приоритету и риску)
-
-| # | Этап | Риск | Что проверяем |
-|---|------|------|---------------|
-| 1 | Извлечь `formatters.ts` + reuse | низкий | tsc + ручной осмотр админки |
-| 2 | Фабрика catalog list/detail routes | средний | e2e: 4 каталога + 4 карточки, sitemap, breadcrumbs |
-| 3 | Декомпозиция `admin.orders.tsx` + типы | средний | админ-смоук: список/диалог/мутации, realtime |
-| 4 | Декомпозиция `cart.tsx` + мемоизация | средний | e2e: добавление/удаление/промо/оформление |
-| 5 | БД-триггеры `audit_log` + `order_timeline` | высокий (DB) | миграция в staging, ревью DDL, rollback-скрипт |
-| 6 | pg_cron хуки (email queue, abandoned, cleanup, SLA) | средний | ручной триггер `net.http_post`, логи воркера |
-| 7 | Декомпозиция `admin.catalog.$type.tsx`, `admin.blog.tsx`, `profile.tsx` | средний | smoke по каждой странице |
-| 8 | Производительность: realtime debounce, useInfiniteQuery, lazy-страницы, изображения | низкий | Lighthouse / Network panel до-после |
-| 9 | Удаление `any`, чистка `console`, tailwind-чистка | низкий | tsc + snapshot UI |
-
-Каждый этап = ≤1 PR, обязательная пара «тесты + ручная проверка». Можем стартовать с этапа 1 (самый дешёвый, нулевой риск) или с этапа 2 (самый высокий ROI — убирает 90% дублей каталога). Скажи, с чего начинаем.
+- Не трогаем `admin.orders.$id.tsx` (отдельная страница) в этом PR, только модалку. Полная страница останется как fallback для печати/sharing.
+- Не меняем структуру БД и server functions.
