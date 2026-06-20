@@ -42,10 +42,6 @@ type EmailPreview = { subject: string; html: string; to: string | null; attachme
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 type OrderItemRow = Database["public"]["Tables"]["order_items"]["Row"];
 type OrderTimelineRow = Database["public"]["Tables"]["order_timeline"]["Row"];
-  zone: "Зона", service: "Услуга", equipment: "Оборудование",
-  tech_equipment: "Оборудование", production: "Продакшн",
-  production_item: "Продакшн", extras: "Доп. услуга",
-};
 
 const DOC_KINDS: { kind: "quote" | "contract" | "invoice" | "act"; label: string }[] = [
   { kind: "quote", label: "КП" },
