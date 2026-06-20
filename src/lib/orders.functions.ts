@@ -849,6 +849,7 @@ export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
 
     const { subject, html } = buildClientOrderConfirmedEmail({
       orderId: order.id,
+      orderNumber: order.order_number,
       clientName: order.client_name,
       clientEmail: order.client_email ?? "",
       clientPhone: order.client_phone,
