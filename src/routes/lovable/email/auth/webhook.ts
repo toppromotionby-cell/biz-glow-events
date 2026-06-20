@@ -147,12 +147,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           newEmail: payload.data.new_email,
         }
 
-        // Render React Email to HTML and plain text
-        const element = React.createElement(EmailTemplate, templateProps)
-        const html = await render(element)
-        const text = await render(element, { plainText: true })
-
-        // Enqueue email for async processing by the dispatcher (process-email-queue).
+        // Render: admin override if available, else default React Email
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -165,6 +160,26 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         }
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+        const rendered = await renderWithOverride(
+          emailType,
+          templateProps,
+          async (key) => {
+            const { data: row } = await supabase
+              .from('email_templates')
+              .select('template_key, subject, preheader, html_body, enabled')
+              .eq('template_key', key)
+              .maybeSingle()
+            return (row as any) ?? null
+          },
+        ).catch(async () => {
+          return renderDefault(emailType, templateProps, EmailTemplate, EMAIL_SUBJECTS[emailType])
+        })
+
+        const html = rendered.html
+        const text = rendered.text
+        const subjectLine = rendered.subject || EMAIL_SUBJECTS[emailType] || 'Notification'
+
         const messageId = crypto.randomUUID()
 
         // Log pending BEFORE enqueue so we have a record even if enqueue crashes
@@ -184,7 +199,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
             from: FROM_ADDRESS,
             reply_to: REPLY_TO_ADDRESS,
             sender_domain: SENDER_DOMAIN,
-            subject: EMAIL_SUBJECTS[emailType] || 'Notification',
+            subject: subjectLine,
             html,
             text,
             purpose: 'transactional',
