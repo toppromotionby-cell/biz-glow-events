@@ -4,7 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   sendClientInvitations,
   previewInvite,
@@ -21,7 +21,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Mail, Send, Eye } from "lucide-react";
+import { Loader2, Mail, Send, Eye, Upload } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { fmtDateTime } from "@/lib/formatters";
 
@@ -143,7 +143,27 @@ function InvitationsPage() {
         {/* Форма */}
         <div className="glass rounded-xl p-5 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="emails">Email-адреса <span className="text-xs text-muted-foreground">(через запятую, пробел или с новой строки, до {MAX})</span></Label>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <Label htmlFor="emails">Email-адреса <span className="text-xs text-muted-foreground">(через запятую, пробел или с новой строки, до {MAX})</span></Label>
+              <CsvUploadButton
+                onEmails={(found, fileName) => {
+                  if (found.length === 0) {
+                    toast.error("В файле не найдено email-адресов");
+                    return;
+                  }
+                  // Объединяем уже введённые адреса с импортированными, удаляем дубли.
+                  const existing = parseEmails(emailsRaw);
+                  const merged = Array.from(new Set([...existing, ...found]));
+                  const limited = merged.slice(0, MAX);
+                  setEmailsRaw(limited.join(", "));
+                  const dropped = merged.length - limited.length;
+                  toast.success(
+                    `Импортировано из ${fileName}: ${found.length}` +
+                      (dropped > 0 ? ` · обрезано до ${MAX} (${dropped} лишних)` : ""),
+                  );
+                }}
+              />
+            </div>
             <Textarea
               id="emails"
               value={emailsRaw}
@@ -276,5 +296,58 @@ function InvitationsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function extractEmailsFromText(text: string): string[] {
+  // Глобальный regex по всему содержимому файла — работает и для CSV
+  // с заголовками/несколькими колонками, и для простого списка построчно.
+  const re = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
+  const matches = text.match(re) ?? [];
+  const set = new Set<string>();
+  for (const m of matches) {
+    const v = m.trim().toLowerCase();
+    if (EMAIL_RE.test(v)) set.add(v);
+  }
+  return Array.from(set);
+}
+
+function CsvUploadButton({ onEmails }: { onEmails: (emails: string[], fileName: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={ref}
+        type="file"
+        accept=".csv,.txt,text/csv,text/plain"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          // Сбрасываем сразу, чтобы можно было повторно выбрать тот же файл.
+          if (ref.current) ref.current.value = "";
+          if (!file) return;
+          if (file.size > 1_000_000) {
+            toast.error("Файл слишком большой (максимум 1 МБ)");
+            return;
+          }
+          try {
+            const text = await file.text();
+            onEmails(extractEmailsFromText(text), file.name);
+          } catch {
+            toast.error("Не удалось прочитать файл");
+          }
+        }}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => ref.current?.click()}
+        title="Загрузить адреса из CSV или текстового файла"
+      >
+        <Upload className="h-4 w-4 mr-1" />
+        Загрузить CSV
+      </Button>
+    </>
   );
 }
