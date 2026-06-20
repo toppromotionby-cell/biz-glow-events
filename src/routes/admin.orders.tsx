@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -250,189 +251,23 @@ function AdminOrders() {
         )}
       </div>
 
-      {/* Десктоп — таблица (md+) */}
-      <div className="glass rounded-xl overflow-hidden hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm" aria-label="Список заказов">
-            <thead className="admin-table-head">
-              <tr>
-                <th scope="col" aria-sort={sortBy === "created_at" ? "descending" : "none"} className="text-left p-3">Создан</th>
-                <th scope="col" className="text-left p-3">Клиент / Компания</th>
-                <th scope="col" className="text-left p-3">Контакты</th>
-                <th scope="col" aria-sort={sortBy === "event_date" ? "descending" : "none"} className="text-left p-3">Мероприятие</th>
-                <th scope="col" className="text-left p-3">Источник</th>
-                <th scope="col" className="text-left p-3">Статус</th>
-                <th scope="col" className="text-left p-3" title="Время в текущем статусе (по updated_at)">В статусе</th>
-                <th scope="col" aria-sort={sortBy === "total" ? "descending" : "none"} className="text-right p-3">Сумма</th>
-                <th scope="col" className="text-right p-3">Оплачено</th>
-                <th scope="col" className="text-right p-3">Долг</th>
-                <th scope="col" className="p-3"><span className="sr-only">Действия</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && Array.from({ length: 6 }).map((_, i) => (
-                <tr key={`sk-${i}`} className="border-t border-border/40">
-                  {Array.from({ length: 11 }).map((__, j) => (
-                    <td key={j} className="p-3"><Skeleton className="h-4 w-full" /></td>
-                  ))}
-                </tr>
-              ))}
-              {!isLoading && sorted.length === 0 && (
-                <tr><td colSpan={11} className="p-10 text-center">
-                  <div className="text-muted-foreground mb-3">
-                    {q || status ? "По текущему фильтру ничего не найдено" : "Заказов пока нет"}
-                  </div>
-                  {(q || status) ? (
-                    <Button variant="outline" size="sm" onClick={() => { setQ(""); setStatus(""); }}>Сбросить фильтры</Button>
-                  ) : (
-                    <Button size="sm" className="btn-primary-gradient" onClick={() => toast.info("Заказы создаются автоматически через форму на сайте")}>
-                      <Plus className="h-4 w-4 mr-1" />Откуда берутся заказы?
-                    </Button>
-                  )}
-                </td></tr>
-              )}
+      <DesktopOrdersTable
+        sorted={sorted}
+        isLoading={isLoading}
+        sortBy={sortBy}
+        q={q}
+        status={status}
+        totals={totals}
+        setQ={setQ}
+        setStatus={setStatus}
+        setOpenId={setOpenId}
+        updateStatus={updateStatus}
+        updatePaid={updatePaid}
+        deleteOrder={deleteOrder}
+        resendEmail={resendEmail}
+        confirmOrder={confirmOrder}
+      />
 
-              {sorted.map((o) => {
-                const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
-                const age = ageInfo(o.updated_at ?? o.created_at, o.status);
-                const canConfirm = (o.status as string) === "new" || (o.status as string) === "pending";
-                return (
-                  <tr
-                    key={o.id}
-                    onClick={() => setOpenId(o.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(o.id); }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Заказ ${o.client_name}, ${fmtDate(o.created_at)}`}
-                    className="border-t border-border/40 hover:bg-muted/20 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-                  >
-                    <td className="p-3 whitespace-nowrap text-muted-foreground">
-                      <div>{fmtDate(o.created_at)}</div>
-                      <div className="text-[10px]">{new Date(o.created_at).toLocaleTimeString("ru-BY", { hour: "2-digit", minute: "2-digit" })}</div>
-                    </td>
-                    <td className="p-3">
-                      <div className="font-medium">{o.client_name}</div>
-                      {o.client_company && <div className="text-xs text-muted-foreground">{o.client_company}</div>}
-                    </td>
-                    <td className="p-3 text-xs">
-                      <span className="hover:text-primary">{o.client_phone}</span>
-                      <br /><a href={`mailto:${o.client_email}`} className="text-muted-foreground hover:text-primary">{o.client_email}</a>
-                    </td>
-                    <td className="p-3 whitespace-nowrap text-muted-foreground">{fmtDate(o.event_date)}</td>
-                    <td className="p-3 text-xs text-muted-foreground">
-                      {o.source ?? "—"}
-                      {o.utm_source && <div className="text-[10px]">{o.utm_source}{o.utm_campaign ? ` / ${o.utm_campaign}` : ""}</div>}
-                    </td>
-                    <td className="p-3" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-                      <select
-                        value={o.status}
-                        disabled={updateStatus.isPending}
-                        onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value as OrderStatus })}
-                        className={`px-2 py-1 rounded-full text-xs border bg-transparent outline-none cursor-pointer ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}
-                      >
-                        {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                          <option key={k} value={k} className="bg-background text-foreground">{v}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className={`p-3 whitespace-nowrap text-xs tabular-nums ${age.cls}`} title={`Обновлён: ${fmtDateTime(o.updated_at ?? o.created_at)}`}>
-                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{age.label}</span>
-                    </td>
-                    <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
-                    <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-                      <PaidCell
-                        value={Number(o.paid ?? 0)}
-                        total={Number(o.total ?? 0)}
-                        disabled={updatePaid.isPending}
-                        onSave={(v) => updatePaid.mutate({ id: o.id, newPaid: v, prevPaid: Number(o.paid ?? 0) })}
-                      />
-                    </td>
-                    <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
-                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-                      <div className="inline-flex items-center gap-2">
-                        {canConfirm ? (
-                          <button
-                            type="button"
-                            title="Подтвердить заказ"
-                            disabled={confirmOrder.isPending}
-                            onClick={() => confirmOrder.mutate(o.id)}
-                            className="inline-flex items-center text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            title={o.client_email ? "Отправить письмо клиенту повторно" : "У клиента не указан email"}
-                            disabled={resendEmail.isPending || !o.client_email}
-                            onClick={() => resendEmail.mutate(o.id)}
-                            className="inline-flex items-center text-primary hover:text-primary/80 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </button>
-                        )}
-                        <Link
-                          to="/admin/orders/$id"
-                          params={{ id: o.id }}
-                          aria-label={`Открыть полную страницу заказа ${o.client_name}`}
-                          className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Link>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <button
-                              type="button"
-                              aria-label={`Удалить заказ ${o.client_name}`}
-                              className="inline-flex items-center text-muted-foreground hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Заказ <b>{o.client_name}</b> от {fmtDate(o.created_at)} будет удалён вместе с позициями,
-                                таймлайном и вложениями. Он также исчезнет из кабинета клиента. Действие необратимо.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Отмена</AlertDialogCancel>
-                              <AlertDialogAction
-                                disabled={deleteOrder.isPending}
-                                onClick={() => deleteOrder.mutate(o.id)}
-                                className="bg-rose-600 hover:bg-rose-700 text-white"
-                              >
-                                Удалить
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            {!isLoading && sorted.length > 0 && (
-              <tfoot className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border/60">
-                <tr className="text-sm font-medium">
-                  <td colSpan={7} className="p-3 text-right text-muted-foreground">
-                    Итого по фильтру ({sorted.length}):
-                  </td>
-                  <td className="p-3 text-right whitespace-nowrap">{fmtMoney(totals.total)}</td>
-                  <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(totals.paid)}</td>
-                  <td className={`p-3 text-right whitespace-nowrap ${totals.debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(totals.debt)}</td>
-                  <td className="p-3" />
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </div>
 
       <OrderDialog id={openId} onClose={() => setOpenId(null)} />
     </div>
@@ -447,3 +282,238 @@ function Stat({ label, value, accent = "" }: { label: string; value: string; acc
     </div>
   );
 }
+
+type DesktopProps = {
+  sorted: OrderListRow[];
+  isLoading: boolean;
+  sortBy: SortBy;
+  q: string;
+  status: string;
+  totals: { total: number; paid: number; debt: number };
+  setQ: (s: string) => void;
+  setStatus: (s: string) => void;
+  setOpenId: (id: string | null) => void;
+  updateStatus: ReturnType<typeof useOrderMutations>["updateStatus"];
+  updatePaid: ReturnType<typeof useOrderMutations>["updatePaid"];
+  deleteOrder: ReturnType<typeof useOrderMutations>["deleteOrder"];
+  resendEmail: ReturnType<typeof useOrderMutations>["resendEmail"];
+  confirmOrder: ReturnType<typeof useOrderMutations>["confirmOrder"];
+};
+
+function DesktopOrdersTable({
+  sorted, isLoading, sortBy, q, status, totals,
+  setQ, setStatus, setOpenId,
+  updateStatus, updatePaid, deleteOrder, resendEmail, confirmOrder,
+}: DesktopProps) {
+  // Виртуализация строк — рендерим только видимые в окне просмотра,
+  // чтобы 500+ заказов не топили DOM. Скроллится сама страница, поэтому
+  // используем useWindowVirtualizer + scrollMargin от позиции контейнера.
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useWindowVirtualizer({
+    count: sorted.length,
+    estimateSize: () => 76,
+    overscan: 8,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
+    getItemKey: (i) => sorted[i]?.id ?? i,
+  });
+  const items = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+  const scrollMargin = virtualizer.options.scrollMargin;
+  const paddingTop = items.length > 0 ? Math.max(0, items[0].start - scrollMargin) : 0;
+  const paddingBottom = items.length > 0 ? Math.max(0, totalSize - (items[items.length - 1].end - scrollMargin)) : 0;
+  const showVirtual = !isLoading && sorted.length > 0;
+
+  return (
+    <div ref={parentRef} className="glass rounded-xl overflow-hidden hidden md:block">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm" aria-label="Список заказов">
+          <thead className="admin-table-head">
+            <tr>
+              <th scope="col" aria-sort={sortBy === "created_at" ? "descending" : "none"} className="text-left p-3">Создан</th>
+              <th scope="col" className="text-left p-3">Клиент / Компания</th>
+              <th scope="col" className="text-left p-3">Контакты</th>
+              <th scope="col" aria-sort={sortBy === "event_date" ? "descending" : "none"} className="text-left p-3">Мероприятие</th>
+              <th scope="col" className="text-left p-3">Источник</th>
+              <th scope="col" className="text-left p-3">Статус</th>
+              <th scope="col" className="text-left p-3" title="Время в текущем статусе (по updated_at)">В статусе</th>
+              <th scope="col" aria-sort={sortBy === "total" ? "descending" : "none"} className="text-right p-3">Сумма</th>
+              <th scope="col" className="text-right p-3">Оплачено</th>
+              <th scope="col" className="text-right p-3">Долг</th>
+              <th scope="col" className="p-3"><span className="sr-only">Действия</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading && Array.from({ length: 6 }).map((_, i) => (
+              <tr key={`sk-${i}`} className="border-t border-border/40">
+                {Array.from({ length: 11 }).map((__, j) => (
+                  <td key={j} className="p-3"><Skeleton className="h-4 w-full" /></td>
+                ))}
+              </tr>
+            ))}
+            {!isLoading && sorted.length === 0 && (
+              <tr><td colSpan={11} className="p-10 text-center">
+                <div className="text-muted-foreground mb-3">
+                  {q || status ? "По текущему фильтру ничего не найдено" : "Заказов пока нет"}
+                </div>
+                {(q || status) ? (
+                  <Button variant="outline" size="sm" onClick={() => { setQ(""); setStatus(""); }}>Сбросить фильтры</Button>
+                ) : (
+                  <Button size="sm" className="btn-primary-gradient" onClick={() => toast.info("Заказы создаются автоматически через форму на сайте")}>
+                    <Plus className="h-4 w-4 mr-1" />Откуда берутся заказы?
+                  </Button>
+                )}
+              </td></tr>
+            )}
+            {showVirtual && paddingTop > 0 && (
+              <tr aria-hidden="true"><td colSpan={11} style={{ height: paddingTop, padding: 0, border: 0 }} /></tr>
+            )}
+            {showVirtual && items.map((vi) => {
+              const o = sorted[vi.index];
+              const debt = Number(o.total ?? 0) - Number(o.paid ?? 0);
+              const age = ageInfo(o.updated_at ?? o.created_at, o.status);
+              const canConfirm = (o.status as string) === "new" || (o.status as string) === "pending";
+              return (
+                <tr
+                  key={o.id}
+                  data-index={vi.index}
+                  ref={virtualizer.measureElement}
+                  onClick={() => setOpenId(o.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(o.id); }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Заказ ${o.client_name}, ${fmtDate(o.created_at)}`}
+                  className="border-t border-border/40 hover:bg-muted/20 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                >
+                  <td className="p-3 whitespace-nowrap text-muted-foreground">
+                    <div>{fmtDate(o.created_at)}</div>
+                    <div className="text-[10px]">{new Date(o.created_at).toLocaleTimeString("ru-BY", { hour: "2-digit", minute: "2-digit" })}</div>
+                  </td>
+                  <td className="p-3">
+                    <div className="font-medium">{o.client_name}</div>
+                    {o.client_company && <div className="text-xs text-muted-foreground">{o.client_company}</div>}
+                  </td>
+                  <td className="p-3 text-xs">
+                    <span className="hover:text-primary">{o.client_phone}</span>
+                    <br /><a href={`mailto:${o.client_email}`} className="text-muted-foreground hover:text-primary">{o.client_email}</a>
+                  </td>
+                  <td className="p-3 whitespace-nowrap text-muted-foreground">{fmtDate(o.event_date)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">
+                    {o.source ?? "—"}
+                    {o.utm_source && <div className="text-[10px]">{o.utm_source}{o.utm_campaign ? ` / ${o.utm_campaign}` : ""}</div>}
+                  </td>
+                  <td className="p-3" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={o.status}
+                      disabled={updateStatus.isPending}
+                      onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value as OrderStatus })}
+                      className={`px-2 py-1 rounded-full text-xs border bg-transparent outline-none cursor-pointer ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}
+                    >
+                      {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                        <option key={k} value={k} className="bg-background text-foreground">{v}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className={`p-3 whitespace-nowrap text-xs tabular-nums ${age.cls}`} title={`Обновлён: ${fmtDateTime(o.updated_at ?? o.created_at)}`}>
+                    <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{age.label}</span>
+                  </td>
+                  <td className="p-3 text-right whitespace-nowrap font-medium">{fmtMoney(o.total)}</td>
+                  <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                    <PaidCell
+                      value={Number(o.paid ?? 0)}
+                      total={Number(o.total ?? 0)}
+                      disabled={updatePaid.isPending}
+                      onSave={(v) => updatePaid.mutate({ id: o.id, newPaid: v, prevPaid: Number(o.paid ?? 0) })}
+                    />
+                  </td>
+                  <td className={`p-3 text-right whitespace-nowrap ${debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(debt)}</td>
+                  <td className="p-3 text-right" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                    <div className="inline-flex items-center gap-2">
+                      {canConfirm ? (
+                        <button
+                          type="button"
+                          title="Подтвердить заказ"
+                          disabled={confirmOrder.isPending}
+                          onClick={() => confirmOrder.mutate(o.id)}
+                          className="inline-flex items-center text-emerald-400 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          title={o.client_email ? "Отправить письмо клиенту повторно" : "У клиента не указан email"}
+                          disabled={resendEmail.isPending || !o.client_email}
+                          onClick={() => resendEmail.mutate(o.id)}
+                          className="inline-flex items-center text-primary hover:text-primary/80 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        >
+                          <Mail className="h-4 w-4" />
+                        </button>
+                      )}
+                      <Link
+                        to="/admin/orders/$id"
+                        params={{ id: o.id }}
+                        aria-label={`Открыть полную страницу заказа ${o.client_name}`}
+                        className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Link>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={`Удалить заказ ${o.client_name}`}
+                            className="inline-flex items-center text-muted-foreground hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Удалить заказ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Заказ <b>{o.client_name}</b> от {fmtDate(o.created_at)} будет удалён вместе с позициями,
+                              таймлайном и вложениями. Он также исчезнет из кабинета клиента. Действие необратимо.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Отмена</AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={deleteOrder.isPending}
+                              onClick={() => deleteOrder.mutate(o.id)}
+                              className="bg-rose-600 hover:bg-rose-700 text-white"
+                            >
+                              Удалить
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {showVirtual && paddingBottom > 0 && (
+              <tr aria-hidden="true"><td colSpan={11} style={{ height: paddingBottom, padding: 0, border: 0 }} /></tr>
+            )}
+          </tbody>
+          {!isLoading && sorted.length > 0 && (
+            <tfoot className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border/60">
+              <tr className="text-sm font-medium">
+                <td colSpan={7} className="p-3 text-right text-muted-foreground">
+                  Итого по фильтру ({sorted.length}):
+                </td>
+                <td className="p-3 text-right whitespace-nowrap">{fmtMoney(totals.total)}</td>
+                <td className="p-3 text-right whitespace-nowrap text-emerald-300">{fmtMoney(totals.paid)}</td>
+                <td className={`p-3 text-right whitespace-nowrap ${totals.debt > 0 ? "text-amber-300" : "text-muted-foreground"}`}>{fmtMoney(totals.debt)}</td>
+                <td className="p-3" />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
