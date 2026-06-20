@@ -37,7 +37,7 @@ export const notifyOrderStatus = createServerFn({ method: 'POST' })
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
     const { data: order, error } = await supabaseAdmin
       .from('orders')
-      .select('id, client_name, client_email, total, event_date')
+      .select('id, order_number, client_name, client_email, total, event_date')
       .eq('id', data.orderId)
       .maybeSingle()
     if (error) throw new Error(error.message)
