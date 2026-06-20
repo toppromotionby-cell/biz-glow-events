@@ -33,6 +33,7 @@ const CRUMBS: { match: RegExp; label: string }[] = [
   
   { match: /^\/admin\/users/, label: "Пользователи" },
   { match: /^\/admin\/sections/, label: "Видимость секций" },
+  { match: /^\/admin\/settings\/emails/, label: "Шаблоны писем" },
   { match: /^\/admin\/audit/, label: "Аудит" },
 ];
 

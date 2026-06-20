@@ -17,6 +17,7 @@ import { ArrowLeft, Clock, Trash2, Mail, FileText } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
 import { openAuthedDocument, openInlineBlob, base64ToBytes } from "@/lib/authed-fetch";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
+import { notifyOrderStatus } from "@/lib/order-notifications.functions";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
 import type { Database } from "@/integrations/supabase/types";
@@ -86,11 +87,19 @@ function OrderDetail() {
     }
   }, [order?.internal_notes]);
 
+  const notifyStatusFn = useServerFn(notifyOrderStatus);
   const updateStatus = useMutation({
     mutationFn: async (status: OrderStatus) => {
       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
       // Событие status_changed:* пишется триггером public.log_order_status_change.
+      // Дополнительно шлём клиенту письмо для известных статусов (best-effort).
+      try {
+        const res = await notifyStatusFn({ data: { orderId: id, status: String(status) } });
+        if (res?.ok) toast.message("Клиенту отправлено уведомление");
+      } catch (e) {
+        console.warn("notifyOrderStatus failed", e);
+      }
     },
     onSuccess: () => { toast.success("Статус обновлён"); qc.invalidateQueries({ queryKey: ["order", id] }); qc.invalidateQueries({ queryKey: ["order-timeline", id] }); },
     onError: (e: Error) => toast.error(e.message),

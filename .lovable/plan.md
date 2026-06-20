@@ -1,28 +1,122 @@
-# Что меняем
+# Раздел «Шаблоны писем» в админке
 
-Сейчас в Telegram-ссылках в качестве подписи показывается номер `+375 44 709-91-22`. По всему сайту нужно показывать текст **«event-hub.by»**, а кликом — открывать существующую Telegram-ссылку (`CONTACT.telegramUrl` → `https://t.me/+375447099122`).
+## Где
 
-# Один источник правды
+В сайдбаре **Система** → новый пункт **«Шаблоны писем»** → роут `/admin/settings/emails`.
+Доступ — только роли `admin`/`manager` (как в `admin.settings.*`).
 
-`src/lib/contacts.ts` — добавить поле `telegramLabel: "event-hub.by"` к `CONTACT`. Сам `telegramUrl` не трогаем — переадресация в Telegram продолжит работать на тот же номер, что и сейчас.
+## Какие письма попадают в редактор
 
-# Где поменять подпись на `CONTACT.telegramLabel`
+Три категории в одном списке, с фильтром-табами:
 
-Меняем только видимый текст возле Telegram-иконки/блока. Сам `href={CONTACT.telegramUrl}` остаётся.
+1. **Транзакционные (сайт)** — то, что уже в `src/lib/email-templates/registry.ts`: `admin-order`, `admin-lead`, `client-invite`.
+2. **Auth-письма** — `signup`, `magic-link`, `recovery`, `invite`, `email-change`, `reauthentication` (уже есть как React Email в `src/lib/email-templates/`).
+3. **Статусы заказа** — добавляем 4 новых шаблона: `order-confirmed`, `order-paid`, `order-completed`, `order-cancelled`. Триггер — функция БД `log_order_status_change` уже фиксирует смену статуса; добавим server fn, который при изменении `orders.status` шлёт письмо клиенту.
 
-1. **`src/routes/contacts.tsx`** (стр. 36) — карточка «Telegram», заменить `{CONTACT.phoneDisplay}` под подписью «Telegram» на `{CONTACT.telegramLabel}`.
-2. **`src/routes/order.success.$id.tsx`** (стр. 47) — то же самое в карточке «Telegram».
-3. **`src/components/SiteChrome.tsx`** (стр. 273 и 323) — в футере вместо `Telegram: {CONTACT.phoneDisplay}` показывать `Telegram: {CONTACT.telegramLabel}` (две одинаковые правки — desktop и mobile футеры).
-4. **`src/routes/index.tsx`** (стр. 336) — в массиве контактов: `{ label: "Telegram", value: CONTACT.telegramLabel, href: CONTACT.telegramUrl, external: true }`.
+## Что именно можно редактировать (полный HTML)
 
-# Где НЕ меняем
+Для каждого шаблона:
 
-- `src/components/FloatingContacts.tsx` — там Telegram-кнопка без видимой подписи (только иконка), правок не требуется.
-- `src/lib/email-templates/client-invite.tsx` — уже показывает `@event-hub.by`, оставляем.
-- `CONTACT.phoneDisplay` в карточках «Телефон» — это телефонный канал, его не трогаем.
-- Серверные функции / админка / Telegram-вебхуки и поддержка — это техническая интеграция, к UI-ссылке отношения не имеет.
+- **Тема письма** (`subject`) — с поддержкой `{{переменных}}`.
+- **Preheader** (короткий текст-превью в инбоксе).
+- **HTML-тело письма** — полнофункциональный редактор кода (CodeMirror с подсветкой HTML). Внутри — Mustache-подобные плейсхолдеры: `{{clientName}}`, `{{orderId}}`, `{{total}}`, `{{actionUrl}}` и т.д.
+- **Флаг «Включено»** — если выключено, используется встроенный React-шаблон по умолчанию (страховка от поломки).
+- **Кнопка «Сбросить к шаблону по умолчанию»** — выкидывает override и возвращает дефолт из кода.
 
-# Проверка
+Жёстко не редактируется (закладывается в код, чтобы не сломать доставку):
+- Технические headers, `Body backgroundColor: #ffffff`, футер с unsubscribe (его дописывает инфраструктура Lovable Emails автоматически).
 
-- `/contacts`, `/`, футер на любой странице, страница успеха заказа — под иконкой Telegram отображается «event-hub.by», клик ведёт на `https://t.me/+375447099122` и открывает чат с тем же номером, что и сейчас.
-- В письмах ничего не меняется.
+## База данных
+
+Новая таблица `email_templates`:
+
+```text
+template_key      text  PK    -- 'admin-order', 'signup', 'order-paid', …
+category          text         -- 'transactional' | 'auth' | 'order-status'
+subject           text
+preheader         text
+html_body         text         -- с {{placeholders}}
+enabled           boolean      -- default true
+updated_by        uuid → auth.users
+updated_at        timestamptz
+```
+
+RLS: read/write только для `has_role(auth.uid(),'admin')` и `'manager'`; `GRANT` на `authenticated` и `service_role`. Серверные функции отправки читают через `supabaseAdmin` (RLS bypass), потому что письма уходят и для гостей (auth signup, admin notifications).
+
+История версий и аудит — **не делаем** (вы не выбрали этот пункт). Базовый audit-log уже пишется триггером `write_audit_log` — его подключим к новой таблице, и кто/когда менял будет видно в существующем `/admin/audit`.
+
+## Рендеринг и подстановка переменных
+
+Новый helper `src/lib/email-templates/render-with-override.ts`:
+
+1. Берёт `template_key` и `data`.
+2. Если в `email_templates` есть row и `enabled=true` — берёт `subject`/`html_body` оттуда, прогоняет Mustache-подстановку (`{{name}}` → `escapeHtml(data.name)`), затем санитизирует через DOMPurify (server-side, `isomorphic-dompurify`) — снимает `<script>`, `on*=`, `javascript:`-ссылки.
+3. Иначе — рендерит существующий React Email компонент из `registry.ts` (текущее поведение).
+
+Точки интеграции:
+- `src/routes/lovable/email/transactional/send.ts` — заменить прямой `render(component)` на `renderWithOverride(name, data)`.
+- `src/routes/lovable/email/auth/webhook.ts` — аналогично для auth-шаблонов.
+- Новая server fn `notifyOrderStatus(orderId, status)` — вызывается из существующих server fn обновления заказа (`src/lib/orders.functions.ts`), шлёт письмо клиенту через `/lovable/email/transactional/send`.
+
+## UI редактора
+
+Страница `/admin/settings/emails`:
+
+```text
+┌──────────────────────────┬──────────────────────────────────────────┐
+│ Список шаблонов          │ Редактор выбранного шаблона              │
+│  [Все] [Сайт] [Auth] [Статусы]                                       │
+│  ▸ Новый заказ           │ Категория · Ключ · [Сбросить] [Тест]     │
+│  ▸ Новая заявка          │ ─────────────────────────────────────    │
+│  ▸ Приглашение в кабинет │ Тема: [____________________________]     │
+│  ▸ Подтверждение оплаты  │ Preheader: [_______________________]     │
+│  ▸ Регистрация (auth)    │                                          │
+│  …                       │ ┌─ Код HTML ────────┬─ Превью ─────────┐ │
+│                          │ │ <Html>            │ [iframe srcDoc]  │ │
+│                          │ │   ...{{name}}...  │                  │ │
+│                          │ └───────────────────┴──────────────────┘ │
+│                          │ Доступные переменные:                    │
+│                          │  {{clientName}} — имя клиента            │
+│                          │  {{orderId}} — ID заказа                 │
+│                          │  …                                       │
+│                          │ [Сохранить]   [Отмена]                   │
+└──────────────────────────┴──────────────────────────────────────────┘
+```
+
+- **Live-превью** — iframe c `srcDoc`, дебаунс 300 мс, рендерит результат подстановки `previewData` (берём из React-шаблона) в текущий HTML.
+- **Тест-отправка** — модалка «Отправить тест на email», POST в `/lovable/email/transactional/send` с `templateName` + `previewData` + указанным адресом + флагом `useDraft=true` (тогда send использует ещё не сохранённую черновую версию из тела запроса). Результат в toast + строкой статуса.
+- **Список переменных** — берётся из `previewData` соответствующего шаблона + статический справочник (описания), показывается прямо под редактором, клик копирует `{{key}}` в буфер.
+
+## Безопасность HTML-редактора
+
+- Серверная санитизация (`isomorphic-dompurify`) на каждом рендере, не только при сохранении.
+- Перед сохранением — Zod-валидация: `subject` 1–200 символов, `html_body` ≤ 200 KB, обязательно валидный HTML (parse через `parse5`, ошибки показываем в редакторе).
+- Запрет `<script>`, `<iframe>`, `on*` атрибутов, `javascript:` URL — DOMPurify конфиг.
+- Все `{{var}}` экранируются как текст (HTML-entities) — нельзя вставить XSS через данные заказа.
+- При ошибке рендера фолбэк на дефолтный React-шаблон + лог в `email_send_log.error_message`.
+
+## Что меняется в коде
+
+Новые файлы:
+- `supabase/migrations/<ts>_email_templates.sql` — таблица, RLS, GRANT, audit-триггер.
+- `src/lib/email-templates/render-with-override.ts` — рендер с подстановкой и санитизацией.
+- `src/lib/email-templates/order-confirmed.tsx`, `order-paid.tsx`, `order-completed.tsx`, `order-cancelled.tsx` — дефолты + регистрация в `registry.ts`.
+- `src/lib/email-templates.functions.ts` — server fn: `listEmailTemplates`, `getEmailTemplate(key)`, `saveEmailTemplate(...)`, `resetEmailTemplate(key)`, `previewEmailTemplate(key, draftSubject, draftHtml)`, `sendTestEmail(key, recipient, draftSubject?, draftHtml?)` — все с `requireSupabaseAuth` + проверкой `has_role admin/manager`.
+- `src/routes/admin.settings.emails.tsx` — UI (список + редактор + iframe-превью).
+- `src/lib/order-notifications.functions.ts` — `notifyOrderStatus`.
+
+Правки:
+- `src/lib/email-templates/registry.ts` — добавить 4 новых шаблона, добавить поле `variables: Record<string,string>` (описания переменных для UI).
+- `src/routes/lovable/email/transactional/send.ts` и `src/routes/lovable/email/auth/webhook.ts` — использовать `renderWithOverride`.
+- `src/components/admin/AdminSidebar.tsx` — пункт «Шаблоны писем» в группе «Система».
+- `src/routes/admin.tsx` — крошка для `/admin/settings/emails`.
+- `src/lib/orders.functions.ts` — вызов `notifyOrderStatus` при смене `status`.
+- `package.json` — `isomorphic-dompurify`, `parse5`, `@uiw/react-codemirror` + `@codemirror/lang-html`.
+
+## Проверка
+
+1. Открываем `/admin/settings/emails`, видим список из 13 шаблонов (3 + 6 + 4) с табами.
+2. Редактируем `admin-order`: меняем тему и текст → live-превью обновляется → тест-отправка приходит на свой адрес с новым контентом.
+3. «Сбросить к дефолту» → строка удаляется → следующий рендер берёт React-шаблон.
+4. Смена статуса заказа в `/admin/orders/:id` на «paid» → в `email_send_log` появляется запись `order-paid`, клиенту приходит письмо.
+5. Изменения шаблона видны в `/admin/audit` (через существующий триггер `write_audit_log`).
