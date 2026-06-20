@@ -65,14 +65,18 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
 
   if (done) {
     return (
-      <div className="glass rounded-xl p-6 text-sm">
-        Спасибо! Менеджер свяжется в течение рабочего дня.
+      <div className="glass rounded-xl p-6 text-sm space-y-2">
+        <div className="font-medium">Спасибо! Мы получили ваш запрос на консультацию.</div>
+        <div className="text-muted-foreground">Менеджер свяжется с вами в течение рабочего дня, чтобы уточнить детали и подобрать решение. Мы также отправили письмо на ваш email — там есть короткая анкета, она поможет ускорить ответ.</div>
       </div>
     );
   }
 
   return (
     <form onSubmit={onSubmit} className="glass rounded-xl p-6 space-y-4">
+      <div className="rounded-md border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+        🟡 Это <b>запрос на консультацию</b>, не оформление заказа. Менеджер свяжется с вами и поможет подобрать. Чтобы оформить заказ с позициями и оплатой — <a href="/cart" className="underline">перейдите в корзину</a>.
+      </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <Field label="Имя *" name="client_name" required />
         <Field label="Телефон *" name="client_phone" required type="tel" />

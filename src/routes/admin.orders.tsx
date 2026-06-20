@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
@@ -32,6 +32,18 @@ export const Route = createFileRoute("/admin/orders")({
 
 function AdminOrders() {
   const qc = useQueryClient();
+  const loc = useLocation();
+  const kindFromUrl = new URLSearchParams(loc.searchStr ?? "").get("kind");
+  const [kind, setKind] = useState<"all" | "orders" | "inquiries">(
+    kindFromUrl === "inquiry" || kindFromUrl === "inquiries" ? "inquiries" : kindFromUrl === "orders" ? "orders" : "all",
+  );
+  useEffect(() => {
+    // Sync ?kind=inquiry from sidebar link
+    const k = new URLSearchParams(loc.searchStr ?? "").get("kind");
+    if (k === "inquiry" || k === "inquiries") setKind("inquiries");
+    else if (k === "orders") setKind("orders");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc.searchStr]);
   const [q, setQ] = useState("");
   const dq = useDebouncedValue(q, 300);
   const [status, setStatus] = useState<string>("");
@@ -39,7 +51,7 @@ function AdminOrders() {
   const [openId, setOpenId] = useState<string | null>(null);
 
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["admin-orders", dq, status],
+    queryKey: ["admin-orders", dq, status, kind],
     queryFn: async (): Promise<OrderListRow[]> => {
       // Узкий select — для списка не нужны notes/utm_*, чтобы не тянуть лишний JSON.
       let query = supabase
@@ -47,6 +59,8 @@ function AdminOrders() {
         .select("id,created_at,updated_at,status,client_name,client_company,client_phone,client_email,event_date,source,utm_source,utm_campaign,total,paid")
         .order("created_at", { ascending: false })
         .limit(500);
+      if (kind === "inquiries") query = query.eq("status", "consultation" as OrderStatus);
+      else if (kind === "orders") query = query.neq("status", "consultation" as OrderStatus);
       if (status) query = query.eq("status", status as OrderStatus);
       if (dq) query = query.or(`client_name.ilike.%${dq}%,client_phone.ilike.%${dq}%,client_email.ilike.%${dq}%,client_company.ilike.%${dq}%`);
       const { data, error } = await query;
@@ -113,6 +127,24 @@ function AdminOrders() {
         <Stat label="Сумма" value={fmtMoney(totals.total)} />
         <Stat label="Оплачено" value={fmtMoney(totals.paid)} accent="text-emerald-300" />
         <Stat label="Долг" value={fmtMoney(totals.debt)} accent={totals.debt > 0 ? "text-amber-300" : ""} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 -mb-1" role="tablist" aria-label="Тип записей">
+        {([
+          { k: "all", label: "Все" },
+          { k: "orders", label: "Заказы" },
+          { k: "inquiries", label: "🟡 Запросы" },
+        ] as const).map((t) => (
+          <button
+            key={t.k}
+            role="tab"
+            aria-selected={kind === t.k}
+            onClick={() => setKind(t.k)}
+            className={`px-3 py-1.5 rounded-md text-sm border transition ${kind === t.k ? "bg-primary/15 border-primary/40 text-primary" : "border-border hover:bg-muted"}`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-3">

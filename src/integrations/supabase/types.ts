@@ -751,6 +751,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          clarification_token: string | null
           client_company: string | null
           client_email: string
           client_name: string
@@ -774,6 +775,7 @@ export type Database = {
           utm_term: string | null
         }
         Insert: {
+          clarification_token?: string | null
           client_company?: string | null
           client_email: string
           client_name: string
@@ -797,6 +799,7 @@ export type Database = {
           utm_term?: string | null
         }
         Update: {
+          clarification_token?: string | null
           client_company?: string | null
           client_email?: string
           client_name?: string

@@ -128,18 +128,39 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
 
             {/* Quick actions */}
             <div className="flex flex-wrap items-center gap-2 mt-4">
-              <Button variant="outline" size="sm" onClick={() => openDoc("quote")}>
-                <FileText className="h-4 w-4 mr-1.5" />КП
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => openDoc("invoice")}>
-                <FileText className="h-4 w-4 mr-1.5" />Счёт
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => openDoc("contract")}>
-                <FileSignature className="h-4 w-4 mr-1.5" />Договор
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => openDoc("act")}>
-                <FileSignature className="h-4 w-4 mr-1.5" />Акт
-              </Button>
+              {order.status === "consultation" ? (
+                <div className="w-full flex items-center justify-between gap-3 rounded-md border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-amber-200 text-sm">
+                  <span>🟡 <b>Запрос на консультацию.</b> Свяжитесь с клиентом и уточните детали — документы будут доступны после превращения в заказ.</span>
+                  <Button size="sm" variant="outline"
+                    onClick={async () => {
+                      try {
+                        const { promoteInquiryToOrder } = await import("@/lib/leads.functions");
+                        await promoteInquiryToOrder({ data: { id: order.id } });
+                        toast.success("Запрос превращён в заказ");
+                        qc.invalidateQueries({ queryKey: ["admin-orders"] });
+                        qc.invalidateQueries({ queryKey: ["admin-order", order.id] });
+                      } catch (e) {
+                        toast.error((e as Error).message);
+                      }
+                    }}
+                  >Превратить в заказ</Button>
+                </div>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => openDoc("quote")}>
+                    <FileText className="h-4 w-4 mr-1.5" />КП
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openDoc("invoice")}>
+                    <FileText className="h-4 w-4 mr-1.5" />Счёт
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openDoc("contract")}>
+                    <FileSignature className="h-4 w-4 mr-1.5" />Договор
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => openDoc("act")}>
+                    <FileSignature className="h-4 w-4 mr-1.5" />Акт
+                  </Button>
+                </>
+              )}
               <Button variant="outline" size="sm"
                 onClick={() => resendEmail.mutate(order.id)}
                 disabled={busy || !order.client_email}

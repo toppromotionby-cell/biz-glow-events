@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
-type BadgeKey = "newOrders" | "todayBookings" | "pendingTestimonials";
+type BadgeKey = "newOrders" | "newInquiries" | "todayBookings" | "pendingTestimonials";
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey };
 type NavGroup = { label: string; items: NavItem[] };
 
@@ -32,6 +32,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
       { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, badgeKey: "newOrders" },
+      { to: "/admin/orders?kind=inquiry", label: "Запросы", icon: Bell, badgeKey: "newInquiries" },
       { to: "/admin/calendar", label: "Календарь", icon: Calendar, badgeKey: "todayBookings" },
       { to: "/admin/availability", label: "Занятость", icon: CalendarClock },
     ],
@@ -72,13 +73,15 @@ function useSidebarBadges() {
     staleTime: 30_000,
     queryFn: async (): Promise<Record<BadgeKey, number>> => {
       const today = new Date().toISOString().slice(0, 10);
-      const [newOrders, todayBookings, pendingTestimonials] = await Promise.all([
+      const [newOrders, newInquiries, todayBookings, pendingTestimonials] = await Promise.all([
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new"),
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "consultation"),
         supabase.from("availability").select("id", { count: "exact", head: true }).lte("start_date", today).gte("end_date", today),
         supabase.from("testimonials").select("id", { count: "exact", head: true }).eq("published", false),
       ]);
       return {
         newOrders: newOrders.count ?? 0,
+        newInquiries: newInquiries.count ?? 0,
         todayBookings: todayBookings.count ?? 0,
         pendingTestimonials: pendingTestimonials.count ?? 0,
       };
