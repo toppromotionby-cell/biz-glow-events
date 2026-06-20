@@ -41,7 +41,10 @@ const GROUPS: NavGroup[] = [
   {
     label: "Контент",
     items: [
-      { to: "/admin/catalog/zones", label: "Наполнение", icon: Package },
+      { to: "/admin/catalog/zones", label: "Зоны", icon: Package },
+      { to: "/admin/catalog/tech_equipment", label: "Оборудование", icon: Wrench },
+      { to: "/admin/catalog/services", label: "Услуги", icon: Sparkles },
+      { to: "/admin/catalog/production_items", label: "Производство", icon: Factory },
       { to: "/admin/cases", label: "Кейсы", icon: Trophy },
       { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials" },
       { to: "/admin/blog", label: "Блог", icon: Newspaper },
