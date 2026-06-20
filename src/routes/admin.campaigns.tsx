@@ -22,7 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare } from "lucide-react";
+import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare, Filter, Search } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { fmtDateTime } from "@/lib/formatters";
 
