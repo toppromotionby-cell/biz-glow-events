@@ -397,6 +397,8 @@ function OrderDocsPanel({ orderId }: { orderId: string }) {
             );
           })}
         </div>
+          );
+        })()
       )}
     </div>
   );
