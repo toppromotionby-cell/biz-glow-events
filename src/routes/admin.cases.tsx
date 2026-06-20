@@ -164,7 +164,7 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
     if (!validation.ok) { toast.error("Исправьте ошибки в форме"); setSaveState("error"); setErrorMessage("Невалидные поля"); return; }
     if (metricsError) { toast.error("Метрики: невалидный JSON"); setSaveState("error"); setErrorMessage(metricsError); return; }
     setSaving(true); setSaveState("saving"); setErrorMessage(null);
-    const metrics = JSON.parse(metricsInput || "{}") as Record<string, unknown>;
+    const metrics = JSON.parse(metricsInput || "{}") as Database["public"]["Tables"]["cases"]["Update"]["metrics"];
     const services_used = servicesInput.split(",").map((s: string) => s.trim()).filter(Boolean);
     const patch: Database["public"]["Tables"]["cases"]["Update"] = {
       title: form.title, slug: form.slug, client: form.client, event_type: form.event_type,
