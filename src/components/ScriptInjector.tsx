@@ -76,6 +76,8 @@ function loadFbPixel(id: string) {
 
 function trackPageview(path: string) {
   if (typeof window === "undefined") return;
+  // Без согласия — не отправляем pageview ни в один счётчик.
+  if (localStorage.getItem(KEY) !== "accept") return;
   // GTM/GA4
   window.dataLayer?.push({ event: "page_view", page_path: path });
   if (GA_ID && window.gtag) window.gtag("event", "page_view", { page_path: path });
@@ -84,6 +86,7 @@ function trackPageview(path: string) {
   // FB
   if (FB_PIXEL_ID && window.fbq) window.fbq("track", "PageView");
 }
+
 
 export function ScriptInjector() {
   const router = useRouter();
