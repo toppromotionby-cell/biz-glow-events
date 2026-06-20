@@ -107,10 +107,10 @@ export const listMailFolders = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({ accountId: z.string().uuid() }).parse(input),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<Json> => {
     await assertStaff(context.supabase, context.userId);
     const cfg = await loadAccountCfg(context.supabase, data.accountId);
-    return callMailWorker<Record<string, unknown>>("/folders", cfg, { timeoutMs: 30_000 });
+    return toJson(await callMailWorker("/folders", cfg, { timeoutMs: 30_000 }));
   });
 
 // ───── /messages ─────
