@@ -8,6 +8,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail, buildClientOrderConfirmedEmail } from "@/lib/admin-email.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const EntityType = z.enum(["zones", "tech_equipment", "services", "production_items"]);
 
@@ -557,9 +559,9 @@ async function sendOrderConfirmationEmailAndLog(
         title: String(i.title),
         qty: Number(i.qty ?? 1),
         price: Number(i.price ?? 0),
-        entityType: (i as any).entity_type ?? null,
-        startDate: (i as any).start_date ?? null,
-        endDate: (i as any).end_date ?? null,
+        entityType: i.entity_type ?? null,
+        startDate: i.start_date ?? null,
+        endDate: i.end_date ?? null,
       })),
     });
   } catch (e) {
@@ -585,7 +587,7 @@ async function sendOrderConfirmationEmailAndLog(
   return res;
 }
 
-async function assertAdminOrManager(supabase: any, userId: string) {
+async function assertAdminOrManager(supabase: SupabaseClient<Database>, userId: string) {
   const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (isAdmin) return;
   const { data: isManager } = await supabase.rpc("has_role", { _user_id: userId, _role: "manager" });
@@ -683,9 +685,9 @@ export const previewOrderConfirmationEmail = createServerFn({ method: "POST" })
         title: String(i.title),
         qty: Number(i.qty ?? 1),
         price: Number(i.price ?? 0),
-        entityType: (i as any).entity_type ?? null,
-        startDate: (i as any).start_date ?? null,
-        endDate: (i as any).end_date ?? null,
+        entityType: i.entity_type ?? null,
+        startDate: i.start_date ?? null,
+        endDate: i.end_date ?? null,
       })),
     });
 

@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Json } from "@/integrations/supabase/types";
 
 export type CaseRow = {
   id: string;
@@ -18,8 +19,7 @@ export type CaseRow = {
   photo_urls: string[] | null;
   video_urls: string[] | null;
   services_used: string[] | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metrics: any;
+  metrics: Json;
   featured: boolean;
   seo_title: string | null;
   seo_description: string | null;

@@ -239,7 +239,7 @@ function OrderDetail() {
               <div><span className="text-muted-foreground">Тема:</span> {emailPreview?.subject}</div>
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden bg-[#0a0a0f]">
+          <div className="flex-1 overflow-hidden bg-background">
             {emailPreview && (
               <iframe
                 title="email-preview"

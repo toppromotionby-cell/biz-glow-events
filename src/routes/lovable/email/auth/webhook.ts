@@ -58,6 +58,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
         }
 
         // Verify signature + timestamp, then parse payload.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let payload: any
         let run_id = ''
         try {

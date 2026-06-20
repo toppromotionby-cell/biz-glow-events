@@ -36,7 +36,7 @@ export async function sendViaResend(args: ResendSendArgs): Promise<ResendSendRes
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = (data && typeof data === "object" && (data as any).message) || JSON.stringify(data);
+    const msg = (data && typeof data === "object" && "message" in data ? String((data as { message?: unknown }).message ?? "") : "") || JSON.stringify(data);
     return { ok: false, status: res.status, error: `[${res.status}] ${msg}` };
   }
   return { ok: true, id: (data as { id?: string }).id ?? "" };

@@ -20,7 +20,7 @@ async function assertAdmin(userId: string): Promise<void> {
 
 const RecipientsConfigSchema = z.object({
   all_confirmed: z.boolean().default(false),
-  roles: z.array(z.string()).default([]),
+  roles: z.array(z.enum(["admin", "manager", "marketer", "content_editor"])).default([]),
   manual_emails: z.array(z.string().email()).default([]),
 });
 
@@ -290,7 +290,7 @@ async function resolveRecipients(cfg: z.infer<typeof RecipientsConfigSchema>): P
       if (error) throw new Error(error.message);
       const users = data?.users ?? [];
       for (const u of users) {
-        const confirmed = (u as any).email_confirmed_at ?? (u as any).confirmed_at;
+        const confirmed = u.email_confirmed_at ?? u.confirmed_at;
         if (confirmed && u.email) set.add(u.email.toLowerCase());
       }
       if (users.length < 1000) break;
@@ -302,7 +302,7 @@ async function resolveRecipients(cfg: z.infer<typeof RecipientsConfigSchema>): P
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")
-      .in("role", cfg.roles as any);
+      .in("role", cfg.roles);
     const userIds = (roles ?? []).map((r) => r.user_id);
     if (userIds.length > 0) {
       const { data: profiles } = await supabaseAdmin
