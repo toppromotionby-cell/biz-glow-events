@@ -332,6 +332,8 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
             <h4 className="font-display font-semibold text-base mb-3">Контакты</h4>
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               {[
+                { label: "Телефон", value: CONTACT.phoneDisplay, href: `tel:${CONTACT.phoneTel}` },
+                { label: "Telegram", value: CONTACT.phoneDisplay, href: CONTACT.telegramUrl, external: true },
                 { label: "E-mail", value: CONTACT.email, href: `mailto:${CONTACT.email}`, breakAll: true },
                 { label: "Адрес", value: CONTACT.address },
                 { label: "Часы работы", value: CONTACT.hours, span: true },
@@ -344,7 +346,7 @@ function OrderDialog({ topic, onClose }: { topic: string | null; onClose: () => 
                   </>
                 );
                 return c.href
-                  ? <a key={c.label} href={c.href} className={cls}>{body}</a>
+                  ? <a key={c.label} href={c.href} {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className={cls}>{body}</a>
                   : <div key={c.label} className={cls}>{body}</div>;
               })}
             </div>
