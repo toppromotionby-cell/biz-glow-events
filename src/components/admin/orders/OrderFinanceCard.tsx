@@ -53,7 +53,7 @@ export function OrderFinanceCard({ total, paid, onAddPayment, onSetPaid, busy }:
         <Input
           type="text"
           inputMode="decimal"
-          placeholder="Внести оплату, BYN"
+          placeholder="Сумма, BYN"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}

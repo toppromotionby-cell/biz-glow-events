@@ -249,14 +249,12 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
               </Card>
             </div>
 
-            <Card
-              title={<span className="flex items-center gap-2"><Paperclip className="h-4 w-4" />Документы и файлы ({attachCount})</span>}
-              className="mt-3"
-            >
+            <section className="glass rounded-xl border border-border/50 p-4 sm:p-5 mt-3">
               <Suspense fallback={<div className="space-y-2"><Skeleton className="h-9 w-full" /><Skeleton className="h-9 w-3/4" /></div>}>
                 <OrderAttachments orderId={order.id} />
               </Suspense>
-            </Card>
+            </section>
+
 
             <Card
               title={<span className="flex items-center gap-2"><Clock className="h-4 w-4" />Таймлайн ({timeline.length})</span>}
