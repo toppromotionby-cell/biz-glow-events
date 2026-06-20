@@ -217,7 +217,7 @@ export const submitOrder = createServerFn({ method: "POST" })
         status: "new",
         total,
       })
-      .select("id")
+      .select("id, order_number")
       .single();
 
 
