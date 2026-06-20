@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fmtCurrency, fmtDate, fmtDateTimeShort } from "@/lib/formatters";
+import { displayOrderNumber } from "@/lib/order-number";
 import { STATUS_LABEL, STATUS_TONE, TIMELINE_EVENT_LABEL } from "./constants";
 import type { OrderDetails, OrderRow } from "./types";
 
