@@ -48,6 +48,13 @@ function parseEmails(raw: string): string[] {
   return Array.from(set);
 }
 
+interface PreviewItem { email: string; selected: boolean; }
+
+function buildPreviewItems(raw: string): PreviewItem[] {
+  const emails = parseEmails(raw);
+  return emails.map((email) => ({ email, selected: true }));
+}
+
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   pending: { label: "В очереди", variant: "secondary" },
   sent: { label: "Отправлено", variant: "default" },
