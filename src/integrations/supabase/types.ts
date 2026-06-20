@@ -490,6 +490,50 @@ export type Database = {
         }
         Relationships: []
       }
+      mail_account_checks: {
+        Row: {
+          account_id: string
+          checked_by: string | null
+          created_at: string
+          details: Json | null
+          duration_ms: number | null
+          id: string
+          message: string | null
+          ok: boolean
+          status_code: number | null
+        }
+        Insert: {
+          account_id: string
+          checked_by?: string | null
+          created_at?: string
+          details?: Json | null
+          duration_ms?: number | null
+          id?: string
+          message?: string | null
+          ok: boolean
+          status_code?: number | null
+        }
+        Update: {
+          account_id?: string
+          checked_by?: string | null
+          created_at?: string
+          details?: Json | null
+          duration_ms?: number | null
+          id?: string
+          message?: string | null
+          ok?: boolean
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_account_checks_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "mail_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mail_accounts: {
         Row: {
           created_at: string
