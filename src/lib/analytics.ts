@@ -5,8 +5,22 @@
 // Window-типы объявлены в src/components/ScriptInjector.tsx
 
 const YM_ID = (import.meta.env.VITE_YM_ID as string | undefined);
+const CONSENT_KEY = "eh_cookie_consent";
 
 function isBrowser() { return typeof window !== "undefined"; }
+
+/**
+ * Проверка согласия на маркетинговую аналитику (cookie consent).
+ * События в GA4/Метрику/серверный лог отправляются только при "accept".
+ */
+export function hasAnalyticsConsent(): boolean {
+  if (!isBrowser()) return false;
+  try {
+    return window.localStorage.getItem(CONSENT_KEY) === "accept";
+  } catch {
+    return false;
+  }
+}
 
 export type AnalyticsItem = {
   item_id: string;
@@ -17,7 +31,7 @@ export type AnalyticsItem = {
 };
 
 function gtagEvent(name: string, params: Record<string, unknown>) {
-  if (!isBrowser()) return;
+  if (!isBrowser() || !hasAnalyticsConsent()) return;
   try {
     window.dataLayer?.push({ event: name, ecommerce: params });
     window.gtag?.("event", name, params);
@@ -25,11 +39,12 @@ function gtagEvent(name: string, params: Record<string, unknown>) {
 }
 
 function ymGoal(goal: string, params?: Record<string, unknown>) {
-  if (!isBrowser() || !YM_ID || !window.ym) return;
+  if (!isBrowser() || !hasAnalyticsConsent() || !YM_ID || !window.ym) return;
   try {
     (window.ym as (...args: unknown[]) => void)(Number(YM_ID), "reachGoal", goal, params ?? {});
   } catch {}
 }
+
 
 export function trackViewItem(item: AnalyticsItem) {
   gtagEvent("view_item", {
@@ -86,6 +101,8 @@ export type SocialPlacement = "footer" | "contacts_page" | "floating_widget";
  */
 export function trackSocialClick(network: SocialNetwork, placement: SocialPlacement, url?: string | null) {
   if (!isBrowser()) return;
+  // Без согласия на маркетинговую аналитику события не отправляем — ни в GA4/Метрику, ни в серверный лог.
+  if (!hasAnalyticsConsent()) return;
   const payload = { network, placement, url: url ?? null };
   // GA4 — рекомендуемое имя для outbound social-click
   gtagEvent("social_click", payload);
@@ -107,4 +124,5 @@ export function trackSocialClick(network: SocialNetwork, placement: SocialPlacem
     }
   } catch {}
 }
+
 
