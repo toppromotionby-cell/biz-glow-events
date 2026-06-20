@@ -349,9 +349,12 @@ function OrderDocsPanel({ orderId }: { orderId: string }) {
       ) : !q.data ? (
         <div className="text-xs text-muted-foreground">Нет данных о прикреплении документов для этого заказа.</div>
       ) : (
+        (() => {
+          const statuses = q.data.statuses;
+          return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {(["quote", "invoice", "contract", "act"] as const).map((kind) => {
-            const s = q.data.statuses.find((x) => x.kind === kind);
+            const s = statuses.find((x) => x.kind === kind);
             const ok = s?.ok ?? false;
             return (
               <div
