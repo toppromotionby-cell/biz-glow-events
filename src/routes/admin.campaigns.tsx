@@ -4,7 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   sendClientInvitations,
   previewInvite,
@@ -21,7 +21,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Loader2, Mail, Send, Eye } from "lucide-react";
+import { Loader2, Mail, Send, Eye, Upload } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { fmtDateTime } from "@/lib/formatters";
 
@@ -143,7 +143,27 @@ function InvitationsPage() {
         {/* Форма */}
         <div className="glass rounded-xl p-5 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="emails">Email-адреса <span className="text-xs text-muted-foreground">(через запятую, пробел или с новой строки, до {MAX})</span></Label>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <Label htmlFor="emails">Email-адреса <span className="text-xs text-muted-foreground">(через запятую, пробел или с новой строки, до {MAX})</span></Label>
+              <CsvUploadButton
+                onEmails={(found, fileName) => {
+                  if (found.length === 0) {
+                    toast.error("В файле не найдено email-адресов");
+                    return;
+                  }
+                  // Объединяем уже введённые адреса с импортированными, удаляем дубли.
+                  const existing = parseEmails(emailsRaw);
+                  const merged = Array.from(new Set([...existing, ...found]));
+                  const limited = merged.slice(0, MAX);
+                  setEmailsRaw(limited.join(", "));
+                  const dropped = merged.length - limited.length;
+                  toast.success(
+                    `Импортировано из ${fileName}: ${found.length}` +
+                      (dropped > 0 ? ` · обрезано до ${MAX} (${dropped} лишних)` : ""),
+                  );
+                }}
+              />
+            </div>
             <Textarea
               id="emails"
               value={emailsRaw}
