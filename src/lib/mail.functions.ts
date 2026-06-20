@@ -110,7 +110,7 @@ export const testMailAccount = createServerFn({ method: "POST" })
 
     try {
       result = await callMailWorker<{ ok: boolean; error?: string }>("/test", cfg, {
-        timeoutMs: 30_000,
+        timeoutMs: 90_000,
       });
       ok = result.ok === true;
       status = 200;
