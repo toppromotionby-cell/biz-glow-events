@@ -178,24 +178,31 @@ function InvitationsPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <Label htmlFor="emails">Email-адреса <span className="text-xs text-muted-foreground">(через запятую, пробел или с новой строки, до {MAX})</span></Label>
-              <CsvUploadButton
-                onEmails={(found, fileName) => {
-                  if (found.length === 0) {
-                    toast.error("В файле не найдено email-адресов");
-                    return;
-                  }
-                  // Объединяем уже введённые адреса с импортированными, удаляем дубли.
-                  const existing = parseEmails(emailsRaw);
-                  const merged = Array.from(new Set([...existing, ...found]));
-                  const limited = merged.slice(0, MAX);
-                  setEmailsRaw(limited.join(", "));
-                  const dropped = merged.length - limited.length;
-                  toast.success(
-                    `Импортировано из ${fileName}: ${found.length}` +
-                      (dropped > 0 ? ` · обрезано до ${MAX} (${dropped} лишних)` : ""),
-                  );
-                }}
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openPreview("manual")}
+                  disabled={emailsRaw.trim().length === 0}
+                  title="Проверить и отредактировать распознанные адреса"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Проверить адреса
+                </Button>
+                <CsvUploadButton
+                  onEmails={(found, fileName) => {
+                    if (found.length === 0) {
+                      toast.error("В файле не найдено email-адресов");
+                      return;
+                    }
+                    const existing = parseEmails(emailsRaw);
+                    const mergedRaw = Array.from(new Set([...existing, ...found])).join(", ");
+                    setEmailsRaw(mergedRaw);
+                    openPreview("csv", fileName);
+                  }}
+                />
+              </div>
             </div>
             <Textarea
               id="emails"
