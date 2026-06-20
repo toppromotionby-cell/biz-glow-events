@@ -48,7 +48,7 @@ export async function loadDocumentSettings(supabaseAdmin: {
 
 type ShellOpts = {
   title: string;
-  kind: "Коммерческое предложение" | "Счёт-фактура" | "Договор";
+  kind: "Коммерческое предложение" | "Счёт-фактура" | "Договор" | "Акт оказанных услуг";
   number: string;
   date: string;
   settings: DocumentSettings;

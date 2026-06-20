@@ -81,7 +81,7 @@ function DocumentSettingsPage() {
     },
   });
 
-  const openPreview = (kind: "quote" | "invoice" | "contract") => {
+  const openPreview = (kind: "quote" | "invoice" | "contract" | "act") => {
     if (!lastOrder.data) {
       notify.info("Нет ни одного заказа — создайте заказ, чтобы посмотреть документ.");
       return;
@@ -122,6 +122,7 @@ function DocumentSettingsPage() {
           <TabsTrigger value="quote">КП</TabsTrigger>
           <TabsTrigger value="invoice">Счёт</TabsTrigger>
           <TabsTrigger value="contract">Договор</TabsTrigger>
+          <TabsTrigger value="act">Акт</TabsTrigger>
         </TabsList>
 
         <TabsContent value="company">
@@ -205,6 +206,29 @@ function DocumentSettingsPage() {
             Сбросить разделы к шаблону
           </button>
         </TabsContent>
+
+        <TabsContent value="act">
+          <Card title="Акт оказанных услуг" preview="act" onPreview={openPreview}>
+            <Field
+              label="Срок приёмки (рабочих дней)"
+              type="number"
+              value={String(form.act_validity_days)}
+              onChange={(v) => update("act_validity_days", Number(v) || 5)}
+            />
+            <FieldArea
+              label="Вступительный текст акта"
+              value={form.act_intro}
+              onChange={(v) => update("act_intro", v)}
+              rows={4}
+            />
+            <FieldArea
+              label="Текст подвала"
+              value={form.act_footer}
+              onChange={(v) => update("act_footer", v)}
+              rows={3}
+            />
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -234,8 +258,8 @@ function Card({
   title: string;
   subtitle?: string;
   children: ReactNode;
-  preview?: "quote" | "invoice" | "contract";
-  onPreview?: (kind: "quote" | "invoice" | "contract") => void;
+  preview?: "quote" | "invoice" | "contract" | "act";
+  onPreview?: (kind: "quote" | "invoice" | "contract" | "act") => void;
 }) {
   return (
     <div className="rounded-lg border border-border/50 bg-card/60 p-5 space-y-4">

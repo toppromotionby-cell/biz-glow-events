@@ -85,6 +85,7 @@ import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
+import { Route as AdminOrdersIdActRouteImport } from './routes/admin.orders.$id.act'
 import { Route as AdminCampaignsIdReportRouteImport } from './routes/admin.campaigns.$id.report'
 
 const ZonesRoute = ZonesRouteImport.update({
@@ -471,6 +472,11 @@ const AdminOrdersIdContractRoute = AdminOrdersIdContractRouteImport.update({
   path: '/contract',
   getParentRoute: () => AdminOrdersIdRoute,
 } as any)
+const AdminOrdersIdActRoute = AdminOrdersIdActRouteImport.update({
+  id: '/act',
+  path: '/act',
+  getParentRoute: () => AdminOrdersIdRoute,
+} as any)
 const AdminCampaignsIdReportRoute = AdminCampaignsIdReportRouteImport.update({
   id: '/report',
   path: '/report',
@@ -546,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
+  '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -624,6 +631,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
+  '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -704,6 +712,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/campaigns/$id/report': typeof AdminCampaignsIdReportRoute
+  '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
@@ -785,6 +794,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/campaigns/$id/report'
+    | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -863,6 +873,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/campaigns/$id/report'
+    | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -942,6 +953,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/campaigns/$id/report'
+    | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
@@ -1537,6 +1549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdContractRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/orders/$id/act': {
+      id: '/admin/orders/$id/act'
+      path: '/act'
+      fullPath: '/admin/orders/$id/act'
+      preLoaderRoute: typeof AdminOrdersIdActRouteImport
+      parentRoute: typeof AdminOrdersIdRoute
+    }
     '/admin/campaigns/$id/report': {
       id: '/admin/campaigns/$id/report'
       path: '/report'
@@ -1585,12 +1604,14 @@ const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
 )
 
 interface AdminOrdersIdRouteChildren {
+  AdminOrdersIdActRoute: typeof AdminOrdersIdActRoute
   AdminOrdersIdContractRoute: typeof AdminOrdersIdContractRoute
   AdminOrdersIdInvoiceRoute: typeof AdminOrdersIdInvoiceRoute
   AdminOrdersIdQuoteRoute: typeof AdminOrdersIdQuoteRoute
 }
 
 const AdminOrdersIdRouteChildren: AdminOrdersIdRouteChildren = {
+  AdminOrdersIdActRoute: AdminOrdersIdActRoute,
   AdminOrdersIdContractRoute: AdminOrdersIdContractRoute,
   AdminOrdersIdInvoiceRoute: AdminOrdersIdInvoiceRoute,
   AdminOrdersIdQuoteRoute: AdminOrdersIdQuoteRoute,

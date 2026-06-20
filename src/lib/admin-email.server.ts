@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 
 const SITE_NAME = "event-hub.by";
-const SENDER_DOMAIN = "z.event-hub.by";
+const SENDER_DOMAIN = "notify.event-hub.by";
 const FROM_DOMAIN = "event-hub.by";
 const FROM_ADDRESS = `${SITE_NAME} <noreply@${FROM_DOMAIN}>`;
 
@@ -176,6 +176,7 @@ export type ClientOrderConfirmedPayload = {
     startDate?: string | null;
     endDate?: string | null;
   }>;
+  documents?: Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; url: string }>;
 };
 
 const ENTITY_LABEL_RU: Record<string, string> = {
@@ -282,6 +283,15 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
     <div style="font-size:14px;color:#e5e5e5;white-space:pre-wrap">${escapeHtml(p.notes)}</div>
   </div>` : ""}
 
+  ${(p.documents && p.documents.length > 0) ? `
+  <div style="background:#1a1a26;border-radius:8px;padding:16px 18px;margin:0 0 20px">
+    <div style="font-size:13px;color:#a78bfa;font-weight:600;margin-bottom:10px">Документы по заказу</div>
+    <div style="display:block">
+      ${p.documents.map(d => `<a href="${escapeHtml(d.url)}" style="display:inline-block;margin:4px 8px 4px 0;padding:8px 14px;border-radius:6px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.35);color:#c4b5fd;text-decoration:none;font-size:13px;font-weight:500">📄 ${escapeHtml(d.label)}</a>`).join("")}
+    </div>
+    <div style="font-size:11px;color:#888;margin-top:8px">Ссылки действительны 30 дней. Откройте, чтобы посмотреть или сохранить документ в PDF.</div>
+  </div>` : ""}
+
   <a href="${orderUrl}" style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:500">Открыть личный кабинет</a>
 
   <p style="margin:24px 0 0;font-size:13px;color:#888;line-height:1.5">
@@ -297,12 +307,15 @@ export async function notifyClientOrderConfirmedEmail(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!p.clientEmail) return { ok: false, error: "no client email" };
   const { subject, html } = buildClientOrderConfirmedEmail(p);
+  // Включаем timestamp в message_id, чтобы повторная отправка не отбивалась
+  // провайдером по идемпотентности (например, после починки sender-домена).
+  const salt = Date.now().toString(36);
   return enqueue({
     to: p.clientEmail,
     subject,
     html,
     label: "client-order-confirmed",
-    messageId: `order-confirmed-${p.orderId}`,
+    messageId: `order-confirmed-${p.orderId}-${salt}`,
   });
 }
 
