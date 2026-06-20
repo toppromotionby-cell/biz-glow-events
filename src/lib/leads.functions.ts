@@ -1,9 +1,15 @@
-// Server function: submit a lead from a public form.
-// Creates an order in Supabase, logs to order_timeline, and (best-effort) notifies Telegram.
+// Server functions for "inquiry" flow (consultation request, not a full order).
+// Creates an order with status='consultation', notifies admin (Telegram + email)
+// with a distinct "ЗАПРОС" template, and emails the client a confirmation +
+// link to a clarification form keyed by `orders.clarification_token`.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { notifyAdminLeadEmail } from "@/lib/admin-email.server";
+import {
+  notifyAdminInquiryEmail,
+  notifyClientInquiryReceivedEmail,
+} from "@/lib/admin-email.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const LeadSchema = z.object({
   client_name: z.string().min(2).max(120),
@@ -22,15 +28,12 @@ const LeadSchema = z.object({
   consent_pd: z.literal(true),
 });
 
-// Escape user-supplied text before inserting into Telegram HTML-mode messages.
 function tgEsc(s: string | null | undefined): string {
   if (s == null) return "";
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: string }> {
-  // Lovable note: requires Telegram connector linked (TELEGRAM_API_KEY) +
-  // TELEGRAM_CHAT_ID secret. Best-effort, never blocks lead creation.
   const lovableKey = process.env.LOVABLE_API_KEY;
   const tgKey = process.env.TELEGRAM_API_KEY;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -52,6 +55,7 @@ async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: stri
   }
 }
 
+// Backward-compat name; this is now the "submit inquiry / запрос на консультацию" handler.
 export const submitLead = createServerFn({ method: "POST" })
   .inputValidator((input) => LeadSchema.parse(input))
   .handler(async ({ data }) => {
@@ -67,18 +71,21 @@ export const submitLead = createServerFn({ method: "POST" })
           payload.event_end_date && payload.event_end_date !== payload.event_date
             ? `Период мероприятия: ${payload.event_date ?? "?"} — ${payload.event_end_date}`
             : "",
-          payload.notes ?? "",
+            payload.notes ?? "",
         ].filter(Boolean).join("\n\n") || null,
         event_date: payload.event_date ?? null,
-        source: payload.source ?? "website",
+        source: payload.source ?? "inquiry",
         utm_source: payload.utm_source ?? null,
         utm_medium: payload.utm_medium ?? null,
         utm_campaign: payload.utm_campaign ?? null,
         utm_term: payload.utm_term ?? null,
         utm_content: payload.utm_content ?? null,
-        status: "new",
+        // Запрос на консультацию — это не оформленный заказ. Менеджер должен
+        // связаться с клиентом, уточнить детали, и только потом превратить в
+        // заказ (см. promoteInquiryToOrder).
+        status: "consultation",
       })
-      .select("id")
+      .select("id, clarification_token")
       .single();
 
     if (error || !order) {
@@ -88,12 +95,13 @@ export const submitLead = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("order_timeline").insert({
       order_id: order.id,
-      event: "lead_created",
-      payload: { source: payload.source ?? "website" },
+      event: "inquiry_created",
+      payload: { source: payload.source ?? "inquiry" },
     });
 
     const text =
-      `<b>Новая заявка</b>\n` +
+      `<b>🟡 ЗАПРОС на консультацию</b>\n` +
+      `<i>Нужно связаться с клиентом и уточнить детали.</i>\n\n` +
       `Имя: ${tgEsc(payload.client_name)}\n` +
       `Телефон: ${tgEsc(payload.client_phone)}\n` +
       `Email: ${tgEsc(payload.client_email)}\n` +
@@ -110,17 +118,126 @@ export const submitLead = createServerFn({ method: "POST" })
       payload: { text },
     });
 
-    // Email-фолбэк: если Telegram не сработал — шлём уведомление на ADMIN_EMAIL.
-    if (!tg.ok) {
-      await notifyAdminLeadEmail({
-        leadId: order.id,
-        clientName: payload.client_name,
-        clientPhone: payload.client_phone,
-        clientEmail: payload.client_email,
-        source: payload.source ?? "website",
-        notes: payload.notes ?? null,
-      }).catch((e) => console.error("[submitLead] email fallback failed:", e));
-    }
+    // Админ-email с явной пометкой «ЗАПРОС» — отличается от уведомления о заказе.
+    await notifyAdminInquiryEmail({
+      inquiryId: order.id,
+      clientName: payload.client_name,
+      clientPhone: payload.client_phone,
+      clientEmail: payload.client_email,
+      clientCompany: payload.client_company ?? null,
+      eventDate: payload.event_date ?? null,
+      source: payload.source ?? "inquiry",
+      notes: payload.notes ?? null,
+    }).catch((e) => console.error("[submitLead] admin email failed:", e));
+
+    // Клиенту — короткое письмо «Мы получили ваш запрос» + ссылка на анкету уточнений.
+    await notifyClientInquiryReceivedEmail({
+      inquiryId: order.id,
+      clientName: payload.client_name,
+      clientEmail: payload.client_email,
+      clarificationToken: (order as { clarification_token: string | null }).clarification_token,
+    }).catch((e) => console.error("[submitLead] client email failed:", e));
 
     return { id: order.id };
+  });
+
+// Публичная server fn для дозаполнения анкеты по токену. Не требует auth —
+// единственный «секрет» это сам токен (uuid с уникальным индексом).
+const ClarificationSchema = z.object({
+  token: z.string().uuid(),
+  event_format: z.string().max(200).optional().nullable(),
+  guests_count: z.string().max(50).optional().nullable(),
+  budget: z.string().max(100).optional().nullable(),
+  venue: z.string().max(200).optional().nullable(),
+  extra: z.string().max(2000).optional().nullable(),
+});
+
+export const submitInquiryClarification = createServerFn({ method: "POST" })
+  .inputValidator((input) => ClarificationSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .select("id, notes, client_name")
+      .eq("clarification_token", data.token)
+      .maybeSingle();
+    if (error || !order) throw new Error("Ссылка устарела или недействительна");
+
+    const lines: string[] = ["", "── Ответы из анкеты ──"];
+    if (data.event_format) lines.push(`Формат: ${data.event_format}`);
+    if (data.guests_count) lines.push(`Гостей: ${data.guests_count}`);
+    if (data.budget) lines.push(`Бюджет: ${data.budget}`);
+    if (data.venue) lines.push(`Площадка: ${data.venue}`);
+    if (data.extra) lines.push(`Доп.: ${data.extra}`);
+    const appended = lines.length > 2 ? lines.join("\n") : "";
+
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        notes: [order.notes ?? "", appended].filter(Boolean).join("\n"),
+      })
+      .eq("id", order.id);
+
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: order.id,
+      event: "inquiry_clarified",
+      payload: { ...data, token: undefined },
+    });
+
+    // Telegram пинг менеджеру: клиент уточнил детали.
+    await notifyTelegram(
+      `<b>📝 Клиент уточнил запрос</b>\n` +
+      `Имя: ${tgEsc(order.client_name)}\n` +
+      (data.event_format ? `Формат: ${tgEsc(data.event_format)}\n` : "") +
+      (data.guests_count ? `Гостей: ${tgEsc(data.guests_count)}\n` : "") +
+      (data.budget ? `Бюджет: ${tgEsc(data.budget)}\n` : "") +
+      (data.venue ? `Площадка: ${tgEsc(data.venue)}\n` : "") +
+      (data.extra ? `Комментарий: ${tgEsc(data.extra)}` : ""),
+    );
+
+    return { ok: true };
+  });
+
+// Лукап для страницы анкеты — отдаёт только публично-безопасные поля.
+export const getInquiryByToken = createServerFn({ method: "GET" })
+  .inputValidator((input) => z.object({ token: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, client_name, event_date, status")
+      .eq("clarification_token", data.token)
+      .maybeSingle();
+    if (!order) return null;
+    return {
+      clientName: order.client_name,
+      eventDate: order.event_date,
+      // Был ли уже превращён в заказ?
+      promoted: order.status !== "consultation",
+    };
+  });
+
+// Admin: превратить запрос в заказ (status: consultation → new).
+const PromoteSchema = z.object({ id: z.string().uuid() });
+export const promoteInquiryToOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => PromoteSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId, supabase } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    const { data: isManager } = await supabase.rpc("has_role", { _user_id: userId, _role: "manager" });
+    if (!isAdmin && !isManager) throw new Error("Доступ запрещён");
+
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "new" as never })
+      .eq("id", data.id)
+      .eq("status", "consultation");
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: data.id,
+      actor_id: userId,
+      event: "inquiry_promoted",
+      payload: {},
+    });
+    return { ok: true };
   });

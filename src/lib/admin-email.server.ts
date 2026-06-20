@@ -154,6 +154,85 @@ export async function notifyAdminLeadEmail(p: AdminLeadPayload): Promise<{ ok: b
   return enqueue({ to, subject, html, label: "admin-lead", messageId: `lead-${p.leadId}` });
 }
 
+// ===== Admin: inquiry / запрос на консультацию (отличный от заказа) =====
+
+export type AdminInquiryPayload = {
+  inquiryId: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail: string;
+  clientCompany?: string | null;
+  eventDate?: string | null;
+  source?: string;
+  notes?: string | null;
+};
+
+export async function notifyAdminInquiryEmail(p: AdminInquiryPayload): Promise<{ ok: boolean; error?: string }> {
+  const to = adminEmail();
+  if (!to) return { ok: false, error: "ADMIN_EMAIL not set" };
+  const subject = `🟡 ЗАПРОС от ${p.clientName} — нужно связаться`;
+  const adminUrl = `https://${FROM_DOMAIN}/admin/orders`;
+  const html = `
+<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px;margin:0">
+<div style="max-width:600px;margin:0 auto;background:#11111a;border-radius:12px;padding:28px">
+  <div style="display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.35);font-size:12px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:12px">ЗАПРОС · требуется связаться</div>
+  <h1 style="color:#fbbf24;margin:0 0 8px;font-size:22px">Новый запрос на консультацию</h1>
+  <p style="margin:0 0 20px;color:#b8b8c8">Клиент оставил запрос — не оформленный заказ. Нужно перезвонить и уточнить, что именно ему нужно.</p>
+  <p><strong>ID:</strong> <span style="font-family:monospace">${escapeHtml(p.inquiryId.slice(0, 8))}</span></p>
+  <p><strong>Источник:</strong> ${escapeHtml(p.source ?? "—")}</p>
+  <hr style="border-color:#2a2a35"/>
+  <h2 style="font-size:16px;color:#e5e5e5">Контакты клиента</h2>
+  <p style="margin:6px 0">${escapeHtml(p.clientName)}${p.clientCompany ? " · " + escapeHtml(p.clientCompany) : ""}</p>
+  <p style="margin:6px 0">📞 <a href="tel:${escapeHtml(p.clientPhone)}" style="color:#fbbf24">${escapeHtml(p.clientPhone)}</a>
+     · ✉ <a href="mailto:${escapeHtml(p.clientEmail)}" style="color:#fbbf24">${escapeHtml(p.clientEmail)}</a></p>
+  ${p.eventDate ? `<p style="margin:6px 0">📅 Дата: ${escapeHtml(p.eventDate)}</p>` : ""}
+  ${p.notes ? `<div style="background:#1a1a26;border-left:3px solid #fbbf24;border-radius:6px;padding:12px 14px;margin:16px 0"><div style="font-size:12px;color:#888;text-transform:uppercase;margin-bottom:6px">Сообщение клиента</div><div style="white-space:pre-wrap">${escapeHtml(p.notes)}</div></div>` : ""}
+  <a href="${adminUrl}" style="display:inline-block;margin-top:16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#0a0a0f;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600">Открыть в админке</a>
+</div></body></html>`;
+  return enqueue({ to, subject, html, label: "admin-inquiry", messageId: `inquiry-${p.inquiryId}` });
+}
+
+// ===== Client: подтверждение получения запроса + ссылка на анкету =====
+
+export type ClientInquiryReceivedPayload = {
+  inquiryId: string;
+  clientName: string;
+  clientEmail: string;
+  clarificationToken: string | null;
+};
+
+export async function notifyClientInquiryReceivedEmail(
+  p: ClientInquiryReceivedPayload,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!p.clientEmail) return { ok: false, error: "no client email" };
+  const subject = `Мы получили ваш запрос — ${SITE_NAME}`;
+  const clarifyUrl = p.clarificationToken
+    ? `https://${FROM_DOMAIN}/inquiry/${p.clarificationToken}`
+    : null;
+  const html = `
+<!doctype html><html><body style="font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e5e5e5;padding:24px;margin:0">
+<div style="max-width:600px;margin:0 auto;background:#11111a;border-radius:12px;padding:28px">
+  <h1 style="color:#a78bfa;margin:0 0 12px;font-size:22px">Спасибо за запрос! 👋</h1>
+  <p style="margin:0 0 14px;color:#d4d4dc">Здравствуйте, ${escapeHtml(p.clientName)}!</p>
+  <p style="margin:0 0 14px;color:#b8b8c8">Мы получили ваш запрос и уже разбираем детали. Менеджер свяжется с вами в течение рабочего дня, чтобы уточнить задачу и подобрать оптимальное решение.</p>
+  ${clarifyUrl ? `
+  <div style="background:#1a1a26;border-radius:8px;padding:18px;margin:20px 0">
+    <div style="font-weight:600;color:#a78bfa;margin-bottom:8px">Поможет ускорить ответ</div>
+    <p style="margin:0 0 14px;color:#b8b8c8;font-size:14px">Если есть пара минут — заполните короткую анкету: дата, формат, число гостей, бюджет. Менеджер сразу подготовит подходящие варианты.</p>
+    <a href="${clarifyUrl}" style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-weight:500">Уточнить детали</a>
+  </div>` : ""}
+  <p style="margin:18px 0 0;font-size:13px;color:#888;line-height:1.5">Если что-то срочно — просто ответьте на это письмо.<br/>С уважением, команда ${SITE_NAME}.</p>
+</div></body></html>`;
+  const salt = Date.now().toString(36);
+  return enqueue({
+    to: p.clientEmail,
+    subject,
+    html,
+    label: "client-inquiry-received",
+    messageId: `inquiry-received-${p.inquiryId}-${salt}`,
+  });
+}
+
 // ===== Client-facing: order confirmation email =====
 
 export type ClientOrderConfirmedPayload = {
