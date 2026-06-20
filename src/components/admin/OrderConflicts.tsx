@@ -24,7 +24,7 @@ export function OrderConflicts({ orderId, eventDate, items }: Props) {
       // Другие активные заказы в тот же день.
       const { data: otherOrders } = await supabase
         .from("orders")
-        .select("id, client_name, status")
+        .select("id, order_number, client_name, status")
         .eq("event_date", day)
         .neq("id", orderId)
         .in("status", ACTIVE_STATUSES);
