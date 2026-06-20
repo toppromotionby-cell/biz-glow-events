@@ -21,7 +21,7 @@ export const listMailAccounts = createServerFn({ method: "GET" })
 
 export const createMailAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => accountInput.parse(input))
+  .inputValidator((input: unknown) => accountCreateSchema.parse(input))
   .handler(async ({ data, context }) => {
     const row = {
       owner_id: context.userId,
