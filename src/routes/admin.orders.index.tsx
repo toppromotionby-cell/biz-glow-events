@@ -56,7 +56,7 @@ function AdminOrders() {
       // Узкий select — для списка не нужны notes/utm_*, чтобы не тянуть лишний JSON.
       let query = supabase
         .from("orders")
-        .select("id,created_at,updated_at,status,client_name,client_company,client_phone,client_email,event_date,source,utm_source,utm_campaign,total,paid")
+        .select("id,order_number,created_at,updated_at,status,client_name,client_company,client_phone,client_email,event_date,source,utm_source,utm_campaign,total,paid")
         .order("created_at", { ascending: false })
         .limit(500);
       if (kind === "inquiries") query = query.eq("status", "consultation" as OrderStatus);

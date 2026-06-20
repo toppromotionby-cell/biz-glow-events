@@ -323,6 +323,7 @@ const metaRow = (label: string, value: string) => `
 
 export type AdminOrderPayload = {
   orderId: string;
+  orderNumber?: string | null;
   clientName: string;
   clientPhone: string;
   clientEmail: string;
@@ -333,6 +334,11 @@ export type AdminOrderPayload = {
   notes?: string | null;
   items: Array<{ title: string; qty: number; price: number }>;
 };
+
+function orderDisplayId(orderId: string, orderNumber?: string | null): string {
+  const n = (orderNumber ?? "").trim();
+  return n || orderId.slice(0, 8);
+}
 
 export async function notifyAdminOrderEmail(p: AdminOrderPayload): Promise<{ ok: boolean; error?: string }> {
   const to = adminEmail();
@@ -347,7 +353,7 @@ export async function notifyAdminOrderEmail(p: AdminOrderPayload): Promise<{ ok:
     <h1 style="font-family:${FONT_DISPLAY};margin:0 0 16px;font-size:24px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text}">Поступил новый заказ</h1>
     <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
-        ${metaRow("ID", `<span style="font-family:ui-monospace,monospace">${escapeHtml(p.orderId.slice(0, 8))}</span>`)}
+        ${metaRow("Номер", `<span style="font-family:ui-monospace,monospace">${escapeHtml(orderDisplayId(p.orderId, p.orderNumber))}</span>`)}
         ${metaRow("Источник", escapeHtml(p.source ?? "—"))}
         ${metaRow("Клиент", escapeHtml(p.clientName) + (p.clientCompany ? ` · ${escapeHtml(p.clientCompany)}` : ""))}
         ${metaRow("Телефон", `<a href="tel:${escapeHtml(p.clientPhone)}" style="color:${BRAND.accent};text-decoration:none">${escapeHtml(p.clientPhone)}</a>`)}
@@ -501,6 +507,7 @@ export async function notifyClientInquiryReceivedEmail(
 
 export type ClientOrderConfirmedPayload = {
   orderId: string;
+  orderNumber?: string | null;
   clientName: string;
   clientEmail: string;
   clientPhone?: string | null;
@@ -589,7 +596,7 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
 
     <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:18px 20px;margin:0 0 18px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tbody>
-        ${metaRow("Номер заказа", `<span style="font-family:ui-monospace,monospace;color:${BRAND.text}">${escapeHtml(p.orderId.slice(0, 8))}</span>`)}
+        ${metaRow("Номер заказа", `<span style="font-family:ui-monospace,monospace;color:${BRAND.text}">${escapeHtml(orderDisplayId(p.orderId, p.orderNumber))}</span>`)}
         ${metaRow("Статус", `<span style="display:inline-block;padding:4px 12px;border-radius:999px;background:${BRAND.accentSoft};color:${BRAND.accent};border:1px solid ${BRAND.accentBorder};font-size:12px;font-weight:600;letter-spacing:0.02em">${escapeHtml(statusLabel)}</span>`)}
         ${p.eventDate ? metaRow("Дата мероприятия", escapeHtml(fmtDateRu(p.eventDate))) : ""}
       </tbody></table>
@@ -653,7 +660,7 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
 
   const html = brandShell({
     title: subject,
-    previewText: `Заказ ${p.orderId.slice(0, 8)} подтверждён. Итого ${fmtBYN(Number(p.total ?? 0))}.`,
+    previewText: `Заказ ${orderDisplayId(p.orderId, p.orderNumber)} подтверждён. Итого ${fmtBYN(Number(p.total ?? 0))}.`,
     body,
   });
   return { subject, html };

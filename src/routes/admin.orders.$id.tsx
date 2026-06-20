@@ -33,6 +33,7 @@ import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { notifyOrderStatus } from "@/lib/order-notifications.functions";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
+import { displayOrderNumber } from "@/lib/order-number";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -196,8 +197,11 @@ function OrderDetail() {
       {/* Шапка: заголовок + статус-меню + действия */}
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div className="space-y-1">
-          <h1 className="admin-h1">Заказ #{order.id.slice(0, 8)}</h1>
-          <p className="text-sm text-muted-foreground">Создан {fmtDateTime(order.created_at)}</p>
+          <h1 className="admin-h1">Заказ {displayOrderNumber(order)}</h1>
+          <p className="text-sm text-muted-foreground">
+            Создан {fmtDateTime(order.created_at)}
+            <span className="ml-2 font-mono text-[10px] opacity-60">#{order.id.slice(0, 8)}</span>
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <OrderAssignee orderId={order.id} managerId={order.manager_id ?? null} />
@@ -258,7 +262,7 @@ function OrderDetail() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Удалить заказ #{order.id.slice(0, 8)}?</AlertDialogTitle>
+                    <AlertDialogTitle>Удалить заказ {displayOrderNumber(order)}?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Будут безвозвратно удалены сам заказ, его позиции, таймлайн и вложения. Действие необратимо.
                     </AlertDialogDescription>

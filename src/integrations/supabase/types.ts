@@ -1129,6 +1129,7 @@ export type Database = {
           internal_notes: string | null
           manager_id: string | null
           notes: string | null
+          order_number: string | null
           paid: number | null
           source: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -1153,6 +1154,7 @@ export type Database = {
           internal_notes?: string | null
           manager_id?: string | null
           notes?: string | null
+          order_number?: string | null
           paid?: number | null
           source?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -1177,6 +1179,7 @@ export type Database = {
           internal_notes?: string | null
           manager_id?: string | null
           notes?: string | null
+          order_number?: string | null
           paid?: number | null
           source?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -1831,6 +1834,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      generate_order_number: { Args: { p_created: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

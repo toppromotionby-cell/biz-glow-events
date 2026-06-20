@@ -22,6 +22,7 @@ import {
   ChevronDown, Calendar,
 } from "lucide-react";
 import { fmtDate, fmtDateTime } from "@/lib/formatters";
+import { displayOrderNumber } from "@/lib/order-number";
 import { openAuthedDocument } from "@/lib/authed-fetch";
 import { useOrderMutations } from "@/hooks/use-order-mutations";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
@@ -111,7 +112,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
     <Dialog open={enabled} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto p-6 gap-0 bg-card">
         <DialogHeader className="sr-only">
-          <DialogTitle>Заказ {order ? `#${order.id.slice(0, 8)}` : ""}</DialogTitle>
+          <DialogTitle>Заказ {order ? displayOrderNumber(order) : ""}</DialogTitle>
           <DialogDescription>Детали и управление заказом</DialogDescription>
         </DialogHeader>
 
@@ -283,7 +284,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Удалить заказ #{order.id.slice(0, 8)}?</AlertDialogTitle>
+                  <AlertDialogTitle>Удалить заказ {displayOrderNumber(order)}?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Будут безвозвратно удалены сам заказ, его позиции, таймлайн и вложения. Действие необратимо.
                   </AlertDialogDescription>

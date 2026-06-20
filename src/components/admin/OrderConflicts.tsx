@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { displayOrderNumber } from "@/lib/order-number";
 
 interface Props {
   orderId: string;
@@ -24,7 +25,7 @@ export function OrderConflicts({ orderId, eventDate, items }: Props) {
       // Другие активные заказы в тот же день.
       const { data: otherOrders } = await supabase
         .from("orders")
-        .select("id, client_name, status")
+        .select("id, order_number, client_name, status")
         .eq("event_date", day)
         .neq("id", orderId)
         .in("status", ACTIVE_STATUSES);
@@ -76,7 +77,7 @@ export function OrderConflicts({ orderId, eventDate, items }: Props) {
                   params={{ id: o.id }}
                   className="text-amber-100 hover:underline"
                 >
-                  #{o.id.slice(0, 8)} — {o.client_name} ({o.status})
+                  {displayOrderNumber(o)} — {o.client_name} ({o.status})
                 </Link>
               </li>
             ))}

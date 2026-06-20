@@ -37,7 +37,7 @@ export const Route = createFileRoute("/admin/orders/$id/invoice")({
         const paid = Number(order.paid ?? 0);
         const debt = Math.max(0, total - paid);
         const date = fmtDate(new Date());
-        const num = String(order.id).slice(0, 8).toUpperCase();
+        const num = (order.order_number ?? "").trim() ? (order.order_number as string).replaceAll("/", ".") : String(order.id).slice(0, 8).toUpperCase();
 
         const body = `
           <div class="grid-2" style="margin-top:14px;">
