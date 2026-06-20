@@ -103,7 +103,7 @@ export const listMailFolders = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertStaff(context.supabase, context.userId);
     const cfg = await loadAccountCfg(context.supabase, data.accountId);
-    return callMailWorker("/folders", cfg, { timeoutMs: 30_000 });
+    return callMailWorker<Record<string, unknown>>("/folders", cfg, { timeoutMs: 30_000 });
   });
 
 // ───── /messages ─────
