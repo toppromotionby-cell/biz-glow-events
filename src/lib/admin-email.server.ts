@@ -637,11 +637,12 @@ export function buildClientOrderConfirmedEmail(p: ClientOrderConfirmedPayload): 
       <div style="font-size:14px;color:${BRAND.text};white-space:pre-wrap;line-height:1.55">${escapeHtml(p.notes)}</div>
     </div>` : ""}
 
-    ${hasAttachments ? `<div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:16px 18px;margin:0 0 24px">
-      <div style="font-family:${FONT_DISPLAY};font-size:13px;font-weight:600;color:${BRAND.accent};margin-bottom:6px">Документы во вложении</div>
-      <div style="font-size:13px;color:${BRAND.textSoft};line-height:1.55">
-        К письму приложены коммерческое предложение, счёт, договор и акт в формате PDF.
+    ${hasDocuments ? `<div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:16px 18px;margin:0 0 24px">
+      <div style="font-family:${FONT_DISPLAY};font-size:13px;font-weight:600;color:${BRAND.accent};margin-bottom:8px">Документы по заказу</div>
+      <div style="font-size:13px;color:${BRAND.textSoft};line-height:1.55;margin-bottom:4px">
+        Нажмите на нужный документ — он откроется в браузере или сохранится на устройство.
       </div>
+      ${documentsHtml}
     </div>` : ""}
 
     <a href="${orderUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND.accent},#f5c97a);color:#1a1208;text-decoration:none;padding:13px 26px;border-radius:10px;font-weight:600;font-size:14px;font-family:${FONT_DISPLAY}">Открыть личный кабинет</a>
