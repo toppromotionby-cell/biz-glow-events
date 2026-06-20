@@ -45,10 +45,10 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Интерактивные зоны, техническое оснащение, услуги и производство для мероприятий любого масштаба в Беларуси." },
       { property: "og:title", content: "event-hub.by — Event-технологии в Минске" },
       { property: "og:description", content: "VR/AR, LED, фотозоны, BTL, промо-персонал, производство декораций." },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: "https://event-hub.by/" },
     ],
     links: [
-      { rel: "canonical", href: "/" },
+      { rel: "canonical", href: "https://event-hub.by/" },
       // Preload LCP hero image (responsive AVIF). Browser matches imagesrcset/imagesizes to the <picture> source.
       {
         rel: "preload",
