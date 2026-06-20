@@ -35,6 +35,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as DeliveryRouteImport } from './routes/delivery'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CasesRouteImport } from './routes/cases'
@@ -216,6 +217,11 @@ const EquipmentRoute = EquipmentRouteImport.update({
 const DeliveryRoute = DeliveryRouteImport.update({
   id: '/delivery',
   path: '/delivery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactsRoute = ContactsRouteImport.update({
@@ -493,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/cases': typeof CasesRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/contacts': typeof ContactsRoute
+  '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -572,6 +579,7 @@ export interface FileRoutesByTo {
   '/cases': typeof CasesRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/contacts': typeof ContactsRoute
+  '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -652,6 +660,7 @@ export interface FileRoutesById {
   '/cases': typeof CasesRouteWithChildren
   '/catalog': typeof CatalogRoute
   '/contacts': typeof ContactsRoute
+  '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
@@ -734,6 +743,7 @@ export interface FileRouteTypes {
     | '/cases'
     | '/catalog'
     | '/contacts'
+    | '/cookies'
     | '/delivery'
     | '/equipment'
     | '/faq'
@@ -813,6 +823,7 @@ export interface FileRouteTypes {
     | '/cases'
     | '/catalog'
     | '/contacts'
+    | '/cookies'
     | '/delivery'
     | '/equipment'
     | '/faq'
@@ -892,6 +903,7 @@ export interface FileRouteTypes {
     | '/cases'
     | '/catalog'
     | '/contacts'
+    | '/cookies'
     | '/delivery'
     | '/equipment'
     | '/faq'
@@ -973,6 +985,7 @@ export interface RootRouteChildren {
   CasesRoute: typeof CasesRouteWithChildren
   CatalogRoute: typeof CatalogRoute
   ContactsRoute: typeof ContactsRoute
+  CookiesRoute: typeof CookiesRoute
   DeliveryRoute: typeof DeliveryRoute
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
@@ -1197,6 +1210,13 @@ declare module '@tanstack/react-router' {
       path: '/delivery'
       fullPath: '/delivery'
       preLoaderRoute: typeof DeliveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contacts': {
@@ -1726,6 +1746,7 @@ const rootRouteChildren: RootRouteChildren = {
   CasesRoute: CasesRouteWithChildren,
   CatalogRoute: CatalogRoute,
   ContactsRoute: ContactsRoute,
+  CookiesRoute: CookiesRoute,
   DeliveryRoute: DeliveryRoute,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
