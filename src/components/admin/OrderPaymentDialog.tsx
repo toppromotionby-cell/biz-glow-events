@@ -51,14 +51,16 @@ function parseAmount(raw: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-function validateAmount(raw: string, remaining: number): string | null {
+const MAX_PAYMENT_AMOUNT = 10_000_000;
+
+function validateAmount(raw: string): string | null {
   if (raw.trim() === "") return "Введите сумму";
   const value = parseAmount(raw);
   if (value === null) return "Некорректный формат суммы. Используйте 1234.56 или 1234,56";
   if (value <= 0) return "Сумма должна быть больше 0";
   const parts = raw.replace(",", ".").split(".");
   if (parts[1] && parts[1].length > 2) return "Не более 2 знаков после запятой";
-  if (value > remaining * 1000) return "Сумма слишком большая";
+  if (value > MAX_PAYMENT_AMOUNT) return `Сумма не должна превышать ${MAX_PAYMENT_AMOUNT.toLocaleString("ru-BY")} BYN`;
   return null;
 }
 
