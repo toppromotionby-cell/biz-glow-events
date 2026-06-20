@@ -73,13 +73,15 @@ function useSidebarBadges() {
     staleTime: 30_000,
     queryFn: async (): Promise<Record<BadgeKey, number>> => {
       const today = new Date().toISOString().slice(0, 10);
-      const [newOrders, todayBookings, pendingTestimonials] = await Promise.all([
+      const [newOrders, newInquiries, todayBookings, pendingTestimonials] = await Promise.all([
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new"),
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "consultation"),
         supabase.from("availability").select("id", { count: "exact", head: true }).lte("start_date", today).gte("end_date", today),
         supabase.from("testimonials").select("id", { count: "exact", head: true }).eq("published", false),
       ]);
       return {
         newOrders: newOrders.count ?? 0,
+        newInquiries: newInquiries.count ?? 0,
         todayBookings: todayBookings.count ?? 0,
         pendingTestimonials: pendingTestimonials.count ?? 0,
       };
