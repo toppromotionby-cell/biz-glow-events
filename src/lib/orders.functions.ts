@@ -640,16 +640,22 @@ async function sendOrderConfirmationEmailAndLog(
     .select("title, qty, price, entity_type, start_date, end_date")
     .eq("order_id", orderId);
 
-  // Параллельно генерим документы и кладём в bucket — даже если не получится,
-  // письмо всё равно отправим без блока «Документы».
-  const { docs: documents, statuses: docStatuses } = await generateAndUploadOrderDocuments(orderId);
-  const docsAllOk = docStatuses.length > 0 && docStatuses.every((s) => s.ok);
-  await supabaseAdmin.from("order_timeline").insert({
-    order_id: orderId,
-    actor_id: actorId,
-    event: docsAllOk ? "documents_attached" : "documents_attach_failed",
-    payload: { trigger, statuses: docStatuses },
-  });
+  // Документы (КП/Счёт/Договор/Акт) релевантны только для оформленных заказов.
+  // Для статуса `consultation` (запрос на консультацию) их не генерируем —
+  // нечего выставлять, пока менеджер не уточнил детали.
+  const isInquiry = order.status === "consultation";
+  const { docs: documents, statuses: docStatuses } = isInquiry
+    ? { docs: [] as Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; url: string }>, statuses: [] as Array<{ kind: "quote" | "invoice" | "contract" | "act"; label: string; ok: boolean; error?: string; url?: string }> }
+    : await generateAndUploadOrderDocuments(orderId);
+  if (!isInquiry) {
+    const docsAllOk = docStatuses.length > 0 && docStatuses.every((s) => s.ok);
+    await supabaseAdmin.from("order_timeline").insert({
+      order_id: orderId,
+      actor_id: actorId,
+      event: docsAllOk ? "documents_attached" : "documents_attach_failed",
+      payload: { trigger, statuses: docStatuses },
+    });
+  }
 
   let res: { ok: boolean; error?: string };
   try {
