@@ -85,8 +85,9 @@ function InvitationsPage() {
   const canSend = emails.length >= 1 && emails.length <= MAX;
   const tooMany = emails.length > MAX;
 
-  const openPreview = (type: "manual" | "csv", fileName?: string) => {
-    const items = buildPreviewItems(emailsRaw);
+  const openPreview = (type: "manual" | "csv", fileName?: string, raw?: string) => {
+    const sourceRaw = raw ?? emailsRaw;
+    const items = buildPreviewItems(sourceRaw);
     setPreviewItems(items);
     setPreviewSource({ type, fileName });
     setPreviewOpen(true);
