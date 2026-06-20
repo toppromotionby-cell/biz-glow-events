@@ -866,3 +866,26 @@ export const DOC_PDF_FILENAMES: Record<DocKind, string> = {
   contract: "Договор",
   act: "Акт",
 };
+
+// Понятное имя файла на основе данных заказа.
+// Пример: "КП №ABCD1234 Иванов.pdf" / "Договор №ABCD1234 ООО Ромашка.pdf"
+const DOC_SHORT_LABEL: Record<DocKind, string> = {
+  quote: "КП",
+  invoice: "Счёт",
+  contract: "Договор",
+  act: "Акт",
+};
+export function buildAttachmentFilename(
+  kind: DocKind,
+  order: { id: string; client_name?: string | null; client_company?: string | null },
+): string {
+  const orderShort = String(order.id).slice(0, 8).toUpperCase();
+  const owner = (order.client_company || order.client_name || "").trim();
+  // Берём фамилию (первое слово), для компаний — целиком (но коротко).
+  let suffix = owner;
+  if (!order.client_company && owner) suffix = owner.split(/\s+/)[0];
+  // Чистим символы, недопустимые в именах файлов на разных OS / в почтовиках.
+  suffix = suffix.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").slice(0, 48).trim();
+  const base = `${DOC_SHORT_LABEL[kind]} №${orderShort}${suffix ? ` ${suffix}` : ""}`;
+  return `${base}.pdf`;
+}
