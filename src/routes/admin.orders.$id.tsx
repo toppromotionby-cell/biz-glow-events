@@ -520,6 +520,15 @@ function OrderDetail() {
         </aside>
       </div>
 
+      {/* Диалог внесения оплаты */}
+      <OrderPaymentDialog
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        orderId={order.id}
+        currentPaid={paid}
+        total={total}
+      />
+
       {/* Модалка предпросмотра письма */}
       <Dialog open={!!emailPreview} onOpenChange={(o) => !o && setEmailPreview(null)}>
         <DialogContent className="max-w-4xl p-0 gap-0 max-h-[92vh] flex flex-col">
