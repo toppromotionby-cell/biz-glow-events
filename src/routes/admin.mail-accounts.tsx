@@ -97,6 +97,7 @@ function MailAccountsPage() {
   const [editing, setEditing] = useState<FormState | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const saveM = useMutation({
     mutationFn: async (f: FormState) => {
