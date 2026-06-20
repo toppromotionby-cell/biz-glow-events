@@ -51,7 +51,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "yandex-verification", content: "acd6f8135beba18a" },
-      { title: "event-hub.by" },
+      { title: "event-hub.by — Event-технологии и продакшн в Минске" },
       { name: "description", content: "Интерактивные зоны, оборудование, услуги и производство для мероприятий в Беларуси. VR/AR, LED, фотозоны, BTL, промо." },
       { name: "author", content: "event-hub.by" },
       { property: "og:site_name", content: "event-hub.by" },
