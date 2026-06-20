@@ -205,7 +205,8 @@ function OrderDetail() {
           <h1 className="admin-h1">Заказ #{order.id.slice(0, 8)}</h1>
           <p className="text-sm text-muted-foreground">Создан {fmtDateTime(order.created_at)}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <OrderAssignee orderId={order.id} managerId={order.manager_id ?? null} />
           {/* Кликабельный badge статуса */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
