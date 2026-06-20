@@ -550,7 +550,6 @@ async function generateAndUploadOrderDocuments(
     }));
 
     const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-    const orderShort = String(order.id).slice(0, 8).toUpperCase();
 
     for (const kind of ["quote", "invoice", "contract", "act"] as const) {
       const label = DOC_LABELS[kind] ?? fallbackLabels[kind];
