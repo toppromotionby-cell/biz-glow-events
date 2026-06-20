@@ -263,6 +263,9 @@ function MailAccountsPage() {
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    <Button variant="ghost" size="sm" title="Журнал проверок" onClick={() => setHistoryId(a.id)}>
+                      <History className="h-4 w-4" />
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => setDeletingId(a.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
