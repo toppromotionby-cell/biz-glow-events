@@ -35,6 +35,7 @@ const INFO_LINKS = [
   { to: "/faq", label: "Частые вопросы", footerKey: "footer.info.faq" },
   { to: "/terms-rental", label: "Условия аренды", footerKey: "footer.info.terms" },
   { to: "/privacy", label: "Политика конфиденциальности", footerKey: "footer.info.privacy" },
+  { to: "/cookies", label: "Политика cookies", footerKey: "footer.info.cookies" },
   { to: "/offer", label: "Публичная оферта", footerKey: "footer.info.offer" },
 ] as const;
 

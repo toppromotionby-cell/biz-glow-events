@@ -62,6 +62,7 @@ export const SECTION_REGISTRY = [
   { key: "footer.info.faq", label: "Подвал → Информация: «Частые вопросы»", group: "Подвал" },
   { key: "footer.info.terms", label: "Подвал → Информация: «Условия аренды»", group: "Подвал" },
   { key: "footer.info.privacy", label: "Подвал → Информация: «Политика конфиденциальности»", group: "Подвал" },
+  { key: "footer.info.cookies", label: "Подвал → Информация: «Политика cookies»", group: "Подвал" },
   { key: "footer.info.offer", label: "Подвал → Информация: «Публичная оферта»", group: "Подвал" },
   { key: "footer.contacts", label: "Подвал: Блок «Контакты»", group: "Подвал" },
   { key: "footer.contacts.address", label: "Подвал → Контакты: Адрес", group: "Подвал" },
