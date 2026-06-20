@@ -16,12 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Mail, Send, Eye, Upload } from "lucide-react";
+import { Loader2, Mail, Send, Eye, Upload, Trash2, CheckSquare, XSquare } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { fmtDateTime } from "@/lib/formatters";
 
@@ -47,6 +48,13 @@ function parseEmails(raw: string): string[] {
   return Array.from(set);
 }
 
+interface PreviewItem { email: string; selected: boolean; }
+
+function buildPreviewItems(raw: string): PreviewItem[] {
+  const emails = parseEmails(raw);
+  return emails.map((email) => ({ email, selected: true }));
+}
+
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   pending: { label: "В очереди", variant: "secondary" },
   sent: { label: "Отправлено", variant: "default" },
@@ -69,10 +77,36 @@ function InvitationsPage() {
   const [recipientName, setRecipientName] = useState("");
   const [personalMessage, setPersonalMessage] = useState("");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewItems, setPreviewItems] = useState<PreviewItem[] | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSource, setPreviewSource] = useState<{ type: "manual" | "csv"; fileName?: string } | null>(null);
 
   const emails = useMemo(() => parseEmails(emailsRaw), [emailsRaw]);
   const canSend = emails.length >= 1 && emails.length <= MAX;
   const tooMany = emails.length > MAX;
+
+  const openPreview = (type: "manual" | "csv", fileName?: string, raw?: string) => {
+    const sourceRaw = raw ?? emailsRaw;
+    const items = buildPreviewItems(sourceRaw);
+    setPreviewItems(items);
+    setPreviewSource({ type, fileName });
+    setPreviewOpen(true);
+  };
+
+  const applyPreview = () => {
+    if (!previewItems) return;
+    const selected = previewItems.filter((i) => i.selected).map((i) => i.email).slice(0, MAX);
+    setEmailsRaw(selected.join(", "));
+    setPreviewOpen(false);
+  };
+
+  const toggleAll = (selected: boolean) => {
+    setPreviewItems((prev) => prev?.map((i) => ({ ...i, selected })) ?? null);
+  };
+
+  const removeUnselected = () => {
+    setPreviewItems((prev) => prev?.filter((i) => i.selected) ?? null);
+  };
 
   const { data: log = [], isLoading: logLoading } = useQuery({
     queryKey: ["admin", "invites", "log"],
@@ -145,24 +179,31 @@ function InvitationsPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <Label htmlFor="emails">Email-адреса <span className="text-xs text-muted-foreground">(через запятую, пробел или с новой строки, до {MAX})</span></Label>
-              <CsvUploadButton
-                onEmails={(found, fileName) => {
-                  if (found.length === 0) {
-                    toast.error("В файле не найдено email-адресов");
-                    return;
-                  }
-                  // Объединяем уже введённые адреса с импортированными, удаляем дубли.
-                  const existing = parseEmails(emailsRaw);
-                  const merged = Array.from(new Set([...existing, ...found]));
-                  const limited = merged.slice(0, MAX);
-                  setEmailsRaw(limited.join(", "));
-                  const dropped = merged.length - limited.length;
-                  toast.success(
-                    `Импортировано из ${fileName}: ${found.length}` +
-                      (dropped > 0 ? ` · обрезано до ${MAX} (${dropped} лишних)` : ""),
-                  );
-                }}
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openPreview("manual")}
+                  disabled={emailsRaw.trim().length === 0}
+                  title="Проверить и отредактировать распознанные адреса"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Проверить адреса
+                </Button>
+                <CsvUploadButton
+                  onEmails={(found, fileName) => {
+                    if (found.length === 0) {
+                      toast.error("В файле не найдено email-адресов");
+                      return;
+                    }
+                    const existing = parseEmails(emailsRaw);
+                    const mergedRaw = Array.from(new Set([...existing, ...found])).join(", ");
+                    setEmailsRaw(mergedRaw);
+                    openPreview("csv", fileName, mergedRaw);
+                  }}
+                />
+              </div>
             </div>
             <Textarea
               id="emails"
@@ -257,6 +298,75 @@ function InvitationsPage() {
           </div>
         </div>
       </div>
+
+      {/* Диалог предпросмотра и редактирования распарсенных адресов */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Проверка адресов</DialogTitle>
+            <DialogDescription>
+              {previewSource?.type === "csv"
+                ? `Адреса из файла «${previewSource.fileName}». Снимите галочки с лишних строк и нажмите «Применить».`
+                : "Снимите галочки с лишних строк и нажмите «Применить»."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewItems && previewItems.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div className="text-muted-foreground">
+                  Всего: <b>{previewItems.length}</b> · выбрано: <b>{previewItems.filter((i) => i.selected).length}</b>
+                  {previewItems.length > MAX && (
+                    <span className="text-destructive ml-2">(лишние не будут отправлены)</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => toggleAll(true)}>
+                    <CheckSquare className="h-4 w-4 mr-1" /> Все
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => toggleAll(false)}>
+                    <XSquare className="h-4 w-4 mr-1" /> Ни одного
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={removeUnselected}>
+                    <Trash2 className="h-4 w-4 mr-1" /> Убрать снятые
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border/50 divide-y divide-border/30 max-h-[360px] overflow-y-auto">
+                {previewItems.map((item, idx) => (
+                  <label
+                    key={`${item.email}-${idx}`}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={item.selected}
+                      onCheckedChange={(checked) => {
+                        setPreviewItems((prev) => {
+                          if (!prev) return null;
+                          const next = [...prev];
+                          next[idx] = { ...next[idx], selected: checked === true };
+                          return next;
+                        });
+                      }}
+                    />
+                    <span className={`text-sm ${item.selected ? "" : "text-muted-foreground line-through"}`}>
+                      {item.email}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)}>Отмена</Button>
+            <Button type="button" className="btn-primary-gradient" onClick={applyPreview}>
+              Применить ({previewItems?.filter((i) => i.selected).length ?? 0})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Лог последних отправок */}
       <div className="glass rounded-xl p-5 space-y-3">
