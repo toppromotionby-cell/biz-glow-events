@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import ogDefault from "@/assets/og-default.jpg";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,40 +10,8 @@ import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider } from "@/lib/site-sections";
 import { DeferredGlobals } from "@/components/DeferredGlobals";
 import { AuthPromptDialog } from "@/components/AuthPromptDialog";
+import { NotFoundView, ErrorView } from "@/components/ErrorBoundaries";
 
-function NotFoundComponent() {
-  return (
-    <div className="flex min-h-dvh items-center justify-center bg-background bg-radial-glow px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-8xl font-display font-bold gradient-text">404</h1>
-        <h2 className="mt-4 text-xl font-semibold">Страница не найдена</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Возможно, страница перемещена или удалена.</p>
-        <Link to="/" className="mt-6 inline-flex items-center justify-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
-          На главную
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
-  const router = useRouter();
-  return (
-    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">Что-то пошло не так</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Попробуйте ещё раз или вернитесь на главную.</p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button onClick={() => { router.invalidate(); reset(); }} className="rounded-md bg-gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground glow-primary">
-            Попробовать снова
-          </button>
-          <a href="/" className="rounded-md border border-border px-4 py-2 text-sm">На главную</a>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -146,9 +114,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   }),
   shellComponent: RootShell,
   component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent,
+  notFoundComponent: () => <NotFoundView />,
+  errorComponent: ({ error, reset }) => <ErrorView error={error} reset={reset} />,
 });
+
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
