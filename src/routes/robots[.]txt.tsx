@@ -9,16 +9,24 @@ const BODY = [
   "Disallow: /profile",
   "Disallow: /cart",
   "Disallow: /wishlist",
-  
   "Disallow: /login",
   "Disallow: /register",
   "Disallow: /reset-password",
+  "Disallow: /forgot-password",
   "Disallow: /lovable",
+  "Disallow: /inquiry",
+  "Disallow: /order",
+  "Disallow: /unsubscribe",
+  "Disallow: /email/unsubscribe",
+  "Disallow: /api/",
+  // Дубли от фильтров/сортировок/пагинации/utm — не индексируем URL с query-параметрами.
+  "Disallow: /*?*",
   "",
   "Sitemap: https://event-hub.by/sitemap-index.xml",
   "Sitemap: https://event-hub.by/sitemap.xml",
   "",
 ].join("\n");
+
 
 export const Route = createFileRoute("/robots.txt")({
   server: {
