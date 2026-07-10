@@ -1,32 +1,85 @@
-## Цель
-Присваивать заказам человекочитаемые номера формата `ДД/ММ/ГГГГ-NN`, где `NN` — порядковый номер заказа за этот календарный день (по дате `created_at` в таймзоне Europe/Minsk). Существующий UUID `id` сохраняется как первичный ключ и не меняется.
+# План SEO-оптимизации
 
-## Изменения в БД (одна миграция)
+Проверил текущий код: SEO-шаблоны для карточек уже есть в `catalog-page-config.ts` с fallback на `seo_title/seo_description` из БД (ручной override уже работает через админ-редактор). Canonical выводится только на страницах карточек. Sitemap динамический (`src/routes/sitemap[.]xml.tsx`). Robots.txt есть как route. Медиа-аплоадер уже жмёт в WebP и ставит `loading="lazy"`. JSON-LD Product есть, но нужно проверить Offer.
 
-1. **Новая колонка** `orders.order_number text` (nullable, `UNIQUE`).
-2. **Функция** `public.generate_order_number(created timestamptz) returns text` — `SECURITY DEFINER`, вычисляет дату в `Europe/Minsk`, считает `count(*) + 1` по существующим заказам с той же датой и форматирует `DD/MM/YYYY-NN` с zero-pad для NN (минимум 2 знака; >99 — естественное расширение до 3).
-3. **Триггер** `BEFORE INSERT` на `public.orders`: если `order_number IS NULL`, проставляет результат функции. На случай гонок — `EXCEPTION WHEN unique_violation THEN` повтор с +1 (до 5 попыток).
-4. **Бэкфилл** существующих заказов: `UPDATE` в цикле по `created_at ASC`, нумерация в рамках каждого дня по хронологии создания. Привязка строго к `created_at`, как просил пользователь (не к `event_date`).
-5. **Индекс** на `(date_trunc('day', created_at AT TIME ZONE 'Europe/Minsk'))` для быстрой нумерации.
+## 1. Единый шаблон мета-тегов (все 4 каталога)
 
-Важно: номер привязан к дате заказа (created_at), не к дате мероприятия. При изменении других полей номер не пересчитывается. Колонку нельзя редактировать вручную из UI.
+Заменить в `src/lib/catalog-page-config.ts` `buildTitle` / `buildDescription` на единый формат ТЗ:
 
-## Изменения во фронте
+- **Title**: `«{title} в Минске — Аренда и прокат на мероприятие»`
+- **Description**: `«Закажите {title} в Минске и Беларуси на выгодных условиях. Техническое обеспечение и организация мероприятий от Event Hub. Цены, фото, подбор за 15 минут!»`
 
-- **Типы** Supabase регенерируются после миграции — `order_number` появится в `OrderRow`.
-- **Список заказов** `src/routes/admin.orders.index.tsx` и связанные компоненты в `src/components/admin/orders/`: вместо `#{id.slice(0,8)}` показывать `order_number`, fallback на короткий UUID для старых записей (на случай, если бэкфилл не сработал).
-- **Карточка заказа** `src/routes/admin.orders.$id.tsx`: заголовок «Заказ {order_number}», в подвале строкой мелким шрифтом — технический UUID для отладки.
-- **Профиль клиента** `src/components/profile/OrderHistoryList.tsx`: «Заявка {order_number}».
-- **Письма и PDF** (`src/lib/email-templates/*`, `src/lib/documents/*`): в шапке/теме письма и в КП/счёте/договоре/акте использовать `order_number`. Темы писем: «Заказ 20/06/2026-01 подтверждён» и т.п.
-- **Страница успеха** `src/routes/order.success.$id.tsx`: показывать `order_number` вместо `id.slice(0,8)`. Серверная функция, возвращающая данные после создания, должна включать новое поле.
-- **Поиск/фильтры** в админке: поиск по `order_number` (ILIKE).
+Ручной override сохраняется: если в админке заполнено `seo_title` / `seo_description` — используется оно, иначе шаблон. Поля уже редактируются в `CatalogEditor.tsx` (вкладка SEO) — ничего в UI не трогаем.
 
-URL-ы заказов остаются на UUID — `/admin/orders/{uuid}` не меняем, чтобы не ломать ссылки в письмах и таймлайне.
+Для страниц-списков (`/zones`, `/equipment`, `/services`, `/production`) оставляем текущие тексты — они уже уникальны для каждой категории.
 
-## Что НЕ меняется
-- Первичный ключ и все FK (`order_items.order_id`, `order_timeline.order_id`, `order_attachments.order_id`).
-- Логика статусов, оплат, документов.
-- Существующие токены (`clarification_token`), webhook'и, RLS.
+## 2. Canonical + чистка URL от фильтров
 
-## Открытый вопрос
-Для нумерации использую таймзону **Europe/Minsk** (UTC+3). Подтверди — или укажи другую (например, UTC).
+**Список каталога** (`catalog-list-route.tsx`): добавить в `head()` `links: [{ rel: "canonical", href: config.pageUrl }]` — canonical всегда указывает на чистый URL без query-параметров (`?type=`, `?price=`, `?page=`, `?sort=`).
+
+**Карточка** (`catalog-slug-route.tsx`): canonical уже стоит, но URL строится без query — оставляем.
+
+**Пагинация**: сейчас пагинации на списках нет (данные грузятся одним запросом), поэтому дублей `?page=2` не будет. Если появится — canonical всё равно уже жёстко зашит на чистый URL.
+
+## 3. Sitemap.xml и Robots.txt
+
+**Sitemap** (`src/routes/sitemap[.]xml.tsx`): уже динамический, тянет `published=true` из `zones/tech_equipment/services/production_items/blog_posts/cases`. Проверю, что новые/удалённые позиции подхватываются автоматически — код уже корректный, менять не нужно. Добавлю в `STATIC` пропущенные страницы (`/cases/{slug}` — уже есть) и проверю кэш (сейчас 1 час).
+
+**Robots.txt** (`src/routes/robots[.]txt.tsx`): дополнить закрытыми путями:
+
+```
+Disallow: /admin
+Disallow: /profile
+Disallow: /cart
+Disallow: /wishlist
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /lovable
+Disallow: /inquiry
+Disallow: /order/success
+Disallow: /unsubscribe
+Disallow: /*?*        # обрезаем индексацию любых URL с query
+```
+
+Правило `Disallow: /*?*` закроет фильтры/сортировки/utm.
+
+## 4. Оптимизация изображений
+
+`UniversalMediaUploader.tsx` **уже** сжимает при загрузке через `browser-image-compression` и конвертирует в WebP (~1.2 МБ, до 2000px). На фронте картинки идут через `<img loading="lazy">` (уже стоит в `MediaThumb` и в компонентах карточек).
+
+Что доработаю:
+- Проверю, что все `<img>` в `CatalogDetail`, `CatalogGrid`, `FeaturedCard`, `HeroSection` имеют `loading="lazy"` (кроме LCP на главной — там `fetchpriority="high"`).
+- Добавлю `decoding="async"` на не-LCP изображения там, где его нет.
+
+Дополнительная серверная перекодировка не нужна: конвертация уже произошла на клиенте перед загрузкой в Storage.
+
+## 5. Микроразметка Product + Offer
+
+`productJsonLd` в `CatalogDetail.tsx` уже генерирует `@type: Product`. Проверю и при необходимости дополню:
+- `name`, `image` (массив), `description`, `brand: Event Hub`, `category`
+- `offers`: `@type: Offer`, `priceCurrency: BYN`, `price` (из первого тарифа `pricing`), `availability: InStock`, `url` (страница карточки)
+- `aggregateRating` — только если есть реальные отзывы (иначе Google карает).
+
+Дополнительно добавлю на все страницы `BreadcrumbList` JSON-LD (Главная → Раздел → Карточка) через существующий `AutoBreadcrumbs`.
+
+---
+
+## Технические детали
+
+**Файлы к изменению:**
+- `src/lib/catalog-page-config.ts` — единый шаблон title/description
+- `src/lib/catalog-list-route.tsx` — canonical в head
+- `src/routes/robots[.]txt.tsx` — расширенный disallow
+- `src/routes/sitemap[.]xml.tsx` — сверка списка статических путей
+- `src/components/CatalogDetail.tsx` — расширить `productJsonLd` (Offer с ценой, BreadcrumbList)
+- `src/components/CatalogGrid.tsx`, `FeaturedCard.tsx`, `HeroSection.tsx` — аудит `loading`/`decoding`
+
+**Что НЕ трогаем:**
+- БД-миграции не нужны (`seo_title`/`seo_description` уже есть)
+- Админ-UI не меняем — ручной override уже работает
+- Storage-политики и загрузчик медиа
+- Основной sitemap-движок (он корректный)
+
+Подтвердите — приступаю к реализации.
