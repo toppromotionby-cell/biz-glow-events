@@ -103,12 +103,10 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Оборудование — event-hub.by",
       notFoundTitle: "Позиция не найдена",
       jsonLdLabel: "Оборудование",
-      buildTitle: (it) => it.seo_title ?? `Аренда ${it.title} в Минске — event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `Аренда ${it.title} в Минске под ключ. Доставка, монтаж и сопровождение event-hub.by.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
+
     fallback: EQUIPMENT,
   },
   "/services": {
