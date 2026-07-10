@@ -153,12 +153,10 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Производство — event-hub.by",
       notFoundTitle: "Позиция не найдена",
       jsonLdLabel: "Производство",
-      buildTitle: (it) => it.seo_title ?? `${it.title} — производство в Минске | event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `Изготовление «${it.title}» под мероприятие в Минске. Сроки и доставка от event-hub.by.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
+
     fallback: PRODUCTION,
   },
 };
