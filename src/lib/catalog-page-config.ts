@@ -49,6 +49,15 @@ export interface CatalogPageConfig {
 
 const SITE = "https://event-hub.by";
 
+/** Единый SEO-шаблон для всех карточек каталога. Ручной override через `seo_title`. */
+export const buildDefaultTitle = (title: string) =>
+  `${title} в Минске — Аренда и прокат на мероприятие`;
+
+/** Единый SEO-шаблон для description. Ручной override через `seo_description`. */
+export const buildDefaultDescription = (title: string) =>
+  `Закажите ${title} в Минске и Беларуси на выгодных условиях. Техническое обеспечение и организация мероприятий от Event Hub. Цены, фото, подбор за 15 минут!`;
+
+
 export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
   "/zones": {
     type: "zones",
@@ -69,13 +78,11 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Зона — event-hub.by",
       notFoundTitle: "Зона не найдена",
       jsonLdLabel: "Интерактивные зоны",
-      buildTitle: (it) => it.seo_title ?? `Аренда ${it.title} в Минске — event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `Аренда интерактивной зоны «${it.title}» в Минске. Доставка и монтаж под мероприятие.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
     fallback: ZONES,
+
   },
   "/equipment": {
     type: "tech_equipment",
@@ -96,12 +103,10 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Оборудование — event-hub.by",
       notFoundTitle: "Позиция не найдена",
       jsonLdLabel: "Оборудование",
-      buildTitle: (it) => it.seo_title ?? `Аренда ${it.title} в Минске — event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `Аренда ${it.title} в Минске под ключ. Доставка, монтаж и сопровождение event-hub.by.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
+
     fallback: EQUIPMENT,
   },
   "/services": {
@@ -123,12 +128,10 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Услуга — event-hub.by",
       notFoundTitle: "Услуга не найдена",
       jsonLdLabel: "Услуги",
-      buildTitle: (it) => it.seo_title ?? `${it.title} — заказать услугу в Минске | event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `${it.title} — услуга для мероприятий в Минске. Профессиональная команда event-hub.by.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
+
     fallback: SERVICES,
   },
   "/production": {
@@ -150,12 +153,10 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Производство — event-hub.by",
       notFoundTitle: "Позиция не найдена",
       jsonLdLabel: "Производство",
-      buildTitle: (it) => it.seo_title ?? `${it.title} — производство в Минске | event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `Изготовление «${it.title}» под мероприятие в Минске. Сроки и доставка от event-hub.by.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
+
     fallback: PRODUCTION,
   },
 };
