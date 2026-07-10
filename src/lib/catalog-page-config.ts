@@ -49,6 +49,15 @@ export interface CatalogPageConfig {
 
 const SITE = "https://event-hub.by";
 
+/** Единый SEO-шаблон для всех карточек каталога. Ручной override через `seo_title`. */
+export const buildDefaultTitle = (title: string) =>
+  `${title} в Минске — Аренда и прокат на мероприятие`;
+
+/** Единый SEO-шаблон для description. Ручной override через `seo_description`. */
+export const buildDefaultDescription = (title: string) =>
+  `Закажите ${title} в Минске и Беларуси на выгодных условиях. Техническое обеспечение и организация мероприятий от Event Hub. Цены, фото, подбор за 15 минут!`;
+
+
 export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
   "/zones": {
     type: "zones",
