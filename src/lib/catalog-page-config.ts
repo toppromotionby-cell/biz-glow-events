@@ -128,12 +128,10 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Услуга — event-hub.by",
       notFoundTitle: "Услуга не найдена",
       jsonLdLabel: "Услуги",
-      buildTitle: (it) => it.seo_title ?? `${it.title} — заказать услугу в Минске | event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `${it.title} — услуга для мероприятий в Минске. Профессиональная команда event-hub.by.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
+
     fallback: SERVICES,
   },
   "/production": {
