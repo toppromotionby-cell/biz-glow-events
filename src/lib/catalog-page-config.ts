@@ -69,13 +69,11 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
       fallbackTitle: "Зона — event-hub.by",
       notFoundTitle: "Зона не найдена",
       jsonLdLabel: "Интерактивные зоны",
-      buildTitle: (it) => it.seo_title ?? `Аренда ${it.title} в Минске — event-hub.by`,
-      buildDescription: (it) =>
-        it.seo_description ??
-        it.short_description ??
-        `Аренда интерактивной зоны «${it.title}» в Минске. Доставка и монтаж под мероприятие.`,
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
     },
     fallback: ZONES,
+
   },
   "/equipment": {
     type: "tech_equipment",
