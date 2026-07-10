@@ -35,7 +35,10 @@ export function catalogListRouteOptions(basePath: CatalogBasePath) {
         { name: "description", content: config.list.description },
         { property: "og:title", content: config.list.ogTitle },
         { property: "og:description", content: config.list.ogDescription },
+        { property: "og:url", content: config.pageUrl },
       ],
+      // Canonical на чистый URL каталога — обрезаем дубли по ?filter/?sort/?page/?utm_*.
+      links: [{ rel: "canonical", href: config.pageUrl }],
       scripts: loaderData?.items?.length
         ? [{
             type: "application/ld+json",
@@ -48,6 +51,7 @@ export function catalogListRouteOptions(basePath: CatalogBasePath) {
           }]
         : [],
     }),
+
     component: function CatalogListRoutePage() {
       const { items, categories } = routeApi.useLoaderData();
       return <CatalogListPage config={config} items={items} categories={categories} />;
