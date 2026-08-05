@@ -84,6 +84,8 @@ export function quoteFileName(quote: Quote): string {
 }
 
 export function quoteValidUntil(quote: Quote): string {
+  const manual = (quote.valid_until_override ?? "").trim();
+  if (manual) return fmtDate(manual);
   if (!quote.validity_days) return "";
   const d = new Date(quote.doc_date);
   if (Number.isNaN(d.getTime())) return "";
