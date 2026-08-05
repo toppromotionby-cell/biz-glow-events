@@ -136,49 +136,60 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                   onReorder={(ids) => reorderSection(name, ids)}
                   className="space-y-1"
                   renderItem={(it, handle) => (
-                    <div className="rounded-lg px-1 py-1 hover:bg-muted/30">
-                      <div className="flex items-start gap-1">
-                        <div className="pt-2">{handle}</div>
-                        <div className="grid flex-1 gap-2 md:grid-cols-[1fr_88px_64px_56px_100px_100px_110px_32px]">
-                          <Input
-                            value={it.title}
-                            onChange={(e) => replace(it.id, { title: e.target.value })}
-                            placeholder="Наименование"
-                            className="h-9"
-                          />
-                          <Input value={it.unit} onChange={(e) => replace(it.id, { unit: e.target.value })} className="h-9" placeholder="Ед." />
-                          <Input type="number" min={0} value={it.qty} onChange={(e) => replace(it.id, { qty: Number(e.target.value) })} className="h-9" />
-                          <Input type="number" min={0} value={it.multiplier} onChange={(e) => replace(it.id, { multiplier: Number(e.target.value) })} className="h-9" />
-                          <Input type="number" min={0} step="0.01" value={it.price} onChange={(e) => replace(it.id, { price: Number(e.target.value) })} className="h-9" />
-                          {showCost ? (
-                            <Input type="number" min={0} step="0.01" value={it.cost} onChange={(e) => replace(it.id, { cost: Number(e.target.value) })} className="h-9" placeholder="Себест." />
-                          ) : (
-                            <span className="hidden md:block" />
+                    <div className="rounded-lg border border-transparent px-1 py-1 hover:border-border/60 hover:bg-muted/30">
+                      <div className="flex items-center gap-1">
+                        <div>{handle}</div>
+                        <Input
+                          value={it.title}
+                          onChange={(e) => replace(it.id, { title: e.target.value })}
+                          placeholder="Наименование позиции"
+                          className="h-9 flex-1"
+                        />
+                        <div className="flex w-[120px] flex-col items-end">
+                          <span className="text-sm tabular-nums">{formatMoney(lineTotal(it), currency)}</span>
+                          {showCost && lineCost(it) > 0 && (
+                            <span className="text-[11px] tabular-nums text-muted-foreground">
+                              маржа {formatMoney(lineTotal(it) - lineCost(it), currency)}
+                            </span>
                           )}
-                          <div className="flex h-9 flex-col items-end justify-center">
-                            <span className="text-sm tabular-nums">{formatMoney(lineTotal(it), currency)}</span>
-                            {showCost && lineCost(it) > 0 && (
-                              <span className="text-[11px] tabular-nums text-muted-foreground">
-                                маржа {formatMoney(lineTotal(it) - lineCost(it), currency)}
-                              </span>
-                            )}
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost" className="h-9 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => duplicate(it.id)}>
-                                <Copy className="mr-2 h-4 w-4" />Дублировать
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={() => removeItem(it.id)}>
-                                <Trash2 className="mr-2 h-4 w-4" />Удалить
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-9 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => duplicate(it.id)}>
+                              <Copy className="mr-2 h-4 w-4" />Дублировать
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onClick={() => removeItem(it.id)}>
+                              <Trash2 className="mr-2 h-4 w-4" />Удалить
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
+
+                      <div className="ml-7 mt-1 flex flex-wrap items-end gap-2">
+                        <Mini label="Ед. изм." width="w-[96px]">
+                          <Input value={it.unit} onChange={(e) => replace(it.id, { unit: e.target.value })} className="h-8" />
+                        </Mini>
+                        <Mini label="Кол-во" width="w-[72px]">
+                          <Input type="number" min={0} value={it.qty} onChange={(e) => replace(it.id, { qty: Number(e.target.value) })} className="h-8" />
+                        </Mini>
+                        <Mini label="×" width="w-[64px]">
+                          <Input type="number" min={0} value={it.multiplier} onChange={(e) => replace(it.id, { multiplier: Number(e.target.value) })} className="h-8" />
+                        </Mini>
+                        <Mini label="Цена" width="w-[100px]">
+                          <Input type="number" min={0} step="0.01" value={it.price} onChange={(e) => replace(it.id, { price: Number(e.target.value) })} className="h-8" />
+                        </Mini>
+                        {showCost && (
+                          <Mini label="Себест." width="w-[100px]">
+                            <Input type="number" min={0} step="0.01" value={it.cost} onChange={(e) => replace(it.id, { cost: Number(e.target.value) })} className="h-8" />
+                          </Mini>
+                        )}
+                        <span className="pb-2 text-[11px] text-muted-foreground">всего: {lineQty(it)}</span>
+                      </div>
+
                       {(showNotes || it.exclude_from_commission) && (
                         <div className="ml-7 mt-1 flex flex-wrap items-center gap-3">
                           {showNotes && (
