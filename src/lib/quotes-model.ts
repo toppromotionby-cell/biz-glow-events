@@ -140,9 +140,14 @@ export type Quote = {
   vat_note: string;
   total: number;
   order_id: string | null;
+  sent_at: string | null;
+  is_template: boolean;
+  template_name: string;
+  public_token: string;
   created_at: string;
   updated_at: string;
 };
+
 
 export function num(v: unknown, fallback = 0): number {
   const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
