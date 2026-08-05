@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.set_promo_quote_number() FROM PUBLIC, anon, authenticated;

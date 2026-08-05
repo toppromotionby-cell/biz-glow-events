@@ -7,6 +7,15 @@ import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import type { DocOrder, DocItem, DocKind } from "@/lib/documents/build.server";
 import { fmtDate } from "@/lib/formatters";
+import {
+  computePromoTotals,
+  groupBySection,
+  lineQty,
+  lineTotal,
+  promoNumberDisplay,
+  type PromoItem as PromoItemT,
+  type PromoQuote as PromoQuoteT,
+} from "@/lib/promo-quote-model";
 
 import regularAsset from "@/assets/fonts/Roboto-Regular.ttf.asset.json";
 import boldAsset from "@/assets/fonts/Roboto-Bold.ttf.asset.json";
@@ -1082,5 +1091,97 @@ export async function buildStandaloneQuotePdf(
   drawParagraph(ctx, `${validity}${applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers)}`, { size: 9.5, color: MUTED });
 
   drawFooter(ctx, eff);
+  return await ctx.pdf.save();
+}
+
+// ===================== Промо-КП =====================
+export async function buildPromoQuotePdf(
+  quote: PromoQuoteT,
+  items: PromoItemT[],
+  settings: DocumentSettings,
+): Promise<Uint8Array> {
+  const ctx = await createCtx();
+  const t = computePromoTotals(quote, items);
+  drawHeader(
+    ctx,
+    "Коммерческое предложение",
+    promoNumberDisplay(quote),
+    fmtDate(quote.created_at || new Date().toISOString()),
+    settings,
+  );
+
+  drawCard(ctx, "Проект", quote.project || "—", [
+    quote.client_name ? `Клиент: ${quote.client_name}` : null,
+    quote.period ? `Период: ${quote.period}` : null,
+    quote.venue ? `Место проведения: ${quote.venue}` : null,
+    quote.contact_name || quote.contact_phone || quote.contact_email
+      ? `Контактное лицо: ${[quote.contact_name, quote.contact_role].filter(Boolean).join(", ")}${
+          quote.contact_phone ? `; ${quote.contact_phone}` : ""
+        }${quote.contact_email ? `; ${quote.contact_email}` : ""}`
+      : null,
+  ]);
+
+  gap(ctx, 6);
+  const tableW = PAGE_W - MARGIN_X * 2;
+  const showNotes = quote.show_notes;
+  const cols: Col[] = showNotes
+    ? [
+        { title: "Наименование", key: "title", width: tableW * 0.3 },
+        { title: "Ед. изм.", key: "unit", width: tableW * 0.11, align: "center" },
+        { title: "Кол-во", key: "qty", width: tableW * 0.08, align: "center" },
+        { title: "Цена", key: "price", width: tableW * 0.12, align: "right" },
+        { title: "Сумма", key: "sum", width: tableW * 0.13, align: "right" },
+        { title: "Примечания", key: "note", width: tableW * 0.26 },
+      ]
+    : [
+        { title: "Наименование", key: "title", width: tableW * 0.46 },
+        { title: "Ед. изм.", key: "unit", width: tableW * 0.14, align: "center" },
+        { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center" },
+        { title: "Цена", key: "price", width: tableW * 0.15, align: "right" },
+        { title: "Сумма", key: "sum", width: tableW * 0.15, align: "right" },
+      ];
+
+  const rows: Array<Record<string, string>> = [];
+  for (const sec of groupBySection(items)) {
+    if (sec.name) rows.push({ title: sec.name.toUpperCase(), unit: "", qty: "", price: "", sum: "", note: "" });
+    for (const it of sec.items) {
+      rows.push({
+        title: safe(it.title),
+        unit: safe(it.unit),
+        qty: String(lineQty(it)),
+        price: it.price ? money(it.price) : "",
+        sum: lineTotal(it) ? money(lineTotal(it)) : "",
+        note: safe(it.note),
+      });
+    }
+  }
+  if (quote.management_enabled) {
+    rows.push({ title: quote.management_label, unit: "услуга", qty: "—", price: "", sum: money(t.management), note: "" });
+  }
+  if (quote.commission_enabled) {
+    rows.push({
+      title: quote.commission_label,
+      unit: "—",
+      qty: "—",
+      price: "",
+      sum: money(t.commission),
+      note: `${quote.commission_rate}%`,
+    });
+  }
+  drawTable(ctx, cols, rows.length ? rows : [{ title: "Позиции не добавлены", unit: "", qty: "", price: "", sum: "", note: "" }]);
+
+  gap(ctx, 6);
+  drawSummary(ctx, [
+    { label: `Всего${quote.vat_enabled ? ", без НДС" : ""}`, value: money(t.subtotal) },
+    ...(quote.vat_enabled ? [{ label: `НДС ${quote.vat_rate}%`, value: money(t.vat) }] : []),
+    { label: `Итого${quote.vat_enabled ? ", с НДС" : ""}`, value: money(t.totalWithVat), emphasis: true },
+  ]);
+
+  if (quote.footer_note) {
+    gap(ctx, 4);
+    drawParagraph(ctx, quote.footer_note, { size: 9.5, color: MUTED });
+  }
+
+  drawFooter(ctx, settings);
   return await ctx.pdf.save();
 }

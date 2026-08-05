@@ -1,0 +1,167 @@
+// HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
+import {
+  computePromoTotals,
+  formatMoney,
+  groupBySection,
+  lineQty,
+  lineTotal,
+  promoNumberDisplay,
+  type PromoItem,
+  type PromoQuote,
+} from "@/lib/promo-quote-model";
+
+function esc(s: unknown): string {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function nf(n: number): string {
+  return new Intl.NumberFormat("ru-BY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+    Number.isFinite(n) ? n : 0,
+  );
+}
+
+export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): string {
+  const t = computePromoTotals(quote, items);
+  const sections = groupBySection(items);
+  const accent = /^#[0-9a-fA-F]{3,8}$/.test(quote.accent_color) ? quote.accent_color : "#F5A623";
+
+  const cols: Array<{ label: string; cls: string }> = [{ label: "Наименование", cls: "c-title" }];
+  cols.push({ label: "Ед. изм.", cls: "c-unit" });
+  if (quote.show_qty) cols.push({ label: "Кол-во", cls: "c-num" });
+  if (quote.show_total_qty) cols.push({ label: "Всего", cls: "c-num" });
+  cols.push({ label: "Цена за ед.", cls: "c-money" });
+  cols.push({ label: `Всего${quote.vat_enabled ? ", без НДС" : ""}`, cls: "c-money" });
+  if (quote.show_notes) cols.push({ label: "Примечания", cls: "c-note" });
+
+  const colCount = cols.length;
+
+  const rowsHtml = sections
+    .map((sec) => {
+      const head = sec.name
+        ? `<tr class="sec"><td colspan="${colCount}">${esc(sec.name)}</td></tr>`
+        : "";
+      const body = sec.items
+        .map((it) => {
+          const cells: string[] = [`<td class="c-title">${esc(it.title)}</td>`, `<td class="c-unit">${esc(it.unit)}</td>`];
+          if (quote.show_qty) cells.push(`<td class="c-num">${nf(it.qty).replace(",00", "")}</td>`);
+          if (quote.show_total_qty) cells.push(`<td class="c-num">${nf(lineQty(it)).replace(",00", "")}</td>`);
+          cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
+          cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
+          if (quote.show_notes) cells.push(`<td class="c-note">${esc(it.note)}</td>`);
+          return `<tr>${cells.join("")}</tr>`;
+        })
+        .join("");
+      return head + body;
+    })
+    .join("");
+
+  const extraRows: string[] = [];
+  if (quote.management_enabled) {
+    extraRows.push(
+      `<tr class="extra"><td class="c-title">${esc(quote.management_label)}</td><td class="c-unit">услуга</td>${
+        quote.show_qty ? '<td class="c-num">—</td>' : ""
+      }${quote.show_total_qty ? '<td class="c-num">—</td>' : ""}<td class="c-money"></td><td class="c-money">${nf(
+        t.management,
+      )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
+    );
+  }
+  if (quote.commission_enabled) {
+    extraRows.push(
+      `<tr class="extra"><td class="c-title">${esc(quote.commission_label)}</td><td class="c-unit">—</td>${
+        quote.show_qty ? '<td class="c-num">—</td>' : ""
+      }${quote.show_total_qty ? '<td class="c-num">—</td>' : ""}<td class="c-money"></td><td class="c-money">${nf(
+        t.commission,
+      )}</td>${quote.show_notes ? `<td class="c-note">${nf(quote.commission_rate).replace(",00", "")} %</td>` : ""}</tr>`,
+    );
+  }
+
+  const totalsRows = [
+    `<tr class="total"><td class="lbl">Всего${quote.vat_enabled ? ", без НДС" : ""}:</td><td class="val">${nf(t.subtotal)}</td></tr>`,
+    quote.vat_enabled
+      ? `<tr class="total"><td class="lbl">НДС ${nf(quote.vat_rate).replace(",00", "")}%:</td><td class="val">${nf(t.vat)}</td></tr>`
+      : "",
+    `<tr class="total grand"><td class="lbl">Итого${quote.vat_enabled ? ", с НДС" : ""}:</td><td class="val">${nf(
+      t.totalWithVat,
+    )} ${esc(quote.currency)}</td></tr>`,
+  ].join("");
+
+  const meta = [
+    quote.project ? `<div><b>Проект:</b> ${esc(quote.project)}</div>` : "",
+    quote.client_name ? `<div><b>Клиент:</b> ${esc(quote.client_name)}</div>` : "",
+    quote.period ? `<div><b>Период:</b> ${esc(quote.period)}</div>` : "",
+    quote.venue ? `<div><b>Место проведения:</b> ${esc(quote.venue)}</div>` : "",
+    quote.contact_name || quote.contact_phone || quote.contact_email
+      ? `<div><b>Контактное лицо:</b> ${esc(
+          [quote.contact_name, quote.contact_role].filter(Boolean).join(", "),
+        )}${quote.contact_phone ? `; ${esc(quote.contact_phone)}` : ""}${
+          quote.contact_email ? `; ${esc(quote.contact_email)}` : ""
+        }</div>`
+      : "",
+  ].join("");
+
+  return `
+<div class="promo-doc" style="--accent:${esc(accent)}">
+  <div class="head">
+    <div class="meta">${meta}</div>
+    <div class="logos">
+      ${quote.logo_url ? `<img src="${esc(quote.logo_url)}" alt="Логотип" />` : ""}
+      ${quote.client_logo_url ? `<img src="${esc(quote.client_logo_url)}" alt="Логотип клиента" />` : ""}
+    </div>
+  </div>
+  <div class="docnum">КП № ${esc(promoNumberDisplay(quote))}</div>
+  <table class="grid">
+    <thead><tr>${cols.map((c) => `<th class="${c.cls}">${esc(c.label)}</th>`).join("")}</tr></thead>
+    <tbody>${rowsHtml || `<tr><td colspan="${colCount}" class="empty">Позиции не добавлены</td></tr>`}${extraRows.join("")}</tbody>
+  </table>
+  <table class="totals"><tbody>${totalsRows}</tbody></table>
+  ${quote.footer_note ? `<div class="footer-note">${esc(quote.footer_note).replaceAll("\n", "<br/>")}</div>` : ""}
+</div>`.trim();
+}
+
+export const PROMO_DOC_CSS = `
+.promo-doc { font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: #16161a; font-size: 12px; }
+.promo-doc .head { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+.promo-doc .meta div { border: 1px solid #d8d8dd; padding: 5px 8px; margin-bottom: -1px; background: #f6f6f7; max-width: 460px; }
+.promo-doc .logos { display: flex; gap: 16px; align-items: center; }
+.promo-doc .logos img { max-height: 64px; max-width: 240px; object-fit: contain; }
+.promo-doc .docnum { margin: 16px 0 8px; font-weight: 700; font-size: 13px; }
+.promo-doc table { width: 100%; border-collapse: collapse; }
+.promo-doc .grid th { background: var(--accent); color: #16161a; font-weight: 700; text-align: center; border: 1px solid #b9b9bf; padding: 6px 6px; }
+.promo-doc .grid td { border: 1px solid #d8d8dd; padding: 5px 6px; vertical-align: top; }
+.promo-doc .grid tr.sec td { background: #e7e7ea; font-weight: 600; }
+.promo-doc .grid tr.extra td { background: #fbfbfc; font-style: italic; }
+.promo-doc .c-title { width: 26%; }
+.promo-doc .c-unit { width: 9%; text-align: center; }
+.promo-doc .c-num { width: 6%; text-align: center; }
+.promo-doc .c-money { width: 10%; text-align: right; white-space: nowrap; }
+.promo-doc .c-note { width: 33%; color: #45454d; }
+.promo-doc .empty { text-align: center; color: #86868f; padding: 16px; }
+.promo-doc .totals { margin-top: 10px; width: 320px; margin-left: auto; }
+.promo-doc .totals td { border: 1px solid #b9b9bf; padding: 6px 8px; }
+.promo-doc .totals .lbl { font-weight: 700; background: var(--accent); text-align: right; }
+.promo-doc .totals .val { text-align: right; white-space: nowrap; background: #fff8ea; }
+.promo-doc .totals .grand td { font-size: 13px; }
+.promo-doc .footer-note { margin-top: 16px; color: #45454d; font-size: 11px; }
+@media print { .promo-doc { font-size: 11px; } }
+`;
+
+export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[]): string {
+  const t = computePromoTotals(quote, items);
+  return `<!doctype html>
+<html lang="ru"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>КП ${esc(promoNumberDisplay(quote))} — ${esc(quote.client_name)}</title>
+<style>
+  body { margin: 0; padding: 28px; background: #f2f2f4; }
+  .sheet { background: #fff; max-width: 1120px; margin: 0 auto; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+  ${PROMO_DOC_CSS}
+  @media print { body { background: #fff; padding: 0; } .sheet { box-shadow: none; max-width: none; padding: 0; } }
+</style></head>
+<body><div class="sheet">${buildPromoQuoteBody(quote, items)}</div>
+<!-- Итого: ${formatMoney(t.totalWithVat, quote.currency)} -->
+</body></html>`;
+}
