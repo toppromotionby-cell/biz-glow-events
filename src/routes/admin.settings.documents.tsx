@@ -18,6 +18,7 @@ import { BRAND_ACCENTS } from "@/lib/documents/brand";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
   getDocumentSettings,
   updateDocumentSettings,
   DEFAULT_DOCUMENT_SETTINGS,
@@ -83,12 +84,13 @@ function DocumentSettingsPage() {
     },
   });
 
+  const viewer = useDocumentViewer();
   const openPreview = (kind: "quote" | "invoice" | "contract" | "act") => {
     if (!lastOrder.data) {
       notify.info("Нет ни одного заказа — создайте заказ, чтобы посмотреть документ.");
       return;
     }
-    window.open(`/admin/orders/${lastOrder.data}/${kind}`, "_blank", "noopener");
+    viewer.openDocument(`/admin/orders/${lastOrder.data}/${kind}`);
   };
 
   if (isLoading || !form) {
