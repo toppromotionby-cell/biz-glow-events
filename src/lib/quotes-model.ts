@@ -86,10 +86,22 @@ export type QuoteItem = {
   qty: number;
   unit: string;
   price: number;
+  cost: number;
   sort_order: number;
   entity_type: string | null;
   entity_id: string | null;
 };
+
+export const QUOTE_SECTION_SUGGESTIONS = [
+  "Оборудование",
+  "Интерактивные зоны",
+  "Персонал",
+  "Логистика",
+  "Продакшн",
+  "Декор",
+  "Дополнительно",
+];
+
 
 export type Quote = {
   id: string;
