@@ -121,16 +121,10 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
 
             {!isCollapsed && (
               <div className="p-2">
-                <div className="hidden gap-2 px-7 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground md:grid md:grid-cols-[1fr_88px_64px_56px_100px_100px_110px_32px]">
-                  <span>Наименование</span>
-                  <span>Ед.</span>
-                  <span>Кол-во</span>
-                  <span>×</span>
-                  <span>Цена</span>
-                  <span>{showCost ? "Себест." : ""}</span>
-                  <span className="text-right">Сумма</span>
-                  <span />
+                <div className="px-7 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Позиции раздела
                 </div>
+
                 <SortableList
                   items={list}
                   onReorder={(ids) => reorderSection(name, ids)}
