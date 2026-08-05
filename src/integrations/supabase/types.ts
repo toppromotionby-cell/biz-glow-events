@@ -1474,8 +1474,10 @@ export type Database = {
       promo_quotes: {
         Row: {
           accent_color: string
+          client_comment: string
           client_logo_url: string | null
           client_name: string
+          client_response: string
           commission_enabled: boolean
           commission_label: string
           commission_rate: number
@@ -1498,6 +1500,8 @@ export type Database = {
           management_label: string
           period: string
           project: string
+          public_token: string
+          responded_at: string | null
           sent_at: string | null
           show_notes: boolean
           show_qty: boolean
@@ -1510,11 +1514,14 @@ export type Database = {
           vat_enabled: boolean
           vat_rate: number
           venue: string
+          viewed_at: string | null
         }
         Insert: {
           accent_color?: string
+          client_comment?: string
           client_logo_url?: string | null
           client_name?: string
+          client_response?: string
           commission_enabled?: boolean
           commission_label?: string
           commission_rate?: number
@@ -1537,6 +1544,8 @@ export type Database = {
           management_label?: string
           period?: string
           project?: string
+          public_token?: string
+          responded_at?: string | null
           sent_at?: string | null
           show_notes?: boolean
           show_qty?: boolean
@@ -1549,11 +1558,14 @@ export type Database = {
           vat_enabled?: boolean
           vat_rate?: number
           venue?: string
+          viewed_at?: string | null
         }
         Update: {
           accent_color?: string
+          client_comment?: string
           client_logo_url?: string | null
           client_name?: string
+          client_response?: string
           commission_enabled?: boolean
           commission_label?: string
           commission_rate?: number
@@ -1576,6 +1588,8 @@ export type Database = {
           management_label?: string
           period?: string
           project?: string
+          public_token?: string
+          responded_at?: string | null
           sent_at?: string | null
           show_notes?: boolean
           show_qty?: boolean
@@ -1588,6 +1602,7 @@ export type Database = {
           vat_enabled?: boolean
           vat_rate?: number
           venue?: string
+          viewed_at?: string | null
         }
         Relationships: []
       }
@@ -1731,10 +1746,12 @@ export type Database = {
         Row: {
           blocks: Json
           client_address: string
+          client_comment: string
           client_company: string
           client_email: string
           client_name: string
           client_phone: string
+          client_response: string
           client_unp: string
           company_overrides: Json
           created_at: string
@@ -1758,6 +1775,7 @@ export type Database = {
           prepayment_value: number
           public_token: string
           quote_number: string | null
+          responded_at: string | null
           sent_at: string | null
           setup_note: string
           signature_url: string | null
@@ -1772,14 +1790,17 @@ export type Database = {
           validity_days: number
           vat_note: string
           venue: string
+          viewed_at: string | null
         }
         Insert: {
           blocks?: Json
           client_address?: string
+          client_comment?: string
           client_company?: string
           client_email?: string
           client_name?: string
           client_phone?: string
+          client_response?: string
           client_unp?: string
           company_overrides?: Json
           created_at?: string
@@ -1803,6 +1824,7 @@ export type Database = {
           prepayment_value?: number
           public_token?: string
           quote_number?: string | null
+          responded_at?: string | null
           sent_at?: string | null
           setup_note?: string
           signature_url?: string | null
@@ -1817,14 +1839,17 @@ export type Database = {
           validity_days?: number
           vat_note?: string
           venue?: string
+          viewed_at?: string | null
         }
         Update: {
           blocks?: Json
           client_address?: string
+          client_comment?: string
           client_company?: string
           client_email?: string
           client_name?: string
           client_phone?: string
+          client_response?: string
           client_unp?: string
           company_overrides?: Json
           created_at?: string
@@ -1848,6 +1873,7 @@ export type Database = {
           prepayment_value?: number
           public_token?: string
           quote_number?: string | null
+          responded_at?: string | null
           sent_at?: string | null
           setup_note?: string
           signature_url?: string | null
@@ -1862,6 +1888,7 @@ export type Database = {
           validity_days?: number
           vat_note?: string
           venue?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
