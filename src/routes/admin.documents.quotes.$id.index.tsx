@@ -28,7 +28,7 @@ import {
   saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
 import {
-  checkQuote, computeTotals, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
+  checkQuote, computeTotals, emptyQuoteItem, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
   type Quote, type QuoteItem, type QuoteStatus,
 } from "@/lib/quotes-model";
 import { buildQuoteHtmlDoc, quoteNumberDisplay } from "@/lib/documents/quote-html";
@@ -171,6 +171,7 @@ function Page() {
             },
             items: items.map((it, i) => ({
               section: it.section ?? "", title: it.title || "Позиция", description: it.description ?? "",
+              includes: (it.includes ?? []).filter((x) => x.text.trim()),
               qty: num(it.qty), unit: it.unit || "шт.", price: num(it.price), cost: num(it.cost), sort_order: i,
               entity_type: it.entity_type, entity_id: it.entity_id,
             })),
@@ -199,10 +200,7 @@ function Page() {
   const addItem = (init?: Partial<QuoteItem>) =>
     patchItems([
       ...items,
-      {
-        id: uid(), quote_id: id, section: "", title: "", description: "", qty: 1, unit: "шт.", price: 0, cost: 0,
-        sort_order: items.length, entity_type: null, entity_id: null, ...init,
-      },
+      emptyQuoteItem(id, items.length, init),
     ]);
 
   const onCreateVersion = async () => {
