@@ -2,7 +2,7 @@
 // Mounted once at root. SSR-safe (does nothing during SSR).
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { CartItem } from "@/lib/cart";
+import { clampQty, type CartItem } from "@/lib/cart";
 
 const KEY = "eh_cart_v1";
 const EVT = "cart:change";
@@ -27,9 +27,9 @@ function mergeCarts(a: CartItem[], b: CartItem[]): CartItem[] {
     const k = `${it.entity_type}::${it.id}`;
     const cur = map.get(k);
     if (cur) {
-      map.set(k, { ...cur, qty: cur.qty + it.qty });
+      map.set(k, { ...cur, qty: clampQty(cur, Math.max(cur.qty, it.qty)) });
     } else {
-      map.set(k, { ...it });
+      map.set(k, { ...it, qty: clampQty(it, it.qty) });
     }
   }
   return Array.from(map.values());
