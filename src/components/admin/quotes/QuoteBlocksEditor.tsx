@@ -239,14 +239,14 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
                     </span>
                     <PlaceholderMenu onPick={(token) => update(b.id, { content: `${b.content ?? ""}${b.content ? " " : ""}${token}` })} />
                   </div>
-                  <Textarea
-                    rows={3}
+                  <QuoteTextEditor
                     value={b.content ?? ""}
-                    onChange={(e) => update(b.id, { content: e.target.value })}
-                    placeholder="Плейсхолдеры {{client_company}}, {{total}} и формулы {{= total - advance }}"
+                    onChange={(v) => update(b.id, { content: v })}
+                    onValidityChange={(hasErr) => setBlockErrors((prev) => (prev[b.id] === hasErr ? prev : { ...prev, [b.id]: hasErr }))}
                   />
                 </div>
               )}
+
             </div>
           );
         })}
