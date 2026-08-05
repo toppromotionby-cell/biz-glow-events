@@ -502,6 +502,14 @@ function Page() {
                     <Field label="Тема предложения">
                       <Input value={quote.title ?? ""} onChange={(e) => patch({ title: e.target.value })} />
                     </Field>
+                    <Field label="Номер КП">
+                      <div className="flex items-center gap-2">
+                        <Input value={quote.quote_number ?? ""} placeholder="Присвоится автоматически"
+                          onChange={(e) => patch({ quote_number: e.target.value })} />
+                        <Button type="button" size="sm" variant="outline" className="shrink-0"
+                          onClick={() => patch({ quote_number: "" })}>Автономер</Button>
+                      </div>
+                    </Field>
                     <div className="grid grid-cols-2 gap-3">
                       <Field label="Дата документа">
                         <Input type="date" value={quote.doc_date ?? ""} onChange={(e) => patch({ doc_date: e.target.value })} />
@@ -511,7 +519,19 @@ function Page() {
                           onChange={(e) => patch({ validity_days: Math.trunc(num(e.target.value)) })} />
                       </Field>
                     </div>
+                    <Field label="Действительно до (вручную)">
+                      <div className="flex items-center gap-2">
+                        <Input type="date" value={quote.valid_until_override ?? ""}
+                          onChange={(e) => patch({ valid_until_override: e.target.value || null })} />
+                        {quote.valid_until_override && (
+                          <Button type="button" size="sm" variant="ghost" className="shrink-0"
+                            onClick={() => patch({ valid_until_override: null })}>Сбросить</Button>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Пусто — считается от даты документа и срока действия.</p>
+                    </Field>
                   </AccordionContent>
+
                 </AccordionItem>
 
                 <AccordionItem value="layout" className="border border-border/60 rounded-xl px-3">
