@@ -236,7 +236,7 @@ function templateVars(template: string): string {
 
 export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: DocumentSettings): string {
   const c = quoteCompany(quote, settings);
-  const accent = (quote.design.accent_color || settings.accent_color || "#e0a13f").trim();
+  const accent = (quote.design.accent_color || settings.accent_color || "#FF7500").trim();
   const t = computeTotals(quote, items);
   const num = quoteNumberDisplay(quote);
   const validUntil = quoteValidUntil(quote);
