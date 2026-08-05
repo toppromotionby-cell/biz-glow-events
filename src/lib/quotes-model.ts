@@ -2,6 +2,15 @@
 // расчёт итогов и валидация. Файл browser-safe — используется и в админке,
 // и на сервере при генерации документа.
 import { z } from "zod";
+import {
+  QUOTE_TEMPLATES,
+  normalizeBlocks,
+  normalizeTemplate,
+  type QuoteBlock,
+  type QuoteTemplate,
+} from "@/lib/quote-blocks";
+
+export * from "@/lib/quote-blocks";
 
 export const QUOTE_STATUSES = ["draft", "sent", "accepted", "rejected"] as const;
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
@@ -109,6 +118,8 @@ export type Quote = {
   stamp_url: string | null;
   texts: QuoteTexts;
   design: QuoteDesign;
+  template: QuoteTemplate;
+  blocks: QuoteBlock[];
   discount_type: "none" | "percent" | "amount";
   discount_value: number;
   prepayment_type: "none" | "percent" | "amount";
@@ -246,6 +257,19 @@ export const quotePatchSchema = z.object({
   stamp_url: z.string().max(1000).nullable().optional(),
   texts: z.record(z.string(), z.string()).optional(),
   design: z.record(z.string(), z.union([z.string(), z.boolean()])).optional(),
+  template: z.enum(QUOTE_TEMPLATES).optional(),
+  blocks: z
+    .array(
+      z.object({
+        id: z.string().max(80),
+        type: z.string().max(40),
+        title: z.string().max(160).default(""),
+        enabled: z.boolean().default(true),
+        content: z.string().max(5000).default(""),
+      }),
+    )
+    .max(40)
+    .optional(),
   discount_type: z.enum(["none", "percent", "amount"]).optional(),
   discount_value: z.number().min(0).max(10_000_000).optional(),
   prepayment_type: z.enum(["none", "percent", "amount"]).optional(),
@@ -263,6 +287,8 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     company_overrides: (row.company_overrides ?? {}) as QuoteCompanyOverrides,
     texts: { ...DEFAULT_QUOTE_TEXTS, ...((row.texts ?? {}) as Partial<QuoteTexts>) },
     design: { ...DEFAULT_QUOTE_DESIGN, ...((row.design ?? {}) as Partial<QuoteDesign>) },
+    template: normalizeTemplate(row.template),
+    blocks: normalizeBlocks(row.blocks, normalizeTemplate(row.template)),
     discount_value: num(row.discount_value),
     prepayment_value: num(row.prepayment_value),
     delivery_amount: num(row.delivery_amount),
