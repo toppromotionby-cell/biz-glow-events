@@ -190,26 +190,24 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                         <span className="pb-2 text-[11px] text-muted-foreground">всего: {lineQty(it)}</span>
                       </div>
 
-                      {(showNotes || it.exclude_from_commission) && (
-                        <div className="ml-7 mt-1 flex flex-wrap items-center gap-3">
-                          {showNotes && (
-                            <Textarea
-                              value={it.note}
-                              onChange={(e) => replace(it.id, { note: e.target.value })}
-                              placeholder="Примечание"
-                              className="min-h-[34px] flex-1 text-xs"
-                            />
-                          )}
-                          <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <Switch
-                              checked={it.exclude_from_commission}
-                              onCheckedChange={(v) => replace(it.id, { exclude_from_commission: v })}
-                            />
-                            Без комиссии
-                          </Label>
-                          <span className="text-[11px] text-muted-foreground">всего: {lineQty(it)}</span>
-                        </div>
-                      )}
+                      <div className="ml-7 mt-1 flex flex-wrap items-center gap-3">
+                        {showNotes && (
+                          <Textarea
+                            value={it.note}
+                            onChange={(e) => replace(it.id, { note: e.target.value })}
+                            placeholder="Примечание"
+                            className="min-h-[34px] flex-1 text-xs"
+                          />
+                        )}
+                        <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <Switch
+                            checked={it.exclude_from_commission}
+                            onCheckedChange={(v) => replace(it.id, { exclude_from_commission: v })}
+                          />
+                          Без комиссии
+                        </Label>
+                      </div>
+
                     </div>
                   )}
                 />
