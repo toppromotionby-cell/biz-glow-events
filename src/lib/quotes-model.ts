@@ -189,6 +189,7 @@ export type Quote = {
   title: string;
   doc_date: string;
   validity_days: number;
+  valid_until_override: string | null;
   client_name: string;
   client_company: string;
   client_unp: string;
