@@ -166,13 +166,9 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   const accent = (quote.design.accent_color || settings.accent_color || "#e0a13f").trim();
   const t = computeTotals(quote, items);
   const num = quoteNumberDisplay(quote);
-  const validUntil = (() => {
-    if (!quote.validity_days) return "";
-    const d = new Date(quote.doc_date);
-    if (Number.isNaN(d.getTime())) return "";
-    d.setDate(d.getDate() + quote.validity_days);
-    return fmtDate(d.toISOString().slice(0, 10));
-  })();
+  const validUntil = quoteValidUntil(quote);
+  const template = quote.template ?? "classic";
+  const map = buildPlaceholderValues(quote, items, settings);
 
   const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
   const sections = new Map<string, QuoteItem[]>();
@@ -184,9 +180,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
 
   const tableBody = [...sections.entries()]
     .map(([section, rows]) => {
-      const head = section
-        ? `<tr class="section-row"><td colspan="5">${esc(section)}</td></tr>`
-        : "";
+      const head = section ? `<tr class="section-row"><td colspan="5">${esc(section)}</td></tr>` : "";
       const body = rows
         .map(
           (it, i) => `<tr>
@@ -207,15 +201,111 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
 
   const eventRows: Array<[string, string]> = [
     ["Дата мероприятия", fmtDate(quote.event_date)],
-    [
-      "Время",
-      [quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — "),
-    ],
+    ["Время", [quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — ")],
     ["Площадка", quote.venue],
     ["Гостей", quote.guests_count != null ? String(quote.guests_count) : ""],
     ["Формат", quote.event_format],
     ["Монтаж / демонтаж", quote.setup_note],
   ].filter(([, v]) => !!v) as Array<[string, string]>;
+
+  const heading = (b: QuoteBlock) => `<h2 class="section">${esc(b.title || "")}</h2>`;
+
+  const renderBlock = (b: QuoteBlock): string => {
+    const text = blockText(b, quote, map);
+    switch (b.type) {
+      case "cover":
+        return `<div class="cover ${template === "premium" ? "cover-dark" : ""}">
+          <h1>${esc(applyPlaceholders(quote.title || "Предложение по организации мероприятия", map))}</h1>
+          ${text ? `<p>${esc(text)}</p>` : ""}
+        </div>`;
+      case "client":
+        return `${heading(b)}<div class="card">
+          <div class="label">Заказчик</div>
+          <div class="name">${esc(quote.client_company || quote.client_name || "—")}</div>
+          ${[
+            quote.client_company && quote.client_name ? `Контакт: ${quote.client_name}` : "",
+            quote.client_unp ? `УНП ${quote.client_unp}` : "",
+            quote.client_phone,
+            quote.client_email,
+            quote.client_address,
+          ]
+            .filter(Boolean)
+            .map((l) => `<div class="line">${esc(l)}</div>`)
+            .join("")}
+        </div>`;
+      case "event":
+        return `${heading(b)}<div class="card">
+          <table class="info-table">
+            ${eventRows.map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("") || `<tr><td class="k">Детали</td><td>уточняются</td></tr>`}
+          </table>
+          ${quote.event_notes ? `<div class="line" style="margin-top:8px;white-space:pre-line;">${esc(quote.event_notes)}</div>` : ""}
+        </div>`;
+      case "items":
+        return `${heading(b)}<table>
+          <thead><tr><th></th><th>Позиция</th><th class="num">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
+          <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}</tbody>
+        </table>`;
+      case "totals":
+        return `<div class="totals">
+          <div class="row"><span>Стоимость позиций</span><span>${money(t.subtotal)}</span></div>
+          ${t.discount ? `<div class="row"><span>Скидка</span><span>−${money(t.discount)}</span></div>` : ""}
+          ${t.delivery ? `<div class="row"><span>Доставка и логистика</span><span>${money(t.delivery)}</span></div>` : ""}
+          <div class="row total"><span>Итого</span><span>${money(t.total)}</span></div>
+          ${t.prepayment ? `<div class="row"><span>Предоплата</span><span>${money(t.prepayment)}</span></div><div class="row"><span>Остаток</span><span>${money(t.balance)}</span></div>` : ""}
+        </div>
+        <div class="words">${esc(amountToWords(t.total))}. ${esc(quote.vat_note || settings.vat_note)}</div>`;
+      case "included":
+      case "excluded":
+        return text ? `${heading(b)}<ul>${lines(text)}</ul>` : "";
+      case "timeline":
+      case "terms":
+      case "text":
+        return text ? `${heading(b)}${paragraphs(text)}` : "";
+      case "requisites":
+        return `${heading(b)}<div class="card">
+          <div class="name">${esc(c.legal)}</div>
+          ${[
+            c.unp ? `УНП ${c.unp}` : "",
+            c.address,
+            c.bank_account ? `р/с ${c.bank_account}` : "",
+            c.bank_name,
+            c.bank_bic ? `БИК ${c.bank_bic}` : "",
+            [c.phone, c.email, c.website].filter(Boolean).join(" · "),
+          ]
+            .filter(Boolean)
+            .map((l) => `<div class="line">${esc(l)}</div>`)
+            .join("")}
+        </div>`;
+      case "signature":
+        return `<div class="sign">
+          <div>
+            <div class="who">Исполнитель</div>
+            <div>${esc(c.legal)}</div>
+            ${quote.signature_url ? `<img src="${esc(quote.signature_url)}" alt="" />` : ""}
+            ${quote.design.show_stamp && quote.stamp_url ? `<img src="${esc(quote.stamp_url)}" alt="" />` : ""}
+            <div class="sign-line">${esc(c.signer_name)}${c.signer_title ? `, ${esc(c.signer_title)}` : ""}</div>
+          </div>
+          <div>
+            <div class="who">Заказчик</div>
+            <div>${esc(quote.client_company || quote.client_name || "")}</div>
+            <div class="sign-line">${esc(quote.client_name || "")}</div>
+          </div>
+        </div>`;
+      default:
+        return "";
+    }
+  };
+
+  // Тумблеры оформления по-прежнему работают как «жёсткое» выключение блока.
+  const hidden = new Set<string>();
+  if (!quote.design.show_cover) hidden.add("cover");
+  if (!quote.design.show_requisites) hidden.add("requisites");
+  if (!quote.design.show_signature) hidden.add("signature");
+
+  const bodyHtml = effectiveBlocks(quote)
+    .filter((b) => !hidden.has(b.type))
+    .map(renderBlock)
+    .join("\n");
 
   return `<!doctype html>
 <html lang="ru"><head><meta charset="utf-8" />
@@ -225,7 +315,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
 <style>
-  :root { --accent: ${esc(accent)}; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --surface:#fafafa; }
+  :root { --accent: ${esc(accent)}; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --surface:#fafafa; ${templateVars(template)} }
   @page { size: A4; margin: 14mm 12mm; }
   * { box-sizing: border-box; }
   body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:12px; line-height:1.55; }
@@ -240,12 +330,13 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   .doc-num { font-family:"Space Grotesk",system-ui,sans-serif; font-size:18px; font-weight:700; }
   .doc-date { color:var(--muted); font-size:11px; }
   .right { text-align:right; }
-  .cover { margin:18px 0 6px; padding:18px 20px; border-radius:14px; background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,#fff),#fff); border:1px solid color-mix(in srgb,var(--accent) 30%,#fff); }
+  .cover { margin:18px 0 6px; padding:18px 20px; border-radius:var(--radius); background:var(--cover-bg); border:1px solid var(--cover-border); }
   .cover h1 { font-size:24px; }
   .cover p { margin:8px 0 0; color:#374151; }
+  .cover.cover-dark, .cover.cover-dark h1 { color:#fff; }
+  .cover.cover-dark p { color:#d1d5db; }
   h2.section { font-size:13px; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin:22px 0 8px; }
-  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .card { border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:12px 14px; }
+  .card { border:1px solid var(--line); background:var(--card-bg); border-radius:var(--radius); padding:12px 14px; }
   .card .label { text-transform:uppercase; font-size:8.5px; letter-spacing:.12em; color:var(--accent); font-weight:600; }
   .card .name { font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:13px; margin:4px 0 4px; }
   .card .line { color:var(--muted); font-size:11px; }
@@ -259,7 +350,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   .unit { color:var(--muted); font-size:10px; }
   .strong { font-weight:600; }
   .section-row td { background:#fff; font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:12px; padding-top:14px; border-bottom:1px solid var(--line); }
-  .totals { margin-top:14px; margin-left:auto; width:min(360px,100%); border:1px solid color-mix(in srgb,var(--accent) 40%,#fff); border-radius:12px; overflow:hidden; }
+  .totals { margin-top:14px; margin-left:auto; width:min(360px,100%); border:1px solid color-mix(in srgb,var(--accent) 40%,#fff); border-radius:var(--radius); overflow:hidden; }
   .totals .row { display:flex; justify-content:space-between; padding:7px 14px; font-size:12px; }
   .totals .row.total { background:color-mix(in srgb,var(--accent) 14%,#fff); font-weight:700; font-size:15px; font-family:"Space Grotesk",system-ui,sans-serif; }
   .words { margin-top:8px; color:var(--muted); font-size:11px; font-style:italic; }
@@ -291,76 +382,10 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
     </div>
   </div>
 
-  ${quote.design.show_cover ? `<div class="cover">
-      <h1>${esc(quote.title || "Предложение по организации мероприятия")}</h1>
-      ${quote.texts.intro ? `<p>${esc(quote.texts.intro)}</p>` : ""}
-    </div>` : ""}
-
-  <h2 class="section">Заказчик и мероприятие</h2>
-  <div class="grid-2">
-    <div class="card">
-      <div class="label">Заказчик</div>
-      <div class="name">${esc(quote.client_company || quote.client_name || "—")}</div>
-      ${[quote.client_company && quote.client_name ? `Контакт: ${quote.client_name}` : "", quote.client_unp ? `УНП ${quote.client_unp}` : "", quote.client_phone, quote.client_email, quote.client_address]
-        .filter(Boolean)
-        .map((l) => `<div class="line">${esc(l)}</div>`)
-        .join("")}
-    </div>
-    <div class="card">
-      <div class="label">Мероприятие</div>
-      <table class="info-table">
-        ${eventRows.map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("") || `<tr><td class="k">Детали</td><td>уточняются</td></tr>`}
-      </table>
-    </div>
-  </div>
-  ${quote.event_notes ? `<p style="color:#374151;white-space:pre-line;margin-top:10px;">${esc(quote.event_notes)}</p>` : ""}
-
-  <h2 class="section">Состав предложения</h2>
-  <table>
-    <thead><tr><th></th><th>Позиция</th><th class="num">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
-    <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}</tbody>
-  </table>
-
-  <div class="totals">
-    <div class="row"><span>Стоимость позиций</span><span>${money(t.subtotal)}</span></div>
-    ${t.discount ? `<div class="row"><span>Скидка</span><span>−${money(t.discount)}</span></div>` : ""}
-    ${t.delivery ? `<div class="row"><span>Доставка и логистика</span><span>${money(t.delivery)}</span></div>` : ""}
-    <div class="row total"><span>Итого</span><span>${money(t.total)}</span></div>
-    ${t.prepayment ? `<div class="row"><span>Предоплата</span><span>${money(t.prepayment)}</span></div><div class="row"><span>Остаток</span><span>${money(t.balance)}</span></div>` : ""}
-  </div>
-  <div class="words">${esc(amountToWords(t.total))}. ${esc(quote.vat_note || settings.vat_note)}</div>
-
-  ${quote.texts.included ? `<h2 class="section">Что входит</h2><ul>${lines(quote.texts.included)}</ul>` : ""}
-  ${quote.texts.excluded ? `<h2 class="section">Не входит</h2><ul>${lines(quote.texts.excluded)}</ul>` : ""}
-  ${quote.texts.timeline ? `<h2 class="section">Сроки и логистика</h2>${paragraphs(quote.texts.timeline)}` : ""}
-  ${quote.texts.terms ? `<h2 class="section">Условия</h2>${paragraphs(quote.texts.terms)}` : ""}
-
-  ${quote.design.show_requisites ? `<h2 class="section">Реквизиты исполнителя</h2>
-  <div class="card">
-    <div class="name">${esc(c.legal)}</div>
-    ${[c.unp ? `УНП ${c.unp}` : "", c.address, c.bank_account ? `р/с ${c.bank_account}` : "", c.bank_name, c.bank_bic ? `БИК ${c.bank_bic}` : "", [c.phone, c.email, c.website].filter(Boolean).join(" · ")]
-      .filter(Boolean)
-      .map((l) => `<div class="line">${esc(l)}</div>`)
-      .join("")}
-  </div>` : ""}
-
-  ${quote.design.show_signature ? `<div class="sign">
-    <div>
-      <div class="who">Исполнитель</div>
-      <div>${esc(c.legal)}</div>
-      ${quote.signature_url ? `<img src="${esc(quote.signature_url)}" alt="" />` : ""}
-      ${quote.design.show_stamp && quote.stamp_url ? `<img src="${esc(quote.stamp_url)}" alt="" />` : ""}
-      <div class="sign-line">${esc(c.signer_name)}${c.signer_title ? `, ${esc(c.signer_title)}` : ""}</div>
-    </div>
-    <div>
-      <div class="who">Заказчик</div>
-      <div>${esc(quote.client_company || quote.client_name || "")}</div>
-      <div class="sign-line">${esc(quote.client_name || "")}</div>
-    </div>
-  </div>` : ""}
+  ${bodyHtml}
 
   <div class="footer">
-    ${esc(quote.texts.footer || settings.quote_footer)}
+    ${esc(applyPlaceholders(quote.texts.footer || settings.quote_footer, map))}
     <div style="margin-top:4px;">${esc(c.legal)} · ${esc(c.phone)} · ${esc(c.email)} · ${esc(c.website)}</div>
   </div>
 </div></body></html>`;
