@@ -25,7 +25,7 @@ import { BRAND_ACCENTS } from "@/lib/documents/brand";
 import {
   getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
   listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
-  saveQuoteAsTemplate, markQuoteSent,
+  saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient,
 } from "@/lib/quotes.functions";
 import {
   checkQuote, computeTotals, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
@@ -34,6 +34,7 @@ import {
 import { buildQuoteHtmlDoc, quoteNumberDisplay } from "@/lib/documents/quote-html";
 import { QuoteBlocksEditor } from "@/components/admin/quotes/QuoteBlocksEditor";
 import { QuoteItemsPanel } from "@/components/admin/quotes/QuoteItemsPanel";
+import { QuoteShareActions, QuoteShareStatus, type ShareState } from "@/components/admin/quotes/QuoteShareActions";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { fmtMoney } from "@/lib/formatters";
 import { downloadAuthedFile, openAuthedDocument } from "@/lib/authed-fetch";
@@ -103,6 +104,7 @@ function Page() {
   const rollback = useServerFn(restoreQuoteVersion);
   const makeTemplate = useServerFn(saveQuoteAsTemplate);
   const markSent = useServerFn(markQuoteSent);
+  const sendToClient = useServerFn(sendQuoteToClient);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-quote", id], queryFn: () => load({ data: { id } }) });
   const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({ queryKey: ["admin-quote-settings"], queryFn: () => loadSettings() });
@@ -236,6 +238,22 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  const shareState: ShareState = {
+    token: quote.public_token,
+    email: quote.client_email,
+    sentAt: quote.sent_at,
+    viewedAt: quote.viewed_at,
+    clientResponse: quote.client_response,
+    clientComment: quote.client_comment,
+  };
+
+  const onSendToClient = async (input: { email: string; note: string; attachPdf: boolean }) => {
+    await sendToClient({ data: { id, ...input } });
+    setQuote((q) => (q ? { ...q, sent_at: new Date().toISOString(), status: q.status === "draft" ? "sent" : q.status } : q));
+    qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+  };
+
+
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -251,12 +269,14 @@ function Page() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SaveStatus state={state} errorMessage={saveError} />
+          <QuoteShareStatus share={shareState} />
           <Select value={quote.status} onValueChange={(v) => patch({ status: v as QuoteStatus })}>
             <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               {QUOTE_STATUSES.map((s) => <SelectItem key={s} value={s}>{QUOTE_STATUS_LABELS[s]}</SelectItem>)}
             </SelectContent>
           </Select>
+          <QuoteShareActions share={shareState} onSend={onSendToClient} />
           <Button variant="outline" size="sm" onClick={onMarkSent}><Send className="h-4 w-4 mr-1.5" />Отправлено</Button>
           <Button variant="outline" size="sm" onClick={() => setTemplateOpen(true)}><BookmarkPlus className="h-4 w-4 mr-1.5" />В шаблоны</Button>
           <Button variant="outline" size="sm" onClick={() => openAuthedDocument(`/admin/documents/quotes/${id}/render`).catch((e) => toast.error((e as Error).message))}>
