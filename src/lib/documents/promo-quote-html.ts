@@ -157,6 +157,8 @@ export const PROMO_DOC_CSS = `
 .promo-doc .grid th { background: var(--accent); color: #16161a; font-weight: 700; text-align: center; border: 1px solid #b9b9bf; padding: 6px 6px; }
 .promo-doc .grid td { border: 1px solid #d8d8dd; padding: 5px 6px; vertical-align: top; }
 .promo-doc .grid tr.sec td { background: #e7e7ea; font-weight: 600; }
+.promo-doc .grid tr.sec-sub td { background: #f4f4f6; font-weight: 600; text-align: right; }
+.promo-doc .c-inc { margin: 3px 0 0; padding-left: 14px; font-size: 11px; color: #5a5a63; }
 .promo-doc .grid tr.extra td { background: #fbfbfc; font-style: italic; }
 .promo-doc .c-title { width: 26%; }
 .promo-doc .c-unit { width: 9%; text-align: center; }
