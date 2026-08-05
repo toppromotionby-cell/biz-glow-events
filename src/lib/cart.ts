@@ -1,6 +1,7 @@
 // Лёгкая клиентская корзина-«заявка»: localStorage + кастом-событие "cart:change".
 // Используется на детальных страницах и на /cart. SSR-безопасна.
 import { useEffect, useState, useCallback } from "react";
+import { maxQtyForItem } from "@/lib/pricing";
 
 export type CartEntityType = "zones" | "tech_equipment" | "services" | "production_items";
 
@@ -11,6 +12,7 @@ export type CartItem = {
   title: string;
   price: number;
   qty: number;
+  unit?: string | null;
   image?: string | null;
   start_date?: string | null;
   end_date?: string | null;
@@ -37,15 +39,27 @@ function write(items: CartItem[]) {
   window.dispatchEvent(new CustomEvent(EVT));
 }
 
-export function addToCart(it: CartItem) {
+export function clampQty(item: Pick<CartItem, "entity_type" | "unit">, qty: number): number {
+  const max = maxQtyForItem(item.entity_type, item.unit);
+  const n = Math.floor(Number(qty)) || 1;
+  return Math.max(1, Math.min(max, n));
+}
+
+export type AddToCartResult = { added: boolean; alreadyInCart: boolean };
+
+/**
+ * Добавляет позицию в корзину ровно один раз.
+ * Повторный клик НЕ увеличивает количество — менять его можно только в корзине.
+ */
+export function addToCart(it: CartItem): AddToCartResult {
   const cur = read();
   const idx = cur.findIndex(c => c.id === it.id && c.entity_type === it.entity_type);
   if (idx >= 0) {
-    cur[idx] = { ...cur[idx], qty: cur[idx].qty + (it.qty || 1) };
-  } else {
-    cur.push({ ...it, qty: it.qty || 1 });
+    return { added: false, alreadyInCart: true };
   }
+  cur.push({ ...it, qty: clampQty(it, it.qty || 1) });
   write(cur);
+  return { added: true, alreadyInCart: false };
 }
 
 export function removeFromCart(id: string, entity_type: CartEntityType) {
@@ -54,7 +68,7 @@ export function removeFromCart(id: string, entity_type: CartEntityType) {
 
 export function updateQty(id: string, entity_type: CartEntityType, qty: number) {
   const next = read().map(c =>
-    c.id === id && c.entity_type === entity_type ? { ...c, qty: Math.max(1, qty | 0) } : c,
+    c.id === id && c.entity_type === entity_type ? { ...c, qty: clampQty(c, qty) } : c,
   );
   write(next);
 }
