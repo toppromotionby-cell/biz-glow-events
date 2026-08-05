@@ -394,6 +394,29 @@ export function amountToWords(value: number): string {
 // --- Валидация ---
 const timeRe = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
+/**
+ * Приводит время к виду ЧЧ:ММ: "18:00:00" → "18:00", "1800"/"18.00"/"18-00" → "18:00",
+ * "9:5" → "09:05". Непонятное значение возвращается как есть (его отсеет проверка).
+ */
+export function normalizeTime(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const m = /^(\d{1,2})\s*[:.\-\s]?\s*(\d{1,2})?(?::\d{1,2})?$/.exec(raw);
+  if (!m) return raw;
+  const h = Number(m[1]);
+  const min = m[2] === undefined ? 0 : Number(m[2]);
+  if (!Number.isFinite(h) || h > 23 || min > 59) return raw;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+/** Поле времени в patch-схеме: пустое значение допустимо, остальное нормализуется. */
+const timeField = () =>
+  z
+    .preprocess((v) => (typeof v === "string" ? normalizeTime(v) : v),
+      z.string().refine((v) => v === "" || timeRe.test(v), "укажите в формате ЧЧ:ММ"))
+    .optional();
+
+
 export const quoteItemSchema = z.object({
   id: z.string().uuid().optional(),
   section: z.string().max(120).default(""),
