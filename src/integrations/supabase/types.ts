@@ -1829,6 +1829,7 @@ export type Database = {
           title: string
           total: number
           updated_at: string
+          valid_until_override: string | null
           validity_days: number
           vat_note: string
           venue: string
@@ -1878,6 +1879,7 @@ export type Database = {
           title?: string
           total?: number
           updated_at?: string
+          valid_until_override?: string | null
           validity_days?: number
           vat_note?: string
           venue?: string
@@ -1927,6 +1929,7 @@ export type Database = {
           title?: string
           total?: number
           updated_at?: string
+          valid_until_override?: string | null
           validity_days?: number
           vat_note?: string
           venue?: string
