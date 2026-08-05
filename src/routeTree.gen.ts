@@ -71,6 +71,7 @@ import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAvailabilityRouteImport } from './routes/admin.availability'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
+import { Route as AdminDocumentsIndexRouteImport } from './routes/admin.documents.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
@@ -81,6 +82,7 @@ import { Route as AdminSettingsEmailsRouteImport } from './routes/admin.settings
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
+import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -91,6 +93,8 @@ import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$i
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
 import { Route as AdminOrdersIdActRouteImport } from './routes/admin.orders.$id.act'
+import { Route as AdminDocumentsQuotesIdIndexRouteImport } from './routes/admin.documents.quotes.$id.index'
+import { Route as AdminDocumentsQuotesIdRenderRouteImport } from './routes/admin.documents.quotes.$id.render'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -402,6 +406,11 @@ const AdminOrdersIndexRoute = AdminOrdersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminOrdersRoute,
 } as any)
+const AdminDocumentsIndexRoute = AdminDocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const OrderSuccessIdRoute = OrderSuccessIdRouteImport.update({
   id: '/order/success/$id',
   path: '/order/success/$id',
@@ -453,6 +462,12 @@ const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const AdminDocumentsQuotesIndexRoute =
+  AdminDocumentsQuotesIndexRouteImport.update({
+    id: '/documents/quotes/',
+    path: '/documents/quotes/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -506,6 +521,18 @@ const AdminOrdersIdActRoute = AdminOrdersIdActRouteImport.update({
   path: '/act',
   getParentRoute: () => AdminOrdersIdRoute,
 } as any)
+const AdminDocumentsQuotesIdIndexRoute =
+  AdminDocumentsQuotesIdIndexRouteImport.update({
+    id: '/documents/quotes/$id/',
+    path: '/documents/quotes/$id/',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminDocumentsQuotesIdRenderRoute =
+  AdminDocumentsQuotesIdRenderRouteImport.update({
+    id: '/documents/quotes/$id/render',
+    path: '/documents/quotes/$id/render',
+    getParentRoute: () => AdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -579,6 +606,7 @@ export interface FileRoutesByFullPath {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -590,6 +618,9 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
+  '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/quotes/$id/': typeof AdminDocumentsQuotesIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -661,6 +692,7 @@ export interface FileRoutesByTo {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/documents': typeof AdminDocumentsIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -672,6 +704,9 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes': typeof AdminDocumentsQuotesIndexRoute
+  '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/quotes/$id': typeof AdminDocumentsQuotesIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -746,6 +781,7 @@ export interface FileRoutesById {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -757,6 +793,9 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
+  '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/quotes/$id/': typeof AdminDocumentsQuotesIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -832,6 +871,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/documents/'
     | '/admin/orders/'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -843,6 +883,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes/'
+    | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/quotes/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -914,6 +957,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/documents'
     | '/admin/orders'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -925,6 +969,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes'
+    | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/quotes/$id'
   id:
     | '__root__'
     | '/'
@@ -998,6 +1045,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/documents/'
     | '/admin/orders/'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -1009,6 +1057,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes/'
+    | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/quotes/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1501,6 +1552,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIndexRouteImport
       parentRoute: typeof AdminOrdersRoute
     }
+    '/admin/documents/': {
+      id: '/admin/documents/'
+      path: '/documents'
+      fullPath: '/admin/documents/'
+      preLoaderRoute: typeof AdminDocumentsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/order/success/$id': {
       id: '/order/success/$id'
       path: '/order/success/$id'
@@ -1570,6 +1628,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/catalog/$type'
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
       parentRoute: typeof AdminCatalogRoute
+    }
+    '/admin/documents/quotes/': {
+      id: '/admin/documents/quotes/'
+      path: '/documents/quotes'
+      fullPath: '/admin/documents/quotes/'
+      preLoaderRoute: typeof AdminDocumentsQuotesIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
@@ -1641,6 +1706,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdActRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/documents/quotes/$id/': {
+      id: '/admin/documents/quotes/$id/'
+      path: '/documents/quotes/$id'
+      fullPath: '/admin/documents/quotes/$id/'
+      preLoaderRoute: typeof AdminDocumentsQuotesIdIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/documents/quotes/$id/render': {
+      id: '/admin/documents/quotes/$id/render'
+      path: '/documents/quotes/$id/render'
+      fullPath: '/admin/documents/quotes/$id/render'
+      preLoaderRoute: typeof AdminDocumentsQuotesIdRenderRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -1707,6 +1786,10 @@ interface AdminRouteChildren {
   AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
+  AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
+  AdminDocumentsQuotesIndexRoute: typeof AdminDocumentsQuotesIndexRoute
+  AdminDocumentsQuotesIdRenderRoute: typeof AdminDocumentsQuotesIdRenderRoute
+  AdminDocumentsQuotesIdIndexRoute: typeof AdminDocumentsQuotesIdIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1728,6 +1811,10 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
+  AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
+  AdminDocumentsQuotesIndexRoute: AdminDocumentsQuotesIndexRoute,
+  AdminDocumentsQuotesIdRenderRoute: AdminDocumentsQuotesIdRenderRoute,
+  AdminDocumentsQuotesIdIndexRoute: AdminDocumentsQuotesIdIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1854,13 +1941,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -47,3 +47,25 @@ export async function fetchAuthedDocument(url: string): Promise<string> {
   if (!res.ok) throw new Error(`Не удалось получить документ (${res.status})`);
   return res.text();
 }
+
+// Скачать auth-защищённый файл (PDF) с сохранением имени из Content-Disposition.
+export async function downloadAuthedFile(url: string, fallbackName = "document.pdf"): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Требуется вход");
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error(`Не удалось получить файл (${res.status})`);
+  const blob = await res.blob();
+  const cd = res.headers.get("content-disposition") ?? "";
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(cd)?.[1];
+  const plain = /filename="([^"]+)"/i.exec(cd)?.[1];
+  const name = star ? decodeURIComponent(star) : plain || fallbackName;
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 30_000);
+}
