@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowDown, ArrowUp, BookmarkPlus, GripVertical, Library, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, BookmarkPlus, GripVertical, Library, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,8 @@ import {
   type QuoteBlock, type QuoteBlockCondition, type QuoteBlockType, type QuoteTemplate,
 } from "@/lib/quote-blocks";
 import { deleteQuoteSnippet, listQuoteSnippets, saveQuoteSnippet } from "@/lib/quotes.functions";
+import { QuoteTextEditor } from "@/components/admin/quotes/QuoteTextEditor";
+
 
 type Props = {
   template: QuoteTemplate;
@@ -65,6 +67,8 @@ function PlaceholderMenu({ onPick }: { onPick: (token: string) => void }) {
 
 export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
+  const [blockErrors, setBlockErrors] = useState<Record<string, boolean>>({});
+
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [saveTarget, setSaveTarget] = useState<QuoteBlock | null>(null);
   const [snippetName, setSnippetName] = useState("");
@@ -99,6 +103,8 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
   });
 
   const list = blocks?.length ? blocks : defaultBlocksForTemplate(template);
+  const errorCount = list.filter((b) => blockErrors[b.id]).length;
+
 
   const update = (id: string, patch: Partial<QuoteBlock>) =>
     onChange({ blocks: list.map((b) => (b.id === id ? { ...b, ...patch } : b)) });
@@ -183,7 +189,17 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
       <p className="text-[11px] text-muted-foreground">
         Условие показа скрывает блок автоматически, если данных нет (нет доставки, скидки, реквизитов и т.д.).
         В текстах работают формулы: <code>{"{{= total - advance }}"}</code>, <code>{"{{= subtotal * 20 / 100 }}"}</code>.
+        Наберите <code>{"{{"}</code> — появится автодополнение переменных.
       </p>
+
+      {errorCount > 0 && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive flex items-center gap-2">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          Ошибки в формулах: {errorCount} {errorCount === 1 ? "блок" : "блока(ов)"}. Исправьте их перед сохранением — иначе выражения попадут в документ как текст.
+        </div>
+      )}
+
+
 
       <div className="space-y-2">
         {list.map((b, i) => {
@@ -239,14 +255,14 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
                     </span>
                     <PlaceholderMenu onPick={(token) => update(b.id, { content: `${b.content ?? ""}${b.content ? " " : ""}${token}` })} />
                   </div>
-                  <Textarea
-                    rows={3}
+                  <QuoteTextEditor
                     value={b.content ?? ""}
-                    onChange={(e) => update(b.id, { content: e.target.value })}
-                    placeholder="Плейсхолдеры {{client_company}}, {{total}} и формулы {{= total - advance }}"
+                    onChange={(v) => update(b.id, { content: v })}
+                    onValidityChange={(hasErr) => setBlockErrors((prev) => (prev[b.id] === hasErr ? prev : { ...prev, [b.id]: hasErr }))}
                   />
                 </div>
               )}
+
             </div>
           );
         })}
