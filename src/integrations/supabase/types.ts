@@ -1344,8 +1344,42 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_item_snippets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          items: Json
+          name: string
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          items?: Json
+          name: string
+          section?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          items?: Json
+          name?: string
+          section?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       promo_quote_items: {
         Row: {
+          cost: number
           created_at: string
           exclude_from_commission: boolean
           id: string
@@ -1360,6 +1394,7 @@ export type Database = {
           unit: string
         }
         Insert: {
+          cost?: number
           created_at?: string
           exclude_from_commission?: boolean
           id?: string
@@ -1374,6 +1409,7 @@ export type Database = {
           unit?: string
         }
         Update: {
+          cost?: number
           created_at?: string
           exclude_from_commission?: boolean
           id?: string
@@ -1397,6 +1433,44 @@ export type Database = {
           },
         ]
       }
+      promo_quote_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          quote_id: string
+          snapshot: Json
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          quote_id: string
+          snapshot: Json
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          quote_id?: string
+          snapshot?: Json
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_quote_versions_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "promo_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promo_quotes: {
         Row: {
           accent_color: string
@@ -1412,6 +1486,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          discount_type: string
+          discount_value: number
           doc_number: string | null
           footer_note: string
           id: string
@@ -1422,6 +1498,7 @@ export type Database = {
           management_label: string
           period: string
           project: string
+          sent_at: string | null
           show_notes: boolean
           show_qty: boolean
           show_total_qty: boolean
@@ -1429,6 +1506,7 @@ export type Database = {
           template_name: string
           total: number
           updated_at: string
+          valid_until: string | null
           vat_enabled: boolean
           vat_rate: number
           venue: string
@@ -1447,6 +1525,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          discount_type?: string
+          discount_value?: number
           doc_number?: string | null
           footer_note?: string
           id?: string
@@ -1457,6 +1537,7 @@ export type Database = {
           management_label?: string
           period?: string
           project?: string
+          sent_at?: string | null
           show_notes?: boolean
           show_qty?: boolean
           show_total_qty?: boolean
@@ -1464,6 +1545,7 @@ export type Database = {
           template_name?: string
           total?: number
           updated_at?: string
+          valid_until?: string | null
           vat_enabled?: boolean
           vat_rate?: number
           venue?: string
@@ -1482,6 +1564,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          discount_type?: string
+          discount_value?: number
           doc_number?: string | null
           footer_note?: string
           id?: string
@@ -1492,6 +1576,7 @@ export type Database = {
           management_label?: string
           period?: string
           project?: string
+          sent_at?: string | null
           show_notes?: boolean
           show_qty?: boolean
           show_total_qty?: boolean
@@ -1499,6 +1584,7 @@ export type Database = {
           template_name?: string
           total?: number
           updated_at?: string
+          valid_until?: string | null
           vat_enabled?: boolean
           vat_rate?: number
           venue?: string

@@ -117,6 +117,7 @@ export const createPromoQuote = createServerFn({ method: "POST" })
         qty: Number(it.qty ?? 1),
         multiplier: Number(it.multiplier ?? 1),
         price: Number(it.price ?? 0),
+        cost: Number(it.cost ?? 0),
         note: String(it.note ?? ""),
         exclude_from_commission: it.exclude_from_commission === true,
         sort_order: i,
@@ -142,6 +143,7 @@ export const createPromoQuote = createServerFn({ method: "POST" })
       qty: it.qty ?? 1,
       multiplier: it.multiplier ?? 1,
       price: it.price ?? 0,
+      cost: it.cost ?? 0,
       note: it.note ?? "",
       exclude_from_commission: it.exclude_from_commission === true,
       sort_order: i,
@@ -174,6 +176,7 @@ export const savePromoQuote = createServerFn({ method: "POST" })
         qty: it.qty,
         multiplier: it.multiplier,
         price: it.price,
+        cost: it.cost,
         note: it.note,
         exclude_from_commission: it.exclude_from_commission,
         sort_order: i,
@@ -183,6 +186,7 @@ export const savePromoQuote = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
     }
+
 
     if (data.patch && Object.keys(data.patch).length) {
       const { error } = await context.supabase.from("promo_quotes").update(data.patch).eq("id", data.id);
@@ -245,10 +249,205 @@ export const savePromoTemplate = createServerFn({ method: "POST" })
       qty: Number(it.qty ?? 1),
       multiplier: Number(it.multiplier ?? 1),
       price: Number(it.price ?? 0),
+      cost: Number(it.cost ?? 0),
       note: String(it.note ?? ""),
       exclude_from_commission: it.exclude_from_commission === true,
       sort_order: i,
     }));
     if (rows.length) await context.supabase.from("promo_quote_items").insert(rows);
     return { id };
+  });
+
+// ==== Библиотека блоков (сниппеты позиций) ====
+
+export type PromoSnippetRow = {
+  id: string;
+  name: string;
+  description: string;
+  section: string;
+  items: PromoItem[];
+  created_at: string;
+};
+
+export const listPromoSnippets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PromoSnippetRow[]> => {
+    await assertStaff(context as never);
+    const { data, error } = await context.supabase
+      .from("promo_item_snippets")
+      .select("id,name,description,section,items,created_at")
+      .order("name");
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+      id: String(r.id),
+      name: String(r.name ?? ""),
+      description: String(r.description ?? ""),
+      section: String(r.section ?? ""),
+      items: (Array.isArray(r.items) ? (r.items as Record<string, unknown>[]) : []).map(normalizePromoItem),
+      created_at: String(r.created_at ?? ""),
+    }));
+  });
+
+export const savePromoSnippet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { name: string; description?: string; section?: string; items: unknown[] }) =>
+    z
+      .object({
+        name: z.string().min(1).max(200),
+        description: z.string().max(500).default(""),
+        section: z.string().max(120).default(""),
+        items: z.array(promoItemSchema).min(1).max(100),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    await assertStaff(context as never);
+    const { data: created, error } = await context.supabase
+      .from("promo_item_snippets")
+      .insert({
+        name: data.name,
+        description: data.description,
+        section: data.section,
+        items: data.items,
+        created_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: (created as { id: string }).id };
+  });
+
+export const deletePromoSnippet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const { error } = await context.supabase.from("promo_item_snippets").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ==== История версий ====
+
+export type PromoVersionRow = { id: string; label: string; total: number; created_at: string };
+
+export const listPromoVersions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { quoteId: string }) => z.object({ quoteId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<PromoVersionRow[]> => {
+    await assertStaff(context as never);
+    const { data: rows, error } = await context.supabase
+      .from("promo_quote_versions")
+      .select("id,label,total,created_at")
+      .eq("quote_id", data.quoteId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as PromoVersionRow[];
+  });
+
+export const createPromoVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { quoteId: string; label?: string }) =>
+    z.object({ quoteId: z.string().uuid(), label: z.string().max(200).default("Снимок") }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    await assertStaff(context as never);
+    const [{ data: row }, { data: items }] = await Promise.all([
+      context.supabase.from("promo_quotes").select("*").eq("id", data.quoteId).maybeSingle(),
+      context.supabase.from("promo_quote_items").select("*").eq("quote_id", data.quoteId).order("sort_order"),
+    ]);
+    if (!row) throw new Error("Документ не найден");
+    const quote = normalizePromoQuote(row as Record<string, unknown>);
+    const list = ((items ?? []) as Record<string, unknown>[]).map(normalizePromoItem);
+    const totals = computePromoTotals(quote, list);
+    const { data: created, error } = await context.supabase
+      .from("promo_quote_versions")
+      .insert({
+        quote_id: data.quoteId,
+        label: data.label,
+        total: totals.totalWithVat,
+        snapshot: { quote, items: list },
+        created_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: (created as { id: string }).id };
+  });
+
+export const restorePromoVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { versionId: string }) => z.object({ versionId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const { data: v } = await context.supabase
+      .from("promo_quote_versions")
+      .select("quote_id,snapshot")
+      .eq("id", data.versionId)
+      .maybeSingle();
+    if (!v) throw new Error("Версия не найдена");
+    const row = v as { quote_id: string; snapshot: { quote: Record<string, unknown>; items: Record<string, unknown>[] } };
+    const snap = normalizePromoQuote(row.snapshot.quote ?? {});
+    const patch = promoQuotePatchSchema.parse({
+      status: snap.status,
+      project: snap.project,
+      client_name: snap.client_name,
+      period: snap.period,
+      venue: snap.venue,
+      contact_name: snap.contact_name,
+      contact_role: snap.contact_role,
+      contact_phone: snap.contact_phone,
+      contact_email: snap.contact_email,
+      logo_url: snap.logo_url,
+      client_logo_url: snap.client_logo_url,
+      accent_color: snap.accent_color,
+      show_qty: snap.show_qty,
+      show_total_qty: snap.show_total_qty,
+      show_notes: snap.show_notes,
+      vat_enabled: snap.vat_enabled,
+      vat_rate: snap.vat_rate,
+      commission_enabled: snap.commission_enabled,
+      commission_rate: snap.commission_rate,
+      commission_label: snap.commission_label,
+      management_enabled: snap.management_enabled,
+      management_amount: snap.management_amount,
+      management_label: snap.management_label,
+      discount_type: snap.discount_type,
+      discount_value: snap.discount_value,
+      valid_until: snap.valid_until,
+      currency: snap.currency,
+      footer_note: snap.footer_note,
+    });
+    await context.supabase.from("promo_quotes").update(patch).eq("id", row.quote_id);
+
+    await context.supabase.from("promo_quote_items").delete().eq("quote_id", row.quote_id);
+    const items = (row.snapshot.items ?? []).map(normalizePromoItem).map((it, i) => ({
+      quote_id: row.quote_id,
+      section: it.section,
+      title: it.title,
+      unit: it.unit,
+      qty: it.qty,
+      multiplier: it.multiplier,
+      price: it.price,
+      cost: it.cost,
+      note: it.note,
+      exclude_from_commission: it.exclude_from_commission,
+      sort_order: i,
+    }));
+    if (items.length) await context.supabase.from("promo_quote_items").insert(items);
+    return { ok: true };
+  });
+
+export const markPromoSent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const { error } = await context.supabase
+      .from("promo_quotes")
+      .update({ status: "sent", sent_at: new Date().toISOString() })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
