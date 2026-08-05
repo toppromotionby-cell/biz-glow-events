@@ -47,6 +47,8 @@ const CRUMBS: { match: RegExp; label: string }[] = [
   { match: /^\/admin\/calendar/, label: "Календарь" },
   { match: /^\/admin\/availability/, label: "Занятость" },
   { match: /^\/admin\/catalog/, label: "Наполнение" },
+  { match: /^\/admin\/documents\/quotes/, label: "Коммерческие предложения" },
+  { match: /^\/admin\/documents/, label: "Документы" },
   { match: /^\/admin\/cases/, label: "Кейсы" },
   { match: /^\/admin\/testimonials/, label: "Отзывы" },
   { match: /^\/admin\/blog/, label: "Блог" },
