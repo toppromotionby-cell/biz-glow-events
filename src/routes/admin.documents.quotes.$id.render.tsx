@@ -27,11 +27,14 @@ export const Route = createFileRoute("/admin/documents/quotes/$id/render")({
         if (new URL(request.url).searchParams.get("format") === "pdf") {
           const bytes = await buildStandaloneQuotePdf(quote, items, settings);
           const filename = quoteFileName(quote);
+          // ASCII-only fallback: HTTP-заголовки не принимают не-latin1 символы.
+          const asciiName =
+            filename.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "") || "quote.pdf";
           return new Response(bytes.slice(), {
             status: 200,
             headers: {
               "content-type": "application/pdf",
-              "content-disposition": `attachment; filename="${filename.replace(/["\\]/g, "")}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+              "content-disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
               "cache-control": "no-store",
             },
           });
