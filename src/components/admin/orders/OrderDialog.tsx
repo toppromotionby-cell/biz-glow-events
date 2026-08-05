@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { fmtDate, fmtDateTime } from "@/lib/formatters";
 import { displayOrderNumber } from "@/lib/order-number";
-import { openAuthedDocument } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { useOrderMutations } from "@/hooks/use-order-mutations";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { OrderHeader } from "./OrderHeader";
@@ -105,7 +105,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
 
   const openDoc = (kind: "quote" | "invoice" | "contract" | "act") => {
     if (!id) return;
-    openAuthedDocument(`/admin/orders/${id}/${kind}`).catch((e) => toast.error((e as Error).message));
+    viewer.openDocument(`/admin/orders/${id}/${kind}`);
   };
 
   return (

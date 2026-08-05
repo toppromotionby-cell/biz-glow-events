@@ -19,7 +19,7 @@ import {
 } from "@/lib/promo-quotes.functions";
 import { PROMO_PRESETS, PROMO_STATUS_LABELS, formatMoney, type PromoStatus } from "@/lib/promo-quote-model";
 import { fmtDate } from "@/lib/formatters";
-import { downloadAuthedFile } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 
 export const Route = createFileRoute("/admin/documents/promo/")({ component: Page });
 

@@ -28,7 +28,8 @@ import { OrderAssignee } from "@/components/admin/OrderAssignee";
 import { OrderPaymentDialog } from "@/components/admin/OrderPaymentDialog";
 import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
 import { OrderConflicts } from "@/components/admin/OrderConflicts";
-import { openAuthedDocument, openInlineBlob, base64ToBytes } from "@/lib/authed-fetch";
+import { base64ToBytes } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { notifyOrderStatus } from "@/lib/order-notifications.functions";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/order-status";
@@ -246,7 +247,7 @@ function OrderDetail() {
                 {loadPreview.isPending ? "Загрузка…" : "Предпросмотр письма"}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => openAuthedDocument(`/admin/orders/${order.id}/quote`).catch((e) => toast.error((e as Error).message))}
+                onClick={() => viewer.openDocument(`/admin/orders/${order.id}/quote`, { name: "КП.html" })}
               >
                 <Download className="h-4 w-4 mr-2" />Скачать КП
               </DropdownMenuItem>
@@ -491,7 +492,7 @@ function OrderDetail() {
                     <button
                       type="button"
                       onClick={() =>
-                        openAuthedDocument(`/admin/orders/${order.id}/${kind}`).catch((e) =>
+                        viewer.openDocument(`/admin/orders/${order.id}/${kind}`).catch((e) =>
                           toast.error((e as Error).message),
                         )
                       }
@@ -556,8 +557,7 @@ function OrderDetail() {
                   <button
                     type="button"
                     onClick={() => {
-                      try { openInlineBlob(emailPreview.html, "text/html;charset=utf-8"); }
-                      catch (e) { toast.error((e as Error).message); }
+                      viewer.openBlob(emailPreview.html, "text/html;charset=utf-8", "Письмо.html");
                     }}
                     className="text-primary hover:underline"
                   >Открыть на полной странице ↗</button>
@@ -577,8 +577,7 @@ function OrderDetail() {
                       <button
                         type="button"
                         onClick={() => {
-                          try { openInlineBlob(base64ToBytes(a.base64), "application/pdf"); }
-                          catch (e) { toast.error((e as Error).message); }
+                          viewer.openBlob(base64ToBytes(a.base64), "application/pdf", a.filename);
                         }}
                         className="text-primary hover:underline"
                       >Открыть на полной странице ↗</button>
