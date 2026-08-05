@@ -297,3 +297,72 @@ export const getQuoteDocSettings = createServerFn({ method: "GET" })
     const { loadDocumentSettings } = await import("@/lib/documents/render.server");
     return await loadDocumentSettings(supabaseAdmin as never);
   });
+
+// --- Библиотека переиспользуемых блоков (сниппетов) ---
+const snippetSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1, "Укажите название").max(160),
+  description: z.string().max(300).default(""),
+  block_type: z.string().max(40).default("text"),
+  title: z.string().max(160).default(""),
+  content: z.string().max(5000).default(""),
+  condition: z.string().max(40).default("always"),
+});
+
+export type QuoteSnippetRow = {
+  id: string;
+  name: string;
+  description: string;
+  block_type: string;
+  title: string;
+  content: string;
+  condition: string;
+  created_at: string;
+};
+
+export const listQuoteSnippets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<QuoteSnippetRow[]> => {
+    await assertStaff(context as never);
+    const { data, error } = await context.supabase
+      .from("quote_block_snippets")
+      .select("id,name,description,block_type,title,content,condition,created_at")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as QuoteSnippetRow[];
+  });
+
+export const saveQuoteSnippet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => snippetSchema.parse(d))
+  .handler(async ({ data, context }): Promise<QuoteSnippetRow> => {
+    await assertStaff(context as never);
+    const payload = {
+      name: data.name,
+      description: data.description,
+      block_type: data.block_type,
+      title: data.title,
+      content: data.content,
+      condition: data.condition,
+    };
+    const q = data.id
+      ? context.supabase.from("quote_block_snippets").update(payload).eq("id", data.id)
+      : context.supabase.from("quote_block_snippets").insert({ ...payload, created_by: context.userId });
+    const { data: row, error } = await q
+      .select("id,name,description,block_type,title,content,condition,created_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return row as QuoteSnippetRow;
+  });
+
+export const deleteQuoteSnippet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertStaff(context as never);
+    const { error } = await context.supabase.from("quote_block_snippets").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

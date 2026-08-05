@@ -7,9 +7,14 @@ import { computeTotals, amountToWords } from "@/lib/quotes-model";
 import {
   applyPlaceholders,
   defaultBlocksForTemplate,
+  evaluateBlockCondition,
+  QUOTE_VAT_RATE,
+  type NumericMap,
   type PlaceholderMap,
   type QuoteBlock,
+  type QuoteConditionContext,
 } from "@/lib/quote-blocks";
+
 
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -86,6 +91,26 @@ export function quoteValidUntil(quote: Quote): string {
   return fmtDate(d.toISOString().slice(0, 10));
 }
 
+/** Числовые значения для формул {{= ... }}. */
+export function buildNumericValues(quote: Quote, items: QuoteItem[]): NumericMap {
+  const t = computeTotals(quote, items);
+  const vat = (t.total * QUOTE_VAT_RATE) / 100;
+  return {
+    subtotal: t.subtotal,
+    discount: t.discount,
+    delivery: t.delivery,
+    total: t.total,
+    prepayment: t.prepayment,
+    advance: t.prepayment,
+    balance: t.balance,
+    vat_rate: QUOTE_VAT_RATE,
+    vat_amount: vat,
+    total_with_vat: t.total + vat,
+    items_count: items.length,
+    items_qty: items.reduce((s, it) => s + Number(it.qty || 0), 0),
+  };
+}
+
 /** Значения плейсхолдеров {{...}} для настраиваемых блоков. */
 export function buildPlaceholderValues(
   quote: Quote,
@@ -94,6 +119,7 @@ export function buildPlaceholderValues(
 ): PlaceholderMap {
   const c = quoteCompany(quote, settings);
   const t = computeTotals(quote, items);
+  const n = buildNumericValues(quote, items);
   return {
     client_name: quote.client_name || "",
     client_company: quote.client_company || "",
@@ -112,7 +138,13 @@ export function buildPlaceholderValues(
     total: money(t.total),
     total_words: amountToWords(t.total),
     prepayment: money(t.prepayment),
+    advance: money(t.prepayment),
     balance: money(t.balance),
+    vat_rate: String(QUOTE_VAT_RATE),
+    vat_amount: money(n.vat_amount ?? 0),
+    total_with_vat: money(n.total_with_vat ?? 0),
+    items_count: String(items.length),
+    items_qty: String(n.items_qty ?? 0),
     quote_number: quoteNumberDisplay(quote),
     doc_date: fmtDate(quote.doc_date),
     valid_until: quoteValidUntil(quote),
@@ -132,14 +164,54 @@ export function buildPlaceholderValues(
   };
 }
 
-/** Эффективный список блоков документа (учитывает шаблон и включённость). */
-export function effectiveBlocks(quote: Quote): QuoteBlock[] {
+/** Контекст для условных блоков: какие данные фактически заполнены. */
+export function buildConditionContext(
+  quote: Quote,
+  items: QuoteItem[],
+  settings: DocumentSettings,
+): Partial<QuoteConditionContext> {
+  const t = computeTotals(quote, items);
+  const c = quoteCompany(quote, settings);
+  return {
+    always: true,
+    has_items: items.length > 0,
+    has_discount: t.discount > 0,
+    has_delivery: t.delivery > 0,
+    has_prepayment: t.prepayment > 0,
+    has_requisites: Boolean((c.bank_account || "").trim() || (c.unp || "").trim()),
+    has_event_date: Boolean(quote.event_date),
+    has_venue: Boolean((quote.venue || "").trim()),
+    has_client_company: Boolean((quote.client_company || "").trim()),
+  };
+}
+
+/**
+ * Эффективный список блоков документа: учитывает шаблон, ручной тумблер
+ * и условия автопоказа (блок скрывается, если по данным он пустой).
+ */
+export function effectiveBlocks(
+  quote: Quote,
+  items: QuoteItem[] = [],
+  settings?: DocumentSettings,
+): QuoteBlock[] {
   const list = quote.blocks?.length ? quote.blocks : defaultBlocksForTemplate(quote.template ?? "classic");
-  return list.filter((b) => b.enabled);
+  const ctx = settings ? buildConditionContext(quote, items, settings) : { always: true };
+  const map = settings ? buildPlaceholderValues(quote, items, settings) : {};
+  const numbers = buildNumericValues(quote, items);
+  return list.filter((b) => {
+    if (!b.enabled) return false;
+    const hasContent = Boolean(blockText(b, quote, map, numbers).trim());
+    return evaluateBlockCondition(b.condition, ctx, hasContent);
+  });
 }
 
 /** Содержимое блока с учётом плейсхолдеров и запасного текста из quote.texts. */
-export function blockText(block: QuoteBlock, quote: Quote, map: PlaceholderMap): string {
+export function blockText(
+  block: QuoteBlock,
+  quote: Quote,
+  map: PlaceholderMap,
+  numbers: NumericMap = {},
+): string {
   const fallback: Partial<Record<QuoteBlock["type"], string>> = {
     cover: quote.texts.intro,
     included: quote.texts.included,
@@ -148,8 +220,9 @@ export function blockText(block: QuoteBlock, quote: Quote, map: PlaceholderMap):
     terms: quote.texts.terms,
   };
   const raw = (block.content?.trim() ? block.content : (fallback[block.type] ?? "")) || "";
-  return applyPlaceholders(raw, map);
+  return applyPlaceholders(raw, map, numbers);
 }
+
 
 function templateVars(template: string): string {
   if (template === "minimal") {
@@ -169,6 +242,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   const validUntil = quoteValidUntil(quote);
   const template = quote.template ?? "classic";
   const map = buildPlaceholderValues(quote, items, settings);
+  const numbers = buildNumericValues(quote, items);
 
   const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
   const sections = new Map<string, QuoteItem[]>();
@@ -211,11 +285,11 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   const heading = (b: QuoteBlock) => `<h2 class="section">${esc(b.title || "")}</h2>`;
 
   const renderBlock = (b: QuoteBlock): string => {
-    const text = blockText(b, quote, map);
+    const text = blockText(b, quote, map, numbers);
     switch (b.type) {
       case "cover":
         return `<div class="cover ${template === "premium" ? "cover-dark" : ""}">
-          <h1>${esc(applyPlaceholders(quote.title || "Предложение по организации мероприятия", map))}</h1>
+          <h1>${esc(applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers))}</h1>
           ${text ? `<p>${esc(text)}</p>` : ""}
         </div>`;
       case "client":
@@ -302,7 +376,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   if (!quote.design.show_requisites) hidden.add("requisites");
   if (!quote.design.show_signature) hidden.add("signature");
 
-  const bodyHtml = effectiveBlocks(quote)
+  const bodyHtml = effectiveBlocks(quote, items, settings)
     .filter((b) => !hidden.has(b.type))
     .map(renderBlock)
     .join("\n");
@@ -385,7 +459,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   ${bodyHtml}
 
   <div class="footer">
-    ${esc(applyPlaceholders(quote.texts.footer || settings.quote_footer, map))}
+    ${esc(applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers))}
     <div style="margin-top:4px;">${esc(c.legal)} · ${esc(c.phone)} · ${esc(c.email)} · ${esc(c.website)}</div>
   </div>
 </div></body></html>`;
