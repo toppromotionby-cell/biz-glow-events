@@ -112,7 +112,7 @@ function EditorPage() {
       setSavedAt(new Date());
       setDirty(false);
     },
-    onError: (e: Error) => toast.error(`Не сохранено: ${e.message}`),
+    onError: (e: Error) => toast.error(`Не сохранено: ${friendlyZodMessage(e)}`),
   });
 
   const scheduleSave = useCallback((q: PromoQuote, list: PromoItem[]) => {
