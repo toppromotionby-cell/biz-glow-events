@@ -116,9 +116,16 @@
     "vite": "^7.3.1",
     "vitest": "^4.1.7"
   },
+  "overrides": {
+    "seroval": "^1.5.3"
+  },
+  "resolutions": {
+    "seroval": "^1.5.3"
+  },
   "pnpm": {
     "overrides": {
-      "entities": "4.5.0"
+      "entities": "4.5.0",
+      "seroval": "^1.5.3"
     }
   }
 }
