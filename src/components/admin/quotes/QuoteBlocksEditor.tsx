@@ -103,6 +103,8 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
   });
 
   const list = blocks?.length ? blocks : defaultBlocksForTemplate(template);
+  const errorCount = list.filter((b) => blockErrors[b.id]).length;
+
 
   const update = (id: string, patch: Partial<QuoteBlock>) =>
     onChange({ blocks: list.map((b) => (b.id === id ? { ...b, ...patch } : b)) });
