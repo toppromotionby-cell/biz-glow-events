@@ -1536,8 +1536,10 @@ export type Database = {
           public_token: string
           responded_at: string | null
           sent_at: string | null
+          show_item_includes: boolean
           show_notes: boolean
           show_qty: boolean
+          show_section_subtotals: boolean
           show_total_qty: boolean
           status: string
           template_name: string
@@ -1580,8 +1582,10 @@ export type Database = {
           public_token?: string
           responded_at?: string | null
           sent_at?: string | null
+          show_item_includes?: boolean
           show_notes?: boolean
           show_qty?: boolean
+          show_section_subtotals?: boolean
           show_total_qty?: boolean
           status?: string
           template_name?: string
@@ -1624,8 +1628,10 @@ export type Database = {
           public_token?: string
           responded_at?: string | null
           sent_at?: string | null
+          show_item_includes?: boolean
           show_notes?: boolean
           show_qty?: boolean
+          show_section_subtotals?: boolean
           show_total_qty?: boolean
           status?: string
           template_name?: string

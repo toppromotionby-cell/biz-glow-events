@@ -1,6 +1,8 @@
 // Таблица позиций промо-КП: секции, drag-n-drop, подытоги, быстрые действия.
 import { useMemo, useState } from "react";
-import { Copy, Plus, Trash2, MoreHorizontal, ChevronDown, ChevronRight, Bookmark } from "lucide-react";
+import {
+  Copy, Plus, Trash2, MoreHorizontal, ChevronDown, ChevronRight, ChevronUp, Bookmark, ListChecks, FolderInput,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,11 +10,18 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SortableList } from "@/components/admin/SortableList";
 import {
-  formatMoney, lineCost, lineQty, lineTotal, newPromoItem, PROMO_SECTION_SUGGESTIONS,
-  type PromoItem,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { SortableList } from "@/components/admin/SortableList";
+import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
+import {
+  duplicatePromoSection, formatMoney, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
+  movePromoSection, newPromoItem, removePromoSection, renamePromoSection, PROMO_NO_SECTION,
+  PROMO_SECTION_SUGGESTIONS, type PromoItem,
 } from "@/lib/promo-quote-model";
 
 type Props = {
@@ -26,17 +35,20 @@ type Props = {
 
 export function PromoItemsTable({ items, currency, showCost, showNotes, onChange, onSaveSectionAsSnippet }: Props) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [includesFor, setIncludesFor] = useState<PromoItem | null>(null);
+  const [deleteSection, setDeleteSection] = useState<string | null>(null);
 
-  const sections = useMemo(() => {
-    const map = new Map<string, PromoItem[]>();
-    for (const it of items) {
-      const key = it.section.trim();
-      const arr = map.get(key);
-      if (arr) arr.push(it);
-      else map.set(key, [it]);
-    }
-    return [...map.entries()].map(([name, list]) => ({ name, list }));
-  }, [items]);
+  const sectionNames = useMemo(() => listPromoSections(items), [items]);
+  const sections = useMemo(
+    () =>
+      sectionNames.map((name) => ({
+        name,
+        list: [...items]
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .filter((it) => (it.section ?? "").trim() === name),
+      })),
+    [items, sectionNames],
+  );
 
   const replace = (id: string, patch: Partial<PromoItem>) =>
     onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
@@ -46,22 +58,27 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const duplicate = (id: string) => {
     const idx = items.findIndex((it) => it.id === id);
     if (idx < 0) return;
-    const copy = { ...items[idx], id: crypto.randomUUID() };
-    onChange([...items.slice(0, idx + 1), copy, ...items.slice(idx + 1)]);
+    const src = items[idx]!;
+    const copy = { ...src, id: crypto.randomUUID(), includes: src.includes.map((x) => ({ ...x })) };
+    onChange([...items.slice(0, idx + 1), copy, ...items.slice(idx + 1)].map((it, i) => ({ ...it, sort_order: i })));
   };
 
-  const addRow = (section: string) => onChange([...items, newPromoItem(section)]);
+  const addRow = (section: string) =>
+    onChange([...items, newPromoItem(section, { sort_order: items.length })]);
 
-  const renameSection = (from: string, to: string) =>
-    onChange(items.map((it) => (it.section.trim() === from ? { ...it, section: to } : it)));
-
-  const removeSection = (name: string) => onChange(items.filter((it) => it.section.trim() !== name));
+  const addSection = () => {
+    const base = "Новый раздел";
+    let name = base;
+    let n = 2;
+    while (sectionNames.includes(name)) name = `${base} ${n++}`;
+    onChange([...items, newPromoItem(name, { sort_order: items.length })]);
+  };
 
   const reorderSection = (name: string, orderedIds: string[]) => {
-    const inSection = new Map(items.filter((it) => it.section.trim() === name).map((it) => [it.id, it]));
+    const inSection = new Map(items.filter((it) => (it.section ?? "").trim() === name).map((it) => [it.id, it]));
     const ordered = orderedIds.map((id) => inSection.get(id)).filter(Boolean) as PromoItem[];
     let cursor = 0;
-    onChange(items.map((it) => (it.section.trim() === name ? ordered[cursor++] ?? it : it)));
+    onChange(items.map((it) => ((it.section ?? "").trim() === name ? ordered[cursor++] ?? it : it)));
   };
 
   return (
@@ -72,7 +89,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
         </div>
       )}
 
-      {sections.map(({ name, list }) => {
+      {sections.map(({ name, list }, secIdx) => {
         const sum = list.reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[name];
         return (
@@ -89,7 +106,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
               </Button>
               <Input
                 value={name}
-                onChange={(e) => renameSection(name, e.target.value)}
+                onChange={(e) => onChange(renamePromoSection(items, name, e.target.value))}
                 placeholder="Название раздела"
                 list="promo-section-suggestions"
                 className="h-8 max-w-[280px] border-transparent bg-transparent font-medium focus-visible:border-input"
@@ -106,13 +123,25 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                   <DropdownMenuItem onClick={() => addRow(name)}>
                     <Plus className="mr-2 h-4 w-4" />Добавить строку
                   </DropdownMenuItem>
+                  <DropdownMenuItem disabled={secIdx === 0} onClick={() => onChange(movePromoSection(items, name, -1))}>
+                    <ChevronUp className="mr-2 h-4 w-4" />Раздел выше
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={secIdx === sections.length - 1}
+                    onClick={() => onChange(movePromoSection(items, name, 1))}
+                  >
+                    <ChevronDown className="mr-2 h-4 w-4" />Раздел ниже
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onChange(duplicatePromoSection(items, name))}>
+                    <Copy className="mr-2 h-4 w-4" />Дублировать раздел
+                  </DropdownMenuItem>
                   {onSaveSectionAsSnippet && (
                     <DropdownMenuItem onClick={() => onSaveSectionAsSnippet(name, list)}>
                       <Bookmark className="mr-2 h-4 w-4" />Сохранить как блок
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive" onClick={() => removeSection(name)}>
+                  <DropdownMenuItem className="text-destructive" onClick={() => setDeleteSection(name)}>
                     <Trash2 className="mr-2 h-4 w-4" />Удалить раздел
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -147,6 +176,15 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                             </span>
                           )}
                         </div>
+                        <Button
+                          size="sm"
+                          variant={it.includes.length ? "secondary" : "ghost"}
+                          className="h-9"
+                          onClick={() => setIncludesFor(it)}
+                        >
+                          <ListChecks className="mr-1 h-4 w-4" />
+                          Состав{it.includes.length ? ` (${it.includes.length})` : ""}
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button size="icon" variant="ghost" className="h-9 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -155,6 +193,28 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                             <DropdownMenuItem onClick={() => duplicate(it.id)}>
                               <Copy className="mr-2 h-4 w-4" />Дублировать
                             </DropdownMenuItem>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <FolderInput className="mr-2 h-4 w-4" />Перенести в раздел
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                {sectionNames
+                                  .filter((s) => s !== name)
+                                  .map((s) => (
+                                    <DropdownMenuItem
+                                      key={s || "__none"}
+                                      onClick={() => onChange(movePromoItemToSection(items, it.id, s))}
+                                    >
+                                      {s || PROMO_NO_SECTION}
+                                    </DropdownMenuItem>
+                                  ))}
+                                {PROMO_SECTION_SUGGESTIONS.filter((s) => !sectionNames.includes(s)).map((s) => (
+                                  <DropdownMenuItem key={`new-${s}`} onClick={() => onChange(movePromoItemToSection(items, it.id, s))}>
+                                    + {s}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => removeItem(it.id)}>
                               <Trash2 className="mr-2 h-4 w-4" />Удалить
@@ -183,6 +243,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                         )}
                         <span className="pb-2 text-[11px] text-muted-foreground">всего: {lineQty(it)}</span>
                       </div>
+
+                      {it.includes.length > 0 && (
+                        <ul className="ml-7 mt-1 list-disc pl-4 text-[11px] text-muted-foreground">
+                          {it.includes.map((inc, i) => (
+                            <li key={i}>{inc.text}{inc.note ? ` — ${inc.note}` : ""}</li>
+                          ))}
+                        </ul>
+                      )}
 
                       <div className="ml-7 mt-1 flex flex-wrap items-center gap-3">
                         {showNotes && (
@@ -214,6 +282,54 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
         );
       })}
 
+      <Button variant="outline" size="sm" onClick={addSection}>
+        <Plus className="mr-1.5 h-4 w-4" />Добавить раздел
+      </Button>
+
+      {includesFor && (
+        <QuoteItemIncludesEditor
+          open
+          onOpenChange={(v) => !v && setIncludesFor(null)}
+          title={includesFor.title}
+          value={includesFor.includes}
+          onSave={(next) => {
+            replace(includesFor.id, { includes: next });
+            setIncludesFor(null);
+          }}
+        />
+      )}
+
+      <AlertDialog open={deleteSection !== null} onOpenChange={(v) => !v && setDeleteSection(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить раздел «{deleteSection || PROMO_NO_SECTION}»?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Позиции раздела можно удалить вместе с ним или перенести в «{PROMO_NO_SECTION}».
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteSection !== null) onChange(removePromoSection(items, deleteSection, "keep"));
+                setDeleteSection(null);
+              }}
+            >
+              Перенести позиции
+            </AlertDialogAction>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteSection !== null) onChange(removePromoSection(items, deleteSection, "items"));
+                setDeleteSection(null);
+              }}
+            >
+              Удалить с позициями
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <datalist id="promo-section-suggestions">
         {PROMO_SECTION_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
       </datalist>
@@ -229,4 +345,3 @@ function Mini({ label, width, children }: { label: string; width: string; childr
     </div>
   );
 }
-

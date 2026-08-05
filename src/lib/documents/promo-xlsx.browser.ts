@@ -4,6 +4,7 @@ import {
   computePromoTotals,
   groupBySection,
   lineQty,
+  lineTotal,
   promoFileName,
   promoNumberDisplay,
   type PromoItem,
@@ -95,8 +96,12 @@ export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]
       r.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE7E7EA" } };
     }
     for (const it of sec.items) {
+      const incText =
+        quote.show_item_includes && it.includes.length
+          ? "\n" + it.includes.map((x) => `• ${x.text}${x.note ? ` — ${x.note}` : ""}`).join("\n")
+          : "";
       const values: Record<ColKey, unknown> = {
-        title: it.title,
+        title: `${it.title}${incText}`,
         unit: it.unit,
         qty: it.qty,
         total_qty: lineQty(it),
@@ -127,6 +132,13 @@ export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]
         row.getCell(cols.findIndex((c) => c.key === "total_qty") + 1).alignment = { horizontal: "center" };
       row.getCell(cols.findIndex((c) => c.key === "price") + 1).numFmt = NUM_FMT;
       sumCell.numFmt = NUM_FMT;
+    }
+    if (quote.show_section_subtotals && sec.name && sec.items.length > 1) {
+      const r = ws.addRow(cols.map((c) => (c.key === "title" ? `Итого по разделу «${sec.name}»` : "")));
+      const cell = r.getCell(cols.findIndex((c) => c.key === "sum") + 1);
+      cell.value = sec.items.reduce((acc, it) => acc + lineTotal(it), 0);
+      cell.numFmt = NUM_FMT;
+      r.font = { bold: true };
     }
   }
 

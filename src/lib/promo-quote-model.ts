@@ -1,6 +1,10 @@
 // Модель промо-КП (раздел «Документы → КП промо»).
 // Browser-safe: используется формой, live-превью, PDF и XLSX — одна логика расчётов.
 import { z } from "zod";
+import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
+
+export { normalizeIncludes };
+export type { QuoteItemInclude };
 
 export const PROMO_STATUSES = ["draft", "sent", "accepted", "rejected"] as const;
 export type PromoStatus = (typeof PROMO_STATUSES)[number];
@@ -35,6 +39,8 @@ export type PromoQuote = {
   show_qty: boolean;
   show_total_qty: boolean;
   show_notes: boolean;
+  show_item_includes: boolean;
+  show_section_subtotals: boolean;
   vat_enabled: boolean;
   vat_rate: number;
   commission_enabled: boolean;
@@ -72,6 +78,7 @@ export type PromoItem = {
   price: number;
   cost: number;
   note: string;
+  includes: QuoteItemInclude[];
   exclude_from_commission: boolean;
   sort_order: number;
 };
@@ -104,6 +111,8 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     show_qty: row.show_qty !== false,
     show_total_qty: row.show_total_qty !== false,
     show_notes: row.show_notes !== false,
+    show_item_includes: row.show_item_includes !== false,
+    show_section_subtotals: row.show_section_subtotals !== false,
     vat_enabled: row.vat_enabled !== false,
     vat_rate: num(row.vat_rate, 20),
     commission_enabled: row.commission_enabled !== false,
@@ -145,6 +154,7 @@ export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
     price: num(row.price),
     cost: num(row.cost),
     note: str(row.note),
+    includes: normalizeIncludes(row.includes),
     exclude_from_commission: row.exclude_from_commission === true,
     sort_order: num(row.sort_order),
   };
@@ -163,6 +173,10 @@ export const promoItemSchema = z.object({
   price: z.number().min(0).max(100000000).default(0),
   cost: z.number().min(0).max(100000000).default(0),
   note: z.string().max(2000).default(""),
+  includes: z
+    .array(z.object({ text: z.string().max(300).default(""), note: z.string().max(300).default("") }))
+    .max(60)
+    .default([]),
   exclude_from_commission: z.boolean().default(false),
   sort_order: z.number().int().min(0).max(10000).default(0),
 });
@@ -184,6 +198,8 @@ export const promoQuotePatchSchema = z
     show_qty: z.boolean(),
     show_total_qty: z.boolean(),
     show_notes: z.boolean(),
+    show_item_includes: z.boolean(),
+    show_section_subtotals: z.boolean(),
     vat_enabled: z.boolean(),
     vat_rate: z.number().min(0).max(100),
     commission_enabled: z.boolean(),
@@ -327,6 +343,7 @@ export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): Prom
     price: 0,
     cost: 0,
     note: "",
+    includes: [],
     exclude_from_commission: false,
     sort_order: 0,
     ...patch,
@@ -370,6 +387,79 @@ export function groupBySection(items: PromoItem[]): PromoSection[] {
     else out.push({ name, items: [it] });
   }
   return out;
+}
+
+export const PROMO_NO_SECTION = "Без раздела";
+
+const reindexPromo = (items: PromoItem[]): PromoItem[] => items.map((it, i) => ({ ...it, sort_order: i }));
+const secKey = (it: PromoItem) => (it.section ?? "").trim();
+
+/** Список разделов в порядке появления. */
+export function listPromoSections(items: PromoItem[]): string[] {
+  const out: string[] = [];
+  for (const it of [...items].sort((a, b) => a.sort_order - b.sort_order)) {
+    const key = secKey(it);
+    if (!out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
+/** Пересобрать позиции в заданном порядке разделов. */
+export function orderPromoBySections(items: PromoItem[], order: string[]): PromoItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const out: PromoItem[] = [];
+  for (const section of order) out.push(...sorted.filter((it) => secKey(it) === section));
+  for (const it of sorted) if (!out.includes(it)) out.push(it);
+  return reindexPromo(out);
+}
+
+export function renamePromoSection(items: PromoItem[], from: string, to: string): PromoItem[] {
+  return items.map((it) => (secKey(it) === from ? { ...it, section: to } : it));
+}
+
+export function movePromoSection(items: PromoItem[], section: string, dir: -1 | 1): PromoItem[] {
+  const order = listPromoSections(items);
+  const i = order.indexOf(section);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= order.length) return items;
+  const next = [...order];
+  next[i] = order[j]!;
+  next[j] = order[i]!;
+  return orderPromoBySections(items, next);
+}
+
+/** Удалить раздел: вместе с позициями или с переносом их в «без раздела». */
+export function removePromoSection(items: PromoItem[], section: string, mode: "items" | "keep"): PromoItem[] {
+  const next =
+    mode === "items"
+      ? items.filter((it) => secKey(it) !== section)
+      : items.map((it) => (secKey(it) === section ? { ...it, section: "" } : it));
+  return reindexPromo([...next].sort((a, b) => a.sort_order - b.sort_order));
+}
+
+export function duplicatePromoSection(items: PromoItem[], section: string): PromoItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const copies = sorted
+    .filter((it) => secKey(it) === section)
+    .map((it) => ({
+      ...it,
+      id: globalThis.crypto?.randomUUID?.() ?? `tmp-${Math.random()}`,
+      section: `${section || PROMO_NO_SECTION} (копия)`,
+      includes: it.includes.map((x) => ({ ...x })),
+    }));
+  return reindexPromo([...sorted, ...copies]);
+}
+
+/** Перенести позицию в другой раздел (в конец этого раздела). */
+export function movePromoItemToSection(items: PromoItem[], id: string, section: string): PromoItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const item = sorted.find((it) => it.id === id);
+  if (!item) return items;
+  const rest = sorted.filter((it) => it.id !== id);
+  const moved = { ...item, section };
+  const lastIdx = rest.map((it) => secKey(it)).lastIndexOf(section.trim());
+  const out = lastIdx >= 0 ? [...rest.slice(0, lastIdx + 1), moved, ...rest.slice(lastIdx + 1)] : [...rest, moved];
+  return reindexPromo(out);
 }
 
 export function promoNumberDisplay(q: PromoQuote): string {

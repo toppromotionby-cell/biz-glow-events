@@ -479,6 +479,10 @@ function EditorPage() {
                 <Switch checked={quote.show_total_qty} onCheckedChange={(v) => patchQuote({ show_total_qty: v })} /></Row>
               <Row><span>Колонка «Примечания»</span>
                 <Switch checked={quote.show_notes} onCheckedChange={(v) => patchQuote({ show_notes: v })} /></Row>
+              <Row><span className="flex items-center gap-1">Состав позиций <Hint text="Показывать в документе список «что входит» под названием позиции." /></span>
+                <Switch checked={quote.show_item_includes} onCheckedChange={(v) => patchQuote({ show_item_includes: v })} /></Row>
+              <Row><span className="flex items-center gap-1">Подытоги разделов <Hint text="Строка «Итого по разделу» после позиций раздела." /></span>
+                <Switch checked={quote.show_section_subtotals} onCheckedChange={(v) => patchQuote({ show_section_subtotals: v })} /></Row>
               <Field label="Акцентный цвет">
                 <Input type="color" value={quote.accent_color} onChange={(e) => patchQuote({ accent_color: e.target.value })} className="h-10 w-20 p-1" />
               </Field>
