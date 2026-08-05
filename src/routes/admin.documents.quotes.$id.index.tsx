@@ -20,6 +20,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
 import { Field } from "@/components/admin/Field";
+import { BRAND_ACCENTS } from "@/lib/documents/brand";
+
 import {
   getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
   listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
