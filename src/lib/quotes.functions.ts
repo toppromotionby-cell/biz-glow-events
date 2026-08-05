@@ -547,3 +547,130 @@ export const markQuoteSent = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, sent_at: sentAt };
   });
+
+/** Публичная ссылка на КП (для клиента). */
+function publicQuoteUrl(token: string): string {
+  const site = (process.env["PUBLIC_SITE_URL"] ?? "https://event-hub.by").replace(/\/+$/, "");
+  return `${site}/kp/${token}`;
+}
+
+/** Отправить КП клиенту: письмо со ссылкой и PDF-вложением. */
+export const sendQuoteToClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; email?: string; note?: string; attachPdf?: boolean }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        email: z.string().email().max(200).optional(),
+        note: z.string().max(2000).optional(),
+        attachPdf: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true; to: string; url: string }> => {
+    await assertStaff(context as never);
+
+    const [{ data: row }, { data: itemRows }] = await Promise.all([
+      context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from("quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
+    ]);
+    if (!row) throw new Error("КП не найдено");
+    const quote = normalizeQuote(row as Record<string, unknown>);
+    const items = ((itemRows ?? []) as Record<string, unknown>[]).map(normalizeItem);
+
+    const to = (data.email ?? quote.client_email ?? "").trim();
+    if (!to) throw new Error("Не указан e-mail клиента");
+
+    const { sendQuoteShareEmail } = await import("@/lib/admin-email.server");
+    const { loadDocumentSettings } = await import("@/lib/documents/render.server");
+    const { buildStandaloneQuotePdf } = await import("@/lib/documents/pdf.server");
+    const { quoteNumberDisplay, quoteValidUntil, quoteFileName } = await import("@/lib/documents/quote-html");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let pdf: { filename: string; bytes: Uint8Array } | null = null;
+    if (data.attachPdf !== false) {
+      try {
+        const settings = await loadDocumentSettings(supabaseAdmin as never);
+        pdf = { filename: quoteFileName(quote), bytes: await buildStandaloneQuotePdf(quote, items, settings) };
+      } catch {
+        pdf = null;
+      }
+    }
+
+    const url = publicQuoteUrl(quote.public_token);
+    const res = await sendQuoteShareEmail({
+      to,
+      clientName: quote.client_name,
+      docTitle: "Коммерческое предложение",
+      docNumber: quoteNumberDisplay(quote),
+      url,
+      total: computeTotals(quote, items).total,
+      validUntil: quoteValidUntil(quote),
+      managerNote: data.note ?? "",
+      pdf,
+    });
+    if (!res.ok) throw new Error(res.error ?? "Не удалось отправить письмо");
+
+    await context.supabase
+      .from("quotes")
+      .update({ sent_at: new Date().toISOString(), status: quote.status === "draft" ? "sent" : quote.status })
+      .eq("id", data.id);
+
+    return { ok: true, to, url };
+  });
+
+/** Создать заказ на основе согласованного КП. */
+export const createOrderFromQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ orderId: string }> => {
+    await assertStaff(context as never);
+
+    const [{ data: row }, { data: itemRows }] = await Promise.all([
+      context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from("quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
+    ]);
+    if (!row) throw new Error("КП не найдено");
+    const quote = normalizeQuote(row as Record<string, unknown>);
+    if (quote.order_id) return { orderId: quote.order_id };
+
+    const items = ((itemRows ?? []) as Record<string, unknown>[]).map(normalizeItem);
+    const total = computeTotals(quote, items).total;
+
+    const { data: order, error } = await context.supabase
+      .from("orders")
+      .insert({
+        client_name: quote.client_name || "Без имени",
+        client_phone: quote.client_phone || "—",
+        client_email: quote.client_email || "—",
+        client_company: quote.client_company || null,
+        event_date: quote.event_date,
+        status: "confirmed",
+        total,
+        source: "quote",
+        manager_id: context.userId,
+        notes: quote.event_notes || null,
+        internal_notes: `Создан из КП ${quote.quote_number ?? quote.id.slice(0, 8)}`,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    const orderId = (order as { id: string }).id;
+
+    if (items.length) {
+      const rows = items.map((it) => ({
+        order_id: orderId,
+        entity_type: it.entity_type ?? "custom",
+        entity_id: it.entity_id ?? null,
+        title: it.title,
+        qty: Math.max(1, Math.round(it.qty)),
+        price: it.price,
+        start_date: quote.event_date,
+        end_date: quote.event_date,
+      }));
+      await context.supabase.from("order_items").insert(rows as never);
+    }
+
+    await context.supabase.from("quotes").update({ order_id: orderId }).eq("id", data.id);
+    return { orderId };
+  });
