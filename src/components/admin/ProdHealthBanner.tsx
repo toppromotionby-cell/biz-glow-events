@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, ExternalLink, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, RefreshCw, WifiOff } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { getProdHealth, PROD_URL } from "@/lib/prod-health.functions";
 
 type Check = { path: string; status: number; ms: number; ok: boolean; error?: string };
 type HealthData = {
+  reachable?: boolean;
   ok: boolean;
   status: number;
   ms: number;
@@ -13,21 +16,21 @@ type HealthData = {
   failedCount?: number;
 };
 
-const PROD_URL = "https://event-hub.by";
 const POLL_MS = 60_000;
 
 export function ProdHealthBanner() {
   const [data, setData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(false);
+  const fetchHealth = useServerFn(getProdHealth);
 
   async function check() {
     setLoading(true);
     try {
-      const res = await fetch(`${PROD_URL}/api/public/health`, { cache: "no-store" });
-      const json = (await res.json()) as HealthData;
+      const json = (await fetchHealth({})) as unknown as HealthData;
       setData(json);
     } catch (err) {
       setData({
+        reachable: false,
         ok: false,
         status: 0,
         ms: 0,
@@ -43,9 +46,42 @@ export function ProdHealthBanner() {
     check();
     const id = setInterval(check, POLL_MS);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!data) return null;
+
+  if (data.ok) {
+    return (
+      <div className="glass rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          Прод работает · {data.checks?.length ?? 0} страниц · {data.ms}ms
+        </span>
+        <button onClick={check} disabled={loading} className="hover:text-foreground inline-flex items-center gap-1">
+          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          Проверить
+        </button>
+      </div>
+    );
+  }
+
+  // Не удалось выполнить саму проверку — это не значит, что прод лежит.
+  if (data.reachable === false) {
+    return (
+      <div className="glass rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <WifiOff className="h-4 w-4 text-amber-500" />
+          Проверка недоступна{data.error ? ` · ${data.error}` : ""}
+        </span>
+        <button onClick={check} disabled={loading} className="hover:text-foreground inline-flex items-center gap-1">
+          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          Повторить
+        </button>
+      </div>
+    );
+  }
+
 
   if (data.ok) {
     return (
