@@ -532,7 +532,7 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
     ctx,
     [
       { title: "Позиция", key: "title", width: tableW * 0.55 },
-      { title: "Кол-во", key: "qty", width: tableW * 0.13, align: "right" },
+      { title: "Кол-во", key: "qty", width: tableW * 0.13, align: "center", valign: "middle" },
       { title: "Цена", key: "price", width: tableW * 0.16, align: "right" },
       { title: "Сумма", key: "sum", width: tableW * 0.16, align: "right" },
     ],
@@ -611,7 +611,7 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
     [
       { title: "№", key: "n", width: tableW * 0.06, align: "right" },
       { title: "Наименование", key: "title", width: tableW * 0.49 },
-      { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "right" },
+      { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center", valign: "middle" },
       { title: "Ед.", key: "u", width: tableW * 0.06, align: "center" },
       { title: "Цена", key: "price", width: tableW * 0.14, align: "right" },
       { title: "Сумма", key: "sum", width: tableW * 0.15, align: "right" },
@@ -801,7 +801,7 @@ async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSet
     [
       { title: "№", key: "n", width: tableW * 0.06, align: "right" },
       { title: "Наименование", key: "title", width: tableW * 0.49 },
-      { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "right" },
+      { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center", valign: "middle" },
       { title: "Ед.", key: "u", width: tableW * 0.06, align: "center" },
       { title: "Цена", key: "price", width: tableW * 0.14, align: "right" },
       { title: "Сумма", key: "sum", width: tableW * 0.15, align: "right" },
@@ -1003,7 +1003,7 @@ export async function buildStandaloneQuotePdf(
           ctx,
           [
             { title: "Позиция", width: PAGE_W - MARGIN_X * 2 - 70 - 80 - 90, key: "title" },
-            { title: "Кол-во", width: 70, align: "right", key: "qty" },
+            { title: "Кол-во", width: 70, align: "center", valign: "middle", key: "qty" },
             { title: "Цена", width: 80, align: "right", key: "price" },
             { title: "Сумма", width: 90, align: "right", key: "sum" },
           ],
