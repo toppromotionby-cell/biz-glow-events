@@ -23,6 +23,7 @@ import {
   type Quote, type QuoteItem, type QuoteStatus,
 } from "@/lib/quotes-model";
 import { buildQuoteHtmlDoc, quoteNumberDisplay } from "@/lib/documents/quote-html";
+import { QuoteBlocksEditor } from "@/components/admin/quotes/QuoteBlocksEditor";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { fmtMoney } from "@/lib/formatters";
 import { downloadAuthedFile, openAuthedDocument } from "@/lib/authed-fetch";
@@ -138,6 +139,7 @@ function Page() {
               logo_url: quote.logo_url, signature_url: quote.signature_url, stamp_url: quote.stamp_url,
               texts: quote.texts as unknown as Record<string, string>,
               design: quote.design as unknown as Record<string, string | boolean>,
+              template: quote.template, blocks: quote.blocks,
               discount_type: quote.discount_type, discount_value: num(quote.discount_value),
               prepayment_type: quote.prepayment_type, prepayment_value: num(quote.prepayment_value),
               delivery_amount: num(quote.delivery_amount), vat_note: quote.vat_note ?? "",
@@ -384,6 +386,17 @@ function Page() {
                     </>
                   )}
                 </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="layout" className="border border-border/60 rounded-xl px-3">
+              <AccordionTrigger className="text-sm font-medium">Шаблон и блоки документа</AccordionTrigger>
+              <AccordionContent className="pb-4">
+                <QuoteBlocksEditor
+                  template={quote.template}
+                  blocks={quote.blocks}
+                  onChange={(p) => patch(p)}
+                />
               </AccordionContent>
             </AccordionItem>
 
