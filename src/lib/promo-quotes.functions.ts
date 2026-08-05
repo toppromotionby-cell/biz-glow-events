@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   computePromoTotals,
+  normalizeIncludes,
   normalizePromoItem,
   normalizePromoQuote,
   promoItemSchema,
