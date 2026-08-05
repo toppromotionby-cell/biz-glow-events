@@ -1176,13 +1176,27 @@ export async function buildPromoQuotePdf(
   for (const sec of groupBySection(items)) {
     if (sec.name) rows.push({ title: sec.name.toUpperCase(), unit: "", qty: "", price: "", sum: "", note: "" });
     for (const it of sec.items) {
+      const lines = [safe(it.title)];
+      if (quote.show_item_includes && it.includes.length) {
+        for (const inc of it.includes) lines.push(`• ${safe(inc.text)}${inc.note ? ` — ${safe(inc.note)}` : ""}`);
+      }
       rows.push({
-        title: safe(it.title),
+        title: lines.join("\n"),
         unit: safe(it.unit),
         qty: String(lineQty(it)),
         price: it.price ? money(it.price) : "",
         sum: lineTotal(it) ? money(lineTotal(it)) : "",
         note: safe(it.note),
+      });
+    }
+    if (quote.show_section_subtotals && sec.name && sec.items.length > 1) {
+      rows.push({
+        title: `Итого по разделу «${sec.name}»`,
+        unit: "",
+        qty: "",
+        price: "",
+        sum: money(sec.items.reduce((s, it) => s + lineTotal(it), 0)),
+        note: "",
       });
     }
   }
