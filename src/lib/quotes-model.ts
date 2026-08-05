@@ -319,6 +319,7 @@ export const quoteItemSchema = z.object({
   qty: z.number().min(0, "Не может быть отрицательным").max(100000),
   unit: z.string().max(40).default("шт."),
   price: z.number().min(0, "Не может быть отрицательной").max(10_000_000),
+  cost: z.number().min(0).max(10_000_000).default(0),
   sort_order: z.number().int().min(0).default(0),
   entity_type: z.string().max(40).nullable().default(null),
   entity_id: z.string().uuid().nullable().default(null),
@@ -327,7 +328,10 @@ export const quoteItemSchema = z.object({
 export const quotePatchSchema = z.object({
   status: z.enum(QUOTE_STATUSES).optional(),
   quote_number: z.string().max(60).optional(),
+  is_template: z.boolean().optional(),
+  template_name: z.string().max(160).optional(),
   title: z.string().max(200).optional(),
+
   doc_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Некорректная дата").optional(),
   validity_days: z.number().int().min(0).max(365).optional(),
   client_name: z.string().max(200).optional(),
