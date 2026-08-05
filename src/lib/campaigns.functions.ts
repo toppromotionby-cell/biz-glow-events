@@ -8,6 +8,7 @@ import * as React from "react";
 import { render } from "@react-email/components";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { TEMPLATES } from "@/lib/email-templates/registry";
+import { resolveSender } from "@/lib/email/sender.server";
 
 const TEMPLATE_NAME = "client-invite";
 const FROM_DOMAIN = "event-hub.by";
@@ -198,13 +199,15 @@ export const sendClientInvitations = createServerFn({ method: "POST" })
         status: "pending",
       });
 
+      const sender = await resolveSender("campaigns");
+
       const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email", {
         queue_name: "transactional_emails",
         payload: {
           message_id: messageId,
           to: email,
-          from: FROM_ADDRESS,
-          reply_to: REPLY_TO_ADDRESS,
+          from: sender.from,
+          reply_to: sender.replyTo,
           sender_domain: SENDER_DOMAIN,
           subject,
           html,

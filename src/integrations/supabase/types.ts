@@ -466,6 +466,36 @@ export type Database = {
         }
         Relationships: []
       }
+      email_senders: {
+        Row: {
+          from_email: string
+          from_name: string
+          inherit_default: boolean
+          kind: string
+          reply_to: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          from_email?: string
+          from_name?: string
+          inherit_default?: boolean
+          kind: string
+          reply_to?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          from_email?: string
+          from_name?: string
+          inherit_default?: boolean
+          kind?: string
+          reply_to?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           category: string

@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { EmailSendersPanel } from '@/components/admin/EmailSendersPanel'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Mail, RotateCcw, Save, Send, Sparkles, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -52,6 +53,8 @@ function EmailTemplatesAdmin() {
   const testFn = useServerFn(sendTestEmail)
 
   const [category, setCategory] = useState<string>('all')
+
+  const [view, setView] = useState('templates')
   const [selected, setSelected] = useState<string | null>(null)
   const [draftSubject, setDraftSubject] = useState('')
   const [draftPreheader, setDraftPreheader] = useState('')
@@ -172,6 +175,16 @@ function EmailTemplatesAdmin() {
         <Badge variant="outline" className="ml-2">{listQuery.data?.length ?? 0} шаблонов</Badge>
       </header>
 
+      <Tabs value={view} onValueChange={setView}>
+        <TabsList>
+          <TabsTrigger value="templates">Шаблоны</TabsTrigger>
+          <TabsTrigger value="senders">Отправители</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {view === 'senders' && <EmailSendersPanel />}
+
+      <div className={view === 'senders' ? 'hidden' : 'space-y-4'}>
       <Tabs value={category} onValueChange={setCategory}>
         <TabsList>
           {Object.keys(CATEGORY_LABEL).map((k) => (
@@ -341,6 +354,7 @@ function EmailTemplatesAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

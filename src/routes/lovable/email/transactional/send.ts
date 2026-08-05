@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
 import { TEMPLATES } from '@/lib/email-templates/registry'
 import { renderWithOverride } from '@/lib/email-templates/render-with-override'
+import { resolveSender } from '@/lib/email/sender.server'
 
 // Configuration baked in at scaffold time
 const SITE_NAME = "event-hub.by"
@@ -290,13 +291,15 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           status: 'pending',
         })
 
+        const sender = await resolveSender('default')
+
         const { error: enqueueError } = await supabase.rpc('enqueue_email', {
           queue_name: 'transactional_emails',
           payload: {
             message_id: messageId,
             to: effectiveRecipient,
-            from: FROM_ADDRESS,
-            reply_to: REPLY_TO_ADDRESS,
+            from: sender.from,
+            reply_to: sender.replyTo,
             sender_domain: SENDER_DOMAIN,
             subject: resolvedSubject,
             html,

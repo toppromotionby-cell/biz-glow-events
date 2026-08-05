@@ -3,6 +3,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ORDER_STATUS_LABEL, formatOrderBYN } from "@/lib/order-status";
 import { sendViaResend } from "@/lib/email/resend.server";
+import { resolveSender, type SenderKind } from "@/lib/email/sender.server";
 
 const SITE_NAME = "event-hub.by";
 const SENDER_DOMAIN = "notify.event-hub.by";
@@ -123,6 +124,15 @@ async function resolveUnsubscribeToken(email: string): Promise<string | null> {
   return token;
 }
 
+/** Тип письма → настройка отправителя из «Настройки → Письма → Отправители». */
+function senderKindFor(label: string): SenderKind {
+  if (label.startsWith("admin-")) return "admin";
+  if (label.includes("quote")) return "quotes";
+  if (label.includes("order")) return "orders";
+  if (label.includes("lead") || label.includes("inquiry")) return "leads";
+  return "default";
+}
+
 async function enqueue(opts: {
   to: string;
   subject: string;
@@ -164,11 +174,13 @@ async function enqueue(opts: {
   // Клиентские письма — без активных ссылок.
   const html = opts.label.startsWith("client-") ? stripActiveLinks(opts.html) : opts.html;
 
+  const sender = await resolveSender(senderKindFor(opts.label));
+
   const payload = {
     message_id: opts.messageId,
     to,
-    from: FROM_ADDRESS,
-    reply_to: REPLY_TO_ADDRESS,
+    from: sender.from,
+    reply_to: sender.replyTo,
     sender_domain: SENDER_DOMAIN,
     subject: opts.subject,
     html,
@@ -241,13 +253,15 @@ async function sendWithAttachments(opts: {
   // Клиентские письма — без активных ссылок.
   const html = opts.label.startsWith("client-") ? stripActiveLinks(opts.html) : opts.html;
 
+  const attachSender = await resolveSender(senderKindFor(opts.label));
+
   const resendRes = await sendViaResend({
-    from: FROM_ADDRESS,
+    from: attachSender.from,
     to,
     subject: opts.subject,
     html,
     text: htmlToPlainText(html),
-    reply_to: REPLY_TO_ADDRESS,
+    reply_to: attachSender.replyTo,
     headers: { "X-Entity-Ref-ID": opts.messageId },
     attachments: opts.attachments.map((a) => ({
       filename: a.filename,

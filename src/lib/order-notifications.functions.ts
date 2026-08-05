@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
 import { renderWithOverride } from '@/lib/email-templates/render-with-override'
+import { resolveSender } from '@/lib/email/sender.server'
 
 const STATUS_TO_TEMPLATE: Record<string, string> = {
   confirmed: 'order-confirmed',
@@ -78,13 +79,15 @@ export const notifyOrderStatus = createServerFn({ method: 'POST' })
       status: 'pending',
     })
 
+    const sender = await resolveSender('orders')
+
     const { error: enqueueErr } = await supabaseAdmin.rpc('enqueue_email', {
       queue_name: 'transactional_emails',
       payload: {
         message_id: messageId,
         to: recipient,
-        from: FROM_ADDRESS,
-        reply_to: REPLY_TO,
+        from: sender.from,
+        reply_to: sender.replyTo,
         sender_domain: SENDER_DOMAIN,
         subject: rendered.subject,
         html: rendered.html,

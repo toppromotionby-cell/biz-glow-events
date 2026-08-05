@@ -32,6 +32,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "event-hub.by"
+import { resolveSender } from '@/lib/email/sender.server'
 const SENDER_DOMAIN = "notify.event-hub.by"
 const ROOT_DOMAIN = "event-hub.by"
 const FROM_DOMAIN = "event-hub.by"
@@ -190,14 +191,16 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           status: 'pending',
         })
 
+        const sender = await resolveSender('auth')
+
         const { error: enqueueError } = await supabase.rpc('enqueue_email', {
           queue_name: 'auth_emails',
           payload: {
             run_id,
             message_id: messageId,
             to: payload.data.email,
-            from: FROM_ADDRESS,
-            reply_to: REPLY_TO_ADDRESS,
+            from: sender.from,
+            reply_to: sender.replyTo,
             sender_domain: SENDER_DOMAIN,
             subject: subjectLine,
             html,

@@ -1,6 +1,7 @@
 // Server functions for admin email-template editor.
 // All functions are admin/manager-gated via has_role().
 import { createServerFn } from '@tanstack/react-start'
+import { resolveSender } from '@/lib/email/sender.server'
 import { z } from 'zod'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
 import {
@@ -250,13 +251,15 @@ export const sendTestEmail = createServerFn({ method: 'POST' })
       status: 'pending',
     })
 
+    const sender = await resolveSender('default')
+
     const { error } = await supabaseAdmin.rpc('enqueue_email', {
       queue_name: 'transactional_emails',
       payload: {
         message_id: messageId,
         to: data.recipient,
-        from: FROM,
-        reply_to: 'noreply@event-hub.by',
+        from: sender.from,
+        reply_to: sender.replyTo,
         sender_domain: SENDER_DOMAIN,
         subject: `[ТЕСТ] ${subject}`,
         html,
