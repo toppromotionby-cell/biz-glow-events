@@ -1344,6 +1344,187 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_items: {
+        Row: {
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          price: number
+          qty: number
+          quote_id: string
+          section: string
+          sort_order: number
+          title: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          price?: number
+          qty?: number
+          quote_id: string
+          section?: string
+          sort_order?: number
+          title?: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          price?: number
+          qty?: number
+          quote_id?: string
+          section?: string
+          sort_order?: number
+          title?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          client_address: string
+          client_company: string
+          client_email: string
+          client_name: string
+          client_phone: string
+          client_unp: string
+          company_overrides: Json
+          created_at: string
+          created_by: string | null
+          delivery_amount: number
+          design: Json
+          discount_type: string
+          discount_value: number
+          doc_date: string
+          event_date: string | null
+          event_format: string
+          event_notes: string
+          event_time_end: string
+          event_time_start: string
+          guests_count: number | null
+          id: string
+          logo_url: string | null
+          order_id: string | null
+          prepayment_type: string
+          prepayment_value: number
+          quote_number: string | null
+          setup_note: string
+          signature_url: string | null
+          stamp_url: string | null
+          status: string
+          texts: Json
+          title: string
+          total: number
+          updated_at: string
+          validity_days: number
+          vat_note: string
+          venue: string
+        }
+        Insert: {
+          client_address?: string
+          client_company?: string
+          client_email?: string
+          client_name?: string
+          client_phone?: string
+          client_unp?: string
+          company_overrides?: Json
+          created_at?: string
+          created_by?: string | null
+          delivery_amount?: number
+          design?: Json
+          discount_type?: string
+          discount_value?: number
+          doc_date?: string
+          event_date?: string | null
+          event_format?: string
+          event_notes?: string
+          event_time_end?: string
+          event_time_start?: string
+          guests_count?: number | null
+          id?: string
+          logo_url?: string | null
+          order_id?: string | null
+          prepayment_type?: string
+          prepayment_value?: number
+          quote_number?: string | null
+          setup_note?: string
+          signature_url?: string | null
+          stamp_url?: string | null
+          status?: string
+          texts?: Json
+          title?: string
+          total?: number
+          updated_at?: string
+          validity_days?: number
+          vat_note?: string
+          venue?: string
+        }
+        Update: {
+          client_address?: string
+          client_company?: string
+          client_email?: string
+          client_name?: string
+          client_phone?: string
+          client_unp?: string
+          company_overrides?: Json
+          created_at?: string
+          created_by?: string | null
+          delivery_amount?: number
+          design?: Json
+          discount_type?: string
+          discount_value?: number
+          doc_date?: string
+          event_date?: string | null
+          event_format?: string
+          event_notes?: string
+          event_time_end?: string
+          event_time_start?: string
+          guests_count?: number | null
+          id?: string
+          logo_url?: string | null
+          order_id?: string | null
+          prepayment_type?: string
+          prepayment_value?: number
+          quote_number?: string | null
+          setup_note?: string
+          signature_url?: string | null
+          stamp_url?: string | null
+          status?: string
+          texts?: Json
+          title?: string
+          total?: number
+          updated_at?: string
+          validity_days?: number
+          vat_note?: string
+          venue?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           category: string | null
