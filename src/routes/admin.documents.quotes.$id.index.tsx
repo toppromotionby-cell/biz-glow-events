@@ -25,7 +25,7 @@ import { BRAND_ACCENTS } from "@/lib/documents/brand";
 import {
   getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
   listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
-  saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient,
+  saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
 import {
   checkQuote, computeTotals, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
@@ -105,6 +105,7 @@ function Page() {
   const makeTemplate = useServerFn(saveQuoteAsTemplate);
   const markSent = useServerFn(markQuoteSent);
   const sendToClient = useServerFn(sendQuoteToClient);
+  const makeOrder = useServerFn(createOrderFromQuote);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-quote", id], queryFn: () => load({ data: { id } }) });
   const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({ queryKey: ["admin-quote-settings"], queryFn: () => loadSettings() });
@@ -253,6 +254,16 @@ function Page() {
     qc.invalidateQueries({ queryKey: ["admin-quotes"] });
   };
 
+  const onCreateOrder = async () => {
+    try {
+      const res = await makeOrder({ data: { id } });
+      setQuote((q) => (q ? { ...q, order_id: res.orderId } : q));
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      navigate({ to: "/admin/orders/$id", params: { id: res.orderId } });
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+
 
   return (
     <div className="space-y-4">
@@ -279,6 +290,9 @@ function Page() {
           <QuoteShareActions share={shareState} onSend={onSendToClient} />
           <Button variant="outline" size="sm" onClick={onMarkSent}><Send className="h-4 w-4 mr-1.5" />Отправлено</Button>
           <Button variant="outline" size="sm" onClick={() => setTemplateOpen(true)}><BookmarkPlus className="h-4 w-4 mr-1.5" />В шаблоны</Button>
+          <Button variant="outline" size="sm" onClick={onCreateOrder}>
+            <FileCheck2 className="h-4 w-4 mr-1.5" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => openAuthedDocument(`/admin/documents/quotes/${id}/render`).catch((e) => toast.error((e as Error).message))}>
             <ExternalLink className="h-4 w-4 mr-1.5" />HTML
           </Button>
