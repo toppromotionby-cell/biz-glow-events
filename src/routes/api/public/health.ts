@@ -31,9 +31,16 @@ async function checkOne(base: URL, path: string, timeoutMs = 8000): Promise<Chec
   }
 }
 
+const CORS = {
+  "cache-control": "no-store",
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, OPTIONS",
+} as const;
+
 export const Route = createFileRoute("/api/public/health")({
   server: {
     handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       GET: async ({ request }) => {
         const started = Date.now();
         const base = new URL("/", request.url);
@@ -49,9 +56,10 @@ export const Route = createFileRoute("/api/public/health")({
             checks,
             failedCount: failed.length,
           },
-          { headers: { "cache-control": "no-store" } },
+          { headers: CORS },
         );
       },
     },
   },
 });
+
