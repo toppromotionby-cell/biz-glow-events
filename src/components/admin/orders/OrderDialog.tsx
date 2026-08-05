@@ -43,6 +43,7 @@ interface OrderDialogProps {
 }
 
 export function OrderDialog({ id, onClose }: OrderDialogProps) {
+  const viewer = useDocumentViewer();
   const enabled = !!id;
   const qc = useQueryClient();
   const [deleteOpen, setDeleteOpen] = useState(false);
