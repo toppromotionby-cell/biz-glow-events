@@ -503,7 +503,7 @@ export const sendPromoQuoteToClient = createServerFn({ method: "POST" })
       docTitle: "Коммерческое предложение",
       docNumber: promoNumberDisplay(quote),
       url,
-      total: computePromoTotals(quote, items).total,
+      total: computePromoTotals(quote, items).totalWithVat,
       validUntil: quote.valid_until,
       managerNote: data.note ?? "",
       pdf,
