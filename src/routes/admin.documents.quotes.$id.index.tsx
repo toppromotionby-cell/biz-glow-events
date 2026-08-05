@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, History, Plus, Search, Send,
-  Settings2, Eye, BookmarkPlus,
+  Settings2, Eye, BookmarkPlus, FileCheck2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,7 @@ function ImageField({ label, value, onChange }: { label: string; value: string |
 
 function Page() {
   const { id } = Route.useParams();
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const load = useServerFn(getQuote);
   const save = useServerFn(saveQuote);
