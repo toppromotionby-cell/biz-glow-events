@@ -248,8 +248,9 @@ export function QuoteItemsPanel({
                     </div>
 
                     <div className="ml-6 mt-1 flex flex-wrap items-end gap-2">
-                      <Mini label="Кол-во" width="w-[76px]">
-                        <Input type="number" min={0} value={it.qty} className="h-8"
+                      <Mini label="Кол-во" width="w-[84px]">
+                        <Input type="number" min={0} value={it.qty}
+                          className="h-8 text-center tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           onChange={(e) => replace(it.id, { qty: num(e.target.value) })} />
                       </Mini>
                       <Mini label="Ед. изм." width="w-[92px]">

@@ -89,6 +89,7 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   th { background: #f8fafc; font-weight: 600; font-size: 10.5px; text-transform: uppercase; color: #475569; letter-spacing: .4px; }
   tbody tr:nth-child(even) td { background: #fcfcfd; }
   td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.qty, th.qty { text-align: center; vertical-align: middle; white-space: nowrap; font-variant-numeric: tabular-nums; width: 78px; }
   tfoot td { font-weight: 700; border-top: 2px solid var(--accent); color: #111827; }
   .summary { margin-top: 12px; padding: 12px 14px; background: color-mix(in srgb, var(--accent) 6%, #fff); border: 1px solid color-mix(in srgb, var(--accent) 18%, #e5e7eb); border-radius: 8px; }
   .summary .row { display: flex; justify-content: space-between; padding: 3px 0; font-variant-numeric: tabular-nums; }

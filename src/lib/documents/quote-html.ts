@@ -275,7 +275,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
               : ""
           }
         </td>
-        <td class="num">${esc(it.qty)}${it.unit ? ` <span class="unit">${esc(it.unit)}</span>` : ""}</td>
+        <td class="qty">${esc(it.qty)}${it.unit ? `<span class="unit">${esc(it.unit)}</span>` : ""}</td>
         <td class="num">${money(it.price)}</td>
         <td class="num strong">${money(it.price * it.qty)}</td>
       </tr>`,
@@ -335,7 +335,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
         </div>`;
       case "items":
         return `${heading(b)}<table>
-          <thead><tr><th></th><th>Позиция</th><th class="num">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
+          <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
           <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}</tbody>
         </table>`;
       case "totals":
@@ -437,6 +437,8 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   thead th { background:color-mix(in srgb,var(--accent) 12%,#fff); font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:8px; }
   tbody td { padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
   td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.qty, th.qty { text-align:center; vertical-align:middle; white-space:nowrap; font-variant-numeric:tabular-nums; width:78px; }
+  td.qty .unit { display:block; margin-top:1px; }
   td.idx { color:var(--muted); width:26px; }
   .it-title { font-weight:600; }
   .it-desc { color:var(--muted); font-size:11px; margin-top:2px; white-space:pre-line; }

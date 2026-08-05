@@ -33,7 +33,7 @@ export function buildQuoteHtml(order: DocOrder, items: DocItem[], settings: Docu
   const rows = items.map((it) => `
     <tr>
       <td>${esc(it.title)}</td>
-      <td class="num">${esc(it.qty)}</td>
+      <td class="qty">${esc(it.qty)}</td>
       <td class="num">${money(Number(it.price))}</td>
       <td class="num">${money(Number(it.price) * Number(it.qty))}</td>
     </tr>`).join("");
@@ -55,7 +55,7 @@ export function buildQuoteHtml(order: DocOrder, items: DocItem[], settings: Docu
     })}
 
     <table>
-      <thead><tr><th>Позиция</th><th class="num">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
+      <thead><tr><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:24px;">Позиции не добавлены</td></tr>`}</tbody>
       <tfoot><tr><td colspan="3" class="num">Итого:</td><td class="num">${money(total)}</td></tr></tfoot>
     </table>
@@ -82,7 +82,7 @@ export function buildInvoiceHtml(order: DocOrder, items: DocItem[], settings: Do
     <tr>
       <td class="num">${i + 1}</td>
       <td>${esc(it.title)}</td>
-      <td class="num">${esc(it.qty)}</td>
+      <td class="qty">${esc(it.qty)}</td>
       <td>шт.</td>
       <td class="num">${money(Number(it.price))}</td>
       <td class="num">${money(Number(it.price) * Number(it.qty))}</td>
@@ -120,7 +120,7 @@ export function buildInvoiceHtml(order: DocOrder, items: DocItem[], settings: Do
     </div>
 
     <table>
-      <thead><tr><th class="num">№</th><th>Наименование</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
+      <thead><tr><th class="num">№</th><th>Наименование</th><th class="qty">Кол-во</th><th>Ед.</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:24px;">Позиции не добавлены</td></tr>`}</tbody>
     </table>
 
@@ -240,7 +240,7 @@ export function buildActHtml(order: DocOrder, items: DocItem[], settings: Docume
     <tr>
       <td class="num">${i + 1}</td>
       <td>${esc(it.title)}</td>
-      <td class="num">${esc(it.qty)}</td>
+      <td class="qty">${esc(it.qty)}</td>
       <td>шт.</td>
       <td class="num">${money(Number(it.price))}</td>
       <td class="num">${money(Number(it.price) * Number(it.qty))}</td>
@@ -278,7 +278,7 @@ export function buildActHtml(order: DocOrder, items: DocItem[], settings: Docume
     <div style="font-size:11.5px;color:#374151;margin-bottom:4px;">Дата оказания услуг: <b>${esc(eventDate)}</b></div>
 
     <table>
-      <thead><tr><th class="num">№</th><th>Наименование</th><th class="num">Кол-во</th><th>Ед.</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
+      <thead><tr><th class="num">№</th><th>Наименование</th><th class="qty">Кол-во</th><th>Ед.</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:24px;">Позиции не добавлены</td></tr>`}</tbody>
     </table>
 
