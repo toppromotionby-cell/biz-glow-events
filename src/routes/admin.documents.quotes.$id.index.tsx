@@ -1,5 +1,5 @@
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -92,7 +92,6 @@ function ImageField({ label, value, onChange }: { label: string; value: string |
 function Page() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const load = useServerFn(getQuote);
   const save = useServerFn(saveQuote);
   const searchCatalog = useServerFn(searchCatalogForQuote);
