@@ -92,6 +92,7 @@ import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$i
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
 import { Route as AdminOrdersIdActRouteImport } from './routes/admin.orders.$id.act'
+import { Route as AdminDocumentsQuotesIdIndexRouteImport } from './routes/admin.documents.quotes.$id.index'
 import { Route as AdminDocumentsQuotesIdRenderRouteImport } from './routes/admin.documents.quotes.$id.render'
 
 const ZonesRoute = ZonesRouteImport.update({
@@ -514,6 +515,12 @@ const AdminOrdersIdActRoute = AdminOrdersIdActRouteImport.update({
   path: '/act',
   getParentRoute: () => AdminOrdersIdRoute,
 } as any)
+const AdminDocumentsQuotesIdIndexRoute =
+  AdminDocumentsQuotesIdIndexRouteImport.update({
+    id: '/documents/quotes/$id/',
+    path: '/documents/quotes/$id/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminDocumentsQuotesIdRenderRoute =
   AdminDocumentsQuotesIdRenderRouteImport.update({
     id: '/documents/quotes/$id/render',
@@ -606,6 +613,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/quotes/$id/': typeof AdminDocumentsQuotesIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -690,6 +698,7 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/documents/quotes': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/quotes/$id': typeof AdminDocumentsQuotesIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -777,6 +786,7 @@ export interface FileRoutesById {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/quotes/$id/': typeof AdminDocumentsQuotesIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -865,6 +875,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/admin/documents/quotes/'
     | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/quotes/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -949,6 +960,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/admin/documents/quotes'
     | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/quotes/$id'
   id:
     | '__root__'
     | '/'
@@ -1035,6 +1047,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/admin/documents/quotes/'
     | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/quotes/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1674,6 +1687,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdActRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/documents/quotes/$id/': {
+      id: '/admin/documents/quotes/$id/'
+      path: '/documents/quotes/$id'
+      fullPath: '/admin/documents/quotes/$id/'
+      preLoaderRoute: typeof AdminDocumentsQuotesIdIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/documents/quotes/$id/render': {
       id: '/admin/documents/quotes/$id/render'
       path: '/documents/quotes/$id/render'
@@ -1749,6 +1769,7 @@ interface AdminRouteChildren {
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
   AdminDocumentsQuotesIndexRoute: typeof AdminDocumentsQuotesIndexRoute
   AdminDocumentsQuotesIdRenderRoute: typeof AdminDocumentsQuotesIdRenderRoute
+  AdminDocumentsQuotesIdIndexRoute: typeof AdminDocumentsQuotesIdIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1772,6 +1793,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
   AdminDocumentsQuotesIndexRoute: AdminDocumentsQuotesIndexRoute,
   AdminDocumentsQuotesIdRenderRoute: AdminDocumentsQuotesIdRenderRoute,
+  AdminDocumentsQuotesIdIndexRoute: AdminDocumentsQuotesIdIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
