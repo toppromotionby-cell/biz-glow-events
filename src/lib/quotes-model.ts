@@ -81,12 +81,16 @@ export type QuoteCompanyOverrides = Partial<{
   signer_title: string;
 }>;
 
+/** Пункт состава позиции: «что входит». */
+export type QuoteItemInclude = { text: string; note: string };
+
 export type QuoteItem = {
   id: string;
   quote_id: string;
   section: string;
   title: string;
   description: string;
+  includes: QuoteItemInclude[];
   qty: number;
   unit: string;
   price: number;
@@ -95,6 +99,77 @@ export type QuoteItem = {
   entity_type: string | null;
   entity_id: string | null;
 };
+
+export function normalizeIncludes(value: unknown): QuoteItemInclude[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((raw) => {
+      if (typeof raw === "string") return { text: raw.trim(), note: "" };
+      const r = (raw ?? {}) as Record<string, unknown>;
+      return { text: String(r.text ?? "").trim(), note: String(r.note ?? "").trim() };
+    })
+    .filter((r) => r.text.length > 0)
+    .slice(0, 60);
+}
+
+export const NO_SECTION = "Без раздела";
+
+/** Список разделов в порядке их первого появления. */
+export function listSections(items: QuoteItem[]): string[] {
+  const out: string[] = [];
+  for (const it of [...items].sort((a, b) => a.sort_order - b.sort_order)) {
+    const key = it.section?.trim() || "";
+    if (!out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
+const reindex = (items: QuoteItem[]): QuoteItem[] => items.map((it, i) => ({ ...it, sort_order: i }));
+
+/** Пересобрать позиции в заданном порядке разделов. */
+export function orderBySections(items: QuoteItem[], order: string[]): QuoteItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const out: QuoteItem[] = [];
+  for (const section of order) out.push(...sorted.filter((it) => (it.section?.trim() || "") === section));
+  for (const it of sorted) if (!out.includes(it)) out.push(it);
+  return reindex(out);
+}
+
+export function renameSection(items: QuoteItem[], from: string, to: string): QuoteItem[] {
+  return items.map((it) => ((it.section?.trim() || "") === from ? { ...it, section: to.trim() } : it));
+}
+
+export function moveSection(items: QuoteItem[], section: string, dir: -1 | 1): QuoteItem[] {
+  const order = listSections(items);
+  const i = order.indexOf(section);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= order.length) return items;
+  const next = [...order];
+  next[i] = order[j]!;
+  next[j] = order[i]!;
+  return orderBySections(items, next);
+}
+
+/** Удалить раздел: вместе с позициями или с переносом их в «без раздела». */
+export function removeSection(items: QuoteItem[], section: string, mode: "items" | "keep"): QuoteItem[] {
+  const match = (it: QuoteItem) => (it.section?.trim() || "") === section;
+  const next = mode === "items" ? items.filter((it) => !match(it)) : items.map((it) => (match(it) ? { ...it, section: "" } : it));
+  return reindex([...next].sort((a, b) => a.sort_order - b.sort_order));
+}
+
+export function duplicateSection(items: QuoteItem[], section: string): QuoteItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const copies = sorted
+    .filter((it) => (it.section?.trim() || "") === section)
+    .map((it) => ({
+      ...it,
+      id: globalThis.crypto?.randomUUID?.() ?? `tmp-${Math.random()}`,
+      section: `${section || NO_SECTION} (копия)`,
+      includes: it.includes.map((x) => ({ ...x })),
+    }));
+  return reindex([...sorted, ...copies]);
+}
+
 
 export const QUOTE_SECTION_SUGGESTIONS = [
   "Оборудование",
