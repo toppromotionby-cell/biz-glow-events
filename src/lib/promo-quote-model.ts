@@ -1,6 +1,10 @@
 // Модель промо-КП (раздел «Документы → КП промо»).
 // Browser-safe: используется формой, live-превью, PDF и XLSX — одна логика расчётов.
 import { z } from "zod";
+import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
+
+export { normalizeIncludes };
+export type { QuoteItemInclude };
 
 export const PROMO_STATUSES = ["draft", "sent", "accepted", "rejected"] as const;
 export type PromoStatus = (typeof PROMO_STATUSES)[number];
