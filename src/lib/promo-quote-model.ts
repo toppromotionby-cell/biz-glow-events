@@ -154,6 +154,7 @@ export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
     price: num(row.price),
     cost: num(row.cost),
     note: str(row.note),
+    includes: normalizeIncludes(row.includes),
     exclude_from_commission: row.exclude_from_commission === true,
     sort_order: num(row.sort_order),
   };
@@ -172,6 +173,10 @@ export const promoItemSchema = z.object({
   price: z.number().min(0).max(100000000).default(0),
   cost: z.number().min(0).max(100000000).default(0),
   note: z.string().max(2000).default(""),
+  includes: z
+    .array(z.object({ text: z.string().max(300).default(""), note: z.string().max(300).default("") }))
+    .max(60)
+    .default([]),
   exclude_from_commission: z.boolean().default(false),
   sort_order: z.number().int().min(0).max(10000).default(0),
 });
@@ -193,6 +198,8 @@ export const promoQuotePatchSchema = z
     show_qty: z.boolean(),
     show_total_qty: z.boolean(),
     show_notes: z.boolean(),
+    show_item_includes: z.boolean(),
+    show_section_subtotals: z.boolean(),
     vat_enabled: z.boolean(),
     vat_rate: z.number().min(0).max(100),
     commission_enabled: z.boolean(),
@@ -336,6 +343,7 @@ export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): Prom
     price: 0,
     cost: 0,
     note: "",
+    includes: [],
     exclude_from_commission: false,
     sort_order: 0,
     ...patch,
