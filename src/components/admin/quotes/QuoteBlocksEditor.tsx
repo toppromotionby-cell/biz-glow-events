@@ -187,7 +187,17 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
       <p className="text-[11px] text-muted-foreground">
         Условие показа скрывает блок автоматически, если данных нет (нет доставки, скидки, реквизитов и т.д.).
         В текстах работают формулы: <code>{"{{= total - advance }}"}</code>, <code>{"{{= subtotal * 20 / 100 }}"}</code>.
+        Наберите <code>{"{{"}</code> — появится автодополнение переменных.
       </p>
+
+      {errorCount > 0 && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive flex items-center gap-2">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          Ошибки в формулах: {errorCount} {errorCount === 1 ? "блок" : "блока(ов)"}. Исправьте их перед сохранением — иначе выражения попадут в документ как текст.
+        </div>
+      )}
+
+
 
       <div className="space-y-2">
         {list.map((b, i) => {
