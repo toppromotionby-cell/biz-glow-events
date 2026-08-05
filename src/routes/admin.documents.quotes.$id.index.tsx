@@ -183,6 +183,7 @@ function Page() {
       try {
         const rawPatch: Record<string, unknown> = {
               status: quote.status, title: quote.title, doc_date: quote.doc_date, validity_days: quote.validity_days,
+              quote_number: quote.quote_number ?? "", valid_until_override: quote.valid_until_override ?? null,
               client_name: quote.client_name ?? "", client_company: quote.client_company ?? "", client_unp: quote.client_unp ?? "",
               client_phone: quote.client_phone ?? "", client_email: quote.client_email ?? "", client_address: quote.client_address ?? "",
               event_date: quote.event_date, event_time_start: quote.event_time_start ?? "", event_time_end: quote.event_time_end ?? "",
@@ -217,6 +218,8 @@ function Page() {
         setSaveError(null);
         setPending(skipped);
         qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+        // Пустой номер = автономер: перечитываем КП, чтобы подтянуть присвоенный БД номер.
+        if (!String(patch.quote_number ?? "").trim()) qc.invalidateQueries({ queryKey: ["admin-quote", id] });
       } catch (e) {
         setState("error");
         setSaveError(friendlyZodMessage(e));
@@ -502,6 +505,14 @@ function Page() {
                     <Field label="Тема предложения">
                       <Input value={quote.title ?? ""} onChange={(e) => patch({ title: e.target.value })} />
                     </Field>
+                    <Field label="Номер КП">
+                      <div className="flex items-center gap-2">
+                        <Input value={quote.quote_number ?? ""} placeholder="Присвоится автоматически"
+                          onChange={(e) => patch({ quote_number: e.target.value })} />
+                        <Button type="button" size="sm" variant="outline" className="shrink-0"
+                          onClick={() => patch({ quote_number: "" })}>Автономер</Button>
+                      </div>
+                    </Field>
                     <div className="grid grid-cols-2 gap-3">
                       <Field label="Дата документа">
                         <Input type="date" value={quote.doc_date ?? ""} onChange={(e) => patch({ doc_date: e.target.value })} />
@@ -511,7 +522,19 @@ function Page() {
                           onChange={(e) => patch({ validity_days: Math.trunc(num(e.target.value)) })} />
                       </Field>
                     </div>
+                    <Field label="Действительно до (вручную)">
+                      <div className="flex items-center gap-2">
+                        <Input type="date" value={quote.valid_until_override ?? ""}
+                          onChange={(e) => patch({ valid_until_override: e.target.value || null })} />
+                        {quote.valid_until_override && (
+                          <Button type="button" size="sm" variant="ghost" className="shrink-0"
+                            onClick={() => patch({ valid_until_override: null })}>Сбросить</Button>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Пусто — считается от даты документа и срока действия.</p>
+                    </Field>
                   </AccordionContent>
+
                 </AccordionItem>
 
                 <AccordionItem value="layout" className="border border-border/60 rounded-xl px-3">
@@ -586,6 +609,7 @@ function Page() {
                         ["company_address", "Адрес"],
                         ["company_phone", "Телефон"],
                         ["company_email", "E-mail"],
+                        ["company_website", "Сайт"],
                         ["bank_name", "Банк"],
                         ["bank_bic", "БИК"],
                         ["bank_account", "Расчётный счёт"],
@@ -601,7 +625,12 @@ function Page() {
                         </Field>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground">Пустые поля берутся из общих настроек документов.</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">Пустые поля берутся из общих настроек документов.</p>
+                      <Button type="button" size="sm" variant="ghost" className="shrink-0"
+                        onClick={() => patch({ company_overrides: {} })}>Сбросить реквизиты</Button>
+                    </div>
+
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

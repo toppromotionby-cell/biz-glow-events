@@ -189,6 +189,7 @@ export type Quote = {
   title: string;
   doc_date: string;
   validity_days: number;
+  valid_until_override: string | null;
   client_name: string;
   client_company: string;
   client_unp: string;
@@ -444,6 +445,11 @@ export const quotePatchSchema = z.object({
 
   doc_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Некорректная дата").optional(),
   validity_days: z.number().int().min(0).max(365).optional(),
+  valid_until_override: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Некорректная дата")
+    .nullable()
+    .optional(),
   client_name: z.string().max(200).optional(),
   client_company: z.string().max(200).optional(),
   client_unp: z.string().max(40).optional(),
