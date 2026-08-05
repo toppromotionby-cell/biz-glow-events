@@ -266,10 +266,12 @@ export const quotePatchSchema = z.object({
         title: z.string().max(160).default(""),
         enabled: z.boolean().default(true),
         content: z.string().max(5000).default(""),
+        condition: z.string().max(40).default("always"),
       }),
     )
     .max(40)
     .optional(),
+
   discount_type: z.enum(["none", "percent", "amount"]).optional(),
   discount_value: z.number().min(0).max(10_000_000).optional(),
   prepayment_type: z.enum(["none", "percent", "amount"]).optional(),

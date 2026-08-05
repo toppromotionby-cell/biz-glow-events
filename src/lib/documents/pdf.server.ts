@@ -893,7 +893,7 @@ export function buildAttachmentFilename(
 // === Standalone КП (раздел «Документы → КП») ===
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
-import { quoteCompany, quoteNumberDisplay, buildPlaceholderValues, effectiveBlocks, blockText } from "@/lib/documents/quote-html";
+import { quoteCompany, quoteNumberDisplay, buildPlaceholderValues, buildNumericValues, effectiveBlocks, blockText } from "@/lib/documents/quote-html";
 import { applyPlaceholders } from "@/lib/quote-blocks";
 
 function bulletList(ctx: DocCtx, text: string) {
@@ -930,6 +930,7 @@ export async function buildStandaloneQuotePdf(
   drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff);
 
   const map = buildPlaceholderValues(quote, items, settings);
+  const numbers = buildNumericValues(quote, items);
   const t = computeTotals(quote, items);
   const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
   const colW = (PAGE_W - MARGIN_X * 2 - 12) / 2;
@@ -945,13 +946,13 @@ export async function buildStandaloneQuotePdf(
     gap(ctx, 2);
   };
 
-  for (const b of effectiveBlocks(quote)) {
+  for (const b of effectiveBlocks(quote, items, settings)) {
     if (hidden.has(b.type)) continue;
-    const text = blockText(b, quote, map);
+    const text = blockText(b, quote, map, numbers);
 
     switch (b.type) {
       case "cover": {
-        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map), { size: F22, bold: true });
+        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers), { size: F22, bold: true });
         gap(ctx, 4);
         if (text) drawParagraph(ctx, text, { size: F11, color: MUTED });
         gap(ctx, 6);
@@ -1078,7 +1079,7 @@ export async function buildStandaloneQuotePdf(
 
   gap(ctx, 4);
   const validity = quote.validity_days ? `Предложение действительно ${quote.validity_days} дней. ` : "";
-  drawParagraph(ctx, `${validity}${applyPlaceholders(quote.texts.footer || settings.quote_footer, map)}`, { size: 9.5, color: MUTED });
+  drawParagraph(ctx, `${validity}${applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers)}`, { size: 9.5, color: MUTED });
 
   drawFooter(ctx, eff);
   return await ctx.pdf.save();

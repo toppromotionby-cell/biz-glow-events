@@ -1344,6 +1344,48 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_block_snippets: {
+        Row: {
+          block_type: string
+          condition: string
+          content: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          name: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          block_type?: string
+          condition?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          block_type?: string
+          condition?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quote_items: {
         Row: {
           created_at: string
