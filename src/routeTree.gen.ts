@@ -81,6 +81,7 @@ import { Route as AdminSettingsEmailsRouteImport } from './routes/admin.settings
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
+import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -454,6 +455,12 @@ const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   path: '/$type',
   getParentRoute: () => AdminCatalogRoute,
 } as any)
+const AdminDocumentsQuotesIndexRoute =
+  AdminDocumentsQuotesIndexRouteImport.update({
+    id: '/documents/quotes/',
+    path: '/documents/quotes/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -597,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
 }
 export interface FileRoutesByTo {
@@ -680,6 +688,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
 }
 export interface FileRoutesById {
@@ -766,6 +775,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
 }
 export interface FileRouteTypes {
@@ -853,6 +863,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes/'
     | '/admin/documents/quotes/$id/render'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -936,6 +947,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes'
     | '/admin/documents/quotes/$id/render'
   id:
     | '__root__'
@@ -1021,6 +1033,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes/'
     | '/admin/documents/quotes/$id/render'
   fileRoutesById: FileRoutesById
 }
@@ -1584,6 +1597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCatalogTypeRouteImport
       parentRoute: typeof AdminCatalogRoute
     }
+    '/admin/documents/quotes/': {
+      id: '/admin/documents/quotes/'
+      path: '/documents/quotes'
+      fullPath: '/admin/documents/quotes/'
+      preLoaderRoute: typeof AdminDocumentsQuotesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1727,6 +1747,7 @@ interface AdminRouteChildren {
   AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
+  AdminDocumentsQuotesIndexRoute: typeof AdminDocumentsQuotesIndexRoute
   AdminDocumentsQuotesIdRenderRoute: typeof AdminDocumentsQuotesIdRenderRoute
 }
 
@@ -1749,6 +1770,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
+  AdminDocumentsQuotesIndexRoute: AdminDocumentsQuotesIndexRoute,
   AdminDocumentsQuotesIdRenderRoute: AdminDocumentsQuotesIdRenderRoute,
 }
 
