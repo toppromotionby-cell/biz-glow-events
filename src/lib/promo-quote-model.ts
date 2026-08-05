@@ -78,6 +78,7 @@ export type PromoItem = {
   price: number;
   cost: number;
   note: string;
+  includes: QuoteItemInclude[];
   exclude_from_commission: boolean;
   sort_order: number;
 };
