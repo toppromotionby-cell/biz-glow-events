@@ -31,7 +31,7 @@ import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { safeJsonLd } from "@/lib/seo-jsonld";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
-import { detectQuantityKind, maxQtyFor, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
+import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 
 
 function asArray<T = unknown>(v: unknown): T[] {
@@ -62,6 +62,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);
   const tiers = getTiers(item.pricing);
+  const itemUnit = unitFromPricing(item.pricing);
   const hasTiers = tiers.length > 0;
   const hourPricing = parseHourTiers(tiers, (item.pricing as { extraHourPrice?: number } | null)?.extraHourPrice);
   const isHourMode = hourPricing !== null;

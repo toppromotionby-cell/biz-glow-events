@@ -7,6 +7,7 @@ import { listCatalog, type CatalogRow, type CatalogType } from "@/lib/catalog.fu
 import { CATALOG_SLUG_ROUTE } from "@/lib/catalog-routes";
 import { Plus } from "lucide-react";
 import { StorageImg } from "@/components/StorageMedia";
+import { unitFromPricing } from "@/lib/pricing";
 import { addToCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
 import { toast } from "sonner";
