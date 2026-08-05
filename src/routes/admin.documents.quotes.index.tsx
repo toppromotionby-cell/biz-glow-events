@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
-import { listQuotes, createQuote, duplicateQuote, deleteQuote, listOrdersForQuote } from "@/lib/quotes.functions";
+import { listQuotes, createQuote, duplicateQuote, deleteQuote, listOrdersForQuote, createQuoteFromTemplate } from "@/lib/quotes.functions";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/lib/quotes-model";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { downloadAuthedFile } from "@/lib/authed-fetch";
