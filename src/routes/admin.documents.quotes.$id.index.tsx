@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, History, Plus, Search, Send,
-  Settings2, Eye, BookmarkPlus,
+  Settings2, Eye, BookmarkPlus, FileCheck2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ import { BRAND_ACCENTS } from "@/lib/documents/brand";
 import {
   getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
   listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
-  saveQuoteAsTemplate, markQuoteSent,
+  saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
 import {
   checkQuote, computeTotals, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
@@ -34,6 +34,7 @@ import {
 import { buildQuoteHtmlDoc, quoteNumberDisplay } from "@/lib/documents/quote-html";
 import { QuoteBlocksEditor } from "@/components/admin/quotes/QuoteBlocksEditor";
 import { QuoteItemsPanel } from "@/components/admin/quotes/QuoteItemsPanel";
+import { QuoteShareActions, QuoteShareStatus, type ShareState } from "@/components/admin/quotes/QuoteShareActions";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { fmtMoney } from "@/lib/formatters";
 import { downloadAuthedFile, openAuthedDocument } from "@/lib/authed-fetch";
@@ -93,6 +94,7 @@ function ImageField({ label, value, onChange }: { label: string; value: string |
 
 function Page() {
   const { id } = Route.useParams();
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const load = useServerFn(getQuote);
   const save = useServerFn(saveQuote);
@@ -103,6 +105,8 @@ function Page() {
   const rollback = useServerFn(restoreQuoteVersion);
   const makeTemplate = useServerFn(saveQuoteAsTemplate);
   const markSent = useServerFn(markQuoteSent);
+  const sendToClient = useServerFn(sendQuoteToClient);
+  const makeOrder = useServerFn(createOrderFromQuote);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-quote", id], queryFn: () => load({ data: { id } }) });
   const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({ queryKey: ["admin-quote-settings"], queryFn: () => loadSettings() });
@@ -236,6 +240,32 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  const shareState: ShareState = {
+    token: quote.public_token,
+    email: quote.client_email,
+    sentAt: quote.sent_at,
+    viewedAt: quote.viewed_at,
+    clientResponse: quote.client_response,
+    clientComment: quote.client_comment,
+  };
+
+  const onSendToClient = async (input: { email: string; note: string; attachPdf: boolean }) => {
+    await sendToClient({ data: { id, ...input } });
+    setQuote((q) => (q ? { ...q, sent_at: new Date().toISOString(), status: q.status === "draft" ? "sent" : q.status } : q));
+    qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+  };
+
+  const onCreateOrder = async () => {
+    try {
+      const res = await makeOrder({ data: { id } });
+      setQuote((q) => (q ? { ...q, order_id: res.orderId } : q));
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      navigate({ to: "/admin/orders/$id", params: { id: res.orderId } });
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+
+
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -251,14 +281,19 @@ function Page() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SaveStatus state={state} errorMessage={saveError} />
+          <QuoteShareStatus share={shareState} />
           <Select value={quote.status} onValueChange={(v) => patch({ status: v as QuoteStatus })}>
             <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               {QUOTE_STATUSES.map((s) => <SelectItem key={s} value={s}>{QUOTE_STATUS_LABELS[s]}</SelectItem>)}
             </SelectContent>
           </Select>
+          <QuoteShareActions share={shareState} onSend={onSendToClient} />
           <Button variant="outline" size="sm" onClick={onMarkSent}><Send className="h-4 w-4 mr-1.5" />Отправлено</Button>
           <Button variant="outline" size="sm" onClick={() => setTemplateOpen(true)}><BookmarkPlus className="h-4 w-4 mr-1.5" />В шаблоны</Button>
+          <Button variant="outline" size="sm" onClick={onCreateOrder}>
+            <FileCheck2 className="h-4 w-4 mr-1.5" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => openAuthedDocument(`/admin/documents/quotes/${id}/render`).catch((e) => toast.error((e as Error).message))}>
             <ExternalLink className="h-4 w-4 mr-1.5" />HTML
           </Button>

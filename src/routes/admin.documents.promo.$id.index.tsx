@@ -24,11 +24,13 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { QuoteShareActions, QuoteShareStatus, type ShareState } from "@/components/admin/quotes/QuoteShareActions";
 import { PromoItemsTable } from "@/components/admin/promo/PromoItemsTable";
 import { PromoItemsToolbar } from "@/components/admin/promo/PromoItemsToolbar";
 import { PromoTotalsPanel } from "@/components/admin/promo/PromoTotalsPanel";
 import {
   createPromoVersion, getPromoQuote, listPromoVersions, markPromoSent, restorePromoVersion,
+  sendPromoQuoteToClient,
   savePromoQuote, savePromoSnippet, savePromoTemplate,
 } from "@/lib/promo-quotes.functions";
 import {
@@ -64,6 +66,7 @@ function EditorPage() {
   const makeVersion = useServerFn(createPromoVersion);
   const restoreVersion = useServerFn(restorePromoVersion);
   const markSent = useServerFn(markPromoSent);
+  const sendPromo = useServerFn(sendPromoQuoteToClient);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["promo-quote", id],
@@ -190,6 +193,14 @@ function EditorPage() {
   }
 
   const validity = promoValidityState(quote);
+  const shareState: ShareState = {
+    token: quote.public_token,
+    email: quote.contact_email,
+    sentAt: quote.sent_at,
+    viewedAt: quote.viewed_at,
+    clientResponse: quote.client_response,
+    clientComment: quote.client_comment,
+  };
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -223,6 +234,17 @@ function EditorPage() {
           >
             {PROMO_STATUS_LABELS[quote.status]}
           </StatusPill>
+          <QuoteShareStatus share={shareState} />
+
+          <QuoteShareActions
+            share={shareState}
+            onSend={async (input) => {
+              await sendPromo({ data: { id, ...input } });
+              await refetch();
+            }}
+          />
+
+
 
           <Button size="sm" variant="ghost" onClick={undo} title="Отменить (Ctrl+Z)">
             <Undo2 className="h-4 w-4" />

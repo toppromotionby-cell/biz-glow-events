@@ -144,6 +144,10 @@ export type Quote = {
   is_template: boolean;
   template_name: string;
   public_token: string;
+  viewed_at: string | null;
+  client_response: string;
+  client_comment: string;
+  responded_at: string | null;
   created_at: string;
   updated_at: string;
 };

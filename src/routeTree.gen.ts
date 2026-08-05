@@ -50,6 +50,7 @@ import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as ProductionSlugRouteImport } from './routes/production.$slug'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
+import { Route as KpTokenRouteImport } from './routes/kp.$token'
 import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as GeoCityRouteImport } from './routes/geo.$city'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
@@ -302,6 +303,11 @@ const ProductionSlugRoute = ProductionSlugRouteImport.update({
 const LpSlugRoute = LpSlugRouteImport.update({
   id: '/lp/$slug',
   path: '/lp/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KpTokenRoute = KpTokenRouteImport.update({
+  id: '/kp/$token',
+  path: '/kp/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InquiryTokenRoute = InquiryTokenRouteImport.update({
@@ -612,6 +618,7 @@ export interface FileRoutesByFullPath {
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
   '/inquiry/$token': typeof InquiryTokenRoute
+  '/kp/$token': typeof KpTokenRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -701,6 +708,7 @@ export interface FileRoutesByTo {
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
   '/inquiry/$token': typeof InquiryTokenRoute
+  '/kp/$token': typeof KpTokenRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -793,6 +801,7 @@ export interface FileRoutesById {
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
   '/inquiry/$token': typeof InquiryTokenRoute
+  '/kp/$token': typeof KpTokenRoute
   '/lp/$slug': typeof LpSlugRoute
   '/production/$slug': typeof ProductionSlugRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -886,6 +895,7 @@ export interface FileRouteTypes {
     | '/equipment/$slug'
     | '/geo/$city'
     | '/inquiry/$token'
+    | '/kp/$token'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -975,6 +985,7 @@ export interface FileRouteTypes {
     | '/equipment/$slug'
     | '/geo/$city'
     | '/inquiry/$token'
+    | '/kp/$token'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -1066,6 +1077,7 @@ export interface FileRouteTypes {
     | '/equipment/$slug'
     | '/geo/$city'
     | '/inquiry/$token'
+    | '/kp/$token'
     | '/lp/$slug'
     | '/production/$slug'
     | '/services/$slug'
@@ -1141,6 +1153,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   GeoCityRoute: typeof GeoCityRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
+  KpTokenRoute: typeof KpTokenRoute
   LpSlugRoute: typeof LpSlugRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSocialClickRoute: typeof ApiPublicSocialClickRoute
@@ -1442,6 +1455,13 @@ declare module '@tanstack/react-router' {
       path: '/lp/$slug'
       fullPath: '/lp/$slug'
       preLoaderRoute: typeof LpSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kp/$token': {
+      id: '/kp/$token'
+      path: '/kp/$token'
+      fullPath: '/kp/$token'
+      preLoaderRoute: typeof KpTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inquiry/$token': {
@@ -1991,6 +2011,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   GeoCityRoute: GeoCityRoute,
   InquiryTokenRoute: InquiryTokenRoute,
+  KpTokenRoute: KpTokenRoute,
   LpSlugRoute: LpSlugRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSocialClickRoute: ApiPublicSocialClickRoute,

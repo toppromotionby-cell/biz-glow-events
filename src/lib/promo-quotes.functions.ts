@@ -451,3 +451,69 @@ export const markPromoSent = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Отправить КП промо клиенту: письмо со ссылкой и PDF-вложением. */
+export const sendPromoQuoteToClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; email?: string; note?: string; attachPdf?: boolean }) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        email: z.string().email().max(200).optional(),
+        note: z.string().max(2000).optional(),
+        attachPdf: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true; to: string; url: string }> => {
+    await assertStaff(context as never);
+
+    const [{ data: row }, { data: itemRows }] = await Promise.all([
+      context.supabase.from("promo_quotes").select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from("promo_quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
+    ]);
+    if (!row) throw new Error("КП не найдено");
+    const quote = normalizePromoQuote(row as Record<string, unknown>);
+    const items = ((itemRows ?? []) as Record<string, unknown>[]).map(normalizePromoItem);
+
+    const to = (data.email ?? quote.contact_email ?? "").trim();
+    if (!to) throw new Error("Не указан e-mail клиента");
+
+    const { sendQuoteShareEmail } = await import("@/lib/admin-email.server");
+    const { loadDocumentSettings } = await import("@/lib/documents/render.server");
+    const { buildPromoQuotePdf } = await import("@/lib/documents/pdf.server");
+    const { promoFileName, promoNumberDisplay } = await import("@/lib/promo-quote-model");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let pdf: { filename: string; bytes: Uint8Array } | null = null;
+    if (data.attachPdf !== false) {
+      try {
+        const settings = await loadDocumentSettings(supabaseAdmin as never);
+        pdf = { filename: promoFileName(quote, "pdf"), bytes: await buildPromoQuotePdf(quote, items, settings) };
+      } catch {
+        pdf = null;
+      }
+    }
+
+    const site = (process.env["PUBLIC_SITE_URL"] ?? "https://event-hub.by").replace(/\/+$/, "");
+    const url = `${site}/kp/${quote.public_token}`;
+    const res = await sendQuoteShareEmail({
+      to,
+      clientName: quote.contact_name || quote.client_name,
+      docTitle: "Коммерческое предложение",
+      docNumber: promoNumberDisplay(quote),
+      url,
+      total: computePromoTotals(quote, items).totalWithVat,
+      validUntil: quote.valid_until,
+      managerNote: data.note ?? "",
+      pdf,
+    });
+    if (!res.ok) throw new Error(res.error ?? "Не удалось отправить письмо");
+
+    await context.supabase
+      .from("promo_quotes")
+      .update({ sent_at: new Date().toISOString(), status: quote.status === "draft" ? "sent" : quote.status })
+      .eq("id", data.id);
+
+    return { ok: true, to, url };
+  });

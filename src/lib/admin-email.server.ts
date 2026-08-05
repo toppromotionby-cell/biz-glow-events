@@ -686,3 +686,55 @@ export async function notifyClientOrderConfirmedEmail(
     messageId,
   });
 }
+
+// ===== Клиенту: коммерческое предложение (ссылка + PDF) =====
+
+export type QuoteShareEmailPayload = {
+  to: string;
+  clientName: string;
+  docTitle: string;
+  docNumber: string;
+  url: string;
+  total: number;
+  validUntil?: string | null;
+  managerNote?: string;
+  pdf?: { filename: string; bytes: Uint8Array } | null;
+};
+
+export async function sendQuoteShareEmail(p: QuoteShareEmailPayload): Promise<{ ok: boolean; error?: string }> {
+  const to = (p.to ?? "").trim();
+  if (!to) return { ok: false, error: "no client email" };
+
+  const subject = `${p.docTitle} ${p.docNumber} — ${SITE_NAME}`;
+  const body = `
+    ${sectionLabel("Коммерческое предложение")}
+    <div style="font-family:${FONT_DISPLAY};font-size:22px;font-weight:700;color:${BRAND.text};margin:0 0 12px">
+      ${escapeHtml(p.docTitle)} ${escapeHtml(p.docNumber)}
+    </div>
+    <div style="font-size:14px;color:${BRAND.textSoft};line-height:1.7;margin:0 0 18px">
+      Здравствуйте${p.clientName ? `, ${escapeHtml(p.clientName)}` : ""}!<br/>
+      Подготовили для вас предложение. Его можно открыть по ссылке, скачать в PDF
+      и прямо там согласовать или задать вопрос.
+    </div>
+    ${p.managerNote ? `<div style="font-size:14px;color:${BRAND.textSoft};line-height:1.7;margin:0 0 18px;white-space:pre-line">${escapeHtml(p.managerNote)}</div>` : ""}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px">
+      ${metaRow("Сумма", `<strong>${escapeHtml(fmtBYN(p.total))}</strong>`)}
+      ${p.validUntil ? metaRow("Действительно до", escapeHtml(p.validUntil)) : ""}
+    </table>
+    <a href="${escapeHtml(p.url)}"
+       style="display:inline-block;background:${BRAND.accent};color:#16110a;font-weight:700;font-size:14px;
+              padding:13px 26px;border-radius:12px;text-decoration:none">Открыть предложение</a>
+    <div style="font-size:12px;color:${BRAND.muted};margin:16px 0 0;word-break:break-all">${escapeHtml(p.url)}</div>
+  `;
+
+  const html = brandShell({ title: subject, previewText: `${p.docTitle} ${p.docNumber}`, body });
+  const messageId = `quote-share-${p.docNumber || "doc"}-${Date.now().toString(36)}`;
+
+  if (p.pdf) {
+    return sendWithAttachments({
+      to, subject, html, label: "quote-share", messageId,
+      attachments: [{ filename: p.pdf.filename, bytes: p.pdf.bytes }],
+    });
+  }
+  return enqueue({ to, subject, html, label: "quote-share", messageId });
+}

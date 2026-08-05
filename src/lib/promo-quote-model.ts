@@ -47,6 +47,11 @@ export type PromoQuote = {
   discount_value: number;
   valid_until: string | null;
   sent_at: string | null;
+  public_token: string;
+  viewed_at: string | null;
+  client_response: string;
+  client_comment: string;
+  responded_at: string | null;
   currency: string;
   footer_note: string;
   is_template: boolean;
@@ -113,6 +118,11 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     discount_value: num(row.discount_value),
     valid_until: row.valid_until ? String(row.valid_until).slice(0, 10) : null,
     sent_at: row.sent_at ? String(row.sent_at) : null,
+    public_token: str(row.public_token),
+    viewed_at: row.viewed_at ? String(row.viewed_at) : null,
+    client_response: str(row.client_response),
+    client_comment: str(row.client_comment),
+    responded_at: row.responded_at ? String(row.responded_at) : null,
     currency: str(row.currency, "BYN"),
     footer_note: str(row.footer_note),
     is_template: row.is_template === true,
