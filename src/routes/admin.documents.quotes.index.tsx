@@ -33,7 +33,9 @@ function Page() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [templatesMode, setTemplatesMode] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [tplOpen, setTplOpen] = useState(false);
   const [orderTerm, setOrderTerm] = useState("");
   const confirm = useConfirm();
 
@@ -42,10 +44,17 @@ function Page() {
   const duplicate = useServerFn(duplicateQuote);
   const remove = useServerFn(deleteQuote);
   const orders = useServerFn(listOrdersForQuote);
+  const fromTemplate = useServerFn(createQuoteFromTemplate);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["admin-quotes", search, status],
-    queryFn: () => list({ data: { search, status } }),
+    queryKey: ["admin-quotes", search, status, templatesMode],
+    queryFn: () => list({ data: { search, status, templates: templatesMode } }),
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["admin-quotes", "templates-picker"],
+    queryFn: () => list({ data: { templates: true } }),
+    enabled: tplOpen,
   });
 
   const { data: orderHits = [] } = useQuery({
@@ -53,6 +62,17 @@ function Page() {
     queryFn: () => orders({ data: { q: orderTerm } }),
     enabled: importOpen,
   });
+
+  const tplMut = useMutation({
+    mutationFn: (templateId: string) => fromTemplate({ data: { templateId } }),
+    onSuccess: ({ id }) => {
+      setTplOpen(false);
+      qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+      navigate({ to: "/admin/documents/quotes/$id", params: { id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const createMut = useMutation({
     mutationFn: (orderId?: string) => create({ data: { orderId: orderId ?? null } }),
