@@ -13,7 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { StatusPill } from "@/components/admin/StatusPill";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { listQuotes, createQuote, duplicateQuote, deleteQuote, listOrdersForQuote } from "@/lib/quotes.functions";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/lib/quotes-model";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
@@ -35,7 +35,7 @@ function Page() {
   const [status, setStatus] = useState("all");
   const [importOpen, setImportOpen] = useState(false);
   const [orderTerm, setOrderTerm] = useState("");
-  const [toDelete, setToDelete] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const list = useServerFn(listQuotes);
   const create = useServerFn(createQuote);
@@ -186,7 +186,9 @@ function Page() {
                     <Button variant="ghost" size="icon" title="Дублировать" onClick={() => dupMut.mutate(r.id)}>
                       <Copy className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" title="Удалить" onClick={() => setToDelete(r.id)}>
+                    <Button variant="ghost" size="icon" title="Удалить" onClick={async () => {
+                        if (await confirm.confirm({ title: "Удалить КП?", description: "Документ и его позиции будут удалены безвозвратно.", destructive: true })) delMut.mutate(r.id);
+                      }}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -197,14 +199,7 @@ function Page() {
         </table>
       </div>
 
-      <ConfirmDialog
-        open={!!toDelete}
-        onOpenChange={(v) => !v && setToDelete(null)}
-        title="Удалить КП?"
-        description="Документ и его позиции будут удалены безвозвратно."
-        confirmLabel="Удалить"
-        onConfirm={() => { if (toDelete) delMut.mutate(toDelete); setToDelete(null); }}
-      />
+      {confirm.dialog}
     </div>
   );
 }
