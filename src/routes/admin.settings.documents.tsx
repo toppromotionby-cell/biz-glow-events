@@ -17,8 +17,8 @@ import { notify } from "@/lib/notify";
 import { BRAND_ACCENTS } from "@/lib/documents/brand";
 
 import { supabase } from "@/integrations/supabase/client";
-import {
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
+import {
   getDocumentSettings,
   updateDocumentSettings,
   DEFAULT_DOCUMENT_SETTINGS,
