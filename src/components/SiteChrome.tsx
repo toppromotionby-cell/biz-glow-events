@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useRoles } from "@/hooks/use-roles";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Heart, Menu } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Heart, Menu, ShieldCheck } from "lucide-react";
+
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { SearchTrigger } from "@/components/SearchTrigger";
@@ -41,6 +43,8 @@ const INFO_LINKS = [
 
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
+  const { isStaff } = useRoles();
+
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
   const [open, setOpen] = useState(false);
