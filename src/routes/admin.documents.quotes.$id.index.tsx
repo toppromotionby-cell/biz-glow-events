@@ -117,6 +117,7 @@ function Page() {
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [state, setState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [pending, setPending] = useState<string[]>([]);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [catalogType, setCatalogType] = useState("all");
   const [catalogTerm, setCatalogTerm] = useState("");
