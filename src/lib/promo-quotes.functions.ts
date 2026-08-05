@@ -496,8 +496,9 @@ export const sendPromoQuoteToClient = createServerFn({ method: "POST" })
       try {
         const settings = await loadDocumentSettings(supabaseAdmin as never);
         pdf = { filename: promoFileName(quote, "pdf"), bytes: await buildPromoQuotePdf(quote, items, settings) };
-      } catch {
-        pdf = null;
+      } catch (error) {
+        console.error("[promo-email] requested PDF build failed", { quoteId: data.id, error });
+        throw new Error("Не удалось сформировать PDF для письма. Повторите попытку");
       }
     }
 

@@ -9,8 +9,16 @@ export async function requireStaff(request: Request): Promise<Response | { userI
     return new Response("Unauthorized", { status: 401 });
   }
   const token = authHeader.slice(7);
-  const SUPABASE_URL = process.env.SUPABASE_URL!;
-  const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY!;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    const errorId = crypto.randomUUID();
+    console.error("[admin-auth] backend configuration missing", { errorId });
+    return Response.json(
+      { error: "Сервис временно недоступен", errorId },
+      { status: 500, headers: { "x-document-error-id": errorId } },
+    );
+  }
   const sb = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
   });
