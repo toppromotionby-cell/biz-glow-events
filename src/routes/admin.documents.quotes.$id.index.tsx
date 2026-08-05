@@ -151,10 +151,7 @@ function Page() {
     const t = setTimeout(async () => {
       setState("saving");
       try {
-        await save({
-          data: {
-            id,
-            patch: {
+        const rawPatch: Record<string, unknown> = {
               status: quote.status, title: quote.title, doc_date: quote.doc_date, validity_days: quote.validity_days,
               client_name: quote.client_name ?? "", client_company: quote.client_company ?? "", client_unp: quote.client_unp ?? "",
               client_phone: quote.client_phone ?? "", client_email: quote.client_email ?? "", client_address: quote.client_address ?? "",
@@ -169,7 +166,14 @@ function Page() {
               discount_type: quote.discount_type, discount_value: num(quote.discount_value),
               prepayment_type: quote.prepayment_type, prepayment_value: num(quote.prepayment_value),
               delivery_amount: num(quote.delivery_amount), vat_note: quote.vat_note ?? "",
-            },
+        };
+        // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
+        // остальные поля сохраняются, а поле подсветится в списке проверок.
+        const { patch, skipped } = sanitizeQuotePatch(rawPatch);
+        await save({
+          data: {
+            id,
+            patch,
             items: items.map((it, i) => ({
               section: it.section ?? "", title: it.title || "Позиция", description: it.description ?? "",
               includes: (it.includes ?? []).filter((x) => x.text.trim()),
@@ -181,10 +185,11 @@ function Page() {
         dirtyRef.current = false;
         setState("saved");
         setSaveError(null);
+        setPending(skipped);
         qc.invalidateQueries({ queryKey: ["admin-quotes"] });
       } catch (e) {
         setState("error");
-        setSaveError((e as Error).message);
+        setSaveError(friendlyZodMessage(e));
       }
     }, 1200);
     return () => clearTimeout(t);
