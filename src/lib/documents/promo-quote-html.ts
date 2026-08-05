@@ -80,6 +80,11 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
   }
 
   const totalsRows = [
+    t.discount > 0
+      ? `<tr class="total"><td class="lbl">Скидка${
+          quote.discount_type === "percent" ? ` ${nf(quote.discount_value).replace(",00", "")}%` : ""
+        }:</td><td class="val">− ${nf(t.discount)}</td></tr>`
+      : "",
     `<tr class="total"><td class="lbl">Всего${quote.vat_enabled ? ", без НДС" : ""}:</td><td class="val">${nf(t.subtotal)}</td></tr>`,
     quote.vat_enabled
       ? `<tr class="total"><td class="lbl">НДС ${nf(quote.vat_rate).replace(",00", "")}%:</td><td class="val">${nf(t.vat)}</td></tr>`
@@ -89,11 +94,16 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
     )} ${esc(quote.currency)}</td></tr>`,
   ].join("");
 
+  const validUntilText = quote.valid_until
+    ? new Date(`${quote.valid_until}T00:00:00`).toLocaleDateString("ru-RU")
+    : "";
+
   const meta = [
     quote.project ? `<div><b>Проект:</b> ${esc(quote.project)}</div>` : "",
     quote.client_name ? `<div><b>Клиент:</b> ${esc(quote.client_name)}</div>` : "",
     quote.period ? `<div><b>Период:</b> ${esc(quote.period)}</div>` : "",
     quote.venue ? `<div><b>Место проведения:</b> ${esc(quote.venue)}</div>` : "",
+    validUntilText ? `<div><b>Предложение действительно до:</b> ${esc(validUntilText)}</div>` : "",
     quote.contact_name || quote.contact_phone || quote.contact_email
       ? `<div><b>Контактное лицо:</b> ${esc(
           [quote.contact_name, quote.contact_role].filter(Boolean).join(", "),
@@ -102,6 +112,7 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
         }</div>`
       : "",
   ].join("");
+
 
   return `
 <div class="promo-doc" style="--accent:${esc(accent)}">

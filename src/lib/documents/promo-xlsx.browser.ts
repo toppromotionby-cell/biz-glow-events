@@ -194,11 +194,27 @@ export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]
     return row.number;
   };
 
-  const subtotalRow = addTotal(
-    `Всего${quote.vat_enabled ? ", без НДС" : ""}:`,
+  const grossRow = addTotal(
+    t.discount > 0 ? "Сумма:" : `Всего${quote.vat_enabled ? ", без НДС" : ""}:`,
     sumRangeFormula(allSumRows),
-    t.subtotal,
+    t.gross,
   );
+  let subtotalRow = grossRow;
+  if (t.discount > 0) {
+    const discountRow = addTotal(
+      quote.discount_type === "percent" ? `Скидка ${quote.discount_value}%:` : "Скидка:",
+      quote.discount_type === "percent"
+        ? `-${sumCol}${grossRow}*${quote.discount_value / 100}`
+        : `-${t.discount}`,
+      -t.discount,
+    );
+    subtotalRow = addTotal(
+      `Всего${quote.vat_enabled ? ", без НДС" : ""}:`,
+      `${sumCol}${grossRow}+${sumCol}${discountRow}`,
+      t.subtotal,
+    );
+  }
+
   let vatRow = 0;
   if (quote.vat_enabled) {
     vatRow = addTotal(`НДС ${quote.vat_rate}%:`, `${sumCol}${subtotalRow}*${quote.vat_rate / 100}`, t.vat);

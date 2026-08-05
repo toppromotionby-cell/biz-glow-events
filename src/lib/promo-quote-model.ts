@@ -12,6 +12,11 @@ export const PROMO_STATUS_LABELS: Record<PromoStatus, string> = {
   rejected: "Отклонено",
 };
 
+export const PROMO_DISCOUNT_TYPES = ["none", "percent", "fixed"] as const;
+export type PromoDiscountType = (typeof PROMO_DISCOUNT_TYPES)[number];
+
+export const PROMO_CURRENCIES = ["BYN", "USD", "EUR", "RUB"] as const;
+
 export type PromoQuote = {
   id: string;
   doc_number: string | null;
@@ -38,6 +43,10 @@ export type PromoQuote = {
   management_enabled: boolean;
   management_amount: number;
   management_label: string;
+  discount_type: PromoDiscountType;
+  discount_value: number;
+  valid_until: string | null;
+  sent_at: string | null;
   currency: string;
   footer_note: string;
   is_template: boolean;
@@ -56,10 +65,12 @@ export type PromoItem = {
   qty: number;
   multiplier: number;
   price: number;
+  cost: number;
   note: string;
   exclude_from_commission: boolean;
   sort_order: number;
 };
+
 
 const num = (v: unknown, d = 0) => {
   const n = typeof v === "string" ? Number(v.replace(",", ".")) : Number(v);
@@ -96,6 +107,12 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     management_enabled: row.management_enabled === true,
     management_amount: num(row.management_amount),
     management_label: str(row.management_label, "Менеджмент"),
+    discount_type: (PROMO_DISCOUNT_TYPES as readonly string[]).includes(str(row.discount_type))
+      ? (str(row.discount_type) as PromoDiscountType)
+      : "none",
+    discount_value: num(row.discount_value),
+    valid_until: row.valid_until ? String(row.valid_until).slice(0, 10) : null,
+    sent_at: row.sent_at ? String(row.sent_at) : null,
     currency: str(row.currency, "BYN"),
     footer_note: str(row.footer_note),
     is_template: row.is_template === true,
@@ -116,11 +133,13 @@ export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
     qty: num(row.qty, 1),
     multiplier: num(row.multiplier, 1),
     price: num(row.price),
+    cost: num(row.cost),
     note: str(row.note),
     exclude_from_commission: row.exclude_from_commission === true,
     sort_order: num(row.sort_order),
   };
 }
+
 
 // ==== Валидация ====
 
@@ -132,6 +151,7 @@ export const promoItemSchema = z.object({
   qty: z.number().min(0).max(100000).default(1),
   multiplier: z.number().min(0).max(100000).default(1),
   price: z.number().min(0).max(100000000).default(0),
+  cost: z.number().min(0).max(100000000).default(0),
   note: z.string().max(2000).default(""),
   exclude_from_commission: z.boolean().default(false),
   sort_order: z.number().int().min(0).max(10000).default(0),
@@ -162,6 +182,10 @@ export const promoQuotePatchSchema = z
     management_enabled: z.boolean(),
     management_amount: z.number().min(0).max(100000000),
     management_label: z.string().max(120),
+    discount_type: z.enum(PROMO_DISCOUNT_TYPES),
+    discount_value: z.number().min(0).max(100000000),
+    valid_until: z.string().max(20).nullable(),
+    sent_at: z.string().max(40).nullable(),
     currency: z.string().max(10),
     footer_note: z.string().max(4000),
     is_template: z.boolean(),
@@ -169,20 +193,34 @@ export const promoQuotePatchSchema = z
   })
   .partial();
 
-// Валидация формы для UI (мягкая — блокируем только экспорт при критичных ошибках).
-export function validatePromoQuote(q: PromoQuote, items: PromoItem[]): string[] {
-  const errs: string[] = [];
-  if (!q.project.trim()) errs.push("Не заполнено поле «Проект»");
-  if (!q.client_name.trim()) errs.push("Не заполнено поле «Клиент»");
+// Проверки готовности документа: критичные (blocking) и предупреждения.
+export type PromoCheck = { level: "error" | "warn"; message: string; itemIndex?: number };
+
+export function checkPromoQuote(q: PromoQuote, items: PromoItem[]): PromoCheck[] {
+  const out: PromoCheck[] = [];
+  if (!q.project.trim()) out.push({ level: "error", message: "Не заполнено поле «Проект»" });
+  if (!q.client_name.trim()) out.push({ level: "error", message: "Не заполнено поле «Клиент»" });
   if (q.contact_email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(q.contact_email.trim()))
-    errs.push("Некорректный e-mail контактного лица");
-  if (!items.length) errs.push("Не добавлено ни одной позиции");
+    out.push({ level: "error", message: "Некорректный e-mail контактного лица" });
+  if (!items.length) out.push({ level: "error", message: "Не добавлено ни одной позиции" });
+  if (!q.valid_until) out.push({ level: "warn", message: "Не указан срок действия предложения" });
   items.forEach((it, i) => {
-    if (!it.title.trim()) errs.push(`Строка ${i + 1}: пустое наименование`);
-    if (it.price < 0) errs.push(`Строка ${i + 1}: отрицательная цена`);
-    if (it.qty < 0 || it.multiplier < 0) errs.push(`Строка ${i + 1}: отрицательное количество`);
+    const label = it.title.trim() || `строка ${i + 1}`;
+    if (!it.title.trim()) out.push({ level: "error", message: `Строка ${i + 1}: пустое наименование`, itemIndex: i });
+    if (it.price < 0 || it.qty < 0 || it.multiplier < 0)
+      out.push({ level: "error", message: `${label}: отрицательное значение`, itemIndex: i });
+    else if (lineTotal(it) === 0) out.push({ level: "warn", message: `${label}: нулевая сумма`, itemIndex: i });
+    if (it.cost > 0 && it.cost * lineQty(it) > lineTotal(it))
+      out.push({ level: "warn", message: `${label}: себестоимость выше цены`, itemIndex: i });
   });
-  return errs;
+  return out;
+}
+
+// Совместимость: плоский список текстов ошибок.
+export function validatePromoQuote(q: PromoQuote, items: PromoItem[]): string[] {
+  return checkPromoQuote(q, items)
+    .filter((c) => c.level === "error")
+    .map((c) => c.message);
 }
 
 // ==== Расчёты ====
@@ -195,6 +233,10 @@ export function lineTotal(it: PromoItem): number {
   return round2(lineQty(it) * num(it.price, 0));
 }
 
+export function lineCost(it: PromoItem): number {
+  return round2(lineQty(it) * num(it.cost, 0));
+}
+
 export function round2(n: number): number {
   return Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
 }
@@ -204,9 +246,14 @@ export type PromoTotals = {
   commissionBase: number;
   commission: number;
   management: number;
+  gross: number;
+  discount: number;
   subtotal: number;
   vat: number;
   totalWithVat: number;
+  costSum: number;
+  margin: number;
+  marginPct: number;
 };
 
 export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTotals {
@@ -216,18 +263,89 @@ export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTota
   );
   const management = q.management_enabled ? round2(q.management_amount) : 0;
   const commission = q.commission_enabled ? round2((commissionBase * q.commission_rate) / 100) : 0;
-  const subtotal = round2(itemsSum + management + commission);
+  const gross = round2(itemsSum + management + commission);
+  const discount =
+    q.discount_type === "percent"
+      ? round2((gross * Math.min(num(q.discount_value), 100)) / 100)
+      : q.discount_type === "fixed"
+        ? round2(Math.min(num(q.discount_value), gross))
+        : 0;
+  const subtotal = round2(gross - discount);
   const vat = q.vat_enabled ? round2((subtotal * q.vat_rate) / 100) : 0;
+  const costSum = round2(items.reduce((s, it) => s + lineCost(it), 0));
+  const margin = round2(subtotal - costSum);
   return {
     itemsSum,
     commissionBase,
     commission,
     management,
+    gross,
+    discount,
     subtotal,
     vat,
     totalWithVat: round2(subtotal + vat),
+    costSum,
+    margin,
+    marginPct: subtotal > 0 ? round2((margin / subtotal) * 100) : 0,
   };
 }
+
+
+// ==== Хелперы редактора ====
+
+export const PROMO_SECTION_SUGGESTIONS = [
+  "Организация",
+  "Персонал",
+  "Логистика",
+  "Активности",
+  "Техническое оснащение",
+  "Шоу программа",
+  "Призовой фонд",
+  "Отчётность",
+  "Прочее",
+];
+
+export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): PromoItem {
+  return {
+    id: crypto.randomUUID(),
+    quote_id: "",
+    section,
+    title: "",
+    unit: "услуга",
+    qty: 1,
+    multiplier: 1,
+    price: 0,
+    cost: 0,
+    note: "",
+    exclude_from_commission: false,
+    sort_order: 0,
+    ...patch,
+  };
+}
+
+// Разбор вставки из Excel/таблицы: наименование [tab] кол-во [tab] цена [tab] примечание
+export function parsePastedPromoRows(text: string, section = ""): PromoItem[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const out: PromoItem[] = [];
+  for (const line of lines) {
+    const cells = line.split(/\t|;/).map((c) => c.trim());
+    if (!cells.length || !cells[0]) continue;
+    const nums = cells.slice(1).map((c) => Number(c.replace(/\s/g, "").replace(",", ".")));
+    const qty = Number.isFinite(nums[0]) ? nums[0] : 1;
+    const price = Number.isFinite(nums[1]) ? nums[1] : 0;
+    const note = cells.slice(1).find((c) => c && !Number.isFinite(Number(c.replace(",", ".")))) ?? "";
+    out.push(newPromoItem(section, { title: cells[0], qty, price, note }));
+  }
+  return out;
+}
+
+export function promoValidityState(q: PromoQuote): "none" | "active" | "expired" {
+  if (!q.valid_until) return "none";
+  const d = new Date(`${q.valid_until}T23:59:59`);
+  if (Number.isNaN(d.getTime())) return "none";
+  return d.getTime() < Date.now() ? "expired" : "active";
+}
+
 
 // Группировка позиций по секциям с сохранением порядка.
 export type PromoSection = { name: string; items: PromoItem[] };
