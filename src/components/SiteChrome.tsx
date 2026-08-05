@@ -213,7 +213,17 @@ export function SiteHeader() {
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                   {isAuthenticated ? (
                     <>
+                      {isStaff && (
+                        <SheetClose asChild>
+                          <Link to="/admin">
+                            <Button variant="outline" className="w-full border-primary/40 text-primary">
+                              <ShieldCheck className="h-4 w-4 mr-2" />Админ-панель
+                            </Button>
+                          </Link>
+                        </SheetClose>
+                      )}
                       <Toggleable sectionKey="header.account" as="div">
+
                         <SheetClose asChild>
                           <Link to="/profile"><Button variant="outline" className="w-full"><User className="h-4 w-4 mr-2" />Личный кабинет</Button></Link>
                         </SheetClose>
