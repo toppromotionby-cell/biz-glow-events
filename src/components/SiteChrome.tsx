@@ -125,9 +125,17 @@ export function SiteHeader() {
             </Toggleable>
             {isAuthenticated ? (
               <>
+                {isStaff && (
+                  <Link to="/admin">
+                    <Button variant="outline" size="sm" className="border-primary/40 text-primary hover:bg-primary/10">
+                      <ShieldCheck className="h-4 w-4 mr-1" />Админка
+                    </Button>
+                  </Link>
+                )}
                 <Toggleable sectionKey="header.account" as="span">
                   <Link to="/profile"><Button variant="ghost" size="sm"><User className="h-4 w-4 mr-1" />Кабинет</Button></Link>
                 </Toggleable>
+
                 <Toggleable sectionKey="header.logout" as="span">
                   <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>Выйти</Button>
                 </Toggleable>
