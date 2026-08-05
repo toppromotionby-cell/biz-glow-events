@@ -248,7 +248,7 @@ function OrderDetail() {
                 {loadPreview.isPending ? "Загрузка…" : "Предпросмотр письма"}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => viewer.openDocument(`/admin/orders/${order.id}/quote`, { name: "КП.html" })}
+                onClick={() => viewer.openDocument(`/admin/orders/${order.id}/quote?format=pdf`, { name: "КП.pdf" })}
               >
                 <Download className="h-4 w-4 mr-2" />Скачать КП
               </DropdownMenuItem>
