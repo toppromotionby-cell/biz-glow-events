@@ -58,6 +58,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
       title: item.title,
       price,
       qty: 1,
+      unit: unitFromPricing(item.pricing),
       image: item.photo_urls?.[0] ?? null,
     });
     trackAddToCart({ item_id: item.id, item_name: item.title, item_category: type, price, quantity: 1 });

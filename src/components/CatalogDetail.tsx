@@ -114,6 +114,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
       title: effectiveTitle,
       price: effectiveTotal,
       image: item.photo_urls?.[0] ?? null,
+      unit: itemUnit,
       qty: 1,
     });
     trackAddToCart({
@@ -293,6 +294,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                     title={effectiveTitle}
                     price={effectivePrice}
                     image={item.photo_urls?.[0] ?? null}
+                    unit={itemUnit}
                   />
                 )}
                 <WishlistButton
