@@ -4,6 +4,12 @@
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
+import {
+  applyPlaceholders,
+  defaultBlocksForTemplate,
+  type PlaceholderMap,
+  type QuoteBlock,
+} from "@/lib/quote-blocks";
 
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -70,6 +76,89 @@ export function quoteNumberDisplay(quote: Quote): string {
 export function quoteFileName(quote: Quote): string {
   const owner = (quote.client_company || quote.client_name || "").trim().replace(/[\\/:*?"<>|]+/g, "").slice(0, 48);
   return `КП №${quoteNumberDisplay(quote)}${owner ? ` ${owner}` : ""}.pdf`;
+}
+
+export function quoteValidUntil(quote: Quote): string {
+  if (!quote.validity_days) return "";
+  const d = new Date(quote.doc_date);
+  if (Number.isNaN(d.getTime())) return "";
+  d.setDate(d.getDate() + quote.validity_days);
+  return fmtDate(d.toISOString().slice(0, 10));
+}
+
+/** Значения плейсхолдеров {{...}} для настраиваемых блоков. */
+export function buildPlaceholderValues(
+  quote: Quote,
+  items: QuoteItem[],
+  settings: DocumentSettings,
+): PlaceholderMap {
+  const c = quoteCompany(quote, settings);
+  const t = computeTotals(quote, items);
+  return {
+    client_name: quote.client_name || "",
+    client_company: quote.client_company || "",
+    client_unp: quote.client_unp || "",
+    client_phone: quote.client_phone || "",
+    client_email: quote.client_email || "",
+    event_date: fmtDate(quote.event_date),
+    event_time: [quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — "),
+    venue: quote.venue || "",
+    guests: quote.guests_count != null ? String(quote.guests_count) : "",
+    event_format: quote.event_format || "",
+    setup_note: quote.setup_note || "",
+    subtotal: money(t.subtotal),
+    discount: money(t.discount),
+    delivery: money(t.delivery),
+    total: money(t.total),
+    total_words: amountToWords(t.total),
+    prepayment: money(t.prepayment),
+    balance: money(t.balance),
+    quote_number: quoteNumberDisplay(quote),
+    doc_date: fmtDate(quote.doc_date),
+    valid_until: quoteValidUntil(quote),
+    quote_title: quote.title || "",
+    company_legal: c.legal,
+    company_brand: c.brand,
+    company_unp: c.unp,
+    company_address: c.address,
+    company_phone: c.phone,
+    company_email: c.email,
+    company_website: c.website,
+    bank_name: c.bank_name,
+    bank_bic: c.bank_bic,
+    bank_account: c.bank_account,
+    signer_name: c.signer_name,
+    signer_title: c.signer_title,
+  };
+}
+
+/** Эффективный список блоков документа (учитывает шаблон и включённость). */
+export function effectiveBlocks(quote: Quote): QuoteBlock[] {
+  const list = quote.blocks?.length ? quote.blocks : defaultBlocksForTemplate(quote.template ?? "classic");
+  return list.filter((b) => b.enabled);
+}
+
+/** Содержимое блока с учётом плейсхолдеров и запасного текста из quote.texts. */
+export function blockText(block: QuoteBlock, quote: Quote, map: PlaceholderMap): string {
+  const fallback: Partial<Record<QuoteBlock["type"], string>> = {
+    cover: quote.texts.intro,
+    included: quote.texts.included,
+    excluded: quote.texts.excluded,
+    timeline: quote.texts.timeline,
+    terms: quote.texts.terms,
+  };
+  const raw = (block.content?.trim() ? block.content : (fallback[block.type] ?? "")) || "";
+  return applyPlaceholders(raw, map);
+}
+
+function templateVars(template: string): string {
+  if (template === "minimal") {
+    return `--cover-bg:#fff; --cover-border:var(--line); --card-bg:#fff; --radius:8px;`;
+  }
+  if (template === "premium") {
+    return `--cover-bg:linear-gradient(135deg,#101828,#1f2937); --cover-border:transparent; --card-bg:var(--surface); --radius:16px;`;
+  }
+  return `--cover-bg:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,#fff),#fff); --cover-border:color-mix(in srgb,var(--accent) 30%,#fff); --card-bg:var(--surface); --radius:14px;`;
 }
 
 export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: DocumentSettings): string {
