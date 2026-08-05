@@ -212,7 +212,7 @@ export const duplicateQuote = createServerFn({ method: "POST" })
       delete c.created_at;
       return c;
     });
-    if (copyItems.length) await context.supabase.from("quote_items").insert(copyItems);
+    if (copyItems.length) await context.supabase.from("quote_items").insert(copyItems as never);
     return { id: newId };
   });
 
@@ -250,10 +250,10 @@ export const searchCatalogForQuote = createServerFn({ method: "GET" })
 
     const results = await Promise.all(
       tables.map(async (table) => {
-        let q = supabaseAdmin.from(table).select("id,title,pricing,short_description").order("sort_order").limit(term ? 20 : 12);
+        let q = supabaseAdmin.from(table as "zones").select("id,title,pricing,short_description").order("sort_order").limit(term ? 20 : 12);
         if (term) q = q.ilike("title", `%${term}%`);
         const { data: rows } = await q;
-        return ((rows ?? []) as Array<Record<string, unknown>>).map((r) => {
+        return ((rows ?? []) as unknown as Array<Record<string, unknown>>).map((r) => {
           const pricing = (r.pricing ?? {}) as { from?: number; unit?: string };
           return {
             entity_type: table,
