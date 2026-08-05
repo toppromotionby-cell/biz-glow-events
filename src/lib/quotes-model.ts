@@ -156,10 +156,17 @@ export type QuoteTotals = {
   total: number;
   prepayment: number;
   balance: number;
+  cost: number;
+  margin: number;
+  marginPct: number;
 };
 
-export function computeTotals(quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount">, items: Array<Pick<QuoteItem, "qty" | "price">>): QuoteTotals {
+export function computeTotals(
+  quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount">,
+  items: Array<Pick<QuoteItem, "qty" | "price"> & { cost?: number }>,
+): QuoteTotals {
   const subtotal = items.reduce((s, it) => s + num(it.qty) * num(it.price), 0);
+  const cost = items.reduce((s, it) => s + num(it.qty) * num(it.cost), 0);
   const dv = Math.max(0, num(quote.discount_value));
   const discount =
     quote.discount_type === "percent" ? (subtotal * Math.min(dv, 100)) / 100
@@ -172,8 +179,77 @@ export function computeTotals(quote: Pick<Quote, "discount_type" | "discount_val
     quote.prepayment_type === "percent" ? (total * Math.min(pv, 100)) / 100
     : quote.prepayment_type === "amount" ? Math.min(pv, total)
     : 0;
-  return { subtotal, discount, delivery, total, prepayment, balance: Math.max(0, total - prepayment) };
+  const margin = subtotal - discount - cost;
+  const revenue = subtotal - discount;
+  return {
+    subtotal, discount, delivery, total, prepayment,
+    balance: Math.max(0, total - prepayment),
+    cost,
+    margin,
+    marginPct: revenue > 0 ? (margin / revenue) * 100 : 0,
+  };
 }
+
+export type QuoteCheck = { level: "error" | "warn" | "info"; message: string };
+
+/** Проверки документа перед отправкой клиенту. */
+export function checkQuote(quote: Quote, items: QuoteItem[]): QuoteCheck[] {
+  const out: QuoteCheck[] = [];
+  const totals = computeTotals(quote, items);
+
+  if (!quote.client_company.trim() && !quote.client_name.trim()) {
+    out.push({ level: "error", message: "Не указан заказчик (компания или контактное лицо)" });
+  }
+  if (!items.length) out.push({ level: "error", message: "В предложении нет ни одной позиции" });
+  if (!quote.title.trim()) out.push({ level: "warn", message: "Не заполнена тема предложения" });
+  if (!quote.validity_days) out.push({ level: "warn", message: "Не указан срок действия предложения" });
+  if (!quote.event_date) out.push({ level: "warn", message: "Не указана дата мероприятия" });
+  if (!quote.client_email.trim()) out.push({ level: "warn", message: "Нет e-mail заказчика — отправка письмом недоступна" });
+
+  const zero = items.filter((it) => num(it.price) <= 0);
+  if (zero.length) {
+    out.push({
+      level: "warn",
+      message: zero.length === 1 ? `Нулевая цена: ${zero[0]!.title || "позиция без названия"}` : `Нулевая цена у ${zero.length} позиций`,
+    });
+  }
+  const noTitle = items.filter((it) => !it.title.trim()).length;
+  if (noTitle) out.push({ level: "error", message: `Позиции без названия: ${noTitle}` });
+
+  if (totals.discount >= totals.subtotal && totals.subtotal > 0) {
+    out.push({ level: "error", message: "Скидка не может быть равна или больше суммы позиций" });
+  }
+  if (totals.cost > 0 && totals.marginPct < 15) {
+    out.push({ level: "warn", message: `Низкая маржа: ${totals.marginPct.toFixed(1)}%` });
+  }
+  return out;
+}
+
+/** Разбор таблицы, скопированной из Excel: название / кол-во / ед. / цена [/ себестоимость]. */
+export function parsePastedQuoteRows(text: string): Array<Pick<QuoteItem, "title" | "qty" | "unit" | "price" | "cost">> {
+  const rows: Array<Pick<QuoteItem, "title" | "qty" | "unit" | "price" | "cost">> = [];
+  for (const raw of text.split(/\r?\n/)) {
+    if (!raw.trim()) continue;
+    const cells = raw.split("\t").length > 1 ? raw.split("\t") : raw.split(/ {2,}|;/);
+    const title = (cells[0] ?? "").trim();
+    if (!title) continue;
+    const nums = cells.slice(1).map((c) => c.trim());
+    const isNum = (v: string) => v !== "" && Number.isFinite(num(v, NaN));
+    const qty = isNum(nums[0] ?? "") ? num(nums[0]) : 1;
+    const unit = nums[1] && !isNum(nums[1]) ? nums[1] : "шт.";
+    const priceCell = nums.slice(1).find((v) => isNum(v));
+    const rest = nums.slice(1).filter((v) => isNum(v));
+    rows.push({
+      title,
+      qty: qty || 1,
+      unit,
+      price: priceCell ? num(priceCell) : 0,
+      cost: rest.length > 1 ? num(rest[1]) : 0,
+    });
+  }
+  return rows;
+}
+
 
 // --- Сумма прописью (BYN) ---
 const ONES = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
