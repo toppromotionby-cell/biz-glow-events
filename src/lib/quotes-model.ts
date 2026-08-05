@@ -492,6 +492,8 @@ export const quotePatchSchema = z.object({
 export function normalizeQuote(row: Record<string, unknown>): Quote {
   return {
     ...(row as unknown as Quote),
+    event_time_start: normalizeTime(row.event_time_start),
+    event_time_end: normalizeTime(row.event_time_end),
     status: (QUOTE_STATUSES as readonly string[]).includes(String(row.status)) ? (row.status as QuoteStatus) : "draft",
     company_overrides: (row.company_overrides ?? {}) as QuoteCompanyOverrides,
     texts: { ...DEFAULT_QUOTE_TEXTS, ...((row.texts ?? {}) as Partial<QuoteTexts>) },
