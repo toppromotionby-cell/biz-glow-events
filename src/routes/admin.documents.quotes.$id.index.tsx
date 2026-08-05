@@ -54,6 +54,34 @@ function uid() {
   return globalThis.crypto?.randomUUID?.() ?? `tmp-${Math.random().toString(36).slice(2)}`;
 }
 
+const PATCH_LABELS: Record<string, string> = {
+  event_time_start: "Время начала",
+  event_time_end: "Время окончания",
+  doc_date: "Дата документа",
+  event_date: "Дата мероприятия",
+  client_email: "E-mail",
+};
+
+/**
+ * Отбрасывает поля с промежуточным/некорректным значением, чтобы автосохранение
+ * не падало целиком, пока пользователь дописывает время или дату.
+ */
+function sanitizeQuotePatch(raw: Record<string, unknown>): { patch: Record<string, unknown>; skipped: string[] } {
+  const patch: Record<string, unknown> = {};
+  const skipped: string[] = [];
+  const shape = (quotePatchSchema as unknown as { shape: Record<string, { safeParse: (v: unknown) => { success: boolean } }> }).shape;
+  for (const [key, value] of Object.entries(raw)) {
+    const field = shape[key];
+    if (field && !field.safeParse(value).success) {
+      skipped.push(PATCH_LABELS[key] ?? key);
+      continue;
+    }
+    patch[key] = value;
+  }
+  return { patch, skipped };
+}
+
+
 function ImageField({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) {
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
