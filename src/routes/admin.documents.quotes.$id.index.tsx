@@ -1,29 +1,37 @@
-// Редактор коммерческого предложения: форма слева, живое превью справа.
-import { createFileRoute, Link } from "@tanstack/react-router";
+// Редактор коммерческого предложения: вкладки слева, живое превью справа.
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, ExternalLink, GripVertical, Plus, Search, Trash2, Eye, Settings2,
+  AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, History, Plus, Search, Send,
+  Settings2, Eye, BookmarkPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
 import { Field } from "@/components/admin/Field";
-import { getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings } from "@/lib/quotes.functions";
 import {
-  computeTotals, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
+  getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
+  listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
+  saveQuoteAsTemplate, markQuoteSent,
+} from "@/lib/quotes.functions";
+import {
+  checkQuote, computeTotals, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
   type Quote, type QuoteItem, type QuoteStatus,
 } from "@/lib/quotes-model";
 import { buildQuoteHtmlDoc, quoteNumberDisplay } from "@/lib/documents/quote-html";
 import { QuoteBlocksEditor } from "@/components/admin/quotes/QuoteBlocksEditor";
+import { QuoteItemsPanel } from "@/components/admin/quotes/QuoteItemsPanel";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { fmtMoney } from "@/lib/formatters";
 import { downloadAuthedFile, openAuthedDocument } from "@/lib/authed-fetch";
@@ -84,13 +92,20 @@ function ImageField({ label, value, onChange }: { label: string; value: string |
 function Page() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const load = useServerFn(getQuote);
   const save = useServerFn(saveQuote);
   const searchCatalog = useServerFn(searchCatalogForQuote);
   const loadSettings = useServerFn(getQuoteDocSettings);
+  const loadVersions = useServerFn(listQuoteVersions);
+  const makeVersion = useServerFn(createQuoteVersion);
+  const rollback = useServerFn(restoreQuoteVersion);
+  const makeTemplate = useServerFn(saveQuoteAsTemplate);
+  const markSent = useServerFn(markQuoteSent);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-quote", id], queryFn: () => load({ data: { id } }) });
   const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({ queryKey: ["admin-quote-settings"], queryFn: () => loadSettings() });
+  const { data: versions = [] } = useQuery({ queryKey: ["admin-quote-versions", id], queryFn: () => loadVersions({ data: { quoteId: id } }) });
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -99,6 +114,9 @@ function Page() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [catalogType, setCatalogType] = useState("all");
   const [catalogTerm, setCatalogTerm] = useState("");
+  const [showCost, setShowCost] = useState(true);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
   const dirtyRef = useRef(false);
 
   useEffect(() => {
@@ -112,9 +130,11 @@ function Page() {
   });
 
   const totals = useMemo(
-    () => (quote ? computeTotals(quote, items) : { subtotal: 0, discount: 0, delivery: 0, total: 0, prepayment: 0, balance: 0 }),
+    () => (quote ? computeTotals(quote, items) : null),
     [quote, items],
   );
+  const checks = useMemo(() => (quote ? checkQuote(quote, items) : []), [quote, items]);
+  const errorsCount = checks.filter((c) => c.level === "error").length;
 
   const patch = (p: Partial<Quote>) => { dirtyRef.current = true; setState("dirty"); setQuote((q) => (q ? { ...q, ...p } : q)); };
   const patchItems = (next: QuoteItem[]) => { dirtyRef.current = true; setState("dirty"); setItems(next); };
@@ -146,7 +166,7 @@ function Page() {
             },
             items: items.map((it, i) => ({
               section: it.section ?? "", title: it.title || "Позиция", description: it.description ?? "",
-              qty: num(it.qty), unit: it.unit || "шт.", price: num(it.price), sort_order: i,
+              qty: num(it.qty), unit: it.unit || "шт.", price: num(it.price), cost: num(it.cost), sort_order: i,
               entity_type: it.entity_type, entity_id: it.entity_id,
             })),
           },
@@ -164,30 +184,55 @@ function Page() {
   }, [quote, items, id, save, qc]);
 
   const previewHtml = useMemo(
-    () => (quote ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings) : ""),
-    [quote, items, settings, totals.total],
+    () => (quote && totals ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings) : ""),
+    [quote, items, settings, totals],
   );
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
-  if (error || !quote) return <div className="p-8 text-destructive">{(error as Error)?.message ?? "КП не найдено"}</div>;
+  if (error || !quote || !totals) return <div className="p-8 text-destructive">{(error as Error)?.message ?? "КП не найдено"}</div>;
 
   const addItem = (init?: Partial<QuoteItem>) =>
     patchItems([
       ...items,
       {
-        id: uid(), quote_id: id, section: "", title: "", description: "", qty: 1, unit: "шт.", price: 0,
+        id: uid(), quote_id: id, section: "", title: "", description: "", qty: 1, unit: "шт.", price: 0, cost: 0,
         sort_order: items.length, entity_type: null, entity_id: null, ...init,
       },
     ]);
 
-  const move = (index: number, dir: -1 | 1) => {
-    const next = [...items];
-    const target = index + dir;
-    if (target < 0 || target >= next.length) return;
-    const a = next[index]!;
-    next[index] = next[target]!;
-    next[target] = a;
-    patchItems(next);
+  const onCreateVersion = async () => {
+    try {
+      await makeVersion({ data: { quoteId: id, label: `Версия от ${new Date().toLocaleString("ru-RU")}` } });
+      qc.invalidateQueries({ queryKey: ["admin-quote-versions", id] });
+      toast.success("Версия сохранена");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const onRestore = async (versionId: string) => {
+    try {
+      await rollback({ data: { versionId } });
+      await qc.invalidateQueries({ queryKey: ["admin-quote", id] });
+      toast.success("Версия восстановлена");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const onSaveTemplate = async () => {
+    try {
+      await makeTemplate({ data: { id, name: templateName.trim() || quote.title || "Шаблон КП" } });
+      setTemplateOpen(false);
+      setTemplateName("");
+      qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+      toast.success("Шаблон сохранён");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const onMarkSent = async () => {
+    try {
+      const res = await markSent({ data: { id } });
+      setQuote((q) => (q ? { ...q, status: "sent", sent_at: res.sent_at } : q));
+      qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+      toast.success("Отмечено как отправленное");
+    } catch (e) { toast.error((e as Error).message); }
   };
 
   return (
@@ -197,10 +242,13 @@ function Page() {
           <Button asChild variant="ghost" size="icon"><Link to="/admin/documents/quotes"><ArrowLeft className="h-4 w-4" /></Link></Button>
           <div className="min-w-0">
             <h1 className="admin-h1 truncate">КП №{quoteNumberDisplay(quote)}</h1>
-            <p className="text-xs text-muted-foreground truncate">{quote.client_company || quote.client_name || "Без клиента"} · {fmtMoney(totals.total)}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {quote.client_company || quote.client_name || "Без клиента"} · {fmtMoney(totals.total)}
+              {quote.sent_at ? ` · отправлено ${new Date(quote.sent_at).toLocaleDateString("ru-RU")}` : ""}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <SaveStatus state={state} errorMessage={saveError} />
           <Select value={quote.status} onValueChange={(v) => patch({ status: v as QuoteStatus })}>
             <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
@@ -208,6 +256,8 @@ function Page() {
               {QUOTE_STATUSES.map((s) => <SelectItem key={s} value={s}>{QUOTE_STATUS_LABELS[s]}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={onMarkSent}><Send className="h-4 w-4 mr-1.5" />Отправлено</Button>
+          <Button variant="outline" size="sm" onClick={() => setTemplateOpen(true)}><BookmarkPlus className="h-4 w-4 mr-1.5" />В шаблоны</Button>
           <Button variant="outline" size="sm" onClick={() => openAuthedDocument(`/admin/documents/quotes/${id}/render`).catch((e) => toast.error((e as Error).message))}>
             <ExternalLink className="h-4 w-4 mr-1.5" />HTML
           </Button>
@@ -218,43 +268,76 @@ function Page() {
       </header>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        {/* ЛЕВО: форма */}
+        {/* ЛЕВО: вкладки */}
         <div className="space-y-3">
-          <Accordion type="multiple" defaultValue={["main", "client", "event", "items", "money"]} className="space-y-2">
-            <AccordionItem value="main" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium">Документ</AccordionTrigger>
-              <AccordionContent className="space-y-3 pb-4">
-                <Field label="Тема предложения">
-                  <Input value={quote.title ?? ""} onChange={(e) => patch({ title: e.target.value })} />
-                </Field>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Дата документа">
-                    <Input type="date" value={quote.doc_date ?? ""} onChange={(e) => patch({ doc_date: e.target.value })} />
-                  </Field>
-                  <Field label="Срок действия, дней">
-                    <Input type="number" min={0} max={365} value={quote.validity_days ?? 0}
-                      onChange={(e) => patch({ validity_days: Math.trunc(num(e.target.value)) })} />
-                  </Field>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+          <Tabs defaultValue="items">
+            <TabsList className="w-full justify-start overflow-x-auto">
+              <TabsTrigger value="items">Состав ({items.length})</TabsTrigger>
+              <TabsTrigger value="client">Клиент и событие</TabsTrigger>
+              <TabsTrigger value="money">Финансы</TabsTrigger>
+              <TabsTrigger value="doc">Документ</TabsTrigger>
+              <TabsTrigger value="checks">
+                Проверки
+                {errorsCount > 0 && <Badge variant="destructive" className="ml-1.5 h-4 px-1 text-[10px]">{errorsCount}</Badge>}
+              </TabsTrigger>
+            </TabsList>
 
-            <AccordionItem value="client" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium">Заказчик</AccordionTrigger>
-              <AccordionContent className="grid grid-cols-2 gap-3 pb-4">
+            <TabsContent value="items" className="space-y-3 pt-3">
+              <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
+                Показывать себестоимость и маржу
+                <Switch checked={showCost} onCheckedChange={setShowCost} />
+              </label>
+              <QuoteItemsPanel
+                items={items}
+                onChange={patchItems}
+                showCost={showCost}
+                toolbar={
+                  <>
+                    <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm"><Search className="h-4 w-4 mr-1.5" />Из каталога</Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader><DialogTitle>Добавить из каталога</DialogTitle></DialogHeader>
+                        <div className="flex gap-2">
+                          <Input placeholder="Поиск по названию" value={catalogTerm} onChange={(e) => setCatalogTerm(e.target.value)} />
+                          <Select value={catalogType} onValueChange={setCatalogType}>
+                            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {CATALOG_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="max-h-96 overflow-auto divide-y divide-border/60 rounded-md border border-border/60">
+                          {hits.map((h) => (
+                            <button key={`${h.entity_type}-${h.entity_id}`} type="button"
+                              className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
+                              onClick={() => { addItem({ title: h.title, price: h.price, unit: h.unit, description: h.description, entity_type: h.entity_type, entity_id: h.entity_id }); toast.success("Позиция добавлена"); }}>
+                              <div className="text-sm font-medium">{h.title}</div>
+                              <div className="text-xs text-muted-foreground">{fmtMoney(h.price)} / {h.unit}</div>
+                            </button>
+                          ))}
+                          {!hits.length && <div className="p-4 text-sm text-muted-foreground">Ничего не найдено</div>}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Button variant="outline" size="sm" onClick={() => addItem()}><Plus className="h-4 w-4 mr-1.5" />Своя позиция</Button>
+                  </>
+                }
+              />
+            </TabsContent>
+
+            <TabsContent value="client" className="space-y-4 pt-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Field label="Компания"><Input value={quote.client_company ?? ""} onChange={(e) => patch({ client_company: e.target.value })} /></Field>
                 <Field label="Контактное лицо"><Input value={quote.client_name ?? ""} onChange={(e) => patch({ client_name: e.target.value })} /></Field>
                 <Field label="УНП"><Input value={quote.client_unp ?? ""} onChange={(e) => patch({ client_unp: e.target.value })} /></Field>
                 <Field label="Телефон"><Input value={quote.client_phone ?? ""} onChange={(e) => patch({ client_phone: e.target.value })} /></Field>
                 <Field label="E-mail"><Input value={quote.client_email ?? ""} onChange={(e) => patch({ client_email: e.target.value })} /></Field>
                 <Field label="Адрес"><Input value={quote.client_address ?? ""} onChange={(e) => patch({ client_address: e.target.value })} /></Field>
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="event" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium">Мероприятие</AccordionTrigger>
-              <AccordionContent className="grid grid-cols-2 gap-3 pb-4">
-                <Field label="Дата"><Input type="date" value={quote.event_date ?? ""} onChange={(e) => patch({ event_date: e.target.value || null })} /></Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Дата мероприятия"><Input type="date" value={quote.event_date ?? ""} onChange={(e) => patch({ event_date: e.target.value || null })} /></Field>
                 <Field label="Гостей">
                   <Input type="number" min={0} value={quote.guests_count ?? ""} onChange={(e) => patch({ guests_count: e.target.value === "" ? null : Math.trunc(num(e.target.value)) })} />
                 </Field>
@@ -264,215 +347,207 @@ function Page() {
                 <Field label="Формат" className="col-span-2"><Input placeholder="Корпоратив, свадьба, конференция…" value={quote.event_format ?? ""} onChange={(e) => patch({ event_format: e.target.value })} /></Field>
                 <Field label="Монтаж / демонтаж" className="col-span-2"><Input value={quote.setup_note ?? ""} onChange={(e) => patch({ setup_note: e.target.value })} /></Field>
                 <Field label="Комментарий" className="col-span-2"><Textarea rows={3} value={quote.event_notes ?? ""} onChange={(e) => patch({ event_notes: e.target.value })} /></Field>
-              </AccordionContent>
-            </AccordionItem>
+              </div>
+            </TabsContent>
 
-            <AccordionItem value="items" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium">Состав ({items.length})</AccordionTrigger>
-              <AccordionContent className="space-y-2 pb-4">
-                <div className="flex gap-2">
-                  <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm"><Search className="h-4 w-4 mr-1.5" />Из каталога</Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader><DialogTitle>Добавить из каталога</DialogTitle></DialogHeader>
-                      <div className="flex gap-2">
-                        <Input placeholder="Поиск по названию" value={catalogTerm} onChange={(e) => setCatalogTerm(e.target.value)} />
-                        <Select value={catalogType} onValueChange={setCatalogType}>
-                          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {CATALOG_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="max-h-96 overflow-auto divide-y divide-border/60 rounded-md border border-border/60">
-                        {hits.map((h) => (
-                          <button key={`${h.entity_type}-${h.entity_id}`} type="button"
-                            className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
-                            onClick={() => { addItem({ title: h.title, price: h.price, unit: h.unit, description: h.description, entity_type: h.entity_type, entity_id: h.entity_id }); toast.success("Позиция добавлена"); }}>
-                            <div className="text-sm font-medium">{h.title}</div>
-                            <div className="text-xs text-muted-foreground">{fmtMoney(h.price)} / {h.unit}</div>
-                          </button>
-                        ))}
-                        {!hits.length && <div className="p-4 text-sm text-muted-foreground">Ничего не найдено</div>}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Button variant="outline" size="sm" onClick={() => addItem()}><Plus className="h-4 w-4 mr-1.5" />Своя позиция</Button>
-                </div>
-
-                {items.map((it, i) => (
-                  <div key={it.id} className="rounded-lg border border-border/60 p-2.5 space-y-2 bg-card/40">
-                    <div className="flex items-start gap-2">
-                      <div className="flex flex-col pt-1.5 text-muted-foreground">
-                        <button type="button" className="hover:text-foreground" onClick={() => move(i, -1)} aria-label="Выше">▲</button>
-                        <GripVertical className="h-3 w-3 opacity-40" />
-                        <button type="button" className="hover:text-foreground" onClick={() => move(i, 1)} aria-label="Ниже">▼</button>
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <Input placeholder="Название позиции" value={it.title}
-                          onChange={(e) => patchItems(items.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} />
-                        <Textarea rows={2} placeholder="Описание (необязательно)" value={it.description}
-                          onChange={(e) => patchItems(items.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))} />
-                        <div className="grid grid-cols-4 gap-2">
-                          <Input type="number" min={0} placeholder="Кол-во" value={it.qty}
-                            onChange={(e) => patchItems(items.map((x, j) => (j === i ? { ...x, qty: num(e.target.value) } : x)))} />
-                          <Input placeholder="Ед." value={it.unit}
-                            onChange={(e) => patchItems(items.map((x, j) => (j === i ? { ...x, unit: e.target.value } : x)))} />
-                          <Input type="number" min={0} placeholder="Цена" value={it.price}
-                            onChange={(e) => patchItems(items.map((x, j) => (j === i ? { ...x, price: num(e.target.value) } : x)))} />
-                          <div className="flex items-center justify-end text-sm tabular-nums font-medium">{fmtMoney(num(it.qty) * num(it.price))}</div>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => patchItems(items.filter((_, j) => j !== i))} aria-label="Удалить">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+            <TabsContent value="money" className="space-y-3 pt-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Тип скидки">
+                  <Select value={quote.discount_type} onValueChange={(v) => patch({ discount_type: v as Quote["discount_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Без скидки</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Значение скидки">
+                  <Input type="number" min={0} disabled={quote.discount_type === "none"} value={quote.discount_value}
+                    onChange={(e) => patch({ discount_value: num(e.target.value) })} />
+                </Field>
+                <Field label="Тип предоплаты">
+                  <Select value={quote.prepayment_type} onValueChange={(v) => patch({ prepayment_type: v as Quote["prepayment_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Без предоплаты</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Значение предоплаты">
+                  <Input type="number" min={0} disabled={quote.prepayment_type === "none"} value={quote.prepayment_value}
+                    onChange={(e) => patch({ prepayment_value: num(e.target.value) })} />
+                </Field>
+                <Field label="Доставка и логистика, BYN">
+                  <Input type="number" min={0} value={quote.delivery_amount} onChange={(e) => patch({ delivery_amount: num(e.target.value) })} />
+                </Field>
+                <Field label="Примечание по НДС">
+                  <Input value={quote.vat_note ?? ""} onChange={(e) => patch({ vat_note: e.target.value })} />
+                </Field>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3 text-sm space-y-1 tabular-nums">
+                <div className="flex justify-between"><span className="text-muted-foreground">Позиции</span><span>{fmtMoney(totals.subtotal)}</span></div>
+                {!!totals.discount && <div className="flex justify-between"><span className="text-muted-foreground">Скидка</span><span>− {fmtMoney(totals.discount)}</span></div>}
+                {!!totals.delivery && <div className="flex justify-between"><span className="text-muted-foreground">Доставка</span><span>{fmtMoney(totals.delivery)}</span></div>}
+                <div className="flex justify-between font-semibold text-base"><span>Итого</span><span>{fmtMoney(totals.total)}</span></div>
+                {!!totals.prepayment && (
+                  <>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Предоплата</span><span>{fmtMoney(totals.prepayment)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Остаток</span><span>{fmtMoney(totals.balance)}</span></div>
+                  </>
+                )}
+                {showCost && totals.cost > 0 && (
+                  <div className="mt-2 border-t border-border/60 pt-2 space-y-1">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Себестоимость</span><span>{fmtMoney(totals.cost)}</span></div>
+                    <div className="flex justify-between font-medium">
+                      <span>Маржа</span>
+                      <span className={totals.marginPct < 15 ? "text-destructive" : ""}>
+                        {fmtMoney(totals.margin)} · {totals.marginPct.toFixed(1)}%
+                      </span>
                     </div>
+                    <p className="text-[11px] text-muted-foreground">Себестоимость видна только в админке и не попадает в документ.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="doc" className="pt-3">
+              <Accordion type="multiple" defaultValue={["main", "layout"]} className="space-y-2">
+                <AccordionItem value="main" className="border border-border/60 rounded-xl px-3">
+                  <AccordionTrigger className="text-sm font-medium">Шапка документа</AccordionTrigger>
+                  <AccordionContent className="space-y-3 pb-4">
+                    <Field label="Тема предложения">
+                      <Input value={quote.title ?? ""} onChange={(e) => patch({ title: e.target.value })} />
+                    </Field>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Дата документа">
+                        <Input type="date" value={quote.doc_date ?? ""} onChange={(e) => patch({ doc_date: e.target.value })} />
+                      </Field>
+                      <Field label="Срок действия, дней">
+                        <Input type="number" min={0} max={365} value={quote.validity_days ?? 0}
+                          onChange={(e) => patch({ validity_days: Math.trunc(num(e.target.value)) })} />
+                      </Field>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="layout" className="border border-border/60 rounded-xl px-3">
+                  <AccordionTrigger className="text-sm font-medium">Шаблон и блоки документа</AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    <QuoteBlocksEditor template={quote.template} blocks={quote.blocks} onChange={(p) => patch(p)} />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="texts" className="border border-border/60 rounded-xl px-3">
+                  <AccordionTrigger className="text-sm font-medium">Тексты документа</AccordionTrigger>
+                  <AccordionContent className="space-y-3 pb-4">
+                    {([
+                      ["intro", "Вступление"],
+                      ["included", "Что входит (по строке на пункт)"],
+                      ["excluded", "Не входит (по строке на пункт)"],
+                      ["timeline", "Сроки и логистика"],
+                      ["terms", "Условия"],
+                      ["footer", "Подпись внизу документа"],
+                    ] as const).map(([key, label]) => (
+                      <Field key={key} label={label}>
+                        <Textarea rows={key === "intro" ? 3 : 4} value={quote.texts[key] ?? ""}
+                          onChange={(e) => patch({ texts: { ...quote.texts, [key]: e.target.value } })} />
+                      </Field>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="brand" className="border border-border/60 rounded-xl px-3">
+                  <AccordionTrigger className="text-sm font-medium"><span className="flex items-center gap-2"><Settings2 className="h-4 w-4" />Оформление и реквизиты</span></AccordionTrigger>
+                  <AccordionContent className="space-y-4 pb-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        ["show_cover", "Титульный блок"],
+                        ["show_requisites", "Реквизиты"],
+                        ["show_signature", "Подписи"],
+                        ["show_stamp", "Печать"],
+                        ["show_logo", "Логотип"],
+                        ["show_about", "Блок о компании"],
+                      ] as const).map(([key, label]) => (
+                        <label key={key} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
+                          {label}
+                          <Switch checked={!!quote.design[key]} onCheckedChange={(v) => patch({ design: { ...quote.design, [key]: v } })} />
+                        </label>
+                      ))}
+                    </div>
+                    <Field label="Акцентный цвет (HEX)">
+                      <Input placeholder={settings.accent_color} value={quote.design.accent_color}
+                        onChange={(e) => patch({ design: { ...quote.design, accent_color: e.target.value } })} />
+                    </Field>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <ImageField label="Логотип" value={quote.logo_url} onChange={(v) => patch({ logo_url: v })} />
+                      <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />
+                      <ImageField label="Печать" value={quote.stamp_url} onChange={(v) => patch({ stamp_url: v })} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        ["company_legal_name", "Юр. название"],
+                        ["company_brand", "Бренд"],
+                        ["company_unp", "УНП"],
+                        ["company_address", "Адрес"],
+                        ["company_phone", "Телефон"],
+                        ["company_email", "E-mail"],
+                        ["bank_name", "Банк"],
+                        ["bank_bic", "БИК"],
+                        ["bank_account", "Расчётный счёт"],
+                        ["signer_name", "Подписант"],
+                        ["signer_title", "Должность подписанта"],
+                      ] as const).map(([key, label]) => (
+                        <Field key={key} label={label}>
+                          <Input
+                            placeholder={String(settings[key] ?? "")}
+                            value={quote.company_overrides[key] ?? ""}
+                            onChange={(e) => patch({ company_overrides: { ...quote.company_overrides, [key]: e.target.value } })}
+                          />
+                        </Field>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Пустые поля берутся из общих настроек документов.</p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </TabsContent>
+
+            <TabsContent value="checks" className="space-y-4 pt-3">
+              <div className="rounded-xl border border-border/60 p-3 space-y-2">
+                <h2 className="text-sm font-medium">Проверка перед отправкой</h2>
+                {!checks.length && (
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />Всё заполнено, можно отправлять клиенту
+                  </p>
+                )}
+                {checks.map((c, i) => (
+                  <p key={i} className={`flex items-start gap-2 text-sm ${c.level === "error" ? "text-destructive" : "text-muted-foreground"}`}>
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{c.message}
+                  </p>
+                ))}
+              </div>
+
+              <div className="rounded-xl border border-border/60 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h2 className="flex items-center gap-2 text-sm font-medium"><History className="h-4 w-4" />История версий</h2>
+                  <Button size="sm" variant="outline" onClick={onCreateVersion}>Сохранить версию</Button>
+                </div>
+                {!versions.length && <p className="text-sm text-muted-foreground">Версий пока нет</p>}
+                {versions.map((v) => (
+                  <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <div className="truncate">{v.label || new Date(v.created_at).toLocaleString("ru-RU")}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums">{fmtMoney(v.total)}</div>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => onRestore(v.id)}>Восстановить</Button>
                   </div>
                 ))}
-                {!items.length && <p className="text-sm text-muted-foreground py-3">Позиции не добавлены</p>}
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="money" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium">Скидка, доставка, предоплата</AccordionTrigger>
-              <AccordionContent className="space-y-3 pb-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Тип скидки">
-                    <Select value={quote.discount_type} onValueChange={(v) => patch({ discount_type: v as Quote["discount_type"] })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Без скидки</SelectItem>
-                        <SelectItem value="percent">Процент</SelectItem>
-                        <SelectItem value="amount">Сумма</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Значение скидки">
-                    <Input type="number" min={0} disabled={quote.discount_type === "none"} value={quote.discount_value}
-                      onChange={(e) => patch({ discount_value: num(e.target.value) })} />
-                  </Field>
-                  <Field label="Тип предоплаты">
-                    <Select value={quote.prepayment_type} onValueChange={(v) => patch({ prepayment_type: v as Quote["prepayment_type"] })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Без предоплаты</SelectItem>
-                        <SelectItem value="percent">Процент</SelectItem>
-                        <SelectItem value="amount">Сумма</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="Значение предоплаты">
-                    <Input type="number" min={0} disabled={quote.prepayment_type === "none"} value={quote.prepayment_value}
-                      onChange={(e) => patch({ prepayment_value: num(e.target.value) })} />
-                  </Field>
-                  <Field label="Доставка и логистика, BYN">
-                    <Input type="number" min={0} value={quote.delivery_amount} onChange={(e) => patch({ delivery_amount: num(e.target.value) })} />
-                  </Field>
-                  <Field label="Примечание по НДС">
-                    <Input value={quote.vat_note ?? ""} onChange={(e) => patch({ vat_note: e.target.value })} />
-                  </Field>
-                </div>
-                <div className="rounded-lg bg-muted/40 p-3 text-sm space-y-1 tabular-nums">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Позиции</span><span>{fmtMoney(totals.subtotal)}</span></div>
-                  {!!totals.discount && <div className="flex justify-between"><span className="text-muted-foreground">Скидка</span><span>− {fmtMoney(totals.discount)}</span></div>}
-                  {!!totals.delivery && <div className="flex justify-between"><span className="text-muted-foreground">Доставка</span><span>{fmtMoney(totals.delivery)}</span></div>}
-                  <div className="flex justify-between font-semibold text-base"><span>Итого</span><span>{fmtMoney(totals.total)}</span></div>
-                  {!!totals.prepayment && (
-                    <>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Предоплата</span><span>{fmtMoney(totals.prepayment)}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Остаток</span><span>{fmtMoney(totals.balance)}</span></div>
-                    </>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="layout" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium">Шаблон и блоки документа</AccordionTrigger>
-              <AccordionContent className="pb-4">
-                <QuoteBlocksEditor
-                  template={quote.template}
-                  blocks={quote.blocks}
-                  onChange={(p) => patch(p)}
-                />
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="texts" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium">Тексты документа</AccordionTrigger>
-              <AccordionContent className="space-y-3 pb-4">
-                {([
-                  ["intro", "Вступление"],
-                  ["included", "Что входит (по строке на пункт)"],
-                  ["excluded", "Не входит (по строке на пункт)"],
-                  ["timeline", "Сроки и логистика"],
-                  ["terms", "Условия"],
-                  ["footer", "Подпись внизу документа"],
-                ] as const).map(([key, label]) => (
-                  <Field key={key} label={label}>
-                    <Textarea rows={key === "intro" ? 3 : 4} value={quote.texts[key] ?? ""}
-                      onChange={(e) => patch({ texts: { ...quote.texts, [key]: e.target.value } })} />
-                  </Field>
-                ))}
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="brand" className="border border-border/60 rounded-xl px-3">
-              <AccordionTrigger className="text-sm font-medium"><span className="flex items-center gap-2"><Settings2 className="h-4 w-4" />Оформление и реквизиты</span></AccordionTrigger>
-              <AccordionContent className="space-y-4 pb-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {([
-                    ["show_cover", "Титульный блок"],
-                    ["show_requisites", "Реквизиты"],
-                    ["show_signature", "Подписи"],
-                    ["show_stamp", "Печать"],
-                    ["show_logo", "Логотип"],
-                    ["show_about", "Блок о компании"],
-                  ] as const).map(([key, label]) => (
-                    <label key={key} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
-                      {label}
-                      <Switch checked={!!quote.design[key]} onCheckedChange={(v) => patch({ design: { ...quote.design, [key]: v } })} />
-                    </label>
-                  ))}
-                </div>
-                <Field label="Акцентный цвет (HEX)">
-                  <Input placeholder={settings.accent_color} value={quote.design.accent_color}
-                    onChange={(e) => patch({ design: { ...quote.design, accent_color: e.target.value } })} />
-                </Field>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <ImageField label="Логотип" value={quote.logo_url} onChange={(v) => patch({ logo_url: v })} />
-                  <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />
-                  <ImageField label="Печать" value={quote.stamp_url} onChange={(v) => patch({ stamp_url: v })} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {([
-                    ["company_legal_name", "Юр. название"],
-                    ["company_brand", "Бренд"],
-                    ["company_unp", "УНП"],
-                    ["company_address", "Адрес"],
-                    ["company_phone", "Телефон"],
-                    ["company_email", "E-mail"],
-                    ["bank_name", "Банк"],
-                    ["bank_bic", "БИК"],
-                    ["bank_account", "Расчётный счёт"],
-                    ["signer_name", "Подписант"],
-                    ["signer_title", "Должность подписанта"],
-                  ] as const).map(([key, label]) => (
-                    <Field key={key} label={label}>
-                      <Input
-                        placeholder={String(settings[key] ?? "")}
-                        value={quote.company_overrides[key] ?? ""}
-                        onChange={(e) => patch({ company_overrides: { ...quote.company_overrides, [key]: e.target.value } })}
-                      />
-                    </Field>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">Пустые поля берутся из общих настроек документов.</p>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* ПРАВО: живое превью */}
@@ -483,6 +558,19 @@ function Page() {
           <iframe title="Превью КП" srcDoc={previewHtml} className="w-full h-[calc(100%-2.25rem)] bg-white" />
         </div>
       </div>
+
+      <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Сохранить как шаблон</DialogTitle></DialogHeader>
+          <Field label="Название шаблона">
+            <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Например: Корпоратив под ключ" />
+          </Field>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTemplateOpen(false)}>Отмена</Button>
+            <Button onClick={onSaveTemplate}>Сохранить</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
