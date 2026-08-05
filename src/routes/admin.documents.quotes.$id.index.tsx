@@ -607,6 +607,7 @@ function Page() {
                         ["company_address", "Адрес"],
                         ["company_phone", "Телефон"],
                         ["company_email", "E-mail"],
+                        ["company_website", "Сайт"],
                         ["bank_name", "Банк"],
                         ["bank_bic", "БИК"],
                         ["bank_account", "Расчётный счёт"],
@@ -622,7 +623,12 @@ function Page() {
                         </Field>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground">Пустые поля берутся из общих настроек документов.</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">Пустые поля берутся из общих настроек документов.</p>
+                      <Button type="button" size="sm" variant="ghost" className="shrink-0"
+                        onClick={() => patch({ company_overrides: {} })}>Сбросить реквизиты</Button>
+                    </div>
+
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
