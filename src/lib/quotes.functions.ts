@@ -207,7 +207,7 @@ export const duplicateQuote = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const newId = (created as { id: string }).id;
     const copyItems = ((items ?? []) as Record<string, unknown>[]).map((it, i) => {
-      const c = { ...it, quote_id: newId, sort_order: i };
+      const c: Record<string, unknown> = { ...it, quote_id: newId, sort_order: i };
       delete c.id;
       delete c.created_at;
       return c;
