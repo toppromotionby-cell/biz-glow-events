@@ -275,7 +275,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
               : ""
           }
         </td>
-        <td class="num">${esc(it.qty)}${it.unit ? ` <span class="unit">${esc(it.unit)}</span>` : ""}</td>
+        <td class="qty">${esc(it.qty)}${it.unit ? `<span class="unit">${esc(it.unit)}</span>` : ""}</td>
         <td class="num">${money(it.price)}</td>
         <td class="num strong">${money(it.price * it.qty)}</td>
       </tr>`,
