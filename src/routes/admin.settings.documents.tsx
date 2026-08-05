@@ -14,6 +14,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { notify } from "@/lib/notify";
+import { BRAND_ACCENTS } from "@/lib/documents/brand";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   getDocumentSettings,
