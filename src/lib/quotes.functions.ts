@@ -454,7 +454,7 @@ export const restoreQuoteVersion = createServerFn({ method: "POST" })
     const restored = { ...v.snapshot.quote };
     for (const key of ["id", "created_at", "updated_at", "public_token", "quote_number", "created_by"]) delete restored[key];
 
-    const { error } = await context.supabase.from("quotes").update(restored).eq("id", v.quote_id);
+    const { error } = await context.supabase.from("quotes").update(restored as never).eq("id", v.quote_id);
     if (error) throw new Error(error.message);
 
     await context.supabase.from("quote_items").delete().eq("quote_id", v.quote_id);
