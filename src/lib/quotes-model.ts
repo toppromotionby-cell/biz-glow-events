@@ -50,6 +50,8 @@ export type QuoteDesign = {
   show_signature: boolean;
   show_stamp: boolean;
   show_requisites: boolean;
+  show_item_includes: boolean;
+  show_section_subtotals: boolean;
 };
 
 export const DEFAULT_QUOTE_DESIGN: QuoteDesign = {
@@ -60,6 +62,8 @@ export const DEFAULT_QUOTE_DESIGN: QuoteDesign = {
   show_signature: true,
   show_stamp: false,
   show_requisites: true,
+  show_item_includes: true,
+  show_section_subtotals: true,
 };
 
 export type QuoteCompanyOverrides = Partial<{
