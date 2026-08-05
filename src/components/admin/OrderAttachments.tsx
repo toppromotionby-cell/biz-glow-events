@@ -15,6 +15,7 @@ const BUCKET = "order-attachments";
 const KIND_LABEL: Record<string, string> = { invoice: "Счёт", contract: "Договор", custom: "Файл" };
 
 function formatSize(n?: number | null) {
+  const viewer = useDocumentViewer();
   if (!n) return "—";
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;

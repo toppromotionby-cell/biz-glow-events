@@ -29,6 +29,7 @@ const STATUS_TONE: Record<QuoteStatus, "muted" | "info" | "success" | "danger"> 
 };
 
 function Page() {
+  const viewer = useDocumentViewer();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");

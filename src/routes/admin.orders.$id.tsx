@@ -81,6 +81,7 @@ export const Route = createFileRoute("/admin/orders/$id")({
 });
 
 function OrderDetail() {
+  const viewer = useDocumentViewer();
   const { id } = useParams({ from: "/admin/orders/$id" });
   const qc = useQueryClient();
   const navigate = useNavigate();

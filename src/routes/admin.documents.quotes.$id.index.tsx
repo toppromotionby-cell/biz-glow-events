@@ -93,6 +93,7 @@ function ImageField({ label, value, onChange }: { label: string; value: string |
 }
 
 function Page() {
+  const viewer = useDocumentViewer();
   const { id } = Route.useParams();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
