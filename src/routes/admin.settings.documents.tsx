@@ -14,6 +14,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { notify } from "@/lib/notify";
+import { BRAND_ACCENTS } from "@/lib/documents/brand";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   getDocumentSettings,
@@ -136,9 +138,16 @@ function DocumentSettingsPage() {
               <Field label="E-mail" type="email" value={form.company_email} onChange={(v) => update("company_email", v)} />
               <Field label="Сайт" value={form.company_website} onChange={(v) => update("company_website", v)} />
               <Field label="URL логотипа (опционально)" value={form.logo_url ?? ""} onChange={(v) => update("logo_url", v || null)} placeholder="https://…/logo.png" />
-              <Field label="Акцентный цвет" value={form.accent_color} onChange={(v) => update("accent_color", v)} placeholder="#6d28d9">
-                <div className="h-10 w-10 rounded-md border border-border/60 shrink-0" style={{ background: form.accent_color }} aria-hidden />
+              <Field label="Акцентный цвет" value={form.accent_color} onChange={(v) => update("accent_color", v)} placeholder="#FF7500">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="h-10 w-10 rounded-md border border-border/60" style={{ background: form.accent_color }} aria-hidden />
+                  {BRAND_ACCENTS.map((c) => (
+                    <button key={c.hex} type="button" title={`${c.label} ${c.hex}`} onClick={() => update("accent_color", c.hex)}
+                      className="h-6 w-6 rounded-full border border-border/60 transition hover:scale-110" style={{ background: c.hex }} />
+                  ))}
+                </div>
               </Field>
+
             </div>
           </Card>
         </TabsContent>

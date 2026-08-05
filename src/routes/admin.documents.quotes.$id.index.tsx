@@ -20,6 +20,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
 import { Field } from "@/components/admin/Field";
+import { BRAND_ACCENTS } from "@/lib/documents/brand";
+
 import {
   getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
   listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
@@ -477,9 +479,20 @@ function Page() {
                       ))}
                     </div>
                     <Field label="Акцентный цвет (HEX)">
-                      <Input placeholder={settings.accent_color} value={quote.design.accent_color}
-                        onChange={(e) => patch({ design: { ...quote.design, accent_color: e.target.value } })} />
+                      <div className="flex items-center gap-2">
+                        <Input placeholder={settings.accent_color} value={quote.design.accent_color}
+                          onChange={(e) => patch({ design: { ...quote.design, accent_color: e.target.value } })} />
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {BRAND_ACCENTS.map((c) => (
+                            <button key={c.hex} type="button" title={`${c.label} ${c.hex}`}
+                              onClick={() => patch({ design: { ...quote.design, accent_color: c.hex } })}
+                              className="h-7 w-7 rounded-full border border-border/60 transition hover:scale-110"
+                              style={{ background: c.hex }} />
+                          ))}
+                        </div>
+                      </div>
                     </Field>
+
                     <div className="grid gap-3 sm:grid-cols-3">
                       <ImageField label="Логотип" value={quote.logo_url} onChange={(v) => patch({ logo_url: v })} />
                       <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />

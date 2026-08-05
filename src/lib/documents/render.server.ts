@@ -57,7 +57,7 @@ type ShellOpts = {
 
 // Базовый каркас: HEAD + общие стили + brand-шапка + контент + футер.
 export function renderShell({ title, kind, number, date, settings, body }: ShellOpts): string {
-  const accent = settings.accent_color || "#6d28d9";
+  const accent = settings.accent_color || "#FF7500";
   const logo = settings.logo_url
     ? `<img src="${esc(settings.logo_url)}" alt="" style="height:36px;width:auto;display:block;" />`
     : "";
