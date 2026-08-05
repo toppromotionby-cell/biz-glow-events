@@ -91,6 +91,7 @@ import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$i
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
 import { Route as AdminOrdersIdActRouteImport } from './routes/admin.orders.$id.act'
+import { Route as AdminDocumentsQuotesIdRenderRouteImport } from './routes/admin.documents.quotes.$id.render'
 
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
@@ -506,6 +507,12 @@ const AdminOrdersIdActRoute = AdminOrdersIdActRouteImport.update({
   path: '/act',
   getParentRoute: () => AdminOrdersIdRoute,
 } as any)
+const AdminDocumentsQuotesIdRenderRoute =
+  AdminDocumentsQuotesIdRenderRouteImport.update({
+    id: '/documents/quotes/$id/render',
+    path: '/documents/quotes/$id/render',
+    getParentRoute: () => AdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -590,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -672,6 +680,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -757,6 +766,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -843,6 +853,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes/$id/render'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -925,6 +936,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes/$id/render'
   id:
     | '__root__'
     | '/'
@@ -1009,6 +1021,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/quotes/$id/render'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1641,6 +1654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdActRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/documents/quotes/$id/render': {
+      id: '/admin/documents/quotes/$id/render'
+      path: '/documents/quotes/$id/render'
+      fullPath: '/admin/documents/quotes/$id/render'
+      preLoaderRoute: typeof AdminDocumentsQuotesIdRenderRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -1707,6 +1727,7 @@ interface AdminRouteChildren {
   AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
+  AdminDocumentsQuotesIdRenderRoute: typeof AdminDocumentsQuotesIdRenderRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1728,6 +1749,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
+  AdminDocumentsQuotesIdRenderRoute: AdminDocumentsQuotesIdRenderRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1854,13 +1876,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
