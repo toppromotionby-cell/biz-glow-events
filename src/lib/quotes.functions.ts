@@ -287,3 +287,13 @@ export const listOrdersForQuote = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return (rows ?? []) as OrderHit[];
   });
+
+// Реквизиты компании для превью КП (staff-доступ, admin-клиент только на чтение).
+export const getQuoteDocSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertStaff(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadDocumentSettings } = await import("@/lib/documents/render.server");
+    return await loadDocumentSettings(supabaseAdmin as never);
+  });
