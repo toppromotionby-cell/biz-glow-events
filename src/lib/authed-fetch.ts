@@ -48,19 +48,44 @@ export async function fetchAuthedDocument(url: string): Promise<string> {
   return res.text();
 }
 
+function inIframe(): boolean {
+  try {
+    return window.top !== window.self;
+  } catch {
+    return true;
+  }
+}
+
 // Скачать auth-защищённый файл (PDF) с сохранением имени из Content-Disposition.
+// Внутри iframe (предпросмотр Lovable) браузер блокирует <a download>, поэтому
+// открываем документ в новой вкладке — оттуда его можно сохранить.
 export async function downloadAuthedFile(url: string, fallbackName = "document.pdf"): Promise<void> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Требуется вход");
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error(`Не удалось получить файл (${res.status})`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    const short = detail.replace(/<[^>]*>/g, " ").trim().slice(0, 160);
+    throw new Error(`Не удалось получить файл (${res.status})${short ? `: ${short}` : ""}`);
+  }
   const blob = await res.blob();
   const cd = res.headers.get("content-disposition") ?? "";
   const star = /filename\*=UTF-8''([^;]+)/i.exec(cd)?.[1];
   const plain = /filename="([^"]+)"/i.exec(cd)?.[1];
   const name = star ? decodeURIComponent(star) : plain || fallbackName;
   const href = URL.createObjectURL(blob);
+
+  if (inIframe()) {
+    const win = window.open(href, "_blank", "noopener,noreferrer");
+    if (!win) {
+      URL.revokeObjectURL(href);
+      throw new Error("Браузер заблокировал новое окно — разрешите всплывающие окна и повторите");
+    }
+    setTimeout(() => URL.revokeObjectURL(href), 60_000);
+    return;
+  }
+
   const a = document.createElement("a");
   a.href = href;
   a.download = name;

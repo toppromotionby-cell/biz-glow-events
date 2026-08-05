@@ -1413,6 +1413,7 @@ export type Database = {
           created_at: string
           exclude_from_commission: boolean
           id: string
+          includes: Json
           multiplier: number
           note: string
           price: number
@@ -1428,6 +1429,7 @@ export type Database = {
           created_at?: string
           exclude_from_commission?: boolean
           id?: string
+          includes?: Json
           multiplier?: number
           note?: string
           price?: number
@@ -1443,6 +1445,7 @@ export type Database = {
           created_at?: string
           exclude_from_commission?: boolean
           id?: string
+          includes?: Json
           multiplier?: number
           note?: string
           price?: number
@@ -1686,6 +1689,7 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
+          includes: Json
           price: number
           qty: number
           quote_id: string
@@ -1701,6 +1705,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          includes?: Json
           price?: number
           qty?: number
           quote_id: string
@@ -1716,6 +1721,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          includes?: Json
           price?: number
           qty?: number
           quote_id?: string

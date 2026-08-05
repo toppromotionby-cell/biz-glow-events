@@ -252,6 +252,9 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
     sections.get(key)!.push(it);
   }
 
+  const showIncludes = quote.design?.show_item_includes !== false;
+  const showSubtotals = quote.design?.show_section_subtotals !== false;
+
   const tableBody = [...sections.entries()]
     .map(([section, rows]) => {
       const head = section ? `<tr class="section-row"><td colspan="5">${esc(section)}</td></tr>` : "";
@@ -262,6 +265,13 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
         <td>
           <div class="it-title">${esc(it.title)}</div>
           ${it.description ? `<div class="it-desc">${esc(it.description)}</div>` : ""}
+          ${
+            showIncludes && it.includes?.length
+              ? `<ul class="it-inc">${it.includes
+                  .map((inc) => `<li>${esc(inc.text)}${inc.note ? ` — ${esc(inc.note)}` : ""}</li>`)
+                  .join("")}</ul>`
+              : ""
+          }
         </td>
         <td class="num">${esc(it.qty)}${it.unit ? ` <span class="unit">${esc(it.unit)}</span>` : ""}</td>
         <td class="num">${money(it.price)}</td>
@@ -269,9 +279,16 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
       </tr>`,
         )
         .join("");
-      return head + body;
+      const subtotal =
+        showSubtotals && section && rows.length > 1
+          ? `<tr class="section-sub"><td colspan="4">Итого по разделу «${esc(section)}»</td><td class="num strong">${money(
+              rows.reduce((s, it) => s + it.price * it.qty, 0),
+            )}</td></tr>`
+          : "";
+      return head + body + subtotal;
     })
     .join("");
+
 
   const eventRows: Array<[string, string]> = [
     ["Дата мероприятия", fmtDate(quote.event_date)],
@@ -421,6 +438,10 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   td.idx { color:var(--muted); width:26px; }
   .it-title { font-weight:600; }
   .it-desc { color:var(--muted); font-size:11px; margin-top:2px; white-space:pre-line; }
+  .it-inc { margin:4px 0 0 14px; padding:0; color:var(--muted); font-size:11px; }
+  .it-inc li { margin:1px 0; }
+  .section-sub td { font-size:11px; color:var(--muted); background:#fafafa; }
+
   .unit { color:var(--muted); font-size:10px; }
   .strong { font-weight:600; }
   .section-row td { background:#fff; font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:12px; padding-top:14px; border-bottom:1px solid var(--line); }

@@ -1012,13 +1012,44 @@ export async function buildStandaloneQuotePdf(
             { title: "Цена", width: 80, align: "right", key: "price" },
             { title: "Сумма", width: 90, align: "right", key: "sum" },
           ],
-          sorted.map((it) => ({
-            title: it.description ? `${it.title}\n${it.description}` : it.title,
-            qty: `${it.qty} ${it.unit ?? ""}`.trim(),
-            price: money(Number(it.price)),
-            sum: money(Number(it.price) * Number(it.qty)),
-          })),
+          (() => {
+            const showIncludes = quote.design?.show_item_includes !== false;
+            const showSubtotals = quote.design?.show_section_subtotals !== false;
+            const groups = new Map<string, typeof sorted>();
+            for (const it of sorted) {
+              const key = (it.section || "").trim();
+              if (!groups.has(key)) groups.set(key, [] as unknown as typeof sorted);
+              groups.get(key)!.push(it);
+            }
+            const rows: Array<{ title: string; qty: string; price: string; sum: string }> = [];
+            for (const [section, list] of groups) {
+              if (section) rows.push({ title: section.toUpperCase(), qty: "", price: "", sum: "" });
+              for (const it of list) {
+                const lines = [it.title];
+                if (it.description) lines.push(it.description);
+                if (showIncludes && it.includes?.length) {
+                  for (const inc of it.includes) lines.push(`• ${inc.text}${inc.note ? ` — ${inc.note}` : ""}`);
+                }
+                rows.push({
+                  title: lines.join("\n"),
+                  qty: `${it.qty} ${it.unit ?? ""}`.trim(),
+                  price: money(Number(it.price)),
+                  sum: money(Number(it.price) * Number(it.qty)),
+                });
+              }
+              if (showSubtotals && section && list.length > 1) {
+                rows.push({
+                  title: `Итого по разделу «${section}»`,
+                  qty: "",
+                  price: "",
+                  sum: money(list.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0)),
+                });
+              }
+            }
+            return rows;
+          })(),
         );
+
         break;
       }
       case "totals": {

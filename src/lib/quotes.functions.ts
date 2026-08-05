@@ -172,6 +172,7 @@ export const saveQuote = createServerFn({ method: "POST" })
           section: it.section ?? "",
           title: it.title,
           description: it.description ?? "",
+          includes: it.includes ?? [],
           qty: it.qty,
           unit: it.unit ?? "шт.",
           price: it.price,
