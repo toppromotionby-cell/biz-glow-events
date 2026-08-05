@@ -183,6 +183,7 @@ function Page() {
       try {
         const rawPatch: Record<string, unknown> = {
               status: quote.status, title: quote.title, doc_date: quote.doc_date, validity_days: quote.validity_days,
+              quote_number: quote.quote_number ?? "", valid_until_override: quote.valid_until_override ?? null,
               client_name: quote.client_name ?? "", client_company: quote.client_company ?? "", client_unp: quote.client_unp ?? "",
               client_phone: quote.client_phone ?? "", client_email: quote.client_email ?? "", client_address: quote.client_address ?? "",
               event_date: quote.event_date, event_time_start: quote.event_time_start ?? "", event_time_end: quote.event_time_end ?? "",
