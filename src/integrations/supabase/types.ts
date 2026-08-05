@@ -1635,6 +1635,7 @@ export type Database = {
       }
       quote_items: {
         Row: {
+          cost: number
           created_at: string
           description: string
           entity_id: string | null
@@ -1649,6 +1650,7 @@ export type Database = {
           unit: string
         }
         Insert: {
+          cost?: number
           created_at?: string
           description?: string
           entity_id?: string | null
@@ -1663,6 +1665,7 @@ export type Database = {
           unit?: string
         }
         Update: {
+          cost?: number
           created_at?: string
           description?: string
           entity_id?: string | null
@@ -1679,6 +1682,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          quote_id: string
+          snapshot: Json
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          quote_id: string
+          snapshot: Json
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          quote_id?: string
+          snapshot?: Json
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_versions_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
@@ -1710,16 +1751,20 @@ export type Database = {
           event_time_start: string
           guests_count: number | null
           id: string
+          is_template: boolean
           logo_url: string | null
           order_id: string | null
           prepayment_type: string
           prepayment_value: number
+          public_token: string
           quote_number: string | null
+          sent_at: string | null
           setup_note: string
           signature_url: string | null
           stamp_url: string | null
           status: string
           template: string
+          template_name: string
           texts: Json
           title: string
           total: number
@@ -1751,16 +1796,20 @@ export type Database = {
           event_time_start?: string
           guests_count?: number | null
           id?: string
+          is_template?: boolean
           logo_url?: string | null
           order_id?: string | null
           prepayment_type?: string
           prepayment_value?: number
+          public_token?: string
           quote_number?: string | null
+          sent_at?: string | null
           setup_note?: string
           signature_url?: string | null
           stamp_url?: string | null
           status?: string
           template?: string
+          template_name?: string
           texts?: Json
           title?: string
           total?: number
@@ -1792,16 +1841,20 @@ export type Database = {
           event_time_start?: string
           guests_count?: number | null
           id?: string
+          is_template?: boolean
           logo_url?: string | null
           order_id?: string | null
           prepayment_type?: string
           prepayment_value?: number
+          public_token?: string
           quote_number?: string | null
+          sent_at?: string | null
           setup_note?: string
           signature_url?: string | null
           stamp_url?: string | null
           status?: string
           template?: string
+          template_name?: string
           texts?: Json
           title?: string
           total?: number
