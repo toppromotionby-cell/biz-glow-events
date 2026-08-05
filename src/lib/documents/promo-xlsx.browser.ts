@@ -4,6 +4,7 @@ import {
   computePromoTotals,
   groupBySection,
   lineQty,
+  lineTotal,
   promoFileName,
   promoNumberDisplay,
   type PromoItem,
