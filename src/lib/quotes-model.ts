@@ -394,6 +394,29 @@ export function amountToWords(value: number): string {
 // --- Валидация ---
 const timeRe = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
+/**
+ * Приводит время к виду ЧЧ:ММ: "18:00:00" → "18:00", "1800"/"18.00"/"18-00" → "18:00",
+ * "9:5" → "09:05". Непонятное значение возвращается как есть (его отсеет проверка).
+ */
+export function normalizeTime(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const m = /^(\d{1,2})\s*[:.\-\s]?\s*(\d{1,2})?(?::\d{1,2})?$/.exec(raw);
+  if (!m) return raw;
+  const h = Number(m[1]);
+  const min = m[2] === undefined ? 0 : Number(m[2]);
+  if (!Number.isFinite(h) || h > 23 || min > 59) return raw;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+/** Поле времени в patch-схеме: пустое значение допустимо, остальное нормализуется. */
+const timeField = () =>
+  z
+    .preprocess((v) => (typeof v === "string" ? normalizeTime(v) : v),
+      z.string().refine((v) => v === "" || timeRe.test(v), "укажите в формате ЧЧ:ММ"))
+    .optional();
+
+
 export const quoteItemSchema = z.object({
   id: z.string().uuid().optional(),
   section: z.string().max(120).default(""),
@@ -428,8 +451,8 @@ export const quotePatchSchema = z.object({
   client_email: z.string().max(200).optional(),
   client_address: z.string().max(300).optional(),
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  event_time_start: z.string().refine((v) => v === "" || timeRe.test(v), "Формат ЧЧ:ММ").optional(),
-  event_time_end: z.string().refine((v) => v === "" || timeRe.test(v), "Формат ЧЧ:ММ").optional(),
+  event_time_start: timeField(),
+  event_time_end: timeField(),
   venue: z.string().max(300).optional(),
   guests_count: z.number().int().min(0).max(100000).nullable().optional(),
   event_format: z.string().max(200).optional(),
@@ -469,6 +492,8 @@ export const quotePatchSchema = z.object({
 export function normalizeQuote(row: Record<string, unknown>): Quote {
   return {
     ...(row as unknown as Quote),
+    event_time_start: normalizeTime(row.event_time_start),
+    event_time_end: normalizeTime(row.event_time_end),
     status: (QUOTE_STATUSES as readonly string[]).includes(String(row.status)) ? (row.status as QuoteStatus) : "draft",
     company_overrides: (row.company_overrides ?? {}) as QuoteCompanyOverrides,
     texts: { ...DEFAULT_QUOTE_TEXTS, ...((row.texts ?? {}) as Partial<QuoteTexts>) },

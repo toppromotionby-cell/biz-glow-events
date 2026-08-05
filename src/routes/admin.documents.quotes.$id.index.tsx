@@ -28,9 +28,10 @@ import {
   saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
 import {
-  checkQuote, computeTotals, emptyQuoteItem, num, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
+  checkQuote, computeTotals, emptyQuoteItem, num, quotePatchSchema, normalizeTime, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
   type Quote, type QuoteItem, type QuoteStatus,
 } from "@/lib/quotes-model";
+import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { buildQuoteHtmlDoc, quoteNumberDisplay } from "@/lib/documents/quote-html";
 import { QuoteBlocksEditor } from "@/components/admin/quotes/QuoteBlocksEditor";
 import { QuoteItemsPanel } from "@/components/admin/quotes/QuoteItemsPanel";
@@ -53,6 +54,34 @@ const CATALOG_TYPES = [
 function uid() {
   return globalThis.crypto?.randomUUID?.() ?? `tmp-${Math.random().toString(36).slice(2)}`;
 }
+
+const PATCH_LABELS: Record<string, string> = {
+  event_time_start: "Время начала",
+  event_time_end: "Время окончания",
+  doc_date: "Дата документа",
+  event_date: "Дата мероприятия",
+  client_email: "E-mail",
+};
+
+/**
+ * Отбрасывает поля с промежуточным/некорректным значением, чтобы автосохранение
+ * не падало целиком, пока пользователь дописывает время или дату.
+ */
+function sanitizeQuotePatch(raw: Record<string, unknown>): { patch: Record<string, unknown>; skipped: string[] } {
+  const patch: Record<string, unknown> = {};
+  const skipped: string[] = [];
+  const shape = (quotePatchSchema as unknown as { shape: Record<string, { safeParse: (v: unknown) => { success: boolean } }> }).shape;
+  for (const [key, value] of Object.entries(raw)) {
+    const field = shape[key];
+    if (field && !field.safeParse(value).success) {
+      skipped.push(PATCH_LABELS[key] ?? key);
+      continue;
+    }
+    patch[key] = value;
+  }
+  return { patch, skipped };
+}
+
 
 function ImageField({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) {
   const [busy, setBusy] = useState(false);
@@ -117,6 +146,7 @@ function Page() {
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [state, setState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [pending, setPending] = useState<string[]>([]);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [catalogType, setCatalogType] = useState("all");
   const [catalogTerm, setCatalogTerm] = useState("");
@@ -151,10 +181,7 @@ function Page() {
     const t = setTimeout(async () => {
       setState("saving");
       try {
-        await save({
-          data: {
-            id,
-            patch: {
+        const rawPatch: Record<string, unknown> = {
               status: quote.status, title: quote.title, doc_date: quote.doc_date, validity_days: quote.validity_days,
               client_name: quote.client_name ?? "", client_company: quote.client_company ?? "", client_unp: quote.client_unp ?? "",
               client_phone: quote.client_phone ?? "", client_email: quote.client_email ?? "", client_address: quote.client_address ?? "",
@@ -169,7 +196,14 @@ function Page() {
               discount_type: quote.discount_type, discount_value: num(quote.discount_value),
               prepayment_type: quote.prepayment_type, prepayment_value: num(quote.prepayment_value),
               delivery_amount: num(quote.delivery_amount), vat_note: quote.vat_note ?? "",
-            },
+        };
+        // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
+        // остальные поля сохраняются, а поле подсветится в списке проверок.
+        const { patch, skipped } = sanitizeQuotePatch(rawPatch);
+        await save({
+          data: {
+            id,
+            patch,
             items: items.map((it, i) => ({
               section: it.section ?? "", title: it.title || "Позиция", description: it.description ?? "",
               includes: (it.includes ?? []).filter((x) => x.text.trim()),
@@ -181,10 +215,11 @@ function Page() {
         dirtyRef.current = false;
         setState("saved");
         setSaveError(null);
+        setPending(skipped);
         qc.invalidateQueries({ queryKey: ["admin-quotes"] });
       } catch (e) {
         setState("error");
-        setSaveError((e as Error).message);
+        setSaveError(friendlyZodMessage(e));
       }
     }, 1200);
     return () => clearTimeout(t);
@@ -280,6 +315,9 @@ function Page() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SaveStatus state={state} errorMessage={saveError} />
+          {pending.length > 0 && state !== "error" && (
+            <span className="text-xs text-amber-500">Не сохранено (допишите значение): {pending.join(", ")}</span>
+          )}
           <QuoteShareStatus share={shareState} />
           <Select value={quote.status} onValueChange={(v) => patch({ status: v as QuoteStatus })}>
             <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
@@ -376,8 +414,16 @@ function Page() {
                 <Field label="Гостей">
                   <Input type="number" min={0} value={quote.guests_count ?? ""} onChange={(e) => patch({ guests_count: e.target.value === "" ? null : Math.trunc(num(e.target.value)) })} />
                 </Field>
-                <Field label="Время начала"><Input placeholder="18:00" value={quote.event_time_start ?? ""} onChange={(e) => patch({ event_time_start: e.target.value })} /></Field>
-                <Field label="Время окончания"><Input placeholder="23:00" value={quote.event_time_end ?? ""} onChange={(e) => patch({ event_time_end: e.target.value })} /></Field>
+                <Field label="Время начала">
+                  <Input type="time" step={300} value={quote.event_time_start ?? ""}
+                    onChange={(e) => patch({ event_time_start: e.target.value })}
+                    onBlur={(e) => patch({ event_time_start: normalizeTime(e.target.value) })} />
+                </Field>
+                <Field label="Время окончания">
+                  <Input type="time" step={300} value={quote.event_time_end ?? ""}
+                    onChange={(e) => patch({ event_time_end: e.target.value })}
+                    onBlur={(e) => patch({ event_time_end: normalizeTime(e.target.value) })} />
+                </Field>
                 <Field label="Площадка" className="col-span-2"><Input value={quote.venue ?? ""} onChange={(e) => patch({ venue: e.target.value })} /></Field>
                 <Field label="Формат" className="col-span-2"><Input placeholder="Корпоратив, свадьба, конференция…" value={quote.event_format ?? ""} onChange={(e) => patch({ event_format: e.target.value })} /></Field>
                 <Field label="Монтаж / демонтаж" className="col-span-2"><Input value={quote.setup_note ?? ""} onChange={(e) => patch({ setup_note: e.target.value })} /></Field>

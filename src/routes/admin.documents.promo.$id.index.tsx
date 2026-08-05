@@ -40,6 +40,7 @@ import {
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyZodMessage } from "@/lib/admin/zod-message";
 
 export const Route = createFileRoute("/admin/documents/promo/$id/")({ component: EditorPage });
 
@@ -112,7 +113,7 @@ function EditorPage() {
       setSavedAt(new Date());
       setDirty(false);
     },
-    onError: (e: Error) => toast.error(`Не сохранено: ${e.message}`),
+    onError: (e: Error) => toast.error(`Не сохранено: ${friendlyZodMessage(e)}`),
   });
 
   const scheduleSave = useCallback((q: PromoQuote, list: PromoItem[]) => {

@@ -200,7 +200,7 @@ export const saveQuote = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase
       .from("quotes")
-      .update({ ...data.patch, total })
+      .update({ ...(data.patch as Record<string, never>), total })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true, total };
