@@ -220,3 +220,13 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
     </div>
   );
 }
+
+function Mini({ label, width, children }: { label: string; width: string; children: React.ReactNode }) {
+  return (
+    <div className={width}>
+      <div className="pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      {children}
+    </div>
+  );
+}
+
