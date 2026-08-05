@@ -1399,6 +1399,7 @@ export type Database = {
       }
       quotes: {
         Row: {
+          blocks: Json
           client_address: string
           client_company: string
           client_email: string
@@ -1429,6 +1430,7 @@ export type Database = {
           signature_url: string | null
           stamp_url: string | null
           status: string
+          template: string
           texts: Json
           title: string
           total: number
@@ -1438,6 +1440,7 @@ export type Database = {
           venue: string
         }
         Insert: {
+          blocks?: Json
           client_address?: string
           client_company?: string
           client_email?: string
@@ -1468,6 +1471,7 @@ export type Database = {
           signature_url?: string | null
           stamp_url?: string | null
           status?: string
+          template?: string
           texts?: Json
           title?: string
           total?: number
@@ -1477,6 +1481,7 @@ export type Database = {
           venue?: string
         }
         Update: {
+          blocks?: Json
           client_address?: string
           client_company?: string
           client_email?: string
@@ -1507,6 +1512,7 @@ export type Database = {
           signature_url?: string | null
           stamp_url?: string | null
           status?: string
+          template?: string
           texts?: Json
           title?: string
           total?: number

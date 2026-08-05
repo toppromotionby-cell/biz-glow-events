@@ -893,7 +893,8 @@ export function buildAttachmentFilename(
 // === Standalone КП (раздел «Документы → КП») ===
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
-import { quoteCompany, quoteNumberDisplay } from "@/lib/documents/quote-html";
+import { quoteCompany, quoteNumberDisplay, buildPlaceholderValues, effectiveBlocks, blockText } from "@/lib/documents/quote-html";
+import { applyPlaceholders } from "@/lib/quote-blocks";
 
 function bulletList(ctx: DocCtx, text: string) {
   for (const raw of String(text ?? "").split("\n")) {
@@ -928,138 +929,156 @@ export async function buildStandaloneQuotePdf(
   const ctx = await createCtx();
   drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff);
 
-  if (quote.design.show_cover) {
-    drawText(ctx, quote.title || "Предложение по организации мероприятия", { size: F22, bold: true });
-    gap(ctx, 4);
-    if (quote.texts.intro) drawParagraph(ctx, quote.texts.intro, { size: F11, color: MUTED });
-    gap(ctx, 6);
-  }
-
-  const eventLines = [
-    quote.event_date ? `Дата: ${fmtDate(quote.event_date)}` : null,
-    quote.event_time_start || quote.event_time_end
-      ? `Время: ${[quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — ")}`
-      : null,
-    quote.venue ? `Площадка: ${quote.venue}` : null,
-    quote.guests_count != null ? `Гостей: ${quote.guests_count}` : null,
-    quote.event_format ? `Формат: ${quote.event_format}` : null,
-    quote.setup_note ? `Монтаж/демонтаж: ${quote.setup_note}` : null,
-  ];
-
-  const colW = (PAGE_W - MARGIN_X * 2 - 12) / 2;
-  const yBefore = ctx.y;
-  drawCard(
-    ctx,
-    "Заказчик",
-    quote.client_company || quote.client_name || "—",
-    [
-      quote.client_company && quote.client_name ? `Контакт: ${quote.client_name}` : null,
-      quote.client_unp ? `УНП ${quote.client_unp}` : null,
-      quote.client_phone,
-      quote.client_email,
-      quote.client_address,
-    ],
-    { x: MARGIN_X, width: colW },
-  );
-  const yAfterLeft = ctx.y;
-  ctx.y = yBefore;
-  drawCard(ctx, "Мероприятие", "Детали", eventLines, { x: MARGIN_X + colW + 12, width: colW });
-  ctx.y = Math.min(ctx.y, yAfterLeft);
-
-  if (quote.event_notes) {
-    gap(ctx, 4);
-    drawParagraph(ctx, quote.event_notes, { size: F11, color: MUTED });
-  }
-
-  gap(ctx, 8);
-  drawText(ctx, "Состав предложения", { size: F13, bold: true, color: ACCENT });
-  gap(ctx, 4);
-
-  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
-  drawTable(
-    ctx,
-    [
-      { title: "Позиция", width: PAGE_W - MARGIN_X * 2 - 70 - 80 - 90, key: "title" },
-      { title: "Кол-во", width: 70, align: "right", key: "qty" },
-      { title: "Цена", width: 80, align: "right", key: "price" },
-      { title: "Сумма", width: 90, align: "right", key: "sum" },
-    ],
-    sorted.map((it) => ({
-      title: it.description ? `${it.title}\n${it.description}` : it.title,
-      qty: `${it.qty} ${it.unit ?? ""}`.trim(),
-      price: money(Number(it.price)),
-      sum: money(Number(it.price) * Number(it.qty)),
-    })),
-  );
-
+  const map = buildPlaceholderValues(quote, items, settings);
   const t = computeTotals(quote, items);
-  gap(ctx, 8);
-  drawSummary(ctx, [
-    { label: "Стоимость позиций", value: money(t.subtotal) },
-    ...(t.discount ? [{ label: "Скидка", value: `− ${money(t.discount)}` }] : []),
-    ...(t.delivery ? [{ label: "Доставка и логистика", value: money(t.delivery) }] : []),
-    { label: "ИТОГО", value: money(t.total), emphasis: true },
-    ...(t.prepayment
-      ? [
-          { label: "Предоплата", value: money(t.prepayment) },
-          { label: "Остаток", value: money(t.balance) },
-        ]
-      : []),
-  ]);
-  drawParagraph(ctx, `${amountToWords(t.total)}. ${quote.vat_note || settings.vat_note}`, { size: 9.5, color: MUTED });
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const colW = (PAGE_W - MARGIN_X * 2 - 12) / 2;
 
-  if (quote.texts.included) {
-    gap(ctx, 8);
-    drawText(ctx, "Что входит", { size: F13, bold: true, color: ACCENT });
-    bulletList(ctx, quote.texts.included);
-  }
-  if (quote.texts.excluded) {
-    gap(ctx, 8);
-    drawText(ctx, "Не входит", { size: F13, bold: true, color: ACCENT });
-    bulletList(ctx, quote.texts.excluded);
-  }
-  if (quote.texts.timeline) {
-    gap(ctx, 8);
-    drawText(ctx, "Сроки и логистика", { size: F13, bold: true, color: ACCENT });
-    drawParagraph(ctx, quote.texts.timeline, { size: F11 });
-  }
-  if (quote.texts.terms) {
-    gap(ctx, 8);
-    drawText(ctx, "Условия", { size: F13, bold: true, color: ACCENT });
-    drawParagraph(ctx, quote.texts.terms, { size: F11 });
-  }
+  const hidden = new Set<string>();
+  if (!quote.design.show_cover) hidden.add("cover");
+  if (!quote.design.show_requisites) hidden.add("requisites");
+  if (!quote.design.show_signature) hidden.add("signature");
 
-  if (quote.design.show_requisites) {
-    gap(ctx, 10);
-    drawCard(ctx, "Реквизиты исполнителя", c.legal, [
-      c.unp ? `УНП ${c.unp}` : null,
-      c.address,
-      c.bank_account ? `р/с ${c.bank_account}` : null,
-      c.bank_name,
-      c.bank_bic ? `БИК ${c.bank_bic}` : null,
-      [c.phone, c.email, c.website].filter(Boolean).join(" · "),
-    ]);
-  }
+  const heading = (title: string) => {
+    gap(ctx, 8);
+    drawText(ctx, title, { size: F13, bold: true, color: ACCENT });
+    gap(ctx, 2);
+  };
 
-  if (quote.design.show_signature) {
-    drawSignatures(
-      ctx,
-      {
-        title: "Исполнитель",
-        lines: [c.legal, c.unp ? `УНП ${c.unp}` : ""],
-        signName: `${c.signer_name}${c.signer_title ? `, ${c.signer_title}` : ""}`,
-      },
-      {
-        title: "Заказчик",
-        lines: [quote.client_company || quote.client_name || ""],
-        signName: quote.client_name || "",
-      },
-    );
+  for (const b of effectiveBlocks(quote)) {
+    if (hidden.has(b.type)) continue;
+    const text = blockText(b, quote, map);
+
+    switch (b.type) {
+      case "cover": {
+        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map), { size: F22, bold: true });
+        gap(ctx, 4);
+        if (text) drawParagraph(ctx, text, { size: F11, color: MUTED });
+        gap(ctx, 6);
+        break;
+      }
+      case "client": {
+        gap(ctx, 6);
+        drawCard(
+          ctx,
+          b.title || "Заказчик",
+          quote.client_company || quote.client_name || "—",
+          [
+            quote.client_company && quote.client_name ? `Контакт: ${quote.client_name}` : null,
+            quote.client_unp ? `УНП ${quote.client_unp}` : null,
+            quote.client_phone,
+            quote.client_email,
+            quote.client_address,
+          ],
+          { x: MARGIN_X, width: colW * 2 + 12 },
+        );
+        break;
+      }
+      case "event": {
+        gap(ctx, 6);
+        drawCard(ctx, b.title || "Мероприятие", "Детали", [
+          quote.event_date ? `Дата: ${fmtDate(quote.event_date)}` : null,
+          quote.event_time_start || quote.event_time_end
+            ? `Время: ${[quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — ")}`
+            : null,
+          quote.venue ? `Площадка: ${quote.venue}` : null,
+          quote.guests_count != null ? `Гостей: ${quote.guests_count}` : null,
+          quote.event_format ? `Формат: ${quote.event_format}` : null,
+          quote.setup_note ? `Монтаж/демонтаж: ${quote.setup_note}` : null,
+        ]);
+        if (quote.event_notes) {
+          gap(ctx, 4);
+          drawParagraph(ctx, quote.event_notes, { size: F11, color: MUTED });
+        }
+        break;
+      }
+      case "items": {
+        heading(b.title || "Состав предложения");
+        drawTable(
+          ctx,
+          [
+            { title: "Позиция", width: PAGE_W - MARGIN_X * 2 - 70 - 80 - 90, key: "title" },
+            { title: "Кол-во", width: 70, align: "right", key: "qty" },
+            { title: "Цена", width: 80, align: "right", key: "price" },
+            { title: "Сумма", width: 90, align: "right", key: "sum" },
+          ],
+          sorted.map((it) => ({
+            title: it.description ? `${it.title}\n${it.description}` : it.title,
+            qty: `${it.qty} ${it.unit ?? ""}`.trim(),
+            price: money(Number(it.price)),
+            sum: money(Number(it.price) * Number(it.qty)),
+          })),
+        );
+        break;
+      }
+      case "totals": {
+        gap(ctx, 8);
+        drawSummary(ctx, [
+          { label: "Стоимость позиций", value: money(t.subtotal) },
+          ...(t.discount ? [{ label: "Скидка", value: `− ${money(t.discount)}` }] : []),
+          ...(t.delivery ? [{ label: "Доставка и логистика", value: money(t.delivery) }] : []),
+          { label: "ИТОГО", value: money(t.total), emphasis: true },
+          ...(t.prepayment
+            ? [
+                { label: "Предоплата", value: money(t.prepayment) },
+                { label: "Остаток", value: money(t.balance) },
+              ]
+            : []),
+        ]);
+        drawParagraph(ctx, `${amountToWords(t.total)}. ${quote.vat_note || settings.vat_note}`, { size: 9.5, color: MUTED });
+        break;
+      }
+      case "included":
+      case "excluded": {
+        if (!text) break;
+        heading(b.title);
+        bulletList(ctx, text);
+        break;
+      }
+      case "timeline":
+      case "terms":
+      case "text": {
+        if (!text) break;
+        heading(b.title);
+        drawParagraph(ctx, text, { size: F11 });
+        break;
+      }
+      case "requisites": {
+        gap(ctx, 10);
+        drawCard(ctx, b.title || "Реквизиты исполнителя", c.legal, [
+          c.unp ? `УНП ${c.unp}` : null,
+          c.address,
+          c.bank_account ? `р/с ${c.bank_account}` : null,
+          c.bank_name,
+          c.bank_bic ? `БИК ${c.bank_bic}` : null,
+          [c.phone, c.email, c.website].filter(Boolean).join(" · "),
+        ]);
+        break;
+      }
+      case "signature": {
+        drawSignatures(
+          ctx,
+          {
+            title: "Исполнитель",
+            lines: [c.legal, c.unp ? `УНП ${c.unp}` : ""],
+            signName: `${c.signer_name}${c.signer_title ? `, ${c.signer_title}` : ""}`,
+          },
+          {
+            title: "Заказчик",
+            lines: [quote.client_company || quote.client_name || ""],
+            signName: quote.client_name || "",
+          },
+        );
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   gap(ctx, 4);
   const validity = quote.validity_days ? `Предложение действительно ${quote.validity_days} дней. ` : "";
-  drawParagraph(ctx, `${validity}${quote.texts.footer || settings.quote_footer}`, { size: 9.5, color: MUTED });
+  drawParagraph(ctx, `${validity}${applyPlaceholders(quote.texts.footer || settings.quote_footer, map)}`, { size: 9.5, color: MUTED });
 
   drawFooter(ctx, eff);
   return await ctx.pdf.save();
