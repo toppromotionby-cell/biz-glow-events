@@ -39,6 +39,13 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Документы",
+    items: [
+      { to: "/admin/documents/quotes", label: "Коммерческие предложения", icon: FileSignature },
+      { to: "/admin/settings/documents", label: "Реквизиты и шаблоны", icon: FileCog },
+    ],
+  },
+  {
     label: "Контент",
     items: [
       { to: "/admin/catalog/zones", label: "Зоны", icon: Package },
@@ -50,6 +57,7 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/blog", label: "Блог", icon: Newspaper },
     ],
   },
+
   {
     label: "Маркетинг",
     items: [
