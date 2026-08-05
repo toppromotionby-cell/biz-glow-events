@@ -248,7 +248,7 @@ function OrderDetail() {
                 {loadPreview.isPending ? "Загрузка…" : "Предпросмотр письма"}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => viewer.openDocument(`/admin/orders/${order.id}/quote`, { name: "КП.html" })}
+                onClick={() => viewer.openDocument(`/admin/orders/${order.id}/quote?format=pdf`, { name: "КП.pdf" })}
               >
                 <Download className="h-4 w-4 mr-2" />Скачать КП
               </DropdownMenuItem>
@@ -492,11 +492,7 @@ function OrderDetail() {
                   <li key={kind}>
                     <button
                       type="button"
-                      onClick={() =>
-                        viewer.openDocument(`/admin/orders/${order.id}/${kind}`).catch((e) =>
-                          toast.error((e as Error).message),
-                        )
-                      }
+                      onClick={() => viewer.openDocument(`/admin/orders/${order.id}/${kind}?format=pdf`)}
                       className="w-full flex items-center justify-between text-sm rounded-md px-2 py-1.5 hover:bg-accent/10 transition"
                     >
                       <span className="flex items-center gap-2">

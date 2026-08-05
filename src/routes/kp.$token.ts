@@ -5,6 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   loadPublicDoc, markViewed, applyClientResponse, buildPublicPage, buildDocPdf, docFileName,
 } from "@/lib/documents/public-doc.server";
+import { buildPdfResponse } from "@/lib/documents/pdf-http.server";
 
 function notFound(): Response {
   return new Response(
@@ -26,16 +27,11 @@ export const Route = createFileRoute("/kp/$token")({
         if (!doc) return notFound();
 
         if (new URL(request.url).searchParams.get("format") === "pdf") {
-          const bytes = await buildDocPdf(doc);
-          const filename = docFileName(doc);
-          const ascii = filename.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "") || "quote.pdf";
-          return new Response(bytes.slice(), {
-            status: 200,
-            headers: {
-              "content-type": "application/pdf",
-              "content-disposition": `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
-              "cache-control": "no-store",
-            },
+          return buildPdfResponse({
+            filename: docFileName(doc),
+            operation: `public-${doc.kind}`,
+            entityId: doc.quote.id,
+            build: () => buildDocPdf(doc),
           });
         }
 

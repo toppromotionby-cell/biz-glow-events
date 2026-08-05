@@ -593,8 +593,9 @@ export const sendQuoteToClient = createServerFn({ method: "POST" })
       try {
         const settings = await loadDocumentSettings(supabaseAdmin as never);
         pdf = { filename: quoteFileName(quote), bytes: await buildStandaloneQuotePdf(quote, items, settings) };
-      } catch {
-        pdf = null;
+      } catch (error) {
+        console.error("[quote-email] requested PDF build failed", { quoteId: data.id, error });
+        throw new Error("Не удалось сформировать PDF для письма. Повторите попытку");
       }
     }
 

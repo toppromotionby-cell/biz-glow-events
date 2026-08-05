@@ -90,7 +90,7 @@ function DocumentSettingsPage() {
       notify.info("Нет ни одного заказа — создайте заказ, чтобы посмотреть документ.");
       return;
     }
-    viewer.openDocument(`/admin/orders/${lastOrder.data}/${kind}`);
+    viewer.openDocument(`/admin/orders/${lastOrder.data}/${kind}?format=pdf`);
   };
 
   if (isLoading || !form) {

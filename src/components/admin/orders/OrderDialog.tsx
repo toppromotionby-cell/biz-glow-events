@@ -106,7 +106,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
 
   const openDoc = (kind: "quote" | "invoice" | "contract" | "act") => {
     if (!id) return;
-    viewer.openDocument(`/admin/orders/${id}/${kind}`);
+    viewer.openDocument(`/admin/orders/${id}/${kind}?format=pdf`);
   };
 
   return (
