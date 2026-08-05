@@ -315,6 +315,9 @@ function Page() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SaveStatus state={state} errorMessage={saveError} />
+          {pending.length > 0 && state !== "error" && (
+            <span className="text-xs text-amber-500">Не сохранено (допишите значение): {pending.join(", ")}</span>
+          )}
           <QuoteShareStatus share={shareState} />
           <Select value={quote.status} onValueChange={(v) => patch({ status: v as QuoteStatus })}>
             <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
