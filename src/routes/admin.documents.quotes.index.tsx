@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
-import { listQuotes, createQuote, duplicateQuote, deleteQuote, listOrdersForQuote } from "@/lib/quotes.functions";
+import { listQuotes, createQuote, duplicateQuote, deleteQuote, listOrdersForQuote, createQuoteFromTemplate } from "@/lib/quotes.functions";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/lib/quotes-model";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { downloadAuthedFile } from "@/lib/authed-fetch";
@@ -33,7 +33,9 @@ function Page() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [templatesMode, setTemplatesMode] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [tplOpen, setTplOpen] = useState(false);
   const [orderTerm, setOrderTerm] = useState("");
   const confirm = useConfirm();
 
@@ -42,10 +44,17 @@ function Page() {
   const duplicate = useServerFn(duplicateQuote);
   const remove = useServerFn(deleteQuote);
   const orders = useServerFn(listOrdersForQuote);
+  const fromTemplate = useServerFn(createQuoteFromTemplate);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["admin-quotes", search, status],
-    queryFn: () => list({ data: { search, status } }),
+    queryKey: ["admin-quotes", search, status, templatesMode],
+    queryFn: () => list({ data: { search, status, templates: templatesMode } }),
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["admin-quotes", "templates-picker"],
+    queryFn: () => list({ data: { templates: true } }),
+    enabled: tplOpen,
   });
 
   const { data: orderHits = [] } = useQuery({
@@ -53,6 +62,17 @@ function Page() {
     queryFn: () => orders({ data: { q: orderTerm } }),
     enabled: importOpen,
   });
+
+  const tplMut = useMutation({
+    mutationFn: (templateId: string) => fromTemplate({ data: { templateId } }),
+    onSuccess: ({ id }) => {
+      setTplOpen(false);
+      qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+      navigate({ to: "/admin/documents/quotes/$id", params: { id } });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const createMut = useMutation({
     mutationFn: (orderId?: string) => create({ data: { orderId: orderId ?? null } }),
@@ -117,6 +137,24 @@ function Page() {
                 </div>
               </DialogContent>
             </Dialog>
+            <Dialog open={tplOpen} onOpenChange={setTplOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm"><FileSignature className="h-4 w-4 mr-1.5" />Из шаблона</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Создать КП из шаблона</DialogTitle></DialogHeader>
+                <div className="max-h-80 overflow-auto divide-y divide-border/60 rounded-md border border-border/60">
+                  {templates.map((t) => (
+                    <button key={t.id} type="button" className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
+                      onClick={() => tplMut.mutate(t.id)}>
+                      <div className="text-sm font-medium">{t.template_name || t.title}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums">{fmtMoney(Number(t.total ?? 0))}</div>
+                    </button>
+                  ))}
+                  {!templates.length && <div className="p-4 text-sm text-muted-foreground">Шаблонов пока нет</div>}
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button size="sm" onClick={() => createMut.mutate(undefined)} disabled={createMut.isPending}>
               <Plus className="h-4 w-4 mr-1.5" />Создать КП
             </Button>
@@ -125,10 +163,15 @@ function Page() {
       />
 
       <div className="flex flex-wrap gap-2">
+        <div className="inline-flex rounded-lg border border-border/60 p-0.5">
+          <Button variant={templatesMode ? "ghost" : "secondary"} size="sm" onClick={() => setTemplatesMode(false)}>Документы</Button>
+          <Button variant={templatesMode ? "secondary" : "ghost"} size="sm" onClick={() => setTemplatesMode(true)}>Шаблоны</Button>
+        </div>
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input className="pl-8" placeholder="Поиск по клиенту, теме, номеру" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>

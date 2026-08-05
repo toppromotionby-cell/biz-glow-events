@@ -86,10 +86,22 @@ export type QuoteItem = {
   qty: number;
   unit: string;
   price: number;
+  cost: number;
   sort_order: number;
   entity_type: string | null;
   entity_id: string | null;
 };
+
+export const QUOTE_SECTION_SUGGESTIONS = [
+  "Оборудование",
+  "Интерактивные зоны",
+  "Персонал",
+  "Логистика",
+  "Продакшн",
+  "Декор",
+  "Дополнительно",
+];
+
 
 export type Quote = {
   id: string;
@@ -128,9 +140,14 @@ export type Quote = {
   vat_note: string;
   total: number;
   order_id: string | null;
+  sent_at: string | null;
+  is_template: boolean;
+  template_name: string;
+  public_token: string;
   created_at: string;
   updated_at: string;
 };
+
 
 export function num(v: unknown, fallback = 0): number {
   const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
@@ -144,10 +161,17 @@ export type QuoteTotals = {
   total: number;
   prepayment: number;
   balance: number;
+  cost: number;
+  margin: number;
+  marginPct: number;
 };
 
-export function computeTotals(quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount">, items: Array<Pick<QuoteItem, "qty" | "price">>): QuoteTotals {
+export function computeTotals(
+  quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount">,
+  items: Array<Pick<QuoteItem, "qty" | "price"> & { cost?: number }>,
+): QuoteTotals {
   const subtotal = items.reduce((s, it) => s + num(it.qty) * num(it.price), 0);
+  const cost = items.reduce((s, it) => s + num(it.qty) * num(it.cost), 0);
   const dv = Math.max(0, num(quote.discount_value));
   const discount =
     quote.discount_type === "percent" ? (subtotal * Math.min(dv, 100)) / 100
@@ -160,8 +184,77 @@ export function computeTotals(quote: Pick<Quote, "discount_type" | "discount_val
     quote.prepayment_type === "percent" ? (total * Math.min(pv, 100)) / 100
     : quote.prepayment_type === "amount" ? Math.min(pv, total)
     : 0;
-  return { subtotal, discount, delivery, total, prepayment, balance: Math.max(0, total - prepayment) };
+  const margin = subtotal - discount - cost;
+  const revenue = subtotal - discount;
+  return {
+    subtotal, discount, delivery, total, prepayment,
+    balance: Math.max(0, total - prepayment),
+    cost,
+    margin,
+    marginPct: revenue > 0 ? (margin / revenue) * 100 : 0,
+  };
 }
+
+export type QuoteCheck = { level: "error" | "warn" | "info"; message: string };
+
+/** Проверки документа перед отправкой клиенту. */
+export function checkQuote(quote: Quote, items: QuoteItem[]): QuoteCheck[] {
+  const out: QuoteCheck[] = [];
+  const totals = computeTotals(quote, items);
+
+  if (!quote.client_company.trim() && !quote.client_name.trim()) {
+    out.push({ level: "error", message: "Не указан заказчик (компания или контактное лицо)" });
+  }
+  if (!items.length) out.push({ level: "error", message: "В предложении нет ни одной позиции" });
+  if (!quote.title.trim()) out.push({ level: "warn", message: "Не заполнена тема предложения" });
+  if (!quote.validity_days) out.push({ level: "warn", message: "Не указан срок действия предложения" });
+  if (!quote.event_date) out.push({ level: "warn", message: "Не указана дата мероприятия" });
+  if (!quote.client_email.trim()) out.push({ level: "warn", message: "Нет e-mail заказчика — отправка письмом недоступна" });
+
+  const zero = items.filter((it) => num(it.price) <= 0);
+  if (zero.length) {
+    out.push({
+      level: "warn",
+      message: zero.length === 1 ? `Нулевая цена: ${zero[0]!.title || "позиция без названия"}` : `Нулевая цена у ${zero.length} позиций`,
+    });
+  }
+  const noTitle = items.filter((it) => !it.title.trim()).length;
+  if (noTitle) out.push({ level: "error", message: `Позиции без названия: ${noTitle}` });
+
+  if (totals.discount >= totals.subtotal && totals.subtotal > 0) {
+    out.push({ level: "error", message: "Скидка не может быть равна или больше суммы позиций" });
+  }
+  if (totals.cost > 0 && totals.marginPct < 15) {
+    out.push({ level: "warn", message: `Низкая маржа: ${totals.marginPct.toFixed(1)}%` });
+  }
+  return out;
+}
+
+/** Разбор таблицы, скопированной из Excel: название / кол-во / ед. / цена [/ себестоимость]. */
+export function parsePastedQuoteRows(text: string): Array<Pick<QuoteItem, "title" | "qty" | "unit" | "price" | "cost">> {
+  const rows: Array<Pick<QuoteItem, "title" | "qty" | "unit" | "price" | "cost">> = [];
+  for (const raw of text.split(/\r?\n/)) {
+    if (!raw.trim()) continue;
+    const cells = raw.split("\t").length > 1 ? raw.split("\t") : raw.split(/ {2,}|;/);
+    const title = (cells[0] ?? "").trim();
+    if (!title) continue;
+    const nums = cells.slice(1).map((c) => c.trim());
+    const isNum = (v: string) => v !== "" && Number.isFinite(num(v, NaN));
+    const qty = isNum(nums[0] ?? "") ? num(nums[0]) : 1;
+    const unit = nums[1] && !isNum(nums[1]) ? nums[1] : "шт.";
+    const priceCell = nums.slice(1).find((v) => isNum(v));
+    const rest = nums.slice(1).filter((v) => isNum(v));
+    rows.push({
+      title,
+      qty: qty || 1,
+      unit,
+      price: priceCell ? num(priceCell) : 0,
+      cost: rest.length > 1 ? num(rest[1]) : 0,
+    });
+  }
+  return rows;
+}
+
 
 // --- Сумма прописью (BYN) ---
 const ONES = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
@@ -226,6 +319,7 @@ export const quoteItemSchema = z.object({
   qty: z.number().min(0, "Не может быть отрицательным").max(100000),
   unit: z.string().max(40).default("шт."),
   price: z.number().min(0, "Не может быть отрицательной").max(10_000_000),
+  cost: z.number().min(0).max(10_000_000).default(0),
   sort_order: z.number().int().min(0).default(0),
   entity_type: z.string().max(40).nullable().default(null),
   entity_id: z.string().uuid().nullable().default(null),
@@ -234,7 +328,10 @@ export const quoteItemSchema = z.object({
 export const quotePatchSchema = z.object({
   status: z.enum(QUOTE_STATUSES).optional(),
   quote_number: z.string().max(60).optional(),
+  is_template: z.boolean().optional(),
+  template_name: z.string().max(160).optional(),
   title: z.string().max(200).optional(),
+
   doc_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Некорректная дата").optional(),
   validity_days: z.number().int().min(0).max(365).optional(),
   client_name: z.string().max(200).optional(),
@@ -303,9 +400,11 @@ export function normalizeItem(row: Record<string, unknown>): QuoteItem {
     ...(row as unknown as QuoteItem),
     qty: num(row.qty, 1),
     price: num(row.price),
+    cost: num(row.cost),
     sort_order: Math.trunc(num(row.sort_order)),
     section: String(row.section ?? ""),
     description: String(row.description ?? ""),
     unit: String(row.unit ?? "шт."),
   };
 }
+

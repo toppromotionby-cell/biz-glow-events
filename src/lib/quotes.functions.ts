@@ -35,18 +35,31 @@ export type QuoteListRow = {
   total: number;
   updated_at: string;
   created_at: string;
+  is_template: boolean;
+  template_name: string;
+  sent_at: string | null;
 };
+
+const LIST_COLS =
+  "id,quote_number,status,title,client_name,client_company,event_date,total,updated_at,created_at,is_template,template_name,sent_at";
 
 export const listQuotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { search?: string; status?: string } | undefined) =>
-    z.object({ search: z.string().max(200).optional(), status: z.string().max(30).optional() }).parse(d ?? {}),
+  .inputValidator((d: { search?: string; status?: string; templates?: boolean } | undefined) =>
+    z
+      .object({
+        search: z.string().max(200).optional(),
+        status: z.string().max(30).optional(),
+        templates: z.boolean().optional(),
+      })
+      .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<QuoteListRow[]> => {
     await assertStaff(context as never);
     let q = context.supabase
       .from("quotes")
-      .select("id,quote_number,status,title,client_name,client_company,event_date,total,updated_at,created_at")
+      .select(LIST_COLS)
+      .eq("is_template", data.templates === true)
       .order("created_at", { ascending: false })
       .limit(300);
     if (data.status && data.status !== "all") q = q.eq("status", data.status);
@@ -54,8 +67,9 @@ export const listQuotes = createServerFn({ method: "GET" })
     if (s) q = q.or(`title.ilike.%${s}%,client_name.ilike.%${s}%,client_company.ilike.%${s}%,quote_number.ilike.%${s}%`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []) as QuoteListRow[];
+    return (rows ?? []) as unknown as QuoteListRow[];
   });
+
 
 export const getQuote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -161,6 +175,7 @@ export const saveQuote = createServerFn({ method: "POST" })
           qty: it.qty,
           unit: it.unit ?? "шт.",
           price: it.price,
+          cost: it.cost ?? 0,
           sort_order: i,
           entity_type: it.entity_type ?? null,
           entity_id: it.entity_id ?? null,
@@ -173,8 +188,14 @@ export const saveQuote = createServerFn({ method: "POST" })
     const { data: current } = await context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle();
     if (!current) throw new Error("КП не найдено");
     const merged = { ...(current as Record<string, unknown>), ...data.patch } as Record<string, unknown>;
-    const { data: itemRows } = await context.supabase.from("quote_items").select("qty,price").eq("quote_id", data.id);
-    total = computeTotals(merged as never, ((itemRows ?? []) as Array<{ qty: number; price: number }>).map((r) => ({ qty: Number(r.qty), price: Number(r.price) }))).total;
+    const { data: itemRows } = await context.supabase.from("quote_items").select("qty,price,cost").eq("quote_id", data.id);
+    total = computeTotals(
+      merged as never,
+      ((itemRows ?? []) as Array<{ qty: number; price: number; cost: number }>).map((r) => ({
+        qty: Number(r.qty), price: Number(r.price), cost: Number(r.cost ?? 0),
+      })),
+    ).total;
+
 
     const { error } = await context.supabase
       .from("quotes")
@@ -201,7 +222,12 @@ export const duplicateQuote = createServerFn({ method: "POST" })
     row.quote_number = null;
     row.status = "draft";
     row.created_by = context.userId;
+    row.sent_at = null;
+    row.is_template = false;
+    row.template_name = "";
+    delete row.public_token;
     row.title = `${String(row.title ?? "КП")} (копия)`;
+
 
     const { data: created, error } = await context.supabase.from("quotes").insert(row).select("id").single();
     if (error) throw new Error(error.message);
@@ -365,4 +391,159 @@ export const deleteQuoteSnippet = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("quote_block_snippets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// --- История версий, шаблоны, отправка ---
+export type QuoteVersionRow = {
+  id: string;
+  label: string;
+  total: number;
+  created_at: string;
+};
+
+export const listQuoteVersions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { quoteId: string }) => z.object({ quoteId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<QuoteVersionRow[]> => {
+    await assertStaff(context as never);
+    const { data: rows, error } = await context.supabase
+      .from("quote_versions")
+      .select("id,label,total,created_at")
+      .eq("quote_id", data.quoteId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as QuoteVersionRow[];
+  });
+
+export const createQuoteVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { quoteId: string; label?: string }) =>
+    z.object({ quoteId: z.string().uuid(), label: z.string().max(160).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const [{ data: quote }, { data: items }] = await Promise.all([
+      context.supabase.from("quotes").select("*").eq("id", data.quoteId).maybeSingle(),
+      context.supabase.from("quote_items").select("*").eq("quote_id", data.quoteId).order("sort_order"),
+    ]);
+    if (!quote) throw new Error("КП не найдено");
+    const { error } = await context.supabase.from("quote_versions").insert({
+      quote_id: data.quoteId,
+      label: data.label ?? "",
+      total: Number((quote as Record<string, unknown>).total ?? 0),
+      snapshot: { quote, items: items ?? [] },
+      created_by: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const restoreQuoteVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { versionId: string }) => z.object({ versionId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true; quoteId: string }> => {
+    await assertStaff(context as never);
+    const { data: version } = await context.supabase
+      .from("quote_versions")
+      .select("quote_id,snapshot")
+      .eq("id", data.versionId)
+      .maybeSingle();
+    if (!version) throw new Error("Версия не найдена");
+    const v = version as { quote_id: string; snapshot: { quote: Record<string, unknown>; items: Record<string, unknown>[] } };
+    const restored = { ...v.snapshot.quote };
+    for (const key of ["id", "created_at", "updated_at", "public_token", "quote_number", "created_by"]) delete restored[key];
+
+    const { error } = await context.supabase.from("quotes").update(restored as never).eq("id", v.quote_id);
+    if (error) throw new Error(error.message);
+
+    await context.supabase.from("quote_items").delete().eq("quote_id", v.quote_id);
+    const rows = (v.snapshot.items ?? []).map((it, i) => {
+      const c: Record<string, unknown> = { ...it, quote_id: v.quote_id, sort_order: i };
+      delete c.id;
+      delete c.created_at;
+      return c;
+    });
+    if (rows.length) await context.supabase.from("quote_items").insert(rows as never);
+    return { ok: true, quoteId: v.quote_id };
+  });
+
+/** Сохранить текущее КП как шаблон (копия с флагом is_template). */
+export const saveQuoteAsTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; name: string }) =>
+    z.object({ id: z.string().uuid(), name: z.string().trim().min(1, "Укажите название").max(160) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    await assertStaff(context as never);
+    const [{ data: src }, { data: items }] = await Promise.all([
+      context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from("quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
+    ]);
+    if (!src) throw new Error("КП не найдено");
+    const row: Record<string, unknown> = { ...(src as Record<string, unknown>) };
+    for (const key of ["id", "created_at", "updated_at", "public_token"]) delete row[key];
+    row.quote_number = null;
+    row.status = "draft";
+    row.sent_at = null;
+    row.created_by = context.userId;
+    row.is_template = true;
+    row.template_name = data.name;
+
+    const { data: created, error } = await context.supabase.from("quotes").insert(row).select("id").single();
+    if (error) throw new Error(error.message);
+    const newId = (created as { id: string }).id;
+    const copies = ((items ?? []) as Record<string, unknown>[]).map((it, i) => {
+      const c: Record<string, unknown> = { ...it, quote_id: newId, sort_order: i };
+      delete c.id;
+      delete c.created_at;
+      return c;
+    });
+    if (copies.length) await context.supabase.from("quote_items").insert(copies as never);
+    return { id: newId };
+  });
+
+/** Создать новое КП из шаблона. */
+export const createQuoteFromTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { templateId: string }) => z.object({ templateId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    await assertStaff(context as never);
+    const [{ data: src }, { data: items }] = await Promise.all([
+      context.supabase.from("quotes").select("*").eq("id", data.templateId).maybeSingle(),
+      context.supabase.from("quote_items").select("*").eq("quote_id", data.templateId).order("sort_order"),
+    ]);
+    if (!src) throw new Error("Шаблон не найден");
+    const row: Record<string, unknown> = { ...(src as Record<string, unknown>) };
+    for (const key of ["id", "created_at", "updated_at", "public_token"]) delete row[key];
+    row.quote_number = null;
+    row.status = "draft";
+    row.sent_at = null;
+    row.created_by = context.userId;
+    row.is_template = false;
+    row.template_name = "";
+
+    const { data: created, error } = await context.supabase.from("quotes").insert(row).select("id").single();
+    if (error) throw new Error(error.message);
+    const newId = (created as { id: string }).id;
+    const copies = ((items ?? []) as Record<string, unknown>[]).map((it, i) => {
+      const c: Record<string, unknown> = { ...it, quote_id: newId, sort_order: i };
+      delete c.id;
+      delete c.created_at;
+      return c;
+    });
+    if (copies.length) await context.supabase.from("quote_items").insert(copies as never);
+    return { id: newId };
+  });
+
+/** Отметить КП отправленным (фиксирует дату и статус). */
+export const markQuoteSent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true; sent_at: string }> => {
+    await assertStaff(context as never);
+    const sentAt = new Date().toISOString();
+    const { error } = await context.supabase.from("quotes").update({ sent_at: sentAt, status: "sent" }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, sent_at: sentAt };
   });
