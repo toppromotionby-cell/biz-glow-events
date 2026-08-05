@@ -46,7 +46,13 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
         : "";
       const body = sec.items
         .map((it) => {
-          const cells: string[] = [`<td class="c-title">${esc(it.title)}</td>`, `<td class="c-unit">${esc(it.unit)}</td>`];
+          const inc =
+            quote.show_item_includes && it.includes.length
+              ? `<ul class="c-inc">${it.includes
+                  .map((x) => `<li>${esc(x.text)}${x.note ? ` — ${esc(x.note)}` : ""}</li>`)
+                  .join("")}</ul>`
+              : "";
+          const cells: string[] = [`<td class="c-title">${esc(it.title)}${inc}</td>`, `<td class="c-unit">${esc(it.unit)}</td>`];
           if (quote.show_qty) cells.push(`<td class="c-num">${nf(it.qty).replace(",00", "")}</td>`);
           if (quote.show_total_qty) cells.push(`<td class="c-num">${nf(lineQty(it)).replace(",00", "")}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
@@ -55,7 +61,14 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
           return `<tr>${cells.join("")}</tr>`;
         })
         .join("");
-      return head + body;
+      const sub =
+        quote.show_section_subtotals && sec.name && sec.items.length > 1
+          ? `<tr class="sec-sub"><td colspan="${colCount - 1}">Итого по разделу «${esc(sec.name)}»</td><td class="c-money">${nf(
+              sec.items.reduce((s, it) => s + lineTotal(it), 0),
+            )}</td></tr>`
+          : "";
+      return head + body + sub;
+
     })
     .join("");
 
