@@ -355,7 +355,16 @@ export function SiteFooter() {
         </div>
         <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} event-hub.by. Все права защищены.
+          <span className="mx-2 opacity-40">·</span>
+          <Link
+            to="/login"
+            search={{ redirect: "/admin" }}
+            className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+          >
+            <ShieldCheck className="h-3 w-3" aria-hidden="true" />Вход для сотрудников
+          </Link>
         </Toggleable>
+
       </footer>
     </Toggleable>
   );
