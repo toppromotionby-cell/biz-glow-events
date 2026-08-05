@@ -1,0 +1,2 @@
+ALTER TABLE public.quote_items ADD COLUMN IF NOT EXISTS includes jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE public.promo_quote_items ADD COLUMN IF NOT EXISTS includes jsonb NOT NULL DEFAULT '[]'::jsonb;
