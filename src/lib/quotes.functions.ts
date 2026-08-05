@@ -35,18 +35,31 @@ export type QuoteListRow = {
   total: number;
   updated_at: string;
   created_at: string;
+  is_template: boolean;
+  template_name: string;
+  sent_at: string | null;
 };
+
+const LIST_COLS =
+  "id,quote_number,status,title,client_name,client_company,event_date,total,updated_at,created_at,is_template,template_name,sent_at";
 
 export const listQuotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { search?: string; status?: string } | undefined) =>
-    z.object({ search: z.string().max(200).optional(), status: z.string().max(30).optional() }).parse(d ?? {}),
+  .inputValidator((d: { search?: string; status?: string; templates?: boolean } | undefined) =>
+    z
+      .object({
+        search: z.string().max(200).optional(),
+        status: z.string().max(30).optional(),
+        templates: z.boolean().optional(),
+      })
+      .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<QuoteListRow[]> => {
     await assertStaff(context as never);
     let q = context.supabase
       .from("quotes")
-      .select("id,quote_number,status,title,client_name,client_company,event_date,total,updated_at,created_at")
+      .select(LIST_COLS)
+      .eq("is_template", data.templates === true)
       .order("created_at", { ascending: false })
       .limit(300);
     if (data.status && data.status !== "all") q = q.eq("status", data.status);
@@ -54,8 +67,9 @@ export const listQuotes = createServerFn({ method: "GET" })
     if (s) q = q.or(`title.ilike.%${s}%,client_name.ilike.%${s}%,client_company.ilike.%${s}%,quote_number.ilike.%${s}%`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []) as QuoteListRow[];
+    return (rows ?? []) as unknown as QuoteListRow[];
   });
+
 
 export const getQuote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
