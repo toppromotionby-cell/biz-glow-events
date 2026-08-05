@@ -9,6 +9,7 @@ import {
   Newspaper, UserCog, Trophy, MessageSquareQuote,
   CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
   Wrench, Sparkles, Factory, FileSignature,
+  Megaphone,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -42,6 +43,7 @@ const GROUPS: NavGroup[] = [
     label: "Документы",
     items: [
       { to: "/admin/documents/quotes", label: "Коммерческие предложения", icon: FileSignature },
+      { to: "/admin/documents/promo", label: "КП промо", icon: Megaphone },
       { to: "/admin/settings/documents", label: "Реквизиты и шаблоны", icon: FileCog },
     ],
   },
