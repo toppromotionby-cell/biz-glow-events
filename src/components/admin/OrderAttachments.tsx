@@ -23,6 +23,7 @@ function formatSize(n?: number | null) {
 
 export function OrderAttachments({ orderId }: { orderId: string }) {
   const qc = useQueryClient();
+  const viewer = useDocumentViewer();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const { confirm, dialog } = useConfirm();
