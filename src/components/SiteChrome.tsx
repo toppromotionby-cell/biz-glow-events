@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useRoles } from "@/hooks/use-roles";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Heart, Menu } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Heart, Menu, ShieldCheck } from "lucide-react";
+
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { SearchTrigger } from "@/components/SearchTrigger";
@@ -41,6 +43,8 @@ const INFO_LINKS = [
 
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
+  const { isStaff } = useRoles();
+
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
   const [open, setOpen] = useState(false);
@@ -121,9 +125,17 @@ export function SiteHeader() {
             </Toggleable>
             {isAuthenticated ? (
               <>
+                {isStaff && (
+                  <Link to="/admin">
+                    <Button variant="outline" size="sm" className="border-primary/40 text-primary hover:bg-primary/10">
+                      <ShieldCheck className="h-4 w-4 mr-1" />Админка
+                    </Button>
+                  </Link>
+                )}
                 <Toggleable sectionKey="header.account" as="span">
                   <Link to="/profile"><Button variant="ghost" size="sm"><User className="h-4 w-4 mr-1" />Кабинет</Button></Link>
                 </Toggleable>
+
                 <Toggleable sectionKey="header.logout" as="span">
                   <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>Выйти</Button>
                 </Toggleable>
@@ -201,7 +213,17 @@ export function SiteHeader() {
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                   {isAuthenticated ? (
                     <>
+                      {isStaff && (
+                        <SheetClose asChild>
+                          <Link to="/admin">
+                            <Button variant="outline" className="w-full border-primary/40 text-primary">
+                              <ShieldCheck className="h-4 w-4 mr-2" />Админ-панель
+                            </Button>
+                          </Link>
+                        </SheetClose>
+                      )}
                       <Toggleable sectionKey="header.account" as="div">
+
                         <SheetClose asChild>
                           <Link to="/profile"><Button variant="outline" className="w-full"><User className="h-4 w-4 mr-2" />Личный кабинет</Button></Link>
                         </SheetClose>
@@ -333,7 +355,16 @@ export function SiteFooter() {
         </div>
         <Toggleable sectionKey="footer.copyright" as="div" className="border-t border-border/50 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} event-hub.by. Все права защищены.
+          <span className="mx-2 opacity-40">·</span>
+          <Link
+            to="/login"
+            search={{ redirect: "/admin" }}
+            className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+          >
+            <ShieldCheck className="h-3 w-3" aria-hidden="true" />Вход для сотрудников
+          </Link>
         </Toggleable>
+
       </footer>
     </Toggleable>
   );
