@@ -67,6 +67,8 @@ function PlaceholderMenu({ onPick }: { onPick: (token: string) => void }) {
 
 export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
+  const [blockErrors, setBlockErrors] = useState<Record<string, boolean>>({});
+
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [saveTarget, setSaveTarget] = useState<QuoteBlock | null>(null);
   const [snippetName, setSnippetName] = useState("");
