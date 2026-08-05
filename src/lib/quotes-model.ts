@@ -400,9 +400,11 @@ export function normalizeItem(row: Record<string, unknown>): QuoteItem {
     ...(row as unknown as QuoteItem),
     qty: num(row.qty, 1),
     price: num(row.price),
+    cost: num(row.cost),
     sort_order: Math.trunc(num(row.sort_order)),
     section: String(row.section ?? ""),
     description: String(row.description ?? ""),
     unit: String(row.unit ?? "шт."),
   };
 }
+
