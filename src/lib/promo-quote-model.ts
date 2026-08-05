@@ -389,6 +389,79 @@ export function groupBySection(items: PromoItem[]): PromoSection[] {
   return out;
 }
 
+export const PROMO_NO_SECTION = "Без раздела";
+
+const reindexPromo = (items: PromoItem[]): PromoItem[] => items.map((it, i) => ({ ...it, sort_order: i }));
+const secKey = (it: PromoItem) => (it.section ?? "").trim();
+
+/** Список разделов в порядке появления. */
+export function listPromoSections(items: PromoItem[]): string[] {
+  const out: string[] = [];
+  for (const it of [...items].sort((a, b) => a.sort_order - b.sort_order)) {
+    const key = secKey(it);
+    if (!out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
+/** Пересобрать позиции в заданном порядке разделов. */
+export function orderPromoBySections(items: PromoItem[], order: string[]): PromoItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const out: PromoItem[] = [];
+  for (const section of order) out.push(...sorted.filter((it) => secKey(it) === section));
+  for (const it of sorted) if (!out.includes(it)) out.push(it);
+  return reindexPromo(out);
+}
+
+export function renamePromoSection(items: PromoItem[], from: string, to: string): PromoItem[] {
+  return items.map((it) => (secKey(it) === from ? { ...it, section: to } : it));
+}
+
+export function movePromoSection(items: PromoItem[], section: string, dir: -1 | 1): PromoItem[] {
+  const order = listPromoSections(items);
+  const i = order.indexOf(section);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= order.length) return items;
+  const next = [...order];
+  next[i] = order[j]!;
+  next[j] = order[i]!;
+  return orderPromoBySections(items, next);
+}
+
+/** Удалить раздел: вместе с позициями или с переносом их в «без раздела». */
+export function removePromoSection(items: PromoItem[], section: string, mode: "items" | "keep"): PromoItem[] {
+  const next =
+    mode === "items"
+      ? items.filter((it) => secKey(it) !== section)
+      : items.map((it) => (secKey(it) === section ? { ...it, section: "" } : it));
+  return reindexPromo([...next].sort((a, b) => a.sort_order - b.sort_order));
+}
+
+export function duplicatePromoSection(items: PromoItem[], section: string): PromoItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const copies = sorted
+    .filter((it) => secKey(it) === section)
+    .map((it) => ({
+      ...it,
+      id: globalThis.crypto?.randomUUID?.() ?? `tmp-${Math.random()}`,
+      section: `${section || PROMO_NO_SECTION} (копия)`,
+      includes: it.includes.map((x) => ({ ...x })),
+    }));
+  return reindexPromo([...sorted, ...copies]);
+}
+
+/** Перенести позицию в другой раздел (в конец этого раздела). */
+export function movePromoItemToSection(items: PromoItem[], id: string, section: string): PromoItem[] {
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const item = sorted.find((it) => it.id === id);
+  if (!item) return items;
+  const rest = sorted.filter((it) => it.id !== id);
+  const moved = { ...item, section };
+  const lastIdx = rest.map((it) => secKey(it)).lastIndexOf(section.trim());
+  const out = lastIdx >= 0 ? [...rest.slice(0, lastIdx + 1), moved, ...rest.slice(lastIdx + 1)] : [...rest, moved];
+  return reindexPromo(out);
+}
+
 export function promoNumberDisplay(q: PromoQuote): string {
   const n = (q.doc_number ?? "").trim();
   return n ? n.replaceAll("/", ".") : q.id.slice(0, 8).toUpperCase();
