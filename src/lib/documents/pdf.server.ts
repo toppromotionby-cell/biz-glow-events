@@ -17,36 +17,31 @@ import {
   type PromoQuote as PromoQuoteT,
 } from "@/lib/promo-quote-model";
 
-import regularAsset from "@/assets/fonts/Roboto-Regular.ttf.asset.json";
-import boldAsset from "@/assets/fonts/Roboto-Bold.ttf.asset.json";
+import { ROBOTO_REGULAR_B64 } from "@/assets/fonts/roboto-regular.base64";
+import { ROBOTO_BOLD_B64 } from "@/assets/fonts/roboto-bold.base64";
 
-// Стабильный публичный URL проекта — нужен чтобы воркер мог дотянуться
-// до /__l5e/assets-v1/... абсолютной ссылкой (на сервере fetch по относительному
-// пути не работает).
-const PROJECT_ID = "8e78edb2-4da2-4eba-a854-c653075850d6";
-const ASSET_HOST = `https://project--${PROJECT_ID}.lovable.app`;
-
-const FONT_REGULAR_URL = `${ASSET_HOST}${regularAsset.url}`;
-const FONT_BOLD_URL = `${ASSET_HOST}${boldAsset.url}`;
-
-let regularBytesPromise: Promise<Uint8Array> | null = null;
-let boldBytesPromise: Promise<Uint8Array> | null = null;
-
-async function fetchFont(url: string): Promise<Uint8Array> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Не удалось загрузить шрифт ${url}: HTTP ${res.status}`);
-  const buf = await res.arrayBuffer();
-  return new Uint8Array(buf);
+// Шрифты встроены в бандл (subset латиница+кириллица). Раньше они качались
+// по сети с публичного адреса того же воркера — такой self-subrequest иногда
+// зависал, и Cloudflare убивал запрос с 502.
+function decodeBase64(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
-function loadRegular() {
-  if (!regularBytesPromise) regularBytesPromise = fetchFont(FONT_REGULAR_URL);
-  return regularBytesPromise;
+let regularBytes: Uint8Array | null = null;
+let boldBytes: Uint8Array | null = null;
+
+function loadRegular(): Uint8Array {
+  if (!regularBytes) regularBytes = decodeBase64(ROBOTO_REGULAR_B64);
+  return regularBytes;
 }
-function loadBold() {
-  if (!boldBytesPromise) boldBytesPromise = fetchFont(FONT_BOLD_URL);
-  return boldBytesPromise;
+function loadBold(): Uint8Array {
+  if (!boldBytes) boldBytes = decodeBase64(ROBOTO_BOLD_B64);
+  return boldBytes;
 }
+
 
 // === Стили / токены, согласованные с сайтом ===
 const ACCENT = rgb(0.94, 0.63, 0.25);          // оранжевый primary
