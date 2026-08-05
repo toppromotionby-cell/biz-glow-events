@@ -184,7 +184,7 @@ function EditorPage() {
             size="sm"
             variant="outline"
             onClick={async () => {
-              const { exportPromoQuoteXlsx } = await import("@/lib/documents/promo-xlsx.client");
+              const { exportPromoQuoteXlsx } = await import("@/lib/documents/promo-xlsx.browser");
               await exportPromoQuoteXlsx(quote, items).catch((e: Error) => toast.error(e.message));
             }}
           >
