@@ -388,7 +388,9 @@ function drawTable(
     for (let i = 0; i < cols.length; i++) {
       const c = cols[i];
       const lines = wrapped[i];
-      let cy = ctx.y - 4;
+      const blockH = Math.max(lines.length, 1) * F11 * 1.3;
+      let cy =
+        c.valign === "middle" ? ctx.y - Math.max(4, (rowH - blockH) / 2) : ctx.y - 4;
       for (const line of lines) {
         let tx = cx + cellPadX;
         if (c.align === "right") {
