@@ -487,7 +487,29 @@ export function normalizeItem(row: Record<string, unknown>): QuoteItem {
     sort_order: Math.trunc(num(row.sort_order)),
     section: String(row.section ?? ""),
     description: String(row.description ?? ""),
+    includes: normalizeIncludes(row.includes),
     unit: String(row.unit ?? "шт."),
   };
 }
+
+/** Пустая позиция КП. */
+export function emptyQuoteItem(quoteId: string, sortOrder: number, init?: Partial<QuoteItem>): QuoteItem {
+  return {
+    id: globalThis.crypto?.randomUUID?.() ?? `tmp-${Math.random()}`,
+    quote_id: quoteId,
+    section: "",
+    title: "",
+    description: "",
+    includes: [],
+    qty: 1,
+    unit: "шт.",
+    price: 0,
+    cost: 0,
+    sort_order: sortOrder,
+    entity_type: null,
+    entity_id: null,
+    ...init,
+  };
+}
+
 
