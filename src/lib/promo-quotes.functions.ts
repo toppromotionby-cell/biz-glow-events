@@ -119,6 +119,7 @@ export const createPromoQuote = createServerFn({ method: "POST" })
         price: Number(it.price ?? 0),
         cost: Number(it.cost ?? 0),
         note: String(it.note ?? ""),
+        includes: normalizeIncludes(it.includes),
         exclude_from_commission: it.exclude_from_commission === true,
         sort_order: i,
       }));
@@ -145,6 +146,7 @@ export const createPromoQuote = createServerFn({ method: "POST" })
       price: it.price ?? 0,
       cost: it.cost ?? 0,
       note: it.note ?? "",
+      includes: normalizeIncludes(it.includes),
       exclude_from_commission: it.exclude_from_commission === true,
       sort_order: i,
     }));
@@ -178,6 +180,7 @@ export const savePromoQuote = createServerFn({ method: "POST" })
         price: it.price,
         cost: it.cost,
         note: it.note,
+        includes: it.includes,
         exclude_from_commission: it.exclude_from_commission,
         sort_order: i,
       }));
@@ -251,6 +254,7 @@ export const savePromoTemplate = createServerFn({ method: "POST" })
       price: Number(it.price ?? 0),
       cost: Number(it.cost ?? 0),
       note: String(it.note ?? ""),
+      includes: normalizeIncludes(it.includes),
       exclude_from_commission: it.exclude_from_commission === true,
       sort_order: i,
     }));
@@ -432,6 +436,7 @@ export const restorePromoVersion = createServerFn({ method: "POST" })
       price: it.price,
       cost: it.cost,
       note: it.note,
+      includes: it.includes,
       exclude_from_commission: it.exclude_from_commission,
       sort_order: i,
     }));
