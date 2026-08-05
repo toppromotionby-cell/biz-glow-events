@@ -110,6 +110,8 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     show_qty: row.show_qty !== false,
     show_total_qty: row.show_total_qty !== false,
     show_notes: row.show_notes !== false,
+    show_item_includes: row.show_item_includes !== false,
+    show_section_subtotals: row.show_section_subtotals !== false,
     vat_enabled: row.vat_enabled !== false,
     vat_rate: num(row.vat_rate, 20),
     commission_enabled: row.commission_enabled !== false,
