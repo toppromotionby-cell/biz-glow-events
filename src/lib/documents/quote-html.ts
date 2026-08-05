@@ -438,6 +438,10 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   td.idx { color:var(--muted); width:26px; }
   .it-title { font-weight:600; }
   .it-desc { color:var(--muted); font-size:11px; margin-top:2px; white-space:pre-line; }
+  .it-inc { margin:4px 0 0 14px; padding:0; color:var(--muted); font-size:11px; }
+  .it-inc li { margin:1px 0; }
+  .section-sub td { font-size:11px; color:var(--muted); background:#fafafa; }
+
   .unit { color:var(--muted); font-size:10px; }
   .strong { font-weight:600; }
   .section-row td { background:#fff; font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:12px; padding-top:14px; border-bottom:1px solid var(--line); }
