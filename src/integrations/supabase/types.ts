@@ -1344,6 +1344,167 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_quote_items: {
+        Row: {
+          created_at: string
+          exclude_from_commission: boolean
+          id: string
+          multiplier: number
+          note: string
+          price: number
+          qty: number
+          quote_id: string
+          section: string
+          sort_order: number
+          title: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          exclude_from_commission?: boolean
+          id?: string
+          multiplier?: number
+          note?: string
+          price?: number
+          qty?: number
+          quote_id: string
+          section?: string
+          sort_order?: number
+          title?: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          exclude_from_commission?: boolean
+          id?: string
+          multiplier?: number
+          note?: string
+          price?: number
+          qty?: number
+          quote_id?: string
+          section?: string
+          sort_order?: number
+          title?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "promo_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_quotes: {
+        Row: {
+          accent_color: string
+          client_logo_url: string | null
+          client_name: string
+          commission_enabled: boolean
+          commission_label: string
+          commission_rate: number
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          contact_role: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          doc_number: string | null
+          footer_note: string
+          id: string
+          is_template: boolean
+          logo_url: string | null
+          management_amount: number
+          management_enabled: boolean
+          management_label: string
+          period: string
+          project: string
+          show_notes: boolean
+          show_qty: boolean
+          show_total_qty: boolean
+          status: string
+          template_name: string
+          total: number
+          updated_at: string
+          vat_enabled: boolean
+          vat_rate: number
+          venue: string
+        }
+        Insert: {
+          accent_color?: string
+          client_logo_url?: string | null
+          client_name?: string
+          commission_enabled?: boolean
+          commission_label?: string
+          commission_rate?: number
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          contact_role?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          doc_number?: string | null
+          footer_note?: string
+          id?: string
+          is_template?: boolean
+          logo_url?: string | null
+          management_amount?: number
+          management_enabled?: boolean
+          management_label?: string
+          period?: string
+          project?: string
+          show_notes?: boolean
+          show_qty?: boolean
+          show_total_qty?: boolean
+          status?: string
+          template_name?: string
+          total?: number
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+          venue?: string
+        }
+        Update: {
+          accent_color?: string
+          client_logo_url?: string | null
+          client_name?: string
+          commission_enabled?: boolean
+          commission_label?: string
+          commission_rate?: number
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          contact_role?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          doc_number?: string | null
+          footer_note?: string
+          id?: string
+          is_template?: boolean
+          logo_url?: string | null
+          management_amount?: number
+          management_enabled?: boolean
+          management_label?: string
+          period?: string
+          project?: string
+          show_notes?: boolean
+          show_qty?: boolean
+          show_total_qty?: boolean
+          status?: string
+          template_name?: string
+          total?: number
+          updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
+          venue?: string
+        }
+        Relationships: []
+      }
       quote_block_snippets: {
         Row: {
           block_type: string
