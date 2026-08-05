@@ -411,8 +411,16 @@ function Page() {
                 <Field label="Гостей">
                   <Input type="number" min={0} value={quote.guests_count ?? ""} onChange={(e) => patch({ guests_count: e.target.value === "" ? null : Math.trunc(num(e.target.value)) })} />
                 </Field>
-                <Field label="Время начала"><Input placeholder="18:00" value={quote.event_time_start ?? ""} onChange={(e) => patch({ event_time_start: e.target.value })} /></Field>
-                <Field label="Время окончания"><Input placeholder="23:00" value={quote.event_time_end ?? ""} onChange={(e) => patch({ event_time_end: e.target.value })} /></Field>
+                <Field label="Время начала">
+                  <Input type="time" step={300} value={quote.event_time_start ?? ""}
+                    onChange={(e) => patch({ event_time_start: e.target.value })}
+                    onBlur={(e) => patch({ event_time_start: normalizeTime(e.target.value) })} />
+                </Field>
+                <Field label="Время окончания">
+                  <Input type="time" step={300} value={quote.event_time_end ?? ""}
+                    onChange={(e) => patch({ event_time_end: e.target.value })}
+                    onBlur={(e) => patch({ event_time_end: normalizeTime(e.target.value) })} />
+                </Field>
                 <Field label="Площадка" className="col-span-2"><Input value={quote.venue ?? ""} onChange={(e) => patch({ venue: e.target.value })} /></Field>
                 <Field label="Формат" className="col-span-2"><Input placeholder="Корпоратив, свадьба, конференция…" value={quote.event_format ?? ""} onChange={(e) => patch({ event_format: e.target.value })} /></Field>
                 <Field label="Монтаж / демонтаж" className="col-span-2"><Input value={quote.setup_note ?? ""} onChange={(e) => patch({ setup_note: e.target.value })} /></Field>
