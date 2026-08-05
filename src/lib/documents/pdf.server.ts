@@ -324,7 +324,13 @@ function drawCard(
 }
 
 // === Таблица позиций ===
-type Col = { title: string; width: number; align?: "left" | "right" | "center"; key: string };
+type Col = {
+  title: string;
+  width: number;
+  align?: "left" | "right" | "center";
+  valign?: "top" | "middle";
+  key: string;
+};
 
 function drawTable(
   ctx: DocCtx,
