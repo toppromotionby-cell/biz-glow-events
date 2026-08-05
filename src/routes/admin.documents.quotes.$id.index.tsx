@@ -218,6 +218,8 @@ function Page() {
         setSaveError(null);
         setPending(skipped);
         qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+        // Пустой номер = автономер: перечитываем КП, чтобы подтянуть присвоенный БД номер.
+        if (!String(patch.quote_number ?? "").trim()) qc.invalidateQueries({ queryKey: ["admin-quote", id] });
       } catch (e) {
         setState("error");
         setSaveError(friendlyZodMessage(e));
