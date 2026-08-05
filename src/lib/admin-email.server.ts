@@ -123,6 +123,15 @@ async function resolveUnsubscribeToken(email: string): Promise<string | null> {
   return token;
 }
 
+/** Тип письма → настройка отправителя из «Настройки → Письма → Отправители». */
+function senderKindFor(label: string): SenderKind {
+  if (label.startsWith("admin-")) return "admin";
+  if (label.includes("quote")) return "quotes";
+  if (label.includes("order")) return "orders";
+  if (label.includes("lead") || label.includes("inquiry")) return "leads";
+  return "default";
+}
+
 async function enqueue(opts: {
   to: string;
   subject: string;
