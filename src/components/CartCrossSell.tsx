@@ -7,6 +7,7 @@ import { listCatalog, type CatalogRow, type CatalogType } from "@/lib/catalog.fu
 import { CATALOG_SLUG_ROUTE } from "@/lib/catalog-routes";
 import { Plus } from "lucide-react";
 import { StorageImg } from "@/components/StorageMedia";
+import { unitFromPricing } from "@/lib/pricing";
 import { addToCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
       title: item.title,
       price,
       qty: 1,
+      unit: unitFromPricing(item.pricing),
       image: item.photo_urls?.[0] ?? null,
     });
     trackAddToCart({ item_id: item.id, item_name: item.title, item_category: type, price, quantity: 1 });

@@ -16,7 +16,7 @@ import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
-import { detectQuantityKind, maxQtyFor, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
+import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";
 import { openAuthPrompt } from "@/lib/auth-prompt";
@@ -157,6 +157,7 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
       title: effectiveTitle,
       price: total,
       image: photos[0] ?? null,
+      unit: unitFromPricing(item.pricing),
       qty: 1,
     });
     toast.success(`«${effectiveTitle}» добавлено в корзину`);

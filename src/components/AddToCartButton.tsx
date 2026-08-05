@@ -5,7 +5,7 @@ import { trackAddToCart } from "@/lib/analytics";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export function AddToCartButton({
-  entity_type, id, slug, title, price, image,
+  entity_type, id, slug, title, price, image, unit,
 }: {
   entity_type: CartEntityType;
   id: string;
@@ -13,6 +13,7 @@ export function AddToCartButton({
   title: string;
   price: number;
   image?: string | null;
+  unit?: string | null;
 }) {
   const { items } = useCart();
   const requireAuth = useRequireAuth();
@@ -22,7 +23,11 @@ export function AddToCartButton({
       removeFromCart(id, entity_type);
       toast.success(`«${title}» убрано из корзины`);
     } else {
-      addToCart({ entity_type, id, slug, title, price, image, qty: 1 });
+      const res = addToCart({ entity_type, id, slug, title, price, image, unit, qty: 1 });
+      if (!res.added) {
+        toast.info("Уже в корзине — количество можно изменить там");
+        return;
+      }
       trackAddToCart({ item_id: id, item_name: title, item_category: entity_type, price, quantity: 1 });
       toast.success(`«${title}» добавлено в корзину`);
     }

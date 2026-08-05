@@ -10,7 +10,7 @@ interface Props {
   label?: string;
 }
 
-export function QtyStepper({ value, onChange, min = 1, max = 99, label }: Props) {
+export function QtyStepper({ value, onChange, min = 1, max = 20, label }: Props) {
   const suffix = label ? ` для ${label}` : "";
   return (
     <div className="flex items-center gap-1">

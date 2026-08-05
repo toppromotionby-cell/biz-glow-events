@@ -40,6 +40,37 @@ export function maxQtyFor(kind: QuantityKind): number {
   return 100;
 }
 
+// ---------- Cart quantity limits ----------
+// Разумные «человеческие» лимиты для корзины: площадку нельзя заказать 99 раз,
+// оборудование — до 50 шт., часы — до 24 и т.д.
+export type CartLikeEntityType = "zones" | "tech_equipment" | "services" | "production_items";
+
+const MAX_BY_ENTITY: Record<CartLikeEntityType, number> = {
+  zones: 1,
+  services: 10,
+  tech_equipment: 50,
+  production_items: 100,
+};
+
+/** Единица измерения позиции — берём из первой строки прайса. */
+export function unitFromPricing(pricing: unknown): string | null {
+  const rows = Array.isArray(pricing) ? pricing : [];
+  for (const r of rows as Array<{ unit?: string | null }>) {
+    const u = (r?.unit ?? "").trim();
+    if (u && !/byn/i.test(u)) return u;
+  }
+  return null;
+}
+
+export function maxQtyForItem(entity_type: string, unit?: string | null): number {
+  if (entity_type === "zones") return 1;
+  const kind = detectQuantityKind(unit);
+  if (kind === "hour") return 24;
+  if (kind === "day") return 14;
+  if (kind === "person") return 500;
+  return MAX_BY_ENTITY[entity_type as CartLikeEntityType] ?? 20;
+}
+
 export function formatBYNTotal(n: number): string {
   return new Intl.NumberFormat("ru-BY", { style: "currency", currency: "BYN", maximumFractionDigits: 0 }).format(n);
 }

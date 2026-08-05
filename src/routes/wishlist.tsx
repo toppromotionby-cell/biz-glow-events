@@ -29,11 +29,15 @@ function WishlistPage() {
 
   function moveAllToCart() {
     if (items.length === 0) return;
-    items.forEach(i => addToCart({
-      id: i.id, entity_type: i.entity_type, slug: i.slug,
-      title: i.title, price: i.price, image: i.image, qty: 1,
-    }));
-    toast.success(`Добавлено в корзину: ${items.length}`);
+    let added = 0;
+    items.forEach(i => {
+      const res = addToCart({
+        id: i.id, entity_type: i.entity_type, slug: i.slug,
+        title: i.title, price: i.price, image: i.image, qty: 1,
+      });
+      if (res.added) added += 1;
+    });
+    toast.success(added > 0 ? `Добавлено в корзину: ${added}` : "Все позиции уже в корзине");
   }
 
   return (
@@ -87,8 +91,8 @@ function WishlistPage() {
                   <div className="mt-3 flex gap-2">
                     <button
                       onClick={() => {
-                        addToCart({ id: i.id, entity_type: i.entity_type, slug: i.slug, title: i.title, price: i.price, image: i.image, qty: 1 });
-                        toast.success(`«${i.title}» добавлено в корзину`);
+                        const res = addToCart({ id: i.id, entity_type: i.entity_type, slug: i.slug, title: i.title, price: i.price, image: i.image, qty: 1 });
+                        toast[res.added ? "success" : "info"](res.added ? `«${i.title}» добавлено в корзину` : "Уже в корзине — количество можно изменить там");
                       }}
                       className="flex-1 rounded-md bg-gradient-primary px-3 py-2 text-xs font-medium text-primary-foreground glow-primary"
                     >

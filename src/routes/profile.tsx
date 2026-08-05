@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { updateOwnOrder, deleteOwnOrder } from "@/lib/orders.functions";
+import { maxQtyForItem } from "@/lib/pricing";
 import { addToCart, clearCart, type CartEntityType } from "@/lib/cart";
 import { ProfileSummary } from "@/components/profile/ProfileSummary";
 import { OrderHistoryList } from "@/components/profile/OrderHistoryList";
@@ -176,7 +177,7 @@ function ProfilePage() {
         slug: meta?.slug ?? it.entity_id ?? it.id,
         title: it.title,
         price: Number(it.price ?? 0),
-        qty: Number(it.qty ?? 1),
+        qty: Math.min(Number(it.qty ?? 1) || 1, maxQtyForItem(it.entity_type as CartEntityType)),
       });
     }
     toast.success("Позиции добавлены в корзину");
