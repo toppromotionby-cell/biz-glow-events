@@ -222,7 +222,12 @@ export const duplicateQuote = createServerFn({ method: "POST" })
     row.quote_number = null;
     row.status = "draft";
     row.created_by = context.userId;
+    row.sent_at = null;
+    row.is_template = false;
+    row.template_name = "";
+    delete row.public_token;
     row.title = `${String(row.title ?? "КП")} (копия)`;
+
 
     const { data: created, error } = await context.supabase.from("quotes").insert(row).select("id").single();
     if (error) throw new Error(error.message);
