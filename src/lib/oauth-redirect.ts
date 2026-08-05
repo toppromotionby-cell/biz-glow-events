@@ -29,7 +29,11 @@ export function getOAuthInitiateUrl(provider: OAuthProvider) {
 export function openOAuthInNewTab(provider: OAuthProvider) {
   const popup = window.open(getOAuthInitiateUrl(provider), "_blank");
 
-  if (!popup) return false;
+  if (!popup) {
+    // Браузер заблокировал окно — уходим на авторизацию в текущей вкладке.
+    window.location.assign(getOAuthInitiateUrl(provider));
+    return true;
+  }
 
   try {
     popup.opener = null;

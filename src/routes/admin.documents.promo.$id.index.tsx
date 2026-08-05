@@ -38,7 +38,7 @@ import {
   promoValidityState, type PromoDiscountType, type PromoItem, type PromoQuote, type PromoStatus,
 } from "@/lib/promo-quote-model";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
-import { downloadAuthedFile } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/documents/promo/$id/")({ component: EditorPage });
@@ -57,6 +57,7 @@ function Hint({ text }: { text: string }) {
 }
 
 function EditorPage() {
+  const viewer = useDocumentViewer();
   const { id } = Route.useParams();
   const get = useServerFn(getPromoQuote);
   const save = useServerFn(savePromoQuote);
@@ -266,9 +267,7 @@ function EditorPage() {
           <Button
             size="sm"
             onClick={() =>
-              downloadAuthedFile(`/admin/documents/promo/${id}/render?format=pdf`, "КП.pdf").catch((e: Error) =>
-                toast.error(e.message),
-              )
+              viewer.openDocument(`/admin/documents/promo/${id}/render?format=pdf`, { name: "КП.pdf" })
             }
           >
             <Download className="mr-1 h-4 w-4" />PDF

@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AdminCommandPalette, CommandPaletteTrigger } from "@/components/admin/AdminCommandPalette";
+import { DocumentViewerProvider } from "@/hooks/use-document-viewer";
 
 const STAFF_ROLES = ["admin", "manager", "marketer", "content_editor"] as const;
 
@@ -98,6 +99,7 @@ function AdminLayout() {
 
   return (
     <SidebarProvider>
+      <DocumentViewerProvider>
       <div className="admin-shell flex w-full min-h-screen">
         <AdminSidebar />
         <div className="flex-1 min-w-0 flex flex-col">
@@ -120,6 +122,7 @@ function AdminLayout() {
           <AdminCommandPalette />
         </div>
       </div>
+      </DocumentViewerProvider>
     </SidebarProvider>
   );
 }

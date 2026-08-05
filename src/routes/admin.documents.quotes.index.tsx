@@ -17,7 +17,7 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { listQuotes, createQuote, duplicateQuote, deleteQuote, listOrdersForQuote, createQuoteFromTemplate } from "@/lib/quotes.functions";
 import { QUOTE_STATUS_LABELS, type QuoteStatus } from "@/lib/quotes-model";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
-import { downloadAuthedFile } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 
 export const Route = createFileRoute("/admin/documents/quotes/")({ component: Page });
 
@@ -29,6 +29,7 @@ const STATUS_TONE: Record<QuoteStatus, "muted" | "info" | "success" | "danger"> 
 };
 
 function Page() {
+  const viewer = useDocumentViewer();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -223,7 +224,7 @@ function Page() {
                 <td className="px-3 py-2">
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" title="Скачать PDF"
-                      onClick={() => downloadAuthedFile(`/admin/documents/quotes/${r.id}/render?format=pdf`).catch((e) => toast.error((e as Error).message))}>
+                      onClick={() => viewer.openDocument(`/admin/documents/quotes/${r.id}/render?format=pdf`, { name: "КП.pdf" })}>
                       <Download className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" title="Дублировать" onClick={() => dupMut.mutate(r.id)}>

@@ -19,7 +19,7 @@ import {
 } from "@/lib/promo-quotes.functions";
 import { PROMO_PRESETS, PROMO_STATUS_LABELS, formatMoney, type PromoStatus } from "@/lib/promo-quote-model";
 import { fmtDate } from "@/lib/formatters";
-import { downloadAuthedFile } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 
 export const Route = createFileRoute("/admin/documents/promo/")({ component: Page });
 
@@ -31,6 +31,7 @@ const STATUS_TONE: Record<PromoStatus, "muted" | "info" | "success" | "danger"> 
 };
 
 function Page() {
+  const viewer = useDocumentViewer();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
@@ -165,9 +166,7 @@ function Page() {
                     variant="ghost"
                     title="Скачать PDF"
                     onClick={() =>
-                      downloadAuthedFile(`/admin/documents/promo/${r.id}/render?format=pdf`, "КП.pdf").catch((e: Error) =>
-                        toast.error(e.message),
-                      )
+                      viewer.openDocument(`/admin/documents/promo/${r.id}/render?format=pdf`, { name: "КП.pdf" })
                     }
                   >
                     <Download className="h-4 w-4" />

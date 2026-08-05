@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Download, Paperclip } from "lucide-react";
 import { toast } from "sonner";
-import { openAuthedDocument, fetchAuthedDocument } from "@/lib/authed-fetch";
+import { fetchAuthedDocument } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { fmtDateTime } from "@/lib/formatters";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 
@@ -22,6 +23,7 @@ function formatSize(n?: number | null) {
 
 export function OrderAttachments({ orderId }: { orderId: string }) {
   const qc = useQueryClient();
+  const viewer = useDocumentViewer();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const { confirm, dialog } = useConfirm();
@@ -77,7 +79,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
 
   const generatePdf = async (kind: "invoice" | "contract") => {
     try {
-      await openAuthedDocument(`/admin/orders/${orderId}/${kind}`);
+      await viewer.openDocument(`/admin/orders/${orderId}/${kind}`);
       toast.info(`${KIND_LABEL[kind]}: используйте «Сохранить как PDF» через печать (Ctrl+P)`);
     } catch (e) {
       toast.error((e as Error).message);

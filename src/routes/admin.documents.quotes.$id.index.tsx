@@ -37,7 +37,7 @@ import { QuoteItemsPanel } from "@/components/admin/quotes/QuoteItemsPanel";
 import { QuoteShareActions, QuoteShareStatus, type ShareState } from "@/components/admin/quotes/QuoteShareActions";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { fmtMoney } from "@/lib/formatters";
-import { downloadAuthedFile, openAuthedDocument } from "@/lib/authed-fetch";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
@@ -93,6 +93,7 @@ function ImageField({ label, value, onChange }: { label: string; value: string |
 }
 
 function Page() {
+  const viewer = useDocumentViewer();
   const { id } = Route.useParams();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
@@ -292,10 +293,10 @@ function Page() {
           <Button variant="outline" size="sm" onClick={onCreateOrder}>
             <FileCheck2 className="h-4 w-4 mr-1.5" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => openAuthedDocument(`/admin/documents/quotes/${id}/render`).catch((e) => toast.error((e as Error).message))}>
+          <Button variant="outline" size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}>
             <ExternalLink className="h-4 w-4 mr-1.5" />HTML
           </Button>
-          <Button size="sm" onClick={() => downloadAuthedFile(`/admin/documents/quotes/${id}/render?format=pdf`).catch((e) => toast.error((e as Error).message))}>
+          <Button size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render?format=pdf`, { name: "КП.pdf" })}>
             <Download className="h-4 w-4 mr-1.5" />PDF
           </Button>
         </div>
