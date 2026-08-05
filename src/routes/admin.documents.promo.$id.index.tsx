@@ -358,7 +358,7 @@ function EditorPage() {
           <div className="space-y-3 lg:sticky lg:top-4 lg:self-start">
             {totals && (
               <div className="rounded-xl border border-border p-3 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Позиции</span><span className="tabular-nums">{formatMoney(totals.itemsTotal, quote.currency)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Позиции</span><span className="tabular-nums">{formatMoney(totals.itemsSum, quote.currency)}</span></div>
                 {quote.commission_enabled && <div className="flex justify-between"><span className="text-muted-foreground">{quote.commission_label}</span><span className="tabular-nums">{formatMoney(totals.commission, quote.currency)}</span></div>}
                 {quote.management_enabled && <div className="flex justify-between"><span className="text-muted-foreground">{quote.management_label}</span><span className="tabular-nums">{formatMoney(totals.management, quote.currency)}</span></div>}
                 {quote.vat_enabled && <div className="flex justify-between"><span className="text-muted-foreground">НДС {quote.vat_rate}%</span><span className="tabular-nums">{formatMoney(totals.vat, quote.currency)}</span></div>}
