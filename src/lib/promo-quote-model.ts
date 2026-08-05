@@ -39,6 +39,8 @@ export type PromoQuote = {
   show_qty: boolean;
   show_total_qty: boolean;
   show_notes: boolean;
+  show_item_includes: boolean;
+  show_section_subtotals: boolean;
   vat_enabled: boolean;
   vat_rate: number;
   commission_enabled: boolean;
