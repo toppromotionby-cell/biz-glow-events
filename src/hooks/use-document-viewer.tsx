@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentViewerDialog, type ViewerDoc } from "@/components/admin/DocumentViewerDialog";
+import { documentFetchError } from "@/lib/document-fetch-error";
 
 type OpenOpts = { name?: string; auth?: boolean };
 
@@ -66,21 +67,23 @@ export function DocumentViewerProvider({ children }: { children: ReactNode }) {
         }
         const res = await fetch(url, { headers });
         if (!res.ok) {
-          const detail = await res.text().catch(() => "");
-          const short = detail.replace(/<[^>]*>/g, " ").trim().slice(0, 160);
-          throw new Error(`Не удалось получить документ (${res.status})${short ? `: ${short}` : ""}`);
+          throw new Error(documentFetchError(res.status, res.headers.get("x-document-error-id")));
         }
         const blob = await res.blob();
         const name = filenameFrom(res.headers.get("content-disposition") ?? "", opts.name ?? "document");
         show(blob, name);
       } catch (e) {
+        revoke();
         setDoc(null);
-        toast.error((e as Error).message);
+        const message = e instanceof TypeError
+          ? "Сеть недоступна. Проверьте подключение и повторите попытку"
+          : (e as Error).message;
+        toast.error(message);
       } finally {
         setLoading(false);
       }
     },
-    [show],
+    [revoke, show],
   );
 
   const close = (open: boolean) => {

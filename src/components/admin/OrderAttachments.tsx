@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Download, Paperclip } from "lucide-react";
 import { toast } from "sonner";
-import { fetchAuthedDocument } from "@/lib/authed-fetch";
+import { fetchAuthedDocumentBlob } from "@/lib/authed-fetch";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { fmtDateTime } from "@/lib/formatters";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
@@ -78,20 +78,14 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
   };
 
   const generatePdf = async (kind: "invoice" | "contract") => {
-    try {
-      await viewer.openDocument(`/admin/orders/${orderId}/${kind}`);
-      toast.info(`${KIND_LABEL[kind]}: используйте «Сохранить как PDF» через печать (Ctrl+P)`);
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
+    await viewer.openDocument(`/admin/orders/${orderId}/${kind}?format=pdf`);
   };
 
   const attachGenerated = async (kind: "invoice" | "contract") => {
     setUploading(true);
     try {
-      const html = await fetchAuthedDocument(`/admin/orders/${orderId}/${kind}`);
-      const blob = new Blob([html], { type: "text/html" });
-      const file = new File([blob], `${KIND_LABEL[kind].toLowerCase()}-${orderId.slice(0, 8)}.html`, { type: "text/html" });
+      const blob = await fetchAuthedDocumentBlob(`/admin/orders/${orderId}/${kind}?format=pdf`);
+      const file = new File([blob], `${KIND_LABEL[kind].toLowerCase()}-${orderId.slice(0, 8)}.pdf`, { type: "application/pdf" });
       await handleUpload(file, kind);
     } catch (e) {
       toast.error((e as Error).message);

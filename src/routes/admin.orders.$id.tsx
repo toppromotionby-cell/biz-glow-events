@@ -492,11 +492,7 @@ function OrderDetail() {
                   <li key={kind}>
                     <button
                       type="button"
-                      onClick={() =>
-                        viewer.openDocument(`/admin/orders/${order.id}/${kind}`).catch((e) =>
-                          toast.error((e as Error).message),
-                        )
-                      }
+                      onClick={() => viewer.openDocument(`/admin/orders/${order.id}/${kind}?format=pdf`)}
                       className="w-full flex items-center justify-between text-sm rounded-md px-2 py-1.5 hover:bg-accent/10 transition"
                     >
                       <span className="flex items-center gap-2">
