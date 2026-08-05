@@ -25,20 +25,30 @@ export const Route = createFileRoute("/admin/documents/promo/$id/render")({
         const items = ((itemRows ?? []) as Record<string, unknown>[]).map(normalizePromoItem);
 
         if (new URL(request.url).searchParams.get("format") === "pdf") {
-          const bytes = await buildPromoQuotePdf(quote, items, settings);
-          const filename = promoFileName(quote, "pdf");
-          // ASCII-only fallback: HTTP-заголовки не принимают не-latin1 символы.
-          const asciiName =
-            filename.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "") || "quote.pdf";
-          return new Response(bytes.slice(), {
-            status: 200,
-            headers: {
-              "content-type": "application/pdf",
-              "content-disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
-              "cache-control": "no-store",
-            },
-          });
+          try {
+            const bytes = await buildPromoQuotePdf(quote, items, settings);
+            const filename = promoFileName(quote, "pdf");
+            // ASCII-only fallback: HTTP-заголовки не принимают не-latin1 символы.
+            const asciiName =
+              filename.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "") || "quote.pdf";
+            return new Response(bytes.slice(), {
+              status: 200,
+              headers: {
+                "content-type": "application/pdf",
+                "content-disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+                "cache-control": "no-store",
+              },
+            });
+          } catch (e) {
+            console.error("[promo-render] PDF build failed", params.id, e);
+            const msg = e instanceof Error ? e.message : String(e);
+            return new Response(`Не удалось собрать PDF: ${msg}`, {
+              status: 500,
+              headers: { "content-type": "text/plain; charset=utf-8" },
+            });
+          }
         }
+
 
         return new Response(buildPromoQuoteHtmlDoc(quote, items), {
           status: 200,
