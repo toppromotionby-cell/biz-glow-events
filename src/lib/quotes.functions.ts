@@ -175,6 +175,7 @@ export const saveQuote = createServerFn({ method: "POST" })
           qty: it.qty,
           unit: it.unit ?? "шт.",
           price: it.price,
+          cost: it.cost ?? 0,
           sort_order: i,
           entity_type: it.entity_type ?? null,
           entity_id: it.entity_id ?? null,
@@ -187,8 +188,14 @@ export const saveQuote = createServerFn({ method: "POST" })
     const { data: current } = await context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle();
     if (!current) throw new Error("КП не найдено");
     const merged = { ...(current as Record<string, unknown>), ...data.patch } as Record<string, unknown>;
-    const { data: itemRows } = await context.supabase.from("quote_items").select("qty,price").eq("quote_id", data.id);
-    total = computeTotals(merged as never, ((itemRows ?? []) as Array<{ qty: number; price: number }>).map((r) => ({ qty: Number(r.qty), price: Number(r.price) }))).total;
+    const { data: itemRows } = await context.supabase.from("quote_items").select("qty,price,cost").eq("quote_id", data.id);
+    total = computeTotals(
+      merged as never,
+      ((itemRows ?? []) as Array<{ qty: number; price: number; cost: number }>).map((r) => ({
+        qty: Number(r.qty), price: Number(r.price), cost: Number(r.cost ?? 0),
+      })),
+    ).total;
+
 
     const { error } = await context.supabase
       .from("quotes")
