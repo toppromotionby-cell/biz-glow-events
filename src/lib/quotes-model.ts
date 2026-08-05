@@ -399,6 +399,10 @@ export const quoteItemSchema = z.object({
   section: z.string().max(120).default(""),
   title: z.string().trim().min(1, "Укажите название").max(300),
   description: z.string().max(2000).default(""),
+  includes: z
+    .array(z.object({ text: z.string().max(300).default(""), note: z.string().max(120).default("") }))
+    .max(60)
+    .default([]),
   qty: z.number().min(0, "Не может быть отрицательным").max(100000),
   unit: z.string().max(40).default("шт."),
   price: z.number().min(0, "Не может быть отрицательной").max(10_000_000),
