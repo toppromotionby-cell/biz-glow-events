@@ -1,6 +1,7 @@
 // Server functions for admin email-template editor.
 // All functions are admin/manager-gated via has_role().
 import { createServerFn } from '@tanstack/react-start'
+import { resolveSender } from '@/lib/email/sender.server'
 import { z } from 'zod'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
 import {
@@ -255,8 +256,8 @@ export const sendTestEmail = createServerFn({ method: 'POST' })
       payload: {
         message_id: messageId,
         to: data.recipient,
-        from: FROM,
-        reply_to: 'noreply@event-hub.by',
+        from: sender.from,
+        reply_to: sender.replyTo,
         sender_domain: SENDER_DOMAIN,
         subject: `[ТЕСТ] ${subject}`,
         html,
