@@ -28,6 +28,8 @@ import {
   type QuoteBlock, type QuoteBlockCondition, type QuoteBlockType, type QuoteTemplate,
 } from "@/lib/quote-blocks";
 import { deleteQuoteSnippet, listQuoteSnippets, saveQuoteSnippet } from "@/lib/quotes.functions";
+import { QuoteTextEditor } from "@/components/admin/quotes/QuoteTextEditor";
+
 
 type Props = {
   template: QuoteTemplate;
