@@ -79,6 +79,8 @@ export const notifyOrderStatus = createServerFn({ method: 'POST' })
       status: 'pending',
     })
 
+    const sender = await resolveSender('orders')
+
     const { error: enqueueErr } = await supabaseAdmin.rpc('enqueue_email', {
       queue_name: 'transactional_emails',
       payload: {

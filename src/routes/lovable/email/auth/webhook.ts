@@ -191,6 +191,8 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           status: 'pending',
         })
 
+        const sender = await resolveSender('auth')
+
         const { error: enqueueError } = await supabase.rpc('enqueue_email', {
           queue_name: 'auth_emails',
           payload: {

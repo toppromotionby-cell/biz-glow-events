@@ -291,6 +291,8 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           status: 'pending',
         })
 
+        const sender = await resolveSender('default')
+
         const { error: enqueueError } = await supabase.rpc('enqueue_email', {
           queue_name: 'transactional_emails',
           payload: {

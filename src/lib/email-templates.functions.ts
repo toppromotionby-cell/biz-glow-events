@@ -251,6 +251,8 @@ export const sendTestEmail = createServerFn({ method: 'POST' })
       status: 'pending',
     })
 
+    const sender = await resolveSender('default')
+
     const { error } = await supabaseAdmin.rpc('enqueue_email', {
       queue_name: 'transactional_emails',
       payload: {

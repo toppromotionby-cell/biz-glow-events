@@ -199,6 +199,8 @@ export const sendClientInvitations = createServerFn({ method: "POST" })
         status: "pending",
       });
 
+      const sender = await resolveSender("campaigns");
+
       const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email", {
         queue_name: "transactional_emails",
         payload: {
