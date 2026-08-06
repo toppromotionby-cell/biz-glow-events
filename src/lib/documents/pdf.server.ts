@@ -1033,7 +1033,16 @@ export async function buildStandaloneQuotePdf(
 
   const heading = (title: string) => {
     gap(ctx, 8);
-    drawText(ctx, title, { size: F13, bold: true, color: ACCENT });
+    ensureSpace(ctx, F13 * 2);
+    drawTracked(ctx.page, title.toUpperCase(), {
+      x: MARGIN_X,
+      y: ctx.y - F13,
+      size: F13,
+      font: ctx.bold,
+      color: ACCENT,
+      tracking: F13 * 0.05,
+    });
+    ctx.y -= F13 * 1.45;
     gap(ctx, 2);
   };
 
@@ -1043,7 +1052,7 @@ export async function buildStandaloneQuotePdf(
 
     switch (b.type) {
       case "cover": {
-        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers), { size: F22, bold: true });
+        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers), { size: F_COVER, bold: true });
         gap(ctx, 4);
         if (text) drawParagraph(ctx, text, { size: F11, color: MUTED });
         gap(ctx, 6);
