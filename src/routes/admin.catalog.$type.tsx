@@ -153,8 +153,14 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       <AdminPageHeader
         title={CATALOG_LABELS[table]}
         subtitle={`${items.length} ${pluralRecords(items.length)}`}
-        action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {table === "attractions" && <AttractionsMediaBackfill />}
+            <Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
+          </div>
+        }
       />
+
 
       {selectedIds.size > 0 && (
         <div className="glass rounded-xl p-3 flex flex-wrap items-center gap-2 sticky top-2 z-20 border border-primary/40">
