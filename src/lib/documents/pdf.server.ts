@@ -82,6 +82,8 @@ type DocCtx = {
   pdf: PDFDocument;
   regular: PDFFont;
   bold: PDFFont;
+  display: PDFFont;
+
   page: PDFPage;
   y: number;
   pageNum: number;
