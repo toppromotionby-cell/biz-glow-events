@@ -271,7 +271,7 @@ const TABLE: Record<KbTable, "doc_contacts" | "doc_item_catalog" | "doc_text_sni
 
 const COLUMNS: Record<KbTable, string> = {
   contacts: "id,name,company,unp,phone,email,address,contact_role,usage_count,last_used_at,created_at",
-  items: "id,section,title,description,unit,price,cost,includes,usage_count,last_used_at,created_at",
+  items: "id,section,title,description,unit,price,cost,usage_count,last_used_at,created_at",
   texts: "id,kind,value,usage_count,last_used_at,created_at",
 };
 
