@@ -41,7 +41,7 @@ export function DocumentViewerProvider({ children }: { children: ReactNode }) {
       revoke();
       const url = URL.createObjectURL(blob);
       urlRef.current = url;
-      setDoc({ url, name, mime: blob.type });
+      setDoc({ url, name, mime: blob.type, blob });
     },
     [revoke],
   );
@@ -70,8 +70,13 @@ export function DocumentViewerProvider({ children }: { children: ReactNode }) {
           throw new Error(documentFetchError(res.status, res.headers.get("x-document-error-id")));
         }
         const blob = await res.blob();
+        const declaredType = (res.headers.get("content-type") ?? "").split(";", 1)[0].toLowerCase();
+        if (declaredType === "application/pdf" || opts.name?.toLowerCase().endsWith(".pdf")) {
+          const signature = new TextDecoder("ascii").decode(new Uint8Array(await blob.slice(0, 5).arrayBuffer()));
+          if (blob.size === 0 || signature !== "%PDF-") throw new Error("Сервер вернул некорректный PDF. Повторите попытку");
+        }
         const name = filenameFrom(res.headers.get("content-disposition") ?? "", opts.name ?? "document");
-        show(blob, name);
+        show(declaredType && blob.type !== declaredType ? new Blob([blob], { type: declaredType }) : blob, name);
       } catch (e) {
         revoke();
         setDoc(null);

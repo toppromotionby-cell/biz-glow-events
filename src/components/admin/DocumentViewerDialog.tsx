@@ -3,9 +3,10 @@
 import { Download, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { downloadUrl } from "@/lib/download";
+import { downloadBlob } from "@/lib/download";
+import { PdfPreview } from "@/components/admin/PdfPreview";
 
-export type ViewerDoc = { url: string; name: string; mime: string };
+export type ViewerDoc = { url: string; name: string; mime: string; blob: Blob };
 
 export function DocumentViewerDialog({
   doc,
@@ -24,7 +25,7 @@ export function DocumentViewerDialog({
           <div className="flex items-center gap-2 pr-6">
             {doc && (
               <>
-                <Button size="sm" variant="outline" onClick={() => downloadUrl(doc.url, doc.name)}>
+                <Button size="sm" variant="outline" onClick={() => void downloadBlob(doc.blob, doc.name)}>
                   <Download className="mr-1.5 h-4 w-4" />Скачать
                 </Button>
                 <Button asChild size="sm" variant="ghost">
@@ -37,8 +38,10 @@ export function DocumentViewerDialog({
           </div>
         </DialogHeader>
 
-        {doc ? (
-          <iframe title={doc.name} src={doc.url} className="h-[76vh] w-full border-0 bg-white" />
+        {doc ? doc.mime === "application/pdf" ? (
+          <PdfPreview blob={doc.blob} />
+        ) : (
+          <iframe title={doc.name} src={doc.url} className="h-[76vh] w-full border-0 bg-background" />
         ) : (
           <div className="flex h-[40vh] items-center justify-center text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />Готовим документ…
