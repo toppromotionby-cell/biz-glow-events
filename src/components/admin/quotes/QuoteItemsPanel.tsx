@@ -19,6 +19,8 @@ import {
   QUOTE_SECTION_SUGGESTIONS, removeSection, renameSection, type QuoteItem,
 } from "@/lib/quotes-model";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
+import { SuggestInput } from "@/components/admin/SuggestInput";
+import { useDocSuggest } from "@/hooks/use-doc-suggest";
 
 function Mini({ label, width, children }: { label: string; width: string; children: ReactNode }) {
   return (
