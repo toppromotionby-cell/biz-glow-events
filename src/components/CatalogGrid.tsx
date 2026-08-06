@@ -369,7 +369,7 @@ function CatalogCard({
           </button>
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3">{item.description}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3 min-h-[2.5rem] sm:min-h-[3.9rem]">{item.description}</p>
         <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2 sm:mt-3">
           {item.tags.slice(0, 3).map((t) => (
             <button

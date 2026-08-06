@@ -15,7 +15,7 @@ export function rowToItem(r: CatalogRow): CatalogItem {
   return {
     slug: r.slug,
     title: r.title,
-    description: r.short_description ?? r.description ?? "",
+    description: toCardExcerpt(r.short_description, r.description),
     priceFrom,
     image: photos[0] ?? FALLBACK_IMG,
     images: photos.length > 0 ? photos : [FALLBACK_IMG],
