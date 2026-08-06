@@ -239,14 +239,16 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     color: ACCENT,
   });
   const numText = `№ ${num}`;
-  const numW = ctx.bold.widthOfTextAtSize(numText, 14);
+  const numFont = displayFont(ctx, numText);
+  const numW = numFont.widthOfTextAtSize(numText, 14);
   ctx.page.drawText(numText, {
     x: rightX - numW,
     y: PAGE_H - MARGIN_TOP - 22,
     size: 14,
-    font: ctx.bold,
+    font: numFont,
     color: TEXT,
   });
+
   const dateText = `от ${date}`;
   const dateW = ctx.regular.widthOfTextAtSize(dateText, 10);
   ctx.page.drawText(dateText, {
