@@ -228,6 +228,24 @@ function gap(ctx: DocCtx, n: number) {
   ctx.y -= n;
 }
 
+/** Ширина строки с межбуквенным интервалом (как letter-spacing в CSS). */
+function trackedWidth(font: PDFFont, text: string, size: number, tracking: number): number {
+  return font.widthOfTextAtSize(text, size) + Math.max(text.length - 1, 0) * tracking;
+}
+
+/** Отрисовать строку капсом с межбуквенным интервалом. */
+function drawTracked(
+  page: PDFPage,
+  text: string,
+  opts: { x: number; y: number; size: number; font: PDFFont; color: ReturnType<typeof rgb>; tracking: number },
+) {
+  let x = opts.x;
+  for (const ch of text) {
+    page.drawText(ch, { x, y: opts.y, size: opts.size, font: opts.font, color: opts.color });
+    x += opts.font.widthOfTextAtSize(ch, opts.size) + opts.tracking;
+  }
+}
+
 function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
   const brand = safe(settings.company_brand);
@@ -242,37 +260,39 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
   const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
   ctx.page.drawText(
     `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
-    { x: MARGIN_X, y: subY, size: 9, font: ctx.regular, color: MUTED },
+    { x: MARGIN_X, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
   );
 
   // Тип/номер/дата справа
   const rightX = PAGE_W - MARGIN_X;
   const kindUpper = kind.toUpperCase();
-  const kindW = ctx.bold.widthOfTextAtSize(kindUpper, 11);
-  ctx.page.drawText(kindUpper, {
+  const kindTracking = F_DOC_KIND * 0.14;
+  const kindW = trackedWidth(ctx.bold, kindUpper, F_DOC_KIND, kindTracking);
+  drawTracked(ctx.page, kindUpper, {
     x: rightX - kindW,
     y: PAGE_H - MARGIN_TOP - 4,
-    size: 11,
+    size: F_DOC_KIND,
     font: ctx.bold,
     color: ACCENT,
+    tracking: kindTracking,
   });
   const numText = `№ ${num}`;
   const numFont = displayFont(ctx, numText);
-  const numW = numFont.widthOfTextAtSize(numText, 14);
+  const numW = numFont.widthOfTextAtSize(numText, F_DOC_NUM);
   ctx.page.drawText(numText, {
     x: rightX - numW,
-    y: PAGE_H - MARGIN_TOP - 22,
-    size: 14,
+    y: PAGE_H - MARGIN_TOP - 24,
+    size: F_DOC_NUM,
     font: numFont,
     color: TEXT,
   });
 
   const dateText = `от ${date}`;
-  const dateW = ctx.regular.widthOfTextAtSize(dateText, 10);
+  const dateW = ctx.regular.widthOfTextAtSize(dateText, F_DOC_DATE);
   ctx.page.drawText(dateText, {
     x: rightX - dateW,
-    y: PAGE_H - MARGIN_TOP - 38,
-    size: 10,
+    y: PAGE_H - MARGIN_TOP - 40,
+    size: F_DOC_DATE,
     font: ctx.regular,
     color: MUTED,
   });
@@ -295,16 +315,16 @@ function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
     p.drawText(safe(footer), {
       x: MARGIN_X,
       y: MARGIN_BOTTOM - 24,
-      size: 8,
+      size: F_FOOTER,
       font: ctx.regular,
       color: MUTED,
     });
     const pageLabel = `${i + 1} / ${total}`;
-    const w = ctx.regular.widthOfTextAtSize(pageLabel, 8);
+    const w = ctx.regular.widthOfTextAtSize(pageLabel, F_FOOTER);
     p.drawText(pageLabel, {
       x: PAGE_W - MARGIN_X - w,
       y: MARGIN_BOTTOM - 24,
-      size: 8,
+      size: F_FOOTER,
       font: ctx.regular,
       color: MUTED,
     });
