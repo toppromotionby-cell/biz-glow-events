@@ -405,8 +405,50 @@ function Page() {
 
             <TabsContent value="client" className="space-y-4 pt-3">
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Компания"><Input value={quote.client_company ?? ""} onChange={(e) => patch({ client_company: e.target.value })} /></Field>
-                <Field label="Контактное лицо"><Input value={quote.client_name ?? ""} onChange={(e) => patch({ client_name: e.target.value })} /></Field>
+                <Field label="Компания">
+                  <SuggestInput
+                    value={quote.client_company ?? ""}
+                    onChange={(v) => patch({ client_company: v })}
+                    fetcher={fetchContacts}
+                    onPick={(h) => patch({
+                      client_company: h.company || quote.client_company || "",
+                      client_name: h.name || quote.client_name || "",
+                      client_unp: h.unp || quote.client_unp || "",
+                      client_phone: h.phone || quote.client_phone || "",
+                      client_email: h.email || quote.client_email || "",
+                      client_address: h.address || quote.client_address || "",
+                    })}
+                    render={(h) => (
+                      <>
+                        <div className="font-medium">{h.company || h.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {[h.name && h.company ? h.name : null, h.unp && `УНП ${h.unp}`, h.phone, h.email].filter(Boolean).join(" · ")}
+                        </div>
+                      </>
+                    )}
+                  />
+                </Field>
+                <Field label="Контактное лицо">
+                  <SuggestInput
+                    value={quote.client_name ?? ""}
+                    onChange={(v) => patch({ client_name: v })}
+                    fetcher={fetchContacts}
+                    onPick={(h) => patch({
+                      client_company: h.company || quote.client_company || "",
+                      client_name: h.name || quote.client_name || "",
+                      client_unp: h.unp || quote.client_unp || "",
+                      client_phone: h.phone || quote.client_phone || "",
+                      client_email: h.email || quote.client_email || "",
+                      client_address: h.address || quote.client_address || "",
+                    })}
+                    render={(h) => (
+                      <>
+                        <div className="font-medium">{h.name || h.company}</div>
+                        <div className="text-xs text-muted-foreground">{[h.company, h.phone, h.email].filter(Boolean).join(" · ")}</div>
+                      </>
+                    )}
+                  />
+                </Field>
                 <Field label="УНП"><Input value={quote.client_unp ?? ""} onChange={(e) => patch({ client_unp: e.target.value })} /></Field>
                 <Field label="Телефон"><Input value={quote.client_phone ?? ""} onChange={(e) => patch({ client_phone: e.target.value })} /></Field>
                 <Field label="E-mail"><Input value={quote.client_email ?? ""} onChange={(e) => patch({ client_email: e.target.value })} /></Field>
