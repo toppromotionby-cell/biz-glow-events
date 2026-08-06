@@ -33,26 +33,61 @@ function openInNewTab(url: string): boolean {
   return !!win;
 }
 
-/** Скачать файл по уже готовому URL (blob: или обычному). */
-export function downloadUrl(url: string, filename: string) {
-  const needsTabFallback = inIframe() || !anchorSupportsDownload();
-  if (!needsTabFallback) {
+type DownloadOpts = {
+  /** Обычный http(s)-URL того же файла на сервере — запасной путь, если blob заблокирован. */
+  fallbackUrl?: string;
+};
+
+/**
+ * Скачать файл по уже готовому URL (blob: или обычному).
+ *
+ * Порядок: сначала штатный <a download> — он работает и в iframe, если у фрейма
+ * есть allow-downloads. Если браузер блокирует (частый случай для blob: внутри
+ * sandbox-фрейма), уходим на серверный URL: новая вкладка, затем навигация.
+ */
+export function downloadUrl(url: string, filename: string, opts: DownloadOpts = {}) {
+  if (anchorSupportsDownload()) {
     clickAnchor(url, filename);
+    if (!inIframe()) return;
+  }
+
+  const serverUrl = opts.fallbackUrl;
+  // В iframe клик мог быть тихо заблокирован — даём пользователю рабочий путь.
+  if (!serverUrl) {
+    if (!anchorSupportsDownload() && openInNewTab(url)) return;
+    toast("Если файл не скачался", {
+      description: filename,
+      action: { label: "Открыть файл", onClick: () => openInNewTab(url) },
+      duration: 10_000,
+    });
     return;
   }
-  if (openInNewTab(url)) return;
-  // Попап заблокирован — пробуем штатный путь и подсказываем пользователю.
-  clickAnchor(url, filename);
-  toast("Скачивание заблокировано браузером", {
+
+  toast("Если файл не скачался", {
     description: filename,
-    action: { label: "Открыть файл", onClick: () => openInNewTab(url) },
+    action: {
+      label: "Открыть файл",
+      onClick: () => {
+        if (!openInNewTab(serverUrl)) {
+          try {
+            (window.top ?? window).location.href = serverUrl;
+          } catch {
+            window.location.href = serverUrl;
+          }
+        }
+      },
+    },
     duration: 10_000,
   });
 }
 
 /** Скачать содержимое blob под заданным именем. */
-export async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+export async function downloadBlob(
+  blob: Blob,
+  filename: string,
+  opts: DownloadOpts = {},
+): Promise<void> {
   const url = URL.createObjectURL(blob);
-  downloadUrl(url, filename);
+  downloadUrl(url, filename, opts);
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
