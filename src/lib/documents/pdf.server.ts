@@ -9,6 +9,14 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import type { DocOrder, DocItem, DocKind } from "@/lib/documents/build.server";
 import { fmtDate } from "@/lib/formatters";
 import {
+  BRAND_ACCENT,
+  DOC_COLORS,
+  DOC_FONT_PT,
+  DOC_LAYOUT,
+  hexToRgb01,
+  mixWithWhite,
+} from "@/lib/documents/brand";
+import {
   computePromoTotals,
   groupBySection,
   lineQty,
@@ -57,26 +65,36 @@ function displayFont(ctx: DocCtx, text: string): PDFFont {
 
 
 
-// === Стили / токены, согласованные с сайтом ===
-const ACCENT = rgb(0.94, 0.63, 0.25);          // оранжевый primary
-const ACCENT_SOFT = rgb(0.98, 0.93, 0.83);     // светлый акцент для фона
-const TEXT = rgb(0.07, 0.07, 0.09);
-const MUTED = rgb(0.43, 0.43, 0.48);
-const LINE = rgb(0.87, 0.87, 0.9);
-const SURFACE = rgb(0.98, 0.98, 0.99);
+// === Стили / токены — единая спецификация с HTML-превью (documents/brand.ts) ===
+const c01 = (c: { r: number; g: number; b: number }) => rgb(c.r, c.g, c.b);
+
+const ACCENT = c01(hexToRgb01(BRAND_ACCENT));
+const ACCENT_SOFT = c01(mixWithWhite(BRAND_ACCENT, 0.12));   // фон шапки таблицы / итога
+const ACCENT_BORDER = c01(mixWithWhite(BRAND_ACCENT, 0.4));  // рамка блока итогов
+const TEXT = c01(hexToRgb01(DOC_COLORS.ink));
+const MUTED = c01(hexToRgb01(DOC_COLORS.muted));
+const LINE = c01(hexToRgb01(DOC_COLORS.line));
+const SURFACE = c01(hexToRgb01(DOC_COLORS.surface));
 
 // A4 в pt (72 dpi)
-const PAGE_W = 595.28;
-const PAGE_H = 841.89;
-const MARGIN_X = 42;
-const MARGIN_TOP = 48;
-const MARGIN_BOTTOM = 48;
+const PAGE_W = DOC_LAYOUT.pageWidthPt;
+const PAGE_H = DOC_LAYOUT.pageHeightPt;
+const MARGIN_X = DOC_LAYOUT.marginXPt;
+const MARGIN_TOP = DOC_LAYOUT.marginTopPt;
+const MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
 
-const F11 = 10.5;
-const F12 = 11;
-const F13 = 12;
-const F16 = 15;
-const F22 = 20;
+// Кегли: те же, что в HTML-превью, переведённые в pt
+const F11 = DOC_FONT_PT.small;
+const F12 = DOC_FONT_PT.body;
+const F13 = DOC_FONT_PT.section;
+const F16 = DOC_FONT_PT.total;
+const F22 = DOC_FONT_PT.brand;
+const F_COVER = DOC_FONT_PT.coverTitle;
+const F_DOC_KIND = DOC_FONT_PT.docKind;
+const F_DOC_NUM = DOC_FONT_PT.docNum;
+const F_DOC_DATE = DOC_FONT_PT.docDate;
+const F_LABEL = DOC_FONT_PT.cardLabel;
+const F_FOOTER = DOC_FONT_PT.footer;
 
 type DocCtx = {
   pdf: PDFDocument;
@@ -210,6 +228,24 @@ function gap(ctx: DocCtx, n: number) {
   ctx.y -= n;
 }
 
+/** Ширина строки с межбуквенным интервалом (как letter-spacing в CSS). */
+function trackedWidth(font: PDFFont, text: string, size: number, tracking: number): number {
+  return font.widthOfTextAtSize(text, size) + Math.max(text.length - 1, 0) * tracking;
+}
+
+/** Отрисовать строку капсом с межбуквенным интервалом. */
+function drawTracked(
+  page: PDFPage,
+  text: string,
+  opts: { x: number; y: number; size: number; font: PDFFont; color: ReturnType<typeof rgb>; tracking: number },
+) {
+  let x = opts.x;
+  for (const ch of text) {
+    page.drawText(ch, { x, y: opts.y, size: opts.size, font: opts.font, color: opts.color });
+    x += opts.font.widthOfTextAtSize(ch, opts.size) + opts.tracking;
+  }
+}
+
 function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
   const brand = safe(settings.company_brand);
@@ -224,37 +260,39 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
   const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
   ctx.page.drawText(
     `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
-    { x: MARGIN_X, y: subY, size: 9, font: ctx.regular, color: MUTED },
+    { x: MARGIN_X, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
   );
 
   // Тип/номер/дата справа
   const rightX = PAGE_W - MARGIN_X;
   const kindUpper = kind.toUpperCase();
-  const kindW = ctx.bold.widthOfTextAtSize(kindUpper, 11);
-  ctx.page.drawText(kindUpper, {
+  const kindTracking = F_DOC_KIND * 0.14;
+  const kindW = trackedWidth(ctx.bold, kindUpper, F_DOC_KIND, kindTracking);
+  drawTracked(ctx.page, kindUpper, {
     x: rightX - kindW,
     y: PAGE_H - MARGIN_TOP - 4,
-    size: 11,
+    size: F_DOC_KIND,
     font: ctx.bold,
     color: ACCENT,
+    tracking: kindTracking,
   });
   const numText = `№ ${num}`;
   const numFont = displayFont(ctx, numText);
-  const numW = numFont.widthOfTextAtSize(numText, 14);
+  const numW = numFont.widthOfTextAtSize(numText, F_DOC_NUM);
   ctx.page.drawText(numText, {
     x: rightX - numW,
-    y: PAGE_H - MARGIN_TOP - 22,
-    size: 14,
+    y: PAGE_H - MARGIN_TOP - 24,
+    size: F_DOC_NUM,
     font: numFont,
     color: TEXT,
   });
 
   const dateText = `от ${date}`;
-  const dateW = ctx.regular.widthOfTextAtSize(dateText, 10);
+  const dateW = ctx.regular.widthOfTextAtSize(dateText, F_DOC_DATE);
   ctx.page.drawText(dateText, {
     x: rightX - dateW,
-    y: PAGE_H - MARGIN_TOP - 38,
-    size: 10,
+    y: PAGE_H - MARGIN_TOP - 40,
+    size: F_DOC_DATE,
     font: ctx.regular,
     color: MUTED,
   });
@@ -277,16 +315,16 @@ function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
     p.drawText(safe(footer), {
       x: MARGIN_X,
       y: MARGIN_BOTTOM - 24,
-      size: 8,
+      size: F_FOOTER,
       font: ctx.regular,
       color: MUTED,
     });
     const pageLabel = `${i + 1} / ${total}`;
-    const w = ctx.regular.widthOfTextAtSize(pageLabel, 8);
+    const w = ctx.regular.widthOfTextAtSize(pageLabel, F_FOOTER);
     p.drawText(pageLabel, {
       x: PAGE_W - MARGIN_X - w,
       y: MARGIN_BOTTOM - 24,
-      size: 8,
+      size: F_FOOTER,
       font: ctx.regular,
       color: MUTED,
     });
@@ -323,12 +361,13 @@ function drawCard(
     borderWidth: 0.6,
   });
   let cy = ctx.y - 14;
-  ctx.page.drawText(label.toUpperCase(), {
+  drawTracked(ctx.page, label.toUpperCase(), {
     x: x + 12,
     y: cy - 9,
-    size: 8.5,
+    size: F_LABEL,
     font: ctx.bold,
     color: ACCENT,
+    tracking: F_LABEL * 0.12,
   });
   cy -= 18;
   for (const t of titleLines) {
@@ -373,16 +412,21 @@ function drawTable(
     color: ACCENT_SOFT,
   });
   let cx = startX;
+  const headTracking = F_DOC_KIND * 0.08;
   for (const c of cols) {
+    const title = c.title.toUpperCase();
+    const w = trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking);
     let tx = cx + cellPadX;
-    if (c.align === "right") {
-      const w = ctx.bold.widthOfTextAtSize(c.title, 9);
-      tx = cx + c.width - cellPadX - w;
-    } else if (c.align === "center") {
-      const w = ctx.bold.widthOfTextAtSize(c.title, 9);
-      tx = cx + (c.width - w) / 2;
-    }
-    ctx.page.drawText(c.title, { x: tx, y: ctx.y - 15, size: 9, font: ctx.bold, color: TEXT });
+    if (c.align === "right") tx = cx + c.width - cellPadX - w;
+    else if (c.align === "center") tx = cx + (c.width - w) / 2;
+    drawTracked(ctx.page, title, {
+      x: tx,
+      y: ctx.y - 15,
+      size: F_DOC_KIND,
+      font: ctx.bold,
+      color: TEXT,
+      tracking: headTracking,
+    });
     cx += c.width;
   }
   ctx.y -= headerH;
@@ -429,44 +473,56 @@ function drawTable(
   }
 }
 
-// === Сводный блок «итого» ===
+// === Сводный блок «итого» (как в HTML-превью: справа, белый фон, акцентная строка «Итого») ===
 function drawSummary(
   ctx: DocCtx,
   rows: Array<{ label: string; value: string; emphasis?: boolean }>,
 ) {
-  const width = PAGE_W - MARGIN_X * 2;
-  const padX = 14;
-  const lineH = F12 * 1.6;
-  const height = rows.length * lineH + 16;
+  const width = Math.min(360 * 0.92, PAGE_W - MARGIN_X * 2);
+  const x = PAGE_W - MARGIN_X - width;
+  const padX = 13;
+  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * 1.5 + 8;
+  const height = rows.reduce((s, r) => s + rowH(r), 0);
 
-  ensureSpace(ctx, height + 6);
+  ensureSpace(ctx, height + 10);
   ctx.page.drawRectangle({
-    x: MARGIN_X,
+    x,
     y: ctx.y - height,
     width,
     height,
-    color: ACCENT_SOFT,
-    borderColor: ACCENT,
-    borderWidth: 0.6,
+    color: rgb(1, 1, 1),
+    borderColor: ACCENT_BORDER,
+    borderWidth: 0.7,
   });
 
-  let cy = ctx.y - 10;
+  let cy = ctx.y;
   for (const r of rows) {
+    const h = rowH(r);
     const size = r.emphasis ? F16 : F12;
-    const font = r.emphasis ? ctx.bold : ctx.regular;
-    const color = r.emphasis ? ACCENT : TEXT;
-    ctx.page.drawText(r.label, { x: MARGIN_X + padX, y: cy - size, size, font: ctx.regular, color: MUTED });
-    const w = font.widthOfTextAtSize(r.value, size);
-    ctx.page.drawText(r.value, {
-      x: MARGIN_X + width - padX - w,
-      y: cy - size,
+    if (r.emphasis) {
+      ctx.page.drawRectangle({ x: x + 0.7, y: cy - h, width: width - 1.4, height: h, color: ACCENT_SOFT });
+    }
+    const labelFont = r.emphasis ? ctx.bold : ctx.regular;
+    const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
+    const baseline = cy - (h + size * 0.72) / 2;
+    ctx.page.drawText(r.label, {
+      x: x + padX,
+      y: baseline,
       size,
-      font,
-      color,
+      font: labelFont,
+      color: r.emphasis ? TEXT : MUTED,
     });
-    cy -= lineH;
+    const w = valueFont.widthOfTextAtSize(r.value, size);
+    ctx.page.drawText(r.value, {
+      x: x + width - padX - w,
+      y: baseline,
+      size,
+      font: valueFont,
+      color: TEXT,
+    });
+    cy -= h;
   }
-  ctx.y -= height + 8;
+  ctx.y -= height + 10;
 }
 
 // === Подпись (две колонки) ===
@@ -481,12 +537,13 @@ function drawSignatures(
   const yStart = ctx.y;
   const drawCol = (x: number, b: typeof left) => {
     let cy = yStart;
-    ctx.page.drawText(b.title.toUpperCase(), {
+    drawTracked(ctx.page, b.title.toUpperCase(), {
       x,
       y: cy - 9,
-      size: 8.5,
+      size: F_LABEL,
       font: ctx.bold,
       color: ACCENT,
+      tracking: F_LABEL * 0.12,
     });
     cy -= 16;
     for (const l of b.lines.filter(Boolean)) {
@@ -707,7 +764,7 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
     width: PAGE_W - MARGIN_X * 2,
   });
   drawText(ctx, `г. ${settings.contract_jurisdiction_city} · ${date}`, {
-    size: 10,
+    size: DOC_FONT_PT.small,
     color: MUTED,
     align: "center",
     x: MARGIN_X,
@@ -976,7 +1033,16 @@ export async function buildStandaloneQuotePdf(
 
   const heading = (title: string) => {
     gap(ctx, 8);
-    drawText(ctx, title, { size: F13, bold: true, color: ACCENT });
+    ensureSpace(ctx, F13 * 2);
+    drawTracked(ctx.page, title.toUpperCase(), {
+      x: MARGIN_X,
+      y: ctx.y - F13,
+      size: F13,
+      font: ctx.bold,
+      color: ACCENT,
+      tracking: F13 * 0.05,
+    });
+    ctx.y -= F13 * 1.45;
     gap(ctx, 2);
   };
 
@@ -986,7 +1052,7 @@ export async function buildStandaloneQuotePdf(
 
     switch (b.type) {
       case "cover": {
-        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers), { size: F22, bold: true });
+        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers), { size: F_COVER, bold: true });
         gap(ctx, 4);
         if (text) drawParagraph(ctx, text, { size: F11, color: MUTED });
         gap(ctx, 6);

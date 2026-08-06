@@ -1,4 +1,5 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
+import { BRAND_ACCENT } from "@/lib/documents/brand";
 import {
   computePromoTotals,
   formatMoney,
@@ -27,7 +28,7 @@ function nf(n: number): string {
 export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): string {
   const t = computePromoTotals(quote, items);
   const sections = groupBySection(items);
-  const accent = /^#[0-9a-fA-F]{3,8}$/.test(quote.accent_color) ? quote.accent_color : "#F5A623";
+  const accent = /^#[0-9a-fA-F]{3,8}$/.test(quote.accent_color) ? quote.accent_color : BRAND_ACCENT;
 
   const cols: Array<{ label: string; cls: string }> = [{ label: "Наименование", cls: "c-title" }];
   cols.push({ label: "Ед. изм.", cls: "c-unit" });
