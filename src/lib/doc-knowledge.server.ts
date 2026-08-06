@@ -255,3 +255,114 @@ export async function searchTexts(kind: TextKind, term: string): Promise<TextHit
   const { data } = await q;
   return (data ?? []) as TextHit[];
 }
+
+/* ------------------------------------------------------------------ */
+/* Управление базой знаний (админский раздел)                          */
+/* ------------------------------------------------------------------ */
+
+export type KbTable = "contacts" | "items" | "texts";
+export type KbSort = "usage" | "recent" | "alpha";
+
+const TABLE: Record<KbTable, "doc_contacts" | "doc_item_catalog" | "doc_text_snippets"> = {
+  contacts: "doc_contacts",
+  items: "doc_item_catalog",
+  texts: "doc_text_snippets",
+};
+
+const COLUMNS: Record<KbTable, string> = {
+  contacts: "id,name,company,unp,phone,email,address,contact_role,usage_count,last_used_at,created_at",
+  items: "id,section,title,description,unit,price,cost,includes,usage_count,last_used_at,created_at",
+  texts: "id,kind,value,usage_count,last_used_at,created_at",
+};
+
+const ALPHA_COL: Record<KbTable, string> = { contacts: "name", items: "title", texts: "value" };
+
+function searchFilter(table: KbTable, t: string): string {
+  const esc = t.replace(/[%,()]/g, " ").trim();
+  if (table === "contacts") {
+    return ["name", "company", "unp", "phone", "email", "address", "contact_role"]
+      .map((c) => `${c}.ilike.%${esc}%`).join(",");
+  }
+  if (table === "items") {
+    return ["section", "title", "description", "unit"].map((c) => `${c}.ilike.%${esc}%`).join(",");
+  }
+  return ["kind", "value"].map((c) => `${c}.ilike.%${esc}%`).join(",");
+}
+
+export type KbRow = Record<string, unknown> & {
+  id: string;
+  usage_count: number;
+  last_used_at: string;
+  created_at: string;
+};
+
+export async function listKnowledge(opts: {
+  table: KbTable;
+  term?: string;
+  sort?: KbSort;
+  kind?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<{ rows: KbRow[]; total: number }> {
+  const page = Math.max(0, opts.page ?? 0);
+  const size = Math.min(200, Math.max(1, opts.pageSize ?? 50));
+  const t = s(opts.term);
+
+  let q = supabaseAdmin
+    .from(TABLE[opts.table])
+    .select(COLUMNS[opts.table], { count: "exact" })
+    .range(page * size, page * size + size - 1);
+
+  if (t) q = q.or(searchFilter(opts.table, t));
+  if (opts.table === "texts" && s(opts.kind)) q = q.eq("kind", s(opts.kind));
+
+  const sort = opts.sort ?? "usage";
+  if (sort === "usage") {
+    q = q.order("usage_count", { ascending: false }).order("last_used_at", { ascending: false });
+  } else if (sort === "recent") {
+    q = q.order("last_used_at", { ascending: false });
+  } else {
+    q = q.order(ALPHA_COL[opts.table], { ascending: true });
+  }
+
+  const { data, count, error } = await q;
+  if (error) throw new Error(error.message);
+  return { rows: (data ?? []) as unknown as KbRow[], total: count ?? 0 };
+}
+
+export async function deleteKnowledge(table: KbTable, ids: string[]): Promise<number> {
+  const list = ids.filter((v) => typeof v === "string" && v.length > 0);
+  if (!list.length) return 0;
+  const { error } = await supabaseAdmin.from(TABLE[table]).delete().in("id", list);
+  if (error) throw new Error(error.message);
+  return list.length;
+}
+
+/** Порог «неиспользуемых»: usage_count <= 1 и last_used_at старше N месяцев. */
+function pruneCutoff(months: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d.toISOString();
+}
+
+export async function countStale(table: KbTable, months = 6): Promise<number> {
+  const { count, error } = await supabaseAdmin
+    .from(TABLE[table])
+    .select("id", { count: "exact", head: true })
+    .lte("usage_count", 1)
+    .lt("last_used_at", pruneCutoff(months));
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function pruneStale(table: KbTable, months = 6): Promise<number> {
+  const n = await countStale(table, months);
+  if (!n) return 0;
+  const { error } = await supabaseAdmin
+    .from(TABLE[table])
+    .delete()
+    .lte("usage_count", 1)
+    .lt("last_used_at", pruneCutoff(months));
+  if (error) throw new Error(error.message);
+  return n;
+}
