@@ -1,5 +1,6 @@
 // Экспорт промо-КП в XLSX с живыми формулами (ExcelJS, только в браузере).
 // Загружается динамически по клику — библиотека не попадает в основной бандл.
+import { downloadBlob } from "@/lib/download";
 import {
   computePromoTotals,
   groupBySection,
