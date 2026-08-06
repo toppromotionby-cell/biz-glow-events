@@ -412,16 +412,21 @@ function drawTable(
     color: ACCENT_SOFT,
   });
   let cx = startX;
+  const headTracking = F_DOC_KIND * 0.08;
   for (const c of cols) {
+    const title = c.title.toUpperCase();
+    const w = trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking);
     let tx = cx + cellPadX;
-    if (c.align === "right") {
-      const w = ctx.bold.widthOfTextAtSize(c.title, 9);
-      tx = cx + c.width - cellPadX - w;
-    } else if (c.align === "center") {
-      const w = ctx.bold.widthOfTextAtSize(c.title, 9);
-      tx = cx + (c.width - w) / 2;
-    }
-    ctx.page.drawText(c.title, { x: tx, y: ctx.y - 15, size: 9, font: ctx.bold, color: TEXT });
+    if (c.align === "right") tx = cx + c.width - cellPadX - w;
+    else if (c.align === "center") tx = cx + (c.width - w) / 2;
+    drawTracked(ctx.page, title, {
+      x: tx,
+      y: ctx.y - 15,
+      size: F_DOC_KIND,
+      font: ctx.bold,
+      color: TEXT,
+      tracking: headTracking,
+    });
     cx += c.width;
   }
   ctx.y -= headerH;
