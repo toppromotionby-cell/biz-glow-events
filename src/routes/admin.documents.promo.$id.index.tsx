@@ -123,6 +123,8 @@ function EditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const { fetchContacts } = useDocSuggest();
+
   const pushHistory = useCallback((snap: Snapshot) => {
     history.current = [...history.current.slice(-29), snap];
   }, []);
