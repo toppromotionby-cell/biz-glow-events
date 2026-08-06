@@ -203,6 +203,32 @@ export const saveQuote = createServerFn({ method: "POST" })
       .update({ ...(data.patch as Record<string, never>), total })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    // Наполнение базы знаний — не должно влиять на результат сохранения.
+    try {
+      const { harvestKnowledge } = await import("@/lib/doc-knowledge.server");
+      const m = merged as Record<string, unknown>;
+      await harvestKnowledge({
+        contacts: [{
+          name: m.client_name as string, company: m.client_company as string, unp: m.client_unp as string,
+          phone: m.client_phone as string, email: m.client_email as string, address: m.client_address as string,
+        }],
+        items: (items ?? []).map((it) => ({
+          section: it.section ?? "", title: it.title, description: it.description ?? "",
+          unit: it.unit ?? "шт.", price: it.price, cost: it.cost ?? 0, includes: it.includes ?? [],
+        })),
+        texts: [
+          { kind: "venue" as const, value: m.venue },
+          { kind: "event_format" as const, value: m.event_format },
+          { kind: "note" as const, value: m.event_notes },
+          { kind: "note" as const, value: m.setup_note },
+          ...(items ?? []).map((it) => ({ kind: "section" as const, value: it.section ?? "" })),
+        ],
+      });
+    } catch (e) {
+      console.error("[quotes] knowledge harvest failed", e);
+    }
+
     return { ok: true, total };
   });
 

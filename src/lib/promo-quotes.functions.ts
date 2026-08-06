@@ -208,6 +208,32 @@ export const savePromoQuote = createServerFn({ method: "POST" })
       ((items ?? []) as Record<string, unknown>[]).map(normalizePromoItem),
     );
     await context.supabase.from("promo_quotes").update({ total: totals.totalWithVat }).eq("id", data.id);
+
+    // Наполнение базы знаний — не должно влиять на результат сохранения.
+    try {
+      const { harvestKnowledge } = await import("@/lib/doc-knowledge.server");
+      const r = row as Record<string, unknown>;
+      await harvestKnowledge({
+        contacts: [{
+          name: (r.contact_name as string) || "", company: r.client_name as string,
+          phone: r.contact_phone as string, email: r.contact_email as string,
+          contact_role: r.contact_role as string,
+        }],
+        items: ((items ?? []) as Record<string, unknown>[]).map((it) => ({
+          section: it.section as string, title: it.title as string, description: it.note as string,
+          unit: it.unit as string, price: Number(it.price ?? 0), cost: Number(it.cost ?? 0),
+          includes: it.includes,
+        })),
+        texts: [
+          { kind: "venue" as const, value: r.venue },
+          { kind: "footer" as const, value: r.footer_note },
+          ...((items ?? []) as Record<string, unknown>[]).map((it) => ({ kind: "section" as const, value: it.section })),
+        ],
+      });
+    } catch (e) {
+      console.error("[promo-quotes] knowledge harvest failed", e);
+    }
+
     return { ok: true, total: totals.totalWithVat };
   });
 

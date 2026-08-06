@@ -38,6 +38,8 @@ import {
   promoValidityState, type PromoDiscountType, type PromoItem, type PromoQuote, type PromoStatus,
 } from "@/lib/promo-quote-model";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
+import { SuggestInput } from "@/components/admin/SuggestInput";
+import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
@@ -122,6 +124,8 @@ function EditorPage() {
     timer.current = setTimeout(() => saveMut.mutate({ quote: q, items: list }), 1200);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const { fetchContacts } = useDocSuggest();
 
   const pushHistory = useCallback((snap: Snapshot) => {
     history.current = [...history.current.slice(-29), snap];
@@ -384,10 +388,48 @@ function EditorPage() {
             <TabsContent value="main" className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Проект"><Input value={quote.project} onChange={(e) => patchQuote({ project: e.target.value })} /></Field>
-                <Field label="Клиент"><Input value={quote.client_name} onChange={(e) => patchQuote({ client_name: e.target.value })} /></Field>
+                <Field label="Клиент">
+                  <SuggestInput
+                    value={quote.client_name}
+                    onChange={(v) => patchQuote({ client_name: v })}
+                    fetcher={fetchContacts}
+                    onPick={(h) => patchQuote({
+                      client_name: h.company || h.name,
+                      contact_name: h.name || quote.contact_name,
+                      contact_role: h.contact_role || quote.contact_role,
+                      contact_phone: h.phone || quote.contact_phone,
+                      contact_email: h.email || quote.contact_email,
+                    })}
+                    render={(h) => (
+                      <>
+                        <div className="font-medium">{h.company || h.name}</div>
+                        <div className="text-xs text-muted-foreground">{[h.name, h.phone, h.email].filter(Boolean).join(" · ")}</div>
+                      </>
+                    )}
+                  />
+                </Field>
                 <Field label="Период"><Input value={quote.period} onChange={(e) => patchQuote({ period: e.target.value })} placeholder="01.09 – 30.09.2026" /></Field>
                 <Field label="Место проведения"><Input value={quote.venue} onChange={(e) => patchQuote({ venue: e.target.value })} /></Field>
-                <Field label="Контактное лицо"><Input value={quote.contact_name} onChange={(e) => patchQuote({ contact_name: e.target.value })} /></Field>
+                <Field label="Контактное лицо">
+                  <SuggestInput
+                    value={quote.contact_name}
+                    onChange={(v) => patchQuote({ contact_name: v })}
+                    fetcher={fetchContacts}
+                    onPick={(h) => patchQuote({
+                      client_name: h.company || quote.client_name,
+                      contact_name: h.name || quote.contact_name,
+                      contact_role: h.contact_role || quote.contact_role,
+                      contact_phone: h.phone || quote.contact_phone,
+                      contact_email: h.email || quote.contact_email,
+                    })}
+                    render={(h) => (
+                      <>
+                        <div className="font-medium">{h.name || h.company}</div>
+                        <div className="text-xs text-muted-foreground">{[h.company, h.phone, h.email].filter(Boolean).join(" · ")}</div>
+                      </>
+                    )}
+                  />
+                </Field>
                 <Field label="Должность"><Input value={quote.contact_role} onChange={(e) => patchQuote({ contact_role: e.target.value })} /></Field>
                 <Field label="Телефон"><Input value={quote.contact_phone} onChange={(e) => patchQuote({ contact_phone: e.target.value })} /></Field>
                 <Field label="E-mail"><Input value={quote.contact_email} onChange={(e) => patchQuote({ contact_email: e.target.value })} /></Field>

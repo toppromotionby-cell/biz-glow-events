@@ -17,6 +17,8 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SortableList } from "@/components/admin/SortableList";
+import { SuggestInput } from "@/components/admin/SuggestInput";
+import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
   duplicatePromoSection, formatMoney, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
@@ -39,6 +41,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const [deleteSection, setDeleteSection] = useState<string | null>(null);
 
   const sectionNames = useMemo(() => listPromoSections(items), [items]);
+  const { fetchItems } = useDocSuggest();
   const sections = useMemo(
     () =>
       sectionNames.map((name) => ({
@@ -162,12 +165,31 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                     <div className="rounded-lg border border-transparent px-1 py-1 hover:border-border/60 hover:bg-muted/30">
                       <div className="flex items-center gap-1">
                         <div>{handle}</div>
-                        <Input
-                          value={it.title}
-                          onChange={(e) => replace(it.id, { title: e.target.value })}
-                          placeholder="Наименование позиции"
-                          className="h-9 flex-1"
-                        />
+                        <div className="flex-1">
+                          <SuggestInput
+                            value={it.title}
+                            onChange={(v) => replace(it.id, { title: v })}
+                            fetcher={(term) => fetchItems(term, name)}
+                            onPick={(h) => replace(it.id, {
+                              title: h.title,
+                              unit: h.unit || it.unit,
+                              price: h.price || it.price,
+                              cost: h.cost || it.cost,
+                              note: h.description || it.note,
+                              includes: h.includes.length ? h.includes : it.includes,
+                            })}
+                            render={(h) => (
+                              <>
+                                <div className="font-medium">{h.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {[h.section, h.unit].filter(Boolean).join(" · ")}
+                                </div>
+                              </>
+                            )}
+                            placeholder="Наименование позиции"
+                            className="h-9"
+                          />
+                        </div>
                         <div className="flex w-[120px] flex-col items-end">
                           <span className="text-sm tabular-nums">{formatMoney(lineTotal(it), currency)}</span>
                           {showCost && lineCost(it) > 0 && (

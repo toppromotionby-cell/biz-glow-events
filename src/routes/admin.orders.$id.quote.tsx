@@ -20,6 +20,8 @@ export const Route = createFileRoute("/admin/orders/$id/quote")({
         ]);
         if (error || !order) return new Response("Not found", { status: 404 });
 
+        try { const { harvestFromOrder } = await import("@/lib/doc-knowledge.server"); await harvestFromOrder(order as Record<string, unknown>, (items ?? []) as Array<Record<string, unknown>>); } catch (e) { console.error("[order-doc] harvest failed", e); }
+
         const pdf = await maybePdfResponse("quote", request, order, items ?? [], settings);
         if (pdf) return pdf;
 
