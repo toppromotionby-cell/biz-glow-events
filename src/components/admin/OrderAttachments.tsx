@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Download, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAuthedDocumentBlob } from "@/lib/authed-fetch";
+import { downloadUrl } from "@/lib/download";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { fmtDateTime } from "@/lib/formatters";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
