@@ -17,6 +17,8 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SortableList } from "@/components/admin/SortableList";
+import { SuggestInput } from "@/components/admin/SuggestInput";
+import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
   duplicatePromoSection, formatMoney, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
@@ -166,7 +168,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                           <SuggestInput
                             value={it.title}
                             onChange={(v) => replace(it.id, { title: v })}
-                            fetcher={(term) => fetchItems(term, section)}
+                            fetcher={(term) => fetchItems(term, name)}
                             onPick={(h) => replace(it.id, {
                               title: h.title,
                               unit: h.unit || it.unit,
