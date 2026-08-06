@@ -196,12 +196,31 @@ export function QuoteItemsPanel({
                           <ChevronDown className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <Input
-                        value={it.title}
-                        onChange={(e) => replace(it.id, { title: e.target.value })}
-                        placeholder="Наименование позиции"
-                        className="h-9 flex-1"
-                      />
+                      <div className="flex-1">
+                        <SuggestInput
+                          value={it.title}
+                          onChange={(v) => replace(it.id, { title: v })}
+                          fetcher={(term) => fetchItems(term, section)}
+                          onPick={(h) => replace(it.id, {
+                            title: h.title,
+                            description: h.description || it.description,
+                            unit: h.unit || it.unit,
+                            price: h.price || it.price,
+                            cost: h.cost || it.cost,
+                            includes: h.includes.length ? h.includes : it.includes,
+                          })}
+                          render={(h) => (
+                            <>
+                              <div className="font-medium">{h.title}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {[h.section, fmtMoney(h.price), h.unit].filter(Boolean).join(" · ")}
+                              </div>
+                            </>
+                          )}
+                          placeholder="Наименование позиции"
+                          className="h-9"
+                        />
+                      </div>
                       <div className="flex w-[120px] flex-col items-end">
                         <span className="text-sm tabular-nums">{fmtMoney(lineTotal(it))}</span>
                         {showCost && lineCost(it) > 0 && (
