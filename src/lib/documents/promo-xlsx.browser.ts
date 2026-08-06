@@ -250,12 +250,5 @@ export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]
   const blob = new Blob([buffer as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = promoFileName(quote, "xlsx");
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  downloadBlob(blob, promoFileName(quote, "xlsx"));
 }
