@@ -41,6 +41,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const [deleteSection, setDeleteSection] = useState<string | null>(null);
 
   const sectionNames = useMemo(() => listPromoSections(items), [items]);
+  const { fetchItems } = useDocSuggest();
   const sections = useMemo(
     () =>
       sectionNames.map((name) => ({
