@@ -9,6 +9,14 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import type { DocOrder, DocItem, DocKind } from "@/lib/documents/build.server";
 import { fmtDate } from "@/lib/formatters";
 import {
+  BRAND_ACCENT,
+  DOC_COLORS,
+  DOC_FONT_PT,
+  DOC_LAYOUT,
+  hexToRgb01,
+  mixWithWhite,
+} from "@/lib/documents/brand";
+import {
   computePromoTotals,
   groupBySection,
   lineQty,
