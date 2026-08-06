@@ -22,6 +22,7 @@ const NAV = [
   { to: "/equipment", label: "Техническое оснащение", key: "header.nav.equipment", footerKey: "footer.catalog.equipment" },
   { to: "/services", label: "Услуги", key: "header.nav.services", footerKey: "footer.catalog.services" },
   { to: "/production", label: "Производство", key: "header.nav.production", footerKey: "footer.catalog.production" },
+  { to: "/attractions", label: "Аттракционы", key: "header.nav.attractions", footerKey: "footer.catalog.attractions" },
   { to: "/cases", label: "Кейсы", key: "header.nav.cases", footerKey: "footer.catalog.cases" },
   { to: "/industries", label: "Индустрии", key: "header.nav.industries", footerKey: "footer.catalog.industries" },
   { to: "/testimonials", label: "Отзывы", key: "header.nav.testimonials", footerKey: "footer.catalog.testimonials" },

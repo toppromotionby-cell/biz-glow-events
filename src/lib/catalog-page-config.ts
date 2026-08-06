@@ -1,11 +1,11 @@
 // Конфигурация страниц каталога: тексты H1/lead/meta и описание под JSON-LD.
-// Один источник истины для 4 типов (zones / tech_equipment / services / production_items).
+// Один источник истины для 5 типов (zones / tech_equipment / services / production_items / attractions).
 import type { CatalogType } from "@/lib/catalog.functions";
 import type { CatalogItem } from "@/lib/catalog-mock";
-import { ZONES, EQUIPMENT, SERVICES, PRODUCTION } from "@/lib/catalog-mock";
+import { ZONES, EQUIPMENT, SERVICES, PRODUCTION, ATTRACTIONS } from "@/lib/catalog-mock";
 
-export type CatalogBasePath = "/zones" | "/equipment" | "/services" | "/production";
-export type CatalogCategoryKey = "zones" | "equipment" | "services" | "production";
+export type CatalogBasePath = "/zones" | "/equipment" | "/services" | "/production" | "/attractions";
+export type CatalogCategoryKey = "zones" | "equipment" | "services" | "production" | "attractions";
 
 export interface CatalogPageConfig {
   /** Тип в таблице БД и в server-functions каталога. */
@@ -158,5 +158,29 @@ export const CATALOG_PAGE_CONFIG: Record<CatalogBasePath, CatalogPageConfig> = {
     },
 
     fallback: PRODUCTION,
+  },
+  "/attractions": {
+    type: "attractions",
+    basePath: "/attractions",
+    category: "attractions",
+    backLabel: "Все аттракционы",
+    h1: "Каталог аттракционов в аренду в Минске",
+    lead: "Тимбилдинг, надувные и спортивные аттракционы, тиры, видеоигры, фан-казино и настольные развлечения — с доставкой и оператором.",
+    collectionName: "Каталог аттракционов для мероприятий в Минске",
+    pageUrl: `${SITE}/attractions`,
+    list: {
+      title: "Каталог аттракционов — аренда и прокат в Минске | event-hub.by",
+      description: "Аренда аттракционов в Минске: тимбилдинг, эстафеты, надувные и спортивные, тиры, видеоигры, фан-казино. Цены, фото, доставка и оператор.",
+      ogTitle: "Каталог аттракционов — event-hub.by",
+      ogDescription: "Более 15 категорий аттракционов в аренду для праздников и корпоративов.",
+    },
+    detail: {
+      fallbackTitle: "Аттракцион — event-hub.by",
+      notFoundTitle: "Аттракцион не найден",
+      jsonLdLabel: "Аттракционы",
+      buildTitle: (it) => it.seo_title ?? buildDefaultTitle(it.title),
+      buildDescription: (it) => it.seo_description ?? buildDefaultDescription(it.title),
+    },
+    fallback: ATTRACTIONS,
   },
 };

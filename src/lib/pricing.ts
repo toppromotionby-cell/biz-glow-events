@@ -43,13 +43,14 @@ export function maxQtyFor(kind: QuantityKind): number {
 // ---------- Cart quantity limits ----------
 // Разумные «человеческие» лимиты для корзины: площадку нельзя заказать 99 раз,
 // оборудование — до 50 шт., часы — до 24 и т.д.
-export type CartLikeEntityType = "zones" | "tech_equipment" | "services" | "production_items";
+export type CartLikeEntityType = "zones" | "tech_equipment" | "services" | "production_items" | "attractions";
 
 const MAX_BY_ENTITY: Record<CartLikeEntityType, number> = {
   zones: 1,
   services: 10,
   tech_equipment: 50,
   production_items: 100,
+  attractions: 1,
 };
 
 /** Единица измерения позиции — берём из первой строки прайса. */
@@ -63,7 +64,7 @@ export function unitFromPricing(pricing: unknown): string | null {
 }
 
 export function maxQtyForItem(entity_type: string, unit?: string | null): number {
-  if (entity_type === "zones") return 1;
+  if (entity_type === "zones" || entity_type === "attractions") return 1;
   const kind = detectQuantityKind(unit);
   if (kind === "hour") return 24;
   if (kind === "day") return 14;

@@ -37,9 +37,9 @@ async function signMediaUrls<T extends { photo_urls?: string[] | null; video_url
   }));
 }
 
-export type CatalogType = "zones" | "tech_equipment" | "services" | "production_items";
+export type CatalogType = "zones" | "tech_equipment" | "services" | "production_items" | "attractions";
 
-const TYPES = ["zones", "tech_equipment", "services", "production_items"] as const;
+const TYPES = ["zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any;

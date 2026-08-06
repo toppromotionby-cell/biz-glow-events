@@ -6,18 +6,21 @@ export type CatalogSlugRoute =
   | "/zones/$slug"
   | "/equipment/$slug"
   | "/services/$slug"
-  | "/production/$slug";
+  | "/production/$slug"
+  | "/attractions/$slug";
 
 export const CATALOG_SLUG_ROUTE: Record<CatalogType, CatalogSlugRoute> = {
   zones: "/zones/$slug",
   tech_equipment: "/equipment/$slug",
   services: "/services/$slug",
   production_items: "/production/$slug",
+  attractions: "/attractions/$slug",
 };
 
-export const CATALOG_BASE_ROUTE: Record<CatalogType, "/zones" | "/equipment" | "/services" | "/production"> = {
+export const CATALOG_BASE_ROUTE: Record<CatalogType, "/zones" | "/equipment" | "/services" | "/production" | "/attractions"> = {
   zones: "/zones",
   tech_equipment: "/equipment",
   services: "/services",
   production_items: "/production",
+  attractions: "/attractions",
 };

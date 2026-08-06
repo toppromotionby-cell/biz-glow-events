@@ -42,6 +42,7 @@ import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as BlogRouteImport } from './routes/blog'
+import { Route as AttractionsRouteImport } from './routes/attractions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -57,6 +58,7 @@ import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AttractionsSlugRouteImport } from './routes/attractions.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminSectionsRouteImport } from './routes/admin.sections'
@@ -266,6 +268,11 @@ const BlogRoute = BlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AttractionsRoute = AttractionsRouteImport.update({
+  id: '/attractions',
+  path: '/attractions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -340,6 +347,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => BlogRoute,
+} as any)
+const AttractionsSlugRoute = AttractionsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AttractionsRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -571,6 +583,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/attractions': typeof AttractionsRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
@@ -618,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/attractions/$slug': typeof AttractionsSlugRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -663,6 +677,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/attractions': typeof AttractionsRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
@@ -709,6 +724,7 @@ export interface FileRoutesByTo {
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/attractions/$slug': typeof AttractionsSlugRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -756,6 +772,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/attractions': typeof AttractionsRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
@@ -803,6 +820,7 @@ export interface FileRoutesById {
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/attractions/$slug': typeof AttractionsSlugRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -851,6 +869,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/attractions'
     | '/blog'
     | '/calculator'
     | '/cart'
@@ -898,6 +917,7 @@ export interface FileRouteTypes {
     | '/admin/sections'
     | '/admin/testimonials'
     | '/admin/users'
+    | '/attractions/$slug'
     | '/blog/$slug'
     | '/cases/$slug'
     | '/email/unsubscribe'
@@ -943,6 +963,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/attractions'
     | '/blog'
     | '/calculator'
     | '/cart'
@@ -989,6 +1010,7 @@ export interface FileRouteTypes {
     | '/admin/sections'
     | '/admin/testimonials'
     | '/admin/users'
+    | '/attractions/$slug'
     | '/blog/$slug'
     | '/cases/$slug'
     | '/email/unsubscribe'
@@ -1035,6 +1057,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/attractions'
     | '/blog'
     | '/calculator'
     | '/cart'
@@ -1082,6 +1105,7 @@ export interface FileRouteTypes {
     | '/admin/sections'
     | '/admin/testimonials'
     | '/admin/users'
+    | '/attractions/$slug'
     | '/blog/$slug'
     | '/cases/$slug'
     | '/email/unsubscribe'
@@ -1129,6 +1153,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AttractionsRoute: typeof AttractionsRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
   CalculatorRoute: typeof CalculatorRoute
   CartRoute: typeof CartRoute
@@ -1413,6 +1438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/attractions': {
+      id: '/attractions'
+      path: '/attractions'
+      fullPath: '/attractions'
+      preLoaderRoute: typeof AttractionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -1517,6 +1549,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof BlogRoute
+    }
+    '/attractions/$slug': {
+      id: '/attractions/$slug'
+      path: '/$slug'
+      fullPath: '/attractions/$slug'
+      preLoaderRoute: typeof AttractionsSlugRouteImport
+      parentRoute: typeof AttractionsRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -1926,6 +1965,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AttractionsRouteChildren {
+  AttractionsSlugRoute: typeof AttractionsSlugRoute
+}
+
+const AttractionsRouteChildren: AttractionsRouteChildren = {
+  AttractionsSlugRoute: AttractionsSlugRoute,
+}
+
+const AttractionsRouteWithChildren = AttractionsRoute._addFileChildren(
+  AttractionsRouteChildren,
+)
+
 interface BlogRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
 }
@@ -1996,6 +2047,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  AttractionsRoute: AttractionsRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
   CalculatorRoute: CalculatorRoute,
   CartRoute: CartRoute,
@@ -2049,13 +2101,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { maxQtyForItem } from "@/lib/pricing";
 
-export type CartEntityType = "zones" | "tech_equipment" | "services" | "production_items";
+export type CartEntityType = "zones" | "tech_equipment" | "services" | "production_items" | "attractions";
 
 export type CartItem = {
   id: string; // uuid из БД, либо slug-фолбэк

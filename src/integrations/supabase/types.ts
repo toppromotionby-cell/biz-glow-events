@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      attractions: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          extras: Json
+          faq: Json | null
+          features: Json | null
+          id: string
+          photo_urls: string[] | null
+          pricing: Json | null
+          published: boolean
+          requirements: string | null
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+          video_urls: string[] | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          extras?: Json
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          extras?: Json
+          faq?: Json | null
+          features?: Json | null
+          id?: string
+          photo_urls?: string[] | null
+          pricing?: Json | null
+          published?: boolean
+          requirements?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          video_urls?: string[] | null
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string

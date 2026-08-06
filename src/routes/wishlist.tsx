@@ -22,6 +22,7 @@ const SLUG_BASE: Record<string, string> = {
   tech_equipment: "/equipment",
   services: "/services",
   production_items: "/production",
+  attractions: "/attractions",
 };
 
 function WishlistPage() {

@@ -20,6 +20,7 @@ const TYPES = [
   { v: "tech_equipment", l: "Оборудование" },
   { v: "services", l: "Услуги" },
   { v: "production_items", l: "Производство" },
+  { v: "attractions", l: "Аттракционы" },
 ] as const;
 
 type EntityType = typeof TYPES[number]["v"];

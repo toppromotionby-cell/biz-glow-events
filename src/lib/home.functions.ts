@@ -38,12 +38,13 @@ export type HomeData = {
 
 const EMPTY_HOME: HomeData = { featured: [], posts: [], cases: [] };
 
-type EntityType = "zones" | "tech_equipment" | "services" | "production_items";
+type EntityType = "zones" | "tech_equipment" | "services" | "production_items" | "attractions";
 const TABLES: { name: EntityType; base: string }[] = [
   { name: "zones", base: "/zones" },
   { name: "tech_equipment", base: "/equipment" },
   { name: "services", base: "/services" },
   { name: "production_items", base: "/production" },
+  { name: "attractions", base: "/attractions" },
 ];
 
 // Веса сигналов популярности от зарегистрированных пользователей.
