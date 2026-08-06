@@ -57,26 +57,36 @@ function displayFont(ctx: DocCtx, text: string): PDFFont {
 
 
 
-// === Стили / токены, согласованные с сайтом ===
-const ACCENT = rgb(0.94, 0.63, 0.25);          // оранжевый primary
-const ACCENT_SOFT = rgb(0.98, 0.93, 0.83);     // светлый акцент для фона
-const TEXT = rgb(0.07, 0.07, 0.09);
-const MUTED = rgb(0.43, 0.43, 0.48);
-const LINE = rgb(0.87, 0.87, 0.9);
-const SURFACE = rgb(0.98, 0.98, 0.99);
+// === Стили / токены — единая спецификация с HTML-превью (documents/brand.ts) ===
+const c01 = (c: { r: number; g: number; b: number }) => rgb(c.r, c.g, c.b);
+
+const ACCENT = c01(hexToRgb01(BRAND_ACCENT));
+const ACCENT_SOFT = c01(mixWithWhite(BRAND_ACCENT, 0.12));   // фон шапки таблицы / итога
+const ACCENT_BORDER = c01(mixWithWhite(BRAND_ACCENT, 0.4));  // рамка блока итогов
+const TEXT = c01(hexToRgb01(DOC_COLORS.ink));
+const MUTED = c01(hexToRgb01(DOC_COLORS.muted));
+const LINE = c01(hexToRgb01(DOC_COLORS.line));
+const SURFACE = c01(hexToRgb01(DOC_COLORS.surface));
 
 // A4 в pt (72 dpi)
-const PAGE_W = 595.28;
-const PAGE_H = 841.89;
-const MARGIN_X = 42;
-const MARGIN_TOP = 48;
-const MARGIN_BOTTOM = 48;
+const PAGE_W = DOC_LAYOUT.pageWidthPt;
+const PAGE_H = DOC_LAYOUT.pageHeightPt;
+const MARGIN_X = DOC_LAYOUT.marginXPt;
+const MARGIN_TOP = DOC_LAYOUT.marginTopPt;
+const MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
 
-const F11 = 10.5;
-const F12 = 11;
-const F13 = 12;
-const F16 = 15;
-const F22 = 20;
+// Кегли: те же, что в HTML-превью, переведённые в pt
+const F11 = DOC_FONT_PT.small;
+const F12 = DOC_FONT_PT.body;
+const F13 = DOC_FONT_PT.section;
+const F16 = DOC_FONT_PT.total;
+const F22 = DOC_FONT_PT.brand;
+const F_COVER = DOC_FONT_PT.coverTitle;
+const F_DOC_KIND = DOC_FONT_PT.docKind;
+const F_DOC_NUM = DOC_FONT_PT.docNum;
+const F_DOC_DATE = DOC_FONT_PT.docDate;
+const F_LABEL = DOC_FONT_PT.cardLabel;
+const F_FOOTER = DOC_FONT_PT.footer;
 
 type DocCtx = {
   pdf: PDFDocument;
