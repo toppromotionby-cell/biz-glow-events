@@ -22,6 +22,8 @@ import {
 } from "@/lib/admin/catalog-types";
 import { CatalogEditor } from "@/components/admin/catalog/CatalogEditor";
 import { CatalogListItem } from "@/components/admin/catalog/CatalogListItem";
+import { AttractionsMediaBackfill } from "@/components/admin/catalog/AttractionsMediaBackfill";
+
 import type { Row } from "@/components/admin/catalog/shared";
 
 export const Route = createFileRoute("/admin/catalog/$type")({
