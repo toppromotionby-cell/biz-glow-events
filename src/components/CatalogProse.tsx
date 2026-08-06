@@ -1,7 +1,21 @@
 // Единый компонент для блоков «Описание» и «Технические требования».
 // Рендерит текст одинаково независимо от авторизации — никаких условных веток
 // по сессии/правам, чтобы не было расхождений между гостем и пользователем.
+import { isHtml, sanitizeRichText } from "@/lib/rich-text";
+
 type Variant = "modal" | "page";
+
+function Prose({ text, className }: { text: string; className: string }) {
+  if (isHtml(text)) {
+    return (
+      <div
+        className={`prose-rich ${className}`}
+        dangerouslySetInnerHTML={{ __html: sanitizeRichText(text) }}
+      />
+    );
+  }
+  return <p className={`prose-wrap ${className}`}>{text}</p>;
+}
 
 export function CatalogProse({
   description,
@@ -28,7 +42,7 @@ export function CatalogProse({
         <section className={descGap}>
           <div className="glass rounded-2xl p-6 md:p-8 w-full min-w-0 overflow-hidden">
             <h2 className={`${descHeading} font-display font-semibold mb-4`}>Описание</h2>
-            <p className="prose-wrap text-[15px] leading-relaxed text-foreground/90">{description}</p>
+            <Prose text={description!.trim()} className="text-[15px] leading-relaxed text-foreground/90" />
           </div>
         </section>
       )}
@@ -36,7 +50,7 @@ export function CatalogProse({
         <section className={reqGap}>
           <div className="glass rounded-2xl p-6 md:p-8 w-full min-w-0 overflow-hidden">
             <h2 className={`${reqHeading} font-display font-semibold mb-3`}>Технические требования</h2>
-            <p className="prose-wrap text-sm leading-relaxed text-muted-foreground">{requirements}</p>
+            <Prose text={requirements!.trim()} className="text-sm leading-relaxed text-muted-foreground" />
           </div>
         </section>
       )}

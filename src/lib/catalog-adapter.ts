@@ -1,6 +1,7 @@
 // Адаптер: CatalogRow (Supabase) → CatalogItem (UI grid).
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogRow } from "@/lib/catalog.functions";
+import { toCardExcerpt } from "@/lib/rich-text";
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=70";
 
@@ -14,7 +15,7 @@ export function rowToItem(r: CatalogRow): CatalogItem {
   return {
     slug: r.slug,
     title: r.title,
-    description: r.short_description ?? r.description ?? "",
+    description: toCardExcerpt(r.short_description, r.description),
     priceFrom,
     image: photos[0] ?? FALLBACK_IMG,
     images: photos.length > 0 ? photos : [FALLBACK_IMG],
