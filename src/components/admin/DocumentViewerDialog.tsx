@@ -3,6 +3,7 @@
 import { Download, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { downloadUrl } from "@/lib/download";
 
 export type ViewerDoc = { url: string; name: string; mime: string };
 
