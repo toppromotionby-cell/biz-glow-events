@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Status = "idle" | "checking" | "ok" | "taken" | "error";
 
-const ALLOWED = ["blog_posts", "cases", "zones", "tech_equipment", "services", "production_items"] as const;
+const ALLOWED = ["blog_posts", "cases", "zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 type AllowedTable = (typeof ALLOWED)[number];
 
 export function useSlugUnique(table: AllowedTable, slug: string, currentId?: string, delayMs = 400) {

@@ -24,6 +24,7 @@ const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin/catalog/tech_equipment", label: "Каталог · Оборудование", icon: Package },
   { to: "/admin/catalog/services", label: "Каталог · Услуги", icon: Package },
   { to: "/admin/catalog/production_items", label: "Каталог · Производство", icon: Package },
+  { to: "/admin/catalog/attractions", label: "Каталог · Аттракционы", icon: Package },
   { to: "/admin/cases", label: "Кейсы", icon: Trophy },
   { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
   { to: "/admin/blog", label: "Блог", icon: Newspaper },
@@ -35,9 +36,9 @@ const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin/audit", label: "Аудит", icon: FileText },
 ];
 
-const TABLES = ["zones", "tech_equipment", "services", "production_items"] as const;
+const TABLES = ["zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 const TABLE_LABEL: Record<(typeof TABLES)[number], string> = {
-  zones: "Зоны", tech_equipment: "Оборудование", services: "Услуги", production_items: "Производство",
+  zones: "Зоны", tech_equipment: "Оборудование", services: "Услуги", production_items: "Производство", attractions: "Аттракционы",
 };
 
 export function AdminCommandPalette() {

@@ -38,3 +38,10 @@ export const PRODUCTION: CatalogItem[] = [
   { slug: "props-custom", title: "Реквизит и арт-объекты", description: "От 3D-печати до крупногабаритных инсталляций.", priceFrom: 350, image: "https://images.unsplash.com/photo-1518972559570-7cc1309f3229?w=800&q=70", tags: ["Реквизит"] },
   { slug: "branding-print", title: "Брендирование и печать", description: "Баннеры, пресс-воллы, наклейки, флаги.", priceFrom: 200, image: "https://images.unsplash.com/photo-1493612276216-ee3925520721?w=800&q=70", tags: ["Печать"] },
 ];
+
+export const ATTRACTIONS: CatalogItem[] = [
+  { slug: "attraction-teambuilding", title: "Тимбилдинг-аттракционы", description: "Командные активности для корпоративов и фестивалей.", priceFrom: 300, image: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=70", tags: ["Тимбилдинг"] },
+  { slug: "attraction-inflatable", title: "Надувные аттракционы", description: "Батуты, полосы препятствий и мягкие модули.", priceFrom: 250, image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=70", tags: ["Надувные"] },
+  { slug: "attraction-arcade", title: "Видеоигры и симуляторы", description: "Аркадные автоматы, гоночные и VR-симуляторы.", priceFrom: 400, image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=70", tags: ["Видеоигры"] },
+  { slug: "attraction-casino", title: "Фан-казино", description: "Рулетка, покер и блэкджек с крупье.", priceFrom: 600, image: "https://images.unsplash.com/photo-1541278107931-e006523892df?w=800&q=70", tags: ["Азартные"] },
+];

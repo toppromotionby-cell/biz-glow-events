@@ -19,6 +19,7 @@ const LABEL: Record<CatalogType, string> = {
   tech_equipment: "Оборудование",
   services: "Услуга",
   production_items: "Производство",
+  attractions: "Аттракцион",
 };
 
 const priceFrom = (p: unknown): number => priceFromUtil(p) ?? 0;

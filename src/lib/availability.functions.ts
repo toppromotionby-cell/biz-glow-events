@@ -17,7 +17,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 export const listItemAvailability = createServerFn({ method: "GET" })
   .inputValidator((i) =>
     z.object({
-      entity_type: z.enum(["zones", "tech_equipment", "services", "production_items"]),
+      entity_type: z.enum(["zones", "tech_equipment", "services", "production_items", "attractions"]),
       item_id: z.string().uuid(),
       from: z.string().regex(ISO_DATE).optional(),
       to: z.string().regex(ISO_DATE).optional(),

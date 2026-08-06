@@ -48,6 +48,7 @@ const PUBLIC_PATH: Record<CatalogTable, string> = {
   tech_equipment: "/equipment",
   services: "/services",
   production_items: "/production",
+  attractions: "/attractions",
 };
 
 export function CatalogEditor({

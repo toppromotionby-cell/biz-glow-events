@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type SearchHit = {
   id: string;
-  kind: "zones" | "tech_equipment" | "services" | "production_items" | "cases" | "blog_posts";
+  kind: "zones" | "tech_equipment" | "services" | "production_items" | "attractions" | "cases" | "blog_posts";
   slug: string;
   title: string;
   excerpt: string | null;
@@ -13,7 +13,7 @@ export type SearchHit = {
   score: number; // higher = better match
 };
 
-const KINDS = ["zones", "tech_equipment", "services", "production_items"] as const;
+const KINDS = ["zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 
 function scoreHit(q: string, title: string, excerpt: string | null): number {
   const ql = q.toLowerCase();

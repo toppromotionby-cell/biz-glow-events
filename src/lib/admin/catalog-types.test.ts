@@ -9,7 +9,7 @@ import {
 
 describe("catalog-types", () => {
   it("CatalogTable exactly equals the table tuple", () => {
-    expectTypeOf<CatalogTable>().toEqualTypeOf<"zones" | "tech_equipment" | "services" | "production_items">();
+    expectTypeOf<CatalogTable>().toEqualTypeOf<"zones" | "tech_equipment" | "services" | "production_items" | "attractions">();
   });
 
   it("CatalogRow<T> matches Database row exactly", () => {

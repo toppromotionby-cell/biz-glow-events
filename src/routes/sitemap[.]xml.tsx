@@ -22,6 +22,7 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/equipment", priority: "0.9", changefreq: "weekly" },
   { path: "/services", priority: "0.9", changefreq: "weekly" },
   { path: "/production", priority: "0.9", changefreq: "weekly" },
+  { path: "/attractions", priority: "0.9", changefreq: "weekly" },
   { path: "/blog", priority: "0.6", changefreq: "weekly" },
   { path: "/cases", priority: "0.8", changefreq: "monthly" },
   { path: "/testimonials", priority: "0.7", changefreq: "monthly" },
@@ -46,7 +47,7 @@ const STATIC: Array<{ path: string; priority: string; changefreq: string }> = [
 type Row = { slug: string; updated_at: string };
 
 async function fetchSlugs(
-  table: "zones" | "tech_equipment" | "services" | "production_items" | "blog_posts" | "cases",
+  table: "zones" | "tech_equipment" | "services" | "production_items" | "attractions" | "blog_posts" | "cases",
 ): Promise<Row[]> {
   const { data } = await supabaseAdmin
     .from(table)
@@ -80,11 +81,12 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         try {
-          const [zones, equipment, services, production, posts, cases] = await Promise.all([
+          const [zones, equipment, services, production, attractions, posts, cases] = await Promise.all([
             fetchSlugs("zones"),
             fetchSlugs("tech_equipment"),
             fetchSlugs("services"),
             fetchSlugs("production_items"),
+            fetchSlugs("attractions"),
             fetchSlugs("blog_posts"),
             fetchSlugs("cases"),
           ]);
@@ -94,6 +96,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             ...equipment.map((r) => ({ path: `/equipment/${r.slug}`, lastmod: r.updated_at })),
             ...services.map((r) => ({ path: `/services/${r.slug}`, lastmod: r.updated_at })),
             ...production.map((r) => ({ path: `/production/${r.slug}`, lastmod: r.updated_at })),
+            ...attractions.map((r) => ({ path: `/attractions/${r.slug}`, lastmod: r.updated_at })),
             ...posts.map((r) => ({ path: `/blog/${r.slug}`, lastmod: r.updated_at })),
             ...cases.map((r) => ({ path: `/cases/${r.slug}`, lastmod: r.updated_at })),
           ];

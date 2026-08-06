@@ -1,5 +1,5 @@
-// Типы каталога: zones | tech_equipment | services | production_items.
-// Все 4 таблицы имеют одинаковый набор колонок (см. supabase types.ts),
+// Типы каталога: zones | tech_equipment | services | production_items | attractions.
+// Все таблицы имеют одинаковый набор колонок (см. supabase types.ts),
 // поэтому общий «shared»-тип эквивалентен Row любой из них.
 import type { Database } from "@/integrations/supabase/types";
 
@@ -8,6 +8,7 @@ export const CATALOG_TABLES = [
   "tech_equipment",
   "services",
   "production_items",
+  "attractions",
 ] as const;
 
 export type CatalogTable = (typeof CATALOG_TABLES)[number];
@@ -25,19 +26,22 @@ export type CatalogRowTagged =
   | (CatalogRow<"zones"> & { readonly __table: "zones" })
   | (CatalogRow<"tech_equipment"> & { readonly __table: "tech_equipment" })
   | (CatalogRow<"services"> & { readonly __table: "services" })
-  | (CatalogRow<"production_items"> & { readonly __table: "production_items" });
+  | (CatalogRow<"production_items"> & { readonly __table: "production_items" })
+  | (CatalogRow<"attractions"> & { readonly __table: "attractions" });
 
 export type AnyCatalogRow =
   | CatalogRow<"zones">
   | CatalogRow<"tech_equipment">
   | CatalogRow<"services">
-  | CatalogRow<"production_items">;
+  | CatalogRow<"production_items">
+  | CatalogRow<"attractions">;
 
 export const CATALOG_LABELS: Record<CatalogTable, string> = {
   zones: "Зоны",
   tech_equipment: "Оборудование",
   services: "Услуги",
   production_items: "Производство",
+  attractions: "Аттракционы",
 };
 
 export function isCatalogTable(value: string): value is CatalogTable {

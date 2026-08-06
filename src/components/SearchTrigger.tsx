@@ -14,6 +14,7 @@ const CATALOG_KINDS: Record<string, CatalogType> = {
   tech_equipment: "tech_equipment",
   services: "services",
   production_items: "production_items",
+  attractions: "attractions",
 };
 
 const KIND_LABELS: Record<SearchHit["kind"], string> = {
@@ -21,6 +22,7 @@ const KIND_LABELS: Record<SearchHit["kind"], string> = {
   tech_equipment: "Оборудование",
   services: "Услуги",
   production_items: "Производство",
+  attractions: "Аттракционы",
   cases: "Кейсы",
   blog_posts: "Блог",
 };
@@ -30,6 +32,7 @@ const KIND_PATHS: Record<SearchHit["kind"], string> = {
   tech_equipment: "/equipment",
   services: "/services",
   production_items: "/production",
+  attractions: "/attractions",
   cases: "/cases",
   blog_posts: "/blog",
 };
