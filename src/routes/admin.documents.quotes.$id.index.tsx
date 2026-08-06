@@ -176,6 +176,7 @@ function Page() {
 
   const patch = (p: Partial<Quote>) => { dirtyRef.current = true; setState("dirty"); setQuote((q) => (q ? { ...q, ...p } : q)); };
   const patchItems = (next: QuoteItem[]) => { dirtyRef.current = true; setState("dirty"); setItems(next); };
+  const { fetchContacts } = useDocSuggest();
 
   // Автосохранение с дебаунсом.
   useEffect(() => {
