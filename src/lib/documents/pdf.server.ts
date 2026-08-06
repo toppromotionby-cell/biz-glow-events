@@ -1,7 +1,8 @@
 // PDF-генератор документов заказа (КП / Счёт / Договор / Акт).
 // Используется только server-side. Рендерит pdf-lib + кастомные TTF
-// (Roboto Regular/Bold) — кириллица в Standard 14 шрифтах PDF не работает,
-// поэтому встраиваем TTF подмножеством (subset:true).
+// (Inter Regular/Bold + Space Grotesk Bold — те же шрифты, что и в HTML-превью);
+// кириллица в Standard 14 шрифтах PDF не работает, поэтому встраиваем TTF
+// подмножеством (subset:true).
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
@@ -17,8 +18,9 @@ import {
   type PromoQuote as PromoQuoteT,
 } from "@/lib/promo-quote-model";
 
-import { ROBOTO_REGULAR_B64 } from "@/assets/fonts/roboto-regular.base64";
-import { ROBOTO_BOLD_B64 } from "@/assets/fonts/roboto-bold.base64";
+import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
+import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
+import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
 
 // Шрифты встроены в бандл (subset латиница+кириллица). Раньше они качались
 // по сети с публичного адреса того же воркера — такой self-subrequest иногда
@@ -32,15 +34,27 @@ function decodeBase64(b64: string): Uint8Array {
 
 let regularBytes: Uint8Array | null = null;
 let boldBytes: Uint8Array | null = null;
+let displayBytes: Uint8Array | null = null;
 
 function loadRegular(): Uint8Array {
-  if (!regularBytes) regularBytes = decodeBase64(ROBOTO_REGULAR_B64);
+  if (!regularBytes) regularBytes = decodeBase64(INTER_REGULAR_B64);
   return regularBytes;
 }
 function loadBold(): Uint8Array {
-  if (!boldBytes) boldBytes = decodeBase64(ROBOTO_BOLD_B64);
+  if (!boldBytes) boldBytes = decodeBase64(INTER_BOLD_B64);
   return boldBytes;
 }
+function loadDisplay(): Uint8Array {
+  if (!displayBytes) displayBytes = decodeBase64(SPACE_GROTESK_BOLD_B64);
+  return displayBytes;
+}
+
+/** В Space Grotesk нет кириллицы — для неё используем Inter Bold. */
+const CYRILLIC = /[\u0400-\u04FF]/;
+function displayFont(ctx: DocCtx, text: string): PDFFont {
+  return CYRILLIC.test(text) ? ctx.bold : ctx.display;
+}
+
 
 
 // === Стили / токены, согласованные с сайтом ===
@@ -68,6 +82,8 @@ type DocCtx = {
   pdf: PDFDocument;
   regular: PDFFont;
   bold: PDFFont;
+  display: PDFFont;
+
   page: PDFPage;
   y: number;
   pageNum: number;
@@ -195,14 +211,16 @@ function gap(ctx: DocCtx, n: number) {
 }
 
 function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
-  // Бренд слева
-  ctx.page.drawText(safe(settings.company_brand), {
+  // Бренд слева — дисплейным шрифтом, как в HTML-превью
+  const brand = safe(settings.company_brand);
+  ctx.page.drawText(brand, {
     x: MARGIN_X,
     y: PAGE_H - MARGIN_TOP - F22 * 0.8,
     size: F22,
-    font: ctx.bold,
+    font: displayFont(ctx, brand),
     color: TEXT,
   });
+
   const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
   ctx.page.drawText(
     `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
@@ -221,14 +239,16 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     color: ACCENT,
   });
   const numText = `№ ${num}`;
-  const numW = ctx.bold.widthOfTextAtSize(numText, 14);
+  const numFont = displayFont(ctx, numText);
+  const numW = numFont.widthOfTextAtSize(numText, 14);
   ctx.page.drawText(numText, {
     x: rightX - numW,
     y: PAGE_H - MARGIN_TOP - 22,
     size: 14,
-    font: ctx.bold,
+    font: numFont,
     color: TEXT,
   });
+
   const dateText = `от ${date}`;
   const dateW = ctx.regular.widthOfTextAtSize(dateText, 10);
   ctx.page.drawText(dateText, {
@@ -506,15 +526,17 @@ function header(order: DocOrder) {
 }
 
 async function createCtx(): Promise<DocCtx> {
-  const [regBytes, boldBytes] = await Promise.all([loadRegular(), loadBold()]);
+  const [regBytes, boldBytes, dispBytes] = [loadRegular(), loadBold(), loadDisplay()];
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   // subset:true → встраиваем только использованные глифы (минимизируем вес).
   const regular = await pdf.embedFont(regBytes, { subset: true });
   const bold = await pdf.embedFont(boldBytes, { subset: true });
+  const display = await pdf.embedFont(dispBytes, { subset: true });
   // ставим как default fallback на StandardFonts (на всякий случай — для emoji не нужно).
   void StandardFonts;
-  const ctx: DocCtx = { pdf, regular, bold, page: pdf.addPage([PAGE_W, PAGE_H]), y: 0, pageNum: 1 };
+  const ctx: DocCtx = { pdf, regular, bold, display, page: pdf.addPage([PAGE_W, PAGE_H]), y: 0, pageNum: 1 };
+
   ctx.y = PAGE_H - MARGIN_TOP;
   ctx.page.drawRectangle({ x: 0, y: PAGE_H - 4, width: PAGE_W, height: 4, color: ACCENT });
   return ctx;
