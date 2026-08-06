@@ -361,12 +361,13 @@ function drawCard(
     borderWidth: 0.6,
   });
   let cy = ctx.y - 14;
-  ctx.page.drawText(label.toUpperCase(), {
+  drawTracked(ctx.page, label.toUpperCase(), {
     x: x + 12,
     y: cy - 9,
-    size: 8.5,
+    size: F_LABEL,
     font: ctx.bold,
     color: ACCENT,
+    tracking: F_LABEL * 0.12,
   });
   cy -= 18;
   for (const t of titleLines) {
