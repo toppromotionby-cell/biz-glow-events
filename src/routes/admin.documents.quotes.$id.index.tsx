@@ -40,6 +40,8 @@ import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
+import { SuggestInput } from "@/components/admin/SuggestInput";
+import { useDocSuggest } from "@/hooks/use-doc-suggest";
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
 
