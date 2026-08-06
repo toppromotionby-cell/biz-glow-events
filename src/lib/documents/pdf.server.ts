@@ -537,12 +537,13 @@ function drawSignatures(
   const yStart = ctx.y;
   const drawCol = (x: number, b: typeof left) => {
     let cy = yStart;
-    ctx.page.drawText(b.title.toUpperCase(), {
+    drawTracked(ctx.page, b.title.toUpperCase(), {
       x,
       y: cy - 9,
-      size: 8.5,
+      size: F_LABEL,
       font: ctx.bold,
       color: ACCENT,
+      tracking: F_LABEL * 0.12,
     });
     cy -= 16;
     for (const l of b.lines.filter(Boolean)) {
