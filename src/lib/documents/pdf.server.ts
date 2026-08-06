@@ -764,7 +764,7 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
     width: PAGE_W - MARGIN_X * 2,
   });
   drawText(ctx, `г. ${settings.contract_jurisdiction_city} · ${date}`, {
-    size: 10,
+    size: DOC_FONT_PT.small,
     color: MUTED,
     align: "center",
     x: MARGIN_X,
