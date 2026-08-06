@@ -48,9 +48,8 @@ export function QuoteItemsPanel({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [includesFor, setIncludesFor] = useState<string | null>(null);
   const [newSectionOpen, setNewSectionOpen] = useState(false);
+  const [newSection, setNewSection] = useState("");
   const { fetchItems } = useDocSuggest();
-
-  const sections = useMemo(() => listSections(items), [items]);
 
   const sections = useMemo(() => listSections(items), [items]);
   const grouped = useMemo(() => {
