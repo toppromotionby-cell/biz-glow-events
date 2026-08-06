@@ -1097,7 +1097,7 @@ a[href],
   font-family: var(--font-display, inherit);
   font-weight: 700;
   line-height: 1.25;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   margin: 1.6em 0 0.6em;
 }
 .prose-rich h2 {
@@ -1112,7 +1112,7 @@ a[href],
 .prose-rich strong,
 .prose-rich b {
   font-weight: 600;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 .prose-rich ul,
 .prose-rich ol {
@@ -1129,19 +1129,19 @@ a[href],
   margin: 0.3em 0;
 }
 .prose-rich a {
-  color: hsl(var(--primary));
+  color: var(--primary);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 .prose-rich blockquote {
   margin: 0 0 0.9em;
   padding-left: 1em;
-  border-left: 2px solid hsl(var(--primary) / 0.4);
-  color: hsl(var(--muted-foreground));
+  border-left: 2px solid color-mix(in oklch, var(--primary) 40%, transparent);
+  color: var(--muted-foreground);
 }
 .prose-rich hr {
   margin: 1.2em 0;
-  border-color: hsl(var(--border));
+  border-color: var(--border);
 }
 .prose-rich table {
   width: 100%;
@@ -1151,7 +1151,7 @@ a[href],
 }
 .prose-rich th,
 .prose-rich td {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   padding: 0.45em 0.6em;
   text-align: left;
 }
