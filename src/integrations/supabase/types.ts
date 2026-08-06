@@ -298,6 +298,135 @@ export type Database = {
         }
         Relationships: []
       }
+      doc_contacts: {
+        Row: {
+          address: string
+          company: string
+          contact_role: string
+          created_at: string
+          email: string
+          id: string
+          last_used_at: string
+          match_key: string
+          name: string
+          phone: string
+          unp: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          address?: string
+          company?: string
+          contact_role?: string
+          created_at?: string
+          email?: string
+          id?: string
+          last_used_at?: string
+          match_key: string
+          name?: string
+          phone?: string
+          unp?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          address?: string
+          company?: string
+          contact_role?: string
+          created_at?: string
+          email?: string
+          id?: string
+          last_used_at?: string
+          match_key?: string
+          name?: string
+          phone?: string
+          unp?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      doc_item_catalog: {
+        Row: {
+          cost: number
+          created_at: string
+          description: string
+          id: string
+          includes: Json
+          last_used_at: string
+          match_key: string
+          price: number
+          section: string
+          title: string
+          unit: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          description?: string
+          id?: string
+          includes?: Json
+          last_used_at?: string
+          match_key: string
+          price?: number
+          section?: string
+          title: string
+          unit?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          description?: string
+          id?: string
+          includes?: Json
+          last_used_at?: string
+          match_key?: string
+          price?: number
+          section?: string
+          title?: string
+          unit?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      doc_text_snippets: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          last_used_at: string
+          match_key: string
+          updated_at: string
+          usage_count: number
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          last_used_at?: string
+          match_key: string
+          updated_at?: string
+          usage_count?: number
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          last_used_at?: string
+          match_key?: string
+          updated_at?: string
+          usage_count?: number
+          value?: string
+        }
+        Relationships: []
+      }
       document_settings: {
         Row: {
           accent_color: string
