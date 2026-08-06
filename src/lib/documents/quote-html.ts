@@ -408,7 +408,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
 <style>
-  :root { --accent: ${esc(accent)}; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --surface:#fafafa; ${templateVars(template)} }
+  :root { ${docCssVars(esc(accent))}; ${templateVars(template)} }
   @page { size: A4; margin: 14mm 12mm; }
   * { box-sizing: border-box; }
   body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:12px; line-height:1.55; }
