@@ -211,14 +211,16 @@ function gap(ctx: DocCtx, n: number) {
 }
 
 function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
-  // Бренд слева
-  ctx.page.drawText(safe(settings.company_brand), {
+  // Бренд слева — дисплейным шрифтом, как в HTML-превью
+  const brand = safe(settings.company_brand);
+  ctx.page.drawText(brand, {
     x: MARGIN_X,
     y: PAGE_H - MARGIN_TOP - F22 * 0.8,
     size: F22,
-    font: ctx.bold,
+    font: displayFont(ctx, brand),
     color: TEXT,
   });
+
   const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
   ctx.page.drawText(
     `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
