@@ -57,16 +57,13 @@ import type { KbRow, KbSort, KbTable } from "@/lib/doc-knowledge.server";
 
 export type { KbRow, KbSort, KbTable };
 
-const kbTable = z.enum(["contacts", "items", "texts"]);
-const kbSort = z.enum(["usage", "recent", "alpha"]);
-
 export const listKnowledgeRows = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
-      table: kbTable,
+      table: z.enum(["contacts", "items", "texts"]),
       term: z.string().max(200).optional(),
-      sort: kbSort.optional(),
+      sort: z.enum(["usage", "recent", "alpha"]).optional(),
       kind: z.string().max(40).optional(),
       page: z.number().int().min(0).max(10000).optional(),
       pageSize: z.number().int().min(1).max(200).optional(),
@@ -81,7 +78,7 @@ export const listKnowledgeRows = createServerFn({ method: "POST" })
 export const deleteKnowledgeRows = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ table: kbTable, ids: z.array(z.string().uuid()).min(1).max(500) }).parse(d),
+    z.object({ table: z.enum(["contacts", "items", "texts"]), ids: z.array(z.string().uuid()).min(1).max(500) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ deleted: number }> => {
     await assertStaff(context as never);
@@ -92,7 +89,7 @@ export const deleteKnowledgeRows = createServerFn({ method: "POST" })
 export const countStaleKnowledge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ table: kbTable, months: z.number().int().min(1).max(60).optional() }).parse(d),
+    z.object({ table: z.enum(["contacts", "items", "texts"]), months: z.number().int().min(1).max(60).optional() }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ count: number }> => {
     await assertStaff(context as never);
@@ -103,7 +100,7 @@ export const countStaleKnowledge = createServerFn({ method: "POST" })
 export const pruneStaleKnowledge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ table: kbTable, months: z.number().int().min(1).max(60).optional() }).parse(d),
+    z.object({ table: z.enum(["contacts", "items", "texts"]), months: z.number().int().min(1).max(60).optional() }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ deleted: number }> => {
     await assertStaff(context as never);
