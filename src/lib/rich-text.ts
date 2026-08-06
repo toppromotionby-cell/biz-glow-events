@@ -43,7 +43,7 @@ function cleanAttributes(tag: string, attrsRaw: string): string {
 }
 
 /**
- * Безопасный HTML: белый список тегов, вырезание data-*/style/on*-атрибутов.
+ * Безопасный HTML: белый список тегов, служебные атрибуты (data, style, on*) удаляются.
  * Неразрешённые теги удаляются вместе с разметкой, но текст внутри сохраняется.
  */
 export function sanitizeRichText(html: string): string {
