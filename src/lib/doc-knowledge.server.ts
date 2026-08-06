@@ -289,11 +289,36 @@ function searchFilter(table: KbTable, t: string): string {
   return ["kind", "value"].map((c) => `${c}.ilike.%${esc}%`).join(",");
 }
 
-export type KbRow = Record<string, unknown> & {
+export type KbRow = {
   id: string;
   usage_count: number;
   last_used_at: string;
   created_at: string;
+  // contacts
+  name?: string;
+  company?: string;
+  unp?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  contact_role?: string;
+  // items
+  section?: string;
+  title?: string;
+  description?: string;
+  unit?: string;
+  price?: number;
+  cost?: number;
+  // texts
+  kind?: string;
+  value?: string;
+};
+
+type LooseQuery = {
+  or: (f: string) => LooseQuery;
+  eq: (c: string, v: string) => LooseQuery;
+  order: (c: string, o: { ascending: boolean }) => LooseQuery;
+  then: Promise<{ data: unknown; count: number | null; error: { message: string } | null }>["then"];
 };
 
 export async function listKnowledge(opts: {
@@ -311,7 +336,7 @@ export async function listKnowledge(opts: {
   let q = supabaseAdmin
     .from(TABLE[opts.table])
     .select(COLUMNS[opts.table], { count: "exact" })
-    .range(page * size, page * size + size - 1);
+    .range(page * size, page * size + size - 1) as unknown as LooseQuery;
 
   if (t) q = q.or(searchFilter(opts.table, t));
   if (opts.table === "texts" && s(opts.kind)) q = q.eq("kind", s(opts.kind));
@@ -325,10 +350,18 @@ export async function listKnowledge(opts: {
     q = q.order(ALPHA_COL[opts.table], { ascending: true });
   }
 
-  const { data, count, error } = await q;
+  const { data, count, error } = await (q as unknown as Promise<{
+    data: unknown; count: number | null; error: { message: string } | null;
+  }>);
   if (error) throw new Error(error.message);
-  return { rows: (data ?? []) as unknown as KbRow[], total: count ?? 0 };
+  const rows = ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    ...r,
+    price: r["price"] == null ? undefined : Number(r["price"]),
+    cost: r["cost"] == null ? undefined : Number(r["cost"]),
+  })) as unknown as KbRow[];
+  return { rows, total: count ?? 0 };
 }
+
 
 export async function deleteKnowledge(table: KbTable, ids: string[]): Promise<number> {
   const list = ids.filter((v) => typeof v === "string" && v.length > 0);
