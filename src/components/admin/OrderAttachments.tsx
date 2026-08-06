@@ -109,14 +109,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
   const download = async (row: { file_path: string; file_name: string }) => {
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(row.file_path, 600);
     if (error) return toast.error(error.message);
-    const a = document.createElement("a");
-    a.href = data.signedUrl;
-    a.download = row.file_name;
-    a.target = "_blank";
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    downloadUrl(data.signedUrl, row.file_name);
   };
 
   return (
