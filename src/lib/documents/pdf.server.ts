@@ -473,44 +473,56 @@ function drawTable(
   }
 }
 
-// === Сводный блок «итого» ===
+// === Сводный блок «итого» (как в HTML-превью: справа, белый фон, акцентная строка «Итого») ===
 function drawSummary(
   ctx: DocCtx,
   rows: Array<{ label: string; value: string; emphasis?: boolean }>,
 ) {
-  const width = PAGE_W - MARGIN_X * 2;
-  const padX = 14;
-  const lineH = F12 * 1.6;
-  const height = rows.length * lineH + 16;
+  const width = Math.min(360 * 0.92, PAGE_W - MARGIN_X * 2);
+  const x = PAGE_W - MARGIN_X - width;
+  const padX = 13;
+  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * 1.5 + 8;
+  const height = rows.reduce((s, r) => s + rowH(r), 0);
 
-  ensureSpace(ctx, height + 6);
+  ensureSpace(ctx, height + 10);
   ctx.page.drawRectangle({
-    x: MARGIN_X,
+    x,
     y: ctx.y - height,
     width,
     height,
-    color: ACCENT_SOFT,
-    borderColor: ACCENT,
-    borderWidth: 0.6,
+    color: rgb(1, 1, 1),
+    borderColor: ACCENT_BORDER,
+    borderWidth: 0.7,
   });
 
-  let cy = ctx.y - 10;
+  let cy = ctx.y;
   for (const r of rows) {
+    const h = rowH(r);
     const size = r.emphasis ? F16 : F12;
-    const font = r.emphasis ? ctx.bold : ctx.regular;
-    const color = r.emphasis ? ACCENT : TEXT;
-    ctx.page.drawText(r.label, { x: MARGIN_X + padX, y: cy - size, size, font: ctx.regular, color: MUTED });
-    const w = font.widthOfTextAtSize(r.value, size);
-    ctx.page.drawText(r.value, {
-      x: MARGIN_X + width - padX - w,
-      y: cy - size,
+    if (r.emphasis) {
+      ctx.page.drawRectangle({ x: x + 0.7, y: cy - h, width: width - 1.4, height: h, color: ACCENT_SOFT });
+    }
+    const labelFont = r.emphasis ? ctx.bold : ctx.regular;
+    const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
+    const baseline = cy - (h + size * 0.72) / 2;
+    ctx.page.drawText(r.label, {
+      x: x + padX,
+      y: baseline,
       size,
-      font,
-      color,
+      font: labelFont,
+      color: r.emphasis ? TEXT : MUTED,
     });
-    cy -= lineH;
+    const w = valueFont.widthOfTextAtSize(r.value, size);
+    ctx.page.drawText(r.value, {
+      x: x + width - padX - w,
+      y: baseline,
+      size,
+      font: valueFont,
+      color: TEXT,
+    });
+    cy -= h;
   }
-  ctx.y -= height + 8;
+  ctx.y -= height + 10;
 }
 
 // === Подпись (две колонки) ===
