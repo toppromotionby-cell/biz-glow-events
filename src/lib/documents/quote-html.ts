@@ -412,58 +412,58 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   :root { ${docCssVars(esc(accent))}; ${templateVars(template)} }
   @page { size: A4; margin: 14mm 12mm; }
   * { box-sizing: border-box; }
-  body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:12px; line-height:1.55; }
+  body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:var(--fs-body); line-height:1.55; }
   .sheet { max-width: 820px; margin: 0 auto; background:#fff; padding: 28px 32px 36px; }
   h1,h2,h3 { font-family:"Space Grotesk",system-ui,sans-serif; letter-spacing:-0.02em; margin:0; }
   .bar { height:4px; background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff)); border-radius:3px; }
   .head { display:flex; justify-content:space-between; gap:20px; align-items:flex-start; padding:16px 0 14px; border-bottom:1px solid var(--line); }
-  .brand { font-family:"Space Grotesk",system-ui,sans-serif; font-size:22px; font-weight:700; }
-  .brand-sub { color:var(--muted); font-size:11px; margin-top:2px; }
+  .brand { font-family:"Space Grotesk",system-ui,sans-serif; font-size:var(--fs-brand); font-weight:700; }
+  .brand-sub { color:var(--muted); font-size:var(--fs-small); margin-top:2px; }
   .logo { height:40px; width:auto; display:block; margin-bottom:6px; }
-  .doc-kind { text-transform:uppercase; letter-spacing:.14em; font-size:9.5px; font-weight:600; color:var(--accent); }
-  .doc-num { font-family:"Space Grotesk",system-ui,sans-serif; font-size:18px; font-weight:700; }
-  .doc-date { color:var(--muted); font-size:11px; }
+  .doc-kind { text-transform:uppercase; letter-spacing:.14em; font-size:var(--fs-doc-kind); font-weight:600; color:var(--accent); }
+  .doc-num { font-family:"Space Grotesk",system-ui,sans-serif; font-size:var(--fs-doc-num); font-weight:700; }
+  .doc-date { color:var(--muted); font-size:var(--fs-doc-date); }
   .right { text-align:right; }
   .cover { margin:18px 0 6px; padding:18px 20px; border-radius:var(--radius); background:var(--cover-bg); border:1px solid var(--cover-border); }
-  .cover h1 { font-size:24px; }
-  .cover p { margin:8px 0 0; color:#374151; }
+  .cover h1 { font-size:var(--fs-cover); }
+  .cover p { margin:8px 0 0; color:var(--body); }
   .cover.cover-dark, .cover.cover-dark h1 { color:#fff; }
   .cover.cover-dark p { color:#d1d5db; }
-  h2.section { font-size:13px; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin:22px 0 8px; }
+  h2.section { font-size:var(--fs-section); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin:22px 0 8px; }
   .card { border:1px solid var(--line); background:var(--card-bg); border-radius:var(--radius); padding:12px 14px; }
-  .card .label { text-transform:uppercase; font-size:8.5px; letter-spacing:.12em; color:var(--accent); font-weight:600; }
-  .card .name { font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:13px; margin:4px 0 4px; }
-  .card .line { color:var(--muted); font-size:11px; }
+  .card .label { text-transform:uppercase; font-size:var(--fs-card-label); letter-spacing:.12em; color:var(--accent); font-weight:600; }
+  .card .name { font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:var(--fs-card-title); margin:4px 0 4px; }
+  .card .line { color:var(--muted); font-size:var(--fs-small); }
   table { width:100%; border-collapse:collapse; margin-top:6px; }
-  thead th { background:color-mix(in srgb,var(--accent) 12%,#fff); font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:8px; }
+  thead th { background:color-mix(in srgb,var(--accent) 12%,#fff); font-size:var(--fs-doc-kind); text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:8px; }
   tbody td { padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
   td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  td.qty, th.qty { text-align:center; vertical-align:middle; white-space:nowrap; font-variant-numeric:tabular-nums; width:78px; }
+  td.qty, th.qty { text-align:center; vertical-align:middle; white-space:nowrap; font-variant-numeric:tabular-nums; width:var(--qty-col); }
   td.qty .unit { display:block; margin-top:1px; }
   td.idx { color:var(--muted); width:26px; }
   .it-title { font-weight:600; }
-  .it-desc { color:var(--muted); font-size:11px; margin-top:2px; white-space:pre-line; }
-  .it-inc { margin:4px 0 0 14px; padding:0; color:var(--muted); font-size:11px; }
+  .it-desc { color:var(--muted); font-size:var(--fs-small); margin-top:2px; white-space:pre-line; }
+  .it-inc { margin:4px 0 0 14px; padding:0; color:var(--muted); font-size:var(--fs-small); }
   .it-inc li { margin:1px 0; }
-  .section-sub td { font-size:11px; color:var(--muted); background:#fafafa; }
+  .section-sub td { font-size:var(--fs-small); color:var(--muted); background:var(--surface); }
 
-  .unit { color:var(--muted); font-size:10px; }
+  .unit { color:var(--muted); font-size:var(--fs-micro); }
   .strong { font-weight:600; }
-  .section-row td { background:#fff; font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:12px; padding-top:14px; border-bottom:1px solid var(--line); }
+  .section-row td { background:#fff; font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:var(--fs-body); padding-top:14px; border-bottom:1px solid var(--line); }
   .totals { margin-top:14px; margin-left:auto; width:min(360px,100%); border:1px solid color-mix(in srgb,var(--accent) 40%,#fff); border-radius:var(--radius); overflow:hidden; }
-  .totals .row { display:flex; justify-content:space-between; padding:7px 14px; font-size:12px; }
-  .totals .row.total { background:color-mix(in srgb,var(--accent) 14%,#fff); font-weight:700; font-size:15px; font-family:"Space Grotesk",system-ui,sans-serif; }
-  .words { margin-top:8px; color:var(--muted); font-size:11px; font-style:italic; }
+  .totals .row { display:flex; justify-content:space-between; padding:7px 14px; font-size:var(--fs-body); }
+  .totals .row.total { background:color-mix(in srgb,var(--accent) 14%,#fff); font-weight:700; font-size:var(--fs-total); font-family:"Space Grotesk",system-ui,sans-serif; }
+  .words { margin-top:8px; color:var(--muted); font-size:var(--fs-small); font-style:italic; }
   .info-table td { padding:4px 0; border:0; }
   .info-table td.k { color:var(--muted); width:180px; }
   ul { margin:6px 0; padding-left:18px; }
   li { margin:2px 0; }
   p { margin:6px 0; }
   .sign { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:26px; }
-  .sign .who { text-transform:uppercase; font-size:8.5px; letter-spacing:.12em; color:var(--accent); font-weight:600; }
-  .sign-line { margin-top:44px; border-top:1px solid var(--line); padding-top:4px; color:var(--muted); font-size:11px; }
+  .sign .who { text-transform:uppercase; font-size:var(--fs-card-label); letter-spacing:.12em; color:var(--accent); font-weight:600; }
+  .sign-line { margin-top:44px; border-top:1px solid var(--line); padding-top:4px; color:var(--muted); font-size:var(--fs-small); }
   .sign img { max-height:60px; display:block; margin-top:6px; }
-  .footer { margin-top:24px; padding-top:10px; border-top:1px solid var(--line); color:var(--muted); font-size:10.5px; }
+  .footer { margin-top:24px; padding-top:10px; border-top:1px solid var(--line); color:var(--muted); font-size:var(--fs-footer); }
   @media print { body { background:#fff; } .sheet { max-width:none; padding:0; } }
 </style></head>
 <body><div class="sheet">
