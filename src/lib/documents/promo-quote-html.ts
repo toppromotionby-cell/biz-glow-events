@@ -1,4 +1,5 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
+import { BRAND_ACCENT } from "@/lib/documents/brand";
 import {
   computePromoTotals,
   formatMoney,
