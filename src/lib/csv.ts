@@ -1,4 +1,5 @@
 // CSV-экспорт без зависимостей. Корректно экранирует значения по RFC 4180.
+import { downloadBlob } from "@/lib/download";
 export function toCsv(rows: Record<string, unknown>[], columns?: string[]): string {
   if (rows.length === 0) return "";
   const cols = columns ?? Object.keys(rows[0]);
@@ -14,8 +15,5 @@ export function toCsv(rows: Record<string, unknown>[], columns?: string[]): stri
 export function downloadCsv(filename: string, csv: string) {
   // BOM для корректного отображения кириллицы в Excel
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, filename);
 }

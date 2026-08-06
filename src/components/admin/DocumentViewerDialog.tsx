@@ -3,6 +3,7 @@
 import { Download, ExternalLink, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { downloadUrl } from "@/lib/download";
 
 export type ViewerDoc = { url: string; name: string; mime: string };
 
@@ -23,10 +24,8 @@ export function DocumentViewerDialog({
           <div className="flex items-center gap-2 pr-6">
             {doc && (
               <>
-                <Button asChild size="sm" variant="outline">
-                  <a href={doc.url} download={doc.name}>
-                    <Download className="mr-1.5 h-4 w-4" />Скачать
-                  </a>
+                <Button size="sm" variant="outline" onClick={() => downloadUrl(doc.url, doc.name)}>
+                  <Download className="mr-1.5 h-4 w-4" />Скачать
                 </Button>
                 <Button asChild size="sm" variant="ghost">
                   <a href={doc.url} target="_blank" rel="noopener noreferrer">
