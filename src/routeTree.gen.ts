@@ -82,6 +82,7 @@ import { Route as AdminSettingsSocialRouteImport } from './routes/admin.settings
 import { Route as AdminSettingsEmailsRouteImport } from './routes/admin.settings.emails'
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as AdminDocumentsPromoIndexRouteImport } from './routes/admin.documents.promo.index'
@@ -466,6 +467,11 @@ const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminOrdersRoute,
 } as any)
+const AdminDocumentsKnowledgeRoute = AdminDocumentsKnowledgeRouteImport.update({
+  id: '/documents/knowledge',
+  path: '/documents/knowledge',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   id: '/$type',
   path: '/$type',
@@ -625,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
@@ -715,6 +722,7 @@ export interface FileRoutesByTo {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
@@ -808,6 +816,7 @@ export interface FileRoutesById {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
@@ -902,6 +911,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
+    | '/admin/documents/knowledge'
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
@@ -992,6 +1002,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin'
     | '/admin/catalog/$type'
+    | '/admin/documents/knowledge'
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
@@ -1084,6 +1095,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/admin/catalog/$type'
+    | '/admin/documents/knowledge'
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
@@ -1681,6 +1693,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdRouteImport
       parentRoute: typeof AdminOrdersRoute
     }
+    '/admin/documents/knowledge': {
+      id: '/admin/documents/knowledge'
+      path: '/documents/knowledge'
+      fullPath: '/admin/documents/knowledge'
+      preLoaderRoute: typeof AdminDocumentsKnowledgeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog/$type': {
       id: '/admin/catalog/$type'
       path: '/$type'
@@ -1863,6 +1882,7 @@ interface AdminRouteChildren {
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
@@ -1891,6 +1911,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
@@ -2028,13 +2049,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

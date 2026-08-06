@@ -50,3 +50,60 @@ export const suggestTexts = createServerFn({ method: "POST" })
     const { searchTexts } = await import("@/lib/doc-knowledge.server");
     return searchTexts(data.kind, data.term ?? "");
   });
+
+/* ---------------- Управление базой знаний (админка) ---------------- */
+
+import type { KbRow, KbSort, KbTable } from "@/lib/doc-knowledge.server";
+
+export type { KbRow, KbSort, KbTable };
+
+export const listKnowledgeRows = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      table: z.enum(["contacts", "items", "texts"]),
+      term: z.string().max(200).optional(),
+      sort: z.enum(["usage", "recent", "alpha"]).optional(),
+      kind: z.string().max(40).optional(),
+      page: z.number().int().min(0).max(10000).optional(),
+      pageSize: z.number().int().min(1).max(200).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ rows: KbRow[]; total: number }> => {
+    await assertStaff(context as never);
+    const { listKnowledge } = await import("@/lib/doc-knowledge.server");
+    return listKnowledge(data);
+  });
+
+export const deleteKnowledgeRows = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ table: z.enum(["contacts", "items", "texts"]), ids: z.array(z.string().uuid()).min(1).max(500) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ deleted: number }> => {
+    await assertStaff(context as never);
+    const { deleteKnowledge } = await import("@/lib/doc-knowledge.server");
+    return { deleted: await deleteKnowledge(data.table, data.ids) };
+  });
+
+export const countStaleKnowledge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ table: z.enum(["contacts", "items", "texts"]), months: z.number().int().min(1).max(60).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ count: number }> => {
+    await assertStaff(context as never);
+    const { countStale } = await import("@/lib/doc-knowledge.server");
+    return { count: await countStale(data.table, data.months ?? 6) };
+  });
+
+export const pruneStaleKnowledge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ table: z.enum(["contacts", "items", "texts"]), months: z.number().int().min(1).max(60).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ deleted: number }> => {
+    await assertStaff(context as never);
+    const { pruneStale } = await import("@/lib/doc-knowledge.server");
+    return { deleted: await pruneStale(data.table, data.months ?? 6) };
+  });
