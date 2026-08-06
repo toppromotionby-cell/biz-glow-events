@@ -1,6 +1,7 @@
 // Адаптер: CatalogRow (Supabase) → CatalogItem (UI grid).
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogRow } from "@/lib/catalog.functions";
+import { toCardExcerpt } from "@/lib/rich-text";
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=70";
 
