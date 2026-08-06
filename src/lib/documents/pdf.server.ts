@@ -1,7 +1,8 @@
 // PDF-генератор документов заказа (КП / Счёт / Договор / Акт).
 // Используется только server-side. Рендерит pdf-lib + кастомные TTF
-// (Roboto Regular/Bold) — кириллица в Standard 14 шрифтах PDF не работает,
-// поэтому встраиваем TTF подмножеством (subset:true).
+// (Inter Regular/Bold + Space Grotesk Bold — те же шрифты, что и в HTML-превью);
+// кириллица в Standard 14 шрифтах PDF не работает, поэтому встраиваем TTF
+// подмножеством (subset:true).
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
@@ -17,8 +18,9 @@ import {
   type PromoQuote as PromoQuoteT,
 } from "@/lib/promo-quote-model";
 
-import { ROBOTO_REGULAR_B64 } from "@/assets/fonts/roboto-regular.base64";
-import { ROBOTO_BOLD_B64 } from "@/assets/fonts/roboto-bold.base64";
+import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
+import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
+import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
 
 // Шрифты встроены в бандл (subset латиница+кириллица). Раньше они качались
 // по сети с публичного адреса того же воркера — такой self-subrequest иногда
@@ -32,15 +34,27 @@ function decodeBase64(b64: string): Uint8Array {
 
 let regularBytes: Uint8Array | null = null;
 let boldBytes: Uint8Array | null = null;
+let displayBytes: Uint8Array | null = null;
 
 function loadRegular(): Uint8Array {
-  if (!regularBytes) regularBytes = decodeBase64(ROBOTO_REGULAR_B64);
+  if (!regularBytes) regularBytes = decodeBase64(INTER_REGULAR_B64);
   return regularBytes;
 }
 function loadBold(): Uint8Array {
-  if (!boldBytes) boldBytes = decodeBase64(ROBOTO_BOLD_B64);
+  if (!boldBytes) boldBytes = decodeBase64(INTER_BOLD_B64);
   return boldBytes;
 }
+function loadDisplay(): Uint8Array {
+  if (!displayBytes) displayBytes = decodeBase64(SPACE_GROTESK_BOLD_B64);
+  return displayBytes;
+}
+
+/** В Space Grotesk нет кириллицы — для неё используем Inter Bold. */
+const CYRILLIC = /[\u0400-\u04FF]/;
+function displayFont(ctx: DocCtx, text: string): PDFFont {
+  return CYRILLIC.test(text) ? ctx.bold : ctx.display;
+}
+
 
 
 // === Стили / токены, согласованные с сайтом ===
