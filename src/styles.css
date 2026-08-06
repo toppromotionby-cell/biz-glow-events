@@ -1074,3 +1074,85 @@ a[href],
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+/* Импортированные описания каталога (HTML из внешних источников). */
+.prose-rich {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.prose-rich > *:first-child {
+  margin-top: 0;
+}
+.prose-rich > *:last-child {
+  margin-bottom: 0;
+}
+.prose-rich p {
+  margin: 0 0 0.85em;
+}
+.prose-rich h2,
+.prose-rich h3,
+.prose-rich h4 {
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  line-height: 1.25;
+  color: hsl(var(--foreground));
+  margin: 1.6em 0 0.6em;
+}
+.prose-rich h2 {
+  font-size: 1.15em;
+}
+.prose-rich h3 {
+  font-size: 1.05em;
+}
+.prose-rich h4 {
+  font-size: 1em;
+}
+.prose-rich strong,
+.prose-rich b {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.prose-rich ul,
+.prose-rich ol {
+  margin: 0 0 0.9em;
+  padding-left: 1.25em;
+}
+.prose-rich ul {
+  list-style: disc;
+}
+.prose-rich ol {
+  list-style: decimal;
+}
+.prose-rich li {
+  margin: 0.3em 0;
+}
+.prose-rich a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-rich blockquote {
+  margin: 0 0 0.9em;
+  padding-left: 1em;
+  border-left: 2px solid hsl(var(--primary) / 0.4);
+  color: hsl(var(--muted-foreground));
+}
+.prose-rich hr {
+  margin: 1.2em 0;
+  border-color: hsl(var(--border));
+}
+.prose-rich table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1em;
+  font-size: 0.95em;
+}
+.prose-rich th,
+.prose-rich td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.45em 0.6em;
+  text-align: left;
+}
+
