@@ -2,6 +2,7 @@
 // Browser-safe: используется и для live-превью в админке, и на сервере
 // (HTML-версия документа). Шрифты и токены — как на сайте (Space Grotesk / Inter).
 import type { DocumentSettings } from "@/lib/document-settings.functions";
+import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
 import {
