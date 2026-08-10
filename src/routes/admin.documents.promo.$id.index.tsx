@@ -215,8 +215,8 @@ function EditorPage() {
       .join(" · ");
   }, [quote?.company_overrides, settings]);
   const previewHtml = useMemo(
-    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit, companyLine }) : ""),
-    [quote, items, inlineEdit, companyLine],
+    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit, companyLine, checks }) : ""),
+    [quote, items, inlineEdit, companyLine, checks],
   );
 
 

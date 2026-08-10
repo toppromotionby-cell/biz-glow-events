@@ -7,7 +7,7 @@ import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
 
-import type { Quote, QuoteItem } from "@/lib/quotes-model";
+import type { Quote, QuoteItem, QuoteCheck, QuoteCheckScope } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
 import { vatRateLabel } from "@/lib/documents/vat";
 import {
@@ -242,7 +242,11 @@ function templateVars(template: string): string {
 }
 
 /** Опции рендера: editable включает подсветку блоков и двойной клик в live-превью. */
-export type QuoteHtmlOptions = { editable?: boolean };
+export type QuoteHtmlOptions = {
+  editable?: boolean;
+  /** Проверки документа — показываются прямо в превью рядом с проблемными местами. */
+  checks?: QuoteCheck[];
+};
 
 export function buildQuoteHtmlDoc(
   quote: Quote,
@@ -256,6 +260,30 @@ export function buildQuoteHtmlDoc(
     editable
       ? ` data-edit="${esc(target)}"${id != null ? ` data-edit-id="${esc(id)}"` : ""}${label ? ` data-edit-label="${esc(label)}"` : ""}`
       : "";
+
+  // ==== Инлайн-предупреждения превью ====
+  const allChecks = (opts.checks ?? []).filter((c) => c.level === "error" || c.level === "warn");
+  const checksByItem = new Map<string, QuoteCheck[]>();
+  const scopeChecks = (scope: QuoteCheckScope) => allChecks.filter((c) => c.scope === scope && !c.refId);
+  for (const ch of allChecks) {
+    if (ch.scope === "item" && ch.refId) {
+      if (!checksByItem.has(ch.refId)) checksByItem.set(ch.refId, []);
+      checksByItem.get(ch.refId)!.push(ch);
+    }
+  }
+  /** Значок с текстом причины. Не печатается. */
+  const chkList = (list: QuoteCheck[], cls = "") =>
+    list.length
+      ? `<div class="chk-list ${cls}">${list
+          .map(
+            (ch) =>
+              `<span class="chk chk-${ch.level}" title="${esc(ch.message)}"><span class="chk-ic">${
+                ch.level === "error" ? "!" : "?"
+              }</span>${esc(ch.message)}</span>`,
+          )
+          .join("")}</div>`
+      : "";
+
   const c = quoteCompany(quote, settings);
   const accent = (quote.design.accent_color || settings.accent_color || BRAND_ACCENT).trim();
   const t = computeTotals(quote, items);
@@ -300,8 +328,14 @@ export function buildQuoteHtmlDoc(
     .map(([section, rows]) => {
       const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${esc(section)}</td></tr>` : "";
       const body = rows
-        .map(
-          (it, i) => `<tr${ed("item", it.id, "Позиция")}>
+        .map((it, i) => {
+          const rowChecks = checksByItem.get(it.id) ?? [];
+          const rowCls = rowChecks.some((c) => c.level === "error")
+            ? " class=\"chk-row chk-row-error\""
+            : rowChecks.length
+              ? " class=\"chk-row chk-row-warn\""
+              : "";
+          return `<tr${rowCls}${ed("item", it.id, "Позиция")}>
         <td class="idx">${i + 1}</td>
         <td>
           <div class="it-title">${esc(it.title)}</div>
@@ -313,13 +347,15 @@ export function buildQuoteHtmlDoc(
                   .join("")}</ul>`
               : ""
           }
+          ${chkList(rowChecks)}
         </td>
         <td class="qty">${esc(it.qty)}${it.unit ? `<span class="unit">${esc(it.unit)}</span>` : ""}</td>
         <td class="num">${money(it.price)}</td>
         <td class="num strong">${money(it.price * it.qty)}</td>
-      </tr>`,
-        )
+      </tr>`;
+        })
         .join("");
+
       const subtotal =
         showSubtotals && section && rows.length > 1
           ? `<tr class="section-sub"><td colspan="4">Итого по разделу «${esc(section)}»</td><td class="num strong">${money(
@@ -349,7 +385,9 @@ export function buildQuoteHtmlDoc(
         return `<div class="cover ${template === "premium" ? "cover-dark" : ""}">
           <h1>${esc(applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers))}</h1>
           ${text ? `<p>${esc(text)}</p>` : ""}
-        </div>`;
+        </div>
+        ${chkList(scopeChecks("doc"))}`;
+
       case "client":
         return `${heading(b)}<div class="card">
           <div class="label">Заказчик</div>
@@ -364,6 +402,7 @@ export function buildQuoteHtmlDoc(
             .filter(Boolean)
             .map((l) => `<div class="line">${esc(l)}</div>`)
             .join("")}
+          ${chkList(scopeChecks("client"))}
         </div>`;
       case "event":
         return `${heading(b)}<div class="card">
@@ -376,7 +415,8 @@ export function buildQuoteHtmlDoc(
         return `${heading(b)}<table>
           <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
           <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}${vatRow}</tbody>
-        </table>`;
+        </table>
+        ${chkList(scopeChecks("item"))}`;
       case "totals":
         return `<div class="totals">
           <div class="row"><span>Стоимость позиций</span><span>${money(t.subtotal)}</span></div>
@@ -386,7 +426,9 @@ export function buildQuoteHtmlDoc(
           <div class="row total"><span>${t.vatEnabled ? "Итого с НДС" : "Итого"}</span><span>${money(t.total)}</span></div>
           ${t.prepayment ? `<div class="row"><span>Предоплата</span><span>${money(t.prepayment)}</span></div><div class="row"><span>Остаток</span><span>${money(t.balance)}</span></div>` : ""}
         </div>
+        ${chkList(scopeChecks("totals"), "chk-right")}
         <div class="words">${esc(amountToWords(t.total))}. ${esc(vatFootNote)}</div>`;
+
       case "included":
       case "excluded":
         return text ? `${heading(b)}<ul>${lines(text)}</ul>` : "";
@@ -445,12 +487,16 @@ export function buildQuoteHtmlDoc(
   };
 
   const renderBlock = (b: QuoteBlock): string => {
-    const html = renderBlockInner(b);
+    const inner = renderBlockInner(b);
+    const blockChecks = allChecks.filter((c) => c.scope === "block" && c.refId === b.id);
+    // Замечания к блоку показываем даже у пустого блока — иначе проблему в превью не видно.
+    const html = inner.trim() || blockChecks.length ? `${inner}${chkList(blockChecks)}` : inner;
     if (!editable || !html.trim()) return html;
     const cfg = BLOCK_EDIT_TARGET[b.type];
     if (!cfg) return html;
     return `<div${ed(cfg.target, cfg.useId ? b.id : undefined, cfg.label)}>${html}</div>`;
   };
+
 
   // Тумблеры оформления по-прежнему работают как «жёсткое» выключение блока.
   const hidden = new Set<string>();
@@ -528,6 +574,18 @@ export function buildQuoteHtmlDoc(
   .sign-line { margin-top:26px; border-top:1px solid var(--line); padding-top:3px; color:var(--muted); font-size:var(--fs-small); }
   .sign img { max-height:46px; display:block; margin-top:4px; }
   .footer { margin-top:12px; padding-top:7px; border-top:1px solid var(--line); color:var(--muted); font-size:var(--fs-footer); }
+  /* Инлайн-предупреждения превью: не попадают в печать и PDF */
+  .chk-list { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .chk-list.chk-right { justify-content:flex-end; }
+  .chk { display:inline-flex; align-items:center; gap:4px; font-size:var(--fs-micro); line-height:1.25; padding:2px 6px; border-radius:999px; border:1px solid; }
+  .chk-ic { display:inline-flex; align-items:center; justify-content:center; width:12px; height:12px; border-radius:50%; font-weight:700; font-size:9px; color:#fff; }
+  .chk-error { color:#991b1b; background:#fef2f2; border-color:#fecaca; }
+  .chk-error .chk-ic { background:#dc2626; }
+  .chk-warn { color:#92400e; background:#fffbeb; border-color:#fde68a; }
+  .chk-warn .chk-ic { background:#d97706; }
+  tr.chk-row-error td { background:#fef2f2; }
+  tr.chk-row-warn td { background:#fffbeb; }
+  @media print { .chk-list { display:none !important; } tr.chk-row td { background:transparent !important; } }
   @media print { body { background:#fff; } .sheet { max-width:none; padding:0; } }
   ${
     editable

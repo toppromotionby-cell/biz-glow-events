@@ -12,6 +12,7 @@ import {
   promoNumberDisplay,
   type PromoItem,
   type PromoQuote,
+  type PromoCheck,
 } from "@/lib/promo-quote-model";
 
 function esc(s: unknown): string {
@@ -31,9 +32,30 @@ function nf(n: number): string {
 export function buildPromoQuoteBody(
   quote: PromoQuote,
   items: PromoItem[],
-  opts: { editable?: boolean; companyLine?: string } = {},
+  opts: { editable?: boolean; companyLine?: string; checks?: PromoCheck[] } = {},
 ): string {
   const editable = opts.editable === true;
+  // Инлайн-предупреждения превью: привязаны к индексу позиции, в печать не идут.
+  const allChecks = opts.checks ?? [];
+  const checksByIndex = new Map<number, PromoCheck[]>();
+  for (const ch of allChecks) {
+    if (ch.itemIndex == null) continue;
+    if (!checksByIndex.has(ch.itemIndex)) checksByIndex.set(ch.itemIndex, []);
+    checksByIndex.get(ch.itemIndex)!.push(ch);
+  }
+  const globalChecks = allChecks.filter((c) => c.itemIndex == null);
+  const chkList = (list: PromoCheck[]) =>
+    list.length
+      ? `<div class="chk-list">${list
+          .map(
+            (ch) =>
+              `<span class="chk chk-${ch.level}" title="${esc(ch.message)}"><span class="chk-ic">${
+                ch.level === "error" ? "!" : "?"
+              }</span>${esc(ch.message)}</span>`,
+          )
+          .join("")}</div>`
+      : "";
+
 
   /** Метка редактируемой зоны — только для live-превью в админке. */
   const ed = (target: string, id?: string, label?: string) =>
@@ -67,14 +89,24 @@ export function buildPromoQuoteBody(
                   .map((x) => `<li>${esc(x.text)}${x.note ? ` — ${esc(x.note)}` : ""}</li>`)
                   .join("")}</ul>`
               : "";
-          const cells: string[] = [`<td class="c-title">${esc(it.title)}${inc}</td>`, `<td class="c-unit">${esc(it.unit)}</td>`];
+          const rowChecks = checksByIndex.get(items.indexOf(it)) ?? [];
+          const rowCls = rowChecks.some((c) => c.level === "error")
+            ? " chk-row chk-row-error"
+            : rowChecks.length
+              ? " chk-row chk-row-warn"
+              : "";
+          const cells: string[] = [
+            `<td class="c-title">${esc(it.title)}${inc}${chkList(rowChecks)}</td>`,
+            `<td class="c-unit">${esc(it.unit)}</td>`,
+          ];
           if (quote.show_qty) cells.push(`<td class="c-num">${nf(it.qty).replace(",00", "")}</td>`);
           if (quote.show_total_qty) cells.push(`<td class="c-num">${nf(lineQty(it)).replace(",00", "")}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
           if (quote.show_notes) cells.push(`<td class="c-note">${esc(it.note)}</td>`);
-          return `<tr${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
+          return `<tr class="${rowCls.trim()}"${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
         })
+
         .join("");
       const sub =
         quote.show_section_subtotals && sec.name && sec.items.length > 1
@@ -176,6 +208,7 @@ export function buildPromoQuoteBody(
     <tbody>${rowsHtml || `<tr><td colspan="${colCount}" class="empty">Позиции не добавлены</td></tr>`}${extraRows.join("")}</tbody>
   </table>
   <table class="totals"${ed("totals", undefined, "Итоги")}><tbody>${totalsRows}</tbody></table>
+  ${chkList(globalChecks)}
   ${
     quote.footer_note
       ? `<div class="footer-note"${ed("footer", undefined, "Примечание")}>${esc(quote.footer_note).replaceAll("\n", "<br/>")}</div>`
@@ -217,6 +250,16 @@ export const PROMO_DOC_CSS = `
 .promo-doc .footer-note { margin-top: 16px; color: #45454d; font-size: 11px; }
 .promo-doc .footer-note-empty { color: #9a9aa2; font-style: italic; }
 @media print { .promo-doc .footer-note-empty { display: none; } }
+.promo-doc .chk-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.promo-doc .chk { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; line-height: 1.25; padding: 2px 6px; border-radius: 999px; border: 1px solid; }
+.promo-doc .chk-ic { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; border-radius: 50%; font-weight: 700; font-size: 9px; color: #fff; }
+.promo-doc .chk-error { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+.promo-doc .chk-error .chk-ic { background: #dc2626; }
+.promo-doc .chk-warn { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+.promo-doc .chk-warn .chk-ic { background: #d97706; }
+.promo-doc tr.chk-row-error td { background: #fef2f2; }
+.promo-doc tr.chk-row-warn td { background: #fffbeb; }
+@media print { .promo-doc .chk-list { display: none !important; } .promo-doc tr.chk-row td { background: transparent !important; } }
 [data-edit] { cursor: pointer; }
 .promo-doc [data-edit]:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media print { .promo-doc [data-edit]:hover { outline: none; } .promo-doc { font-size: 11px; } }
