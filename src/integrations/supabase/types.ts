@@ -343,24 +343,72 @@ export type Database = {
       catalog_categories: {
         Row: {
           created_at: string
+          description: string
           entity_type: string
+          icon: string
           id: string
           name: string
+          slug: string | null
           sort_order: number
+          updated_at: string
+          visible: boolean
         }
         Insert: {
           created_at?: string
+          description?: string
           entity_type: string
+          icon?: string
           id?: string
           name: string
+          slug?: string | null
           sort_order?: number
+          updated_at?: string
+          visible?: boolean
         }
         Update: {
           created_at?: string
+          description?: string
           entity_type?: string
+          icon?: string
           id?: string
           name?: string
+          slug?: string | null
           sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
+      catalog_sections: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          key: string
+          sort_order: number
+          title: string
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          icon?: string
+          key: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          key?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          visible?: boolean
         }
         Relationships: []
       }
