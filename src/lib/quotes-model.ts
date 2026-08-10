@@ -491,7 +491,11 @@ export const quotePatchSchema = z.object({
   event_notes: z.string().max(3000).optional(),
   company_overrides: z.record(z.string(), z.string()).optional(),
   logo_url: z.string().max(1000).nullable().optional(),
-  logo_layout: z.unknown().optional().transform(normalizeLogoLayout),
+  logo_layout: z
+    .unknown()
+    .optional()
+    .transform((v) => (v === undefined ? undefined : normalizeLogoLayout(v))),
+
   signature_url: z.string().max(1000).nullable().optional(),
   stamp_url: z.string().max(1000).nullable().optional(),
   texts: z.record(z.string(), z.string()).optional(),
