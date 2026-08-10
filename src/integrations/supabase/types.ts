@@ -1717,6 +1717,116 @@ export type Database = {
         }
         Relationships: []
       }
+      presentation_slides: {
+        Row: {
+          content_json: Json
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          image_url: string | null
+          is_visible: boolean
+          position: number
+          presentation_id: string
+          quote_item_id: string | null
+          subtitle: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content_json?: Json
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean
+          position?: number
+          presentation_id: string
+          quote_item_id?: string | null
+          subtitle?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          content_json?: Json
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          image_url?: string | null
+          is_visible?: boolean
+          position?: number
+          presentation_id?: string
+          quote_item_id?: string | null
+          subtitle?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_slides_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentations: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          quote_id: string | null
+          status: string
+          template: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          quote_id?: string | null
+          status?: string
+          template?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          quote_id?: string | null
+          status?: string
+          template?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presentations_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_items: {
         Row: {
           category: string | null

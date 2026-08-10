@@ -88,6 +88,7 @@ import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.docu
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as AdminDocumentsPromoIndexRouteImport } from './routes/admin.documents.promo.index'
+import { Route as AdminDocumentsPresentationsIndexRouteImport } from './routes/admin.documents.presentations.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -100,8 +101,10 @@ import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders
 import { Route as AdminOrdersIdActRouteImport } from './routes/admin.orders.$id.act'
 import { Route as AdminDocumentsQuotesIdIndexRouteImport } from './routes/admin.documents.quotes.$id.index'
 import { Route as AdminDocumentsPromoIdIndexRouteImport } from './routes/admin.documents.promo.$id.index'
+import { Route as AdminDocumentsPresentationsIdIndexRouteImport } from './routes/admin.documents.presentations.$id.index'
 import { Route as AdminDocumentsQuotesIdRenderRouteImport } from './routes/admin.documents.quotes.$id.render'
 import { Route as AdminDocumentsPromoIdRenderRouteImport } from './routes/admin.documents.promo.$id.render'
+import { Route as AdminDocumentsPresentationsIdRenderRouteImport } from './routes/admin.documents.presentations.$id.render'
 import { Route as AdminDocumentsFinanceIdRenderRouteImport } from './routes/admin.documents.finance.$id.render'
 
 const ZonesRoute = ZonesRouteImport.update({
@@ -502,6 +505,12 @@ const AdminDocumentsPromoIndexRoute =
     path: '/documents/promo/',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminDocumentsPresentationsIndexRoute =
+  AdminDocumentsPresentationsIndexRouteImport.update({
+    id: '/documents/presentations/',
+    path: '/documents/presentations/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -567,6 +576,12 @@ const AdminDocumentsPromoIdIndexRoute =
     path: '/documents/promo/$id/',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminDocumentsPresentationsIdIndexRoute =
+  AdminDocumentsPresentationsIdIndexRouteImport.update({
+    id: '/documents/presentations/$id/',
+    path: '/documents/presentations/$id/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminDocumentsQuotesIdRenderRoute =
   AdminDocumentsQuotesIdRenderRouteImport.update({
     id: '/documents/quotes/$id/render',
@@ -577,6 +592,12 @@ const AdminDocumentsPromoIdRenderRoute =
   AdminDocumentsPromoIdRenderRouteImport.update({
     id: '/documents/promo/$id/render',
     path: '/documents/promo/$id/render',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminDocumentsPresentationsIdRenderRoute =
+  AdminDocumentsPresentationsIdRenderRouteImport.update({
+    id: '/documents/presentations/$id/render',
+    path: '/documents/presentations/$id/render',
     getParentRoute: () => AdminRoute,
   } as any)
 const AdminDocumentsFinanceIdRenderRoute =
@@ -674,11 +695,14 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/presentations/': typeof AdminDocumentsPresentationsIndexRoute
   '/admin/documents/promo/': typeof AdminDocumentsPromoIndexRoute
   '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/finance/$id/render': typeof AdminDocumentsFinanceIdRenderRoute
+  '/admin/documents/presentations/$id/render': typeof AdminDocumentsPresentationsIdRenderRoute
   '/admin/documents/promo/$id/render': typeof AdminDocumentsPromoIdRenderRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/presentations/$id/': typeof AdminDocumentsPresentationsIdIndexRoute
   '/admin/documents/promo/$id/': typeof AdminDocumentsPromoIdIndexRoute
   '/admin/documents/quotes/$id/': typeof AdminDocumentsQuotesIdIndexRoute
 }
@@ -768,11 +792,14 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/presentations': typeof AdminDocumentsPresentationsIndexRoute
   '/admin/documents/promo': typeof AdminDocumentsPromoIndexRoute
   '/admin/documents/quotes': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/finance/$id/render': typeof AdminDocumentsFinanceIdRenderRoute
+  '/admin/documents/presentations/$id/render': typeof AdminDocumentsPresentationsIdRenderRoute
   '/admin/documents/promo/$id/render': typeof AdminDocumentsPromoIdRenderRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/presentations/$id': typeof AdminDocumentsPresentationsIdIndexRoute
   '/admin/documents/promo/$id': typeof AdminDocumentsPromoIdIndexRoute
   '/admin/documents/quotes/$id': typeof AdminDocumentsQuotesIdIndexRoute
 }
@@ -865,11 +892,14 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/presentations/': typeof AdminDocumentsPresentationsIndexRoute
   '/admin/documents/promo/': typeof AdminDocumentsPromoIndexRoute
   '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/finance/$id/render': typeof AdminDocumentsFinanceIdRenderRoute
+  '/admin/documents/presentations/$id/render': typeof AdminDocumentsPresentationsIdRenderRoute
   '/admin/documents/promo/$id/render': typeof AdminDocumentsPromoIdRenderRoute
   '/admin/documents/quotes/$id/render': typeof AdminDocumentsQuotesIdRenderRoute
+  '/admin/documents/presentations/$id/': typeof AdminDocumentsPresentationsIdIndexRoute
   '/admin/documents/promo/$id/': typeof AdminDocumentsPromoIdIndexRoute
   '/admin/documents/quotes/$id/': typeof AdminDocumentsQuotesIdIndexRoute
 }
@@ -963,11 +993,14 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/presentations/'
     | '/admin/documents/promo/'
     | '/admin/documents/quotes/'
     | '/admin/documents/finance/$id/render'
+    | '/admin/documents/presentations/$id/render'
     | '/admin/documents/promo/$id/render'
     | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/presentations/$id/'
     | '/admin/documents/promo/$id/'
     | '/admin/documents/quotes/$id/'
   fileRoutesByTo: FileRoutesByTo
@@ -1057,11 +1090,14 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/presentations'
     | '/admin/documents/promo'
     | '/admin/documents/quotes'
     | '/admin/documents/finance/$id/render'
+    | '/admin/documents/presentations/$id/render'
     | '/admin/documents/promo/$id/render'
     | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/presentations/$id'
     | '/admin/documents/promo/$id'
     | '/admin/documents/quotes/$id'
   id:
@@ -1153,11 +1189,14 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/presentations/'
     | '/admin/documents/promo/'
     | '/admin/documents/quotes/'
     | '/admin/documents/finance/$id/render'
+    | '/admin/documents/presentations/$id/render'
     | '/admin/documents/promo/$id/render'
     | '/admin/documents/quotes/$id/render'
+    | '/admin/documents/presentations/$id/'
     | '/admin/documents/promo/$id/'
     | '/admin/documents/quotes/$id/'
   fileRoutesById: FileRoutesById
@@ -1773,6 +1812,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsPromoIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/documents/presentations/': {
+      id: '/admin/documents/presentations/'
+      path: '/documents/presentations'
+      fullPath: '/admin/documents/presentations/'
+      preLoaderRoute: typeof AdminDocumentsPresentationsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1857,6 +1903,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsPromoIdIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/documents/presentations/$id/': {
+      id: '/admin/documents/presentations/$id/'
+      path: '/documents/presentations/$id'
+      fullPath: '/admin/documents/presentations/$id/'
+      preLoaderRoute: typeof AdminDocumentsPresentationsIdIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/documents/quotes/$id/render': {
       id: '/admin/documents/quotes/$id/render'
       path: '/documents/quotes/$id/render'
@@ -1869,6 +1922,13 @@ declare module '@tanstack/react-router' {
       path: '/documents/promo/$id/render'
       fullPath: '/admin/documents/promo/$id/render'
       preLoaderRoute: typeof AdminDocumentsPromoIdRenderRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/documents/presentations/$id/render': {
+      id: '/admin/documents/presentations/$id/render'
+      path: '/documents/presentations/$id/render'
+      fullPath: '/admin/documents/presentations/$id/render'
+      preLoaderRoute: typeof AdminDocumentsPresentationsIdRenderRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/documents/finance/$id/render': {
@@ -1946,11 +2006,14 @@ interface AdminRouteChildren {
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
+  AdminDocumentsPresentationsIndexRoute: typeof AdminDocumentsPresentationsIndexRoute
   AdminDocumentsPromoIndexRoute: typeof AdminDocumentsPromoIndexRoute
   AdminDocumentsQuotesIndexRoute: typeof AdminDocumentsQuotesIndexRoute
   AdminDocumentsFinanceIdRenderRoute: typeof AdminDocumentsFinanceIdRenderRoute
+  AdminDocumentsPresentationsIdRenderRoute: typeof AdminDocumentsPresentationsIdRenderRoute
   AdminDocumentsPromoIdRenderRoute: typeof AdminDocumentsPromoIdRenderRoute
   AdminDocumentsQuotesIdRenderRoute: typeof AdminDocumentsQuotesIdRenderRoute
+  AdminDocumentsPresentationsIdIndexRoute: typeof AdminDocumentsPresentationsIdIndexRoute
   AdminDocumentsPromoIdIndexRoute: typeof AdminDocumentsPromoIdIndexRoute
   AdminDocumentsQuotesIdIndexRoute: typeof AdminDocumentsQuotesIdIndexRoute
 }
@@ -1976,11 +2039,16 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
+  AdminDocumentsPresentationsIndexRoute: AdminDocumentsPresentationsIndexRoute,
   AdminDocumentsPromoIndexRoute: AdminDocumentsPromoIndexRoute,
   AdminDocumentsQuotesIndexRoute: AdminDocumentsQuotesIndexRoute,
   AdminDocumentsFinanceIdRenderRoute: AdminDocumentsFinanceIdRenderRoute,
+  AdminDocumentsPresentationsIdRenderRoute:
+    AdminDocumentsPresentationsIdRenderRoute,
   AdminDocumentsPromoIdRenderRoute: AdminDocumentsPromoIdRenderRoute,
   AdminDocumentsQuotesIdRenderRoute: AdminDocumentsQuotesIdRenderRoute,
+  AdminDocumentsPresentationsIdIndexRoute:
+    AdminDocumentsPresentationsIdIndexRoute,
   AdminDocumentsPromoIdIndexRoute: AdminDocumentsPromoIdIndexRoute,
   AdminDocumentsQuotesIdIndexRoute: AdminDocumentsQuotesIdIndexRoute,
 }
@@ -2123,13 +2191,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
