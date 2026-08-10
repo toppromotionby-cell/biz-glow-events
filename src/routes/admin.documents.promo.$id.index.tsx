@@ -226,7 +226,7 @@ function EditorPage() {
         {/* Шапка */}
         <div className="sticky top-0 z-20 -mx-2 flex flex-wrap items-center gap-2 bg-background/95 px-2 py-2 backdrop-blur">
           <Button asChild variant="ghost" size="sm">
-            <Link to="/admin/documents/promo"><ArrowLeft className="mr-1 h-4 w-4" />К списку</Link>
+            <Link to="/admin/documents"><ArrowLeft className="mr-1 h-4 w-4" />К документам</Link>
           </Button>
           <div className="mr-auto">
             <div className="font-semibold">{quote.project || "Без названия"}</div>
