@@ -1063,6 +1063,10 @@ function drawSignatures(
   ensureSpace(ctx, 14 + Math.max(measureCol(left), measureCol(right)));
   ctx.y -= 14;
   const yStart = ctx.y;
+  // Линия подписи в обеих колонках на одном уровне — независимо от числа строк.
+  const linesH = (b: typeof left) =>
+    b.lines.filter(Boolean).reduce((s, l) => s + wrapText(ctx.regular, l, F11, colW).length * F11 * LH_TEXT, 0);
+  const blockH = Math.max(linesH(left), linesH(right));
   const drawCol = (x: number, b: typeof left) => {
     let cy = yStart;
     drawTracked(ctx.page, b.title.toUpperCase(), {
@@ -1081,7 +1085,8 @@ function drawSignatures(
         cy -= F11 * LH_TEXT;
       }
     }
-    cy -= 28;
+    cy = yStart - 16 - blockH - 28;
+
     ctx.page.drawLine({
       start: { x, y: cy },
       end: { x: x + colW, y: cy },
