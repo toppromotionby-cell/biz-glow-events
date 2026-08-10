@@ -1,10 +1,12 @@
-// Модальное окно «быстрый просмотр» позиции каталога.
-// Минималистично: галерея, цена с qty, основные блоки. Полный FAQ/видео — на детальной странице.
-import { useEffect, useState } from "react";
-import { SearchX, ShoppingCart, MessageSquare } from "lucide-react";
+// Модальное окно «Подробнее» для позиции каталога.
+// Содержит ключевые данные: медиа (фото + видео), цены, занятость, требования,
+// состав и доп. опции, а также инлайн-запрос КП без переходов на другие страницы.
+import { useEffect, useMemo, useState } from "react";
+import { SearchX, ShoppingCart, FileText, Play, Maximize2, ChevronDown, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCatalogItem, type CatalogType, type CatalogRow } from "@/lib/catalog.functions";
 import { MediaShield } from "@/components/MediaShield";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
@@ -15,10 +17,10 @@ import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
+import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
+import { QuickQuoteRequest } from "@/components/catalog/QuickQuoteRequest";
 import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
-import { useAuth } from "@/hooks/use-auth";
-import { openAuthPrompt } from "@/lib/auth-prompt";
 import { toast } from "sonner";
 import { priceFrom } from "@/lib/utils";
 
@@ -92,21 +94,33 @@ export function CatalogQuickView({
   );
 }
 
-function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; type: CatalogType; onClose: () => void }) {
+type Slide = { kind: "photo" | "video"; src: string };
+
+function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: string; type: CatalogType; onClose: () => void }) {
   const navigate = useNavigate();
   const photos = item.photo_urls ?? [];
   const videos = item.video_urls ?? [];
   const features = asArray<string>(item.features);
   const from = priceFrom(item.pricing);
+
+  const slides = useMemo<Slide[]>(
+    () => [
+      ...photos.map((src) => ({ kind: "photo" as const, src })),
+      ...videos.map((src) => ({ kind: "video" as const, src })),
+    ],
+    [photos, videos],
+  );
   const [active, setActive] = useState(0);
-  const cover = photos[active];
+  const [lightbox, setLightbox] = useState(false);
+  const current = slides[active];
   useEffect(() => {
-    if (photos.length < 2) return;
+    // Автопрокрутка только по фото и только пока пользователь не открыл видео/лайтбокс.
+    if (photos.length < 2 || lightbox || current?.kind === "video") return;
     const id = window.setInterval(() => {
       setActive((i) => (i + 1) % photos.length);
     }, 5000);
     return () => window.clearInterval(id);
-  }, [photos.length]);
+  }, [photos.length, lightbox, current?.kind]);
 
   const tiers = getTiers(item.pricing);
   const hasTiers = tiers.length > 0;
@@ -133,22 +147,36 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
   const needsSelection = !isHourMode && hasTiers && selectedTier === null;
   const isByRequest = !needsSelection && !isHourMode && unitPrice <= 0;
 
-
-  const hasPhotos = photos.length > 0;
-  const hasDescription = Boolean(item.description || item.requirements);
+  const hasMedia = slides.length > 0;
+  const hasDescription = Boolean(item.description);
+  const hasRequirements = Boolean(item.requirements && item.requirements.trim());
   const extras = (item as unknown as { extras?: unknown }).extras;
   const hasExtras = Array.isArray(extras) && extras.length > 0;
 
-  const { isAuthenticated } = useAuth();
+  const unitLabel = unitFromPricing(item.pricing);
+  const chips: string[] = [
+    item.category ?? "",
+    from !== null ? `от ${formatBYNTotal(from)}` : "Цена по запросу",
+    unitLabel ? `Ед.: ${unitLabel}` : "",
+    isHourMode && hourPricing?.minHours ? `Мин. ${hourPricing.minHours} ч` : "",
+    photos.length > 0 ? `${photos.length} фото` : "",
+    videos.length > 0 ? `${videos.length} видео` : "",
+  ].filter(Boolean);
+
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(true);
+
+  function openQuote() {
+    setQuoteOpen(true);
+    // Прокручиваем к форме после раскрытия.
+    window.setTimeout(() => {
+      document.getElementById("quickview-quote")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 60);
+  }
+
   function handleOrder() {
-    if (!isAuthenticated) { openAuthPrompt({ reason: "Войдите, чтобы оформить заказ или отправить запрос." }); return; }
     if (needsSelection) return;
-    if (isByRequest) {
-      try { localStorage.setItem("lead_subject_v1", effectiveTitle); } catch { /* ignore */ }
-      onClose();
-      navigate({ to: "/contacts" });
-      return;
-    }
+    if (isByRequest) { openQuote(); return; }
     addToCart({
       entity_type: type,
       id: effectiveId,
@@ -164,47 +192,71 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
     navigate({ to: "/cart" });
   }
 
+  const detailPath = `${basePath.replace(/\/$/, "")}/${item.slug}`;
+
   return (
     <div className="flex flex-col max-h-[92vh]">
       {/* Scrollable body */}
       <div className="overflow-y-auto overscroll-contain px-5 pt-5 pb-4 md:px-7 md:pt-7">
-        <div className={`grid gap-6 ${hasPhotos ? "lg:grid-cols-2" : "grid-cols-1"}`}>
-          {/* Gallery */}
-          {hasPhotos && (
+        <div className={`grid gap-6 ${hasMedia ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+          {/* Медиа */}
+          {hasMedia && (
             <div className="space-y-2.5">
-              <MediaShield className="rounded-2xl overflow-hidden aspect-[4/3] glass">
-                <StorageImg
-                  path={cover!}
-                  alt={item.title}
-                  className="h-full w-full object-cover transition-opacity duration-500"
-                  fallbackClassName="h-full w-full"
-                />
-              </MediaShield>
-              {photos.length > 1 && (
+              <div className="relative">
+                {current?.kind === "video" ? (
+                  <VideoFrame url={current.src} title={item.title} />
+                ) : (
+                  <>
+                    <MediaShield className="rounded-2xl overflow-hidden aspect-[4/3] glass">
+                      <StorageImg
+                        path={current!.src}
+                        alt={item.title}
+                        className="h-full w-full object-cover transition-opacity duration-500"
+                        fallbackClassName="h-full w-full"
+                      />
+                    </MediaShield>
+                    <button
+                      type="button"
+                      onClick={() => setLightbox(true)}
+                      aria-label="Открыть фото на весь экран"
+                      className="absolute bottom-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-md bg-background/80 backdrop-blur border border-border/50 hover:bg-background transition"
+                    >
+                      <Maximize2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </>
+                )}
+              </div>
+              {slides.length > 1 && (
                 <div
                   className="grid gap-2"
-                  style={{ gridTemplateColumns: `repeat(${Math.min(photos.length, 5)}, minmax(0, 1fr))` }}
+                  style={{ gridTemplateColumns: `repeat(${Math.min(slides.length, 5)}, minmax(0, 1fr))` }}
                 >
-                  {photos.slice(0, 5).map((p, i) => (
+                  {slides.slice(0, 10).map((s, i) => (
                     <button
-                      key={p + i}
+                      key={s.src + i}
                       type="button"
                       onClick={() => setActive(i)}
-                      aria-label={`Фото ${i + 1}`}
-                      className={`aspect-square rounded-md overflow-hidden border transition ${i === active ? "border-primary" : "border-border/40 opacity-70 hover:opacity-100"}`}
+                      aria-label={s.kind === "video" ? `Видео ${i + 1}` : `Фото ${i + 1}`}
+                      className={`relative aspect-square rounded-md overflow-hidden border transition ${i === active ? "border-primary" : "border-border/40 opacity-70 hover:opacity-100"}`}
                     >
-                      <StorageImg path={p} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+                      {s.kind === "photo" ? (
+                        <StorageImg path={s.src} className="h-full w-full object-cover" fallbackClassName="h-full w-full" />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center bg-muted/50">
+                          <Play className="h-4 w-4 text-primary" aria-hidden="true" />
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
               {hasDescription && (
-                <CatalogProse description={item.description} requirements={item.requirements} variant="modal" />
+                <CatalogProse description={item.description} variant="modal" />
               )}
             </div>
           )}
 
-          {/* Info column */}
+          {/* Информация */}
           <aside className="space-y-4 min-w-0">
             <header>
               {item.category && <div className="text-xs uppercase tracking-wide text-primary">{item.category}</div>}
@@ -212,133 +264,185 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
               {item.short_description && (
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.short_description}</p>
               )}
+              {chips.length > 0 && (
+                <ul className="mt-3 flex flex-wrap gap-1.5">
+                  {chips.map((c) => (
+                    <li key={c} className="rounded-full border border-border/50 bg-muted/30 px-2.5 py-1 text-[11px] text-muted-foreground">
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </header>
 
-            {/* Price block (desktop) — sticky CTA on mobile lives in footer below */}
+            {/* Цены / занятость / требования */}
             <div className="glass rounded-xl p-4 space-y-3 hidden md:block">
-              <div className="text-xs text-muted-foreground">Стоимость актуальна в безналичном расчёте</div>
-              <PriceGate>
-                {isHourMode ? (
-                  <HourPriceSlider
-                    pricing={hourPricing!}
-                    hours={hours}
-                    onChange={setHours}
-                    rawPricing={item.pricing}
-                  />
-                ) : (
-                  <>
-                    <div className="text-2xl font-display font-bold tabular-nums">
-                      {tierPrice !== null
-                        ? formatBYNTotal(tierPrice)
-                        : from !== null
-                        ? `от ${formatBYNTotal(from)}`
-                        : "По запросу"}
-                    </div>
-                    {hasTiers && (
+              <Tabs defaultValue="price">
+                <TabsList className="w-full">
+                  <TabsTrigger value="price" className="flex-1">Цены</TabsTrigger>
+                  <TabsTrigger value="availability" className="flex-1">Занятость</TabsTrigger>
+                  {hasRequirements && <TabsTrigger value="requirements" className="flex-1">Требования</TabsTrigger>}
+                </TabsList>
+
+                <TabsContent value="price" className="space-y-3 pt-3">
+                  <div className="text-xs text-muted-foreground">Стоимость актуальна в безналичном расчёте</div>
+                  <PriceGate>
+                    {isHourMode ? (
+                      <HourPriceSlider
+                        pricing={hourPricing!}
+                        hours={hours}
+                        onChange={setHours}
+                        rawPricing={item.pricing}
+                      />
+                    ) : (
                       <>
-                        <div className="text-xs text-muted-foreground">
-                          {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                        <div className="text-2xl font-display font-bold tabular-nums">
+                          {tierPrice !== null
+                            ? formatBYNTotal(tierPrice)
+                            : from !== null
+                            ? `от ${formatBYNTotal(from)}`
+                            : "По запросу"}
                         </div>
-                        <PriceTableView
-                          pricing={item.pricing}
-                          selectable
-                          selectedIndex={selectedTier}
-                          onSelect={(i) => setSelectedTier(i)}
-                        />
+                        {hasTiers && (
+                          <>
+                            <div className="text-xs text-muted-foreground">
+                              {needsSelection ? "Выберите позицию из таблицы" : `Выбрано: ${activeTier?.label || "—"}`}
+                            </div>
+                            <PriceTableView
+                              pricing={item.pricing}
+                              selectable
+                              selectedIndex={selectedTier}
+                              onSelect={(i) => setSelectedTier(i)}
+                            />
+                          </>
+                        )}
                       </>
                     )}
-                  </>
-                )}
-              </PriceGate>
+                  </PriceGate>
 
-              {qtyKind && !needsSelection && !isByRequest && (
-                <>
-                  <QuantityStepper
-                    value={qty}
-                    onChange={setQty}
-                    kind={qtyKind}
-                    min={1}
-                    max={maxQtyFor(qtyKind)}
-                    label={qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
-                  />
-                  <div className="flex items-baseline justify-between border-t border-border/30 pt-2">
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground">Итого</span>
-                    <span className="text-lg font-display font-bold tabular-nums">
-                      {formatBYNTotal(total)}
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        {effectiveQty} × {formatBYNTotal(unitPrice)}
-                      </span>
-                    </span>
-                  </div>
-                </>
-              )}
-
-
-              {needsSelection ? (
-                <button type="button" disabled className="inline-flex w-full justify-center rounded-md bg-muted/40 px-5 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed">
-                  Выберите позицию, чтобы заказать
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleOrder}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition"
-                >
-                  {isByRequest ? (
-                    <><MessageSquare className="h-4 w-4" /> Запросить смету</>
-                  ) : (
+                  {qtyKind && !needsSelection && !isByRequest && (
                     <>
-                      <ShoppingCart className="h-4 w-4" />
-                      Заказать{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(total)}` : ""}
+                      <QuantityStepper
+                        value={qty}
+                        onChange={setQty}
+                        kind={qtyKind}
+                        min={1}
+                        max={maxQtyFor(qtyKind)}
+                        label={qtyKind === "day" ? "Дней" : qtyKind === "person" ? "Гостей" : "Кол-во"}
+                      />
+                      <div className="flex items-baseline justify-between border-t border-border/30 pt-2">
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">Итого</span>
+                        <span className="text-lg font-display font-bold tabular-nums">
+                          {formatBYNTotal(total)}
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            {effectiveQty} × {formatBYNTotal(unitPrice)}
+                          </span>
+                        </span>
+                      </div>
                     </>
                   )}
-                </button>
-              )}
+                </TabsContent>
 
+                <TabsContent value="availability" className="pt-3">
+                  <AvailabilityCalendar entityType={type} itemId={item.id} />
+                </TabsContent>
+
+                {hasRequirements && (
+                  <TabsContent value="requirements" className="pt-3">
+                    <CatalogProse requirements={item.requirements} variant="modal" />
+                  </TabsContent>
+                )}
+              </Tabs>
+
+              <div className="space-y-2 border-t border-border/30 pt-3">
+                {needsSelection ? (
+                  <button type="button" disabled className="inline-flex w-full justify-center rounded-md bg-muted/40 px-5 py-2.5 text-sm font-medium text-muted-foreground cursor-not-allowed">
+                    Выберите позицию, чтобы заказать
+                  </button>
+                ) : (
+                  !isByRequest && (
+                    <button
+                      type="button"
+                      onClick={handleOrder}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      Заказать{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(total)}` : ""}
+                    </button>
+                  )
+                )}
+                <button
+                  type="button"
+                  onClick={openQuote}
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-medium transition ${
+                    isByRequest
+                      ? "bg-gradient-primary text-primary-foreground glow-primary hover:opacity-95"
+                      : "border border-primary/40 text-foreground hover:bg-primary/10"
+                  }`}
+                >
+                  <FileText className="h-4 w-4" /> Запросить КП
+                </button>
+              </div>
             </div>
 
             {features.length > 0 && (
               <div className="glass rounded-xl p-4">
-                <h3 className="font-semibold mb-2 text-sm">Что входит</h3>
-                <ul className="space-y-1.5 text-sm">
-                  {features.slice(0, 6).map((f, i) => (
-                    <li key={i} className="flex gap-2"><span className="text-primary">•</span><span>{String(f)}</span></li>
-                  ))}
-                </ul>
+                <button
+                  type="button"
+                  onClick={() => setFeaturesOpen((v) => !v)}
+                  aria-expanded={featuresOpen}
+                  className="flex w-full items-center justify-between text-sm font-semibold"
+                >
+                  Что входит
+                  <ChevronDown className={`h-4 w-4 transition-transform ${featuresOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                </button>
+                {featuresOpen && (
+                  <ul className="mt-2 space-y-1.5 text-sm">
+                    {features.map((f, i) => (
+                      <li key={i} className="flex gap-2"><span className="text-primary">•</span><span>{String(f)}</span></li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
             {hasExtras && <ExtrasBlock extras={extras} variant="modal" />}
+
+            {/* Мобильные вкладки занятости/требований */}
+            <div className="md:hidden space-y-3">
+              <Tabs defaultValue="availability">
+                <TabsList className="w-full">
+                  <TabsTrigger value="availability" className="flex-1">Занятость</TabsTrigger>
+                  {hasRequirements && <TabsTrigger value="requirements" className="flex-1">Требования</TabsTrigger>}
+                </TabsList>
+                <TabsContent value="availability" className="pt-3">
+                  <AvailabilityCalendar entityType={type} itemId={item.id} />
+                </TabsContent>
+                {hasRequirements && (
+                  <TabsContent value="requirements" className="pt-3">
+                    <CatalogProse requirements={item.requirements} variant="modal" />
+                  </TabsContent>
+                )}
+              </Tabs>
+            </div>
           </aside>
         </div>
 
-        {videos.length > 0 && (
-          <section className="mt-6">
-            <h3 className="text-base font-display font-semibold mb-3">Видео</h3>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {videos.map((url, i) => {
-                const isYouTube = /youtube\.com|youtu\.be/i.test(url);
-                if (isYouTube) {
-                  let embed = url;
-                  const m = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([\w-]{6,})/);
-                  if (m) embed = `https://www.youtube.com/embed/${m[1]}`;
-                  return (
-                    <iframe
-                      key={url + i}
-                      src={embed}
-                      title={`${item.title} — видео ${i + 1}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      loading="lazy"
-                      className="w-full rounded-xl bg-black aspect-video glass border-0"
-                    />
-                  );
-                }
-                return <StorageVideo key={url + i} path={url} className="w-full rounded-xl bg-black aspect-video glass" />;
-              })}
-            </div>
+        {quoteOpen && (
+          <section id="quickview-quote" className="mt-6">
+            <QuickQuoteRequest subject={effectiveTitle} source={`quickview:${type}`} />
           </section>
         )}
+
+        <div className="mt-6 border-t border-border/40 pt-3">
+          <Link
+            to={detailPath}
+            onClick={onClose}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" /> Открыть полную страницу
+          </Link>
+        </div>
       </div>
 
       {/* Sticky mobile CTA */}
@@ -367,23 +471,68 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
           />
         )}
         <div className="flex items-stretch gap-2">
+          {!isByRequest && (
+            <button
+              type="button"
+              onClick={handleOrder}
+              disabled={needsSelection}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {needsSelection ? "Выберите позицию" : `Заказать — ${formatBYNTotal(total || unitPrice)}`}
+            </button>
+          )}
           <button
             type="button"
-            onClick={handleOrder}
-            disabled={needsSelection}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={openQuote}
+            className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition ${
+              isByRequest
+                ? "flex-1 bg-gradient-primary text-primary-foreground glow-primary"
+                : "border border-primary/40 text-foreground hover:bg-primary/10"
+            }`}
           >
-            {needsSelection ? "Выберите позицию" : isByRequest ? (
-              <><MessageSquare className="h-4 w-4" /> Запросить смету</>
-            ) : (
-              <>
-                <ShoppingCart className="h-4 w-4" />
-                Заказать — {formatBYNTotal(total || unitPrice)}
-              </>
-            )}
+            <FileText className="h-4 w-4" /> КП
           </button>
         </div>
       </div>
+
+      {/* Лайтбокс для фото */}
+      <Dialog open={lightbox} onOpenChange={setLightbox}>
+        <DialogContent className="max-w-5xl w-[min(98vw,64rem)] bg-background/95" bodyClassName="p-2">
+          <DialogTitle className="sr-only">{item.title} — просмотр фото</DialogTitle>
+          <DialogDescription className="sr-only">Полноэкранный просмотр фотографии</DialogDescription>
+          {current?.kind === "photo" && (
+            <MediaShield className="rounded-xl overflow-hidden">
+              <StorageImg
+                path={current.src}
+                alt={item.title}
+                className="w-full max-h-[85vh] object-contain"
+                fallbackClassName="w-full aspect-video"
+              />
+            </MediaShield>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function VideoFrame({ url, title }: { url: string; title: string }) {
+  const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+  if (isYouTube) {
+    let embed = url;
+    const m = url.match(/(?:embed\/|watch\?v=|youtu\.be\/)([\w-]{6,})/);
+    if (m) embed = `https://www.youtube.com/embed/${m[1]}`;
+    return (
+      <iframe
+        src={embed}
+        title={`${title} — видео`}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        loading="lazy"
+        className="w-full rounded-2xl bg-black aspect-video glass border-0"
+      />
+    );
+  }
+  return <StorageVideo path={url} className="w-full rounded-2xl bg-black aspect-video glass" />;
 }
