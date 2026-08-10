@@ -49,17 +49,22 @@ export const listPresentations = createServerFn({ method: "GET" })
         companyId: z.string().uuid().nullable().optional(),
         quoteId: z.string().uuid().nullable().optional(),
         status: z.string().max(20).optional(),
+        sort: z.enum(["updated", "created", "title"]).optional(),
       })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<PresentationListRow[]> => {
     await assertStaff(context as never);
 
+    const sort = data.sort ?? "updated";
+    const orderCol = sort === "title" ? "title" : sort === "created" ? "created_at" : "updated_at";
+
     let q = context.supabase
       .from("presentations")
       .select("*, presentation_slides(id)")
-      .order("updated_at", { ascending: false })
+      .order(orderCol, { ascending: sort === "title" })
       .limit(200);
+
 
     const term = (data.search ?? "").trim();
     if (term) q = q.ilike("title", `%${term}%`);
@@ -494,6 +499,24 @@ export const deletePresentation = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Переименование из списка — без пересохранения слайдов. */
+export const renamePresentation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; title: string }) =>
+    z.object({ id: z.string().uuid(), title: z.string().trim().min(1).max(200) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const { error } = await context.supabase
+      .from("presentations")
+      .update({ title: data.title })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 
 /* ---------------- Справочник КП для селектов ---------------- */
 
