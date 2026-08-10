@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CatalogSectionCard, catalogNavQueryOptions, FALLBACK_NAV } from "@/components/catalog/CatalogNav";
 
-export const Route = createFileRoute("/catalog")({
+export const Route = createFileRoute("/catalog/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(catalogNavQueryOptions);
   },
