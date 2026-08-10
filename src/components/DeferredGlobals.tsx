@@ -8,6 +8,7 @@ const FloatingContacts = lazy(() => import("@/components/FloatingContacts").then
 const CartSync = lazy(() => import("@/components/CartSync").then((m) => ({ default: m.CartSync })));
 const ScriptInjector = lazy(() => import("@/components/ScriptInjector").then((m) => ({ default: m.ScriptInjector })));
 const CookieConsent = lazy(() => import("@/components/CookieConsent").then((m) => ({ default: m.CookieConsent })));
+const MobileActionBar = lazy(() => import("@/components/MobileActionBar").then((m) => ({ default: m.MobileActionBar })));
 
 
 export function DeferredGlobals() {
@@ -38,8 +39,10 @@ export function DeferredGlobals() {
       <EffectsLayer />
       <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
       <FloatingContacts />
+      <MobileActionBar />
       <CartSync />
       <ScriptInjector />
+      
       
     </Suspense>
   );
