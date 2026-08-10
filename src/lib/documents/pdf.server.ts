@@ -903,7 +903,7 @@ function drawSummary(
     });
     cy -= h;
   }
-  ctx.y -= height + 10;
+  ctx.y -= height + 10 * D;
 }
 
 // === Подпись (две колонки) ===
