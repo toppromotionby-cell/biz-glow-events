@@ -500,6 +500,24 @@ export const deletePresentation = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Переименование из списка — без пересохранения слайдов. */
+export const renamePresentation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; title: string }) =>
+    z.object({ id: z.string().uuid(), title: z.string().trim().min(1).max(200) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const { error } = await context.supabase
+      .from("presentations")
+      .update({ title: data.title })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 /* ---------------- Справочник КП для селектов ---------------- */
 
 export type QuoteOption = {
