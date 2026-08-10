@@ -441,6 +441,7 @@ function Page() {
         width={Math.max(320, canvasWidth - 32)}
         index={currentIndex}
         total={slides.length}
+        showWarnings
         onEdit={(patch) => patchSlide(current.id, patch)}
       />
       <p className="mt-2 text-xs text-muted-foreground">
