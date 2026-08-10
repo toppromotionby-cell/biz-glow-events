@@ -1,0 +1,317 @@
+// Диалог редактирования блока документа, открываемый двойным кликом в живом превью КП.
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Field } from "@/components/admin/Field";
+import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
+import { VatSettings } from "@/components/admin/VatSettings";
+import { normalizeVatMode, type Quote, type QuoteItem } from "@/lib/quotes-model";
+import type { CompanyOverrides } from "@/lib/documents/company";
+import type { DocumentSettings } from "@/lib/document-settings.functions";
+
+export type DocEditTarget = { target: string; id: string | null };
+
+const TITLES: Record<string, string> = {
+  header: "Номер и даты документа",
+  company: "Реквизиты этого КП",
+  cover: "Заголовок и вступление",
+  client: "Заказчик",
+  event: "Мероприятие",
+  item: "Позиция",
+  section: "Раздел позиций",
+  totals: "Итоги и оплата",
+  block: "Текстовый блок",
+  footer: "Подвал документа",
+};
+
+function n(v: string): number {
+  const x = Number(String(v).replace(",", "."));
+  return Number.isFinite(x) ? x : 0;
+}
+
+export function BlockEditDialog({
+  edit,
+  quote,
+  items,
+  settings,
+  onClose,
+  onSaveQuote,
+  onSaveItems,
+}: {
+  edit: DocEditTarget | null;
+  quote: Quote;
+  items: QuoteItem[];
+  settings: DocumentSettings;
+  onClose: () => void;
+  onSaveQuote: (patch: Partial<Quote>) => void;
+  onSaveItems: (next: QuoteItem[]) => void;
+}) {
+  const target = edit?.target ?? "";
+  const [draft, setDraft] = useState<Partial<Quote>>({});
+  const [item, setItem] = useState<QuoteItem | null>(null);
+  const [sectionName, setSectionName] = useState("");
+
+  const block = useMemo(() => {
+    if (!edit) return null;
+    if (target === "block") return quote.blocks.find((b) => b.id === edit.id) ?? null;
+    if (target === "cover") return quote.blocks.find((b) => b.type === "cover") ?? null;
+    return null;
+  }, [edit, target, quote.blocks]);
+
+  useEffect(() => {
+    if (!edit) return;
+    setDraft({
+      quote_number: quote.quote_number ?? "",
+      doc_date: quote.doc_date,
+      validity_days: quote.validity_days,
+      valid_until_override: quote.valid_until_override,
+      title: quote.title,
+      client_company: quote.client_company,
+      client_name: quote.client_name,
+      client_unp: quote.client_unp,
+      client_phone: quote.client_phone,
+      client_email: quote.client_email,
+      client_address: quote.client_address,
+      event_date: quote.event_date,
+      event_time_start: quote.event_time_start,
+      event_time_end: quote.event_time_end,
+      venue: quote.venue,
+      guests_count: quote.guests_count,
+      event_format: quote.event_format,
+      setup_note: quote.setup_note,
+      event_notes: quote.event_notes,
+      discount_type: quote.discount_type,
+      discount_value: quote.discount_value,
+      prepayment_type: quote.prepayment_type,
+      prepayment_value: quote.prepayment_value,
+      delivery_amount: quote.delivery_amount,
+      vat_mode: quote.vat_mode,
+      vat_rate: quote.vat_rate,
+      vat_as_line: quote.vat_as_line,
+      company_overrides: quote.company_overrides,
+      texts: quote.texts,
+      blocks: quote.blocks,
+    });
+    setItem(edit.target === "item" ? (items.find((i) => i.id === edit.id) ?? null) : null);
+    setSectionName(edit.target === "section" ? (edit.id ?? "") : "");
+  }, [edit, quote, items]);
+
+  if (!edit) return null;
+
+  const set = (p: Partial<Quote>) => setDraft((d) => ({ ...d, ...p }));
+  const setBlock = (p: { title?: string; content?: string }) => {
+    if (!block) return;
+    set({ blocks: (draft.blocks ?? quote.blocks).map((b) => (b.id === block.id ? { ...b, ...p } : b)) });
+  };
+  const currentBlock = block ? (draft.blocks ?? quote.blocks).find((b) => b.id === block.id) ?? block : null;
+
+  const submit = () => {
+    if (target === "item" && item) {
+      onSaveItems(items.map((it) => (it.id === item.id ? item : it)));
+    } else if (target === "section") {
+      const from = edit.id ?? "";
+      onSaveItems(items.map((it) => ((it.section ?? "") === from ? { ...it, section: sectionName } : it)));
+    } else {
+      onSaveQuote(draft);
+    }
+    onClose();
+  };
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{TITLES[target] ?? "Редактирование"}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          {target === "header" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Номер (пусто = авто)">
+                <Input value={draft.quote_number ?? ""} onChange={(e) => set({ quote_number: e.target.value })} />
+              </Field>
+              <Field label="Дата документа">
+                <Input type="date" value={draft.doc_date ?? ""} onChange={(e) => set({ doc_date: e.target.value })} />
+              </Field>
+              <Field label="Срок действия, дней">
+                <Input
+                  type="number"
+                  value={String(draft.validity_days ?? 0)}
+                  onChange={(e) => set({ validity_days: Math.max(0, Math.round(n(e.target.value))) })}
+                />
+              </Field>
+              <Field label="Действительно до (вручную)">
+                <Input
+                  type="date"
+                  value={draft.valid_until_override ?? ""}
+                  onChange={(e) => set({ valid_until_override: e.target.value || null })}
+                />
+              </Field>
+            </div>
+          )}
+
+          {target === "cover" && (
+            <>
+              <Field label="Заголовок документа">
+                <Input value={draft.title ?? ""} onChange={(e) => set({ title: e.target.value })} />
+              </Field>
+              <Field label="Вступительный текст" hint="Поддерживаются плейсхолдеры вида {{client_name}}">
+                <Textarea
+                  rows={5}
+                  value={currentBlock?.content ?? draft.texts?.intro ?? ""}
+                  onChange={(e) =>
+                    currentBlock
+                      ? setBlock({ content: e.target.value })
+                      : set({ texts: { ...(draft.texts ?? quote.texts), intro: e.target.value } })
+                  }
+                />
+              </Field>
+            </>
+          )}
+
+          {target === "client" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Компания"><Input value={draft.client_company ?? ""} onChange={(e) => set({ client_company: e.target.value })} /></Field>
+              <Field label="Контактное лицо"><Input value={draft.client_name ?? ""} onChange={(e) => set({ client_name: e.target.value })} /></Field>
+              <Field label="УНП"><Input value={draft.client_unp ?? ""} onChange={(e) => set({ client_unp: e.target.value })} /></Field>
+              <Field label="Телефон"><Input value={draft.client_phone ?? ""} onChange={(e) => set({ client_phone: e.target.value })} /></Field>
+              <Field label="E-mail"><Input value={draft.client_email ?? ""} onChange={(e) => set({ client_email: e.target.value })} /></Field>
+              <Field label="Адрес" className="sm:col-span-2"><Input value={draft.client_address ?? ""} onChange={(e) => set({ client_address: e.target.value })} /></Field>
+            </div>
+          )}
+
+          {target === "event" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Дата мероприятия"><Input type="date" value={draft.event_date ?? ""} onChange={(e) => set({ event_date: e.target.value || null })} /></Field>
+              <Field label="Гостей">
+                <Input
+                  type="number"
+                  value={draft.guests_count == null ? "" : String(draft.guests_count)}
+                  onChange={(e) => set({ guests_count: e.target.value === "" ? null : Math.round(n(e.target.value)) })}
+                />
+              </Field>
+              <Field label="Начало"><Input value={draft.event_time_start ?? ""} onChange={(e) => set({ event_time_start: e.target.value })} placeholder="10:00" /></Field>
+              <Field label="Окончание"><Input value={draft.event_time_end ?? ""} onChange={(e) => set({ event_time_end: e.target.value })} placeholder="18:00" /></Field>
+              <Field label="Площадка" className="sm:col-span-2"><Input value={draft.venue ?? ""} onChange={(e) => set({ venue: e.target.value })} /></Field>
+              <Field label="Формат" className="sm:col-span-2"><Input value={draft.event_format ?? ""} onChange={(e) => set({ event_format: e.target.value })} /></Field>
+              <Field label="Монтаж / демонтаж" className="sm:col-span-2"><Textarea rows={2} value={draft.setup_note ?? ""} onChange={(e) => set({ setup_note: e.target.value })} /></Field>
+              <Field label="Заметки" className="sm:col-span-2"><Textarea rows={3} value={draft.event_notes ?? ""} onChange={(e) => set({ event_notes: e.target.value })} /></Field>
+            </div>
+          )}
+
+          {target === "item" && item && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Название" className="sm:col-span-2"><Input value={item.title} onChange={(e) => setItem({ ...item, title: e.target.value })} /></Field>
+              <Field label="Описание" className="sm:col-span-2"><Textarea rows={3} value={item.description ?? ""} onChange={(e) => setItem({ ...item, description: e.target.value })} /></Field>
+              <Field label="Раздел"><Input value={item.section ?? ""} onChange={(e) => setItem({ ...item, section: e.target.value })} /></Field>
+              <Field label="Единица"><Input value={item.unit ?? ""} onChange={(e) => setItem({ ...item, unit: e.target.value })} /></Field>
+              <Field label="Кол-во"><Input inputMode="decimal" value={String(item.qty)} onChange={(e) => setItem({ ...item, qty: n(e.target.value) })} /></Field>
+              <Field label="Цена, BYN"><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: n(e.target.value) })} /></Field>
+              <Field label="Себестоимость, BYN"><Input inputMode="decimal" value={String(item.cost ?? 0)} onChange={(e) => setItem({ ...item, cost: n(e.target.value) })} /></Field>
+              <Field label="Что входит" className="sm:col-span-2" hint="По строке на пункт">
+                <Textarea
+                  rows={4}
+                  value={(item.includes ?? []).map((i) => (i.note ? `${i.text} — ${i.note}` : i.text)).join("\n")}
+                  onChange={(e) =>
+                    setItem({
+                      ...item,
+                      includes: e.target.value
+                        .split(/\r?\n/)
+                        .map((line) => line.trim())
+                        .filter(Boolean)
+                        .map((line) => {
+                          const [text, ...rest] = line.split(" — ");
+                          return { text: (text ?? "").trim(), note: rest.join(" — ").trim() };
+                        }),
+                    })
+                  }
+                />
+              </Field>
+            </div>
+          )}
+
+          {target === "section" && (
+            <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
+              <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
+            </Field>
+          )}
+
+          {target === "totals" && (
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Скидка">
+                  <Select value={draft.discount_type ?? "none"} onValueChange={(v) => set({ discount_type: v as Quote["discount_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Нет</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Значение скидки"><Input inputMode="decimal" value={String(draft.discount_value ?? 0)} onChange={(e) => set({ discount_value: n(e.target.value) })} /></Field>
+                <Field label="Предоплата">
+                  <Select value={draft.prepayment_type ?? "none"} onValueChange={(v) => set({ prepayment_type: v as Quote["prepayment_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Нет</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Значение предоплаты"><Input inputMode="decimal" value={String(draft.prepayment_value ?? 0)} onChange={(e) => set({ prepayment_value: n(e.target.value) })} /></Field>
+                <Field label="Доставка и логистика, BYN" className="sm:col-span-2"><Input inputMode="decimal" value={String(draft.delivery_amount ?? 0)} onChange={(e) => set({ delivery_amount: n(e.target.value) })} /></Field>
+              </div>
+              <VatSettings
+                value={{ mode: normalizeVatMode(draft.vat_mode ?? quote.vat_mode), rate: draft.vat_rate ?? quote.vat_rate, asLine: draft.vat_as_line ?? quote.vat_as_line }}
+                onChange={(p) =>
+                  set({
+                    ...(p.mode !== undefined ? { vat_mode: p.mode } : {}),
+                    ...(p.rate !== undefined ? { vat_rate: p.rate } : {}),
+                    ...(p.asLine !== undefined ? { vat_as_line: p.asLine } : {}),
+                  })
+                }
+              />
+            </div>
+          )}
+
+          {target === "block" && currentBlock && (
+            <>
+              <Field label="Заголовок блока"><Input value={currentBlock.title} onChange={(e) => setBlock({ title: e.target.value })} /></Field>
+              <Field label="Содержимое" hint="Каждая строка — отдельный пункт списка / абзац">
+                <Textarea rows={8} value={currentBlock.content} onChange={(e) => setBlock({ content: e.target.value })} />
+              </Field>
+            </>
+          )}
+
+          {target === "footer" && (
+            <Field label="Текст подвала">
+              <Textarea
+                rows={3}
+                value={draft.texts?.footer ?? ""}
+                onChange={(e) => set({ texts: { ...(draft.texts ?? quote.texts), footer: e.target.value } })}
+              />
+            </Field>
+          )}
+
+          {target === "company" && (
+            <CompanyOverridesEditor
+              value={(draft.company_overrides ?? {}) as CompanyOverrides}
+              onChange={(next) => set({ company_overrides: next })}
+              settings={settings}
+            />
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Отмена</Button>
+          <Button onClick={submit}>Сохранить</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
