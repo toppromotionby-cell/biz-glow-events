@@ -1,7 +1,6 @@
 // Липкий хедер модалки заказа: id, статус, возраст в статусе, ссылка на полную страницу
 // и контекстное меню действий. Все мутации поднимаются через onAction.
-import { Link } from "@tanstack/react-router";
-import { ExternalLink, MoreHorizontal, CheckCircle2, MailCheck, Trash2, Clock } from "lucide-react";
+import { MoreHorizontal, CheckCircle2, MailCheck, Trash2, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,

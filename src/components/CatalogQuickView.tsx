@@ -2,9 +2,9 @@
 // Содержит ключевые данные: медиа (фото + видео), цены, занятость, требования,
 // состав и доп. опции, а также инлайн-запрос КП без переходов на другие страницы.
 import { useEffect, useMemo, useState } from "react";
-import { SearchX, ShoppingCart, FileText, Play, Maximize2, ChevronDown, ExternalLink } from "lucide-react";
+import { SearchX, ShoppingCart, FileText, Play, Maximize2, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCatalogItem, type CatalogType, type CatalogRow } from "@/lib/catalog.functions";
