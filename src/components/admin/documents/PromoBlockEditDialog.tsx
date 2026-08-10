@@ -222,6 +222,28 @@ export function PromoBlockEditDialog({
                   })
                 }
               />
+              <Summary
+                rows={[
+                  ["Позиции", money(totals.itemsSum, cur)],
+                  ...(totals.commission
+                    ? ([[merged.commission_label || "Комиссия", money(totals.commission, cur)]] as Array<[string, string]>)
+                    : []),
+                  ...(totals.management
+                    ? ([[merged.management_label || "Менеджмент", money(totals.management, cur)]] as Array<[string, string]>)
+                    : []),
+                  ...(totals.discount ? ([["Скидка", `− ${money(totals.discount, cur)}`]] as Array<[string, string]>) : []),
+                  ...(totals.vatEnabled
+                    ? ([
+                        ["Без НДС", money(totals.net, cur)],
+                        [`НДС ${totals.vatRate}%`, money(totals.vat, cur)],
+                      ] as Array<[string, string]>)
+                    : []),
+                  ["Итого", money(totals.totalWithVat, cur), true],
+                  ...(totals.costSum
+                    ? ([["Маржа", `${money(totals.margin, cur)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
+                    : []),
+                ]}
+              />
             </div>
           )}
 
