@@ -81,8 +81,9 @@ export function AdminCommandPalette() {
       const like = `%${term}%`;
       const { data } = await supabase
         .from("orders")
-        .select("id,client_name,client_email,status,total")
-        .or(`client_name.ilike.${like},client_email.ilike.${like},client_phone.ilike.${like}`)
+        .select("id,order_number,client_name,client_email,status,total")
+        .or(`order_number.ilike.${like},client_name.ilike.${like},client_email.ilike.${like},client_phone.ilike.${like}`)
+
         .order("created_at", { ascending: false })
         .limit(8);
       return data ?? [];
