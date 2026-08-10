@@ -135,7 +135,7 @@ export async function exportPresentationPptx(
     if (c.showPrice && c.price != null && c.price > 0) {
       slide.addText(`${c.price.toFixed(2)} BYN / ${c.priceUnit}`, {
         x: textLeft, y: H - 1.25, w: 3.2, h: 0.5, fontSize: 16, bold: true,
-        color: t.onAccent, fill: { color: t.accent }, align: "center", rounding: true,
+        color: t.onAccent, fill: { color: t.accent }, align: "center",
       });
     }
 
