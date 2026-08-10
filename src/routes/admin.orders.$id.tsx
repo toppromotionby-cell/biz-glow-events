@@ -444,7 +444,12 @@ function OrderDetail() {
               <TabsContent value="attachments" className="mt-4">
                 <OrderAttachments orderId={order.id} />
               </TabsContent>
+
+              <TabsContent value="history" className="mt-4">
+                <RecordHistory recordId={order.id} />
+              </TabsContent>
             </Tabs>
+
           </section>
         </div>
 
