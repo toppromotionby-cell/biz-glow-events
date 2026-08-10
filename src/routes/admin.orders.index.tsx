@@ -483,14 +483,6 @@ function DesktopOrdersTable({
                           <Mail className="h-4 w-4" />
                         </button>
                       )}
-                      <Link
-                        to="/admin/orders/$id"
-                        params={{ id: o.id }}
-                        aria-label={`Открыть полную страницу заказа ${o.client_name}`}
-                        className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
