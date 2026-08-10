@@ -55,7 +55,7 @@ export function catalogSlugRouteOptions(basePath: CatalogBasePath) {
           { title: config.detail.buildTitle(it) },
           { name: "description", content: config.detail.buildDescription(it) },
           { property: "og:title", content: it.title },
-          { property: "og:description", content: it.short_description ?? "" },
+          { property: "og:description", content: config.detail.buildDescription(it) },
           { property: "og:url", content: url },
           { property: "og:type", content: "product" },
           ...(it.photo_urls?.[0]

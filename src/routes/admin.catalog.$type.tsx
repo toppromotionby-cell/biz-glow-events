@@ -133,7 +133,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
   const q = search.trim().toLowerCase();
   const filtered = q
     ? items.filter((it) => {
-        const hay = [it.title, it.slug, it.category, it.short_description, it.description]
+        const hay = [it.title, it.slug, it.category, it.description]
           .filter(Boolean).join(" ").toLowerCase();
         return hay.includes(q);
       })

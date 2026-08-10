@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { toCardExcerpt } from "@/lib/rich-text";
 
 export type SearchHit = {
   id: string;

@@ -56,7 +56,7 @@ export function CatalogQuickView({
         bodyClassName="p-0 gap-0 overflow-hidden"
       >
         <DialogTitle className="sr-only">{data?.title ?? "Просмотр позиции"}</DialogTitle>
-        <DialogDescription className="sr-only">{data?.short_description ?? "Детальная информация о позиции каталога"}</DialogDescription>
+        <DialogDescription className="sr-only">{"Детальная информация о позиции каталога"}</DialogDescription>
         {isLoading && (
           <div className="p-6 md:p-7 overflow-y-auto" aria-busy="true" aria-label="Загрузка позиции">
             <div className="grid md:grid-cols-2 gap-6">
@@ -282,9 +282,6 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
             <header>
               {item.category && <div className="text-xs uppercase tracking-wide text-primary">{item.category}</div>}
               <h2 className="mt-1 text-2xl font-display font-bold gradient-text">{item.title}</h2>
-              {item.short_description && (
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.short_description}</p>
-              )}
               {chips.length > 0 && (
                 <ul className="mt-3 flex flex-wrap gap-1.5">
                   {chips.map((c) => (

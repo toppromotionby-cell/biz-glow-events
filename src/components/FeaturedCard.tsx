@@ -197,7 +197,7 @@ export function FeaturedCard({
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />
         <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3 break-words hyphens-auto min-h-[2.25rem] sm:min-h-[3.75rem]">
-          {item.short_description ?? "\u00A0"}
+          {toCardExcerpt(item.description) || "\u00A0"}
         </p>
         <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40 min-h-[3.25rem] sm:min-h-[3.5rem]">
           <PriceBlock price={price} />

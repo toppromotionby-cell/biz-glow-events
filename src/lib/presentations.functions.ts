@@ -15,6 +15,7 @@ import {
   type SlideType,
 } from "@/lib/presentations/model";
 import type { QuoteItemLite } from "@/lib/presentations/check";
+import { toCardExcerpt } from "@/lib/rich-text";
 
 async function assertStaff(context: { supabase: unknown; userId: string }) {
   await assertPermission(context as never, "documents.manage");
