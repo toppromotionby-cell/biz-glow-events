@@ -1501,12 +1501,38 @@ function bulletList(ctx: DocCtx, text: string) {
   }
 }
 
+/**
+ * Автоподбор плотности: сначала «комфортно» (1:1 с превью), затем компактнее —
+ * чтобы КП не растягивалось на лишние листы (по умолчанию цель — 2 листа).
+ */
 export async function buildStandaloneQuotePdf(
   quote: Quote,
   items: QuoteItem[],
   settings: DocumentSettings,
+  opts: { density?: DocDensity | "auto"; maxPages?: number } = {},
 ): Promise<Uint8Array> {
+  const requested = opts.density ?? "auto";
+  const maxPages = opts.maxPages ?? 2;
+  if (requested !== "auto") return (await renderQuotePdf(quote, items, settings, requested)).bytes;
+
+  const ladder: DocDensity[] = ["comfortable", "compact", "dense"];
+  let last: { bytes: Uint8Array; pages: number } | null = null;
+  for (const density of ladder) {
+    last = await renderQuotePdf(quote, items, settings, density);
+    if (last.pages <= maxPages) return last.bytes;
+  }
+  return last!.bytes;
+}
+
+async function renderQuotePdf(
+  quote: Quote,
+  items: QuoteItem[],
+  settings: DocumentSettings,
+  density: DocDensity,
+): Promise<{ bytes: Uint8Array; pages: number }> {
+  applyDensity(density);
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
+
   const c = {
     legal: eff.company_legal_name,
     brand: eff.company_brand,
