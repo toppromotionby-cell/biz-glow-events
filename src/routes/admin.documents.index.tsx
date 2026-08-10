@@ -57,14 +57,23 @@ function Page() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [kind, setKind] = useState<"all" | "quote" | "promo">("all");
-  const [templates, setTemplates] = useState(false);
+  const [view, setView] = useState<"docs" | "templates" | "orders">("docs");
+  const templates = view === "templates";
   const [createOpen, setCreateOpen] = useState(false);
 
   const list = useServerFn(listAllDocuments);
+  const listOrderDocs = useServerFn(listOrderDocuments);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-documents-overview", search, status, kind, templates],
     queryFn: () => list({ data: { search, status, kind, templates } }),
+    enabled: view !== "orders",
+  });
+
+  const orderDocs = useQuery({
+    queryKey: ["admin-order-documents", search],
+    queryFn: () => listOrderDocs({ data: { search } }),
+    enabled: view === "orders",
   });
 
   const rows = data?.rows ?? [];
