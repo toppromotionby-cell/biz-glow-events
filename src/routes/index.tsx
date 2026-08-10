@@ -237,9 +237,10 @@ function HomePage() {
         <div className="glass-strong rounded-3xl p-10 md:p-16 text-center bg-gradient-to-br from-primary/10 to-transparent">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Готовы обсудить ваше мероприятие?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-            Зарегистрируйтесь, чтобы получить доступ к ценам, сохранённым сметам и истории заказов.
+            Оставьте заявку или соберите заказ в каталоге — личный кабинет с историей заказов
+            и документами мы создадим автоматически и пришлём доступ на почту.
           </p>
-          <Link to="/register"><Button size="lg" className="bg-gradient-primary glow-primary-lg">
+          <Link to="/contacts"><Button size="lg" className="bg-gradient-primary glow-primary-lg">
             Начать сотрудничество <ArrowRight className="ml-2 h-4 w-4" />
           </Button></Link>
         </div>
