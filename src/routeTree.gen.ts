@@ -36,7 +36,6 @@ import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CompareRouteImport } from './routes/compare'
-import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CalculatorRouteImport } from './routes/calculator'
@@ -45,6 +44,7 @@ import { Route as AttractionsRouteImport } from './routes/attractions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
@@ -239,11 +239,6 @@ const CompareRoute = CompareRouteImport.update({
   path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CatalogRoute = CatalogRouteImport.update({
-  id: '/catalog',
-  path: '/catalog',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CasesRoute = CasesRouteImport.update({
   id: '/cases',
   path: '/cases',
@@ -282,6 +277,11 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogIndexRoute = CatalogIndexRouteImport.update({
+  id: '/catalog/',
+  path: '/catalog/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -594,7 +594,6 @@ export interface FileRoutesByFullPath {
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
-  '/catalog': typeof CatalogRoute
   '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
@@ -651,6 +650,7 @@ export interface FileRoutesByFullPath {
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/catalog/': typeof CatalogIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -689,7 +689,6 @@ export interface FileRoutesByTo {
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
-  '/catalog': typeof CatalogRoute
   '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
@@ -745,6 +744,7 @@ export interface FileRoutesByTo {
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/catalog': typeof CatalogIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -785,7 +785,6 @@ export interface FileRoutesById {
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
-  '/catalog': typeof CatalogRoute
   '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
@@ -842,6 +841,7 @@ export interface FileRoutesById {
   '/services/$slug': typeof ServicesSlugRoute
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/catalog/': typeof CatalogIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -883,7 +883,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/cart'
     | '/cases'
-    | '/catalog'
     | '/compare'
     | '/contacts'
     | '/cookies'
@@ -940,6 +939,7 @@ export interface FileRouteTypes {
     | '/services/$slug'
     | '/zones/$slug'
     | '/admin/'
+    | '/catalog/'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
     | '/admin/orders/$id'
@@ -978,7 +978,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/cart'
     | '/cases'
-    | '/catalog'
     | '/compare'
     | '/contacts'
     | '/cookies'
@@ -1034,6 +1033,7 @@ export interface FileRouteTypes {
     | '/services/$slug'
     | '/zones/$slug'
     | '/admin'
+    | '/catalog'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
     | '/admin/orders/$id'
@@ -1073,7 +1073,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/cart'
     | '/cases'
-    | '/catalog'
     | '/compare'
     | '/contacts'
     | '/cookies'
@@ -1130,6 +1129,7 @@ export interface FileRouteTypes {
     | '/services/$slug'
     | '/zones/$slug'
     | '/admin/'
+    | '/catalog/'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
     | '/admin/orders/$id'
@@ -1170,7 +1170,6 @@ export interface RootRouteChildren {
   CalculatorRoute: typeof CalculatorRoute
   CartRoute: typeof CartRoute
   CasesRoute: typeof CasesRouteWithChildren
-  CatalogRoute: typeof CatalogRoute
   CompareRoute: typeof CompareRoute
   ContactsRoute: typeof ContactsRoute
   CookiesRoute: typeof CookiesRoute
@@ -1204,6 +1203,7 @@ export interface RootRouteChildren {
   KpTokenRoute: typeof KpTokenRoute
   LpSlugRoute: typeof LpSlugRoute
   MyTokenRoute: typeof MyTokenRoute
+  CatalogIndexRoute: typeof CatalogIndexRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSocialClickRoute: typeof ApiPublicSocialClickRoute
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
@@ -1408,13 +1408,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/catalog': {
-      id: '/catalog'
-      path: '/catalog'
-      fullPath: '/catalog'
-      preLoaderRoute: typeof CatalogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/cases': {
       id: '/cases'
       path: '/cases'
@@ -1469,6 +1462,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog/': {
+      id: '/catalog/'
+      path: '/catalog'
+      fullPath: '/catalog/'
+      preLoaderRoute: typeof CatalogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -2073,7 +2073,6 @@ const rootRouteChildren: RootRouteChildren = {
   CalculatorRoute: CalculatorRoute,
   CartRoute: CartRoute,
   CasesRoute: CasesRouteWithChildren,
-  CatalogRoute: CatalogRoute,
   CompareRoute: CompareRoute,
   ContactsRoute: ContactsRoute,
   CookiesRoute: CookiesRoute,
@@ -2107,6 +2106,7 @@ const rootRouteChildren: RootRouteChildren = {
   KpTokenRoute: KpTokenRoute,
   LpSlugRoute: LpSlugRoute,
   MyTokenRoute: MyTokenRoute,
+  CatalogIndexRoute: CatalogIndexRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSocialClickRoute: ApiPublicSocialClickRoute,
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
@@ -2122,13 +2122,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
