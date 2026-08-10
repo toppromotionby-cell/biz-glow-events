@@ -126,9 +126,19 @@ export function CompanyProfilesManager() {
     );
   }
 
+  const noDefault = (companies ?? []).length > 0 && !(companies ?? []).some((c) => c.is_default);
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+    <div className="space-y-3">
+      {noDefault && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+          Ни одна компания не отмечена как основная. Её реквизиты подставляются в документы,
+          где компания не выбрана, — откройте нужную компанию и нажмите «Сделать основной».
+        </div>
+      )}
+      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
       {/* Список компаний */}
+
       <div className="space-y-2">
         {(companies ?? []).map((c) => (
           <button
