@@ -14,7 +14,7 @@ import {
 
 export type PublicDoc =
   | { kind: "quote"; quote: Quote; items: QuoteItem[]; settings: Awaited<ReturnType<typeof loadDocumentSettings>> }
-  | { kind: "promo"; quote: PromoQuote; items: PromoItem[] };
+  | { kind: "promo"; quote: PromoQuote; items: PromoItem[]; settings: Awaited<ReturnType<typeof loadDocumentSettings>> };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -46,12 +46,15 @@ export async function loadPublicDoc(token: string): Promise<PublicDoc | null> {
     .from("promo_quotes").select("*").eq("public_token", token).eq("is_template", false).maybeSingle();
   if (p) {
     const row = p as Record<string, unknown>;
-    const { data: items } = await supabaseAdmin
-      .from("promo_quote_items").select("*").eq("quote_id", row.id as string).order("sort_order");
+    const [{ data: items }, settings] = await Promise.all([
+      supabaseAdmin.from("promo_quote_items").select("*").eq("quote_id", row.id as string).order("sort_order"),
+      loadDocumentSettings(supabaseAdmin as never, (row.company_id as string | null) ?? null),
+    ]);
     return {
       kind: "promo",
       quote: normalizePromoQuote(row),
       items: ((items ?? []) as Record<string, unknown>[]).map(normalizePromoItem),
+      settings,
     };
   }
   return null;
