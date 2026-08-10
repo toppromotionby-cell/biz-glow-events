@@ -31,7 +31,7 @@ export async function loadPublicDoc(token: string): Promise<PublicDoc | null> {
     const row = q as Record<string, unknown>;
     const [{ data: items }, settings] = await Promise.all([
       supabaseAdmin.from("quote_items").select("*").eq("quote_id", row.id as string).order("sort_order"),
-      loadDocumentSettings(supabaseAdmin as never),
+      loadDocumentSettings(supabaseAdmin as never, (row.company_id as string | null) ?? null),
     ]);
     return {
       kind: "quote",
@@ -93,7 +93,7 @@ export function docFileName(doc: PublicDoc): string {
 
 export async function buildDocPdf(doc: PublicDoc): Promise<Uint8Array> {
   if (doc.kind === "quote") return buildStandaloneQuotePdf(doc.quote, doc.items, doc.settings);
-  const settings = await loadDocumentSettings(supabaseAdmin as never);
+  const settings = await loadDocumentSettings(supabaseAdmin as never, doc.quote.company_id);
   return buildPromoQuotePdf(doc.quote, doc.items, settings);
 }
 
