@@ -8,7 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Field } from "@/components/admin/Field";
 import { normalizeVatMode } from "@/lib/documents/vat";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { type PromoDiscountType, type PromoItem, type PromoQuote } from "@/lib/promo-quote-model";
+import {
+  computePromoTotals,
+  lineCost,
+  lineTotal,
+  type PromoDiscountType,
+  type PromoItem,
+  type PromoQuote,
+} from "@/lib/promo-quote-model";
 
 export type PromoEditTarget = { target: string; id: string | null };
 
@@ -24,6 +31,23 @@ const n = (v: string) => {
   const x = Number(String(v).replace(",", "."));
   return Number.isFinite(x) ? x : 0;
 };
+
+const money = (v: number, currency = "BYN") =>
+  `${new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0)} ${currency}`;
+
+/** Сводка «как в превью»: только чтение. */
+function Summary({ rows }: { rows: Array<[string, string, boolean?]> }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm">
+      {rows.map(([k, v, strong]) => (
+        <div key={k} className={`flex justify-between gap-4 py-0.5 ${strong ? "font-semibold" : ""}`}>
+          <span className="text-muted-foreground">{k}</span>
+          <span className="tabular-nums">{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function PromoBlockEditDialog({
   edit,
