@@ -19,6 +19,7 @@ import { BRAND_ACCENTS } from "@/lib/documents/brand";
 import { supabase } from "@/integrations/supabase/client";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import {
+import { VatSettings } from "@/components/admin/VatSettings";
   getDocumentSettings,
   updateDocumentSettings,
   DEFAULT_DOCUMENT_SETTINGS,
@@ -179,6 +180,17 @@ function DocumentSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Срок действия (дней)" type="number" value={String(form.quote_validity_days)} onChange={(v) => update("quote_validity_days", Number(v) || 14)} />
               <Field label="Примечание об НДС" value={form.vat_note} onChange={(v) => update("vat_note", v)} />
+            </div>
+            <div className="mt-4">
+              <VatSettings
+                value={{ mode: form.vat_mode, rate: form.vat_rate, asLine: form.vat_as_line }}
+                onChange={(v) => {
+                  if (v.mode !== undefined) update("vat_mode", v.mode);
+                  if (v.rate !== undefined) update("vat_rate", v.rate);
+                  if (v.asLine !== undefined) update("vat_as_line", v.asLine);
+                }}
+                hint="Настройка применяется к счетам, актам и договорам, формируемым из заказов."
+              />
             </div>
             <FieldArea label="Текст футера" value={form.quote_footer} onChange={(v) => update("quote_footer", v)} rows={3} />
           </Card>
