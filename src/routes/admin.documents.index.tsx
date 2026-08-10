@@ -21,7 +21,7 @@ import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import {
   listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus, setDocumentTemplate,
-  type DocumentRow,
+  listOrderDocuments, type DocumentRow,
 } from "@/lib/documents-overview.functions";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
 
