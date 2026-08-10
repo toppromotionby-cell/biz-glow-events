@@ -3,7 +3,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
-import { Cpu, Music, Lightbulb, Package, FerrisWheel, ArrowRight, Sparkles } from "lucide-react";
+import { Cpu, Music, Lightbulb, Package, FerrisWheel, Sparkles } from "lucide-react";
 import { getCatalogNavigation, type CatalogNavSection } from "@/lib/catalog-nav.functions";
 
 export const catalogNavQueryOptions = queryOptions({
