@@ -59,20 +59,23 @@ function isExpired(validUntil: string | null, status: string): boolean {
 
 export const listAllDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { search?: string; status?: string; kind?: string } | undefined) =>
-    z
-      .object({
-        search: z.string().max(200).optional(),
-        status: z.string().max(30).optional(),
-        kind: z.enum(["all", "quote", "promo"]).optional(),
-      })
-      .parse(d ?? {}),
+  .inputValidator(
+    (d: { search?: string; status?: string; kind?: string; templates?: boolean } | undefined) =>
+      z
+        .object({
+          search: z.string().max(200).optional(),
+          status: z.string().max(30).optional(),
+          kind: z.enum(["all", "quote", "promo"]).optional(),
+          templates: z.boolean().optional(),
+        })
+        .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<DocumentsOverview> => {
     await assertStaff(context as never);
 
     const kind = data.kind ?? "all";
     const search = (data.search ?? "").trim().toLowerCase();
+    const templatesMode = data.templates === true;
 
     const wantQuotes = kind === "all" || kind === "quote";
     const wantPromo = kind === "all" || kind === "promo";
@@ -82,9 +85,9 @@ export const listAllDocuments = createServerFn({ method: "GET" })
         ? context.supabase
             .from("quotes")
             .select(
-              "id,quote_number,status,title,client_name,client_company,event_date,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until_override,doc_date,validity_days",
+              "id,quote_number,status,title,template_name,client_name,client_company,event_date,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until_override,doc_date,validity_days",
             )
-            .eq("is_template", false)
+            .eq("is_template", templatesMode)
             .order("created_at", { ascending: false })
             .limit(300)
         : Promise.resolve({ data: [] as unknown[] }),
@@ -92,9 +95,9 @@ export const listAllDocuments = createServerFn({ method: "GET" })
         ? context.supabase
             .from("promo_quotes")
             .select(
-              "id,doc_number,status,project,client_name,period,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until",
+              "id,doc_number,status,project,template_name,client_name,period,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until",
             )
-            .eq("is_template", false)
+            .eq("is_template", templatesMode)
             .order("created_at", { ascending: false })
             .limit(300)
         : Promise.resolve({ data: [] as unknown[] }),
@@ -114,7 +117,7 @@ export const listAllDocuments = createServerFn({ method: "GET" })
         kind: "quote",
         id: String(raw.id),
         number: str(raw.quote_number) || String(raw.id).slice(0, 8),
-        title: str(raw.title) || "Коммерческое предложение",
+        title: (templatesMode ? str(raw.template_name) : "") || str(raw.title) || "Коммерческое предложение",
         client: str(raw.client_company) || str(raw.client_name) || "Без клиента",
         status: str(raw.status) || "draft",
         total: num(raw.total),
@@ -133,7 +136,7 @@ export const listAllDocuments = createServerFn({ method: "GET" })
         kind: "promo",
         id: String(raw.id),
         number: str(raw.doc_number) || String(raw.id).slice(0, 8),
-        title: str(raw.project) || "КП промо",
+        title: (templatesMode ? str(raw.template_name) : "") || str(raw.project) || "КП промо",
         client: str(raw.client_name) || "Без клиента",
         status: str(raw.status) || "draft",
         total: num(raw.total),
@@ -258,3 +261,23 @@ export const setDocumentStatus = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Перевод документа в шаблон и обратно (общий для КП и КП промо)
+export const setDocumentTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { kind: DocKind; id: string; isTemplate: boolean; name?: string }) =>
+    idSchema.extend({ isTemplate: z.boolean(), name: z.string().max(160).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const patch: Record<string, unknown> = { is_template: data.isTemplate };
+    if (data.isTemplate) patch.template_name = (data.name ?? "").trim() || "Шаблон";
+    else patch.template_name = "";
+    const { error } = await context.supabase
+      .from(TABLES[data.kind].doc)
+      .update(patch as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+

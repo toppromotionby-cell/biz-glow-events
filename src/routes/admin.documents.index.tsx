@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   FileStack, Plus, Search, Download, FileSignature, Megaphone, Brain, ArrowRight,
-  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2,
+  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2, BookmarkPlus,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import {
-  listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus,
+  listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus, setDocumentTemplate,
   type DocumentRow,
 } from "@/lib/documents-overview.functions";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
@@ -57,13 +57,14 @@ function Page() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [kind, setKind] = useState<"all" | "quote" | "promo">("all");
+  const [templates, setTemplates] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
   const list = useServerFn(listAllDocuments);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-documents-overview", search, status, kind],
-    queryFn: () => list({ data: { search, status, kind } }),
+    queryKey: ["admin-documents-overview", search, status, kind, templates],
+    queryFn: () => list({ data: { search, status, kind, templates } }),
   });
 
   const rows = data?.rows ?? [];
@@ -112,6 +113,14 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const tplFn = useServerFn(setDocumentTemplate);
+  const toggleTemplate = useMutation({
+    mutationFn: (v: { r: DocumentRow; isTemplate: boolean }) =>
+      tplFn({ data: { kind: v.r.kind, id: v.r.id, isTemplate: v.isTemplate, name: v.r.title } }),
+    onSuccess: (_d, v) => { toast.success(v.isTemplate ? "Сохранено как шаблон" : "Убрано из шаблонов"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const askDelete = async (r: DocumentRow) => {
     const ok = await confirm({
       title: "Удалить документ?",
@@ -140,14 +149,24 @@ function Page() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Черновики" value={counts?.draft ?? 0} onClick={() => setStatus("draft")} />
-        <StatCard label="Ждут ответа клиента" value={counts?.awaiting ?? 0} onClick={() => setStatus("sent")} />
-        <StatCard label="Согласовано" value={counts?.accepted ?? 0} onClick={() => setStatus("accepted")} />
-        <StatCard label="Просрочено" value={counts?.expired ?? 0} onClick={() => setStatus("expired")} />
-      </div>
+      {!templates && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Черновики" value={counts?.draft ?? 0} onClick={() => setStatus("draft")} />
+          <StatCard label="Ждут ответа клиента" value={counts?.awaiting ?? 0} onClick={() => setStatus("sent")} />
+          <StatCard label="Согласовано" value={counts?.accepted ?? 0} onClick={() => setStatus("accepted")} />
+          <StatCard label="Просрочено" value={counts?.expired ?? 0} onClick={() => setStatus("expired")} />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-lg border border-border/60 p-0.5">
+          <Button size="sm" variant={templates ? "ghost" : "secondary"} onClick={() => setTemplates(false)}>
+            Документы
+          </Button>
+          <Button size="sm" variant={templates ? "secondary" : "ghost"} onClick={() => { setTemplates(true); setStatus("all"); }}>
+            Шаблоны
+          </Button>
+        </div>
         <div className="inline-flex rounded-lg border border-border/60 p-0.5">
           {(["all", "quote", "promo"] as const).map((k) => (
             <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
@@ -164,14 +183,17 @@ function Page() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="inline-flex flex-wrap gap-1">
-          {FILTERS.map((f) => (
-            <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => setStatus(f.key)}>
-              {f.label}
-            </Button>
-          ))}
-        </div>
+        {!templates && (
+          <div className="inline-flex flex-wrap gap-1">
+            {FILTERS.map((f) => (
+              <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => setStatus(f.key)}>
+                {f.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
+
 
       <div className="overflow-hidden rounded-xl border border-border/60">
         <table className="w-full text-sm">
@@ -253,30 +275,42 @@ function Page() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => duplicate.mutate(r)}>
-                          <Copy className="mr-2 h-4 w-4" />Дублировать
+                          <Copy className="mr-2 h-4 w-4" />
+                          {templates ? "Создать документ из шаблона" : "Дублировать"}
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => toggleTemplate.mutate({ r, isTemplate: !templates })}
+                        >
+                          <BookmarkPlus className="mr-2 h-4 w-4" />
+                          {templates ? "Убрать из шаблонов" : "Сохранить как шаблон"}
+                        </DropdownMenuItem>
+                        {!templates && (
+                          <>
+                            <DropdownMenuSeparator />
+                            {r.status !== "sent" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "sent" })}>
+                                <Send className="mr-2 h-4 w-4" />Отметить отправленным
+                              </DropdownMenuItem>
+                            )}
+                            {r.status !== "accepted" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "accepted" })}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />Согласовано
+                              </DropdownMenuItem>
+                            )}
+                            {r.status !== "rejected" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "rejected" })}>
+                                <XCircle className="mr-2 h-4 w-4" />Отклонено
+                              </DropdownMenuItem>
+                            )}
+                            {r.status !== "draft" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "draft" })}>
+                                <Undo2 className="mr-2 h-4 w-4" />Вернуть в черновик
+                              </DropdownMenuItem>
+                            )}
+                          </>
+                        )}
                         <DropdownMenuSeparator />
-                        {r.status !== "sent" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "sent" })}>
-                            <Send className="mr-2 h-4 w-4" />Отметить отправленным
-                          </DropdownMenuItem>
-                        )}
-                        {r.status !== "accepted" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "accepted" })}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />Согласовано
-                          </DropdownMenuItem>
-                        )}
-                        {r.status !== "rejected" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "rejected" })}>
-                            <XCircle className="mr-2 h-4 w-4" />Отклонено
-                          </DropdownMenuItem>
-                        )}
-                        {r.status !== "draft" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "draft" })}>
-                            <Undo2 className="mr-2 h-4 w-4" />Вернуть в черновик
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
+
                         <DropdownMenuItem className="text-destructive" onClick={() => void askDelete(r)}>
                           <Trash2 className="mr-2 h-4 w-4" />Удалить
                         </DropdownMenuItem>
