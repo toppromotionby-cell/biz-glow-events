@@ -2,6 +2,7 @@ import { toast } from "sonner";
 import { ShoppingCart, Check } from "lucide-react";
 import { addToCart, removeFromCart, useCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
+import { signalDemand } from "@/lib/demand";
 
 export function AddToCartButton({
   entity_type, id, slug, title, price, image, unit,
@@ -27,6 +28,7 @@ export function AddToCartButton({
         return;
       }
       trackAddToCart({ item_id: id, item_name: title, item_category: entity_type, price, quantity: 1 });
+      signalDemand(entity_type, id, "cart", { once: false });
       toast.success(`«${title}» добавлено в корзину`);
     }
   });
