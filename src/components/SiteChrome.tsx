@@ -16,6 +16,7 @@ import { CONTACT } from "@/lib/contacts";
 import { SocialIcons } from "@/components/SocialIcons";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CatalogMegaMenu, CategoryChip, useCatalogNav } from "@/components/catalog/CatalogNav";
 
 // Разделы каталога — собраны в одно выпадающее меню «Каталог».
 const CATALOG_NAV = [
@@ -61,6 +62,7 @@ export function SiteHeader() {
   const { isStaff } = useRoles();
 
   const { count } = useCart();
+  const catalogSections = useCatalogNav();
 
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
