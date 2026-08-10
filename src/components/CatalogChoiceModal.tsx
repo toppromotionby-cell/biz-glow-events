@@ -34,7 +34,7 @@ export function CatalogChoiceModal(props: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-2 items-stretch">
+        <div className="grid-tiles mt-2">
           {sections.map((section, i) => (
             <CatalogSectionTile
               key={section.key}

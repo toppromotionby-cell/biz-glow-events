@@ -41,7 +41,7 @@ export function CartCrossSell({ presentTypes }: { presentTypes: CartEntityType[]
     <section className="mt-10">
       <h2 className="text-xl font-display font-semibold mb-3">Часто берут вместе</h2>
       <p className="text-sm text-muted-foreground mb-4">Дополните заявку — менеджер всё посчитает в одном договоре.</p>
-      <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <ul className="grid-tiles">
         {items.map(i => <Card key={i.id} item={i} type={target} />)}
       </ul>
     </section>

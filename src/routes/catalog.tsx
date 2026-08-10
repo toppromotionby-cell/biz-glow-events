@@ -38,7 +38,7 @@ function CatalogPage() {
           Выберите раздел или сразу перейдите к нужному направлению.
         </p>
       </header>
-      <div className="grid sm:grid-cols-2 gap-4 items-stretch">
+      <div className="grid-cards">
         {sections.map((section, i) => (
           <CatalogSectionCard key={section.key} section={section} index={i} />
         ))}

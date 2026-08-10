@@ -1156,3 +1156,36 @@ a[href],
   text-align: left;
 }
 
+
+/* ── Единая адаптивная сетка карточек каталога ──────────────────────────────
+   Колонки подстраиваются под ширину контейнера, поэтому карточки одинаково
+   масштабируются на любых разрешениях (и в модалках, и на страницах). */
+@utility grid-cards {
+  display: grid;
+  align-items: stretch;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+}
+@media (min-width: 640px) {
+  .grid-cards {
+    gap: 1rem;
+  }
+}
+@media (min-width: 1024px) {
+  .grid-cards {
+    gap: 1.25rem;
+  }
+}
+
+/* Компактный вариант — плитки разделов, мега-меню, кросс-селл. */
+@utility grid-tiles {
+  display: grid;
+  align-items: stretch;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+}
+@media (min-width: 640px) {
+  .grid-tiles {
+    gap: 1rem;
+  }
+}

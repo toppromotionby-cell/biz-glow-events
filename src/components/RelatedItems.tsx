@@ -34,7 +34,7 @@ export function RelatedItems({ type, currentId, category }: {
   return (
     <section className="mt-16">
       <h2 className="text-2xl font-display font-semibold mb-5">Похожие позиции</h2>
-      <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <ul className="grid-tiles">
         {items.map(i => <Card key={i.id} item={i} onOpen={() => setOpenSlug(i.slug)} />)}
       </ul>
       {openSlug && (
