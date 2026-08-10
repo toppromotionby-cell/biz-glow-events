@@ -1390,12 +1390,43 @@ export async function buildStandaloneQuotePdf(
 
     switch (b.type) {
       case "cover": {
-        drawText(ctx, applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers), { size: F_COVER, bold: true });
-        gap(ctx, 4);
-        if (text) drawParagraph(ctx, text, { size: F11, color: MUTED });
+        // Обложка — карточка с мягкой акцентной заливкой, как в превью
+        const coverTitle = applyPlaceholders(
+          quote.title || "Предложение по организации мероприятия",
+          map,
+          numbers,
+        );
+        const innerW = PAGE_W - MARGIN_X * 2 - 40;
+        const tFont = displayFont(ctx, coverTitle);
+        const tLines = wrapText(tFont, coverTitle, F_COVER, innerW);
+        const pLines = text ? wrapText(ctx.regular, text, F11, innerW) : [];
+        const boxH = 18 + tLines.length * F_COVER * 1.2 + (pLines.length ? 8 + pLines.length * F11 * 1.45 : 0) + 18;
         gap(ctx, 6);
+        ensureSpace(ctx, boxH + 8);
+        roundedRect(ctx.page, {
+          x: MARGIN_X,
+          y: ctx.y - boxH,
+          width: PAGE_W - MARGIN_X * 2,
+          height: boxH,
+          radius: 12,
+          color: c01(mixWithWhite(BRAND_ACCENT, 0.9)),
+          borderColor: ACCENT_BORDER,
+          borderWidth: 0.6,
+        });
+        let cyc = ctx.y - 18;
+        for (const line of tLines) {
+          ctx.page.drawText(line, { x: MARGIN_X + 20, y: cyc - F_COVER, size: F_COVER, font: tFont, color: TEXT });
+          cyc -= F_COVER * 1.2;
+        }
+        if (pLines.length) cyc -= 8;
+        for (const line of pLines) {
+          ctx.page.drawText(line, { x: MARGIN_X + 20, y: cyc - F11, size: F11, font: ctx.regular, color: MUTED });
+          cyc -= F11 * 1.45;
+        }
+        ctx.y -= boxH + 8;
         break;
       }
+
       case "client": {
         gap(ctx, 6);
         drawCard(
