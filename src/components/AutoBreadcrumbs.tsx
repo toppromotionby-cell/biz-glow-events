@@ -21,7 +21,6 @@ const SEGMENT_LABELS: Record<string, string> = {
   offer: "Оферта",
   "terms-rental": "Условия аренды",
   cart: "Корзина",
-  wishlist: "Избранное",
   
   profile: "Кабинет",
   login: "Вход",

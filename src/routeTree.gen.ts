@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ZonesRouteImport } from './routes/zones'
-import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TestimonialsRouteImport } from './routes/testimonials'
 import { Route as TermsRentalRouteImport } from './routes/terms-rental'
@@ -106,11 +105,6 @@ import { Route as AdminDocumentsPromoIdRenderRouteImport } from './routes/admin.
 const ZonesRoute = ZonesRouteImport.update({
   id: '/zones',
   path: '/zones',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WishlistRoute = WishlistRouteImport.update({
-  id: '/wishlist',
-  path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
@@ -615,7 +609,6 @@ export interface FileRoutesByFullPath {
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/availability': typeof AdminAvailabilityRoute
@@ -709,7 +702,6 @@ export interface FileRoutesByTo {
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/availability': typeof AdminAvailabilityRoute
@@ -804,7 +796,6 @@ export interface FileRoutesById {
   '/terms-rental': typeof TermsRentalRoute
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/wishlist': typeof WishlistRoute
   '/zones': typeof ZonesRouteWithChildren
   '/admin/audit': typeof AdminAuditRoute
   '/admin/availability': typeof AdminAvailabilityRoute
@@ -901,7 +892,6 @@ export interface FileRouteTypes {
     | '/terms-rental'
     | '/testimonials'
     | '/unsubscribe'
-    | '/wishlist'
     | '/zones'
     | '/admin/audit'
     | '/admin/availability'
@@ -995,7 +985,6 @@ export interface FileRouteTypes {
     | '/terms-rental'
     | '/testimonials'
     | '/unsubscribe'
-    | '/wishlist'
     | '/zones'
     | '/admin/audit'
     | '/admin/availability'
@@ -1089,7 +1078,6 @@ export interface FileRouteTypes {
     | '/terms-rental'
     | '/testimonials'
     | '/unsubscribe'
-    | '/wishlist'
     | '/zones'
     | '/admin/audit'
     | '/admin/availability'
@@ -1185,7 +1173,6 @@ export interface RootRouteChildren {
   TermsRentalRoute: typeof TermsRentalRoute
   TestimonialsRoute: typeof TestimonialsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
-  WishlistRoute: typeof WishlistRoute
   ZonesRoute: typeof ZonesRouteWithChildren
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   GeoCityRoute: typeof GeoCityRoute
@@ -1212,13 +1199,6 @@ declare module '@tanstack/react-router' {
       path: '/zones'
       fullPath: '/zones'
       preLoaderRoute: typeof ZonesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/wishlist': {
-      id: '/wishlist'
-      path: '/wishlist'
-      fullPath: '/wishlist'
-      preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/unsubscribe': {
@@ -2079,7 +2059,6 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRentalRoute: TermsRentalRoute,
   TestimonialsRoute: TestimonialsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
-  WishlistRoute: WishlistRoute,
   ZonesRoute: ZonesRouteWithChildren,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   GeoCityRoute: GeoCityRoute,
@@ -2101,13 +2080,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -4,31 +4,46 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Heart, Menu, ShieldCheck } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown } from "lucide-react";
 
 import { useCart } from "@/lib/cart";
-import { useWishlist } from "@/lib/wishlist";
 import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CONTACT } from "@/lib/contacts";
 import { SocialIcons } from "@/components/SocialIcons";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const NAV = [
+// Разделы каталога — собраны в одно выпадающее меню «Каталог».
+const CATALOG_NAV = [
   { to: "/zones", label: "Интерактивные зоны", key: "header.nav.zones", footerKey: "footer.catalog.zones" },
   { to: "/equipment", label: "Техническое оснащение", key: "header.nav.equipment", footerKey: "footer.catalog.equipment" },
   { to: "/services", label: "Услуги", key: "header.nav.services", footerKey: "footer.catalog.services" },
   { to: "/production", label: "Производство", key: "header.nav.production", footerKey: "footer.catalog.production" },
   { to: "/attractions", label: "Аттракционы", key: "header.nav.attractions", footerKey: "footer.catalog.attractions" },
+] as const;
+
+// Второстепенные разделы — остаются в мобильном меню и футере.
+const SECONDARY_NAV = [
   { to: "/cases", label: "Кейсы", key: "header.nav.cases", footerKey: "footer.catalog.cases" },
   { to: "/industries", label: "Индустрии", key: "header.nav.industries", footerKey: "footer.catalog.industries" },
   { to: "/testimonials", label: "Отзывы", key: "header.nav.testimonials", footerKey: "footer.catalog.testimonials" },
   { to: "/blog", label: "Блог", key: "header.nav.blog", footerKey: "footer.catalog.blog" },
   { to: "/about", label: "О нас", key: "header.nav.about", footerKey: "footer.catalog.about" },
   { to: "/contacts", label: "Контакты", key: "header.nav.contacts", footerKey: "footer.catalog.contacts_link" },
+] as const;
+
+const NAV = [...CATALOG_NAV, ...SECONDARY_NAV];
+
+// Ключевые пункты, которые остаются в десктопной шапке рядом с «Каталогом».
+const PRIMARY_NAV = [
+  { to: "/cases", label: "Кейсы", key: "header.nav.cases" },
+  { to: "/calculator", label: "Калькулятор", key: "header.nav.calculator" },
+  { to: "/blog", label: "Блог", key: "header.nav.blog" },
+  { to: "/contacts", label: "Контакты", key: "header.nav.contacts" },
 ] as const;
 
 const INFO_LINKS = [
@@ -42,12 +57,13 @@ const INFO_LINKS = [
   { to: "/offer", label: "Публичная оферта", footerKey: "footer.info.offer" },
 ] as const;
 
+
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
   const { isStaff } = useRoles();
 
   const { count } = useCart();
-  const { count: wishCount } = useWishlist();
+
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrolling, setScrolling] = useState(false);
@@ -93,7 +109,22 @@ export function SiteHeader() {
               aria-label="Основная навигация"
               className={`hidden md:flex items-center gap-6 text-sm ${!isAuthenticated ? "justify-center" : ""}`}
             >
-              {NAV.map(n => (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded">
+                  Каталог
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64">
+                  {CATALOG_NAV.map((n) => (
+                    <Toggleable key={n.to} sectionKey={n.key} as="div">
+                      <DropdownMenuItem asChild>
+                        <Link to={n.to} className="w-full cursor-pointer">{n.label}</Link>
+                      </DropdownMenuItem>
+                    </Toggleable>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {PRIMARY_NAV.map(n => (
                 <Toggleable key={n.to} sectionKey={n.key} as="span">
                   <Link to={n.to} className="text-muted-foreground hover:text-foreground transition" activeProps={{ className: "text-foreground" }}>
                     {n.label}
@@ -106,14 +137,7 @@ export function SiteHeader() {
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
-            <Toggleable sectionKey="header.wishlist" as="span">
-              <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                <Heart className="h-4 w-4" aria-hidden="true" />
-                {wishCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
-                )}
-              </Link>
-            </Toggleable>
+
 
 
             <Toggleable sectionKey="header.cart" as="span">
@@ -200,16 +224,19 @@ export function SiteHeader() {
 
                 <div className="border-t border-border/50 px-2 py-3">
                   <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
-                  <Toggleable sectionKey="header.wishlist" as="div">
-                    <SheetClose asChild>
-                      <Link to="/wishlist" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                        <span className="flex items-center gap-3"><Heart className="h-4 w-4" /> Избранное</span>
-                        {wishCount > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{wishCount}</span>}
-                      </Link>
-                    </SheetClose>
-                  </Toggleable>
-
+                  <SheetClose asChild>
+                    <Link to="/calculator" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                      <span>Калькулятор сметы</span>
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link to="/cart" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
+                      <span className="flex items-center gap-3"><ShoppingCart className="h-4 w-4" /> Корзина</span>
+                      {count > 0 && <span className="text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">{count}</span>}
+                    </Link>
+                  </SheetClose>
                 </div>
+
 
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                   {isAuthenticated ? (

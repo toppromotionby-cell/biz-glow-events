@@ -10,13 +10,18 @@ function Field({
   type = "text",
   required,
   defaultValue,
+  error,
+  onFieldBlur,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
   defaultValue?: string;
+  error?: string;
+  onFieldBlur?: (name: string, value: string) => void;
 }) {
+  const errorId = `${name}-error`;
   return (
     <label className="block text-sm">
       <span className="text-muted-foreground">{label}</span>
@@ -25,8 +30,21 @@ function Field({
         type={type}
         required={required}
         defaultValue={defaultValue}
-        className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2 outline-none focus:border-primary"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        onBlur={(e) => onFieldBlur?.(name, e.currentTarget.value)}
+        onInput={(e) => {
+          if (error) onFieldBlur?.(name, e.currentTarget.value);
+        }}
+        className={`mt-1 w-full rounded-md bg-background/50 border px-3 py-2 outline-none transition ${
+          error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary"
+        }`}
       />
+      {error && (
+        <span id={errorId} role="alert" className="mt-1 block text-xs text-destructive">
+          {error}
+        </span>
+      )}
     </label>
   );
 }
@@ -39,6 +57,8 @@ export function ContactForm({
   draft,
   finalTotal,
   onSubmit,
+  errors = {},
+  onFieldBlur,
 }: {
   formRef: RefObject<HTMLFormElement | null>;
   loading: boolean;
@@ -47,11 +67,16 @@ export function ContactForm({
   draft: Record<string, string>;
   finalTotal: number;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  errors?: Record<string, string>;
+  onFieldBlur?: (name: string, value: string) => void;
 }) {
   return (
     <aside className="lg:col-span-2">
-      <form ref={formRef} onSubmit={onSubmit} className="glass rounded-xl p-5 space-y-3">
+      <form ref={formRef} onSubmit={onSubmit} noValidate className="glass rounded-xl p-5 space-y-3">
         <h2 className="font-display font-semibold">Контактные данные</h2>
+        <p className="text-xs text-muted-foreground">
+          Регистрация не нужна — просто оставьте контакты, менеджер свяжется с вами.
+        </p>
         <div className="flex gap-2 p-1 rounded-md bg-background/40 border border-border">
           {(["individual", "company"] as const).map((t) => (
             <button
@@ -68,11 +93,11 @@ export function ContactForm({
             </button>
           ))}
         </div>
-        <Field label="Имя *" name="client_name" required defaultValue={draft.client_name} />
-        <Field label="Телефон *" name="client_phone" type="tel" required defaultValue={draft.client_phone} />
-        <Field label="Email *" name="client_email" type="email" required defaultValue={draft.client_email} />
+        <Field label="Имя *" name="client_name" required defaultValue={draft.client_name} error={errors.client_name} onFieldBlur={onFieldBlur} />
+        <Field label="Телефон *" name="client_phone" type="tel" required defaultValue={draft.client_phone} error={errors.client_phone} onFieldBlur={onFieldBlur} />
+        <Field label="Email *" name="client_email" type="email" required defaultValue={draft.client_email} error={errors.client_email} onFieldBlur={onFieldBlur} />
         {clientType === "company" && (
-          <Field label="Компания *" name="client_company" required defaultValue={draft.client_company} />
+          <Field label="Компания *" name="client_company" required defaultValue={draft.client_company} error={errors.client_company} onFieldBlur={onFieldBlur} />
         )}
         <DateField
           label="Дата мероприятия"
