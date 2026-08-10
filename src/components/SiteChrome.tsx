@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown, GitCompare } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown, GitCompare, Send } from "lucide-react";
 
 import { useCart } from "@/lib/cart";
 import { useCompare } from "@/lib/compare";
@@ -121,6 +121,23 @@ export function SiteHeader() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
+            {/* Быстрый контакт — главный «тёплый» канал заявок. */}
+            <a
+              href={`tel:${CONTACT.phoneTel}`}
+              className="hidden lg:inline-flex items-center rounded-md px-2 py-1 text-sm font-semibold text-foreground/90 hover:text-foreground transition whitespace-nowrap"
+            >
+              {CONTACT.phoneDisplay}
+            </a>
+            <a
+              href={CONTACT.telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Написать в Telegram"
+              className="hidden lg:inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition"
+            >
+              <Send className="h-4 w-4" aria-hidden="true" />
+            </a>
+
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
 
 

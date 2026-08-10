@@ -36,7 +36,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
   return (
     <section
       ref={ref}
-      className="relative overflow-hidden min-h-[88svh] md:min-h-[92vh] flex items-center"
+      className="relative overflow-hidden min-h-[78svh] md:min-h-[88vh] flex items-center"
     >
       {/* Background image */}
       <div className="absolute inset-0 z-0">
@@ -85,7 +85,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
       <div className="hidden md:block absolute bottom-1/4 -left-20 h-64 w-64 rounded-full bg-accent/8 blur-[80px] pointer-events-none" aria-hidden="true" />
 
       {/* Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 relative z-10">
         <div className="max-w-3xl text-center md:text-left">
           {/* Badge */}
           <div
