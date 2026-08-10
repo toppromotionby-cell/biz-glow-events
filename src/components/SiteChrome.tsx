@@ -177,12 +177,6 @@ export function SiteHeader() {
           <div className="flex md:hidden items-center gap-1">
             
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
-            {compareCount > 0 && (
-              <Link to="/compare" aria-label={`Сравнение, ${compareCount} позиций`} className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                <GitCompare className="h-5 w-5" aria-hidden="true" />
-                <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{compareCount}</span>
-              </Link>
-            )}
             <Toggleable sectionKey="header.cart" as="span">
               <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition">
                 <ShoppingCart className="h-5 w-5" aria-hidden="true" />
