@@ -273,11 +273,11 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition"
               >
                 {isByRequest ? (
-                  <><MessageSquare className="h-4 w-4" /> Запросить смету</>
+                  <><MessageSquare className="h-4 w-4" /> Оставить заявку</>
                 ) : (
                   <>
                     <ShoppingCart className="h-4 w-4" />
-                    Заказать{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(effectiveTotal)}` : activeTier?.label ? ` «${activeTier.label}»` : ""}
+                    В корзину{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(effectiveTotal)}` : activeTier?.label ? ` «${activeTier.label}»` : ""}
                   </>
                 )}
               </button>
@@ -467,7 +467,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md bg-gradient-primary px-4 h-11 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isByRequest ? <MessageSquare className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
-          <span>{needsSelection ? "Выберите" : isByRequest ? "Запрос" : "Заказать"}</span>
+          <span>{needsSelection ? "Выберите" : isByRequest ? "Заявка" : "В корзину"}</span>
         </button>
       </div>
     </div>
