@@ -102,7 +102,7 @@ function ComparePage() {
                   <article key={`${meta.entity_type}-${meta.slug}`} className="glass rounded-2xl overflow-hidden flex h-full flex-col">
                     <div className="relative aspect-[4/3] bg-muted/30">
                       {photo ? (
-                        <StorageImg src={photo} alt={meta.title} className="absolute inset-0 h-full w-full object-cover" />
+                        <StorageImg path={photo} alt={meta.title} className="absolute inset-0 h-full w-full object-cover" />
                       ) : null}
                       <button
                         type="button"
