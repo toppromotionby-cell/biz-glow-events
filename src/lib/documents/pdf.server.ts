@@ -789,7 +789,7 @@ function drawSummary(
       });
     }
 
-    const labelFont = r.emphasis ? ctx.bold : ctx.regular;
+    const labelFont = r.emphasis ? displayFont(ctx, r.label) : ctx.regular;
     const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
     const baseline = cy - (h + size * 0.72) / 2;
     ctx.page.drawText(r.label, {
