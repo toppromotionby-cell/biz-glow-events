@@ -16,15 +16,7 @@ import { CONTACT } from "@/lib/contacts";
 import { SocialIcons } from "@/components/SocialIcons";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-
-// Разделы каталога — собраны в одно выпадающее меню «Каталог».
-const CATALOG_NAV = [
-  { to: "/zones", label: "Интерактивные зоны", key: "header.nav.zones", footerKey: "footer.catalog.zones" },
-  { to: "/equipment", label: "Техническое оснащение", key: "header.nav.equipment", footerKey: "footer.catalog.equipment" },
-  { to: "/services", label: "Услуги", key: "header.nav.services", footerKey: "footer.catalog.services" },
-  { to: "/production", label: "Производство", key: "header.nav.production", footerKey: "footer.catalog.production" },
-  { to: "/attractions", label: "Аттракционы", key: "header.nav.attractions", footerKey: "footer.catalog.attractions" },
-] as const;
+import { CatalogMegaMenu, CategoryChip, useCatalogNav } from "@/components/catalog/CatalogNav";
 
 // Второстепенные разделы — остаются в мобильном меню и футере.
 const SECONDARY_NAV = [
@@ -35,8 +27,6 @@ const SECONDARY_NAV = [
   { to: "/about", label: "О нас", key: "header.nav.about", footerKey: "footer.catalog.about" },
   { to: "/contacts", label: "Контакты", key: "header.nav.contacts", footerKey: "footer.catalog.contacts_link" },
 ] as const;
-
-const NAV = [...CATALOG_NAV, ...SECONDARY_NAV];
 
 // Ключевые пункты, которые остаются в десктопной шапке рядом с «Каталогом».
 const PRIMARY_NAV = [
@@ -61,6 +51,7 @@ export function SiteHeader() {
   const { isStaff } = useRoles();
 
   const { count } = useCart();
+  const catalogSections = useCatalogNav();
 
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -112,16 +103,11 @@ export function SiteHeader() {
                   Каталог
                   <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64">
-                  {CATALOG_NAV.map((n) => (
-                    <Toggleable key={n.to} sectionKey={n.key} as="div">
-                      <DropdownMenuItem asChild>
-                        <Link to={n.to} className="w-full cursor-pointer">{n.label}</Link>
-                      </DropdownMenuItem>
-                    </Toggleable>
-                  ))}
+                <DropdownMenuContent align="start" className="w-[min(90vw,880px)] p-4">
+                  <CatalogMegaMenu />
                 </DropdownMenuContent>
               </DropdownMenu>
+
               {PRIMARY_NAV.map(n => (
                 <Toggleable key={n.to} sectionKey={n.key} as="span">
                   <Link to={n.to} className="text-muted-foreground hover:text-foreground transition" activeProps={{ className: "text-foreground" }}>
@@ -199,7 +185,31 @@ export function SiteHeader() {
 
                 <Toggleable sectionKey="header.nav" as="div">
                   <nav aria-label="Мобильная навигация" className="px-2 pb-4 flex flex-col">
-                    {NAV.map((n) => (
+                    {catalogSections.map((section) => (
+                      <div key={section.key}>
+                        <SheetClose asChild>
+                          <Link
+                            to={section.basePath}
+                            className="block px-3 py-3 rounded-md text-base text-foreground hover:bg-primary/10 transition"
+                            activeProps={{ className: "bg-primary/15 text-foreground" }}
+                          >
+                            {section.title}
+                          </Link>
+                        </SheetClose>
+                        {section.categories.length > 0 && (
+                          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+                            {section.categories.slice(0, 8).map((c) => (
+                              <SheetClose asChild key={c.id}>
+                                <span>
+                                  <CategoryChip section={section} name={c.name} count={c.count} />
+                                </span>
+                              </SheetClose>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {SECONDARY_NAV.map((n) => (
                       <Toggleable key={n.to} sectionKey={n.key} as="div">
                         <SheetClose asChild>
                           <Link
@@ -214,6 +224,7 @@ export function SiteHeader() {
                     ))}
                   </nav>
                 </Toggleable>
+
 
                 <div className="border-t border-border/50 px-2 py-3">
                   <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
@@ -267,6 +278,7 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const catalogSections = useCatalogNav();
   return (
     <Toggleable sectionKey="footer.root" as="div">
       <footer className="border-t border-border/50 mt-20">
@@ -280,7 +292,12 @@ export function SiteFooter() {
             <Toggleable sectionKey="footer.catalog" as="div">
               <h4 className="font-medium mb-3">Каталог</h4>
               <ul className="space-y-2 text-muted-foreground">
-                {NAV.map(n => (
+                {catalogSections.map(section => (
+                  <li key={section.key}>
+                    <Link to={section.basePath} className="hover:text-foreground">{section.title}</Link>
+                  </li>
+                ))}
+                {SECONDARY_NAV.map(n => (
                   <Toggleable key={n.to} sectionKey={n.footerKey} as="li">
                     <Link to={n.to} className="hover:text-foreground">{n.label}</Link>
                   </Toggleable>
@@ -322,7 +339,12 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      {NAV.map(n => (
+                      {catalogSections.map(section => (
+                        <li key={section.key}>
+                          <Link to={section.basePath} className="hover:text-foreground">{section.title}</Link>
+                        </li>
+                      ))}
+                      {SECONDARY_NAV.map(n => (
                         <Toggleable key={n.to} sectionKey={n.footerKey} as="li">
                           <Link to={n.to} className="hover:text-foreground">{n.label}</Link>
                         </Toggleable>
