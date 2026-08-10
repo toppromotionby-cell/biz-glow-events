@@ -250,6 +250,16 @@ export const PROMO_DOC_CSS = `
 .promo-doc .footer-note { margin-top: 16px; color: #45454d; font-size: 11px; }
 .promo-doc .footer-note-empty { color: #9a9aa2; font-style: italic; }
 @media print { .promo-doc .footer-note-empty { display: none; } }
+.promo-doc .chk-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.promo-doc .chk { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; line-height: 1.25; padding: 2px 6px; border-radius: 999px; border: 1px solid; }
+.promo-doc .chk-ic { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; border-radius: 50%; font-weight: 700; font-size: 9px; color: #fff; }
+.promo-doc .chk-error { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+.promo-doc .chk-error .chk-ic { background: #dc2626; }
+.promo-doc .chk-warn { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+.promo-doc .chk-warn .chk-ic { background: #d97706; }
+.promo-doc tr.chk-row-error td { background: #fef2f2; }
+.promo-doc tr.chk-row-warn td { background: #fffbeb; }
+@media print { .promo-doc .chk-list { display: none !important; } .promo-doc tr.chk-row td { background: transparent !important; } }
 [data-edit] { cursor: pointer; }
 .promo-doc [data-edit]:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media print { .promo-doc [data-edit]:hover { outline: none; } .promo-doc { font-size: 11px; } }
