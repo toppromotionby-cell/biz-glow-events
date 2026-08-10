@@ -17,23 +17,22 @@ import {
 
 const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard, hint: "g d" },
-  { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, hint: "g o" },
+  { to: "/admin/orders", label: "Заказы и запросы", icon: ShoppingCart, hint: "g o" },
   { to: "/admin/calendar", label: "Календарь", icon: Calendar },
-  { to: "/admin/catalog/zones", label: "Каталог · Зоны", icon: Package, hint: "g c" },
-  { to: "/admin/catalog/tech_equipment", label: "Каталог · Оборудование", icon: Package },
-  { to: "/admin/catalog/services", label: "Каталог · Услуги", icon: Package },
-  { to: "/admin/catalog/production_items", label: "Каталог · Производство", icon: Package },
-  { to: "/admin/catalog/attractions", label: "Каталог · Аттракционы", icon: Package },
+  { to: "/admin/documents", label: "Документы", icon: FileText },
+  { to: "/admin/catalog/zones", label: "Каталог", icon: Package, hint: "g c" },
+  { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Package },
   { to: "/admin/cases", label: "Кейсы", icon: Trophy },
   { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
   { to: "/admin/blog", label: "Блог", icon: Newspaper },
-  
+
   { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail },
   { to: "/admin/promo", label: "Промокоды", icon: Tag },
   { to: "/admin/users", label: "Пользователи", icon: UserCog },
   { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
   { to: "/admin/audit", label: "Аудит", icon: FileText },
 ];
+
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 const TABLE_LABEL: Record<(typeof TABLES)[number], string> = {
