@@ -12,6 +12,34 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   cancelled: "Отменён",
 };
 
+/**
+ * Упрощённая воронка (этап 2): в новых заказах используем только эти статусы.
+ * Остальные оставлены как legacy — показываем их лишь в тех заказах,
+ * где они уже проставлены, чтобы не терять историю.
+ */
+export const ORDER_STATUS_PIPELINE = [
+  "new",
+  "in_progress",
+  "confirmed",
+  "paid",
+  "completed",
+  "cancelled",
+] as const;
+
+export const LEGACY_ORDER_STATUSES = ["consultation", "estimate", "contract", "quoted"] as const;
+
+export function isLegacyOrderStatus(status: string): boolean {
+  return (LEGACY_ORDER_STATUSES as readonly string[]).includes(status);
+}
+
+/** Список статусов для селекта: воронка + текущий legacy-статус, если он есть. */
+export function orderStatusOptions(current?: string | null): { value: string; label: string }[] {
+  const values: string[] = [...ORDER_STATUS_PIPELINE];
+  if (current && !values.includes(current)) values.unshift(current);
+  return values.map((v) => ({ value: v, label: ORDER_STATUS_LABEL[v] ?? v }));
+}
+
+
 export const ORDER_STATUS_COLOR: Record<string, string> = {
   new: "bg-blue-500/15 text-blue-300 border-blue-400/30",
   consultation: "bg-cyan-500/15 text-cyan-300 border-cyan-400/30",

@@ -10,7 +10,7 @@ import { downloadCsv, toCsv } from "@/lib/csv";
 import { Download, Search, Clock, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
+import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR, orderStatusOptions } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
@@ -442,9 +442,10 @@ function DesktopOrdersTable({
                       onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value as OrderStatus })}
                       className={`px-2 py-1 rounded-full text-xs border bg-transparent outline-none cursor-pointer ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}
                     >
-                      {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                        <option key={k} value={k} className="bg-background text-foreground">{v}</option>
+                      {orderStatusOptions(o.status).map((s) => (
+                        <option key={s.value} value={s.value} className="bg-background text-foreground">{s.label}</option>
                       ))}
+
                     </select>
                   </td>
                   <td className={`p-3 whitespace-nowrap text-xs tabular-nums ${age.cls}`} title={`Обновлён: ${fmtDateTime(o.updated_at ?? o.created_at)}`}>

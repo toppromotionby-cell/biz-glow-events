@@ -22,8 +22,11 @@ import {
   ArrowLeft, Clock, Trash2, Mail, FileText, MoreHorizontal, Phone, Copy,
   Send, Download, ChevronDown, CheckCircle2, Circle, MessageSquare, Paperclip,
   CalendarDays, Building2, User as UserIcon, Link2, Plus,
+  History as HistoryIcon,
 } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { RecordHistory } from "@/components/admin/RecordHistory";
+
 import { OrderAssignee } from "@/components/admin/OrderAssignee";
 import { OrderPaymentDialog } from "@/components/admin/OrderPaymentDialog";
 import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
@@ -32,7 +35,7 @@ import { base64ToBytes } from "@/lib/authed-fetch";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { previewOrderConfirmationEmail } from "@/lib/orders.functions";
 import { notifyOrderStatus } from "@/lib/order-notifications.functions";
-import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/order-status";
+import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, orderStatusOptions } from "@/lib/order-status";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
 import { displayOrderNumber } from "@/lib/order-number";
 import { cn } from "@/lib/utils";
@@ -228,9 +231,10 @@ function OrderDetail() {
                 value={order.status}
                 onValueChange={(v) => updateStatus.mutate(v as OrderStatus)}
               >
-                {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => (
-                  <DropdownMenuRadioItem key={k} value={k}>{v}</DropdownMenuRadioItem>
+                {orderStatusOptions(order.status).map((o) => (
+                  <DropdownMenuRadioItem key={o.value} value={o.value}>{o.label}</DropdownMenuRadioItem>
                 ))}
+
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -396,6 +400,10 @@ function OrderDetail() {
                 <TabsTrigger value="attachments" className="gap-1.5">
                   <Paperclip className="h-3.5 w-3.5" />Вложения
                 </TabsTrigger>
+                <TabsTrigger value="history" className="gap-1.5">
+                  <HistoryIcon className="h-3.5 w-3.5" />История
+                </TabsTrigger>
+
               </TabsList>
 
               <TabsContent value="notes" className="mt-4 space-y-3">
@@ -444,7 +452,12 @@ function OrderDetail() {
               <TabsContent value="attachments" className="mt-4">
                 <OrderAttachments orderId={order.id} />
               </TabsContent>
+
+              <TabsContent value="history" className="mt-4">
+                <RecordHistory recordId={order.id} />
+              </TabsContent>
             </Tabs>
+
           </section>
         </div>
 
