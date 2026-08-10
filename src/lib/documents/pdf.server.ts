@@ -1137,6 +1137,14 @@ export async function buildStandaloneQuotePdf(
                 });
               }
             }
+            if (t.vatEnabled && quote.vat_as_line) {
+              rows.push({
+                title: t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
+                qty: "",
+                price: "",
+                sum: money(t.vat),
+              });
+            }
             return rows;
           })(),
         );
@@ -1149,7 +1157,13 @@ export async function buildStandaloneQuotePdf(
           { label: "Стоимость позиций", value: money(t.subtotal) },
           ...(t.discount ? [{ label: "Скидка", value: `− ${money(t.discount)}` }] : []),
           ...(t.delivery ? [{ label: "Доставка и логистика", value: money(t.delivery) }] : []),
-          { label: "ИТОГО", value: money(t.total), emphasis: true },
+          ...(t.vatEnabled
+            ? [
+                { label: "Сумма без НДС", value: money(t.net) },
+                { label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) },
+              ]
+            : []),
+          { label: t.vatEnabled ? "ИТОГО С НДС" : "ИТОГО", value: money(t.total), emphasis: true },
           ...(t.prepayment
             ? [
                 { label: "Предоплата", value: money(t.prepayment) },
@@ -1157,7 +1171,13 @@ export async function buildStandaloneQuotePdf(
               ]
             : []),
         ]);
-        drawParagraph(ctx, `${amountToWords(t.total)}. ${quote.vat_note || settings.vat_note}`, { size: 9.5, color: MUTED });
+        drawParagraph(
+          ctx,
+          `${amountToWords(t.total)}. ${
+            t.vatEnabled ? `В том числе НДС ${vatRateLabel(t.vatRate)}% — ${money(t.vat)}` : quote.vat_note || settings.vat_note
+          }`,
+          { size: 9.5, color: MUTED },
+        );
         break;
       }
       case "included":
@@ -1304,13 +1324,23 @@ export async function buildPromoQuotePdf(
       note: `${quote.commission_rate}%`,
     });
   }
+  if (t.vatEnabled && quote.vat_as_line) {
+    rows.push({
+      title: t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
+      unit: "—",
+      qty: "—",
+      price: "",
+      sum: money(t.vat),
+      note: "",
+    });
+  }
   drawTable(ctx, cols, rows.length ? rows : [{ title: "Позиции не добавлены", unit: "", qty: "", price: "", sum: "", note: "" }]);
 
   gap(ctx, 6);
   drawSummary(ctx, [
-    { label: `Всего${quote.vat_enabled ? ", без НДС" : ""}`, value: money(t.subtotal) },
-    ...(quote.vat_enabled ? [{ label: `НДС ${quote.vat_rate}%`, value: money(t.vat) }] : []),
-    { label: `Итого${quote.vat_enabled ? ", с НДС" : ""}`, value: money(t.totalWithVat), emphasis: true },
+    { label: t.vatEnabled ? "Сумма без НДС" : "Всего", value: money(t.net) },
+    ...(t.vatEnabled ? [{ label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) }] : []),
+    { label: `Итого${t.vatEnabled ? ", с НДС" : ""}`, value: money(t.totalWithVat), emphasis: true },
   ]);
 
   if (quote.footer_note) {
