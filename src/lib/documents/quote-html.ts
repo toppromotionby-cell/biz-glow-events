@@ -288,7 +288,7 @@ export function buildQuoteHtmlDoc(
       const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${esc(section)}</td></tr>` : "";
       const body = rows
         .map(
-          (it, i) => `<tr${ed("item", it.id, "Позиция")}>ature
+          (it, i) => `<tr${ed("item", it.id, "Позиция")}>
         <td class="idx">${i + 1}</td>
         <td>
           <div class="it-title">${esc(it.title)}</div>
