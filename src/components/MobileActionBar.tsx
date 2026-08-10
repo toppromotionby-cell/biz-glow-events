@@ -5,7 +5,6 @@ import { Link } from "@tanstack/react-router";
 import { Phone, Send, ShoppingCart } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
 import { useCart } from "@/lib/cart";
-import { trackSocialClick } from "@/lib/analytics";
 
 const HIDDEN_PREFIXES = ["/admin", "/cart", "/checkout", "/auth"];
 
@@ -33,7 +32,6 @@ export function MobileActionBar() {
           rel="noopener noreferrer"
           className={cls}
           aria-label="Написать в Telegram"
-          onClick={() => trackSocialClick("telegram", "mobile_bar", CONTACT.telegramUrl)}
         >
           <Send className="h-5 w-5 text-primary" aria-hidden="true" />
           Telegram
