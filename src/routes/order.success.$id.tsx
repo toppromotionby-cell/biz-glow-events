@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Mail, FileText, Phone, Send } from "lucide-react";
+import { CheckCircle2, Mail, FileText, Phone, Send, UserPlus } from "lucide-react";
 import { CONTACT } from "@/lib/contacts";
 import { supabase } from "@/integrations/supabase/client";
 import { displayOrderNumber } from "@/lib/order-number";
+import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/order/success/$id")({
   component: OrderSuccess,
