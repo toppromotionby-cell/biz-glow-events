@@ -6,8 +6,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ArrowLeft, Download, FileSpreadsheet, Save, Loader2, Info, Undo2, History, Send,
-  AlertTriangle, CheckCircle2, Eye, Percent,
+  AlertTriangle, CheckCircle2, Eye, Percent, Brain,
 } from "lucide-react";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
