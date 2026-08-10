@@ -293,7 +293,20 @@ function SectionCard({
   const [title, setTitle] = useState(section.title);
   const [description, setDescription] = useState(section.description ?? "");
   const [newName, setNewName] = useState("");
+  const [listOpen, setListOpen] = useState(false);
   const isVirtual = section.kind === "virtual";
+  const storageKey = `catalog-structure:open:${section.key}`;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setListOpen(window.localStorage.getItem(storageKey) === "1");
+  }, [storageKey]);
+
+  const toggleList = (v: boolean) => {
+    setListOpen(v);
+    if (typeof window !== "undefined") window.localStorage.setItem(storageKey, v ? "1" : "0");
+  };
+
 
   const move = (index: number, dir: -1 | 1) => {
     const target = categories[index + dir];
