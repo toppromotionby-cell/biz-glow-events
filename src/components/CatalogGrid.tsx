@@ -9,7 +9,7 @@ import { useClampedText } from "@/components/ui/ClampedTitle";
 
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
-import { Info, X, ArrowUpDown } from "lucide-react";
+import { Info, X, ArrowUpDown, Search } from "lucide-react";
 
 type SortKey = "default" | "price-asc" | "price-desc" | "title-asc";
 
@@ -52,6 +52,8 @@ export function CatalogGrid({
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<PerPage>(30);
   const [sort, setSort] = useState<SortKey>("default");
+  const [price, setPrice] = useState<PriceKey>("all");
+  const [query, setQuery] = useState("");
 
   // Категории фильтра берём из админского справочника, но показываем
   // только те, по которым реально есть опубликованные позиции.
@@ -104,6 +106,12 @@ export function CatalogGrid({
     if (pg > 0) setPage(pg);
     const pp = Number(params.get("per"));
     if ((PER_PAGE_OPTIONS as readonly number[]).includes(pp)) setPerPage(pp as PerPage);
+    const pr = params.get("price") as PriceKey | null;
+    if (pr && PRICE_FILTERS.some((f) => f.key === pr)) setPrice(pr);
+    const so = params.get("sort") as SortKey | null;
+    if (so && so in SORT_LABELS) setSort(so);
+    const q = params.get("q");
+    if (q) setQuery(q);
   }, []);
 
   // Sync to URL
@@ -114,13 +122,16 @@ export function CatalogGrid({
     if (activeCategory) params.set("category", activeCategory); else params.delete("category");
     if (page > 1) params.set("page", String(page)); else params.delete("page");
     if (perPage !== 30) params.set("per", String(perPage)); else params.delete("per");
+    if (price !== "all") params.set("price", price); else params.delete("price");
+    if (sort !== "default") params.set("sort", sort); else params.delete("sort");
+    if (query.trim()) params.set("q", query.trim()); else params.delete("q");
     const qs = params.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     window.history.replaceState(null, "", url);
-  }, [activeTags, activeCategory, page, perPage]);
+  }, [activeTags, activeCategory, page, perPage, price, sort, query]);
 
   // Reset page when filter changes
-  useEffect(() => { setPage(1); }, [activeTags, activeCategory, perPage, sort]);
+  useEffect(() => { setPage(1); }, [activeTags, activeCategory, perPage, sort, price, query]);
 
   const toggleTag = (t: string) =>
     setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
@@ -133,6 +144,19 @@ export function CatalogGrid({
     }
     if (activeTags.length) {
       result = result.filter((it) => activeTags.every((t) => it.tags?.includes(t)));
+    }
+    if (price !== "all") {
+      const f = PRICE_FILTERS.find((x) => x.key === price);
+      if (f) result = result.filter((it) => f.test(it.priceFrom || 0));
+    }
+    const q = query.trim().toLowerCase();
+    if (q) {
+      result = result.filter(
+        (it) =>
+          it.title.toLowerCase().includes(q) ||
+          (it.description ?? "").toLowerCase().includes(q) ||
+          it.tags?.some((t) => t.toLowerCase().includes(q)),
+      );
     }
     if (sort !== "default") {
       // Позиции «по запросу» (цена 0) всегда в конце при сортировке по цене.
@@ -149,7 +173,7 @@ export function CatalogGrid({
       );
     }
     return result;
-  }, [items, activeTags, activeCategory, sort]);
+  }, [items, activeTags, activeCategory, sort, price, query]);
 
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -158,6 +182,14 @@ export function CatalogGrid({
     () => filtered.slice((currentPage - 1) * perPage, currentPage * perPage),
     [filtered, currentPage, perPage],
   );
+
+  const hasFilters = activeTags.length > 0 || !!activeCategory || price !== "all" || !!query.trim();
+  const resetFilters = () => {
+    setActiveTags([]);
+    setActiveCategory(null);
+    setPrice("all");
+    setQuery("");
+  };
 
   const handlePage = (p: number) => {
     setPage(p);
@@ -200,6 +232,46 @@ export function CatalogGrid({
           })}
         </div>
       )}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <label className="relative flex-1 min-w-[12rem] max-w-sm">
+          <span className="sr-only">Поиск по разделу</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск по разделу..."
+            className="glass w-full rounded-full border border-primary/20 bg-transparent py-1.5 pl-9 pr-3 text-xs sm:text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
+          />
+        </label>
+        {PRICE_FILTERS.map((f) => {
+          const active = price === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setPrice(f.key)}
+              aria-pressed={active}
+              className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                active
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "glass border-primary/20 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-muted-foreground transition hover:text-foreground"
+          >
+            <X className="h-3 w-3" /> Сбросить всё
+          </button>
+        )}
+      </div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs sm:text-sm text-muted-foreground">
           Найдено позиций: <span className="font-semibold text-foreground">{filtered.length}</span>
@@ -256,7 +328,7 @@ export function CatalogGrid({
         <div className="glass rounded-2xl p-8 text-center">
           <p className="text-muted-foreground">Ничего не найдено по выбранным фильтрам.</p>
           <button
-            onClick={() => { setActiveTags([]); setActiveCategory(null); }}
+            onClick={resetFilters}
             className="mt-3 inline-flex items-center justify-center rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
           >
             Сбросить фильтры
