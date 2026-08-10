@@ -50,12 +50,6 @@ export function OrderHeader({ order, onStatusChange, onConfirm, onResendEmail, o
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            to="/admin/orders/$id" params={{ id: order.id }}
-            className="text-xs inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
-          >
-            <ExternalLink className="h-3 w-3" /><span className="hidden sm:inline">Полная страница</span>
-          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Действия">
