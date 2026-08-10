@@ -453,6 +453,7 @@ function Page() {
               <QuoteItemsPanel
                 items={items}
                 onChange={patchItems}
+                issues={itemIssues}
                 showCost={showCost}
                 toolbar={
                   <>
