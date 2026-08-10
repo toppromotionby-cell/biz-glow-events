@@ -426,6 +426,7 @@ export function BlockEditDialog({
                 value={draft.texts?.footer ?? ""}
                 onChange={(e) => set({ texts: { ...(draft.texts ?? quote.texts), footer: e.target.value } })}
               />
+              <PlaceholderPreview text={draft.texts?.footer ?? ""} map={map} numbers={numbers} />
               <div className="mt-2">
                 <Button
                   type="button"
