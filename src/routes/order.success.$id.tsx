@@ -66,14 +66,32 @@ function OrderSuccess() {
           </a>
         </div>
 
+        {!isAuthenticated && (
+          <div className="glass rounded-xl p-4 text-left space-y-2">
+            <div className="text-sm font-medium">Хотите отслеживать заявки онлайн?</div>
+            <p className="text-xs text-muted-foreground">
+              Создайте аккаунт за минуту — история заказов, документы и повторный заказ в один клик.
+            </p>
+            <Link
+              to="/auth"
+              className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground glow-primary"
+            >
+              <UserPlus className="h-4 w-4" /> Создать аккаунт
+            </Link>
+          </div>
+        )}
+
         <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <Link to="/profile" className="inline-flex items-center gap-2 rounded-md border border-primary/40 px-5 py-2.5 text-sm font-medium hover:bg-primary/10 transition">
-            <FileText className="h-4 w-4" /> Мои заявки
-          </Link>
+          {isAuthenticated && (
+            <Link to="/profile" className="inline-flex items-center gap-2 rounded-md border border-primary/40 px-5 py-2.5 text-sm font-medium hover:bg-primary/10 transition">
+              <FileText className="h-4 w-4" /> Мои заявки
+            </Link>
+          )}
           <Link to="/" className="inline-flex items-center rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary">
             На главную
           </Link>
         </div>
+
       </div>
     </div>
   );
