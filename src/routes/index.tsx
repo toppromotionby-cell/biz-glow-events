@@ -18,6 +18,7 @@ import { InView } from "@/components/InView";
 
 // Тяжёлые модалки/виджеты — ленивая загрузка ради меньшего initial JS.
 const GuestEstimator = lazy(() => import("@/components/GuestEstimator").then((m) => ({ default: m.GuestEstimator })));
+const PackageBuilder = lazy(() => import("@/components/PackageBuilder").then((m) => ({ default: m.PackageBuilder })));
 const CatalogChoiceModal = lazy(() => import("@/components/CatalogChoiceModal").then((m) => ({ default: m.CatalogChoiceModal })));
 const TestimonialsTeaser = lazy(() => import("@/components/TestimonialsTeaser").then((m) => ({ default: m.TestimonialsTeaser })));
 const CatalogQuickView = lazy(() => import("@/components/CatalogQuickView").then((m) => ({ default: m.CatalogQuickView })));
@@ -188,6 +189,13 @@ function HomePage() {
       <InView minHeight={400}>
         <Toggleable sectionKey="home.estimator"><Suspense fallback={null}><GuestEstimator /></Suspense></Toggleable>
       </InView>
+
+      {/* PACKAGE BUILDER */}
+      <InView minHeight={400}>
+        <Toggleable sectionKey="home.packages"><Suspense fallback={null}><PackageBuilder /></Suspense></Toggleable>
+      </InView>
+
+
 
       {/* TESTIMONIALS */}
       <InView minHeight={320}>
