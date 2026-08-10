@@ -21,11 +21,13 @@ export const Route = createFileRoute("/admin/documents/finance/$id/render")({
         const auth = await requireStaff(request);
         if (auth instanceof Response) return auth;
 
-        const [{ data: doc, error }, settings] = await Promise.all([
-          supabaseAdmin.from("finance_documents").select("*").eq("id", params.id).maybeSingle(),
-          loadDocumentSettings(supabaseAdmin as never),
-        ]);
+        const { data: doc, error } = await supabaseAdmin
+          .from("finance_documents").select("*").eq("id", params.id).maybeSingle();
         if (error || !doc) return new Response("Not found", { status: 404 });
+        const settings = await loadDocumentSettings(
+          supabaseAdmin as never,
+          (doc as { company_id?: string | null }).company_id ?? null,
+        );
 
         const kind = (doc.kind ?? "invoice") as keyof typeof BUILDERS;
         const items: DocItem[] = (Array.isArray(doc.items) ? doc.items : []).map((raw) => {
