@@ -1,3 +1,4 @@
+import { assertPermission } from "@/lib/authz";
 // Клиентский доступ к базе знаний документов (подсказки в конструкторах).
 // Только для staff: проверка ролей внутри обработчика.
 import { createServerFn } from "@tanstack/react-start";
@@ -9,15 +10,8 @@ export type { ContactHit, ItemHit, TextHit };
 
 const TEXT_KINDS = ["note", "footer", "section", "venue", "event_format", "term"] as const;
 
-async function assertStaff(context: {
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> };
-  userId: string;
-}) {
-  const [{ data: isAdmin }, { data: isManager }] = await Promise.all([
-    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
-    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "manager" }),
-  ]);
-  if (!isAdmin && !isManager) throw new Error("Forbidden");
+async function assertStaff(context: { supabase: unknown; userId: string }) {
+  await assertPermission(context as never, "documents.knowledge");
 }
 
 export const suggestContacts = createServerFn({ method: "POST" })

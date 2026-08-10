@@ -1,3 +1,4 @@
+import { assertPermission } from "@/lib/authz";
 // Серверные функции раздела «Документы → КП».
 // Доступ только для staff (admin/manager) — проверяется через has_role,
 // данные пишутся под пользователем (RLS), каталог читается admin-клиентом.
@@ -16,12 +17,8 @@ import {
   type QuoteItem,
 } from "@/lib/quotes-model";
 
-async function assertStaff(context: { supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> }; userId: string }) {
-  const [{ data: isAdmin }, { data: isManager }] = await Promise.all([
-    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
-    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "manager" }),
-  ]);
-  if (!isAdmin && !isManager) throw new Error("Forbidden");
+async function assertStaff(context: { supabase: unknown; userId: string }) {
+  await assertPermission(context as never, "documents.manage");
 }
 
 export type QuoteListRow = {
