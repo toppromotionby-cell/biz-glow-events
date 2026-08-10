@@ -117,11 +117,13 @@ export function SlideSettingsPanel({
       )}
 
       {slide.type !== "contacts" && slide.type !== "section" && (
-        <ImageField
-          value={slide.image_url}
+        <GalleryField
+          images={c.images}
+          layout={c.imageLayout}
           enabled={c.showImage}
           onToggle={(v) => setContent({ showImage: v })}
-          onChange={(url) => onChange({ image_url: url })}
+          onChange={(images) => setContent({ images })}
+          onLayout={(imageLayout) => setContent({ imageLayout })}
         />
       )}
 
