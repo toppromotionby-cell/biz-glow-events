@@ -59,20 +59,23 @@ function isExpired(validUntil: string | null, status: string): boolean {
 
 export const listAllDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { search?: string; status?: string; kind?: string } | undefined) =>
-    z
-      .object({
-        search: z.string().max(200).optional(),
-        status: z.string().max(30).optional(),
-        kind: z.enum(["all", "quote", "promo"]).optional(),
-      })
-      .parse(d ?? {}),
+  .inputValidator(
+    (d: { search?: string; status?: string; kind?: string; templates?: boolean } | undefined) =>
+      z
+        .object({
+          search: z.string().max(200).optional(),
+          status: z.string().max(30).optional(),
+          kind: z.enum(["all", "quote", "promo"]).optional(),
+          templates: z.boolean().optional(),
+        })
+        .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<DocumentsOverview> => {
     await assertStaff(context as never);
 
     const kind = data.kind ?? "all";
     const search = (data.search ?? "").trim().toLowerCase();
+    const templatesMode = data.templates === true;
 
     const wantQuotes = kind === "all" || kind === "quote";
     const wantPromo = kind === "all" || kind === "promo";
@@ -82,9 +85,9 @@ export const listAllDocuments = createServerFn({ method: "GET" })
         ? context.supabase
             .from("quotes")
             .select(
-              "id,quote_number,status,title,client_name,client_company,event_date,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until_override,doc_date,validity_days",
+              "id,quote_number,status,title,template_name,client_name,client_company,event_date,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until_override,doc_date,validity_days",
             )
-            .eq("is_template", false)
+            .eq("is_template", templatesMode)
             .order("created_at", { ascending: false })
             .limit(300)
         : Promise.resolve({ data: [] as unknown[] }),
@@ -92,9 +95,9 @@ export const listAllDocuments = createServerFn({ method: "GET" })
         ? context.supabase
             .from("promo_quotes")
             .select(
-              "id,doc_number,status,project,client_name,period,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until",
+              "id,doc_number,status,project,template_name,client_name,period,total,updated_at,created_at,sent_at,viewed_at,client_response,valid_until",
             )
-            .eq("is_template", false)
+            .eq("is_template", templatesMode)
             .order("created_at", { ascending: false })
             .limit(300)
         : Promise.resolve({ data: [] as unknown[] }),
