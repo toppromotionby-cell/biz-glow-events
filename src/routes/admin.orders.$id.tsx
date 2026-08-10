@@ -133,7 +133,14 @@ function OrderDetail() {
   const notifyStatusFn = useServerFn(notifyOrderStatus);
   const updateStatus = useMutation({
     mutationFn: async (status: OrderStatus) => {
-      const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+      // Этап 3: заказ без ответственного автоматически закрепляется за тем,
+      // кто первым сдвинул его из «Новый».
+      const patch: { status: OrderStatus; manager_id?: string } = { status };
+      if (!order?.manager_id && status !== "new") {
+        const { data: auth } = await supabase.auth.getUser();
+        if (auth?.user?.id) patch.manager_id = auth.user.id;
+      }
+      const { error } = await supabase.from("orders").update(patch).eq("id", id);
       if (error) throw error;
       try {
         const res = await notifyStatusFn({ data: { orderId: id, status: String(status) } });
@@ -141,12 +148,15 @@ function OrderDetail() {
       } catch (e) {
         console.warn("notifyOrderStatus failed", e);
       }
+      return patch.manager_id ?? null;
     },
-    onSuccess: () => {
-      toast.success("Статус обновлён");
+    onSuccess: (assigned) => {
+      toast.success(assigned ? "Статус обновлён, заказ закреплён за вами" : "Статус обновлён");
       qc.invalidateQueries({ queryKey: ["order", id] });
       qc.invalidateQueries({ queryKey: ["order-timeline", id] });
+      qc.invalidateQueries({ queryKey: ["admin-attention"] });
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 

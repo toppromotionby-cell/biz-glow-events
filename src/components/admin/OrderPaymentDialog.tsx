@@ -130,9 +130,22 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
 
       const newPaid = currentPaid + value;
 
+      // Этап 3 (автоматизация): статус переводится сам по факту оплаты.
+      const { data: cur } = await supabase
+        .from("orders")
+        .select("status")
+        .eq("id", orderId)
+        .maybeSingle();
+      const status = cur?.status as string | undefined;
+      const patch: { paid: number; status?: "paid" | "confirmed" } = { paid: newPaid };
+      if (status && !["cancelled", "completed", "paid"].includes(status)) {
+        if (total > 0 && newPaid >= total) patch.status = "paid";
+        else if (status === "new" || status === "in_progress") patch.status = "confirmed";
+      }
+
       const { error: updErr } = await supabase
         .from("orders")
-        .update({ paid: newPaid })
+        .update(patch)
         .eq("id", orderId);
       if (updErr) throw updErr;
 
@@ -142,14 +155,21 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
         payload,
       });
       if (tlErr) throw tlErr;
+      return patch.status ?? null;
     },
-    onSuccess: () => {
-      toast.success("Платёж зафиксирован");
+    onSuccess: (autoStatus) => {
+      toast.success(
+        autoStatus === "paid" ? "Платёж зафиксирован — заказ отмечен как оплаченный"
+          : autoStatus === "confirmed" ? "Платёж зафиксирован — заказ подтверждён"
+          : "Платёж зафиксирован",
+      );
       qc.invalidateQueries({ queryKey: ["order", orderId] });
       qc.invalidateQueries({ queryKey: ["order-timeline", orderId] });
+      qc.invalidateQueries({ queryKey: ["admin-attention"] });
       onOpenChange(false);
       resetForm();
     },
+
     onError: (e: Error) => {
       toast.error(e instanceof z.ZodError ? "Проверьте введённые данные" : e.message);
     },

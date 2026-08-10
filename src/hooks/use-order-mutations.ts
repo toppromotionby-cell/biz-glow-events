@@ -27,12 +27,22 @@ export function useOrderMutations() {
   // public.log_order_status_change (см. миграцию Stage 5).
   const updateStatus = useMutation({
     mutationFn: async ({ id, newStatus }: { id: string; newStatus: OrderStatus }) => {
-      const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", id);
+      // Этап 3: если ответственного нет, закрепляем заказ за тем, кто двигает статус.
+      const patch: { status: OrderStatus; manager_id?: string } = { status: newStatus };
+      if (newStatus !== "new") {
+        const { data: cur } = await supabase.from("orders").select("manager_id").eq("id", id).maybeSingle();
+        if (!cur?.manager_id) {
+          const { data: auth } = await supabase.auth.getUser();
+          if (auth?.user?.id) patch.manager_id = auth.user.id;
+        }
+      }
+      const { error } = await supabase.from("orders").update(patch).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { notify.success("Статус обновлён"); invalidateAll(); },
     onError: (e: Error) => notify.error(e?.message ?? "Не удалось изменить статус"),
   });
+
 
   const updatePaid = useMutation({
     mutationFn: async ({ id, newPaid }: { id: string; newPaid: number; prevPaid: number }) => {
