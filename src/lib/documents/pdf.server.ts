@@ -2043,7 +2043,7 @@ export async function buildPromoQuotePdf(
 
   gap(ctx, 6);
   drawSummary(ctx, [
-    { label: t.vatEnabled ? "Сумма без НДС" : "Всего", value: money(t.net) },
+    { label: t.vatEnabled ? "Стоимость позиций (без НДС)" : "Всего", value: money(t.net) },
     ...(t.vatEnabled ? [{ label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) }] : []),
     { label: `Итого${t.vatEnabled ? ", с НДС" : ""}`, value: money(t.totalWithVat), emphasis: true },
   ]);
