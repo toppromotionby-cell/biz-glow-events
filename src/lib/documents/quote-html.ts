@@ -591,6 +591,7 @@ export function buildQuoteHtmlDoc(
   tr.chk-row-warn td { background:#fffbeb; }
   @media print { .chk-list { display:none !important; } tr.chk-row td { background:transparent !important; } }
   @media print { body { background:#fff; } .sheet { max-width:none; padding:0; } }
+  ${DENSITY_PAGE_CSS}
   ${
     editable
       ? `
