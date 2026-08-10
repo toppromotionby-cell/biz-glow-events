@@ -91,18 +91,49 @@ const MARGIN_X = DOC_LAYOUT.marginXPt;
 const MARGIN_TOP = DOC_LAYOUT.marginTopPt;
 const MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
 
-// Кегли: те же, что в HTML-превью, переведённые в pt
-const F11 = DOC_FONT_PT.small;
-const F12 = DOC_FONT_PT.body;
-const F13 = DOC_FONT_PT.section;
-const F16 = DOC_FONT_PT.total;
-const F22 = DOC_FONT_PT.brand;
-const F_COVER = DOC_FONT_PT.coverTitle;
-const F_DOC_KIND = DOC_FONT_PT.docKind;
-const F_DOC_NUM = DOC_FONT_PT.docNum;
-const F_DOC_DATE = DOC_FONT_PT.docDate;
-const F_LABEL = DOC_FONT_PT.cardLabel;
-const F_FOOTER = DOC_FONT_PT.footer;
+// Кегли: те же, что в HTML-превью, переведённые в pt.
+// Плотность (density) позволяет уплотнить документ, чтобы он влез в меньшее
+// число листов: 1 = «комфортно» (как превью), 0.94 = «компактно», 0.88 = «плотно».
+export type DocDensity = "comfortable" | "compact" | "dense";
+export const DOC_DENSITY_SCALE: Record<DocDensity, number> = {
+  comfortable: 1,
+  compact: 0.94,
+  dense: 0.88,
+};
+
+/** Текущий множитель плотности (отступы, высоты строк). */
+let D = 1;
+
+let F11 = DOC_FONT_PT.small;
+let F12 = DOC_FONT_PT.body;
+let F13 = DOC_FONT_PT.section;
+let F16 = DOC_FONT_PT.total;
+let F22 = DOC_FONT_PT.brand;
+let F_COVER = DOC_FONT_PT.coverTitle;
+let F_DOC_KIND = DOC_FONT_PT.docKind;
+let F_DOC_NUM = DOC_FONT_PT.docNum;
+let F_DOC_DATE = DOC_FONT_PT.docDate;
+let F_LABEL = DOC_FONT_PT.cardLabel;
+let F_FOOTER = DOC_FONT_PT.footer;
+
+/** Пересчитать шкалу кеглей и отступов под выбранную плотность. */
+function applyDensity(density: DocDensity) {
+  const k = DOC_DENSITY_SCALE[density];
+  D = k;
+  const s = (v: number) => Math.round(v * (0.5 + k / 2) * 10) / 10; // кегли ужимаем мягче отступов
+  F11 = s(DOC_FONT_PT.small);
+  F12 = s(DOC_FONT_PT.body);
+  F13 = s(DOC_FONT_PT.section);
+  F16 = s(DOC_FONT_PT.total);
+  F22 = s(DOC_FONT_PT.brand);
+  F_COVER = s(DOC_FONT_PT.coverTitle);
+  F_DOC_KIND = s(DOC_FONT_PT.docKind);
+  F_DOC_NUM = s(DOC_FONT_PT.docNum);
+  F_DOC_DATE = s(DOC_FONT_PT.docDate);
+  F_LABEL = s(DOC_FONT_PT.cardLabel);
+  F_FOOTER = s(DOC_FONT_PT.footer);
+}
+
 
 type FittedLogo = { img: PDFImage; w: number; h: number; aspect: number };
 
@@ -325,6 +356,36 @@ function drawParagraph(
   }
 }
 
+/**
+ * Финальное примечание (условия/срок действия). В отличие от drawParagraph
+ * не переносится на новую страницу из-за пары строк: сначала пробуем ужать
+ * кегль и занять нижнее поле до линии футера.
+ */
+function drawTrailingNote(
+  ctx: DocCtx,
+  text: string,
+  opts: { size?: number; color?: ReturnType<typeof rgb> } = {},
+) {
+  const clean = safe(text).trim();
+  if (!clean) return;
+  const base = opts.size ?? 9.5;
+  const color = opts.color ?? MUTED;
+  const maxW = PAGE_W - MARGIN_X * 2;
+  const floor = MARGIN_BOTTOM - 6; // чуть выше линии футера
+  for (const size of [base, base - 0.5, base - 1, base - 1.5]) {
+    if (size < 7.5) break;
+    const lines = wrapText(ctx.regular, clean, size, maxW);
+    const h = lines.length * size * 1.35;
+    if (ctx.y - h < floor) continue;
+    for (const line of lines) {
+      ctx.page.drawText(line, { x: MARGIN_X, y: ctx.y - size, size, font: ctx.regular, color });
+      ctx.y -= size * 1.35;
+    }
+    return;
+  }
+  drawParagraph(ctx, clean, { size: base, color });
+}
+
 function divider(ctx: DocCtx, color = LINE) {
   ensureSpace(ctx, 8);
   ctx.y -= 4;
@@ -338,8 +399,9 @@ function divider(ctx: DocCtx, color = LINE) {
 }
 
 function gap(ctx: DocCtx, n: number) {
-  ctx.y -= n;
+  ctx.y -= n * D;
 }
+
 
 /** Ширина строки с межбуквенным интервалом (как letter-spacing в CSS). */
 function trackedWidth(font: PDFFont, text: string, size: number, tracking: number): number {
@@ -561,6 +623,87 @@ function drawCard(
   ctx.y -= height + 6;
 }
 
+/**
+ * Карточка с таблицей «ключ — значение» (как `.info-table` в HTML-превью):
+ * подписи слева серым, значения справа. Используется для блока «Мероприятие»,
+ * чтобы PDF совпадал с превью по подписям и сетке.
+ */
+function drawInfoCard(
+  ctx: DocCtx,
+  label: string,
+  rows: Array<[string, string]>,
+  note?: string | null,
+  opts: { x?: number; width?: number } = {},
+) {
+  const x = opts.x ?? MARGIN_X;
+  const width = opts.width ?? PAGE_W - MARGIN_X * 2;
+  const innerW = width - 24;
+  const keyW = Math.min(150, innerW * 0.38);
+  const valW = innerW - keyW - 8;
+  const clean = rows.filter(([, v]) => !!v && String(v).trim() !== "");
+  const list: Array<[string, string]> = clean.length ? clean : [["Детали", "уточняются"]];
+
+  const wrapped = list.map(([k, v]) => ({
+    k,
+    lines: wrapText(ctx.regular, v, F11, valW),
+  }));
+  const noteLines = note ? wrapText(ctx.regular, note, F11, innerW) : [];
+  const rowsH = wrapped.reduce((s, r) => s + Math.max(1, r.lines.length) * F11 * 1.45, 0);
+  const height =
+    14 * D + 16 * D + rowsH + (noteLines.length ? 6 * D + noteLines.length * F11 * 1.35 : 0) + 12 * D;
+
+  ensureSpace(ctx, height + 6 * D);
+  roundedRect(ctx.page, {
+    x,
+    y: ctx.y - height,
+    width,
+    height,
+    radius: 10,
+    color: SURFACE,
+    borderColor: LINE,
+    borderWidth: 0.6,
+  });
+
+  let cy = ctx.y - 14 * D;
+  drawTracked(ctx.page, label.toUpperCase(), {
+    x: x + 12,
+    y: cy - 9,
+    size: F_LABEL,
+    font: ctx.bold,
+    color: ACCENT,
+    tracking: F_LABEL * 0.12,
+  });
+  cy -= 16 * D;
+
+  for (const r of wrapped) {
+    ctx.page.drawText(r.k, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
+    let vy = cy;
+    for (const line of r.lines) {
+      ctx.page.drawText(line, {
+        x: x + 12 + keyW + 8,
+        y: vy - F11,
+        size: F11,
+        font: ctx.bold,
+        color: TEXT,
+      });
+      vy -= F11 * 1.45;
+    }
+    cy -= Math.max(1, r.lines.length) * F11 * 1.45;
+  }
+
+  if (noteLines.length) {
+    cy -= 6 * D;
+    for (const line of noteLines) {
+      ctx.page.drawText(line, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
+      cy -= F11 * 1.35;
+    }
+  }
+
+  ctx.y -= height + 6 * D;
+}
+
+
+
 // === Таблица позиций ===
 type Col = {
   title: string;
@@ -585,49 +728,108 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
   const startX = MARGIN_X;
   const cellPadX = 6;
-  const headerH = 22;
-  const rowMinH = 18;
+  const headerH = 22 * D;
+  const rowMinH = 18 * D;
   const SMALL = F11 - 1;
 
-  // header
-  ensureSpace(ctx, headerH + rowMinH);
-  ctx.page.drawRectangle({
-    x: startX,
-    y: ctx.y - headerH,
-    width: totalW,
-    height: headerH,
-    color: ACCENT_SOFT,
-  });
-  let cx = startX;
   const headTracking = F_DOC_KIND * 0.08;
-  for (const c of cols) {
-    const title = c.title.toUpperCase();
-    const w = trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking);
-    let tx = cx + cellPadX;
-    if (c.align === "right") tx = cx + c.width - cellPadX - w;
-    else if (c.align === "center") tx = cx + (c.width - w) / 2;
-    drawTracked(ctx.page, title, {
-      x: tx,
-      y: ctx.y - 15,
-      size: F_DOC_KIND,
-      font: ctx.bold,
-      color: TEXT,
-      tracking: headTracking,
+  const drawHead = () => {
+    ctx.page.drawRectangle({
+      x: startX,
+      y: ctx.y - headerH,
+      width: totalW,
+      height: headerH,
+      color: ACCENT_SOFT,
     });
-    cx += c.width;
-  }
-  ctx.y -= headerH;
+    let hx = startX;
+    for (const c of cols) {
+      const title = c.title.toUpperCase();
+      const w = trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking);
+      let tx = hx + cellPadX;
+      if (c.align === "right") tx = hx + c.width - cellPadX - w;
+      else if (c.align === "center") tx = hx + (c.width - w) / 2;
+      drawTracked(ctx.page, title, {
+        x: tx,
+        y: ctx.y - headerH + (headerH - F_DOC_KIND) / 2 + 1,
+        size: F_DOC_KIND,
+        font: ctx.bold,
+        color: TEXT,
+        tracking: headTracking,
+      });
+      hx += c.width;
+    }
+    ctx.y -= headerH;
+  };
+
+  // header (шапка повторяется на каждой новой странице таблицы)
+  ensureSpace(ctx, headerH + rowMinH);
+  drawHead();
+
+  /** Перенос строки таблицы на новую страницу с повтором шапки. */
+  const ensureRow = (needed: number) => {
+    if (ctx.y - needed < MARGIN_BOTTOM) {
+      newPage(ctx);
+      drawHead();
+    }
+  };
 
   // «Богатая» колонка (название позиции) — может быть не первой, если есть №
   const richIdx = Math.max(0, cols.findIndex((c) => c.key === "title"));
   const firstCol = cols[richIdx];
   const richX = startX + cols.slice(0, richIdx).reduce((s, c) => s + c.width, 0);
 
+  const cellOf = (r: TableRow, key: string) =>
+    typeof r[key] === "string" ? (r[key] as string) : "";
+
+  /** Высота строки без отрисовки — нужна, чтобы не отрывать заголовок раздела. */
+  const measure = (r: TableRow): number => {
+    const kind = r._kind;
+    if (kind === "section" || kind === "subtotal") {
+      const isSub = kind === "subtotal";
+      const label = cellOf(r, firstCol.key);
+      const font = isSub ? ctx.regular : displayFont(ctx, label);
+      const size = isSub ? SMALL : F12;
+      const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
+      const lines = wrapText(font, label, size, labelW);
+      return Math.max((isSub ? 18 : 24) * D, lines.length * size * 1.3 + (isSub ? 8 : 12) * D);
+    }
+    const titleW = firstCol.width - cellPadX * 2;
+    const titleLines = wrapText(ctx.bold, cellOf(r, firstCol.key), F11, titleW);
+    const descLines = r._desc ? wrapText(ctx.regular, r._desc, SMALL, titleW) : [];
+    const bulletLines = (r._bullets ?? []).flatMap((b) =>
+      wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
+    );
+    const firstBlockH =
+      titleLines.length * F11 * 1.3 + (descLines.length + bulletLines.length) * SMALL * 1.3;
+    const restH =
+      Math.max(
+        ...cols.map((c, i) =>
+          i === richIdx ? 0 : wrapText(ctx.regular, cellOf(r, c.key), F11, c.width - cellPadX * 2).length,
+        ),
+        1,
+      ) *
+      F11 *
+      1.3;
+    return Math.max(rowMinH, Math.max(firstBlockH, restH) + 9 * D);
+  };
 
   // rows
-  for (const r of rows) {
+  for (let ri = 0; ri < rows.length; ri += 1) {
+    const r = rows[ri];
     const kind = r._kind;
-    const cell = (key: string) => (typeof r[key] === "string" ? (r[key] as string) : "");
+    const cell = (key: string) => cellOf(r, key);
+    const rowH = measure(r);
+
+    // keep-with-next: заголовок раздела всегда переносим вместе с первой
+    // строкой раздела, а обычную строку — вместе со следующим подытогом.
+    const next = rows[ri + 1];
+    const glued =
+      kind === "section" && next
+        ? measure(next)
+        : kind !== "subtotal" && next?._kind === "subtotal"
+          ? measure(next)
+          : 0;
+    ensureRow(rowH + glued);
 
     if (kind === "section" || kind === "subtotal") {
       const label = cell(firstCol.key);
@@ -636,8 +838,6 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       const size = isSub ? SMALL : F12;
       const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
       const lines = wrapText(font, label, size, labelW);
-      const rowH = Math.max(isSub ? 18 : 24, lines.length * size * 1.3 + (isSub ? 8 : 12));
-      ensureSpace(ctx, rowH);
       if (isSub) {
         ctx.page.drawRectangle({ x: startX, y: ctx.y - rowH, width: totalW, height: rowH, color: SURFACE });
       }
@@ -647,7 +847,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         thickness: 0.4,
         color: LINE,
       });
-      let ly = ctx.y - (isSub ? 5 : 8);
+      let ly = ctx.y - (isSub ? 5 : 8) * D;
       for (const line of lines) {
         ctx.page.drawText(line, {
           x: startX + cellPadX,
@@ -667,7 +867,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         const w = vFont.widthOfTextAtSize(lastVal, vSize);
         ctx.page.drawText(lastVal, {
           x: startX + totalW - cellPadX - w,
-          y: ctx.y - (isSub ? 5 : 8) - vSize,
+          y: ctx.y - (isSub ? 5 : 8) * D - vSize,
           size: vSize,
           font: vFont,
           color: TEXT,
@@ -685,16 +885,10 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     const bulletLines = (r._bullets ?? []).flatMap((b) =>
       wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
     );
-    const firstBlockH =
-      titleLines.length * F11 * 1.3 + (descLines.length + bulletLines.length) * SMALL * 1.3;
-
     const restWrapped = cols.map((c, i) =>
       i === richIdx ? [] : wrapText(ctx.regular, cell(c.key), F11, c.width - cellPadX * 2),
     );
-    const restH = Math.max(...restWrapped.map((w) => w.length), 1) * F11 * 1.3;
-    const rowH = Math.max(rowMinH, Math.max(firstBlockH, restH) + 9);
 
-    ensureSpace(ctx, rowH);
     ctx.page.drawLine({
       start: { x: startX, y: ctx.y - rowH },
       end: { x: startX + totalW, y: ctx.y - rowH },
@@ -703,7 +897,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     });
 
     // колонка с названием
-    let cy = ctx.y - 5;
+    let cy = ctx.y - 5 * D;
     for (const line of titleLines) {
       ctx.page.drawText(line, { x: richX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
       cy -= F11 * 1.3;
@@ -718,7 +912,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     }
 
     // остальные колонки
-    cx = startX;
+    let cx = startX;
     for (let i = 0; i < cols.length; i++) {
       const c = cols[i];
       if (i === richIdx) {
@@ -727,7 +921,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       }
       const lines = restWrapped[i];
       const blockH = Math.max(lines.length, 1) * F11 * 1.3;
-      let ly = c.valign === "middle" ? ctx.y - Math.max(5, (rowH - blockH) / 2) : ctx.y - 5;
+      let ly = c.valign === "middle" ? ctx.y - Math.max(5 * D, (rowH - blockH) / 2) : ctx.y - 5 * D;
       const color = c.key === "idx" ? MUTED : TEXT;
       for (const line of lines) {
         let tx = cx + cellPadX;
@@ -749,6 +943,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
 }
 
 
+
 // === Сводный блок «итого» (как в HTML-превью: справа, белый фон, акцентная строка «Итого») ===
 function drawSummary(
   ctx: DocCtx,
@@ -757,10 +952,10 @@ function drawSummary(
   const width = Math.min(360 * 0.92, PAGE_W - MARGIN_X * 2);
   const x = PAGE_W - MARGIN_X - width;
   const padX = 13;
-  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * 1.5 + 8;
+  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * 1.5 + 8 * D;
   const height = rows.reduce((s, r) => s + rowH(r), 0);
 
-  ensureSpace(ctx, height + 10);
+  ensureSpace(ctx, height + 10 * D);
   roundedRect(ctx.page, {
     x,
     y: ctx.y - height,
@@ -792,6 +987,7 @@ function drawSummary(
     const labelFont = r.emphasis ? displayFont(ctx, r.label) : ctx.regular;
     const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
     const baseline = cy - (h + size * 0.72) / 2;
+    const labelW = labelFont.widthOfTextAtSize(r.label, size);
     ctx.page.drawText(r.label, {
       x: x + padX,
       y: baseline,
@@ -799,17 +995,26 @@ function drawSummary(
       font: labelFont,
       color: r.emphasis ? TEXT : MUTED,
     });
-    const w = valueFont.widthOfTextAtSize(r.value, size);
+    // значение не должно вылезать за рамку и наезжать на подпись:
+    // если места мало — уменьшаем кегль значения.
+    const avail = width - padX * 2 - labelW - 8;
+    let vSize = size;
+    let w = valueFont.widthOfTextAtSize(r.value, vSize);
+    while (w > avail && vSize > size * 0.7) {
+      vSize -= 0.4;
+      w = valueFont.widthOfTextAtSize(r.value, vSize);
+    }
     ctx.page.drawText(r.value, {
       x: x + width - padX - w,
       y: baseline,
-      size,
+      size: vSize,
+
       font: valueFont,
       color: TEXT,
     });
     cy -= h;
   }
-  ctx.y -= height + 10;
+  ctx.y -= height + 10 * D;
 }
 
 // === Подпись (две колонки) ===
@@ -854,10 +1059,11 @@ function drawSignatures(
       font: ctx.regular,
       color: MUTED,
     });
+    return yStart - (cy - F11 - 6); // фактически занятая высота
   };
-  drawCol(MARGIN_X, left);
-  drawCol(MARGIN_X + colW + 24, right);
-  ctx.y -= 110;
+  const usedL = drawCol(MARGIN_X, left);
+  const usedR = drawCol(MARGIN_X + colW + 24, right);
+  ctx.y -= Math.max(usedL, usedR);
 }
 
 // === Утилиты ===
@@ -950,7 +1156,7 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
   }
 
   gap(ctx, 8);
-  drawParagraph(
+  drawTrailingNote(
     ctx,
     `${settings.quote_footer} Предложение действительно ${settings.quote_validity_days} дней. ${settings.vat_note}.`,
     { size: 9.5, color: MUTED },
@@ -1276,7 +1482,9 @@ export async function buildOrderDocPdf(
   items: DocItem[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
+  applyDensity("comfortable");
   if (kind === "quote") return buildQuote(order, items, settings);
+
   if (kind === "invoice") return buildInvoice(order, items, settings);
   if (kind === "contract") return buildContract(order, items, settings);
   return buildAct(order, items, settings);
@@ -1326,12 +1534,38 @@ function bulletList(ctx: DocCtx, text: string) {
   }
 }
 
+/**
+ * Автоподбор плотности: сначала «комфортно» (1:1 с превью), затем компактнее —
+ * чтобы КП не растягивалось на лишние листы (по умолчанию цель — 2 листа).
+ */
 export async function buildStandaloneQuotePdf(
   quote: Quote,
   items: QuoteItem[],
   settings: DocumentSettings,
+  opts: { density?: DocDensity | "auto"; maxPages?: number } = {},
 ): Promise<Uint8Array> {
+  const requested = opts.density ?? "auto";
+  const maxPages = opts.maxPages ?? 2;
+  if (requested !== "auto") return (await renderQuotePdf(quote, items, settings, requested)).bytes;
+
+  const ladder: DocDensity[] = ["comfortable", "compact", "dense"];
+  let last: { bytes: Uint8Array; pages: number } | null = null;
+  for (const density of ladder) {
+    last = await renderQuotePdf(quote, items, settings, density);
+    if (last.pages <= maxPages) return last.bytes;
+  }
+  return last!.bytes;
+}
+
+async function renderQuotePdf(
+  quote: Quote,
+  items: QuoteItem[],
+  settings: DocumentSettings,
+  density: DocDensity,
+): Promise<{ bytes: Uint8Array; pages: number }> {
+  applyDensity(density);
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
+
   const c = {
     legal: eff.company_legal_name,
     brand: eff.company_brand,
@@ -1446,22 +1680,23 @@ export async function buildStandaloneQuotePdf(
       }
       case "event": {
         gap(ctx, 6);
-        drawCard(ctx, b.title || "Мероприятие", "Детали", [
-          quote.event_date ? `Дата: ${fmtDate(quote.event_date)}` : null,
-          quote.event_time_start || quote.event_time_end
-            ? `Время: ${[quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — ")}`
-            : null,
-          quote.venue ? `Площадка: ${quote.venue}` : null,
-          quote.guests_count != null ? `Гостей: ${quote.guests_count}` : null,
-          quote.event_format ? `Формат: ${quote.event_format}` : null,
-          quote.setup_note ? `Монтаж/демонтаж: ${quote.setup_note}` : null,
-        ]);
-        if (quote.event_notes) {
-          gap(ctx, 4);
-          drawParagraph(ctx, quote.event_notes, { size: F11, color: MUTED });
-        }
+        // те же подписи и сетка, что в HTML-превью (.info-table)
+        drawInfoCard(
+          ctx,
+          b.title || "Мероприятие",
+          [
+            ["Дата мероприятия", quote.event_date ? fmtDate(quote.event_date) : ""],
+            ["Время", [quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — ")],
+            ["Площадка", quote.venue || ""],
+            ["Гостей", quote.guests_count != null ? String(quote.guests_count) : ""],
+            ["Формат", quote.event_format || ""],
+            ["Монтаж / демонтаж", quote.setup_note || ""],
+          ],
+          quote.event_notes || null,
+        );
         break;
       }
+
       case "items": {
         heading(b.title || "Состав предложения");
         drawTable(
@@ -1605,12 +1840,20 @@ export async function buildStandaloneQuotePdf(
   }
 
   gap(ctx, 4);
-  const validity = quote.validity_days ? `Предложение действительно ${quote.validity_days} дней. ` : "";
-  drawParagraph(ctx, `${validity}${applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers)}`, { size: 9.5, color: MUTED });
+  const footerText = applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers);
+  // срок действия добавляем только если его нет в тексте подвала — иначе фраза дублируется
+  const validity =
+    quote.validity_days && !/действительн/i.test(footerText)
+      ? `Предложение действительно ${quote.validity_days} дней. `
+      : "";
+  drawTrailingNote(ctx, `${validity}${footerText}`, { size: 9.5, color: MUTED });
 
   drawFooter(ctx, eff);
-  return await ctx.pdf.save();
+  const pages = ctx.pdf.getPageCount();
+  return { bytes: await ctx.pdf.save(), pages };
+
 }
+
 
 // ===================== Промо-КП =====================
 export async function buildPromoQuotePdf(
@@ -1618,8 +1861,10 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
+  applyDensity("comfortable");
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
   const ctx = await createCtx(quote.logo_url || eff.logo_url, quote.client_logo_url, quote.logo_layout);
+
   const t = computePromoTotals(quote, items);
   drawHeader(
     ctx,
@@ -1724,7 +1969,7 @@ export async function buildPromoQuotePdf(
 
   if (quote.footer_note) {
     gap(ctx, 4);
-    drawParagraph(ctx, quote.footer_note, { size: 9.5, color: MUTED });
+    drawTrailingNote(ctx, quote.footer_note, { size: 9.5, color: MUTED });
   }
 
   drawFooter(ctx, eff);
