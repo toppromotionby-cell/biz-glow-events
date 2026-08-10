@@ -110,7 +110,9 @@ let FONT_K = 1;                       // множитель кеглей
 // Кегли: те же, что в HTML-превью, переведённые в pt.
 // Плотность (density) позволяет уплотнить документ, чтобы он влез в меньшее
 // число листов: 1 = «комфортно» (как превью), 0.94 = «компактно», 0.88 = «плотно».
-export { DOC_DENSITY_SCALE, type DocDensity } from "@/lib/documents/density";
+import { DOC_DENSITY_SCALE, DOC_DENSITY_LADDER, type DocDensity } from "@/lib/documents/density";
+export { DOC_DENSITY_SCALE, type DocDensity };
+
 
 
 /** Текущий множитель плотности (отступы, высоты строк). */
