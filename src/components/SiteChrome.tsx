@@ -51,7 +51,7 @@ export function SiteHeader() {
   
 
   const { count } = useCart();
-  const { count: compareCount } = useCompare();
+  
   const catalogSections = useCatalogNav();
 
   const [open, setOpen] = useState(false);
