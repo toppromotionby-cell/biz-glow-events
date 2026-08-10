@@ -152,7 +152,9 @@ function CatalogInner({ table }: { table: CatalogTable }) {
 
   return (
     <div className="space-y-5">
+      <CatalogTabs />
       <AdminPageHeader
+
         title={CATALOG_LABELS[table]}
         subtitle={`${items.length} ${pluralRecords(items.length)}`}
         action={
