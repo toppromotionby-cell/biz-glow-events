@@ -23,8 +23,6 @@ export type LogoLayout = {
   offsetY: number;
   /** Отступ между логотипом и текстом бренда (для выравнивания слева), pt. */
   gap: number;
-  /** Скрыть текстовое название бренда рядом с логотипом. */
-  hideBrandText: boolean;
 };
 
 export const DEFAULT_LOGO_LAYOUT: LogoLayout = {
@@ -34,7 +32,6 @@ export const DEFAULT_LOGO_LAYOUT: LogoLayout = {
   offsetX: 0,
   offsetY: 0,
   gap: 12,
-  hideBrandText: false,
 };
 
 export const LOGO_LAYOUT_LIMITS = {
@@ -63,7 +60,6 @@ export function normalizeLogoLayout(value: unknown): LogoLayout {
     offsetX: clamp(raw.offsetX, L.offsetX.min, L.offsetX.max, 0),
     offsetY: clamp(raw.offsetY, L.offsetY.min, L.offsetY.max, 0),
     gap: clamp(raw.gap, L.gap.min, L.gap.max, DEFAULT_LOGO_LAYOUT.gap),
-    hideBrandText: raw.hideBrandText === true,
   };
 }
 

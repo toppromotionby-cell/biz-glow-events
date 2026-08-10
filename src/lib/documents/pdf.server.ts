@@ -315,8 +315,9 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
   }
 
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
+  // Логотип заменяет текстовое название бренда: пишем бренд только когда логотипа нет.
   const brand = safe(settings.company_brand);
-  const showBrand = !(logo && layout.hideBrandText);
+  const showBrand = !logo;
   if (showBrand) {
     ctx.page.drawText(brand, {
       x: leftX,

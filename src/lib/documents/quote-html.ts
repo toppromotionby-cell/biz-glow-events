@@ -483,7 +483,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   <div class="head">
     <div>
       ${quote.design.show_logo && (quote.logo_url || settings.logo_url) ? `<div style="${logoWrapStyle(quote.logo_layout)}"><img class="logo" style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url || settings.logo_url)}" alt="" /></div>` : ""}
-      ${quote.design.show_logo && quote.logo_layout.hideBrandText && (quote.logo_url || settings.logo_url) ? "" : `<div class="brand">${esc(c.brand)}</div>`}
+      ${quote.design.show_logo && (quote.logo_url || settings.logo_url) ? "" : `<div class="brand">${esc(c.brand)}</div>`}
       <div class="brand-sub">${esc(c.legal)}${c.unp ? ` · УНП ${esc(c.unp)}` : ""}<br/>${esc(c.address)}</div>
     </div>
     <div class="right">
