@@ -1,7 +1,7 @@
 // Хук ролей и прав текущего пользователя.
 // Роли не кешируются надолго и обновляются в реальном времени: при смене роли
 // администратором права применяются без перезагрузки страницы.
-import { createContext, useContext, useEffect, useId, useMemo, type ReactNode } from "react";
+import { createContext, createElement, useContext, useEffect, useId, useMemo, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,7 +96,7 @@ export function RolesProvider({ children }: { children: ReactNode }) {
     isStaff: isStaffRoles(roles),
   }), [roles, perms, loading]);
 
-  return <RolesContext.Provider value={value}>{children}</RolesContext.Provider>;
+  return createElement(RolesContext.Provider, { value }, children);
 }
 
 export function useRoles() {
