@@ -12,6 +12,7 @@ import {
   promoNumberDisplay,
   type PromoItem,
   type PromoQuote,
+  type PromoCheck,
 } from "@/lib/promo-quote-model";
 
 function esc(s: unknown): string {
