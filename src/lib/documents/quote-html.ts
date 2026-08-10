@@ -435,8 +435,7 @@ export function buildQuoteHtmlDoc(
     const html = renderBlockInner(b);
     if (!editable || !html.trim()) return html;
     const cfg = BLOCK_EDIT_TARGET[b.type];
-    if (!cfg) return `<div${ed("", undefined)}>${html}</div>`.replace(" data-edit=\"\"", "");
-    return `<div${ed(cfg.target, cfg.useId ? b.id : undefined, cfg.label)}>${html}</div>`;
+    if (!cfg) return html;
   };
 
   // Тумблеры оформления по-прежнему работают как «жёсткое» выключение блока.
