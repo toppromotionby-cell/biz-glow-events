@@ -7,7 +7,6 @@ import { Loader2, Send, Check, Clock } from "lucide-react";
 import { submitLead } from "@/lib/leads.functions";
 import { readUtm } from "@/lib/utm";
 import { trackLead } from "@/lib/analytics";
-import { useAuth } from "@/hooks/use-auth";
 
 export function QuickQuoteForm({
   itemTitle,
@@ -17,7 +16,6 @@ export function QuickQuoteForm({
   source?: string;
 }) {
   const submit = useServerFn(submitLead);
-  const { isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [name, setName] = useState("");

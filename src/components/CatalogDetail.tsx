@@ -19,7 +19,6 @@ import { useSectionEnabled } from "@/lib/site-sections";
 import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare, Check } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
-import { useAuth } from "@/hooks/use-auth";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
@@ -96,7 +95,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const prev = useCallback(() => setLightbox((i) => (i === null ? null : (i - 1 + photos.length) % photos.length)), [photos.length]);
   const next = useCallback(() => setLightbox((i) => (i === null ? null : (i + 1) % photos.length)), [photos.length]);
 
-  const { isAuthenticated } = useAuth();
   function handlePrimaryOrder() {
     if (needsSelection) return;
     if (isByRequest) {
