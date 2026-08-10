@@ -110,6 +110,13 @@ function CartPage() {
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    if (!fd.get("consent_pd")) {
+      toast.error("Подтвердите согласие на обработку персональных данных");
+      const el = form.querySelector<HTMLInputElement>('[name="consent_pd"]');
+      el?.focus();
+      return;
+    }
+
     setContactDraft(contact);
     if (clientType === "company") {
       setReqOpen(true);
