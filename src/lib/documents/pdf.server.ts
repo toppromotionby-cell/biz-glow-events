@@ -1467,7 +1467,8 @@ export async function buildStandaloneQuotePdf(
         drawTable(
           ctx,
           [
-            { title: "Позиция", width: PAGE_W - MARGIN_X * 2 - 70 - 80 - 90, key: "title" },
+            { title: "", width: 24, key: "idx" },
+            { title: "Позиция", width: PAGE_W - MARGIN_X * 2 - 24 - 70 - 80 - 90, key: "title" },
             { title: "Кол-во", width: 70, align: "center", valign: "middle", key: "qty" },
             { title: "Цена", width: 80, align: "right", key: "price" },
             { title: "Сумма", width: 90, align: "right", key: "sum" },
@@ -1481,24 +1482,27 @@ export async function buildStandaloneQuotePdf(
               if (!groups.has(key)) groups.set(key, [] as unknown as typeof sorted);
               groups.get(key)!.push(it);
             }
-            const rows: Array<{ title: string; qty: string; price: string; sum: string }> = [];
+            const rows: TableRow[] = [];
             for (const [section, list] of groups) {
-              if (section) rows.push({ title: section.toUpperCase(), qty: "", price: "", sum: "" });
-              for (const it of list) {
-                const lines = [it.title];
-                if (it.description) lines.push(it.description);
-                if (showIncludes && it.includes?.length) {
-                  for (const inc of it.includes) lines.push(`• ${inc.text}${inc.note ? ` — ${inc.note}` : ""}`);
-                }
+              if (section) rows.push({ _kind: "section", idx: "", title: section, qty: "", price: "", sum: "" });
+              list.forEach((it, i) => {
                 rows.push({
-                  title: lines.join("\n"),
+                  idx: String(i + 1),
+                  title: it.title,
+                  _desc: it.description || undefined,
+                  _bullets:
+                    showIncludes && it.includes?.length
+                      ? it.includes.map((inc) => `${inc.text}${inc.note ? ` — ${inc.note}` : ""}`)
+                      : undefined,
                   qty: `${it.qty} ${it.unit ?? ""}`.trim(),
                   price: money(Number(it.price)),
                   sum: money(Number(it.price) * Number(it.qty)),
                 });
-              }
+              });
               if (showSubtotals && section && list.length > 1) {
                 rows.push({
+                  _kind: "subtotal",
+                  idx: "",
                   title: `Итого по разделу «${section}»`,
                   qty: "",
                   price: "",
@@ -1508,6 +1512,8 @@ export async function buildStandaloneQuotePdf(
             }
             if (t.vatEnabled && quote.vat_as_line) {
               rows.push({
+                _kind: "subtotal",
+                idx: "",
                 title: t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
                 qty: "",
                 price: "",
@@ -1517,6 +1523,7 @@ export async function buildStandaloneQuotePdf(
             return rows;
           })(),
         );
+
 
         break;
       }
