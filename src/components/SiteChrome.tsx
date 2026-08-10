@@ -289,6 +289,7 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const catalogSections = useCatalogNav();
   return (
     <Toggleable sectionKey="footer.root" as="div">
       <footer className="border-t border-border/50 mt-20">
@@ -302,7 +303,12 @@ export function SiteFooter() {
             <Toggleable sectionKey="footer.catalog" as="div">
               <h4 className="font-medium mb-3">Каталог</h4>
               <ul className="space-y-2 text-muted-foreground">
-                {NAV.map(n => (
+                {catalogSections.map(section => (
+                  <li key={section.key}>
+                    <Link to={section.basePath} className="hover:text-foreground">{section.title}</Link>
+                  </li>
+                ))}
+                {SECONDARY_NAV.map(n => (
                   <Toggleable key={n.to} sectionKey={n.footerKey} as="li">
                     <Link to={n.to} className="hover:text-foreground">{n.label}</Link>
                   </Toggleable>
@@ -344,7 +350,12 @@ export function SiteFooter() {
                   <AccordionTrigger className="py-3">Каталог</AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2 text-muted-foreground pb-2">
-                      {NAV.map(n => (
+                      {catalogSections.map(section => (
+                        <li key={section.key}>
+                          <Link to={section.basePath} className="hover:text-foreground">{section.title}</Link>
+                        </li>
+                      ))}
+                      {SECONDARY_NAV.map(n => (
                         <Toggleable key={n.to} sectionKey={n.footerKey} as="li">
                           <Link to={n.to} className="hover:text-foreground">{n.label}</Link>
                         </Toggleable>
