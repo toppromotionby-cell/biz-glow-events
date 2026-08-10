@@ -79,8 +79,38 @@ export const saveCompanyProfile = createServerFn({ method: "POST" })
       : context.supabase.from("company_profiles").insert(payload).select("*").single();
     const { data: row, error } = await q;
     if (error) throw new Error(error.message);
+
+    // Основная компания — источник запасных реквизитов для документов,
+    // где компания не выбрана. Синхронизируем общие настройки.
+    if (payload.is_default) {
+      const { error: sErr } = await context.supabase
+        .from("document_settings")
+        .update({
+          company_legal_name: payload.company_legal_name,
+          company_brand: payload.company_brand,
+          company_unp: payload.company_unp,
+          company_address: payload.company_address,
+          company_phone: payload.company_phone,
+          company_email: payload.company_email,
+          company_website: payload.company_website,
+          logo_url: payload.logo_url,
+          logo_layout: payload.logo_layout as never,
+          accent_color: payload.accent_color,
+          bank_name: payload.bank_name,
+          bank_bic: payload.bank_bic,
+          bank_account: payload.bank_account,
+          signer_name: payload.signer_name,
+          signer_title: payload.signer_title,
+          signer_basis: payload.signer_basis,
+          updated_by: context.userId,
+        })
+        .eq("singleton", true);
+      if (sErr) console.warn("company->document_settings sync failed", sErr.message);
+    }
+
     return normalizeCompanyProfile(row as Record<string, unknown>);
   });
+
 
 /** Удаление компании. Документы, где она выбрана, вернутся к общим настройкам. */
 export const deleteCompanyProfile = createServerFn({ method: "POST" })
