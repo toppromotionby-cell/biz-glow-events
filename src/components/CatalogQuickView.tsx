@@ -404,18 +404,6 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                 >
                   <FileText className="h-4 w-4" /> Оставить заявку
                 </button>
-                <CompareButton
-                  variant="full"
-                  className="w-full"
-                  item={{
-                    id: item.id,
-                    entity_type: type,
-                    slug: item.slug,
-                    title: item.title,
-                    image: item.photo_urls?.[0] ?? null,
-                    priceFrom: priceFrom(item.pricing),
-                  }}
-                />
               </div>
             </div>
 
