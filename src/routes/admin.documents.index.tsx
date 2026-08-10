@@ -295,6 +295,7 @@ function Page() {
         onOpenChange={setCreateOpen}
         onCreated={(t) => { setCreateOpen(false); created.mutate(t); }}
       />
+      {dialog}
     </div>
   );
 }
