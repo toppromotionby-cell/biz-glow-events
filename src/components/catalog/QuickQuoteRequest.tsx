@@ -64,10 +64,19 @@ function Field({
 export function QuickQuoteRequest({
   subject,
   source,
+  details = [],
+  itemUrl,
+  defaultNotes,
   onDone,
 }: {
   subject: string;
   source: string;
+  /** Ключевые данные позиции: цена/пакет, требования, медиа — уходят в заявку. */
+  details?: { label: string; value: string }[];
+  /** Ссылка на карточку позиции — менеджер сразу видит, о чём речь. */
+  itemUrl?: string;
+  /** Предзаполненный комментарий. */
+  defaultNotes?: string;
   onDone?: () => void;
 }) {
   const submit = useServerFn(submitLead);
@@ -75,6 +84,7 @@ export function QuickQuoteRequest({
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
 
   function handleBlurValidate(name: string, value: string) {
     const msg = validate(name, value);
