@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, CalendarCheck, Package } from "lucide-react";
+import { Sparkles, Zap, Shield, Award, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { HeroSection } from "@/components/HeroSection";
 import { DirectionCard } from "@/components/ui/DirectionCard";
+import { CatalogSectionTile, useCatalogNav } from "@/components/catalog/CatalogNav";
 import { MediaCard } from "@/components/ui/MediaCard";
 import { FeaturedCard } from "@/components/FeaturedCard";
 
