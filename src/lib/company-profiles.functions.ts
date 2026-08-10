@@ -3,10 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertPermission, hasPermission } from "@/lib/authz";
-import {
-  normalizeCompanyProfile,
-  type CompanyProfile,
-} from "@/lib/documents/company-profile";
+import { normalizeCompanyProfile, type CompanyProfile } from "@/lib/documents/company-profile";
 import { normalizeLogoLayout } from "@/lib/documents/logo-layout";
 import { DEFAULT_VAT_RATE } from "@/lib/documents/vat";
 
@@ -26,7 +23,10 @@ const ProfileSchema = z.object({
   signature_url: z.string().trim().max(500).nullable().default(null),
   stamp_url: z.string().trim().max(500).nullable().default(null),
   logo_layout: z.unknown().optional().transform(normalizeLogoLayout),
-  accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Ожидается hex-цвет").default("#FF7500"),
+  accent_color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается hex-цвет")
+    .default("#FF7500"),
   bank_name: z.string().trim().max(200).default(""),
   bank_bic: z.string().trim().max(50).default(""),
   bank_account: z.string().trim().max(100).default(""),
@@ -65,7 +65,10 @@ export const saveCompanyProfile = createServerFn({ method: "POST" })
 
     if (payload.is_default) {
       // Уникальный частичный индекс не даст двум компаниям быть основными.
-      let reset = context.supabase.from("company_profiles").update({ is_default: false }).eq("is_default", true);
+      let reset = context.supabase
+        .from("company_profiles")
+        .update({ is_default: false })
+        .eq("is_default", true);
       if (id) reset = reset.neq("id", id);
       const { error: rErr } = await reset;
       if (rErr) throw new Error(rErr.message);
