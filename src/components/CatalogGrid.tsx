@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
+import { CompareButton } from "@/components/CompareButton";
+
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import { useClampedText } from "@/components/ui/ClampedTitle";
