@@ -841,10 +841,10 @@ function drawSummary(
   const width = Math.min(360 * 0.92, PAGE_W - MARGIN_X * 2);
   const x = PAGE_W - MARGIN_X - width;
   const padX = 13;
-  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * 1.5 + 8;
+  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * 1.5 + 8 * D;
   const height = rows.reduce((s, r) => s + rowH(r), 0);
 
-  ensureSpace(ctx, height + 10);
+  ensureSpace(ctx, height + 10 * D);
   roundedRect(ctx.page, {
     x,
     y: ctx.y - height,
@@ -876,6 +876,7 @@ function drawSummary(
     const labelFont = r.emphasis ? displayFont(ctx, r.label) : ctx.regular;
     const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
     const baseline = cy - (h + size * 0.72) / 2;
+    const labelW = labelFont.widthOfTextAtSize(r.label, size);
     ctx.page.drawText(r.label, {
       x: x + padX,
       y: baseline,
@@ -883,11 +884,20 @@ function drawSummary(
       font: labelFont,
       color: r.emphasis ? TEXT : MUTED,
     });
-    const w = valueFont.widthOfTextAtSize(r.value, size);
+    // значение не должно вылезать за рамку и наезжать на подпись:
+    // если места мало — уменьшаем кегль значения.
+    const avail = width - padX * 2 - labelW - 8;
+    let vSize = size;
+    let w = valueFont.widthOfTextAtSize(r.value, vSize);
+    while (w > avail && vSize > size * 0.7) {
+      vSize -= 0.4;
+      w = valueFont.widthOfTextAtSize(r.value, vSize);
+    }
     ctx.page.drawText(r.value, {
       x: x + width - padX - w,
       y: baseline,
-      size,
+      size: vSize,
+
       font: valueFont,
       color: TEXT,
     });
