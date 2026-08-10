@@ -6,6 +6,8 @@ import fontkit from "@pdf-lib/fontkit";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { hexToRgb01 } from "@/lib/documents/brand";
 import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
+import { MAX_SLIDE_PHOTOS, SLIDE_W } from "@/lib/presentations/design";
+import { fitSlide } from "@/lib/presentations/fit";
 import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
 import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
 import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
@@ -110,8 +112,11 @@ async function embedImage(pdf: PDFDocument, url: string | null): Promise<PDFImag
   }
 }
 
-/** Слайд с уже разрешённым абсолютным URL картинки. */
-export type ResolvedSlide = PresentationSlide & { resolved_image_url: string | null };
+/** Слайд с уже разрешёнными абсолютными URL фотографий (до 5). */
+export type ResolvedSlide = PresentationSlide & {
+  resolved_image_url: string | null;
+  resolved_images: string[];
+};
 
 export async function buildPresentationPdf(
   presentation: Presentation,
@@ -141,9 +146,17 @@ export async function buildPresentationPdf(
   for (const [index, slide] of visible.entries()) {
     const page = pdf.addPage([W, H]);
     page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: t.bg });
-    const img = slide.content.showImage ? await embedImage(pdf, slide.resolved_image_url) : null;
+    const sources = slide.content.showImage
+      ? (slide.resolved_images.length
+          ? slide.resolved_images
+          : [slide.resolved_image_url].filter((v): v is string => !!v))
+      : [];
+    const images: (PDFImage | null)[] = [];
+    for (const src of sources.slice(0, MAX_SLIDE_PHOTOS)) {
+      images.push(await embedImage(pdf, src));
+    }
     await drawSlide({
-      page, slide, img, logo, brand, theme: t,
+      page, slide, images, logo, brand, theme: t,
       fonts: { regular, bold, display },
       company, presentation,
       index, total: visible.length,
@@ -153,10 +166,11 @@ export async function buildPresentationPdf(
   return await pdf.save();
 }
 
+
 type DrawArgs = {
   page: PDFPage;
   slide: ResolvedSlide;
-  img: PDFImage | null;
+  images: (PDFImage | null)[];
   logo: PDFImage | null;
   brand: string;
   theme: Theme;
@@ -168,7 +182,7 @@ type DrawArgs = {
 };
 
 async function drawSlide(a: DrawArgs) {
-  const { page, slide, img, logo, brand, theme: t, fonts, company, presentation, index, total } = a;
+  const { page, slide, images, logo, brand, theme: t, fonts, company, presentation, index, total } = a;
   const c = slide.content;
 
   const drawLines = (
@@ -231,52 +245,75 @@ async function drawSlide(a: DrawArgs) {
     return;
   }
 
-  const imgW = img ? 360 : 0;
-  if (img) {
-    // Заполнение по принципу cover.
-    const k = Math.max(imgW / img.width, H / img.height);
-    const w = img.width * k;
-    const h = img.height * k;
-    page.drawImage(img, { x: (imgW - w) / 2, y: (H - h) / 2, width: w, height: h });
-  }
-  const x = img ? imgW + 40 : PAD;
-  const maxW = W - x - PAD;
-  let y = H - 84;
+  // Общая раскладка (1280×720) переводится в points 960×540 коэффициентом K.
+  const fit = fitSlide(slide);
+  const K = W / SLIDE_W;
+  const ts = fit.type;
+  const px = (v: number) => v * K;
 
-  y = drawLines(wrap(fonts.display, slide.title, img ? 24 : 28, maxW), x, y, img ? 24 : 28, fonts.display, t.ink, 1.2);
-  if (slide.subtitle) y = drawLines(wrap(fonts.regular, slide.subtitle, 13, maxW), x, y - 6, 13, fonts.regular, t.muted);
+  fit.layout.frames.forEach((f, i) => {
+    const image = images[i];
+    if (!image) return;
+    const fw = px(f.w);
+    const fh = px(f.h);
+    const k = Math.max(fw / image.width, fh / image.height);
+    const w = image.width * k;
+    const h = image.height * k;
+    const cx = px(f.x) + fw / 2;
+    const cy = H - px(f.y) - fh / 2;
+    page.drawImage(image, { x: cx - w / 2, y: cy - h / 2, width: w, height: h });
+  });
+
+  const box = fit.layout.textBox;
+  const x = px(box.x);
+  const maxW = px(box.w);
+  const titleSize = px(ts.titleSlide);
+  const subSize = px(ts.subtitle);
+  const bodySize = px(ts.body);
+  const bulletSize = px(ts.bullet);
+  let y = H - px(box.y) - titleSize;
+
+  y = drawLines(wrap(fonts.display, slide.title, titleSize, maxW), x, y, titleSize, fonts.display, t.ink, 1.14);
+  if (slide.subtitle) {
+    y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, t.muted);
+  }
   page.drawRectangle({ x, y: y - 14, width: 52, height: 2.5, color: t.accent });
-  y -= 36;
+  y -= px(ts.blockGap) + 14;
+
 
   if (c.showDescription && c.description.trim()) {
-    y = drawLines(wrap(fonts.regular, c.description, 12, maxW), x, y, 12, fonts.regular, t.ink, 1.45);
-    y -= 10;
+    y = drawLines(wrap(fonts.regular, c.description, bodySize, maxW), x, y, bodySize, fonts.regular, t.ink, ts.lineGap);
+    y -= px(ts.blockGap) * 0.6;
   }
 
   if (c.showIncludes && c.includes.length) {
-    page.drawText("ЧТО ВХОДИТ", { x, y, size: 8.5, font: fonts.bold, color: t.muted });
-    y -= 16;
+    if (slide.type === "product") {
+      page.drawText("ЧТО ВХОДИТ", { x, y, size: px(ts.label), font: fonts.bold, color: t.muted });
+      y -= px(ts.label) * 1.8;
+    }
     for (const item of c.includes.slice(0, 9)) {
-      const lines = wrap(fonts.regular, item, 11.5, maxW - 14);
-      page.drawText("•", { x, y, size: 11.5, font: fonts.regular, color: t.accent });
-      y = drawLines(lines, x + 14, y, 11.5, fonts.regular, t.ink, 1.35);
+      const lines = wrap(fonts.regular, item, bulletSize, maxW - 14);
+      page.drawText("•", { x, y, size: bulletSize, font: fonts.regular, color: t.accent });
+      y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
       y -= 2;
     }
-    y -= 8;
+    y -= px(ts.blockGap) * 0.5;
   }
 
   if (c.showSpecs && c.specs.length) {
+    const chip = px(ts.chip);
     let cx = x;
     for (const s of c.specs) {
       const text = `${s.label}: ${s.value}`;
-      const w = fonts.regular.widthOfTextAtSize(text, 10) + 20;
-      if (cx + w > W - PAD) { cx = x; y -= 26; }
-      page.drawRectangle({ x: cx, y: y - 6, width: w, height: 22, color: t.panel, opacity: 0.9 });
-      page.drawText(text, { x: cx + 10, y, size: 10, font: fonts.regular, color: t.ink });
+      const w = fonts.regular.widthOfTextAtSize(text, chip) + 20;
+      if (cx + w > x + maxW) { cx = x; y -= chip * 2.4; }
+      page.drawRectangle({ x: cx, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
+      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: t.ink });
       cx += w + 8;
     }
-    y -= 34;
+    y -= chip * 3;
   }
+
 
   if (slide.type === "contacts") {
     const rows = [

@@ -29,6 +29,17 @@ export const TEMPLATE_LABELS: Record<PresentationTemplate, string> = {
 
 export type SlideSpec = { label: string; value: string };
 
+/** Ручное переопределение стороны фотоблока. */
+export type SlideImageLayout = "auto" | "left" | "right" | "top" | "none";
+
+export const IMAGE_LAYOUT_LABELS: Record<SlideImageLayout, string> = {
+  auto: "Авто",
+  left: "Фото слева",
+  right: "Фото справа",
+  top: "Фото сверху",
+  none: "Только текст",
+};
+
 export type SlideContent = {
   /** Основной текст (описание позиции или текст слайда). */
   description: string;
@@ -41,6 +52,10 @@ export type SlideContent = {
   priceUnit: string;
   qty: number | null;
   sku: string;
+  /** Фотографии слайда (до 5), первая — главная. */
+  images: string[];
+  /** Раскладка фотоблока. */
+  imageLayout: SlideImageLayout;
   /** Тумблеры видимости блоков. */
   showDescription: boolean;
   showIncludes: boolean;
@@ -48,6 +63,7 @@ export type SlideContent = {
   showPrice: boolean;
   showImage: boolean;
 };
+
 
 export type PresentationSlide = {
   id: string;
@@ -89,6 +105,8 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+export const MAX_IMAGES = 5;
+
 export const EMPTY_CONTENT: SlideContent = {
   description: "",
   includes: [],
@@ -97,6 +115,8 @@ export const EMPTY_CONTENT: SlideContent = {
   priceUnit: "шт.",
   qty: null,
   sku: "",
+  images: [],
+  imageLayout: "auto",
   showDescription: true,
   showIncludes: true,
   showSpecs: true,
@@ -104,9 +124,14 @@ export const EMPTY_CONTENT: SlideContent = {
   showImage: true,
 };
 
+const IMAGE_LAYOUTS: SlideImageLayout[] = ["auto", "left", "right", "top", "none"];
+
 export function normalizeContent(raw: unknown): SlideContent {
   const r = (raw ?? {}) as Record<string, unknown>;
   const bool = (v: unknown, d = true) => (typeof v === "boolean" ? v : d);
+  const images = Array.isArray(r.images)
+    ? Array.from(new Set(r.images.map((i) => str(i).trim()).filter(Boolean))).slice(0, MAX_IMAGES)
+    : [];
   return {
     description: str(r.description),
     includes: Array.isArray(r.includes) ? r.includes.map((i) => str(i)).filter(Boolean) : [],
@@ -119,6 +144,10 @@ export function normalizeContent(raw: unknown): SlideContent {
     priceUnit: str(r.priceUnit, "шт.") || "шт.",
     qty: num(r.qty),
     sku: str(r.sku),
+    images,
+    imageLayout: IMAGE_LAYOUTS.includes(r.imageLayout as SlideImageLayout)
+      ? (r.imageLayout as SlideImageLayout)
+      : "auto",
     showDescription: bool(r.showDescription),
     showIncludes: bool(r.showIncludes),
     showSpecs: bool(r.showSpecs),
@@ -126,6 +155,7 @@ export function normalizeContent(raw: unknown): SlideContent {
     showImage: bool(r.showImage),
   };
 }
+
 
 const SLIDE_TYPES: SlideType[] = ["title", "product", "text", "section", "contacts"];
 
@@ -187,7 +217,7 @@ export function blankSlide(type: SlideType, position: number): PresentationSlide
     title: titles[type],
     subtitle: "",
     image_url: null,
-    content: { ...EMPTY_CONTENT, includes: [], specs: [] },
+    content: { ...EMPTY_CONTENT, includes: [], specs: [], images: [] },
     entity_type: null,
     entity_id: null,
     quote_item_id: null,

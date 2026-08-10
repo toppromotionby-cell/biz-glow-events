@@ -1,7 +1,7 @@
 // Правая панель редактора: настройки выбранного слайда.
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import {
-  SLIDE_TYPE_LABELS, type PresentationSlide, type SlideContent, type SlideType,
+  IMAGE_LAYOUT_LABELS, MAX_IMAGES, SLIDE_TYPE_LABELS,
+  type PresentationSlide, type SlideContent, type SlideImageLayout, type SlideType,
 } from "@/lib/presentations/model";
 
 export function SlideSettingsPanel({
@@ -116,11 +117,13 @@ export function SlideSettingsPanel({
       )}
 
       {slide.type !== "contacts" && slide.type !== "section" && (
-        <ImageField
-          value={slide.image_url}
+        <GalleryField
+          images={c.images}
+          layout={c.imageLayout}
           enabled={c.showImage}
           onToggle={(v) => setContent({ showImage: v })}
-          onChange={(url) => onChange({ image_url: url })}
+          onChange={(images) => setContent({ images })}
+          onLayout={(imageLayout) => setContent({ imageLayout })}
         />
       )}
 
@@ -215,31 +218,44 @@ function SpecsEditor({
   );
 }
 
-function ImageField({
-  value, enabled, onToggle, onChange,
+function GalleryField({
+  images, layout, enabled, onToggle, onChange, onLayout,
 }: {
-  value: string | null;
+  images: string[];
+  layout: SlideImageLayout;
   enabled: boolean;
   onToggle: (v: boolean) => void;
-  onChange: (url: string | null) => void;
+  onChange: (images: string[]) => void;
+  onLayout: (v: SlideImageLayout) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const preview = useResolvedUrl(value);
+  const [url, setUrl] = useState("");
+  const full = images.length >= MAX_IMAGES;
 
-  const upload = async (file: File) => {
-    if (file.size > 12 * 1024 * 1024) { toast.error("Файл больше 12 МБ"); return; }
+  const add = (next: string[]) => {
+    const merged = Array.from(new Set([...images, ...next].map((v) => v.trim()).filter(Boolean)));
+    if (merged.length > MAX_IMAGES) toast.info(`На слайд помещается не более ${MAX_IMAGES} фото`);
+    onChange(merged.slice(0, MAX_IMAGES));
+  };
+
+  const upload = async (files: File[]) => {
+    const slots = MAX_IMAGES - images.length;
+    if (slots <= 0) { toast.info(`Уже добавлено ${MAX_IMAGES} фото`); return; }
     setBusy(true);
     try {
-      const safe = file.name.replace(/[^\w.\-]+/g, "_");
-      const path = `presentations/${Date.now()}-${safe}`;
-      const { error } = await supabase.storage
-        .from("catalog-media")
-        .upload(path, file, { upsert: false, contentType: file.type });
-      if (error) throw new Error(error.message);
-      const { data } = supabase.storage.from("catalog-media").getPublicUrl(path);
-      onChange(data.publicUrl);
-      toast.success("Изображение загружено");
+      const urls: string[] = [];
+      for (const file of files.slice(0, slots)) {
+        if (file.size > 12 * 1024 * 1024) { toast.error(`${file.name}: больше 12 МБ`); continue; }
+        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `presentations/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safe}`;
+        const { error } = await supabase.storage
+          .from("catalog-media")
+          .upload(path, file, { upsert: false, contentType: file.type });
+        if (error) throw new Error(error.message);
+        urls.push(supabase.storage.from("catalog-media").getPublicUrl(path).data.publicUrl);
+      }
+      if (urls.length) { add(urls); toast.success(`Загружено фото: ${urls.length}`); }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ошибка загрузки");
     } finally {
@@ -247,46 +263,126 @@ function ImageField({
     }
   };
 
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= images.length) return;
+    const next = [...images];
+    const [item] = next.splice(i, 1);
+    next.splice(j, 0, item);
+    onChange(next);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label>Изображение</Label>
+        <Label>Фотографии ({images.length}/{MAX_IMAGES})</Label>
         <Toggle checked={enabled} onChange={onToggle} />
       </div>
-      {preview && (
-        <div className="relative overflow-hidden rounded-lg border border-border/60">
-          <img src={preview} alt="" className="h-32 w-full object-cover" />
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute right-2 top-2 h-7 w-7"
-            onClick={() => onChange(null)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {images.map((src, i) => (
+            <GalleryThumb
+              key={`${src}-${i}`}
+              src={src}
+              index={i}
+              count={images.length}
+              onMove={(dir) => move(i, dir)}
+              onRemove={() => onChange(images.filter((_, k) => k !== i))}
+            />
+          ))}
         </div>
       )}
+
       <div className="flex gap-2">
         <Input
-          value={value ?? ""}
+          value={url}
           placeholder="URL изображения"
-          onChange={(e) => onChange(e.target.value || null)}
+          disabled={full}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && url.trim()) { add([url]); setUrl(""); }
+          }}
         />
-        <Button variant="outline" size="icon" disabled={busy} onClick={() => inputRef.current?.click()}>
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={busy || full}
+          aria-label="Загрузить фото"
+          onClick={() => inputRef.current?.click()}
+        >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
         </Button>
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
           onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void upload(f);
+            const files = Array.from(e.target.files ?? []);
+            if (files.length) void upload(files);
             e.target.value = "";
           }}
         />
       </div>
+
+      <div className="space-y-1.5">
+        <Label>Раскладка фото</Label>
+        <Select value={layout} onValueChange={(v) => onLayout(v as SlideImageLayout)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(IMAGE_LAYOUT_LABELS) as SlideImageLayout[]).map((v) => (
+              <SelectItem key={v} value={v}>{IMAGE_LAYOUT_LABELS[v]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          «Авто» подбирает сетку под количество фото и объём текста.
+        </p>
+      </div>
     </div>
   );
 }
+
+function GalleryThumb({
+  src, index, count, onMove, onRemove,
+}: {
+  src: string;
+  index: number;
+  count: number;
+  onMove: (dir: -1 | 1) => void;
+  onRemove: () => void;
+}) {
+  const preview = useResolvedUrl(src);
+  return (
+    <div className="relative overflow-hidden rounded-lg border border-border/60">
+      {preview ? (
+        <img src={preview} alt="" className="h-24 w-full object-cover" />
+      ) : (
+        <div className="h-24 w-full bg-muted/40" />
+      )}
+      <span className="absolute left-1.5 top-1.5 rounded bg-background/85 px-1.5 text-[11px] font-medium">
+        {index + 1}
+      </span>
+      <div className="absolute right-1 top-1 flex gap-1">
+        <Button
+          variant="secondary" size="icon" className="h-6 w-6"
+          aria-label="Левее" disabled={index === 0} onClick={() => onMove(-1)}
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          variant="secondary" size="icon" className="h-6 w-6"
+          aria-label="Правее" disabled={index === count - 1} onClick={() => onMove(1)}
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="secondary" size="icon" className="h-6 w-6" aria-label="Удалить" onClick={onRemove}>
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
