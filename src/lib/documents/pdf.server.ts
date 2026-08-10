@@ -173,17 +173,74 @@ function safe(s: unknown): string {
   return String(s ?? "").replace(/\s+\n/g, "\n").trim();
 }
 
+/** Прямоугольник со скруглением (pdf-lib умеет только через path). */
+function roundedRect(
+  page: PDFPage,
+  opts: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    radius?: number;
+    color?: ReturnType<typeof rgb>;
+    borderColor?: ReturnType<typeof rgb>;
+    borderWidth?: number;
+  },
+) {
+  const r = Math.max(0, Math.min(opts.radius ?? 6, opts.width / 2, opts.height / 2));
+  const { x, y, width: w, height: h } = opts;
+  const k = 0.5523 * r;
+  const d = [
+    `M ${x + r} ${y}`,
+    `L ${x + w - r} ${y}`,
+    `C ${x + w - r + k} ${y} ${x + w} ${y + r - k} ${x + w} ${y + r}`,
+    `L ${x + w} ${y + h - r}`,
+    `C ${x + w} ${y + h - r + k} ${x + w - r + k} ${y + h} ${x + w - r} ${y + h}`,
+    `L ${x + r} ${y + h}`,
+    `C ${x + r - k} ${y + h} ${x} ${y + h - r + k} ${x} ${y + h - r}`,
+    `L ${x} ${y + r}`,
+    `C ${x} ${y + r - k} ${x + r - k} ${y} ${x + r} ${y}`,
+    "Z",
+  ].join(" ");
+  page.drawSvgPath(d, {
+    x: 0,
+    y: PAGE_H,
+    ...(opts.color ? { color: opts.color } : {}),
+    ...(opts.borderColor ? { borderColor: opts.borderColor } : {}),
+    borderWidth: opts.borderWidth ?? 0,
+    scale: 1,
+  });
+}
+
+/** Верхняя акцентная полоса — как градиент в HTML-превью (набор сегментов). */
+function drawTopBar(page: PDFPage) {
+  const w = PAGE_W - MARGIN_X * 2;
+  const y = PAGE_H - MARGIN_TOP + 14;
+  const steps = 24;
+  for (let i = 0; i < steps; i += 1) {
+    const t = i / (steps - 1);
+    const c = c01(mixWithWhite(BRAND_ACCENT, t * 0.55));
+    page.drawRectangle({
+      x: MARGIN_X + (w / steps) * i,
+      y,
+      width: w / steps + 0.6,
+      height: 3.2,
+      color: c,
+    });
+  }
+}
+
 function newPage(ctx: DocCtx) {
   ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
   ctx.pageNum += 1;
   ctx.y = PAGE_H - MARGIN_TOP;
-  // верхняя акцентная полоса
-  ctx.page.drawRectangle({ x: 0, y: PAGE_H - 4, width: PAGE_W, height: 4, color: ACCENT });
+  drawTopBar(ctx.page);
 }
 
 function ensureSpace(ctx: DocCtx, needed: number) {
   if (ctx.y - needed < MARGIN_BOTTOM) newPage(ctx);
 }
+
 
 function drawText(
   ctx: DocCtx,
