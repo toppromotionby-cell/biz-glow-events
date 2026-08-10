@@ -240,7 +240,21 @@ function templateVars(template: string): string {
   return `--cover-bg:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,#fff),#fff); --cover-border:color-mix(in srgb,var(--accent) 30%,#fff); --card-bg:var(--surface); --radius:14px;`;
 }
 
-export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: DocumentSettings): string {
+/** Опции рендера: editable включает подсветку блоков и двойной клик в live-превью. */
+export type QuoteHtmlOptions = { editable?: boolean };
+
+export function buildQuoteHtmlDoc(
+  quote: Quote,
+  items: QuoteItem[],
+  settings: DocumentSettings,
+  opts: QuoteHtmlOptions = {},
+): string {
+  const editable = opts.editable === true;
+  /** Метка редактируемой зоны — попадает в HTML только в режиме редактирования. */
+  const ed = (target: string, id?: string, label?: string) =>
+    editable
+      ? ` data-edit="${esc(target)}"${id != null ? ` data-edit-id="${esc(id)}"` : ""}${label ? ` data-edit-label="${esc(label)}"` : ""}`
+      : "";
   const c = quoteCompany(quote, settings);
   const accent = (quote.design.accent_color || settings.accent_color || BRAND_ACCENT).trim();
   const t = computeTotals(quote, items);
