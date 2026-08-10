@@ -1052,9 +1052,16 @@ function drawSignatures(
   left: { title: string; lines: string[]; signName: string },
   right: { title: string; lines: string[]; signName: string },
 ) {
-  ensureSpace(ctx, 110);
-  ctx.y -= 14;
   const colW = (PAGE_W - MARGIN_X * 2 - 24) / 2;
+  // Подпись нельзя рвать между страницами: считаем реальную высоту заранее.
+  const measureCol = (b: { lines: string[] }) =>
+    16 +
+    b.lines.filter(Boolean).reduce((s, l) => s + wrapText(ctx.regular, l, F11, colW).length * F11 * LH_TEXT, 0) +
+    28 +
+    F11 * 2 +
+    10;
+  ensureSpace(ctx, 14 + Math.max(measureCol(left), measureCol(right)));
+  ctx.y -= 14;
   const yStart = ctx.y;
   const drawCol = (x: number, b: typeof left) => {
     let cy = yStart;
@@ -1573,14 +1580,19 @@ export async function buildStandaloneQuotePdf(
   settings: DocumentSettings,
   opts: { density?: DocDensity | "auto"; maxPages?: number } = {},
 ): Promise<Uint8Array> {
+  const preset = resolvePrintPreset(
+    quote.template,
+    (settings as { quote_print_presets?: unknown }).quote_print_presets as never,
+    quote.design as unknown as Record<string, unknown>,
+  );
   const requested = opts.density ?? "auto";
-  const maxPages = opts.maxPages ?? 1;
-  if (requested !== "auto") return (await renderQuotePdf(quote, items, settings, requested)).bytes;
+  const maxPages = opts.maxPages ?? preset.maxPages;
+  if (requested !== "auto") return (await renderQuotePdf(quote, items, settings, requested, preset)).bytes;
 
   const ladder: DocDensity[] = ["comfortable", "compact", "dense", "ultra"];
   let last: { bytes: Uint8Array; pages: number } | null = null;
   for (const density of ladder) {
-    last = await renderQuotePdf(quote, items, settings, density);
+    last = await renderQuotePdf(quote, items, settings, density, preset);
     if (last.pages <= maxPages) return last.bytes;
   }
   return last!.bytes;
@@ -1591,8 +1603,9 @@ async function renderQuotePdf(
   items: QuoteItem[],
   settings: DocumentSettings,
   density: DocDensity,
+  preset: DocPrintPreset = BASE_PRINT_PRESET,
 ): Promise<{ bytes: Uint8Array; pages: number }> {
-  applyDensity(density);
+  applyDensity(density, preset);
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
 
   const c = {
@@ -1890,7 +1903,14 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
-  applyDensity("comfortable");
+  applyDensity(
+    "comfortable",
+    resolvePrintPreset(
+      "classic",
+      (settings as { quote_print_presets?: unknown }).quote_print_presets as never,
+      (quote as { design?: Record<string, unknown> }).design,
+    ),
+  );
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
   const ctx = await createCtx(quote.logo_url || eff.logo_url, quote.client_logo_url, quote.logo_layout);
 
