@@ -242,6 +242,13 @@ export type QuoteTotals = {
   subtotal: number;
   discount: number;
   delivery: number;
+  /** Сумма до НДС (в режиме «в том числе» — очищенная от налога). */
+  net: number;
+  vat: number;
+  vatRate: number;
+  vatMode: VatMode;
+  vatEnabled: boolean;
+  /** Итог к оплате (с НДС, если он есть). */
   total: number;
   prepayment: number;
   balance: number;
@@ -251,7 +258,8 @@ export type QuoteTotals = {
 };
 
 export function computeTotals(
-  quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount">,
+  quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount"> &
+    Partial<Pick<Quote, "vat_mode" | "vat_rate" | "vat_as_line">>,
   items: Array<Pick<QuoteItem, "qty" | "price"> & { cost?: number }>,
 ): QuoteTotals {
   const subtotal = items.reduce((s, it) => s + num(it.qty) * num(it.price), 0);
@@ -262,22 +270,31 @@ export function computeTotals(
     : quote.discount_type === "amount" ? Math.min(dv, subtotal)
     : 0;
   const delivery = Math.max(0, num(quote.delivery_amount));
-  const total = Math.max(0, subtotal - discount + delivery);
+  const base = Math.max(0, subtotal - discount + delivery);
+  const v = computeVat(base, vatConfig(quote));
+  const total = v.gross;
   const pv = Math.max(0, num(quote.prepayment_value));
   const prepayment =
     quote.prepayment_type === "percent" ? (total * Math.min(pv, 100)) / 100
     : quote.prepayment_type === "amount" ? Math.min(pv, total)
     : 0;
-  const margin = subtotal - discount - cost;
-  const revenue = subtotal - discount;
+  const revenue = v.net;
+  const margin = revenue - cost;
   return {
-    subtotal, discount, delivery, total, prepayment,
+    subtotal, discount, delivery,
+    net: v.net,
+    vat: v.vat,
+    vatRate: v.rate,
+    vatMode: v.mode,
+    vatEnabled: v.enabled,
+    total, prepayment,
     balance: Math.max(0, total - prepayment),
     cost,
     margin,
     marginPct: revenue > 0 ? (margin / revenue) * 100 : 0,
   };
 }
+
 
 export type QuoteCheck = { level: "error" | "warn" | "info"; message: string };
 
