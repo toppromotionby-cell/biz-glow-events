@@ -63,13 +63,6 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-const FEATURES = [
-  { icon: Gamepad2, title: "Интерактивные зоны", desc: "VR/AR, геймификация, фотозоны и иммерсивные активности", to: "/zones" as const },
-  { icon: Settings2, title: "Техническое оснащение мероприятий", desc: "Звук, свет, LED-экраны и сцена под ключ", to: "/equipment" as const },
-  { icon: CalendarCheck, title: "Организация мероприятий под ключ", desc: "Концепция, площадка, подрядчики, монтаж, координация — мы берём всё", to: "/services" as const },
-  { icon: Package, title: "Производство", desc: "Декорации, баннеры, арт-объекты, реквизит", to: "/production" as const },
-];
-
 const VALUES = [
   { icon: Zap, title: "Скорость", desc: "От заявки до сметы — 24 часа" },
   { icon: Shield, title: "Надёжность", desc: "Резервное оборудование на каждом проекте" },
@@ -79,6 +72,7 @@ const VALUES = [
 function HomePage() {
   const { data } = useSuspenseQuery(homeQueryOptions);
   const { featured, posts, cases } = data;
+  const sections = useCatalogNav();
   const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const [orderTopic, setOrderTopic] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -101,9 +95,9 @@ function HomePage() {
       {/* DIRECTIONS */}
       <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 pb-16 md:pb-20">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f) => (
-            <DirectionCard key={f.title} icon={f.icon} title={f.title} description={f.desc} to={f.to} />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [grid-auto-rows:1fr]">
+          {sections.map((section, i) => (
+            <CatalogSectionTile key={section.key} section={section} index={i} />
           ))}
         </div>
       </Toggleable>
