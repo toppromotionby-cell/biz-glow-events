@@ -183,8 +183,9 @@ export function GuestEstimator() {
           ) : (
             <>
               <div className="font-display text-3xl md:text-4xl font-bold leading-tight gradient-text">
-                {money(min)} — {money(max)}
+                {min === max ? `от ${money(min)}` : `${money(min)} — ${money(max)}`}
               </div>
+
               <p className="text-sm text-muted-foreground mt-3">
                 Расчёт построен на реальных ценах каталога с учётом количества гостей и длительности.
                 Финальная стоимость зависит от логистики, монтажа и доп. опций.
