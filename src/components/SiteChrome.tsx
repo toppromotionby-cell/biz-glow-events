@@ -194,7 +194,31 @@ export function SiteHeader() {
 
                 <Toggleable sectionKey="header.nav" as="div">
                   <nav aria-label="Мобильная навигация" className="px-2 pb-4 flex flex-col">
-                    {NAV.map((n) => (
+                    {catalogSections.map((section) => (
+                      <div key={section.key}>
+                        <SheetClose asChild>
+                          <Link
+                            to={section.basePath}
+                            className="block px-3 py-3 rounded-md text-base text-foreground hover:bg-primary/10 transition"
+                            activeProps={{ className: "bg-primary/15 text-foreground" }}
+                          >
+                            {section.title}
+                          </Link>
+                        </SheetClose>
+                        {section.categories.length > 0 && (
+                          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+                            {section.categories.slice(0, 8).map((c) => (
+                              <SheetClose asChild key={c.id}>
+                                <span>
+                                  <CategoryChip section={section} name={c.name} count={c.count} />
+                                </span>
+                              </SheetClose>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {SECONDARY_NAV.map((n) => (
                       <Toggleable key={n.to} sectionKey={n.key} as="div">
                         <SheetClose asChild>
                           <Link
@@ -209,6 +233,7 @@ export function SiteHeader() {
                     ))}
                   </nav>
                 </Toggleable>
+
 
                 <div className="border-t border-border/50 px-2 py-3">
                   <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
