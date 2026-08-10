@@ -1618,7 +1618,7 @@ export async function buildStandaloneQuotePdf(
   const maxPages = opts.maxPages ?? preset.maxPages;
   if (requested !== "auto") return (await renderQuotePdf(quote, items, settings, requested, preset)).bytes;
 
-  const ladder: DocDensity[] = ["comfortable", "compact", "dense", "ultra"];
+  const ladder: DocDensity[] = DOC_DENSITY_LADDER;
   let last: { bytes: Uint8Array; pages: number } | null = null;
   for (const density of ladder) {
     last = await renderQuotePdf(quote, items, settings, density, preset);
