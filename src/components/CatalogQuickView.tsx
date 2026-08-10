@@ -17,7 +17,6 @@ import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
-import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { QuickLeadRequest } from "@/components/catalog/QuickLeadRequest";
 
 import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
@@ -297,14 +296,14 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
               )}
             </header>
 
-            {/* Цены / занятость / требования */}
+            {/* Цены / требования */}
             <div className="glass rounded-xl p-4 space-y-3 hidden md:block">
               <Tabs defaultValue="price">
                 <TabsList className="w-full">
                   <TabsTrigger value="price" className="flex-1">Цены</TabsTrigger>
-                  <TabsTrigger value="availability" className="flex-1">Занятость</TabsTrigger>
                   {hasRequirements && <TabsTrigger value="requirements" className="flex-1">Требования</TabsTrigger>}
                 </TabsList>
+
 
                 <TabsContent value="price" className="space-y-3 pt-3">
                   <div className="text-xs text-muted-foreground">Стоимость актуальна в безналичном расчёте</div>
@@ -365,9 +364,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                   )}
                 </TabsContent>
 
-                <TabsContent value="availability" className="pt-3">
-                  <AvailabilityCalendar entityType={type} itemId={item.id} />
-                </TabsContent>
+
 
                 {hasRequirements && (
                   <TabsContent value="requirements" className="pt-3">
@@ -430,23 +427,14 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
 
             {hasExtras && <ExtrasBlock extras={extras} variant="modal" />}
 
-            {/* Мобильные вкладки занятости/требований */}
-            <div className="md:hidden space-y-3">
-              <Tabs defaultValue="availability">
-                <TabsList className="w-full">
-                  <TabsTrigger value="availability" className="flex-1">Занятость</TabsTrigger>
-                  {hasRequirements && <TabsTrigger value="requirements" className="flex-1">Требования</TabsTrigger>}
-                </TabsList>
-                <TabsContent value="availability" className="pt-3">
-                  <AvailabilityCalendar entityType={type} itemId={item.id} />
-                </TabsContent>
-                {hasRequirements && (
-                  <TabsContent value="requirements" className="pt-3">
-                    <CatalogProse requirements={item.requirements} variant="modal" />
-                  </TabsContent>
-                )}
-              </Tabs>
-            </div>
+            {/* Требования (мобильные) */}
+            {hasRequirements && (
+              <div className="md:hidden glass rounded-xl p-4 space-y-2">
+                <div className="text-sm font-semibold">Требования</div>
+                <CatalogProse requirements={item.requirements} variant="modal" />
+              </div>
+            )}
+
           </aside>
         </div>
 

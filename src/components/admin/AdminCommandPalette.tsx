@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
-  CalendarClock, Tag, ToggleRight, Mail, Search, Box,
+  Tag, ToggleRight, Mail, Search, Box,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,7 +19,6 @@ const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard, hint: "g d" },
   { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, hint: "g o" },
   { to: "/admin/calendar", label: "Календарь", icon: Calendar },
-  { to: "/admin/availability", label: "Занятость", icon: CalendarClock },
   { to: "/admin/catalog/zones", label: "Каталог · Зоны", icon: Package, hint: "g c" },
   { to: "/admin/catalog/tech_equipment", label: "Каталог · Оборудование", icon: Package },
   { to: "/admin/catalog/services", label: "Каталог · Услуги", icon: Package },

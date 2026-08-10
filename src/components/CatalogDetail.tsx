@@ -11,7 +11,6 @@ import { RelatedItems } from "@/components/RelatedItems";
 import { CatalogSkeleton } from "@/components/CatalogSkeleton";
 import { CatalogSocialProof } from "@/components/CatalogSocialProof";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
@@ -333,7 +332,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           <ExtrasBlock extras={(item as unknown as { extras?: unknown }).extras} variant="page" />
 
 
-          <AvailabilityCalendar entityType={entityType} itemId={item.id} />
         </aside>
       </div>
 
