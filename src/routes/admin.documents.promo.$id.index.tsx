@@ -51,6 +51,7 @@ import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { PromoBlockEditDialog, type PromoEditTarget } from "@/components/admin/documents/PromoBlockEditDialog";
 import { getQuoteDocSettings } from "@/lib/quotes.functions";
+import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { resolveCompany } from "@/lib/documents/company";
 
@@ -83,15 +84,16 @@ function EditorPage() {
   const markSent = useServerFn(markPromoSent);
   const sendPromo = useServerFn(sendPromoQuoteToClient);
 
-  const loadDocSettings = useServerFn(getQuoteDocSettings);
-  const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({
-    queryKey: ["admin-quote-settings"],
-    queryFn: () => loadDocSettings(),
-  });
-
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["promo-quote", id],
     queryFn: () => get({ data: { id } }),
+  });
+
+  const loadDocSettings = useServerFn(getQuoteDocSettings);
+  const activeCompanyId = data?.quote?.company_id ?? null;
+  const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({
+    queryKey: ["admin-quote-settings", activeCompanyId],
+    queryFn: () => loadDocSettings({ data: { companyId: activeCompanyId } }),
   });
 
   const [quote, setQuote] = useState<PromoQuote | null>(null);
@@ -588,6 +590,10 @@ function EditorPage() {
               />
 
               <Separator />
+              <CompanySelect
+                value={quote.company_id}
+                onChange={(companyId) => patchQuote({ company_id: companyId })}
+              />
               <CompanyOverridesEditor
                 value={quote.company_overrides}
                 onChange={(v) => patchQuote({ company_overrides: v })}
