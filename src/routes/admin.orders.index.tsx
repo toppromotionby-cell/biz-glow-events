@@ -442,9 +442,10 @@ function DesktopOrdersTable({
                       onChange={(e) => updateStatus.mutate({ id: o.id, newStatus: e.target.value as OrderStatus })}
                       className={`px-2 py-1 rounded-full text-xs border bg-transparent outline-none cursor-pointer ${STATUS_COLOR[o.status] ?? "border-primary/30"}`}
                     >
-                      {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                        <option key={k} value={k} className="bg-background text-foreground">{v}</option>
+                      {orderStatusOptions(o.status).map((s) => (
+                        <option key={s.value} value={s.value} className="bg-background text-foreground">{s.label}</option>
                       ))}
+
                     </select>
                   </td>
                   <td className={`p-3 whitespace-nowrap text-xs tabular-nums ${age.cls}`} title={`Обновлён: ${fmtDateTime(o.updated_at ?? o.created_at)}`}>
