@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 
 export type DocumentSettings = {
   company_legal_name: string;
@@ -21,6 +22,9 @@ export type DocumentSettings = {
   signer_basis: string;
   quote_validity_days: number;
   quote_footer: string;
+  vat_mode: VatMode;
+  vat_rate: number;
+  vat_as_line: boolean;
   vat_note: string;
   invoice_validity_days: number;
   invoice_footer: string;
@@ -54,6 +58,9 @@ export const DEFAULT_DOCUMENT_SETTINGS: DocumentSettings = {
   quote_validity_days: 14,
   quote_footer:
     "Предложение действительно 14 дней. Цены указаны без НДС, если иное не оговорено отдельно. Для подтверждения заказа свяжитесь с менеджером.",
+  vat_mode: "none",
+  vat_rate: DEFAULT_VAT_RATE,
+  vat_as_line: false,
   vat_note: "НДС не облагается (УСН)",
   invoice_validity_days: 5,
   invoice_footer:
@@ -94,6 +101,9 @@ const SettingsSchema = z.object({
   signer_basis: z.string().trim().min(1).max(100),
   quote_validity_days: z.coerce.number().int().min(1).max(365),
   quote_footer: z.string().trim().max(1000),
+  vat_mode: z.enum(["none", "add", "included"]).default("none"),
+  vat_rate: z.coerce.number().min(0).max(30).default(DEFAULT_VAT_RATE),
+  vat_as_line: z.boolean().default(false),
   vat_note: z.string().trim().max(200),
   invoice_validity_days: z.coerce.number().int().min(1).max(365),
   invoice_footer: z.string().trim().max(1000),
@@ -157,5 +167,8 @@ function normalize(row: Record<string, unknown>): DocumentSettings {
     contract_sections: Array.isArray(sections)
       ? (sections as { title: string; paragraphs: string[] }[])
       : [],
+    vat_mode: normalizeVatMode(row.vat_mode),
+    vat_rate: Number(row.vat_rate) || DEFAULT_VAT_RATE,
+    vat_as_line: row.vat_as_line === true,
   };
 }

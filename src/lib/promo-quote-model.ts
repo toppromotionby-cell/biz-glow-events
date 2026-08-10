@@ -2,6 +2,7 @@
 // Browser-safe: используется формой, live-превью, PDF и XLSX — одна логика расчётов.
 import { z } from "zod";
 import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
+import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 
 export { normalizeIncludes };
 export type { QuoteItemInclude };
@@ -42,7 +43,9 @@ export type PromoQuote = {
   show_item_includes: boolean;
   show_section_subtotals: boolean;
   vat_enabled: boolean;
+  vat_mode: VatMode;
   vat_rate: number;
+  vat_as_line: boolean;
   commission_enabled: boolean;
   commission_rate: number;
   commission_label: string;
@@ -113,8 +116,10 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     show_notes: row.show_notes !== false,
     show_item_includes: row.show_item_includes !== false,
     show_section_subtotals: row.show_section_subtotals !== false,
-    vat_enabled: row.vat_enabled !== false,
-    vat_rate: num(row.vat_rate, 20),
+    vat_enabled: normalizeVatMode(row.vat_mode) !== "none",
+    vat_mode: normalizeVatMode(row.vat_mode),
+    vat_rate: num(row.vat_rate, DEFAULT_VAT_RATE) || DEFAULT_VAT_RATE,
+    vat_as_line: row.vat_as_line === true,
     commission_enabled: row.commission_enabled !== false,
     commission_rate: num(row.commission_rate, 10),
     commission_label: str(row.commission_label, "Комиссия агентства"),
@@ -201,7 +206,9 @@ export const promoQuotePatchSchema = z
     show_item_includes: z.boolean(),
     show_section_subtotals: z.boolean(),
     vat_enabled: z.boolean(),
-    vat_rate: z.number().min(0).max(100),
+    vat_mode: z.enum(["none", "add", "included"]),
+    vat_rate: z.number().min(0).max(30),
+    vat_as_line: z.boolean(),
     commission_enabled: z.boolean(),
     commission_rate: z.number().min(0).max(100),
     commission_label: z.string().max(120),
@@ -275,7 +282,11 @@ export type PromoTotals = {
   gross: number;
   discount: number;
   subtotal: number;
+  net: number;
   vat: number;
+  vatRate: number;
+  vatMode: VatMode;
+  vatEnabled: boolean;
   totalWithVat: number;
   costSum: number;
   margin: number;
@@ -297,9 +308,10 @@ export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTota
         ? round2(Math.min(num(q.discount_value), gross))
         : 0;
   const subtotal = round2(gross - discount);
-  const vat = q.vat_enabled ? round2((subtotal * q.vat_rate) / 100) : 0;
+  const v = computeVat(subtotal, vatConfig(q));
+  const vat = v.vat;
   const costSum = round2(items.reduce((s, it) => s + lineCost(it), 0));
-  const margin = round2(subtotal - costSum);
+  const margin = round2(v.net - costSum);
   return {
     itemsSum,
     commissionBase,
@@ -308,11 +320,15 @@ export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTota
     gross,
     discount,
     subtotal,
+    net: v.net,
     vat,
-    totalWithVat: round2(subtotal + vat),
+    vatRate: v.rate,
+    vatMode: v.mode,
+    vatEnabled: v.enabled,
+    totalWithVat: v.gross,
     costSum,
     margin,
-    marginPct: subtotal > 0 ? round2((margin / subtotal) * 100) : 0,
+    marginPct: v.net > 0 ? round2((margin / v.net) * 100) : 0,
   };
 }
 

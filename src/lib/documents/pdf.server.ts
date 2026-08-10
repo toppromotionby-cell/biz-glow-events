@@ -8,6 +8,7 @@ import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import type { DocOrder, DocItem, DocKind } from "@/lib/documents/build.server";
 import { fmtDate } from "@/lib/formatters";
+import { computeVat, vatConfig, vatRateLabel } from "@/lib/documents/vat";
 import {
   BRAND_ACCENT,
   DOC_COLORS,
@@ -715,12 +716,19 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
       : [{ n: "", title: "Позиции не добавлены", qty: "", u: "", price: "", sum: "" }],
   );
 
-  const total = items.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
+  const base = items.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
+  const v = computeVat(base, vatConfig(settings));
+  const total = v.gross;
   const paid = Number(order.paid ?? 0);
   const debt = Math.max(0, total - paid);
   gap(ctx, 6);
   drawSummary(ctx, [
-    { label: `Итого, ${settings.vat_note}`, value: money(total) },
+    ...(v.enabled
+      ? [
+          { label: "Сумма без НДС", value: money(v.net) },
+          { label: `НДС ${vatRateLabel(v.rate)}%`, value: money(v.vat) },
+        ]
+      : [{ label: `Итого, ${settings.vat_note}`, value: money(total) }]),
     { label: "К ОПЛАТЕ", value: money(total), emphasis: true },
     ...(paid > 0 ? [{ label: "Оплачено", value: money(paid) }] : []),
     ...(paid > 0 && debt > 0 ? [{ label: "Остаток", value: money(debt) }] : []),
@@ -798,7 +806,16 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
   }
 
   section("2", "Стоимость услуг и порядок расчётов");
-  drawParagraph(ctx, `2.1. Общая стоимость услуг по Договору составляет ${money(total)}, ${settings.vat_note}.`, { size: F11 });
+  drawParagraph(
+    ctx,
+    (() => {
+      const cv = computeVat(total, vatConfig(settings));
+      return `2.1. Общая стоимость услуг по Договору составляет ${money(cv.gross)}, ${
+        cv.enabled ? `в том числе НДС ${vatRateLabel(cv.rate)}% — ${money(cv.vat)}` : settings.vat_note
+      }.`;
+    })(),
+    { size: F11 },
+  );
   drawParagraph(ctx, `2.2. Заказчик вносит предоплату в размере ${settings.contract_prepayment_pct}% от стоимости в течение ${settings.contract_prepayment_days} банковских дней с момента подписания Договора.`, { size: F11 });
   drawParagraph(ctx, "2.3. Окончательный расчёт производится не позднее даты проведения мероприятия.", { size: F11 });
   drawParagraph(ctx, "2.4. Оплата осуществляется безналичным перечислением на расчётный счёт Исполнителя.", { size: F11 });
@@ -905,11 +922,19 @@ async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSet
       : [{ n: "", title: "Позиции не добавлены", qty: "", u: "", price: "", sum: "" }],
   );
 
-  const total = items.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
+  const actBase = items.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
+  const actVat = computeVat(actBase, vatConfig(settings));
+  const total = actVat.gross;
   gap(ctx, 6);
   drawSummary(ctx, [
+    ...(actVat.enabled
+      ? [
+          { label: "Сумма без НДС", value: money(actVat.net) },
+          { label: `НДС ${vatRateLabel(actVat.rate)}%`, value: money(actVat.vat) },
+        ]
+      : []),
     { label: "ИТОГО оказано услуг на сумму", value: money(total), emphasis: true },
-    { label: settings.vat_note, value: "—" },
+    ...(actVat.enabled ? [] : [{ label: settings.vat_note, value: "—" }]),
   ]);
 
   gap(ctx, 6);
@@ -1137,6 +1162,14 @@ export async function buildStandaloneQuotePdf(
                 });
               }
             }
+            if (t.vatEnabled && quote.vat_as_line) {
+              rows.push({
+                title: t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
+                qty: "",
+                price: "",
+                sum: money(t.vat),
+              });
+            }
             return rows;
           })(),
         );
@@ -1149,7 +1182,13 @@ export async function buildStandaloneQuotePdf(
           { label: "Стоимость позиций", value: money(t.subtotal) },
           ...(t.discount ? [{ label: "Скидка", value: `− ${money(t.discount)}` }] : []),
           ...(t.delivery ? [{ label: "Доставка и логистика", value: money(t.delivery) }] : []),
-          { label: "ИТОГО", value: money(t.total), emphasis: true },
+          ...(t.vatEnabled
+            ? [
+                { label: "Сумма без НДС", value: money(t.net) },
+                { label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) },
+              ]
+            : []),
+          { label: t.vatEnabled ? "ИТОГО С НДС" : "ИТОГО", value: money(t.total), emphasis: true },
           ...(t.prepayment
             ? [
                 { label: "Предоплата", value: money(t.prepayment) },
@@ -1157,7 +1196,13 @@ export async function buildStandaloneQuotePdf(
               ]
             : []),
         ]);
-        drawParagraph(ctx, `${amountToWords(t.total)}. ${quote.vat_note || settings.vat_note}`, { size: 9.5, color: MUTED });
+        drawParagraph(
+          ctx,
+          `${amountToWords(t.total)}. ${
+            t.vatEnabled ? `В том числе НДС ${vatRateLabel(t.vatRate)}% — ${money(t.vat)}` : quote.vat_note || settings.vat_note
+          }`,
+          { size: 9.5, color: MUTED },
+        );
         break;
       }
       case "included":
@@ -1304,13 +1349,23 @@ export async function buildPromoQuotePdf(
       note: `${quote.commission_rate}%`,
     });
   }
+  if (t.vatEnabled && quote.vat_as_line) {
+    rows.push({
+      title: t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
+      unit: "—",
+      qty: "—",
+      price: "",
+      sum: money(t.vat),
+      note: "",
+    });
+  }
   drawTable(ctx, cols, rows.length ? rows : [{ title: "Позиции не добавлены", unit: "", qty: "", price: "", sum: "", note: "" }]);
 
   gap(ctx, 6);
   drawSummary(ctx, [
-    { label: `Всего${quote.vat_enabled ? ", без НДС" : ""}`, value: money(t.subtotal) },
-    ...(quote.vat_enabled ? [{ label: `НДС ${quote.vat_rate}%`, value: money(t.vat) }] : []),
-    { label: `Итого${quote.vat_enabled ? ", с НДС" : ""}`, value: money(t.totalWithVat), emphasis: true },
+    { label: t.vatEnabled ? "Сумма без НДС" : "Всего", value: money(t.net) },
+    ...(t.vatEnabled ? [{ label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) }] : []),
+    { label: `Итого${t.vatEnabled ? ", с НДС" : ""}`, value: money(t.totalWithVat), emphasis: true },
   ]);
 
   if (quote.footer_note) {

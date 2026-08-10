@@ -5,11 +5,11 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
+import { vatRateLabel } from "@/lib/documents/vat";
 import {
   applyPlaceholders,
   defaultBlocksForTemplate,
   evaluateBlockCondition,
-  QUOTE_VAT_RATE,
   type NumericMap,
   type PlaceholderMap,
   type QuoteBlock,
@@ -97,7 +97,6 @@ export function quoteValidUntil(quote: Quote): string {
 /** Числовые значения для формул {{= ... }}. */
 export function buildNumericValues(quote: Quote, items: QuoteItem[]): NumericMap {
   const t = computeTotals(quote, items);
-  const vat = (t.total * QUOTE_VAT_RATE) / 100;
   return {
     subtotal: t.subtotal,
     discount: t.discount,
@@ -106,9 +105,10 @@ export function buildNumericValues(quote: Quote, items: QuoteItem[]): NumericMap
     prepayment: t.prepayment,
     advance: t.prepayment,
     balance: t.balance,
-    vat_rate: QUOTE_VAT_RATE,
-    vat_amount: vat,
-    total_with_vat: t.total + vat,
+    net: t.net,
+    vat_rate: t.vatRate,
+    vat_amount: t.vat,
+    total_with_vat: t.total,
     items_count: items.length,
     items_qty: items.reduce((s, it) => s + Number(it.qty || 0), 0),
   };
@@ -143,7 +143,8 @@ export function buildPlaceholderValues(
     prepayment: money(t.prepayment),
     advance: money(t.prepayment),
     balance: money(t.balance),
-    vat_rate: String(QUOTE_VAT_RATE),
+    net: money(t.net),
+    vat_rate: String(t.vatRate),
     vat_amount: money(n.vat_amount ?? 0),
     total_with_vat: money(n.total_with_vat ?? 0),
     items_count: String(items.length),
@@ -255,6 +256,14 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
     sections.get(key)!.push(it);
   }
 
+  const vatRow =
+    t.vatEnabled && quote.vat_as_line
+      ? `<tr class="section-row"><td></td><td>${esc(t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`)}</td><td class="qty"></td><td class="num"></td><td class="num">${money(t.vat)}</td></tr>`
+      : "";
+  const vatFootNote = t.vatEnabled
+    ? `В том числе НДС ${vatRateLabel(t.vatRate)}% — ${money(t.vat)}`
+    : quote.vat_note || settings.vat_note;
+
   const showIncludes = quote.design?.show_item_includes !== false;
   const showSubtotals = quote.design?.show_section_subtotals !== false;
 
@@ -337,17 +346,18 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
       case "items":
         return `${heading(b)}<table>
           <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
-          <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}</tbody>
+          <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}${vatRow}</tbody>
         </table>`;
       case "totals":
         return `<div class="totals">
           <div class="row"><span>Стоимость позиций</span><span>${money(t.subtotal)}</span></div>
           ${t.discount ? `<div class="row"><span>Скидка</span><span>−${money(t.discount)}</span></div>` : ""}
           ${t.delivery ? `<div class="row"><span>Доставка и логистика</span><span>${money(t.delivery)}</span></div>` : ""}
-          <div class="row total"><span>Итого</span><span>${money(t.total)}</span></div>
+          ${t.vatEnabled ? `<div class="row"><span>Сумма без НДС</span><span>${money(t.net)}</span></div><div class="row"><span>НДС ${vatRateLabel(t.vatRate)}%</span><span>${money(t.vat)}</span></div>` : ""}
+          <div class="row total"><span>${t.vatEnabled ? "Итого с НДС" : "Итого"}</span><span>${money(t.total)}</span></div>
           ${t.prepayment ? `<div class="row"><span>Предоплата</span><span>${money(t.prepayment)}</span></div><div class="row"><span>Остаток</span><span>${money(t.balance)}</span></div>` : ""}
         </div>
-        <div class="words">${esc(amountToWords(t.total))}. ${esc(quote.vat_note || settings.vat_note)}</div>`;
+        <div class="words">${esc(amountToWords(t.total))}. ${esc(vatFootNote)}</div>`;
       case "included":
       case "excluded":
         return text ? `${heading(b)}<ul>${lines(text)}</ul>` : "";

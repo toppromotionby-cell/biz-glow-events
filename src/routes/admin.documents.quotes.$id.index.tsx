@@ -42,6 +42,7 @@ import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
+import { VatSettings } from "@/components/admin/VatSettings";
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
 
@@ -200,6 +201,7 @@ function Page() {
               discount_type: quote.discount_type, discount_value: num(quote.discount_value),
               prepayment_type: quote.prepayment_type, prepayment_value: num(quote.prepayment_value),
               delivery_amount: num(quote.delivery_amount), vat_note: quote.vat_note ?? "",
+              vat_mode: quote.vat_mode, vat_rate: num(quote.vat_rate), vat_as_line: quote.vat_as_line,
         };
         // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
         // остальные поля сохраняются, а поле подсветится в списке проверок.
@@ -516,6 +518,16 @@ function Page() {
                   <Input value={quote.vat_note ?? ""} onChange={(e) => patch({ vat_note: e.target.value })} />
                 </Field>
               </div>
+              <VatSettings
+                value={{ mode: quote.vat_mode, rate: quote.vat_rate, asLine: quote.vat_as_line }}
+                onChange={(v) =>
+                  patch({
+                    ...(v.mode !== undefined ? { vat_mode: v.mode } : {}),
+                    ...(v.rate !== undefined ? { vat_rate: v.rate } : {}),
+                    ...(v.asLine !== undefined ? { vat_as_line: v.asLine } : {}),
+                  })
+                }
+              />
               <div className="rounded-lg bg-muted/40 p-3 text-sm space-y-1 tabular-nums">
                 <div className="flex justify-between"><span className="text-muted-foreground">Позиции</span><span>{fmtMoney(totals.subtotal)}</span></div>
                 {!!totals.discount && <div className="flex justify-between"><span className="text-muted-foreground">Скидка</span><span>− {fmtMoney(totals.discount)}</span></div>}

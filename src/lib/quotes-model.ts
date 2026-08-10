@@ -9,8 +9,11 @@ import {
   type QuoteBlock,
   type QuoteTemplate,
 } from "@/lib/quote-blocks";
+import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 
 export * from "@/lib/quote-blocks";
+export * from "@/lib/documents/vat";
+
 
 export const QUOTE_STATUSES = ["draft", "sent", "accepted", "rejected"] as const;
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
@@ -217,6 +220,9 @@ export type Quote = {
   prepayment_type: "none" | "percent" | "amount";
   prepayment_value: number;
   delivery_amount: number;
+  vat_mode: VatMode;
+  vat_rate: number;
+  vat_as_line: boolean;
   vat_note: string;
   total: number;
   order_id: string | null;
@@ -242,6 +248,13 @@ export type QuoteTotals = {
   subtotal: number;
   discount: number;
   delivery: number;
+  /** Сумма до НДС (в режиме «в том числе» — очищенная от налога). */
+  net: number;
+  vat: number;
+  vatRate: number;
+  vatMode: VatMode;
+  vatEnabled: boolean;
+  /** Итог к оплате (с НДС, если он есть). */
   total: number;
   prepayment: number;
   balance: number;
@@ -251,7 +264,8 @@ export type QuoteTotals = {
 };
 
 export function computeTotals(
-  quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount">,
+  quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount"> &
+    Partial<Pick<Quote, "vat_mode" | "vat_rate" | "vat_as_line">>,
   items: Array<Pick<QuoteItem, "qty" | "price"> & { cost?: number }>,
 ): QuoteTotals {
   const subtotal = items.reduce((s, it) => s + num(it.qty) * num(it.price), 0);
@@ -262,22 +276,31 @@ export function computeTotals(
     : quote.discount_type === "amount" ? Math.min(dv, subtotal)
     : 0;
   const delivery = Math.max(0, num(quote.delivery_amount));
-  const total = Math.max(0, subtotal - discount + delivery);
+  const base = Math.max(0, subtotal - discount + delivery);
+  const v = computeVat(base, vatConfig(quote));
+  const total = v.gross;
   const pv = Math.max(0, num(quote.prepayment_value));
   const prepayment =
     quote.prepayment_type === "percent" ? (total * Math.min(pv, 100)) / 100
     : quote.prepayment_type === "amount" ? Math.min(pv, total)
     : 0;
-  const margin = subtotal - discount - cost;
-  const revenue = subtotal - discount;
+  const revenue = v.net;
+  const margin = revenue - cost;
   return {
-    subtotal, discount, delivery, total, prepayment,
+    subtotal, discount, delivery,
+    net: v.net,
+    vat: v.vat,
+    vatRate: v.rate,
+    vatMode: v.mode,
+    vatEnabled: v.enabled,
+    total, prepayment,
     balance: Math.max(0, total - prepayment),
     cost,
     margin,
     marginPct: revenue > 0 ? (margin / revenue) * 100 : 0,
   };
 }
+
 
 export type QuoteCheck = { level: "error" | "warn" | "info"; message: string };
 
@@ -490,6 +513,9 @@ export const quotePatchSchema = z.object({
   prepayment_type: z.enum(["none", "percent", "amount"]).optional(),
   prepayment_value: z.number().min(0).max(10_000_000).optional(),
   delivery_amount: z.number().min(0).max(10_000_000).optional(),
+  vat_mode: z.enum(["none", "add", "included"]).optional(),
+  vat_rate: z.number().min(0).max(30).optional(),
+  vat_as_line: z.boolean().optional(),
   vat_note: z.string().max(300).optional(),
   order_id: z.string().uuid().nullable().optional(),
 });
@@ -509,6 +535,9 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     discount_value: num(row.discount_value),
     prepayment_value: num(row.prepayment_value),
     delivery_amount: num(row.delivery_amount),
+    vat_mode: normalizeVatMode(row.vat_mode),
+    vat_rate: num(row.vat_rate, DEFAULT_VAT_RATE) || DEFAULT_VAT_RATE,
+    vat_as_line: row.vat_as_line === true,
     total: num(row.total),
   };
 }

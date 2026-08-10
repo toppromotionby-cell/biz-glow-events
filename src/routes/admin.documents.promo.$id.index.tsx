@@ -43,6 +43,7 @@ import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
+import { VatSettings } from "@/components/admin/VatSettings";
 
 export const Route = createFileRoute("/admin/documents/promo/$id/")({ component: EditorPage });
 
@@ -503,15 +504,16 @@ function EditorPage() {
                 )}
               </div>
               <Separator />
-              <Row>
-                <span>НДС</span>
-                <Switch checked={quote.vat_enabled} onCheckedChange={(v) => patchQuote({ vat_enabled: v })} />
-              </Row>
-              {quote.vat_enabled && (
-                <Field label="Ставка НДС, %">
-                  <Input type="number" min={0} max={30} step="0.1" value={quote.vat_rate} onChange={(e) => patchQuote({ vat_rate: Number(e.target.value) })} />
-                </Field>
-              )}
+              <VatSettings
+                value={{ mode: quote.vat_mode, rate: quote.vat_rate, asLine: quote.vat_as_line }}
+                onChange={(v) =>
+                  patchQuote({
+                    ...(v.mode !== undefined ? { vat_mode: v.mode, vat_enabled: v.mode !== "none" } : {}),
+                    ...(v.rate !== undefined ? { vat_rate: v.rate } : {}),
+                    ...(v.asLine !== undefined ? { vat_as_line: v.asLine } : {}),
+                  })
+                }
+              />
             </TabsContent>
 
             <TabsContent value="view" className="space-y-3">

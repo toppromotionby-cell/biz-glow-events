@@ -1,4 +1,5 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
+import { vatRateLabel } from "@/lib/documents/vat";
 import { BRAND_ACCENT } from "@/lib/documents/brand";
 import {
   computePromoTotals,
@@ -35,7 +36,7 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
   if (quote.show_qty) cols.push({ label: "Кол-во", cls: "c-num" });
   if (quote.show_total_qty) cols.push({ label: "Всего", cls: "c-num" });
   cols.push({ label: "Цена за ед.", cls: "c-money" });
-  cols.push({ label: `Всего${quote.vat_enabled ? ", без НДС" : ""}`, cls: "c-money" });
+  cols.push({ label: `Всего${t.vatMode === "add" ? ", без НДС" : t.vatMode === "included" ? ", с НДС" : ""}`, cls: "c-money" });
   if (quote.show_notes) cols.push({ label: "Примечания", cls: "c-note" });
 
   const colCount = cols.length;
@@ -93,17 +94,27 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
     );
   }
 
+  if (t.vatEnabled && quote.vat_as_line) {
+    extraRows.push(
+      `<tr class="extra"><td class="c-title">${esc(
+        t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
+      )}</td><td class="c-unit">—</td>${quote.show_qty ? '<td class="c-num">—</td>' : ""}${
+        quote.show_total_qty ? '<td class="c-num">—</td>' : ""
+      }<td class="c-money"></td><td class="c-money">${nf(t.vat)}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
+    );
+  }
+
   const totalsRows = [
     t.discount > 0
       ? `<tr class="total"><td class="lbl">Скидка${
           quote.discount_type === "percent" ? ` ${nf(quote.discount_value).replace(",00", "")}%` : ""
         }:</td><td class="val">− ${nf(t.discount)}</td></tr>`
       : "",
-    `<tr class="total"><td class="lbl">Всего${quote.vat_enabled ? ", без НДС" : ""}:</td><td class="val">${nf(t.subtotal)}</td></tr>`,
-    quote.vat_enabled
-      ? `<tr class="total"><td class="lbl">НДС ${nf(quote.vat_rate).replace(",00", "")}%:</td><td class="val">${nf(t.vat)}</td></tr>`
+    `<tr class="total"><td class="lbl">${t.vatEnabled ? "Сумма без НДС" : "Всего"}:</td><td class="val">${nf(t.net)}</td></tr>`,
+    t.vatEnabled
+      ? `<tr class="total"><td class="lbl">НДС ${vatRateLabel(t.vatRate)}%:</td><td class="val">${nf(t.vat)}</td></tr>`
       : "",
-    `<tr class="total grand"><td class="lbl">Итого${quote.vat_enabled ? ", с НДС" : ""}:</td><td class="val">${nf(
+    `<tr class="total grand"><td class="lbl">Итого${t.vatEnabled ? ", с НДС" : ""}:</td><td class="val">${nf(
       t.totalWithVat,
     )} ${esc(quote.currency)}</td></tr>`,
   ].join("");

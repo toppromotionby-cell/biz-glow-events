@@ -4,6 +4,7 @@
 import { fmtDate } from "@/lib/formatters";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { esc, money, renderShell, partyCard } from "@/lib/documents/render.server";
+import { computeVat, vatConfig, vatRateLabel } from "@/lib/documents/vat";
 
 export type DocOrder = {
   id: string;
@@ -125,9 +126,16 @@ export function buildInvoiceHtml(order: DocOrder, items: DocItem[], settings: Do
     </table>
 
     <div class="summary">
-      <div class="row"><span>Итого без НДС:</span><span>${money(total)}</span></div>
+      ${(() => {
+        const v = computeVat(total, vatConfig(settings));
+        return v.enabled
+          ? `<div class="row"><span>Сумма без НДС:</span><span>${money(v.net)}</span></div>
+      <div class="row"><span>НДС ${vatRateLabel(v.rate)}%:</span><span>${money(v.vat)}</span></div>
+      <div class="row total"><span>К ОПЛАТЕ:</span><span>${money(v.gross)}</span></div>`
+          : `<div class="row"><span>Итого без НДС:</span><span>${money(total)}</span></div>
       <div class="row"><span>${esc(settings.vat_note)}:</span><span>—</span></div>
-      <div class="row total"><span>К ОПЛАТЕ:</span><span>${money(total)}</span></div>
+      <div class="row total"><span>К ОПЛАТЕ:</span><span>${money(total)}</span></div>`;
+      })()}
       ${paid > 0 ? `<div class="row"><span>Оплачено:</span><span>${money(paid)}</span></div>` : ""}
       ${paid > 0 && debt > 0 ? `<div class="row"><span>Остаток:</span><span>${money(debt)}</span></div>` : ""}
     </div>
@@ -200,7 +208,10 @@ export function buildContractHtml(order: DocOrder, items: DocItem[], settings: D
     <ul>${itemsList}</ul>
 
     <h2 class="section">2. Стоимость услуг и порядок расчётов</h2>
-    <p>2.1. Общая стоимость услуг по Договору составляет <b>${money(total)}</b>, ${esc(settings.vat_note)}.</p>
+    <p>2.1. Общая стоимость услуг по Договору составляет <b>${money(computeVat(total, vatConfig(settings)).gross)}</b>, ${(() => {
+      const v = computeVat(total, vatConfig(settings));
+      return v.enabled ? `в том числе НДС ${vatRateLabel(v.rate)}% — ${money(v.vat)}` : esc(settings.vat_note);
+    })()}.</p>
     <p>2.2. Заказчик вносит предоплату в размере ${settings.contract_prepayment_pct}% от стоимости в течение ${settings.contract_prepayment_days} банковских дней с момента подписания Договора.</p>
     <p>2.3. Окончательный расчёт производится не позднее даты проведения мероприятия.</p>
     <p>2.4. Оплата осуществляется безналичным перечислением на расчётный счёт Исполнителя.</p>
@@ -283,8 +294,15 @@ export function buildActHtml(order: DocOrder, items: DocItem[], settings: Docume
     </table>
 
     <div class="summary">
-      <div class="row total"><span>ИТОГО оказано услуг на сумму:</span><span>${money(total)}</span></div>
-      <div class="row"><span>${esc(settings.vat_note)}</span><span>—</span></div>
+      ${(() => {
+        const v = computeVat(total, vatConfig(settings));
+        return v.enabled
+          ? `<div class="row"><span>Сумма без НДС:</span><span>${money(v.net)}</span></div>
+      <div class="row"><span>НДС ${vatRateLabel(v.rate)}%:</span><span>${money(v.vat)}</span></div>
+      <div class="row total"><span>ИТОГО оказано услуг на сумму:</span><span>${money(v.gross)}</span></div>`
+          : `<div class="row total"><span>ИТОГО оказано услуг на сумму:</span><span>${money(total)}</span></div>
+      <div class="row"><span>${esc(settings.vat_note)}</span><span>—</span></div>`;
+      })()}
     </div>
 
     <p style="margin-top:14px;">Услуги оказаны полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.</p>
