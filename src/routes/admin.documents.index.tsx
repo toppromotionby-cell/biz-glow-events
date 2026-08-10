@@ -394,6 +394,8 @@ function Page() {
           </tbody>
         </table>
       </div>
+      )}
+
 
       <CreateDocumentDialog
         open={createOpen}
