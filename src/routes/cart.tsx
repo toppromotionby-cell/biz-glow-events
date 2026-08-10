@@ -133,7 +133,7 @@ function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-5xl">
+    <div className="container mx-auto px-4 py-12 max-w-5xl pb-28 lg:pb-12">
       <header className="mb-8">
         <h1 className="text-4xl font-display font-bold gradient-text">Ваша корзина</h1>
         <p className="mt-2 text-muted-foreground">
@@ -168,6 +168,31 @@ function CartPage() {
             onFieldBlur={handleFieldBlur}
 
           />
+        </div>
+      )}
+
+      {/* Липкая панель итога на мобильных: сумма всегда видна, кнопка скроллит к форме. */}
+      {items.length > 0 && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 glass-strong px-4 py-2.5 lg:hidden"
+          style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="leading-tight">
+              <p className="text-[11px] text-muted-foreground">Итого · {count} поз.</p>
+              <p className="font-display text-lg font-bold gradient-text">{fmtCurrency(finalTotal)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                formRef.current?.querySelector<HTMLInputElement>('[name="client_name"]')?.focus();
+              }}
+              className="rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary"
+            >
+              Оформить
+            </button>
+          </div>
         </div>
       )}
 
