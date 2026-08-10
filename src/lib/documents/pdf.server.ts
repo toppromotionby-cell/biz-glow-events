@@ -1546,10 +1546,10 @@ export async function buildStandaloneQuotePdf(
   opts: { density?: DocDensity | "auto"; maxPages?: number } = {},
 ): Promise<Uint8Array> {
   const requested = opts.density ?? "auto";
-  const maxPages = opts.maxPages ?? 2;
+  const maxPages = opts.maxPages ?? 1;
   if (requested !== "auto") return (await renderQuotePdf(quote, items, settings, requested)).bytes;
 
-  const ladder: DocDensity[] = ["comfortable", "compact", "dense"];
+  const ladder: DocDensity[] = ["comfortable", "compact", "dense", "ultra"];
   let last: { bytes: Uint8Array; pages: number } | null = null;
   for (const density of ladder) {
     last = await renderQuotePdf(quote, items, settings, density);
