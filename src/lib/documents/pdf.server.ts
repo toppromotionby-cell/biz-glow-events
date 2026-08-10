@@ -1781,12 +1781,18 @@ export async function buildStandaloneQuotePdf(
   }
 
   gap(ctx, 4);
-  const validity = quote.validity_days ? `Предложение действительно ${quote.validity_days} дней. ` : "";
-  drawParagraph(ctx, `${validity}${applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers)}`, { size: 9.5, color: MUTED });
+  const footerText = applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers);
+  // срок действия добавляем только если его нет в тексте подвала — иначе фраза дублируется
+  const validity =
+    quote.validity_days && !/действительн/i.test(footerText)
+      ? `Предложение действительно ${quote.validity_days} дней. `
+      : "";
+  drawParagraph(ctx, `${validity}${footerText}`, { size: 9.5, color: MUTED });
 
   drawFooter(ctx, eff);
   return await ctx.pdf.save();
 }
+
 
 // ===================== Промо-КП =====================
 export async function buildPromoQuotePdf(
