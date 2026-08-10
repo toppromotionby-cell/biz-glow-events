@@ -1660,16 +1660,16 @@ export async function buildPromoQuotePdf(
         { title: "Сумма", key: "sum", width: tableW * 0.15, align: "right" },
       ];
 
-  const rows: Array<Record<string, string>> = [];
+  const rows: TableRow[] = [];
   for (const sec of groupBySection(items)) {
-    if (sec.name) rows.push({ title: sec.name.toUpperCase(), unit: "", qty: "", price: "", sum: "", note: "" });
+    if (sec.name) rows.push({ _kind: "section", title: sec.name, unit: "", qty: "", price: "", sum: "", note: "" });
     for (const it of sec.items) {
-      const lines = [safe(it.title)];
-      if (quote.show_item_includes && it.includes.length) {
-        for (const inc of it.includes) lines.push(`• ${safe(inc.text)}${inc.note ? ` — ${safe(inc.note)}` : ""}`);
-      }
       rows.push({
-        title: lines.join("\n"),
+        title: safe(it.title),
+        _bullets:
+          quote.show_item_includes && it.includes.length
+            ? it.includes.map((inc) => `${safe(inc.text)}${inc.note ? ` — ${safe(inc.note)}` : ""}`)
+            : undefined,
         unit: safe(it.unit),
         qty: String(lineQty(it)),
         price: it.price ? money(it.price) : "",
@@ -1679,6 +1679,7 @@ export async function buildPromoQuotePdf(
     }
     if (quote.show_section_subtotals && sec.name && sec.items.length > 1) {
       rows.push({
+        _kind: "subtotal",
         title: `Итого по разделу «${sec.name}»`,
         unit: "",
         qty: "",
@@ -1688,6 +1689,7 @@ export async function buildPromoQuotePdf(
       });
     }
   }
+
   if (quote.management_enabled) {
     rows.push({ title: quote.management_label, unit: "услуга", qty: "—", price: "", sum: money(t.management), note: "" });
   }
