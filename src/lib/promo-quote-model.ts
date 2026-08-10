@@ -39,6 +39,7 @@ export type PromoQuote = {
   logo_url: string | null;
   client_logo_url: string | null;
   logo_layout: LogoLayout;
+  company_id: string | null;
   company_overrides: CompanyOverrides;
   accent_color: string;
   show_qty: boolean;
@@ -115,6 +116,7 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     logo_url: row.logo_url ? String(row.logo_url) : null,
     client_logo_url: row.client_logo_url ? String(row.client_logo_url) : null,
     logo_layout: normalizeLogoLayout(row.logo_layout),
+    company_id: row.company_id ? String(row.company_id) : null,
     company_overrides: normalizeCompanyOverrides(row.company_overrides),
     accent_color: str(row.accent_color, "#F5A623"),
     show_qty: row.show_qty !== false,
@@ -206,6 +208,7 @@ export const promoQuotePatchSchema = z
     logo_url: z.string().max(1000).nullable(),
     client_logo_url: z.string().max(1000).nullable(),
     logo_layout: z.unknown().transform(normalizeLogoLayout),
+    company_id: z.string().uuid().nullable(),
     company_overrides: z.unknown().transform(normalizeCompanyOverrides),
     accent_color: z.string().max(20),
     show_qty: z.boolean(),
