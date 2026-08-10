@@ -103,6 +103,9 @@ function AdminDashboard() {
 
       {DEV_OVERLAYS_ENABLED && <ProdHealthBanner />}
 
+      <AttentionPanel />
+
+
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
           <div key={c.label} className="glass rounded-2xl p-5">
