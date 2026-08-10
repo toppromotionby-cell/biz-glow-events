@@ -118,16 +118,14 @@ export function CatalogSectionTile({
         </span>
         <span className="min-w-0 flex-1 font-semibold leading-snug text-balance group-hover:text-primary transition">
           {section.title}
+          {section.count > 0 && (
+            <span className="ml-1.5 text-xs font-normal text-muted-foreground">{section.count}</span>
+          )}
         </span>
       </div>
       {section.description && (
         <p className="text-sm leading-relaxed text-muted-foreground line-clamp-2 text-pretty">{section.description}</p>
       )}
-      <span className="mt-auto inline-flex items-center text-xs font-medium text-primary">
-        Перейти
-        {section.count > 0 && <span className="ml-1 text-muted-foreground">({section.count})</span>}
-        <ArrowRight className="ml-1 h-3 w-3" />
-      </span>
     </Link>
   );
 }
@@ -137,14 +135,18 @@ export function CatalogSectionCard({ section, index }: { section: CatalogNavSect
   const Icon = sectionIcon(section.icon);
   return (
     <div className="group relative glass rounded-xl px-4 py-5 sm:p-6 hover:border-primary/50 transition-all duration-200 h-full flex flex-col">
-      <div className="flex gap-4">
+      <Link {...sectionLink(section)} aria-label={section.title} className="absolute inset-0 z-0 rounded-xl" />
+      <div className="relative z-10 pointer-events-none flex gap-4">
         <div className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${sectionGradient(index)} group-hover:glow-primary transition`}>
           <Icon className="h-6 w-6 text-primary-foreground" />
         </div>
         <div className="min-w-0 flex-1">
-          <Link {...sectionLink(section)} className="font-semibold text-lg leading-snug text-balance hover:text-primary transition">
+          <span className="font-semibold text-lg leading-snug text-balance group-hover:text-primary transition">
             {section.title}
-          </Link>
+            {section.count > 0 && (
+              <span className="ml-1.5 text-sm font-normal text-muted-foreground">{section.count}</span>
+            )}
+          </span>
           {section.description && (
             <p className="text-sm leading-relaxed text-muted-foreground mt-1.5 text-pretty">{section.description}</p>
           )}
@@ -152,21 +154,16 @@ export function CatalogSectionCard({ section, index }: { section: CatalogNavSect
       </div>
 
       {section.categories.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="relative z-10 mt-4 flex flex-wrap gap-1.5">
           {section.categories.slice(0, 8).map((c) => (
             <CategoryChip key={c.id} section={section} name={c.name} count={c.count} />
           ))}
         </div>
       )}
-
-      <Link {...sectionLink(section)} className="mt-4 inline-flex items-center text-sm text-primary font-medium">
-        Перейти в раздел
-        {section.count > 0 && <span className="ml-1 text-muted-foreground">({section.count})</span>}
-        <ArrowRight className="ml-1 h-3 w-3" />
-      </Link>
     </div>
   );
 }
+
 
 /** Мега-меню «Каталог» для десктопной шапки — только основные разделы. */
 export function CatalogMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
