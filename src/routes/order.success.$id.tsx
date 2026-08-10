@@ -77,7 +77,7 @@ function OrderSuccess() {
               Создайте аккаунт за минуту — история заказов, документы и повторный заказ в один клик.
             </p>
             <Link
-              to="/auth"
+              to="/login"
               className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground glow-primary"
             >
               <UserPlus className="h-4 w-4" /> Создать аккаунт
