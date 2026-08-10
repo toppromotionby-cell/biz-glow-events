@@ -328,8 +328,14 @@ export function buildQuoteHtmlDoc(
     .map(([section, rows]) => {
       const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${esc(section)}</td></tr>` : "";
       const body = rows
-        .map(
-          (it, i) => `<tr${ed("item", it.id, "Позиция")}>
+        .map((it, i) => {
+          const rowChecks = checksByItem.get(it.id) ?? [];
+          const rowCls = rowChecks.some((c) => c.level === "error")
+            ? " class=\"chk-row chk-row-error\""
+            : rowChecks.length
+              ? " class=\"chk-row chk-row-warn\""
+              : "";
+          return `<tr${rowCls}${ed("item", it.id, "Позиция")}>
         <td class="idx">${i + 1}</td>
         <td>
           <div class="it-title">${esc(it.title)}</div>
@@ -341,13 +347,15 @@ export function buildQuoteHtmlDoc(
                   .join("")}</ul>`
               : ""
           }
+          ${chkList(rowChecks)}
         </td>
         <td class="qty">${esc(it.qty)}${it.unit ? `<span class="unit">${esc(it.unit)}</span>` : ""}</td>
         <td class="num">${money(it.price)}</td>
         <td class="num strong">${money(it.price * it.qty)}</td>
-      </tr>`,
-        )
+      </tr>`;
+        })
         .join("");
+
       const subtotal =
         showSubtotals && section && rows.length > 1
           ? `<tr class="section-sub"><td colspan="4">Итого по разделу «${esc(section)}»</td><td class="num strong">${money(
