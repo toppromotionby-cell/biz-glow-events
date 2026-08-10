@@ -155,11 +155,29 @@ export function CompanyProfilesManager() {
             </p>
           </button>
         ))}
-        <Button type="button" variant="outline" className="w-full" onClick={addNew}>
+        {mode === "new" && (
+          <div className="rounded-xl border border-dashed border-primary/60 bg-primary/5 p-3">
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate text-sm font-medium">{draft?.name || "Новая компания"}</span>
+              <Badge variant="outline" className="ml-auto text-[10px]">
+                черновик
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Заполните и сохраните</p>
+          </div>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={addNew}
+          disabled={mode === "new"}
+        >
           <Plus className="mr-1 h-4 w-4" />
           Добавить компанию
         </Button>
-        {!companies?.length && (
+        {!companies?.length && mode !== "new" && (
           <p className="text-xs text-muted-foreground">
             Пока нет ни одной компании — добавьте первую, она станет основной.
           </p>
@@ -173,12 +191,24 @@ export function CompanyProfilesManager() {
         </div>
       ) : (
         <div className="space-y-5 rounded-xl border border-border/60 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold">
+              {mode === "new" ? "Новая компания" : draft.name || "Компания"}
+            </h3>
+            {mode === "new" && (
+              <Button type="button" variant="ghost" size="sm" onClick={cancelNew}>
+                Отмена
+              </Button>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <F
               label="Название профиля (видно только вам)"
               value={draft.name}
               onChange={(v) => set("name", v)}
+              inputRef={nameRef}
             />
+
             <F
               label="Юр. название"
               value={draft.company_legal_name}
