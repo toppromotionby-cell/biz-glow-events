@@ -4,31 +4,46 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Heart, Menu, ShieldCheck } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown } from "lucide-react";
 
 import { useCart } from "@/lib/cart";
-import { useWishlist } from "@/lib/wishlist";
 import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CONTACT } from "@/lib/contacts";
 import { SocialIcons } from "@/components/SocialIcons";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const NAV = [
+// Разделы каталога — собраны в одно выпадающее меню «Каталог».
+const CATALOG_NAV = [
   { to: "/zones", label: "Интерактивные зоны", key: "header.nav.zones", footerKey: "footer.catalog.zones" },
   { to: "/equipment", label: "Техническое оснащение", key: "header.nav.equipment", footerKey: "footer.catalog.equipment" },
   { to: "/services", label: "Услуги", key: "header.nav.services", footerKey: "footer.catalog.services" },
   { to: "/production", label: "Производство", key: "header.nav.production", footerKey: "footer.catalog.production" },
   { to: "/attractions", label: "Аттракционы", key: "header.nav.attractions", footerKey: "footer.catalog.attractions" },
+] as const;
+
+// Второстепенные разделы — остаются в мобильном меню и футере.
+const SECONDARY_NAV = [
   { to: "/cases", label: "Кейсы", key: "header.nav.cases", footerKey: "footer.catalog.cases" },
   { to: "/industries", label: "Индустрии", key: "header.nav.industries", footerKey: "footer.catalog.industries" },
   { to: "/testimonials", label: "Отзывы", key: "header.nav.testimonials", footerKey: "footer.catalog.testimonials" },
   { to: "/blog", label: "Блог", key: "header.nav.blog", footerKey: "footer.catalog.blog" },
   { to: "/about", label: "О нас", key: "header.nav.about", footerKey: "footer.catalog.about" },
   { to: "/contacts", label: "Контакты", key: "header.nav.contacts", footerKey: "footer.catalog.contacts_link" },
+] as const;
+
+const NAV = [...CATALOG_NAV, ...SECONDARY_NAV];
+
+// Ключевые пункты, которые остаются в десктопной шапке рядом с «Каталогом».
+const PRIMARY_NAV = [
+  { to: "/cases", label: "Кейсы", key: "header.nav.cases" },
+  { to: "/calculator", label: "Калькулятор", key: "header.nav.calculator" },
+  { to: "/blog", label: "Блог", key: "header.nav.blog" },
+  { to: "/contacts", label: "Контакты", key: "header.nav.contacts" },
 ] as const;
 
 const INFO_LINKS = [
@@ -41,6 +56,7 @@ const INFO_LINKS = [
   { to: "/cookies", label: "Политика cookies", footerKey: "footer.info.cookies" },
   { to: "/offer", label: "Публичная оферта", footerKey: "footer.info.offer" },
 ] as const;
+
 
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
