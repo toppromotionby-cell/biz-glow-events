@@ -261,3 +261,23 @@ export const setDocumentStatus = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Перевод документа в шаблон и обратно (общий для КП и КП промо)
+export const setDocumentTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { kind: DocKind; id: string; isTemplate: boolean; name?: string }) =>
+    idSchema.extend({ isTemplate: z.boolean(), name: z.string().max(160).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const patch: Record<string, unknown> = { is_template: data.isTemplate };
+    if (data.isTemplate) patch.template_name = (data.name ?? "").trim() || "Шаблон";
+    else patch.template_name = "";
+    const { error } = await context.supabase
+      .from(TABLES[data.kind].doc)
+      .update(patch as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
