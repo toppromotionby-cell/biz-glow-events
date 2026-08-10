@@ -6,10 +6,9 @@ import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components
 import { useResolvedUrl } from "@/components/StorageMedia";
 import { useClampedText } from "@/components/ui/ClampedTitle";
 
-import { WishlistButton } from "@/components/WishlistButton";
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
-import { X } from "lucide-react";
+import { Info, X } from "lucide-react";
 
 export function CatalogGrid({
   items,
@@ -394,18 +393,15 @@ function CatalogCard({
               <span className="text-xs sm:text-sm text-muted-foreground">BYN</span>
             </div>
           </PriceGate>
-          <div className="mt-3 flex items-stretch gap-2">
-            <div className="flex-1">
-              <WishlistButton
-                entity_type={entityType}
-                id={item.slug}
-                slug={item.slug}
-                title={item.title}
-                price={item.priceFrom}
-                image={item.image}
-              />
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`Подробнее: ${item.title}`}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-5 py-2 text-sm font-medium text-foreground transition hover:bg-primary/20 hover:border-primary/60"
+          >
+            <Info className="h-4 w-4 text-primary" aria-hidden="true" />
+            Подробнее
+          </button>
 
         </div>
       </div>

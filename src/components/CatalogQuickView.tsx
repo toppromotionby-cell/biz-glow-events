@@ -9,7 +9,6 @@ import { getCatalogItem, type CatalogType, type CatalogRow } from "@/lib/catalog
 import { MediaShield } from "@/components/MediaShield";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
-import { WishlistButton } from "@/components/WishlistButton";
 
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { CatalogProse } from "@/components/CatalogProse";
@@ -296,11 +295,6 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                 </button>
               )}
 
-              {!needsSelection && type !== "services" && (
-                <div className="flex gap-2 pt-1">
-                  <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} />
-                </div>
-              )}
             </div>
 
             {features.length > 0 && (
@@ -388,9 +382,6 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
               </>
             )}
           </button>
-          {!needsSelection && type !== "services" && (
-            <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} compact />
-          )}
         </div>
       </div>
     </div>
