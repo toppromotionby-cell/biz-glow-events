@@ -1,0 +1,1 @@
+ALTER TABLE public.promo_quotes ADD COLUMN IF NOT EXISTS company_overrides jsonb NOT NULL DEFAULT '{}'::jsonb;
