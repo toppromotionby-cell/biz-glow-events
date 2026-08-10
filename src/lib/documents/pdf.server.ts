@@ -761,23 +761,34 @@ function drawSummary(
   const height = rows.reduce((s, r) => s + rowH(r), 0);
 
   ensureSpace(ctx, height + 10);
-  ctx.page.drawRectangle({
+  roundedRect(ctx.page, {
     x,
     y: ctx.y - height,
     width,
     height,
+    radius: 10,
     color: rgb(1, 1, 1),
     borderColor: ACCENT_BORDER,
     borderWidth: 0.7,
   });
 
   let cy = ctx.y;
-  for (const r of rows) {
+  const lastIdx = rows.length - 1;
+  for (const [i, r] of rows.entries()) {
     const h = rowH(r);
     const size = r.emphasis ? F16 : F12;
     if (r.emphasis) {
-      ctx.page.drawRectangle({ x: x + 0.7, y: cy - h, width: width - 1.4, height: h, color: ACCENT_SOFT });
+      const isLast = i === lastIdx;
+      roundedRect(ctx.page, {
+        x: x + 0.7,
+        y: cy - h,
+        width: width - 1.4,
+        height: h,
+        radius: isLast ? 9 : 0,
+        color: ACCENT_SOFT,
+      });
     }
+
     const labelFont = r.emphasis ? ctx.bold : ctx.regular;
     const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
     const baseline = cy - (h + size * 0.72) / 2;
