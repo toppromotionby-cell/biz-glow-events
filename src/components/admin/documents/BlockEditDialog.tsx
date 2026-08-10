@@ -155,6 +155,15 @@ export function BlockEditDialog({
   };
   const currentBlock = block ? (draft.blocks ?? quote.blocks).find((b) => b.id === block.id) ?? block : null;
 
+  // Живые значения «как в превью»: считаем тем же кодом, что и документ.
+  const merged: Quote = { ...quote, ...draft } as Quote;
+  const draftItems = item ? items.map((it) => (it.id === item.id ? item : it)) : items;
+  const totals = computeTotals(merged, draftItems);
+  const map = buildPlaceholderValues(merged, draftItems, settings);
+  const numbers = buildNumericValues(merged, draftItems);
+  const sectionItems = target === "section" ? items.filter((it) => (it.section ?? "") === (edit.id ?? "")) : [];
+
+
   const submit = () => {
     if (target === "item" && item) {
       onSaveItems(items.map((it) => (it.id === item.id ? item : it)));
