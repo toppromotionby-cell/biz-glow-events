@@ -850,6 +850,99 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_documents: {
+        Row: {
+          client_address: string
+          client_company: string
+          client_email: string
+          client_name: string
+          client_phone: string
+          client_unp: string
+          created_at: string
+          created_by: string | null
+          doc_date: string
+          doc_number: string | null
+          due_date: string | null
+          event_date: string | null
+          id: string
+          items: Json
+          kind: string
+          notes: string
+          order_id: string | null
+          paid: number
+          quote_id: string | null
+          status: string
+          total: number
+          updated_at: string
+          versions: Json
+        }
+        Insert: {
+          client_address?: string
+          client_company?: string
+          client_email?: string
+          client_name?: string
+          client_phone?: string
+          client_unp?: string
+          created_at?: string
+          created_by?: string | null
+          doc_date?: string
+          doc_number?: string | null
+          due_date?: string | null
+          event_date?: string | null
+          id?: string
+          items?: Json
+          kind: string
+          notes?: string
+          order_id?: string | null
+          paid?: number
+          quote_id?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+          versions?: Json
+        }
+        Update: {
+          client_address?: string
+          client_company?: string
+          client_email?: string
+          client_name?: string
+          client_phone?: string
+          client_unp?: string
+          created_at?: string
+          created_by?: string | null
+          doc_date?: string
+          doc_number?: string | null
+          due_date?: string | null
+          event_date?: string | null
+          id?: string
+          items?: Json
+          kind?: string
+          notes?: string
+          order_id?: string | null
+          paid?: number
+          quote_id?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+          versions?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_documents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_documents_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mail_account_checks: {
         Row: {
           account_id: string
