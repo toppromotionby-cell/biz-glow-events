@@ -187,14 +187,8 @@ function EditorPage() {
     queryFn: () => listVersions({ data: { quoteId: id } }),
   });
 
-  const uploadLogo = async (file: File, field: "logo_url" | "client_logo_url") => {
-    const path = `promo-quotes/${id}/${field}-${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-    const { error: upErr } = await supabase.storage.from("catalog-media").upload(path, file, { upsert: true });
-    if (upErr) return toast.error(upErr.message);
-    const { data: pub } = supabase.storage.from("catalog-media").getPublicUrl(path);
-    patchQuote({ [field]: pub.publicUrl } as Partial<PromoQuote>);
-    toast.success("Логотип загружен");
-  };
+
+
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
   if (error || !quote || !totals) {
