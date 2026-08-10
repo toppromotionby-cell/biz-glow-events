@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Menu, ChevronDown } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown } from "lucide-react";
 
 import { useCart } from "@/lib/cart";
 import { SearchTrigger } from "@/components/SearchTrigger";
