@@ -329,7 +329,7 @@ export function buildQuoteHtmlDoc(
 
   const heading = (b: QuoteBlock) => `<h2 class="section">${esc(b.title || "")}</h2>`;
 
-  const renderBlock = (b: QuoteBlock): string => {
+  const renderBlockInner = (b: QuoteBlock): string => {
     const text = blockText(b, quote, map, numbers);
     switch (b.type) {
       case "cover":
