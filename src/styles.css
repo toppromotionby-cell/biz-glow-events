@@ -216,6 +216,10 @@
 
 @layer base {
   * { border-color: var(--color-border); }
+  /* Высота мобильной панели быстрых действий — чтобы плавающие элементы и футер её не перекрывали. */
+  :root { --mobile-bar-h: 3.5rem; }
+  @media (min-width: 768px) { :root { --mobile-bar-h: 0px; } }
+  body { padding-bottom: var(--mobile-bar-h); }
   html {
     scroll-behavior: smooth;
     /* Текучая эргономичная типографика: ~15px на 320px, ~17px на 1024px+, плавно масштабируется. */
