@@ -10,6 +10,7 @@ import {
   CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
   Wrench, Sparkles, Factory, FileStack,
   Brain,
+  Layers,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
