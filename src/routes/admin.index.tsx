@@ -32,11 +32,10 @@ function AdminDashboard() {
     queryKey: ["admin-stats-v2"],
     queryFn: async () => {
       const since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
-      const [allOrders, recent, posts, bookings] = await Promise.all([
+      const [allOrders, recent, posts] = await Promise.all([
         supabase.from("orders").select("id, status, total, source, created_at"),
         supabase.from("orders").select("id, order_number, client_name, total, status, created_at").order("created_at", { ascending: false }).limit(8),
         supabase.from("blog_posts").select("id", { count: "exact", head: true }).eq("published", true),
-        supabase.from("availability").select("id", { count: "exact", head: true }),
       ]);
 
       const orders = (allOrders.data ?? []) as StatsOrder[];
@@ -80,7 +79,6 @@ function AdminDashboard() {
         revenue,
         revenue30,
         last30Count: last30.length,
-        bookings: bookings.count ?? 0,
         posts: posts.count ?? 0,
         statusData,
         sourceData,
@@ -94,7 +92,6 @@ function AdminDashboard() {
     { label: "Всего заявок", value: data?.ordersTotal ?? "—", icon: ShoppingCart, sub: `${data?.last30Count ?? 0} за 30 дн` },
     { label: "Активных", value: data?.ordersActive ?? "—", icon: Users, sub: `${data?.ordersNew ?? 0} новых` },
     { label: "Сумма (всё)", value: data ? fmtCurrency(data.revenue) : "—", icon: BadgeDollarSign, sub: data ? `${fmtCurrency(data.revenue30)} / 30 дн` : "" },
-    { label: "Бронирований", value: data?.bookings ?? "—", icon: CalendarDays, sub: `${data?.posts ?? 0} постов в блоге` },
   ];
 
   return (
