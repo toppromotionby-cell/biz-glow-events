@@ -23,9 +23,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { useRoles } from "@/hooks/use-roles";
+import type { Permission } from "@/lib/permissions";
 
 type BadgeKey = "newOrders" | "newInquiries" | "pendingTestimonials";
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey };
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey; perm?: Permission };
 type NavGroup = { label: string; items: NavItem[] };
 
 
@@ -34,52 +36,52 @@ const GROUPS: NavGroup[] = [
     label: "Операции",
     items: [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
-      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, badgeKey: "newOrders" },
-      { to: "/admin/orders?kind=inquiry", label: "Запросы", icon: Bell, badgeKey: "newInquiries" },
-      { to: "/admin/calendar", label: "Календарь", icon: Calendar },
+      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, badgeKey: "newOrders", perm: "orders.manage" },
+      { to: "/admin/orders?kind=inquiry", label: "Запросы", icon: Bell, badgeKey: "newInquiries", perm: "orders.manage" },
+      { to: "/admin/calendar", label: "Календарь", icon: Calendar, perm: "orders.manage" },
     ],
   },
   {
     label: "Документы",
     items: [
-      { to: "/admin/documents", label: "Все документы", icon: FileStack, exact: true },
+      { to: "/admin/documents", label: "Все документы", icon: FileStack, exact: true, perm: "documents.manage" },
 
-      { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain },
-      { to: "/admin/settings/documents", label: "Реквизиты и шаблоны", icon: FileCog },
+      { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain, perm: "documents.knowledge" },
+      { to: "/admin/settings/documents", label: "Реквизиты и шаблоны", icon: FileCog, perm: "documents.settings" },
     ],
   },
   {
     label: "Контент",
     items: [
-      { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Layers },
-      { to: "/admin/catalog/zones", label: "Зоны", icon: Package },
-      { to: "/admin/catalog/tech_equipment", label: "Оборудование", icon: Wrench },
-      { to: "/admin/catalog/services", label: "Услуги", icon: Sparkles },
-      { to: "/admin/catalog/production_items", label: "Производство", icon: Factory },
-      { to: "/admin/catalog/attractions", label: "Аттракционы", icon: Package },
-      { to: "/admin/cases", label: "Кейсы", icon: Trophy },
-      { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials" },
-      { to: "/admin/blog", label: "Блог", icon: Newspaper },
+      { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Layers, perm: "content.manage" },
+      { to: "/admin/catalog/zones", label: "Зоны", icon: Package, perm: "content.manage" },
+      { to: "/admin/catalog/tech_equipment", label: "Оборудование", icon: Wrench, perm: "content.manage" },
+      { to: "/admin/catalog/services", label: "Услуги", icon: Sparkles, perm: "content.manage" },
+      { to: "/admin/catalog/production_items", label: "Производство", icon: Factory, perm: "content.manage" },
+      { to: "/admin/catalog/attractions", label: "Аттракционы", icon: Package, perm: "content.manage" },
+      { to: "/admin/cases", label: "Кейсы", icon: Trophy, perm: "content.manage" },
+      { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials", perm: "content.manage" },
+      { to: "/admin/blog", label: "Блог", icon: Newspaper, perm: "content.manage" },
     ],
   },
 
   {
     label: "Маркетинг",
     items: [
-      { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail },
-      { to: "/admin/mail-accounts", label: "Почтовые ящики", icon: Mail },
-      { to: "/admin/promo", label: "Промокоды", icon: Tag },
+      { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail, perm: "marketing.manage" },
+      { to: "/admin/mail-accounts", label: "Почтовые ящики", icon: Mail, perm: "marketing.manage" },
+      { to: "/admin/promo", label: "Промокоды", icon: Tag, perm: "marketing.manage" },
     ],
   },
   {
     label: "Система",
     items: [
-      { to: "/admin/users", label: "Пользователи", icon: UserCog },
-      { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
-      { to: "/admin/notifications", label: "Уведомления", icon: Bell },
-      { to: "/admin/settings/emails", label: "Шаблоны писем", icon: Mail },
-      { to: "/admin/settings/social", label: "Соцсети", icon: Share2 },
-      { to: "/admin/audit", label: "Аудит", icon: FileText },
+      { to: "/admin/users", label: "Пользователи", icon: UserCog, perm: "users.manage" },
+      { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight, perm: "system.manage" },
+      { to: "/admin/notifications", label: "Уведомления", icon: Bell, perm: "system.manage" },
+      { to: "/admin/settings/emails", label: "Шаблоны писем", icon: Mail, perm: "system.manage" },
+      { to: "/admin/settings/social", label: "Соцсети", icon: Share2, perm: "system.manage" },
+      { to: "/admin/audit", label: "Аудит", icon: FileText, perm: "audit.view" },
     ],
   },
 ];
@@ -116,12 +118,18 @@ export function AdminSidebar() {
   const { state, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
   const { user } = useAuth();
+  const { can } = useRoles();
   const { data: badges } = useSidebarBadges();
+
+  // Показываем только те пункты, к которым у роли есть доступ.
+  const visibleGroups = GROUPS
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.perm || can(i.perm)) }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarContent className="gap-0 pt-14">
-        {GROUPS.map((group) => {
+        {visibleGroups.map((group) => {
           const hasActive = group.items.some((i) => isItemActive(loc.pathname, i));
           return (
             <NavSection
@@ -135,6 +143,7 @@ export function AdminSidebar() {
           );
         })}
       </SidebarContent>
+
 
 
       <SidebarFooter className="border-t border-border/40">

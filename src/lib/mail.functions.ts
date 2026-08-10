@@ -1,5 +1,5 @@
 // Серверные функции почты. Все вызовы проксируются во внешний mail-worker
-// (Render). Доступно только staff-ролям (admin/manager/marketer/content_editor).
+// (Render). Доступно только staff-ролям (admin/manager/accountant/content_editor).
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -21,7 +21,7 @@ function toJson(value: unknown): Json {
   return JSON.parse(JSON.stringify(value ?? null)) as Json;
 }
 
-const STAFF_ROLES = ["admin", "manager", "marketer", "content_editor"] as const;
+const STAFF_ROLES = ["admin", "manager", "accountant", "content_editor"] as const;
 
 async function assertStaff(supabase: SbClient, userId: string) {
   for (const role of STAFF_ROLES) {
