@@ -1,0 +1,301 @@
+// Экспорт презентации в PDF: альбомный формат 16:9 (960×540 pt), pdf-lib.
+// Работает только на сервере. Шрифты — те же Inter/Space Grotesk, что и в
+// остальных документах, чтобы PDF совпадал с превью.
+import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import type { CompanyProfile } from "@/lib/documents/company-profile";
+import { hexToRgb01 } from "@/lib/documents/brand";
+import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
+import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
+import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
+import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
+
+const W = 960;
+const H = 540;
+const PAD = 56;
+
+function decodeBase64(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+type Theme = {
+  bg: ReturnType<typeof rgb>;
+  panel: ReturnType<typeof rgb>;
+  ink: ReturnType<typeof rgb>;
+  muted: ReturnType<typeof rgb>;
+  accent: ReturnType<typeof rgb>;
+  onAccent: ReturnType<typeof rgb>;
+};
+
+function color(hex: string): ReturnType<typeof rgb> {
+  const [r, g, b] = hexToRgb01(hex);
+  return rgb(r, g, b);
+}
+
+function themeOf(template: Presentation["template"], accentHex: string): Theme {
+  const accent = color(accentHex);
+  if (template === "dark") {
+    return {
+      bg: rgb(0.059, 0.067, 0.082),
+      panel: rgb(0.13, 0.14, 0.16),
+      ink: rgb(0.97, 0.98, 0.99),
+      muted: rgb(0.65, 0.68, 0.72),
+      accent,
+      onAccent: rgb(0.059, 0.067, 0.082),
+    };
+  }
+  if (template === "accent") {
+    return {
+      bg: accent,
+      panel: rgb(1, 1, 1),
+      ink: rgb(1, 1, 1),
+      muted: rgb(0.93, 0.94, 0.96),
+      accent: rgb(1, 1, 1),
+      onAccent: accent,
+    };
+  }
+  return {
+    bg: rgb(1, 1, 1),
+    panel: rgb(0.968, 0.973, 0.98),
+    ink: rgb(0.067, 0.094, 0.153),
+    muted: rgb(0.42, 0.45, 0.5),
+    accent,
+    onAccent: rgb(1, 1, 1),
+  };
+}
+
+function wrap(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
+  const out: string[] = [];
+  for (const para of String(text ?? "").split("\n")) {
+    let line = "";
+    for (const word of para.split(/\s+/).filter(Boolean)) {
+      const cand = line ? `${line} ${word}` : word;
+      if (font.widthOfTextAtSize(cand, size) <= maxWidth) line = cand;
+      else {
+        if (line) out.push(line);
+        line = word;
+      }
+    }
+    out.push(line);
+  }
+  return out.filter((l, i, a) => l !== "" || i < a.length - 1);
+}
+
+function money(n: number): string {
+  const fmt = new Intl.NumberFormat("ru-BY", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+  return `${fmt} BYN`;
+}
+
+async function embedImage(pdf: PDFDocument, url: string | null): Promise<PDFImage | null> {
+  const src = (url ?? "").trim();
+  if (!src || !/^https?:\/\//i.test(src)) return null;
+  try {
+    const res = await fetch(src, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (!bytes.byteLength || bytes.byteLength > 8 * 1024 * 1024) return null;
+    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
+    const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
+    if (!isPng && !isJpg) return null;
+    return isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/** Слайд с уже разрешённым абсолютным URL картинки. */
+export type ResolvedSlide = PresentationSlide & { resolved_image_url: string | null };
+
+export async function buildPresentationPdf(
+  presentation: Presentation,
+  slides: ResolvedSlide[],
+  company: CompanyProfile | null,
+  logoUrl: string | null,
+): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
+  const regular = await pdf.embedFont(decodeBase64(INTER_REGULAR_B64), { subset: true });
+  const bold = await pdf.embedFont(decodeBase64(INTER_BOLD_B64), { subset: true });
+  const display = await pdf.embedFont(decodeBase64(SPACE_GROTESK_BOLD_B64), { subset: true });
+
+  pdf.setTitle(presentation.title);
+  const t = themeOf(presentation.template, company?.accent_color ?? "#FF7500");
+  const logo = await embedImage(pdf, logoUrl);
+  const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
+
+  const visible = slides.filter((s) => s.is_visible);
+  if (!visible.length) {
+    const page = pdf.addPage([W, H]);
+    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: t.bg });
+    page.drawText("Нет слайдов", { x: PAD, y: H / 2, size: 24, font: bold, color: t.ink });
+    return await pdf.save();
+  }
+
+  for (const [index, slide] of visible.entries()) {
+    const page = pdf.addPage([W, H]);
+    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: t.bg });
+    const img = slide.content.showImage ? await embedImage(pdf, slide.resolved_image_url) : null;
+    await drawSlide({
+      page, slide, img, logo, brand, theme: t,
+      fonts: { regular, bold, display },
+      company, presentation,
+      index, total: visible.length,
+    });
+  }
+
+  return await pdf.save();
+}
+
+type DrawArgs = {
+  page: PDFPage;
+  slide: ResolvedSlide;
+  img: PDFImage | null;
+  logo: PDFImage | null;
+  brand: string;
+  theme: Theme;
+  fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont };
+  company: CompanyProfile | null;
+  presentation: Presentation;
+  index: number;
+  total: number;
+};
+
+async function drawSlide(a: DrawArgs) {
+  const { page, slide, img, logo, brand, theme: t, fonts, company, presentation, index, total } = a;
+  const c = slide.content;
+
+  const drawLines = (
+    lines: string[],
+    x: number,
+    yStart: number,
+    size: number,
+    font: PDFFont,
+    col: ReturnType<typeof rgb>,
+    lh = 1.35,
+  ) => {
+    let y = yStart;
+    for (const line of lines) {
+      page.drawText(line, { x, y, size, font, color: col });
+      y -= size * lh;
+    }
+    return y;
+  };
+
+  const footer = () => {
+    if (logo) {
+      const k = Math.min(90 / logo.width, 22 / logo.height);
+      page.drawImage(logo, { x: PAD, y: 22, width: logo.width * k, height: logo.height * k });
+    } else if (brand) {
+      page.drawText(brand, { x: PAD, y: 26, size: 10, font: fonts.regular, color: t.muted });
+    }
+    const label = `${index + 1} / ${total}`;
+    const w = fonts.regular.widthOfTextAtSize(label, 10);
+    page.drawText(label, { x: W - PAD - w, y: 26, size: 10, font: fonts.regular, color: t.muted });
+  };
+
+  if (slide.type === "title") {
+    let y = H - 130;
+    if (logo) {
+      const k = Math.min(180 / logo.width, 52 / logo.height);
+      page.drawImage(logo, { x: PAD, y: H - 110, width: logo.width * k, height: logo.height * k });
+    } else if (brand) {
+      page.drawText(brand, { x: PAD, y: H - 96, size: 18, font: fonts.bold, color: t.ink });
+    }
+    const title = slide.title || presentation.title;
+    y = drawLines(wrap(fonts.display, title, 40, W - PAD * 2 - 120), PAD, y - 40, 40, fonts.display, t.ink, 1.2);
+    if (slide.subtitle) {
+      y = drawLines(wrap(fonts.regular, slide.subtitle, 17, W - PAD * 2 - 140), PAD, y - 12, 17, fonts.regular, t.muted);
+    }
+    page.drawRectangle({ x: PAD, y: y - 22, width: 84, height: 3, color: t.accent });
+    const contacts = [company?.company_phone, company?.company_email, company?.company_website, company?.company_address]
+      .filter((v): v is string => !!v && !!v.trim())
+      .join("   ·   ");
+    if (contacts) {
+      page.drawText(contacts, { x: PAD, y: y - 58, size: 11, font: fonts.regular, color: t.muted });
+    }
+    return;
+  }
+
+  if (slide.type === "section") {
+    page.drawRectangle({ x: PAD, y: H / 2 + 46, width: 66, height: 3, color: t.accent });
+    let y = drawLines(wrap(fonts.display, slide.title, 34, W - PAD * 2), PAD, H / 2, 34, fonts.display, t.ink, 1.2);
+    if (slide.subtitle) drawLines(wrap(fonts.regular, slide.subtitle, 16, W - PAD * 2 - 100), PAD, y - 14, 16, fonts.regular, t.muted);
+    footer();
+    return;
+  }
+
+  const imgW = img ? 360 : 0;
+  if (img) {
+    // Заполнение по принципу cover.
+    const k = Math.max(imgW / img.width, H / img.height);
+    const w = img.width * k;
+    const h = img.height * k;
+    page.drawImage(img, { x: (imgW - w) / 2, y: (H - h) / 2, width: w, height: h });
+  }
+  const x = img ? imgW + 40 : PAD;
+  const maxW = W - x - PAD;
+  let y = H - 84;
+
+  y = drawLines(wrap(fonts.display, slide.title, img ? 24 : 28, maxW), x, y, img ? 24 : 28, fonts.display, t.ink, 1.2);
+  if (slide.subtitle) y = drawLines(wrap(fonts.regular, slide.subtitle, 13, maxW), x, y - 6, 13, fonts.regular, t.muted);
+  page.drawRectangle({ x, y: y - 14, width: 52, height: 2.5, color: t.accent });
+  y -= 36;
+
+  if (c.showDescription && c.description.trim()) {
+    y = drawLines(wrap(fonts.regular, c.description, 12, maxW), x, y, 12, fonts.regular, t.ink, 1.45);
+    y -= 10;
+  }
+
+  if (c.showIncludes && c.includes.length) {
+    page.drawText("ЧТО ВХОДИТ", { x, y, size: 8.5, font: fonts.bold, color: t.muted });
+    y -= 16;
+    for (const item of c.includes.slice(0, 9)) {
+      const lines = wrap(fonts.regular, item, 11.5, maxW - 14);
+      page.drawText("•", { x, y, size: 11.5, font: fonts.regular, color: t.accent });
+      y = drawLines(lines, x + 14, y, 11.5, fonts.regular, t.ink, 1.35);
+      y -= 2;
+    }
+    y -= 8;
+  }
+
+  if (c.showSpecs && c.specs.length) {
+    let cx = x;
+    for (const s of c.specs) {
+      const text = `${s.label}: ${s.value}`;
+      const w = fonts.regular.widthOfTextAtSize(text, 10) + 20;
+      if (cx + w > W - PAD) { cx = x; y -= 26; }
+      page.drawRectangle({ x: cx, y: y - 6, width: w, height: 22, color: t.panel, opacity: 0.9 });
+      page.drawText(text, { x: cx + 10, y, size: 10, font: fonts.regular, color: t.ink });
+      cx += w + 8;
+    }
+    y -= 34;
+  }
+
+  if (slide.type === "contacts") {
+    const rows = [
+      company?.company_phone && `Телефон: ${company.company_phone}`,
+      company?.company_email && `E-mail: ${company.company_email}`,
+      company?.company_website && `Сайт: ${company.company_website}`,
+      company?.company_address && `Адрес: ${company.company_address}`,
+    ].filter((v): v is string => !!v);
+    for (const row of rows) {
+      page.drawText(row, { x, y, size: 14, font: fonts.regular, color: t.ink });
+      y -= 26;
+    }
+  }
+
+  if (c.showPrice && c.price != null && c.price > 0) {
+    const label = `${money(c.price)} / ${c.priceUnit}`;
+    const w = fonts.bold.widthOfTextAtSize(label, 15) + 32;
+    page.drawRectangle({ x, y: 64, width: w, height: 34, color: t.accent });
+    page.drawText(label, { x: x + 16, y: 75, size: 15, font: fonts.bold, color: t.onAccent });
+  }
+
+  footer();
+}
