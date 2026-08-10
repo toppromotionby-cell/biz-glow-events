@@ -527,12 +527,13 @@ function drawCard(
   const height = 14 + 14 + titleLines.length * (F13 * 1.3) + bodyLineHeights.length * (F11 * 1.35) + 12;
 
   ensureSpace(ctx, height + 6);
-  // фон карточки
-  ctx.page.drawRectangle({
+  // фон карточки (скруглённые углы — как в превью)
+  roundedRect(ctx.page, {
     x,
     y: ctx.y - height,
     width,
     height,
+    radius: 10,
     color: SURFACE,
     borderColor: LINE,
     borderWidth: 0.6,
@@ -548,9 +549,10 @@ function drawCard(
   });
   cy -= 18;
   for (const t of titleLines) {
-    ctx.page.drawText(t, { x: x + 12, y: cy - F13, size: F13, font: ctx.bold, color: TEXT });
+    ctx.page.drawText(t, { x: x + 12, y: cy - F13, size: F13, font: displayFont(ctx, t), color: TEXT });
     cy -= F13 * 1.3;
   }
+
   cy -= 2;
   for (const l of bodyLineHeights) {
     ctx.page.drawText(l, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
