@@ -282,34 +282,38 @@ async function drawSlide(a: DrawArgs) {
 
 
   if (c.showDescription && c.description.trim()) {
-    y = drawLines(wrap(fonts.regular, c.description, 12, maxW), x, y, 12, fonts.regular, t.ink, 1.45);
-    y -= 10;
+    y = drawLines(wrap(fonts.regular, c.description, bodySize, maxW), x, y, bodySize, fonts.regular, t.ink, ts.lineGap);
+    y -= px(ts.blockGap) * 0.6;
   }
 
   if (c.showIncludes && c.includes.length) {
-    page.drawText("ЧТО ВХОДИТ", { x, y, size: 8.5, font: fonts.bold, color: t.muted });
-    y -= 16;
+    if (slide.type === "product") {
+      page.drawText("ЧТО ВХОДИТ", { x, y, size: px(ts.label), font: fonts.bold, color: t.muted });
+      y -= px(ts.label) * 1.8;
+    }
     for (const item of c.includes.slice(0, 9)) {
-      const lines = wrap(fonts.regular, item, 11.5, maxW - 14);
-      page.drawText("•", { x, y, size: 11.5, font: fonts.regular, color: t.accent });
-      y = drawLines(lines, x + 14, y, 11.5, fonts.regular, t.ink, 1.35);
+      const lines = wrap(fonts.regular, item, bulletSize, maxW - 14);
+      page.drawText("•", { x, y, size: bulletSize, font: fonts.regular, color: t.accent });
+      y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
       y -= 2;
     }
-    y -= 8;
+    y -= px(ts.blockGap) * 0.5;
   }
 
   if (c.showSpecs && c.specs.length) {
+    const chip = px(ts.chip);
     let cx = x;
     for (const s of c.specs) {
       const text = `${s.label}: ${s.value}`;
-      const w = fonts.regular.widthOfTextAtSize(text, 10) + 20;
-      if (cx + w > W - PAD) { cx = x; y -= 26; }
-      page.drawRectangle({ x: cx, y: y - 6, width: w, height: 22, color: t.panel, opacity: 0.9 });
-      page.drawText(text, { x: cx + 10, y, size: 10, font: fonts.regular, color: t.ink });
+      const w = fonts.regular.widthOfTextAtSize(text, chip) + 20;
+      if (cx + w > x + maxW) { cx = x; y -= chip * 2.4; }
+      page.drawRectangle({ x: cx, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
+      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: t.ink });
       cx += w + 8;
     }
-    y -= 34;
+    y -= chip * 3;
   }
+
 
   if (slide.type === "contacts") {
     const rows = [
