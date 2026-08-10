@@ -416,6 +416,29 @@ export function buildQuoteHtmlDoc(
     }
   };
 
+  /** Зоны редактирования: тип блока -> цель диалога в админке. */
+  const BLOCK_EDIT_TARGET: Partial<Record<QuoteBlock["type"], { target: string; label: string; useId?: boolean }>> = {
+    cover: { target: "cover", label: "Заголовок и вступление" },
+    client: { target: "client", label: "Заказчик" },
+    event: { target: "event", label: "Мероприятие" },
+    totals: { target: "totals", label: "Итоги и оплата" },
+    requisites: { target: "company", label: "Реквизиты" },
+    signature: { target: "company", label: "Реквизиты" },
+    included: { target: "block", label: "Текстовый блок", useId: true },
+    excluded: { target: "block", label: "Текстовый блок", useId: true },
+    timeline: { target: "block", label: "Текстовый блок", useId: true },
+    terms: { target: "block", label: "Текстовый блок", useId: true },
+    text: { target: "block", label: "Текстовый блок", useId: true },
+  };
+
+  const renderBlock = (b: QuoteBlock): string => {
+    const html = renderBlockInner(b);
+    if (!editable || !html.trim()) return html;
+    const cfg = BLOCK_EDIT_TARGET[b.type];
+    if (!cfg) return `<div${ed("", undefined)}>${html}</div>`.replace(" data-edit=\"\"", "");
+    return `<div${ed(cfg.target, cfg.useId ? b.id : undefined, cfg.label)}>${html}</div>`;
+  };
+
   // Тумблеры оформления по-прежнему работают как «жёсткое» выключение блока.
   const hidden = new Set<string>();
   if (!quote.design.show_cover) hidden.add("cover");
