@@ -8,7 +8,7 @@ import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { HeroSection } from "@/components/HeroSection";
 import { DirectionCard } from "@/components/ui/DirectionCard";
-import { CatalogSectionTile, useCatalogNav } from "@/components/catalog/CatalogNav";
+import { CatalogSectionTile, sectionIcon, useCatalogNav } from "@/components/catalog/CatalogNav";
 import { MediaCard } from "@/components/ui/MediaCard";
 import { FeaturedCard } from "@/components/FeaturedCard";
 
@@ -249,23 +249,23 @@ function HomePage() {
             Выберите направление и оформите заявку — мы соберём смету и свяжемся в течение 24 часов.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [grid-auto-rows:1fr]">
+          {sections.map((section) => (
             <DirectionCard
-              key={f.title}
-              icon={f.icon}
-              title={f.title}
-              description={f.desc}
+              key={section.key}
+              icon={sectionIcon(section.icon)}
+              title={section.title}
+              description={section.description}
               footer={
                 <div className="flex flex-col gap-2">
                   <Button
                     size="sm"
                     className="w-full bg-gradient-primary"
-                    onClick={() => setOrderTopic(f.title)}
+                    onClick={() => setOrderTopic(section.title)}
                   >
                     Заказать <ArrowRight className="ml-2 h-3 w-3" />
                   </Button>
-                  <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
+                  <Link to={section.basePath} className="text-xs text-muted-foreground hover:text-primary transition text-center">
                     Посмотреть каталог
                   </Link>
                 </div>
