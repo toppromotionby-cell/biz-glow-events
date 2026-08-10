@@ -41,14 +41,12 @@ const NAV = [...CATALOG_NAV, ...SECONDARY_NAV];
 // Ключевые пункты, которые остаются в десктопной шапке рядом с «Каталогом».
 const PRIMARY_NAV = [
   { to: "/cases", label: "Кейсы", key: "header.nav.cases" },
-  { to: "/calculator", label: "Калькулятор", key: "header.nav.calculator" },
   { to: "/blog", label: "Блог", key: "header.nav.blog" },
   { to: "/contacts", label: "Контакты", key: "header.nav.contacts" },
 ] as const;
 
 const INFO_LINKS = [
   { to: "/partners", label: "Агентствам", footerKey: "footer.info.partners" },
-  { to: "/calculator", label: "Калькулятор сметы", footerKey: "footer.info.calculator" },
   { to: "/delivery", label: "Доставка и оплата", footerKey: "footer.info.delivery" },
   { to: "/faq", label: "Частые вопросы", footerKey: "footer.info.faq" },
   { to: "/terms-rental", label: "Условия аренды", footerKey: "footer.info.terms" },
@@ -219,11 +217,7 @@ export function SiteHeader() {
 
                 <div className="border-t border-border/50 px-2 py-3">
                   <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
-                  <SheetClose asChild>
-                    <Link to="/calculator" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                      <span>Калькулятор сметы</span>
-                    </Link>
-                  </SheetClose>
+
                   <SheetClose asChild>
                     <Link to="/cart" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
                       <span className="flex items-center gap-3"><ShoppingCart className="h-4 w-4" /> Корзина</span>

@@ -15,7 +15,6 @@ const SEGMENT_LABELS: Record<string, string> = {
   industries: "Индустрии",
   faq: "FAQ",
   partners: "Партнёрам",
-  calculator: "Калькулятор",
   delivery: "Доставка и оплата",
   privacy: "Конфиденциальность",
   offer: "Оферта",
