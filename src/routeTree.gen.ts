@@ -88,6 +88,7 @@ import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.docu
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as AdminDocumentsPromoIndexRouteImport } from './routes/admin.documents.promo.index'
+import { Route as AdminDocumentsPresentationsIndexRouteImport } from './routes/admin.documents.presentations.index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -502,6 +503,12 @@ const AdminDocumentsPromoIndexRoute =
     path: '/documents/promo/',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminDocumentsPresentationsIndexRoute =
+  AdminDocumentsPresentationsIndexRouteImport.update({
+    id: '/documents/presentations/',
+    path: '/documents/presentations/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -674,6 +681,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/presentations/': typeof AdminDocumentsPresentationsIndexRoute
   '/admin/documents/promo/': typeof AdminDocumentsPromoIndexRoute
   '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/finance/$id/render': typeof AdminDocumentsFinanceIdRenderRoute
@@ -768,6 +776,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/presentations': typeof AdminDocumentsPresentationsIndexRoute
   '/admin/documents/promo': typeof AdminDocumentsPromoIndexRoute
   '/admin/documents/quotes': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/finance/$id/render': typeof AdminDocumentsFinanceIdRenderRoute
@@ -865,6 +874,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/admin/documents/presentations/': typeof AdminDocumentsPresentationsIndexRoute
   '/admin/documents/promo/': typeof AdminDocumentsPromoIndexRoute
   '/admin/documents/quotes/': typeof AdminDocumentsQuotesIndexRoute
   '/admin/documents/finance/$id/render': typeof AdminDocumentsFinanceIdRenderRoute
@@ -963,6 +973,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/presentations/'
     | '/admin/documents/promo/'
     | '/admin/documents/quotes/'
     | '/admin/documents/finance/$id/render'
@@ -1057,6 +1068,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/presentations'
     | '/admin/documents/promo'
     | '/admin/documents/quotes'
     | '/admin/documents/finance/$id/render'
@@ -1153,6 +1165,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/admin/documents/presentations/'
     | '/admin/documents/promo/'
     | '/admin/documents/quotes/'
     | '/admin/documents/finance/$id/render'
@@ -1773,6 +1786,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsPromoIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/documents/presentations/': {
+      id: '/admin/documents/presentations/'
+      path: '/documents/presentations'
+      fullPath: '/admin/documents/presentations/'
+      preLoaderRoute: typeof AdminDocumentsPresentationsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1946,6 +1966,7 @@ interface AdminRouteChildren {
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
+  AdminDocumentsPresentationsIndexRoute: typeof AdminDocumentsPresentationsIndexRoute
   AdminDocumentsPromoIndexRoute: typeof AdminDocumentsPromoIndexRoute
   AdminDocumentsQuotesIndexRoute: typeof AdminDocumentsQuotesIndexRoute
   AdminDocumentsFinanceIdRenderRoute: typeof AdminDocumentsFinanceIdRenderRoute
@@ -1976,6 +1997,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
+  AdminDocumentsPresentationsIndexRoute: AdminDocumentsPresentationsIndexRoute,
   AdminDocumentsPromoIndexRoute: AdminDocumentsPromoIndexRoute,
   AdminDocumentsQuotesIndexRoute: AdminDocumentsQuotesIndexRoute,
   AdminDocumentsFinanceIdRenderRoute: AdminDocumentsFinanceIdRenderRoute,
@@ -2123,13 +2145,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
