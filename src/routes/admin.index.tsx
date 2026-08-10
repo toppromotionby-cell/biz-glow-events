@@ -10,6 +10,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { fmtCurrency, fmtDateTimeShort } from "@/lib/formatters";
 import { displayOrderNumber } from "@/lib/order-number";
 import { ProdHealthBanner } from "@/components/admin/ProdHealthBanner";
+import { AttentionPanel } from "@/components/admin/AttentionPanel";
+
 import { DEV_OVERLAYS_ENABLED } from "@/lib/debug-flags";
 
 export const Route = createFileRoute("/admin/")({
