@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   FileStack, Plus, Search, Download, FileSignature, Megaphone, Brain, ArrowRight,
-  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2, BookmarkPlus,
+  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2, BookmarkPlus, Wallet,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,9 @@ import {
   listOrderDocuments, type DocumentRow,
 } from "@/lib/documents-overview.functions";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
+import { FinanceDocumentsPanel } from "@/components/admin/documents/FinanceDocumentsPanel";
+import { DocumentsAnalyticsPanel } from "@/components/admin/documents/DocumentsAnalyticsPanel";
+import { createFinanceDocument } from "@/lib/finance-documents.functions";
 
 export const Route = createFileRoute("/admin/documents/")({ component: Page });
 
@@ -65,7 +68,7 @@ function Page() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [kind, setKind] = useState<"all" | "quote" | "promo">("all");
-  const [view, setView] = useState<"docs" | "templates" | "orders">("docs");
+  const [view, setView] = useState<"docs" | "templates" | "finance" | "orders" | "analytics">("docs");
   const templates = view === "templates";
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -75,7 +78,7 @@ function Page() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-documents-overview", search, status, kind, templates],
     queryFn: () => list({ data: { search, status, kind, templates } }),
-    enabled: view !== "orders",
+    enabled: view === "docs" || view === "templates",
   });
 
   const orderDocs = useQuery({
@@ -138,6 +141,17 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const invoiceFn = useServerFn(createFinanceDocument);
+  const invoiceFromQuote = useMutation({
+    mutationFn: (r: DocumentRow) => invoiceFn({ data: { kind: "invoice", quoteId: r.id } }),
+    onSuccess: () => {
+      toast.success("Счёт создан — вкладка «Счета и акты»");
+      qc.invalidateQueries({ queryKey: ["finance-documents"] });
+      setView("finance");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const askDelete = async (r: DocumentRow) => {
     const ok = await confirm({
       title: "Удалить документ?",
@@ -180,7 +194,9 @@ function Page() {
           {([
             { key: "docs", label: "Документы" },
             { key: "templates", label: "Шаблоны" },
-            { key: "orders", label: "Счета и договоры" },
+            { key: "finance", label: "Счета и акты" },
+            { key: "orders", label: "Файлы по заказам" },
+            { key: "analytics", label: "Аналитика" },
           ] as const).map((v) => (
             <Button
               key={v.key}
@@ -192,7 +208,7 @@ function Page() {
             </Button>
           ))}
         </div>
-        {view !== "orders" && (
+        {(view === "docs" || view === "templates") && (
           <div className="inline-flex rounded-lg border border-border/60 p-0.5">
             {(["all", "quote", "promo"] as const).map((k) => (
               <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
@@ -201,6 +217,7 @@ function Page() {
             ))}
           </div>
         )}
+        {view !== "analytics" && (
         <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -210,6 +227,7 @@ function Page() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        )}
         {view === "docs" && (
           <div className="inline-flex flex-wrap gap-1">
             {FILTERS.map((f) => (
@@ -272,7 +290,10 @@ function Page() {
         </div>
       )}
 
-      {view !== "orders" && (
+      {view === "finance" && <FinanceDocumentsPanel search={search} />}
+      {view === "analytics" && <DocumentsAnalyticsPanel />}
+
+      {(view === "docs" || view === "templates") && (
       <div className="overflow-hidden rounded-xl border border-border/60">
 
         <table className="w-full text-sm">
@@ -386,6 +407,14 @@ function Page() {
                                 <Undo2 className="mr-2 h-4 w-4" />Вернуть в черновик
                               </DropdownMenuItem>
                             )}
+                          </>
+                        )}
+                        {!templates && r.kind === "quote" && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => invoiceFromQuote.mutate(r)}>
+                              <Wallet className="mr-2 h-4 w-4" />Выставить счёт
+                            </DropdownMenuItem>
                           </>
                         )}
                         <DropdownMenuSeparator />
