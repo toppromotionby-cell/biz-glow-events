@@ -298,12 +298,14 @@ export function buildQuoteHtmlDoc(
     (settings as { quote_print_presets?: unknown }).quote_print_presets as never,
     quote.design as unknown as Record<string, unknown>,
   );
-  /** Кегли из docCssVars, масштабированные пресетом. */
+  /** Кегли из docCssVars: масштаб пресета + плотность (--fk, как в PDF). */
   const scaledVars = (css: string) =>
-    print.fontScale === 1
-      ? css
-      : css.replace(/(--fs-[a-z-]+):([\d.]+)px/g, (_m, k: string, v: string) =>
-          `${k}:${Math.round(Number(v) * print.fontScale * 100) / 100}px`);
+    css.replace(
+      /(--fs-[a-z-]+):([\d.]+)px/g,
+      (_m, k: string, v: string) =>
+        `${k}:calc(${Math.round(Number(v) * print.fontScale * 100) / 100}px * var(--fk))`,
+    );
+
   const map = buildPlaceholderValues(quote, items, settings);
   const numbers = buildNumericValues(quote, items);
 
