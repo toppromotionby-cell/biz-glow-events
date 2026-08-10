@@ -243,22 +243,41 @@ async function drawSlide(a: DrawArgs) {
     return;
   }
 
-  const imgW = img ? 360 : 0;
-  if (img) {
-    // Заполнение по принципу cover.
-    const k = Math.max(imgW / img.width, H / img.height);
-    const w = img.width * k;
-    const h = img.height * k;
-    page.drawImage(img, { x: (imgW - w) / 2, y: (H - h) / 2, width: w, height: h });
-  }
-  const x = img ? imgW + 40 : PAD;
-  const maxW = W - x - PAD;
-  let y = H - 84;
+  // Общая раскладка (1280×720) переводится в points 960×540 коэффициентом K.
+  const fit = fitSlide(slide);
+  const K = W / SLIDE_W;
+  const ts = fit.type;
+  const px = (v: number) => v * K;
 
-  y = drawLines(wrap(fonts.display, slide.title, img ? 24 : 28, maxW), x, y, img ? 24 : 28, fonts.display, t.ink, 1.2);
-  if (slide.subtitle) y = drawLines(wrap(fonts.regular, slide.subtitle, 13, maxW), x, y - 6, 13, fonts.regular, t.muted);
+  fit.layout.frames.forEach((f, i) => {
+    const image = images[i];
+    if (!image) return;
+    const fw = px(f.w);
+    const fh = px(f.h);
+    const k = Math.max(fw / image.width, fh / image.height);
+    const w = image.width * k;
+    const h = image.height * k;
+    const cx = px(f.x) + fw / 2;
+    const cy = H - px(f.y) - fh / 2;
+    page.drawImage(image, { x: cx - w / 2, y: cy - h / 2, width: w, height: h });
+  });
+
+  const box = fit.layout.textBox;
+  const x = px(box.x);
+  const maxW = px(box.w);
+  const titleSize = px(ts.titleSlide);
+  const subSize = px(ts.subtitle);
+  const bodySize = px(ts.body);
+  const bulletSize = px(ts.bullet);
+  let y = H - px(box.y) - titleSize;
+
+  y = drawLines(wrap(fonts.display, slide.title, titleSize, maxW), x, y, titleSize, fonts.display, t.ink, 1.14);
+  if (slide.subtitle) {
+    y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, t.muted);
+  }
   page.drawRectangle({ x, y: y - 14, width: 52, height: 2.5, color: t.accent });
-  y -= 36;
+  y -= px(ts.blockGap) + 14;
+
 
   if (c.showDescription && c.description.trim()) {
     y = drawLines(wrap(fonts.regular, c.description, 12, maxW), x, y, 12, fonts.regular, t.ink, 1.45);
