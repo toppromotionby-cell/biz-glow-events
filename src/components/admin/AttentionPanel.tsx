@@ -1,7 +1,7 @@
 // Блок «Требует внимания» на дашборде: очередь задач вместо графиков.
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Clock, Inbox, MessageSquareQuote, CircleCheck } from "lucide-react";
+import { AlertTriangle, Clock, Inbox, MessageSquareQuote, CircleCheck, CalendarClock, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type AttentionItem = {
