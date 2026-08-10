@@ -3,6 +3,8 @@ import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { vatRateLabel } from "@/lib/documents/vat";
 
 import { BRAND_ACCENT } from "@/lib/documents/brand";
+import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
+import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
 import {
   computePromoTotals,
   formatMoney,
@@ -272,12 +274,15 @@ export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[], co
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>КП ${esc(promoNumberDisplay(quote))} — ${esc(quote.client_name)}</title>
 <style>
+  :root { ${densityRootVars()}; }
   body { margin: 0; padding: 28px; background: #f2f2f4; }
   .sheet { background: #fff; max-width: 1120px; margin: 0 auto; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
   ${PROMO_DOC_CSS}
   @media print { body { background: #fff; padding: 0; } .sheet { box-shadow: none; max-width: none; padding: 0; } }
+  ${DENSITY_PAGE_CSS}
 </style></head>
 <body><div class="sheet">${buildPromoQuoteBody(quote, items, { companyLine })}</div>
 <!-- Итого: ${formatMoney(t.totalWithVat, quote.currency)} -->
+${autoFitScript({ ...BASE_PRINT_PRESET, maxPages: 2 }, { zoomMode: true })}
 </body></html>`;
 }

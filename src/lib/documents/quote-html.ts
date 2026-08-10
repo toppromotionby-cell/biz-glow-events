@@ -6,6 +6,8 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
+import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
+
 
 import type { Quote, QuoteItem, QuoteCheck, QuoteCheckScope } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
@@ -296,12 +298,14 @@ export function buildQuoteHtmlDoc(
     (settings as { quote_print_presets?: unknown }).quote_print_presets as never,
     quote.design as unknown as Record<string, unknown>,
   );
-  /** Кегли из docCssVars, масштабированные пресетом. */
+  /** Кегли из docCssVars: масштаб пресета + плотность (--fk, как в PDF). */
   const scaledVars = (css: string) =>
-    print.fontScale === 1
-      ? css
-      : css.replace(/(--fs-[a-z-]+):([\d.]+)px/g, (_m, k: string, v: string) =>
-          `${k}:${Math.round(Number(v) * print.fontScale * 100) / 100}px`);
+    css.replace(
+      /(--fs-[a-z-]+):([\d.]+)px/g,
+      (_m, k: string, v: string) =>
+        `${k}:calc(${Math.round(Number(v) * print.fontScale * 100) / 100}px * var(--fk))`,
+    );
+
   const map = buildPlaceholderValues(quote, items, settings);
   const numbers = buildNumericValues(quote, items);
 
@@ -517,8 +521,8 @@ export function buildQuoteHtmlDoc(
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
 <style>
-  :root { ${scaledVars(docCssVars(esc(accent)))}; ${templateVars(template)}
-    --gap-k:${print.blockGap}; --row-k:${print.rowGap}; --lh:${print.lineHeight}; }
+  :root { ${densityRootVars()}; ${scaledVars(docCssVars(esc(accent)))}; ${templateVars(template)}
+    --gap-k:calc(${print.blockGap} * var(--dk)); --row-k:calc(${print.rowGap} * var(--dk)); --lh:${print.lineHeight}; }
   @page { size: A4; margin: ${printPageMarginCss(print)}; }
   * { box-sizing: border-box; }
   body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:var(--fs-body); line-height:var(--lh); }
@@ -587,6 +591,7 @@ export function buildQuoteHtmlDoc(
   tr.chk-row-warn td { background:#fffbeb; }
   @media print { .chk-list { display:none !important; } tr.chk-row td { background:transparent !important; } }
   @media print { body { background:#fff; } .sheet { max-width:none; padding:0; } }
+  ${DENSITY_PAGE_CSS}
   ${
     editable
       ? `
@@ -650,5 +655,5 @@ export function buildQuoteHtmlDoc(
 })();
 <\/script>`
       : ""
-  }</body></html>`;
+  }${autoFitScript(print)}</body></html>`;
 }

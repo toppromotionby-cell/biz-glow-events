@@ -110,13 +110,10 @@ let FONT_K = 1;                       // множитель кеглей
 // Кегли: те же, что в HTML-превью, переведённые в pt.
 // Плотность (density) позволяет уплотнить документ, чтобы он влез в меньшее
 // число листов: 1 = «комфортно» (как превью), 0.94 = «компактно», 0.88 = «плотно».
-export type DocDensity = "comfortable" | "compact" | "dense" | "ultra";
-export const DOC_DENSITY_SCALE: Record<DocDensity, number> = {
-  comfortable: 1,
-  compact: 0.94,
-  dense: 0.88,
-  ultra: 0.8,
-};
+import { DOC_DENSITY_SCALE, DOC_DENSITY_LADDER, type DocDensity } from "@/lib/documents/density";
+export { DOC_DENSITY_SCALE, type DocDensity };
+
+
 
 /** Текущий множитель плотности (отступы, высоты строк). */
 let D = 1;
@@ -1621,7 +1618,7 @@ export async function buildStandaloneQuotePdf(
   const maxPages = opts.maxPages ?? preset.maxPages;
   if (requested !== "auto") return (await renderQuotePdf(quote, items, settings, requested, preset)).bytes;
 
-  const ladder: DocDensity[] = ["comfortable", "compact", "dense", "ultra"];
+  const ladder: DocDensity[] = DOC_DENSITY_LADDER;
   let last: { bytes: Uint8Array; pages: number } | null = null;
   for (const density of ladder) {
     last = await renderQuotePdf(quote, items, settings, density, preset);
