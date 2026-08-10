@@ -41,6 +41,14 @@ const STATUS_TONE: Record<string, "muted" | "info" | "success" | "danger"> = {
   rejected: "danger",
 };
 
+const ORDER_DOC_LABELS: Record<string, string> = {
+  quote: "КП",
+  invoice: "Счёт",
+  contract: "Договор",
+  act: "Акт",
+  custom: "Файл",
+};
+
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: "all", label: "Все" },
   { key: "draft", label: "Черновики" },
