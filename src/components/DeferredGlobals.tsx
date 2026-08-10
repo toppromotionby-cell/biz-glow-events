@@ -39,8 +39,10 @@ export function DeferredGlobals() {
       <EffectsLayer />
       <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
       <FloatingContacts />
+      <MobileActionBar />
       <CartSync />
       <ScriptInjector />
+      
       
     </Suspense>
   );
