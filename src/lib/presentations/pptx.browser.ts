@@ -66,17 +66,34 @@ export async function exportPresentationPptx(
     slide.background = { color: t.bg };
     const c = s.content;
 
-    let imgData: string | null = null;
-    if (c.showImage && s.image_url && (s.type === "product" || s.type === "text")) {
-      const url = await resolveImage(s.image_url);
-      imgData = url ? await toDataUrl(url) : null;
+    // Та же раскладка, что в превью и PDF: переводим пиксели 1280×720 в дюймы.
+    const fit = fitSlide(s);
+    const IN = W / SLIDE_W;
+    const pt = (v: number) => v * 0.75; // px -> pt для кеглей
+    const gallery: { data: string; x: number; y: number; w: number; h: number }[] = [];
+    if (s.type === "product" || s.type === "text") {
+      for (const [k, path] of fit.layout.photos.entries()) {
+        const frame = fit.layout.frames[k];
+        if (!frame) continue;
+        const url = await resolveImage(path);
+        const data = url ? await toDataUrl(url) : null;
+        if (!data) continue;
+        gallery.push({
+          data,
+          x: frame.x * IN,
+          y: frame.y * IN,
+          w: frame.w * IN,
+          h: frame.h * IN,
+        });
+      }
     }
 
-    const textLeft = imgData ? 4.4 : 0.7;
-    const textW = imgData ? W - textLeft - 0.6 : W - 1.4;
+    const box = fit.layout.textBox;
+    const textLeft = gallery.length ? box.x * IN : 0.7;
+    const textW = gallery.length ? box.w * IN : W - 1.4;
 
-    if (imgData) {
-      slide.addImage({ data: imgData, x: 0, y: 0, w: 4.0, h: H, sizing: { type: "cover", w: 4.0, h: H } });
+    for (const g of gallery) {
+      slide.addImage({ data: g.data, x: g.x, y: g.y, w: g.w, h: g.h, sizing: { type: "cover", w: g.w, h: g.h } });
     }
 
     if (s.type === "title") {
@@ -96,22 +113,26 @@ export async function exportPresentationPptx(
       continue;
     }
 
+    const ts = fit.type;
+    const topY = gallery.length ? box.y * IN : 0.55;
     slide.addText(s.title, {
-      x: textLeft, y: 0.55, w: textW, h: 0.9, fontSize: s.type === "section" ? 34 : 26, bold: true, color: t.ink,
+      x: textLeft, y: topY, w: textW, h: 0.9,
+      fontSize: pt(s.type === "section" ? ts.titleSection : ts.titleSlide),
+      bold: true, color: t.ink,
     });
     if (s.subtitle) {
-      slide.addText(s.subtitle, { x: textLeft, y: 1.35, w: textW, h: 0.5, fontSize: 14, color: t.muted });
+      slide.addText(s.subtitle, { x: textLeft, y: topY + 0.8, w: textW, h: 0.5, fontSize: pt(ts.subtitle), color: t.muted });
     }
 
-    let y = s.subtitle ? 1.95 : 1.6;
+    let y = topY + (s.subtitle ? 1.4 : 1.05);
     if (c.showDescription && c.description) {
-      slide.addText(c.description, { x: textLeft, y, w: textW, h: 1.2, fontSize: 13, color: t.ink });
+      slide.addText(c.description, { x: textLeft, y, w: textW, h: 1.2, fontSize: pt(ts.body), color: t.ink });
       y += 1.3;
     }
     if (c.showIncludes && c.includes.length) {
       slide.addText(
         c.includes.slice(0, 8).map((v) => ({ text: v, options: { bullet: true } })),
-        { x: textLeft, y, w: textW, h: 1.6, fontSize: 12, color: t.ink },
+        { x: textLeft, y, w: textW, h: 1.6, fontSize: pt(ts.bullet), color: t.ink },
       );
       y += Math.min(c.includes.length, 8) * 0.24 + 0.2;
     }
