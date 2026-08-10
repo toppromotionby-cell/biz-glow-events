@@ -44,6 +44,8 @@ import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { VatSettings } from "@/components/admin/VatSettings";
+import { LogoUploader } from "@/components/admin/LogoUploader";
+
 
 export const Route = createFileRoute("/admin/documents/promo/$id/")({ component: EditorPage });
 
