@@ -87,9 +87,19 @@ const SURFACE = c01(hexToRgb01(DOC_COLORS.surface));
 // A4 в pt (72 dpi)
 const PAGE_W = DOC_LAYOUT.pageWidthPt;
 const PAGE_H = DOC_LAYOUT.pageHeightPt;
-const MARGIN_X = DOC_LAYOUT.marginXPt;
-const MARGIN_TOP = DOC_LAYOUT.marginTopPt;
-const MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
+let MARGIN_X = DOC_LAYOUT.marginXPt;
+let MARGIN_TOP = DOC_LAYOUT.marginTopPt;
+let MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
+
+// Межстрочные интервалы и множители отступов — задаются пресетом печати.
+let LH = DOC_LAYOUT.lineHeight;       // базовый интервал (таблица, плотный текст)
+let LH_TEXT = LH + 0.05;              // обычный текст
+let LH_LOOSE = LH + 0.15;             // абзацы / карточки
+let LH_TOTAL = LH + 0.2;              // строки блока «итого»
+let LH_TIGHT = Math.max(1.05, LH - 0.1); // крупные заголовки
+let GAP_K = 1;                        // множитель отступов между блоками
+let ROW_K = 1;                        // множитель высоты строк таблицы
+let FONT_K = 1;                       // множитель кеглей
 
 // Кегли: те же, что в HTML-превью, переведённые в pt.
 // Плотность (density) позволяет уплотнить документ, чтобы он влез в меньшее
@@ -118,10 +128,21 @@ let F_LABEL = DOC_FONT_PT.cardLabel;
 let F_FOOTER = DOC_FONT_PT.footer;
 
 /** Пересчитать шкалу кеглей и отступов под выбранную плотность. */
-function applyDensity(density: DocDensity) {
+function applyDensity(density: DocDensity, preset: DocPrintPreset = BASE_PRINT_PRESET) {
   const k = DOC_DENSITY_SCALE[density];
   D = k;
-  const s = (v: number) => Math.round(v * (0.5 + k / 2) * 10) / 10; // кегли ужимаем мягче отступов
+  MARGIN_X = mmToPt(preset.marginXMm);
+  MARGIN_TOP = mmToPt(preset.marginTopMm);
+  MARGIN_BOTTOM = mmToPt(preset.marginBottomMm);
+  LH = preset.lineHeight;
+  LH_TEXT = LH + 0.05;
+  LH_LOOSE = LH + 0.15;
+  LH_TOTAL = LH + 0.2;
+  LH_TIGHT = Math.max(1.05, LH - 0.1);
+  GAP_K = preset.blockGap;
+  ROW_K = preset.rowGap;
+  FONT_K = preset.fontScale;
+  const s = (v: number) => Math.round(v * (0.5 + k / 2) * FONT_K * 10) / 10; // кегли ужимаем мягче отступов
   F11 = s(DOC_FONT_PT.small);
   F12 = s(DOC_FONT_PT.body);
   F13 = s(DOC_FONT_PT.section);
@@ -296,7 +317,7 @@ function drawText(
   const txt = safe(text);
   const lines = txt.split("\n");
   for (const line of lines) {
-    ensureSpace(ctx, size * 1.4);
+    ensureSpace(ctx, size * LH_LOOSE);
     let x = opts.x ?? MARGIN_X;
     if (opts.align && opts.width) {
       const w = font.widthOfTextAtSize(line, size);
@@ -304,7 +325,7 @@ function drawText(
       else if (opts.align === "center") x = (opts.x ?? MARGIN_X) + (opts.width - w) / 2;
     }
     ctx.page.drawText(line, { x, y: ctx.y - size, size, font, color });
-    ctx.y -= size * 1.35;
+    ctx.y -= size * LH_TEXT;
   }
 }
 
@@ -350,9 +371,9 @@ function drawParagraph(
   for (const p of paragraphs) {
     const lines = wrapText(font, p, size, maxW);
     for (const line of lines) {
-      ensureSpace(ctx, size * 1.45);
+      ensureSpace(ctx, size * LH_LOOSE);
       ctx.page.drawText(line, { x: MARGIN_X + indent, y: ctx.y - size, size, font, color });
-      ctx.y -= size * 1.45;
+      ctx.y -= size * LH_LOOSE;
     }
   }
 }
@@ -376,11 +397,11 @@ function drawTrailingNote(
   for (const size of [base, base - 0.5, base - 1, base - 1.5]) {
     if (size < 7.5) break;
     const lines = wrapText(ctx.regular, clean, size, maxW);
-    const h = lines.length * size * 1.35;
+    const h = lines.length * size * LH_TEXT;
     if (ctx.y - h < floor) continue;
     for (const line of lines) {
       ctx.page.drawText(line, { x: MARGIN_X, y: ctx.y - size, size, font: ctx.regular, color });
-      ctx.y -= size * 1.35;
+      ctx.y -= size * LH_TEXT;
     }
     return;
   }
@@ -400,7 +421,7 @@ function divider(ctx: DocCtx, color = LINE) {
 }
 
 function gap(ctx: DocCtx, n: number) {
-  ctx.y -= n * D;
+  ctx.y -= n * D * GAP_K;
 }
 
 
@@ -485,7 +506,7 @@ function drawHeader(
   let subY = PAGE_H - MARGIN_TOP - (showBrand ? F22 * 0.8 + 14 : Math.max(14, (place?.reserve ?? 0) + 2));
   for (const line of subLines) {
     ctx.page.drawText(line, { x: leftX, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED });
-    subY -= DOC_FONT_PT.small * 1.35;
+    subY -= DOC_FONT_PT.small * LH_TEXT;
   }
 
   drawTracked(ctx.page, kindUpper, {
@@ -587,7 +608,7 @@ function drawCard(
   // считаем нужную высоту
   const titleLines = wrapText(displayFont(ctx, title), title, F13, innerW);
   const bodyLineHeights = cleanLines.flatMap((l) => wrapText(ctx.regular, l, F11, innerW));
-  const height = 14 + 14 + titleLines.length * (F13 * 1.3) + bodyLineHeights.length * (F11 * 1.35) + 12;
+  const height = 14 + 14 + titleLines.length * (F13 * LH) + bodyLineHeights.length * (F11 * LH_TEXT) + 12;
 
   ensureSpace(ctx, height + 6);
   // фон карточки (скруглённые углы — как в превью)
@@ -613,13 +634,13 @@ function drawCard(
   cy -= 18;
   for (const t of titleLines) {
     ctx.page.drawText(t, { x: x + 12, y: cy - F13, size: F13, font: displayFont(ctx, t), color: TEXT });
-    cy -= F13 * 1.3;
+    cy -= F13 * LH;
   }
 
   cy -= 2;
   for (const l of bodyLineHeights) {
     ctx.page.drawText(l, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
-    cy -= F11 * 1.35;
+    cy -= F11 * LH_TEXT;
   }
   ctx.y -= height + 6;
 }
@@ -649,9 +670,9 @@ function drawInfoCard(
     lines: wrapText(ctx.regular, v, F11, valW),
   }));
   const noteLines = note ? wrapText(ctx.regular, note, F11, innerW) : [];
-  const rowsH = wrapped.reduce((s, r) => s + Math.max(1, r.lines.length) * F11 * 1.45, 0);
+  const rowsH = wrapped.reduce((s, r) => s + Math.max(1, r.lines.length) * F11 * LH_LOOSE, 0);
   const height =
-    14 * D + 16 * D + rowsH + (noteLines.length ? 6 * D + noteLines.length * F11 * 1.35 : 0) + 12 * D;
+    14 * D + 16 * D + rowsH + (noteLines.length ? 6 * D + noteLines.length * F11 * LH_TEXT : 0) + 12 * D;
 
   ensureSpace(ctx, height + 6 * D);
   roundedRect(ctx.page, {
@@ -687,16 +708,16 @@ function drawInfoCard(
         font: ctx.bold,
         color: TEXT,
       });
-      vy -= F11 * 1.45;
+      vy -= F11 * LH_LOOSE;
     }
-    cy -= Math.max(1, r.lines.length) * F11 * 1.45;
+    cy -= Math.max(1, r.lines.length) * F11 * LH_LOOSE;
   }
 
   if (noteLines.length) {
     cy -= 6 * D;
     for (const line of noteLines) {
       ctx.page.drawText(line, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
-      cy -= F11 * 1.35;
+      cy -= F11 * LH_TEXT;
     }
   }
 
@@ -729,8 +750,9 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
   const startX = MARGIN_X;
   const cellPadX = 6;
-  const headerH = 22 * D;
-  const rowMinH = 18 * D;
+  const RD = D * ROW_K;
+  const headerH = 22 * RD;
+  const rowMinH = 18 * RD;
   const SMALL = F11 - 1;
 
   const headTracking = F_DOC_KIND * 0.08;
@@ -792,7 +814,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       const size = isSub ? SMALL : F12;
       const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
       const lines = wrapText(font, label, size, labelW);
-      return Math.max((isSub ? 18 : 24) * D, lines.length * size * 1.3 + (isSub ? 8 : 12) * D);
+      return Math.max((isSub ? 18 : 24) * D, lines.length * size * LH + (isSub ? 8 : 12) * D);
     }
     const titleW = firstCol.width - cellPadX * 2;
     const titleLines = wrapText(ctx.bold, cellOf(r, firstCol.key), F11, titleW);
@@ -801,7 +823,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
     );
     const firstBlockH =
-      titleLines.length * F11 * 1.3 + (descLines.length + bulletLines.length) * SMALL * 1.3;
+      titleLines.length * F11 * LH + (descLines.length + bulletLines.length) * SMALL * LH;
     const restH =
       Math.max(
         ...cols.map((c, i) =>
@@ -857,7 +879,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
           font,
           color: isSub ? MUTED : TEXT,
         });
-        ly -= size * 1.3;
+        ly -= size * LH;
       }
       // сумма подытога — справа
       const last = cols.at(-1);
@@ -901,15 +923,15 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     let cy = ctx.y - 5 * D;
     for (const line of titleLines) {
       ctx.page.drawText(line, { x: richX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
-      cy -= F11 * 1.3;
+      cy -= F11 * LH;
     }
     for (const line of descLines) {
       ctx.page.drawText(line, { x: richX + cellPadX, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
-      cy -= SMALL * 1.3;
+      cy -= SMALL * LH;
     }
     for (const line of bulletLines) {
       ctx.page.drawText(line, { x: richX + cellPadX + 8, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
-      cy -= SMALL * 1.3;
+      cy -= SMALL * LH;
     }
 
     // остальные колонки
@@ -921,7 +943,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         continue;
       }
       const lines = restWrapped[i];
-      const blockH = Math.max(lines.length, 1) * F11 * 1.3;
+      const blockH = Math.max(lines.length, 1) * F11 * LH;
       let ly = c.valign === "middle" ? ctx.y - Math.max(5 * D, (rowH - blockH) / 2) : ctx.y - 5 * D;
       const color = c.key === "idx" ? MUTED : TEXT;
       for (const line of lines) {
@@ -934,7 +956,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
           tx = cx + (c.width - w) / 2;
         }
         ctx.page.drawText(line, { x: tx, y: ly - F11, size: F11, font: ctx.regular, color });
-        ly -= F11 * 1.3;
+        ly -= F11 * LH;
       }
       cx += c.width;
     }
@@ -953,7 +975,7 @@ function drawSummary(
   const width = Math.min(360 * 0.92, PAGE_W - MARGIN_X * 2);
   const x = PAGE_W - MARGIN_X - width;
   const padX = 13;
-  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * 1.5 + 8 * D;
+  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * LH_TOTAL + 8 * D;
   const height = rows.reduce((s, r) => s + rowH(r), 0);
 
   ensureSpace(ctx, height + 10 * D);
@@ -1043,7 +1065,7 @@ function drawSignatures(
       const wrapped = wrapText(ctx.regular, l, F11, colW);
       for (const line of wrapped) {
         ctx.page.drawText(line, { x, y: cy - F11, size: F11, font: ctx.regular, color: TEXT });
-        cy -= F11 * 1.35;
+        cy -= F11 * LH_TEXT;
       }
     }
     cy -= 28;
@@ -1615,7 +1637,7 @@ async function renderQuotePdf(
       color: ACCENT,
       tracking: F13 * 0.05,
     });
-    ctx.y -= F13 * 1.45;
+    ctx.y -= F13 * LH_LOOSE;
     gap(ctx, 2);
   };
 
@@ -1635,7 +1657,7 @@ async function renderQuotePdf(
         const tFont = displayFont(ctx, coverTitle);
         const tLines = wrapText(tFont, coverTitle, F_COVER, innerW);
         const pLines = text ? wrapText(ctx.regular, text, F11, innerW) : [];
-        const boxH = 18 + tLines.length * F_COVER * 1.2 + (pLines.length ? 8 + pLines.length * F11 * 1.45 : 0) + 18;
+        const boxH = 18 + tLines.length * F_COVER * LH_TIGHT + (pLines.length ? 8 + pLines.length * F11 * LH_LOOSE : 0) + 18;
         gap(ctx, 6);
         ensureSpace(ctx, boxH + 8);
         roundedRect(ctx.page, {
@@ -1651,12 +1673,12 @@ async function renderQuotePdf(
         let cyc = ctx.y - 18;
         for (const line of tLines) {
           ctx.page.drawText(line, { x: MARGIN_X + 20, y: cyc - F_COVER, size: F_COVER, font: tFont, color: TEXT });
-          cyc -= F_COVER * 1.2;
+          cyc -= F_COVER * LH_TIGHT;
         }
         if (pLines.length) cyc -= 8;
         for (const line of pLines) {
           ctx.page.drawText(line, { x: MARGIN_X + 20, y: cyc - F11, size: F11, font: ctx.regular, color: MUTED });
-          cyc -= F11 * 1.45;
+          cyc -= F11 * LH_LOOSE;
         }
         ctx.y -= boxH + 8;
         break;
