@@ -256,18 +256,11 @@ export function SiteHeader() {
                       </Toggleable>
                     </>
                   ) : (
-                    <>
-                      <Toggleable sectionKey="header.login" as="div">
-                        <SheetClose asChild>
-                          <Link to="/login"><Button variant="outline" className="w-full">Войти</Button></Link>
-                        </SheetClose>
-                      </Toggleable>
-                      <Toggleable sectionKey="header.register" as="div">
-                        <SheetClose asChild>
-                          <Link to="/register"><Button className="w-full bg-gradient-primary glow-primary">Регистрация</Button></Link>
-                        </SheetClose>
-                      </Toggleable>
-                    </>
+                    <Toggleable sectionKey="header.login" as="div">
+                      <SheetClose asChild>
+                        <Link to="/login"><Button className="w-full bg-gradient-primary glow-primary">Войти</Button></Link>
+                      </SheetClose>
+                    </Toggleable>
                   )}
                 </div>
               </SheetContent>
