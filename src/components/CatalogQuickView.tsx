@@ -462,15 +462,6 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
           </section>
         )}
 
-        <div className="mt-6 border-t border-border/40 pt-3">
-          <Link
-            to={detailPath}
-            onClick={onClose}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
-          >
-            <ExternalLink className="h-4 w-4" aria-hidden="true" /> Открыть полную страницу
-          </Link>
-        </div>
       </div>
 
       {/* Sticky mobile CTA */}
