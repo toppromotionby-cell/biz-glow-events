@@ -1539,7 +1539,7 @@ export async function buildStandaloneQuotePdf(
                 { label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) },
               ]
             : []),
-          { label: t.vatEnabled ? "ИТОГО С НДС" : "ИТОГО", value: money(t.total), emphasis: true },
+          { label: t.vatEnabled ? "Итого с НДС" : "Итого", value: money(t.total), emphasis: true },
           ...(t.prepayment
             ? [
                 { label: "Предоплата", value: money(t.prepayment) },
