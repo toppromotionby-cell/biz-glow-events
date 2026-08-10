@@ -285,10 +285,10 @@ export function buildQuoteHtmlDoc(
 
   const tableBody = [...sections.entries()]
     .map(([section, rows]) => {
-      const head = section ? `<tr class="section-row"><td colspan="5">${esc(section)}</td></tr>` : "";
+      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${esc(section)}</td></tr>` : "";
       const body = rows
         .map(
-          (it, i) => `<tr>
+          (it, i) => `<tr${ed("item", it.id, "Позиция")}>ature
         <td class="idx">${i + 1}</td>
         <td>
           <div class="it-title">${esc(it.title)}</div>
