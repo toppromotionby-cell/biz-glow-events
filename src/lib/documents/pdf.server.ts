@@ -1353,7 +1353,10 @@ export async function buildStandaloneQuotePdf(
     null,
     quote.logo_layout,
   );
-  drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff);
+  drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff, {
+    validUntil: quoteValidUntil(quote),
+  });
+
 
   const map = buildPlaceholderValues(quote, items, settings);
   const numbers = buildNumericValues(quote, items);
