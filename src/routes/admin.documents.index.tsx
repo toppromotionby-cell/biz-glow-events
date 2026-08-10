@@ -21,7 +21,7 @@ import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import {
   listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus, setDocumentTemplate,
-  type DocumentRow,
+  listOrderDocuments, type DocumentRow,
 } from "@/lib/documents-overview.functions";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
 
@@ -41,6 +41,14 @@ const STATUS_TONE: Record<string, "muted" | "info" | "success" | "danger"> = {
   rejected: "danger",
 };
 
+const ORDER_DOC_LABELS: Record<string, string> = {
+  quote: "КП",
+  invoice: "Счёт",
+  contract: "Договор",
+  act: "Акт",
+  custom: "Файл",
+};
+
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: "all", label: "Все" },
   { key: "draft", label: "Черновики" },
@@ -57,14 +65,23 @@ function Page() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [kind, setKind] = useState<"all" | "quote" | "promo">("all");
-  const [templates, setTemplates] = useState(false);
+  const [view, setView] = useState<"docs" | "templates" | "orders">("docs");
+  const templates = view === "templates";
   const [createOpen, setCreateOpen] = useState(false);
 
   const list = useServerFn(listAllDocuments);
+  const listOrderDocs = useServerFn(listOrderDocuments);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-documents-overview", search, status, kind, templates],
     queryFn: () => list({ data: { search, status, kind, templates } }),
+    enabled: view !== "orders",
+  });
+
+  const orderDocs = useQuery({
+    queryKey: ["admin-order-documents", search],
+    queryFn: () => listOrderDocs({ data: { search } }),
+    enabled: view === "orders",
   });
 
   const rows = data?.rows ?? [];
@@ -149,7 +166,7 @@ function Page() {
         }
       />
 
-      {!templates && (
+      {view === "docs" && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Черновики" value={counts?.draft ?? 0} onClick={() => setStatus("draft")} />
           <StatCard label="Ждут ответа клиента" value={counts?.awaiting ?? 0} onClick={() => setStatus("sent")} />
@@ -160,20 +177,30 @@ function Page() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-border/60 p-0.5">
-          <Button size="sm" variant={templates ? "ghost" : "secondary"} onClick={() => setTemplates(false)}>
-            Документы
-          </Button>
-          <Button size="sm" variant={templates ? "secondary" : "ghost"} onClick={() => { setTemplates(true); setStatus("all"); }}>
-            Шаблоны
-          </Button>
-        </div>
-        <div className="inline-flex rounded-lg border border-border/60 p-0.5">
-          {(["all", "quote", "promo"] as const).map((k) => (
-            <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
-              {k === "all" ? "Все типы" : k === "quote" ? "КП" : "КП промо"}
+          {([
+            { key: "docs", label: "Документы" },
+            { key: "templates", label: "Шаблоны" },
+            { key: "orders", label: "Счета и договоры" },
+          ] as const).map((v) => (
+            <Button
+              key={v.key}
+              size="sm"
+              variant={view === v.key ? "secondary" : "ghost"}
+              onClick={() => { setView(v.key); setStatus("all"); }}
+            >
+              {v.label}
             </Button>
           ))}
         </div>
+        {view !== "orders" && (
+          <div className="inline-flex rounded-lg border border-border/60 p-0.5">
+            {(["all", "quote", "promo"] as const).map((k) => (
+              <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
+                {k === "all" ? "Все типы" : k === "quote" ? "КП" : "КП промо"}
+              </Button>
+            ))}
+          </div>
+        )}
         <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -183,7 +210,7 @@ function Page() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        {!templates && (
+        {view === "docs" && (
           <div className="inline-flex flex-wrap gap-1">
             {FILTERS.map((f) => (
               <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => setStatus(f.key)}>
@@ -194,8 +221,60 @@ function Page() {
         )}
       </div>
 
+      {view === "orders" && (
+        <div className="overflow-hidden rounded-xl border border-border/60">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left">Тип</th>
+                <th className="px-3 py-2 text-left">Файл</th>
+                <th className="px-3 py-2 text-left">Заказ</th>
+                <th className="px-3 py-2 text-left">Клиент</th>
+                <th className="px-3 py-2 text-left">Создан</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {orderDocs.isLoading && (
+                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Загрузка…</td></tr>
+              )}
+              {!orderDocs.isLoading && !(orderDocs.data ?? []).length && (
+                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Документов по заказам пока нет</td></tr>
+              )}
+              {(orderDocs.data ?? []).map((d) => (
+                <tr key={d.id} className="border-t border-border/50 transition-colors hover:bg-muted/30">
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{ORDER_DOC_LABELS[d.kind] ?? d.kind}</td>
+                  <td className="px-3 py-2">{d.fileName}</td>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                    <Link to="/admin/orders/$id" params={{ id: d.orderId }} className="hover:text-primary">
+                      {d.orderNumber.replaceAll("/", ".")}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">{d.client}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{fmtDate(d.createdAt)}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Скачать"
+                        disabled={!d.url}
+                        onClick={() => d.url && viewer.openDocument(d.url, { name: d.fileName })}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
+      {view !== "orders" && (
       <div className="overflow-hidden rounded-xl border border-border/60">
+
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
@@ -323,6 +402,8 @@ function Page() {
           </tbody>
         </table>
       </div>
+      )}
+
 
       <CreateDocumentDialog
         open={createOpen}
