@@ -522,7 +522,7 @@ function drawCard(
   const cleanLines = lines.filter((l): l is string => !!l && l.trim() !== "");
 
   // считаем нужную высоту
-  const titleLines = wrapText(ctx.bold, title, F13, innerW);
+  const titleLines = wrapText(displayFont(ctx, title), title, F13, innerW);
   const bodyLineHeights = cleanLines.flatMap((l) => wrapText(ctx.regular, l, F11, innerW));
   const height = 14 + 14 + titleLines.length * (F13 * 1.3) + bodyLineHeights.length * (F11 * 1.35) + 12;
 
