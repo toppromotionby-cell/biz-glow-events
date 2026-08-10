@@ -1621,22 +1621,23 @@ export async function buildStandaloneQuotePdf(
       }
       case "event": {
         gap(ctx, 6);
-        drawCard(ctx, b.title || "Мероприятие", "Детали", [
-          quote.event_date ? `Дата: ${fmtDate(quote.event_date)}` : null,
-          quote.event_time_start || quote.event_time_end
-            ? `Время: ${[quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — ")}`
-            : null,
-          quote.venue ? `Площадка: ${quote.venue}` : null,
-          quote.guests_count != null ? `Гостей: ${quote.guests_count}` : null,
-          quote.event_format ? `Формат: ${quote.event_format}` : null,
-          quote.setup_note ? `Монтаж/демонтаж: ${quote.setup_note}` : null,
-        ]);
-        if (quote.event_notes) {
-          gap(ctx, 4);
-          drawParagraph(ctx, quote.event_notes, { size: F11, color: MUTED });
-        }
+        // те же подписи и сетка, что в HTML-превью (.info-table)
+        drawInfoCard(
+          ctx,
+          b.title || "Мероприятие",
+          [
+            ["Дата мероприятия", quote.event_date ? fmtDate(quote.event_date) : ""],
+            ["Время", [quote.event_time_start, quote.event_time_end].filter(Boolean).join(" — ")],
+            ["Площадка", quote.venue || ""],
+            ["Гостей", quote.guests_count != null ? String(quote.guests_count) : ""],
+            ["Формат", quote.event_format || ""],
+            ["Монтаж / демонтаж", quote.setup_note || ""],
+          ],
+          quote.event_notes || null,
+        );
         break;
       }
+
       case "items": {
         heading(b.title || "Состав предложения");
         drawTable(
