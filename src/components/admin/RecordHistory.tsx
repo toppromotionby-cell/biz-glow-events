@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime } from "@/lib/formatters";
-import { usePermissions } from "@/hooks/use-permissions";
+import { useRoles } from "@/hooks/use-roles";
 
 type AuditRow = {
   id: string;
