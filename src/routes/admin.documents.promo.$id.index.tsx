@@ -46,6 +46,10 @@ import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoUploader } from "@/components/admin/LogoUploader";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
+import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
+import { getQuoteDocSettings } from "@/lib/quotes.functions";
+import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
+import { resolveCompany } from "@/lib/documents/company";
 
 
 export const Route = createFileRoute("/admin/documents/promo/$id/")({ component: EditorPage });
@@ -75,6 +79,12 @@ function EditorPage() {
   const restoreVersion = useServerFn(restorePromoVersion);
   const markSent = useServerFn(markPromoSent);
   const sendPromo = useServerFn(sendPromoQuoteToClient);
+
+  const loadDocSettings = useServerFn(getQuoteDocSettings);
+  const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({
+    queryKey: ["admin-quote-settings"],
+    queryFn: () => loadDocSettings(),
+  });
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["promo-quote", id],
@@ -533,8 +543,8 @@ function EditorPage() {
                 onLogoChange={(v) => patchQuote({ logo_url: v })}
                 layout={quote.logo_layout}
                 onLayoutChange={(l) => patchQuote({ logo_layout: l })}
-                brand={quote.project || "Event Hub"}
-                legalLine={quote.client_name || "Клиент"}
+                brand={resolveCompany(quote.company_overrides, settings).company_brand}
+                legalLine={`${resolveCompany(quote.company_overrides, settings).company_legal_name} · ${resolveCompany(quote.company_overrides, settings).company_address}`}
                 accent={quote.accent_color}
                 docNum={quote.doc_number || "000"}
               />
@@ -542,6 +552,13 @@ function EditorPage() {
                 label="Логотип клиента"
                 value={quote.client_logo_url}
                 onChange={(v) => patchQuote({ client_logo_url: v })}
+              />
+
+              <Separator />
+              <CompanyOverridesEditor
+                value={quote.company_overrides}
+                onChange={(v) => patchQuote({ company_overrides: v })}
+                settings={settings}
               />
 
               <Field label="Примечание в подвале">

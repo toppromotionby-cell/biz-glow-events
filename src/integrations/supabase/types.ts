@@ -1748,6 +1748,7 @@ export type Database = {
           commission_enabled: boolean
           commission_label: string
           commission_rate: number
+          company_overrides: Json
           contact_email: string
           contact_name: string
           contact_phone: string
@@ -1797,6 +1798,7 @@ export type Database = {
           commission_enabled?: boolean
           commission_label?: string
           commission_rate?: number
+          company_overrides?: Json
           contact_email?: string
           contact_name?: string
           contact_phone?: string
@@ -1846,6 +1848,7 @@ export type Database = {
           commission_enabled?: boolean
           commission_label?: string
           commission_rate?: number
+          company_overrides?: Json
           contact_email?: string
           contact_name?: string
           contact_phone?: string

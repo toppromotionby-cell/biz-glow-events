@@ -11,6 +11,7 @@ import {
 } from "@/lib/quote-blocks";
 import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
+import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
 
 export * from "@/lib/quote-blocks";
 export * from "@/lib/documents/vat";
@@ -70,20 +71,7 @@ export const DEFAULT_QUOTE_DESIGN: QuoteDesign = {
   show_section_subtotals: true,
 };
 
-export type QuoteCompanyOverrides = Partial<{
-  company_legal_name: string;
-  company_brand: string;
-  company_unp: string;
-  company_address: string;
-  company_phone: string;
-  company_email: string;
-  company_website: string;
-  bank_name: string;
-  bank_bic: string;
-  bank_account: string;
-  signer_name: string;
-  signer_title: string;
-}>;
+export type QuoteCompanyOverrides = CompanyOverrides;
 
 /** Пункт состава позиции: «что входит». */
 export type QuoteItemInclude = { text: string; note: string };
@@ -534,7 +522,7 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     event_time_start: normalizeTime(row.event_time_start),
     event_time_end: normalizeTime(row.event_time_end),
     status: (QUOTE_STATUSES as readonly string[]).includes(String(row.status)) ? (row.status as QuoteStatus) : "draft",
-    company_overrides: (row.company_overrides ?? {}) as QuoteCompanyOverrides,
+    company_overrides: normalizeCompanyOverrides(row.company_overrides),
     texts: { ...DEFAULT_QUOTE_TEXTS, ...((row.texts ?? {}) as Partial<QuoteTexts>) },
     design: { ...DEFAULT_QUOTE_DESIGN, ...((row.design ?? {}) as Partial<QuoteDesign>) },
     logo_layout: normalizeLogoLayout(row.logo_layout),

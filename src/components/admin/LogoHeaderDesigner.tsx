@@ -6,7 +6,6 @@ import { AlignCenter, AlignLeft, AlignRight, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { LogoUploader } from "@/components/admin/LogoUploader";
 import { DOC_LAYOUT } from "@/lib/documents/brand";
 import {
@@ -99,7 +98,8 @@ export function LogoHeaderPreview({
   const aspect = useAspect(logoUrl);
   const place = logoUrl ? computeLogoPlacement(layout, aspect) : null;
   const textX = place ? place.textX : MARGIN_X;
-  const hideBrand = Boolean(logoUrl) && layout.hideBrandText;
+  // Есть логотип — текст бренда в шапке не печатается.
+  const hideBrand = Boolean(logoUrl);
 
   return (
     <div
@@ -288,10 +288,10 @@ export function LogoHeaderDesigner({
           )}
         </div>
 
-        <label className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-          <Switch checked={layout.hideBrandText} onCheckedChange={(v) => set({ hideBrandText: v })} />
-          Скрыть название бренда рядом с логотипом
-        </label>
+        <p className="pt-1 text-xs text-muted-foreground">
+          Пока логотип загружен, текстовое название бренда в шапке не печатается — остаётся только
+          строка с юр. названием и адресом.
+        </p>
       </div>
     </div>
   );

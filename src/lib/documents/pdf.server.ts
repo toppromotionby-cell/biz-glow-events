@@ -315,8 +315,9 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
   }
 
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
+  // Логотип заменяет текстовое название бренда: пишем бренд только когда логотипа нет.
   const brand = safe(settings.company_brand);
-  const showBrand = !(logo && layout.hideBrandText);
+  const showBrand = !logo;
   if (showBrand) {
     ctx.page.drawText(brand, {
       x: leftX,
@@ -1115,7 +1116,8 @@ export function buildAttachmentFilename(
 // === Standalone КП (раздел «Документы → КП») ===
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
-import { quoteCompany, quoteNumberDisplay, buildPlaceholderValues, buildNumericValues, effectiveBlocks, blockText } from "@/lib/documents/quote-html";
+import { applyCompanyOverrides } from "@/lib/documents/company";
+import { quoteNumberDisplay, buildPlaceholderValues, buildNumericValues, effectiveBlocks, blockText } from "@/lib/documents/quote-html";
 import { applyPlaceholders } from "@/lib/quote-blocks";
 
 function bulletList(ctx: DocCtx, text: string) {
@@ -1131,21 +1133,21 @@ export async function buildStandaloneQuotePdf(
   items: QuoteItem[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
-  const c = quoteCompany(quote, settings);
-  const eff: DocumentSettings = {
-    ...settings,
-    company_legal_name: c.legal,
-    company_brand: c.brand,
-    company_unp: c.unp,
-    company_address: c.address,
-    company_phone: c.phone,
-    company_email: c.email,
-    company_website: c.website,
-    bank_name: c.bank_name,
-    bank_bic: c.bank_bic,
-    bank_account: c.bank_account,
-    signer_name: c.signer_name,
-    signer_title: c.signer_title,
+  const eff = applyCompanyOverrides(settings, quote.company_overrides);
+  const c = {
+    legal: eff.company_legal_name,
+    brand: eff.company_brand,
+    unp: eff.company_unp,
+    address: eff.company_address,
+    phone: eff.company_phone,
+    email: eff.company_email,
+    website: eff.company_website,
+    bank_name: eff.bank_name,
+    bank_bic: eff.bank_bic,
+    bank_account: eff.bank_account,
+    signer_name: eff.signer_name,
+    signer_title: eff.signer_title,
+    signer_basis: eff.signer_basis,
   };
 
   const ctx = await createCtx(
@@ -1377,14 +1379,15 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
-  const ctx = await createCtx(quote.logo_url || settings.logo_url, quote.client_logo_url, quote.logo_layout);
+  const eff = applyCompanyOverrides(settings, quote.company_overrides);
+  const ctx = await createCtx(quote.logo_url || eff.logo_url, quote.client_logo_url, quote.logo_layout);
   const t = computePromoTotals(quote, items);
   drawHeader(
     ctx,
     "Коммерческое предложение",
     promoNumberDisplay(quote),
     fmtDate(quote.created_at || new Date().toISOString()),
-    settings,
+    eff,
   );
 
   drawCard(ctx, "Проект", quote.project || "—", [
@@ -1483,6 +1486,6 @@ export async function buildPromoQuotePdf(
     drawParagraph(ctx, quote.footer_note, { size: 9.5, color: MUTED });
   }
 
-  drawFooter(ctx, settings);
+  drawFooter(ctx, eff);
   return await ctx.pdf.save();
 }
