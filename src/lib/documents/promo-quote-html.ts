@@ -155,7 +155,7 @@ export function buildPromoQuoteBody(
           quote.discount_type === "percent" ? ` ${nf(quote.discount_value).replace(",00", "")}%` : ""
         }:</td><td class="val">− ${nf(t.discount)}</td></tr>`
       : "",
-    `<tr class="total"><td class="lbl">${t.vatEnabled ? "Сумма без НДС" : "Всего"}:</td><td class="val">${nf(t.net)}</td></tr>`,
+    `<tr class="total"><td class="lbl">${t.vatEnabled ? "Стоимость позиций (без НДС)" : "Всего"}:</td><td class="val">${nf(t.net)}</td></tr>`,
     t.vatEnabled
       ? `<tr class="total"><td class="lbl">НДС ${vatRateLabel(t.vatRate)}%:</td><td class="val">${nf(t.vat)}</td></tr>`
       : "",

@@ -1839,12 +1839,12 @@ async function renderQuotePdf(
       case "totals": {
         gap(ctx, 8);
         drawSummary(ctx, [
-          { label: "Стоимость позиций", value: money(t.subtotal) },
+          { label: `Стоимость позиций${t.vatEnabled ? " (без НДС)" : ""}`, value: money(t.subtotal) },
           ...(t.discount ? [{ label: "Скидка", value: `− ${money(t.discount)}` }] : []),
           ...(t.delivery ? [{ label: "Доставка и логистика", value: money(t.delivery) }] : []),
           ...(t.vatEnabled
             ? [
-                { label: "Сумма без НДС", value: money(t.net) },
+                ...(t.discount || t.delivery ? [{ label: "Сумма без НДС", value: money(t.net) }] : []),
                 { label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) },
               ]
             : []),
@@ -2043,7 +2043,7 @@ export async function buildPromoQuotePdf(
 
   gap(ctx, 6);
   drawSummary(ctx, [
-    { label: t.vatEnabled ? "Сумма без НДС" : "Всего", value: money(t.net) },
+    { label: t.vatEnabled ? "Стоимость позиций (без НДС)" : "Всего", value: money(t.net) },
     ...(t.vatEnabled ? [{ label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) }] : []),
     { label: `Итого${t.vatEnabled ? ", с НДС" : ""}`, value: money(t.totalWithVat), emphasis: true },
   ]);
