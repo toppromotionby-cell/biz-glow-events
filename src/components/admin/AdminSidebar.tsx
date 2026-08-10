@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
   CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
-  Wrench, Sparkles, Factory, FileSignature,
+  Wrench, Sparkles, Factory, FileSignature, FileStack,
   Megaphone, Brain,
 } from "lucide-react";
 import {
