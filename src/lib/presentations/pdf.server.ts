@@ -6,6 +6,8 @@ import fontkit from "@pdf-lib/fontkit";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { hexToRgb01 } from "@/lib/documents/brand";
 import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
+import { MAX_SLIDE_PHOTOS, SLIDE_W } from "@/lib/presentations/design";
+import { fitSlide } from "@/lib/presentations/fit";
 import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
 import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
 import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
