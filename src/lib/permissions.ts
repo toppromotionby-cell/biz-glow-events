@@ -43,10 +43,11 @@ const MATRIX: Record<AppRole, Permission[]> = {
     "content.manage", "marketing.manage", "system.manage", "users.manage", "audit.view",
   ],
   manager: [
-    "orders.manage", "orders.payments",
+    "orders.manage", "orders.view_all", "orders.payments",
     "documents.manage", "documents.finance", "documents.knowledge",
     "marketing.manage",
   ],
+
   accountant: [
     "orders.manage", "orders.view_all", "orders.payments",
     "documents.manage", "documents.finance", "documents.settings", "documents.knowledge", "documents.cost_margin",
