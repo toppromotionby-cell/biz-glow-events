@@ -21,6 +21,7 @@ import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
+import { CompanyProfilesManager } from "@/components/admin/documents/CompanyProfilesManager";
 import { QUOTE_TEMPLATES, QUOTE_TEMPLATE_LABELS, type QuoteTemplate } from "@/lib/quote-blocks";
 import { DEFAULT_PRINT_PRESETS, normalizePrintPresets } from "@/lib/documents/print-preset";
 
@@ -129,9 +130,10 @@ function DocumentSettingsPage() {
         }
       />
 
-      <Tabs defaultValue="company" className="space-y-4">
+      <Tabs defaultValue="companies" className="space-y-4">
         <TabsList className="bg-card/60 border border-border/50 flex flex-wrap h-auto">
-          <TabsTrigger value="company">Компания</TabsTrigger>
+          <TabsTrigger value="companies">Компании</TabsTrigger>
+          <TabsTrigger value="company">Общие реквизиты</TabsTrigger>
           <TabsTrigger value="bank">Банк</TabsTrigger>
           <TabsTrigger value="signer">Подписант</TabsTrigger>
           <TabsTrigger value="quote">КП</TabsTrigger>
@@ -140,8 +142,21 @@ function DocumentSettingsPage() {
           <TabsTrigger value="act">Акт</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="companies">
+          <div className="rounded-2xl border border-border/60 bg-card/40 p-4">
+            <div className="mb-4">
+              <h2 className="text-sm font-medium">Компании</h2>
+              <p className="text-xs text-muted-foreground">
+                Добавьте все свои юрлица: реквизиты, логотип, подпись, печать и НДС. В любом документе
+                достаточно выбрать компанию — остальное подставится автоматически.
+              </p>
+            </div>
+            <CompanyProfilesManager />
+          </div>
+        </TabsContent>
+
         <TabsContent value="company">
-          <Card title="Компания и бренд" preview="quote" onPreview={openPreview}>
+          <Card title="Общие реквизиты (запасной вариант)" preview="quote" onPreview={openPreview}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Юр. название" value={form.company_legal_name} onChange={(v) => update("company_legal_name", v)} />
               <Field label="Бренд (для шапки)" value={form.company_brand} onChange={(v) => update("company_brand", v)} />
