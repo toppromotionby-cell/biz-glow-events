@@ -6,6 +6,8 @@ import { MediaShield } from "@/components/MediaShield";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { CompareButton } from "@/components/CompareButton";
+
 import { RelatedItems } from "@/components/RelatedItems";
 import { CatalogSkeleton } from "@/components/CatalogSkeleton";
 import { CatalogSocialProof } from "@/components/CatalogSocialProof";
@@ -191,6 +193,20 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             <h1 className="mt-1 text-3xl font-display font-bold gradient-text">{item.title}</h1>
             {item.short_description && <p className="mt-2 text-muted-foreground">{item.short_description}</p>}
           </header>
+
+          <CompareButton
+            variant="full"
+            className="w-full"
+            item={{
+              id: item.id,
+              entity_type: entityType,
+              slug: item.slug,
+              title: item.title,
+              image: item.photo_urls?.[0] ?? null,
+              priceFrom: from ?? null,
+            }}
+          />
+
 
           <div className="glass rounded-xl p-5 space-y-3">
             <div className="flex items-center justify-between text-sm text-muted-foreground">

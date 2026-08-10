@@ -19,6 +19,7 @@ import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { QuickQuoteRequest } from "@/components/catalog/QuickQuoteRequest";
+import { CompareButton } from "@/components/CompareButton";
 import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
 import { toast } from "sonner";
@@ -403,6 +404,18 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                 >
                   <FileText className="h-4 w-4" /> Запросить КП
                 </button>
+                <CompareButton
+                  variant="full"
+                  className="w-full"
+                  item={{
+                    id: item.id,
+                    entity_type: type,
+                    slug: item.slug,
+                    title: item.title,
+                    image: item.photo_urls?.[0] ?? null,
+                    priceFrom: priceFrom(item.pricing),
+                  }}
+                />
               </div>
             </div>
 

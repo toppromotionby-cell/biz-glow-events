@@ -25,6 +25,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductionRouteImport } from './routes/production'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PartnersRouteImport } from './routes/partners'
+import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
@@ -35,6 +36,7 @@ import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
@@ -183,6 +185,11 @@ const PartnersRoute = PartnersRouteImport.update({
   path: '/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PackagesRoute = PackagesRouteImport.update({
+  id: '/packages',
+  path: '/packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OfferRoute = OfferRouteImport.update({
   id: '/offer',
   path: '/offer',
@@ -231,6 +238,11 @@ const CookiesRoute = CookiesRouteImport.update({
 const ContactsRoute = ContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogRoute = CatalogRouteImport.update({
@@ -589,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
   '/catalog': typeof CatalogRoute
+  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
@@ -599,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
+  '/packages': typeof PackagesRoute
   '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
@@ -683,6 +697,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
   '/catalog': typeof CatalogRoute
+  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
@@ -693,6 +708,7 @@ export interface FileRoutesByTo {
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
+  '/packages': typeof PackagesRoute
   '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
@@ -778,6 +794,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
   '/catalog': typeof CatalogRoute
+  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
@@ -788,6 +805,7 @@ export interface FileRoutesById {
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
+  '/packages': typeof PackagesRoute
   '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
@@ -875,6 +893,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/cases'
     | '/catalog'
+    | '/compare'
     | '/contacts'
     | '/cookies'
     | '/delivery'
@@ -885,6 +904,7 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/login'
     | '/offer'
+    | '/packages'
     | '/partners'
     | '/privacy'
     | '/production'
@@ -969,6 +989,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/cases'
     | '/catalog'
+    | '/compare'
     | '/contacts'
     | '/cookies'
     | '/delivery'
@@ -979,6 +1000,7 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/login'
     | '/offer'
+    | '/packages'
     | '/partners'
     | '/privacy'
     | '/production'
@@ -1063,6 +1085,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/cases'
     | '/catalog'
+    | '/compare'
     | '/contacts'
     | '/cookies'
     | '/delivery'
@@ -1073,6 +1096,7 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/login'
     | '/offer'
+    | '/packages'
     | '/partners'
     | '/privacy'
     | '/production'
@@ -1159,6 +1183,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CasesRoute: typeof CasesRouteWithChildren
   CatalogRoute: typeof CatalogRoute
+  CompareRoute: typeof CompareRoute
   ContactsRoute: typeof ContactsRoute
   CookiesRoute: typeof CookiesRoute
   DeliveryRoute: typeof DeliveryRoute
@@ -1169,6 +1194,7 @@ export interface RootRouteChildren {
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
   OfferRoute: typeof OfferRoute
+  PackagesRoute: typeof PackagesRoute
   PartnersRoute: typeof PartnersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProductionRoute: typeof ProductionRouteWithChildren
@@ -1318,6 +1344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/packages': {
+      id: '/packages'
+      path: '/packages'
+      fullPath: '/packages'
+      preLoaderRoute: typeof PackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offer': {
       id: '/offer'
       path: '/offer'
@@ -1386,6 +1419,13 @@ declare module '@tanstack/react-router' {
       path: '/contacts'
       fullPath: '/contacts'
       preLoaderRoute: typeof ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog': {
@@ -2054,6 +2094,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CasesRoute: CasesRouteWithChildren,
   CatalogRoute: CatalogRoute,
+  CompareRoute: CompareRoute,
   ContactsRoute: ContactsRoute,
   CookiesRoute: CookiesRoute,
   DeliveryRoute: DeliveryRoute,
@@ -2064,6 +2105,7 @@ const rootRouteChildren: RootRouteChildren = {
   LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
   OfferRoute: OfferRoute,
+  PackagesRoute: PackagesRoute,
   PartnersRoute: PartnersRoute,
   PrivacyRoute: PrivacyRoute,
   ProductionRoute: ProductionRouteWithChildren,
