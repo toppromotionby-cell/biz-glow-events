@@ -1315,7 +1315,7 @@ export function buildAttachmentFilename(
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
 import { applyCompanyOverrides } from "@/lib/documents/company";
-import { quoteNumberDisplay, buildPlaceholderValues, buildNumericValues, effectiveBlocks, blockText } from "@/lib/documents/quote-html";
+import { quoteNumberDisplay, quoteValidUntil, buildPlaceholderValues, buildNumericValues, effectiveBlocks, blockText } from "@/lib/documents/quote-html";
 import { applyPlaceholders } from "@/lib/quote-blocks";
 
 function bulletList(ctx: DocCtx, text: string) {
