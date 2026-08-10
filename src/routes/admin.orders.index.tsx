@@ -10,7 +10,7 @@ import { downloadCsv, toCsv } from "@/lib/csv";
 import { Download, Search, Clock, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
+import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR, orderStatusOptions } from "@/lib/order-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { fmtMoney, fmtDate, fmtDateTime } from "@/lib/formatters";
