@@ -20,31 +20,57 @@ export function money(n: number): string {
   }).format(n);
 }
 
-export async function loadDocumentSettings(supabaseAdmin: {
+type AdminLike = {
   from: (t: string) => {
     select: (c: string) => {
       eq: (k: string, v: unknown) => { maybeSingle: () => Promise<{ data: unknown }> };
     };
   };
-}): Promise<DocumentSettings> {
+};
+
+export async function loadDocumentSettings(
+  supabaseAdmin: AdminLike,
+  companyId?: string | null,
+): Promise<DocumentSettings> {
+  let settings: DocumentSettings;
   try {
     const { data } = await supabaseAdmin
       .from("document_settings")
       .select("*")
       .eq("singleton", true)
       .maybeSingle();
-    if (!data) return DEFAULT_DOCUMENT_SETTINGS;
-    const row = data as Record<string, unknown>;
-    return {
-      ...(row as unknown as DocumentSettings),
-      contract_sections: Array.isArray(row.contract_sections)
-        ? (row.contract_sections as { title: string; paragraphs: string[] }[])
-        : DEFAULT_DOCUMENT_SETTINGS.contract_sections,
-    };
+    if (!data) settings = DEFAULT_DOCUMENT_SETTINGS;
+    else {
+      const row = data as Record<string, unknown>;
+      settings = {
+        ...(row as unknown as DocumentSettings),
+        contract_sections: Array.isArray(row.contract_sections)
+          ? (row.contract_sections as { title: string; paragraphs: string[] }[])
+          : DEFAULT_DOCUMENT_SETTINGS.contract_sections,
+      };
+    }
   } catch {
-    return DEFAULT_DOCUMENT_SETTINGS;
+    settings = DEFAULT_DOCUMENT_SETTINGS;
   }
+
+  // Профиль компании документа (или основной), накладывается поверх настроек.
+  try {
+    const { applyCompanyProfile, normalizeCompanyProfile } = await import(
+      "@/lib/documents/company-profile"
+    );
+    const query = supabaseAdmin.from("company_profiles").select("*");
+    const { data } = companyId
+      ? await query.eq("id", companyId).maybeSingle()
+      : await query.eq("is_default", true).maybeSingle();
+    if (data) {
+      return applyCompanyProfile(settings, normalizeCompanyProfile(data as Record<string, unknown>));
+    }
+  } catch {
+    /* профиль не обязателен — остаёмся на общих настройках */
+  }
+  return settings;
 }
+
 
 type ShellOpts = {
   title: string;
