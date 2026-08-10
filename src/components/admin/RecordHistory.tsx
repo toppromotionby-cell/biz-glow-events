@@ -45,8 +45,9 @@ function diff(row: AuditRow): { field: string; from: unknown; to: unknown }[] {
 }
 
 export function RecordHistory({ recordId, limit = 20 }: { recordId: string; limit?: number }) {
-  const { has } = usePermissions();
-  const allowed = has("audit.view");
+  const { can } = useRoles();
+  const allowed = can("audit.view");
+
 
   const { data: rows = [], isLoading } = useQuery({
     enabled: allowed && !!recordId,
