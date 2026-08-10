@@ -105,6 +105,8 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+export const MAX_IMAGES = 5;
+
 export const EMPTY_CONTENT: SlideContent = {
   description: "",
   includes: [],
@@ -113,6 +115,8 @@ export const EMPTY_CONTENT: SlideContent = {
   priceUnit: "шт.",
   qty: null,
   sku: "",
+  images: [],
+  imageLayout: "auto",
   showDescription: true,
   showIncludes: true,
   showSpecs: true,
@@ -120,9 +124,14 @@ export const EMPTY_CONTENT: SlideContent = {
   showImage: true,
 };
 
+const IMAGE_LAYOUTS: SlideImageLayout[] = ["auto", "left", "right", "top", "none"];
+
 export function normalizeContent(raw: unknown): SlideContent {
   const r = (raw ?? {}) as Record<string, unknown>;
   const bool = (v: unknown, d = true) => (typeof v === "boolean" ? v : d);
+  const images = Array.isArray(r.images)
+    ? Array.from(new Set(r.images.map((i) => str(i).trim()).filter(Boolean))).slice(0, MAX_IMAGES)
+    : [];
   return {
     description: str(r.description),
     includes: Array.isArray(r.includes) ? r.includes.map((i) => str(i)).filter(Boolean) : [],
@@ -135,6 +144,10 @@ export function normalizeContent(raw: unknown): SlideContent {
     priceUnit: str(r.priceUnit, "шт.") || "шт.",
     qty: num(r.qty),
     sku: str(r.sku),
+    images,
+    imageLayout: IMAGE_LAYOUTS.includes(r.imageLayout as SlideImageLayout)
+      ? (r.imageLayout as SlideImageLayout)
+      : "auto",
     showDescription: bool(r.showDescription),
     showIncludes: bool(r.showIncludes),
     showSpecs: bool(r.showSpecs),
@@ -142,6 +155,7 @@ export function normalizeContent(raw: unknown): SlideContent {
     showImage: bool(r.showImage),
   };
 }
+
 
 const SLIDE_TYPES: SlideType[] = ["title", "product", "text", "section", "contacts"];
 
