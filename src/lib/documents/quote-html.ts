@@ -1,6 +1,7 @@
 // Единый HTML-рендер коммерческого предложения.
 // Browser-safe: используется и для live-превью в админке, и на сервере
 // (HTML-версия документа). Шрифты и токены — как на сайте (Space Grotesk / Inter).
+import { resolveCompany } from "@/lib/documents/company";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
@@ -57,22 +58,21 @@ function paragraphs(text: string): string {
 }
 
 export function quoteCompany(quote: Quote, settings: DocumentSettings) {
-  const o = quote.company_overrides ?? {};
-  const pick = (k: keyof DocumentSettings & keyof typeof o) =>
-    (o[k] && String(o[k]).trim()) || String(settings[k] ?? "");
+  const c = resolveCompany(quote.company_overrides, settings);
   return {
-    legal: pick("company_legal_name"),
-    brand: pick("company_brand"),
-    unp: pick("company_unp"),
-    address: pick("company_address"),
-    phone: pick("company_phone"),
-    email: pick("company_email"),
-    website: pick("company_website"),
-    bank_name: pick("bank_name"),
-    bank_bic: pick("bank_bic"),
-    bank_account: pick("bank_account"),
-    signer_name: pick("signer_name"),
-    signer_title: pick("signer_title"),
+    legal: c.company_legal_name,
+    brand: c.company_brand,
+    unp: c.company_unp,
+    address: c.company_address,
+    phone: c.company_phone,
+    email: c.company_email,
+    website: c.company_website,
+    bank_name: c.bank_name,
+    bank_bic: c.bank_bic,
+    bank_account: c.bank_account,
+    signer_name: c.signer_name,
+    signer_title: c.signer_title,
+    signer_basis: c.signer_basis,
   };
 }
 
