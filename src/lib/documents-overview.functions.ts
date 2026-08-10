@@ -177,3 +177,84 @@ export const listAllDocuments = createServerFn({ method: "GET" })
       sum: visible.reduce((s, r) => s + r.total, 0),
     };
   });
+
+// ---- Единые действия над документом любого типа (КП / КП промо) ----
+
+const kindSchema = z.enum(["quote", "promo"]);
+const idSchema = z.object({ kind: kindSchema, id: z.string().uuid() });
+
+type Tbl = { doc: "quotes" | "promo_quotes"; items: "quote_items" | "promo_quote_items"; fk: "quote_id" };
+const TABLES: Record<DocKind, Tbl> = {
+  quote: { doc: "quotes", items: "quote_items", fk: "quote_id" },
+  promo: { doc: "promo_quotes", items: "promo_quote_items", fk: "quote_id" },
+};
+
+export const duplicateDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { kind: DocKind; id: string }) => idSchema.parse(d))
+  .handler(async ({ data, context }): Promise<{ id: string; kind: DocKind }> => {
+    await assertStaff(context as never);
+    const t = TABLES[data.kind];
+    const [{ data: src }, { data: items }] = await Promise.all([
+      context.supabase.from(t.doc).select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from(t.items).select("*").eq(t.fk, data.id).order("sort_order"),
+    ]);
+    if (!src) throw new Error("Документ не найден");
+
+    const row = { ...(src as Record<string, unknown>) };
+    for (const k of ["id", "created_at", "updated_at", "public_token", "sent_at", "viewed_at", "responded_at"]) delete row[k];
+    row.status = "draft";
+    row.created_by = context.userId;
+    row.is_template = false;
+    row.template_name = "";
+    row.client_response = "";
+    row.client_comment = "";
+    if (data.kind === "quote") {
+      row.quote_number = null;
+      row.title = `${str(row.title) || "КП"} (копия)`;
+    } else {
+      row.doc_number = null;
+      row.project = `${str(row.project) || "КП промо"} (копия)`;
+    }
+
+    const { data: created, error } = await context.supabase.from(t.doc).insert(row as never).select("id").single();
+    if (error) throw new Error(error.message);
+    const newId = (created as { id: string }).id;
+
+    const copies = ((items ?? []) as Record<string, unknown>[]).map((it, i) => {
+      const c: Record<string, unknown> = { ...it, [t.fk]: newId, sort_order: i };
+      delete c.id;
+      delete c.created_at;
+      return c;
+    });
+    if (copies.length) await context.supabase.from(t.items).insert(copies as never);
+
+    return { id: newId, kind: data.kind };
+  });
+
+export const deleteDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { kind: DocKind; id: string }) => idSchema.parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const { error } = await context.supabase.from(TABLES[data.kind].doc).delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setDocumentStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { kind: DocKind; id: string; status: string }) =>
+    idSchema.extend({ status: z.enum(["draft", "sent", "accepted", "rejected"]) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertStaff(context as never);
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.status === "sent") patch.sent_at = new Date().toISOString();
+    const { error } = await context.supabase
+      .from(TABLES[data.kind].doc)
+      .update(patch as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
