@@ -617,49 +617,108 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
   const startX = MARGIN_X;
   const cellPadX = 6;
-  const headerH = 22;
-  const rowMinH = 18;
+  const headerH = 22 * D;
+  const rowMinH = 18 * D;
   const SMALL = F11 - 1;
 
-  // header
-  ensureSpace(ctx, headerH + rowMinH);
-  ctx.page.drawRectangle({
-    x: startX,
-    y: ctx.y - headerH,
-    width: totalW,
-    height: headerH,
-    color: ACCENT_SOFT,
-  });
-  let cx = startX;
   const headTracking = F_DOC_KIND * 0.08;
-  for (const c of cols) {
-    const title = c.title.toUpperCase();
-    const w = trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking);
-    let tx = cx + cellPadX;
-    if (c.align === "right") tx = cx + c.width - cellPadX - w;
-    else if (c.align === "center") tx = cx + (c.width - w) / 2;
-    drawTracked(ctx.page, title, {
-      x: tx,
-      y: ctx.y - 15,
-      size: F_DOC_KIND,
-      font: ctx.bold,
-      color: TEXT,
-      tracking: headTracking,
+  const drawHead = () => {
+    ctx.page.drawRectangle({
+      x: startX,
+      y: ctx.y - headerH,
+      width: totalW,
+      height: headerH,
+      color: ACCENT_SOFT,
     });
-    cx += c.width;
-  }
-  ctx.y -= headerH;
+    let hx = startX;
+    for (const c of cols) {
+      const title = c.title.toUpperCase();
+      const w = trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking);
+      let tx = hx + cellPadX;
+      if (c.align === "right") tx = hx + c.width - cellPadX - w;
+      else if (c.align === "center") tx = hx + (c.width - w) / 2;
+      drawTracked(ctx.page, title, {
+        x: tx,
+        y: ctx.y - headerH + (headerH - F_DOC_KIND) / 2 + 1,
+        size: F_DOC_KIND,
+        font: ctx.bold,
+        color: TEXT,
+        tracking: headTracking,
+      });
+      hx += c.width;
+    }
+    ctx.y -= headerH;
+  };
+
+  // header (шапка повторяется на каждой новой странице таблицы)
+  ensureSpace(ctx, headerH + rowMinH);
+  drawHead();
+
+  /** Перенос строки таблицы на новую страницу с повтором шапки. */
+  const ensureRow = (needed: number) => {
+    if (ctx.y - needed < MARGIN_BOTTOM) {
+      newPage(ctx);
+      drawHead();
+    }
+  };
 
   // «Богатая» колонка (название позиции) — может быть не первой, если есть №
   const richIdx = Math.max(0, cols.findIndex((c) => c.key === "title"));
   const firstCol = cols[richIdx];
   const richX = startX + cols.slice(0, richIdx).reduce((s, c) => s + c.width, 0);
 
+  const cellOf = (r: TableRow, key: string) =>
+    typeof r[key] === "string" ? (r[key] as string) : "";
+
+  /** Высота строки без отрисовки — нужна, чтобы не отрывать заголовок раздела. */
+  const measure = (r: TableRow): number => {
+    const kind = r._kind;
+    if (kind === "section" || kind === "subtotal") {
+      const isSub = kind === "subtotal";
+      const label = cellOf(r, firstCol.key);
+      const font = isSub ? ctx.regular : displayFont(ctx, label);
+      const size = isSub ? SMALL : F12;
+      const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
+      const lines = wrapText(font, label, size, labelW);
+      return Math.max((isSub ? 18 : 24) * D, lines.length * size * 1.3 + (isSub ? 8 : 12) * D);
+    }
+    const titleW = firstCol.width - cellPadX * 2;
+    const titleLines = wrapText(ctx.bold, cellOf(r, firstCol.key), F11, titleW);
+    const descLines = r._desc ? wrapText(ctx.regular, r._desc, SMALL, titleW) : [];
+    const bulletLines = (r._bullets ?? []).flatMap((b) =>
+      wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
+    );
+    const firstBlockH =
+      titleLines.length * F11 * 1.3 + (descLines.length + bulletLines.length) * SMALL * 1.3;
+    const restH =
+      Math.max(
+        ...cols.map((c, i) =>
+          i === richIdx ? 0 : wrapText(ctx.regular, cellOf(r, c.key), F11, c.width - cellPadX * 2).length,
+        ),
+        1,
+      ) *
+      F11 *
+      1.3;
+    return Math.max(rowMinH, Math.max(firstBlockH, restH) + 9 * D);
+  };
 
   // rows
-  for (const r of rows) {
+  for (let ri = 0; ri < rows.length; ri += 1) {
+    const r = rows[ri];
     const kind = r._kind;
-    const cell = (key: string) => (typeof r[key] === "string" ? (r[key] as string) : "");
+    const cell = (key: string) => cellOf(r, key);
+    const rowH = measure(r);
+
+    // keep-with-next: заголовок раздела всегда переносим вместе с первой
+    // строкой раздела, а обычную строку — вместе со следующим подытогом.
+    const next = rows[ri + 1];
+    const glued =
+      kind === "section" && next
+        ? measure(next)
+        : kind !== "subtotal" && next?._kind === "subtotal"
+          ? measure(next)
+          : 0;
+    ensureRow(rowH + glued);
 
     if (kind === "section" || kind === "subtotal") {
       const label = cell(firstCol.key);
@@ -668,8 +727,6 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       const size = isSub ? SMALL : F12;
       const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
       const lines = wrapText(font, label, size, labelW);
-      const rowH = Math.max(isSub ? 18 : 24, lines.length * size * 1.3 + (isSub ? 8 : 12));
-      ensureSpace(ctx, rowH);
       if (isSub) {
         ctx.page.drawRectangle({ x: startX, y: ctx.y - rowH, width: totalW, height: rowH, color: SURFACE });
       }
@@ -679,7 +736,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         thickness: 0.4,
         color: LINE,
       });
-      let ly = ctx.y - (isSub ? 5 : 8);
+      let ly = ctx.y - (isSub ? 5 : 8) * D;
       for (const line of lines) {
         ctx.page.drawText(line, {
           x: startX + cellPadX,
@@ -699,7 +756,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         const w = vFont.widthOfTextAtSize(lastVal, vSize);
         ctx.page.drawText(lastVal, {
           x: startX + totalW - cellPadX - w,
-          y: ctx.y - (isSub ? 5 : 8) - vSize,
+          y: ctx.y - (isSub ? 5 : 8) * D - vSize,
           size: vSize,
           font: vFont,
           color: TEXT,
@@ -717,16 +774,10 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     const bulletLines = (r._bullets ?? []).flatMap((b) =>
       wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
     );
-    const firstBlockH =
-      titleLines.length * F11 * 1.3 + (descLines.length + bulletLines.length) * SMALL * 1.3;
-
     const restWrapped = cols.map((c, i) =>
       i === richIdx ? [] : wrapText(ctx.regular, cell(c.key), F11, c.width - cellPadX * 2),
     );
-    const restH = Math.max(...restWrapped.map((w) => w.length), 1) * F11 * 1.3;
-    const rowH = Math.max(rowMinH, Math.max(firstBlockH, restH) + 9);
 
-    ensureSpace(ctx, rowH);
     ctx.page.drawLine({
       start: { x: startX, y: ctx.y - rowH },
       end: { x: startX + totalW, y: ctx.y - rowH },
@@ -735,7 +786,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     });
 
     // колонка с названием
-    let cy = ctx.y - 5;
+    let cy = ctx.y - 5 * D;
     for (const line of titleLines) {
       ctx.page.drawText(line, { x: richX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
       cy -= F11 * 1.3;
@@ -750,7 +801,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     }
 
     // остальные колонки
-    cx = startX;
+    let cx = startX;
     for (let i = 0; i < cols.length; i++) {
       const c = cols[i];
       if (i === richIdx) {
@@ -759,7 +810,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       }
       const lines = restWrapped[i];
       const blockH = Math.max(lines.length, 1) * F11 * 1.3;
-      let ly = c.valign === "middle" ? ctx.y - Math.max(5, (rowH - blockH) / 2) : ctx.y - 5;
+      let ly = c.valign === "middle" ? ctx.y - Math.max(5 * D, (rowH - blockH) / 2) : ctx.y - 5 * D;
       const color = c.key === "idx" ? MUTED : TEXT;
       for (const line of lines) {
         let tx = cx + cellPadX;
@@ -779,6 +830,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     ctx.y -= rowH;
   }
 }
+
 
 
 // === Сводный блок «итого» (как в HTML-превью: справа, белый фон, акцентная строка «Итого») ===
