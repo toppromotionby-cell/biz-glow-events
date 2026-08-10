@@ -109,11 +109,13 @@ export const cleanupCatalogStructure = createServerFn({ method: "POST" })
       if (s.kind !== "virtual") continue;
       const ids = (s.category_ids ?? []).filter((id) => survivors.has(id));
       const shouldHide = ids.length === 0;
-      const patch: Record<string, unknown> = {};
-      if ((s.category_ids ?? []).length !== ids.length) patch['category_ids'] = ids;
-      if (s.auto_hidden !== shouldHide) patch['auto_hidden'] = shouldHide;
-      if (Object.keys(patch).length === 0) continue;
-      await supabaseAdmin.from("catalog_sections").update(patch).eq("key", s.key);
+      const idsChanged = (s.category_ids ?? []).length !== ids.length;
+      const hideChanged = s.auto_hidden !== shouldHide;
+      if (!idsChanged && !hideChanged) continue;
+      await supabaseAdmin
+        .from("catalog_sections")
+        .update({ category_ids: ids, auto_hidden: shouldHide })
+        .eq("key", s.key);
       if (s.auto_hidden !== shouldHide) (shouldHide ? hidden : shown).push(s.title);
     }
 
