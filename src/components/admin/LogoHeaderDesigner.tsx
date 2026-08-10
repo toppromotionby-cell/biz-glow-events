@@ -6,7 +6,6 @@ import { AlignCenter, AlignLeft, AlignRight, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { LogoUploader } from "@/components/admin/LogoUploader";
 import { DOC_LAYOUT } from "@/lib/documents/brand";
 import {
