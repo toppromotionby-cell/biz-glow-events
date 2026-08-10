@@ -31,7 +31,6 @@ const SECONDARY_NAV = [
 // Ключевые пункты, которые остаются в десктопной шапке рядом с «Каталогом».
 const PRIMARY_NAV = [
   { to: "/cases", label: "Кейсы", key: "header.nav.cases" },
-  { to: "/packages", label: "Пакеты", key: "header.nav.packages" },
   { to: "/blog", label: "Блог", key: "header.nav.blog" },
   { to: "/contacts", label: "Контакты", key: "header.nav.contacts" },
 ] as const;

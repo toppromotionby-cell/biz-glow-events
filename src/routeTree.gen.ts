@@ -25,7 +25,6 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductionRouteImport } from './routes/production'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PartnersRouteImport } from './routes/partners'
-import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as OfferRouteImport } from './routes/offer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
@@ -183,11 +182,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PartnersRoute = PartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PackagesRoute = PackagesRouteImport.update({
-  id: '/packages',
-  path: '/packages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfferRoute = OfferRouteImport.update({
@@ -612,7 +606,6 @@ export interface FileRoutesByFullPath {
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
-  '/packages': typeof PackagesRoute
   '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
@@ -708,7 +701,6 @@ export interface FileRoutesByTo {
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
-  '/packages': typeof PackagesRoute
   '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
@@ -805,7 +797,6 @@ export interface FileRoutesById {
   '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/offer': typeof OfferRoute
-  '/packages': typeof PackagesRoute
   '/partners': typeof PartnersRoute
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
@@ -904,7 +895,6 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/login'
     | '/offer'
-    | '/packages'
     | '/partners'
     | '/privacy'
     | '/production'
@@ -1000,7 +990,6 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/login'
     | '/offer'
-    | '/packages'
     | '/partners'
     | '/privacy'
     | '/production'
@@ -1096,7 +1085,6 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/login'
     | '/offer'
-    | '/packages'
     | '/partners'
     | '/privacy'
     | '/production'
@@ -1194,7 +1182,6 @@ export interface RootRouteChildren {
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
   OfferRoute: typeof OfferRoute
-  PackagesRoute: typeof PackagesRoute
   PartnersRoute: typeof PartnersRoute
   PrivacyRoute: typeof PrivacyRoute
   ProductionRoute: typeof ProductionRouteWithChildren
@@ -1342,13 +1329,6 @@ declare module '@tanstack/react-router' {
       path: '/partners'
       fullPath: '/partners'
       preLoaderRoute: typeof PartnersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/packages': {
-      id: '/packages'
-      path: '/packages'
-      fullPath: '/packages'
-      preLoaderRoute: typeof PackagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offer': {
@@ -2105,7 +2085,6 @@ const rootRouteChildren: RootRouteChildren = {
   LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
   OfferRoute: OfferRoute,
-  PackagesRoute: PackagesRoute,
   PartnersRoute: PartnersRoute,
   PrivacyRoute: PrivacyRoute,
   ProductionRoute: ProductionRouteWithChildren,

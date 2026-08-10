@@ -9,7 +9,6 @@ const SEGMENT_LABELS: Record<string, string> = {
   production: "Производство",
   cases: "Кейсы",
   compare: "Сравнение",
-  packages: "Пакет под бюджет",
 
   blog: "Блог",
   about: "О нас",
