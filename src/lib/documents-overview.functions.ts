@@ -262,6 +262,66 @@ export const setDocumentStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---- Счета, договоры и акты, сохранённые по заказам (order_attachments) ----
+
+export type OrderDocumentRow = {
+  id: string;
+  kind: string;
+  fileName: string;
+  createdAt: string;
+  orderId: string;
+  orderNumber: string;
+  client: string;
+  url: string | null;
+};
+
+export const listOrderDocuments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { search?: string } | undefined) =>
+    z.object({ search: z.string().max(200).optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<OrderDocumentRow[]> => {
+    await assertStaff(context as never);
+    const { data: rows } = await context.supabase
+      .from("order_attachments")
+      .select("id,kind,file_name,file_path,created_at,order_id,orders(order_number,client_name,client_company)")
+      .order("created_at", { ascending: false })
+      .limit(200);
+
+    const list = ((rows ?? []) as Record<string, unknown>[]).map((raw) => {
+      const order = (raw.orders ?? {}) as Record<string, unknown>;
+      return {
+        id: String(raw.id),
+        kind: str(raw.kind) || "custom",
+        fileName: str(raw.file_name) || "Документ",
+        filePath: str(raw.file_path),
+        createdAt: str(raw.created_at),
+        orderId: String(raw.order_id),
+        orderNumber: str(order.order_number) || String(raw.order_id).slice(0, 8),
+        client: str(order.client_company) || str(order.client_name) || "Без клиента",
+      };
+    });
+
+    const search = (data.search ?? "").trim().toLowerCase();
+    const filtered = search
+      ? list.filter((r) => `${r.orderNumber} ${r.client} ${r.fileName} ${r.kind}`.toLowerCase().includes(search))
+      : list;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const paths = filtered.map((r) => r.filePath).filter(Boolean);
+    const signedMap = new Map<string, string>();
+    if (paths.length) {
+      const { data: signed } = await supabaseAdmin.storage
+        .from("order-attachments")
+        .createSignedUrls(paths, 60 * 60);
+      for (const s of signed ?? []) {
+        if (s.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
+      }
+    }
+
+    return filtered.map(({ filePath, ...r }) => ({ ...r, url: signedMap.get(filePath) ?? null }));
+  });
+
 // Перевод документа в шаблон и обратно (общий для КП и КП промо)
 export const setDocumentTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
