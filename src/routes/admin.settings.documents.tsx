@@ -81,6 +81,10 @@ function DocumentSettingsPage() {
     persist(next);
   };
 
+  const printPresets = normalizePrintPresets(form?.quote_print_presets);
+
+
+
   // Последний заказ — чтобы можно было открыть пример КП/счёта/договора.
   const lastOrder = useQuery({
     queryKey: ["last-order-for-doc-preview"],
