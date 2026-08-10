@@ -154,7 +154,15 @@ export function GuestEstimator() {
                             : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
                         }`}
                       >
-                        <Checkbox checked={active} className="pointer-events-none" />
+                        <span
+                          aria-hidden
+                          className={`grid h-4 w-4 shrink-0 place-content-center rounded-sm border ${
+                            active ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                          }`}
+                        >
+                          {active && <Check className="h-3 w-3" />}
+                        </span>
+
                         {m.label}
                       </button>
                     );
