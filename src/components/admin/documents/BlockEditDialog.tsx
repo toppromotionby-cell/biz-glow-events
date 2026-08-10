@@ -92,12 +92,15 @@ export function BlockEditDialog({
       vat_rate: quote.vat_rate,
       vat_as_line: quote.vat_as_line,
       company_overrides: quote.company_overrides,
-      texts: quote.texts,
+      // «Редактирую то, что вижу»: если у КП своего текста нет — подставляем
+      // унаследованное значение из общих настроек документов (как в превью).
+      vat_note: quote.vat_note || settings.vat_note,
+      texts: { ...quote.texts, footer: quote.texts.footer || settings.quote_footer },
       blocks: quote.blocks,
     });
     setItem(edit.target === "item" ? (items.find((i) => i.id === edit.id) ?? null) : null);
     setSectionName(edit.target === "section" ? (edit.id ?? "") : "");
-  }, [edit, quote, items]);
+  }, [edit, quote, items, settings]);
 
   if (!edit) return null;
 
@@ -276,6 +279,21 @@ export function BlockEditDialog({
                   })
                 }
               />
+              <Field
+                label="Примечание об НДС"
+                hint={
+                  (draft.vat_note ?? "") === settings.vat_note && !quote.vat_note
+                    ? "Значение по умолчанию из настроек документов."
+                    : undefined
+                }
+              >
+                <Textarea rows={2} value={draft.vat_note ?? ""} onChange={(e) => set({ vat_note: e.target.value })} />
+                <div className="mt-2">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => set({ vat_note: "" })}>
+                    Сбросить к настройкам
+                  </Button>
+                </div>
+              </Field>
             </div>
           )}
 
@@ -289,12 +307,29 @@ export function BlockEditDialog({
           )}
 
           {target === "footer" && (
-            <Field label="Текст подвала">
+            <Field
+              label="Текст подвала"
+              hint={
+                (draft.texts?.footer ?? "") === settings.quote_footer && !quote.texts.footer
+                  ? "Значение по умолчанию из настроек документов. После сохранения текст закрепится за этим КП."
+                  : "Поддерживаются плейсхолдеры вида {{client_name}}"
+              }
+            >
               <Textarea
                 rows={3}
                 value={draft.texts?.footer ?? ""}
                 onChange={(e) => set({ texts: { ...(draft.texts ?? quote.texts), footer: e.target.value } })}
               />
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => set({ texts: { ...(draft.texts ?? quote.texts), footer: "" } })}
+                >
+                  Сбросить к настройкам
+                </Button>
+              </div>
             </Field>
           )}
 

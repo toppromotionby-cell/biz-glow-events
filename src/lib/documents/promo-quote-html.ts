@@ -166,7 +166,13 @@ export function buildPromoQuoteBody(
     <tbody>${rowsHtml || `<tr><td colspan="${colCount}" class="empty">Позиции не добавлены</td></tr>`}${extraRows.join("")}</tbody>
   </table>
   <table class="totals"${ed("totals", undefined, "Итоги")}><tbody>${totalsRows}</tbody></table>
-  ${quote.footer_note ? `<div class="footer-note"${ed("footer", undefined, "Примечание")}>${esc(quote.footer_note).replaceAll("\n", "<br/>")}</div>` : ""}
+  ${
+    quote.footer_note
+      ? `<div class="footer-note"${ed("footer", undefined, "Примечание")}>${esc(quote.footer_note).replaceAll("\n", "<br/>")}</div>`
+      : editable
+        ? `<div class="footer-note footer-note-empty"${ed("footer", undefined, "Примечание")}>Добавить примечание</div>`
+        : ""
+  }
 </div>`.trim();
 }
 
@@ -196,6 +202,8 @@ export const PROMO_DOC_CSS = `
 .promo-doc .totals .val { text-align: right; white-space: nowrap; background: #fff8ea; }
 .promo-doc .totals .grand td { font-size: 13px; }
 .promo-doc .footer-note { margin-top: 16px; color: #45454d; font-size: 11px; }
+.promo-doc .footer-note-empty { color: #9a9aa2; font-style: italic; }
+@media print { .promo-doc .footer-note-empty { display: none; } }
 [data-edit] { cursor: pointer; }
 .promo-doc [data-edit]:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media print { .promo-doc [data-edit]:hover { outline: none; } .promo-doc { font-size: 11px; } }
