@@ -19,6 +19,8 @@ export const Route = createFileRoute("/order/success/$id")({
 
 function OrderSuccess() {
   const { id } = Route.useParams();
+  const { isAuthenticated } = useAuth();
+
   const { data } = useQuery({
     queryKey: ["order-success-number", id],
     queryFn: async () => {
