@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, ExternalLink, RefreshCw, WifiOff } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { getProdHealth, PROD_URL } from "@/lib/prod-health.functions";
+import { getProdHealth } from "@/lib/prod-health.functions";
+import { PROD_URL } from "@/lib/prod-health";
 
 type Check = { path: string; status: number; ms: number; ok: boolean; error?: string };
 type HealthData = {

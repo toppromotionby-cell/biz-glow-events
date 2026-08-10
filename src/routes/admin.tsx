@@ -2,7 +2,7 @@
 // Сайдбар сворачивается (cookie от SidebarProvider), на мобильных — off-canvas.
 import { createFileRoute, Outlet, useNavigate, useLocation, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
-import { useRoles } from "@/hooks/use-roles";
+import { RolesProvider, useRoles } from "@/hooks/use-roles";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -69,6 +69,14 @@ const CRUMBS: { match: RegExp; label: string }[] = [
 ];
 
 function AdminLayout() {
+  return (
+    <RolesProvider>
+      <AdminLayoutContent />
+    </RolesProvider>
+  );
+}
+
+function AdminLayoutContent() {
   const { user, loading: authLoading } = useAuth();
   const { loading, isStaff, perms } = useRoles();
   const navigate = useNavigate();
