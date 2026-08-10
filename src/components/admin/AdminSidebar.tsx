@@ -111,8 +111,10 @@ function useSidebarBadges() {
 
 function isItemActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.to;
+  if (item.matchPrefix && pathname.startsWith(item.matchPrefix)) return true;
   return pathname === item.to || pathname.startsWith(item.to + "/");
 }
+
 
 export function AdminSidebar() {
   const loc = useLocation();
