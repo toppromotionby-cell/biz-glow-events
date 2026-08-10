@@ -1059,10 +1059,11 @@ function drawSignatures(
       font: ctx.regular,
       color: MUTED,
     });
+    return yStart - (cy - F11 - 6); // фактически занятая высота
   };
-  drawCol(MARGIN_X, left);
-  drawCol(MARGIN_X + colW + 24, right);
-  ctx.y -= 110;
+  const usedL = drawCol(MARGIN_X, left);
+  const usedR = drawCol(MARGIN_X + colW + 24, right);
+  ctx.y -= Math.max(usedL, usedR);
 }
 
 // === Утилиты ===
