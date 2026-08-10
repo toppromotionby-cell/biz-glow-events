@@ -133,7 +133,14 @@ export function BlockEditDialog({
       // унаследованное значение из общих настроек документов (как в превью).
       vat_note: quote.vat_note || settings.vat_note,
       texts: { ...quote.texts, footer: quote.texts.footer || settings.quote_footer },
-      blocks: quote.blocks,
+      // Блоки без своего текста показывают в превью запасной текст из quote.texts —
+      // подставляем его в форму, чтобы редактировалось именно видимое содержимое.
+      blocks: quote.blocks.map((b) => {
+        if (b.content?.trim()) return b;
+        const key = BLOCK_TEXT_FALLBACK[b.type];
+        const fallback = key ? quote.texts[key] : "";
+        return fallback ? { ...b, content: fallback } : b;
+      }),
     });
     setItem(edit.target === "item" ? (items.find((i) => i.id === edit.id) ?? null) : null);
     setSectionName(edit.target === "section" ? (edit.id ?? "") : "");
