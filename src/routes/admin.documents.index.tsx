@@ -141,14 +141,24 @@ function Page() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Черновики" value={counts?.draft ?? 0} onClick={() => setStatus("draft")} />
-        <StatCard label="Ждут ответа клиента" value={counts?.awaiting ?? 0} onClick={() => setStatus("sent")} />
-        <StatCard label="Согласовано" value={counts?.accepted ?? 0} onClick={() => setStatus("accepted")} />
-        <StatCard label="Просрочено" value={counts?.expired ?? 0} onClick={() => setStatus("expired")} />
-      </div>
+      {!templates && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Черновики" value={counts?.draft ?? 0} onClick={() => setStatus("draft")} />
+          <StatCard label="Ждут ответа клиента" value={counts?.awaiting ?? 0} onClick={() => setStatus("sent")} />
+          <StatCard label="Согласовано" value={counts?.accepted ?? 0} onClick={() => setStatus("accepted")} />
+          <StatCard label="Просрочено" value={counts?.expired ?? 0} onClick={() => setStatus("expired")} />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-lg border border-border/60 p-0.5">
+          <Button size="sm" variant={templates ? "ghost" : "secondary"} onClick={() => setTemplates(false)}>
+            Документы
+          </Button>
+          <Button size="sm" variant={templates ? "secondary" : "ghost"} onClick={() => { setTemplates(true); setStatus("all"); }}>
+            Шаблоны
+          </Button>
+        </div>
         <div className="inline-flex rounded-lg border border-border/60 p-0.5">
           {(["all", "quote", "promo"] as const).map((k) => (
             <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
@@ -165,14 +175,17 @@ function Page() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="inline-flex flex-wrap gap-1">
-          {FILTERS.map((f) => (
-            <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => setStatus(f.key)}>
-              {f.label}
-            </Button>
-          ))}
-        </div>
+        {!templates && (
+          <div className="inline-flex flex-wrap gap-1">
+            {FILTERS.map((f) => (
+              <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => setStatus(f.key)}>
+                {f.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
+
 
       <div className="overflow-hidden rounded-xl border border-border/60">
         <table className="w-full text-sm">
