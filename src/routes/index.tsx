@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Zap, Shield, Award, ArrowRight, Gamepad2, Settings2, CalendarCheck, Package } from "lucide-react";
+import { Sparkles, Zap, Shield, Award, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import { CONTACT } from "@/lib/contacts";
 import type { CatalogType } from "@/lib/catalog.functions";
 import { HeroSection } from "@/components/HeroSection";
 import { DirectionCard } from "@/components/ui/DirectionCard";
+import { CatalogSectionTile, sectionIcon, useCatalogNav } from "@/components/catalog/CatalogNav";
 import { MediaCard } from "@/components/ui/MediaCard";
 import { FeaturedCard } from "@/components/FeaturedCard";
 
@@ -63,13 +64,6 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-const FEATURES = [
-  { icon: Gamepad2, title: "Интерактивные зоны", desc: "VR/AR, геймификация, фотозоны и иммерсивные активности", to: "/zones" as const },
-  { icon: Settings2, title: "Техническое оснащение мероприятий", desc: "Звук, свет, LED-экраны и сцена под ключ", to: "/equipment" as const },
-  { icon: CalendarCheck, title: "Организация мероприятий под ключ", desc: "Концепция, площадка, подрядчики, монтаж, координация — мы берём всё", to: "/services" as const },
-  { icon: Package, title: "Производство", desc: "Декорации, баннеры, арт-объекты, реквизит", to: "/production" as const },
-];
-
 const VALUES = [
   { icon: Zap, title: "Скорость", desc: "От заявки до сметы — 24 часа" },
   { icon: Shield, title: "Надёжность", desc: "Резервное оборудование на каждом проекте" },
@@ -79,6 +73,7 @@ const VALUES = [
 function HomePage() {
   const { data } = useSuspenseQuery(homeQueryOptions);
   const { featured, posts, cases } = data;
+  const sections = useCatalogNav();
   const [quick, setQuick] = useState<{ type: CatalogType; slug: string; basePath: string } | null>(null);
   const [orderTopic, setOrderTopic] = useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -101,9 +96,9 @@ function HomePage() {
       {/* DIRECTIONS */}
       <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 pb-16 md:pb-20">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f) => (
-            <DirectionCard key={f.title} icon={f.icon} title={f.title} description={f.desc} to={f.to} />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [grid-auto-rows:1fr]">
+          {sections.map((section, i) => (
+            <CatalogSectionTile key={section.key} section={section} index={i} />
           ))}
         </div>
       </Toggleable>
@@ -254,23 +249,23 @@ function HomePage() {
             Выберите направление и оформите заявку — мы соберём смету и свяжемся в течение 24 часов.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [grid-auto-rows:1fr]">
+          {sections.map((section) => (
             <DirectionCard
-              key={f.title}
-              icon={f.icon}
-              title={f.title}
-              description={f.desc}
+              key={section.key}
+              icon={sectionIcon(section.icon)}
+              title={section.title}
+              description={section.description}
               footer={
                 <div className="flex flex-col gap-2">
                   <Button
                     size="sm"
                     className="w-full bg-gradient-primary"
-                    onClick={() => setOrderTopic(f.title)}
+                    onClick={() => setOrderTopic(section.title)}
                   >
                     Заказать <ArrowRight className="ml-2 h-3 w-3" />
                   </Button>
-                  <Link to={f.to} className="text-xs text-muted-foreground hover:text-primary transition text-center">
+                  <Link to={section.basePath} className="text-xs text-muted-foreground hover:text-primary transition text-center">
                     Посмотреть каталог
                   </Link>
                 </div>
