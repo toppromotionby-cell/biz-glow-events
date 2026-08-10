@@ -63,7 +63,7 @@ export function autoFitScript(preset: DocPrintPreset = BASE_PRINT_PRESET, opts: 
   function apply(k){
     root.style.setProperty('--dk', String(k));
     root.style.setProperty('--fk', String(0.5 + k / 2));
-    if (ZOOM) sheet.style.zoom = String(k);
+    if (ZOOM) { var inner = sheet.firstElementChild; if (inner) inner.style.zoom = String(k); }
   }
   function fit(){
     var limit = P.maxPages;
