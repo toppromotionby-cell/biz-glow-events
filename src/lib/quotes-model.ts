@@ -9,7 +9,7 @@ import {
   type QuoteBlock,
   type QuoteTemplate,
 } from "@/lib/quote-blocks";
-import { computeVat, vatConfig, type VatMode } from "@/lib/documents/vat";
+import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 
 export * from "@/lib/quote-blocks";
 export * from "@/lib/documents/vat";
@@ -220,6 +220,9 @@ export type Quote = {
   prepayment_type: "none" | "percent" | "amount";
   prepayment_value: number;
   delivery_amount: number;
+  vat_mode: VatMode;
+  vat_rate: number;
+  vat_as_line: boolean;
   vat_note: string;
   total: number;
   order_id: string | null;
@@ -510,6 +513,9 @@ export const quotePatchSchema = z.object({
   prepayment_type: z.enum(["none", "percent", "amount"]).optional(),
   prepayment_value: z.number().min(0).max(10_000_000).optional(),
   delivery_amount: z.number().min(0).max(10_000_000).optional(),
+  vat_mode: z.enum(["none", "add", "included"]).optional(),
+  vat_rate: z.number().min(0).max(30).optional(),
+  vat_as_line: z.boolean().optional(),
   vat_note: z.string().max(300).optional(),
   order_id: z.string().uuid().nullable().optional(),
 });
@@ -529,6 +535,9 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     discount_value: num(row.discount_value),
     prepayment_value: num(row.prepayment_value),
     delivery_amount: num(row.delivery_amount),
+    vat_mode: normalizeVatMode(row.vat_mode),
+    vat_rate: num(row.vat_rate, DEFAULT_VAT_RATE) || DEFAULT_VAT_RATE,
+    vat_as_line: row.vat_as_line === true,
     total: num(row.total),
   };
 }
