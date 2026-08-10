@@ -6,8 +6,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ArrowLeft, Download, FileSpreadsheet, Save, Loader2, Info, Undo2, History, Send,
-  AlertTriangle, CheckCircle2, Eye, Percent,
+  AlertTriangle, CheckCircle2, Eye, Percent, Brain,
 } from "lucide-react";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,6 +98,9 @@ function EditorPage() {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [showCost, setShowCost] = useState(false);
   const [snippetDraft, setSnippetDraft] = useState<{ name: string; section: string; items: PromoItem[] } | null>(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const history = useRef<Snapshot[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -309,7 +313,11 @@ function EditorPage() {
                 <DropdownMenuItem
                   key={v.id}
                   onClick={async () => {
-                    if (!window.confirm("Восстановить эту версию? Текущие данные будут заменены.")) return;
+                    const ok = await confirm({
+                      title: "Восстановить эту версию?",
+                      description: "Текущие данные документа будут заменены содержимым версии.",
+                    });
+                    if (!ok) return;
                     await restoreVersion({ data: { versionId: v.id } });
                     await refetch();
                     toast.success("Версия восстановлена");
@@ -329,14 +337,18 @@ function EditorPage() {
                 <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={async () => {
-                  const name = window.prompt("Название шаблона", quote.project || "Шаблон промо-КП");
-                  if (!name) return;
-                  await saveTpl({ data: { id, name } });
-                  toast.success("Шаблон сохранён");
+                onClick={() => {
+                  setTemplateName(quote.project || "Шаблон промо-КП");
+                  setTemplateOpen(true);
                 }}
               >
                 Сохранить как шаблон
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin/documents/knowledge">
+                  <Brain className="mr-2 h-4 w-4" />База знаний подсказок
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -616,6 +628,32 @@ function EditorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Сохранение как шаблон */}
+      <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Сохранить как шаблон</DialogTitle></DialogHeader>
+          <Field label="Название шаблона">
+            <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} />
+          </Field>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTemplateOpen(false)}>Отмена</Button>
+            <Button
+              onClick={async () => {
+                const name = templateName.trim();
+                if (!name) return toast.error("Введите название");
+                await saveTpl({ data: { id, name } });
+                setTemplateOpen(false);
+                toast.success("Шаблон сохранён");
+              }}
+            >
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {confirmDialog}
     </TooltipProvider>
   );
 }

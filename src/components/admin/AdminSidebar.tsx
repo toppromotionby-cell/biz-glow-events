@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
   CalendarClock, Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
-  Wrench, Sparkles, Factory, FileSignature,
+  Wrench, Sparkles, Factory, FileSignature, FileStack,
   Megaphone, Brain,
 } from "lucide-react";
 import {
@@ -42,6 +42,7 @@ const GROUPS: NavGroup[] = [
   {
     label: "Документы",
     items: [
+      { to: "/admin/documents", label: "Все документы", icon: FileStack, exact: true },
       { to: "/admin/documents/quotes", label: "Коммерческие предложения", icon: FileSignature },
       { to: "/admin/documents/promo", label: "КП промо", icon: Megaphone },
       { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain },
