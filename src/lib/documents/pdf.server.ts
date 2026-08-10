@@ -97,6 +97,8 @@ const F_DOC_DATE = DOC_FONT_PT.docDate;
 const F_LABEL = DOC_FONT_PT.cardLabel;
 const F_FOOTER = DOC_FONT_PT.footer;
 
+type FittedLogo = { img: PDFImage; w: number; h: number };
+
 type DocCtx = {
   pdf: PDFDocument;
   regular: PDFFont;
@@ -106,7 +108,46 @@ type DocCtx = {
   page: PDFPage;
   y: number;
   pageNum: number;
+
+  /** Логотип компании в шапке (если загружен и доступен). */
+  logo?: FittedLogo | null;
+  /** Логотип клиента (промо-КП) — рисуется справа под шапкой. */
+  clientLogo?: FittedLogo | null;
 };
+
+// Габариты логотипа в шапке (pt). Пропорции сохраняются, картинка вписывается.
+const HEADER_LOGO_MAX_H = 34;
+const HEADER_LOGO_MAX_W = 150;
+const MAX_LOGO_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Загружает логотип по URL и встраивает в PDF, вписывая в бокс maxW×maxH.
+ * Ошибки сети/формата не ломают документ — логотип просто не рисуется.
+ */
+async function embedLogo(
+  pdf: PDFDocument,
+  url: string | null | undefined,
+  maxW = HEADER_LOGO_MAX_W,
+  maxH = HEADER_LOGO_MAX_H,
+): Promise<FittedLogo | null> {
+  const src = (url ?? "").trim();
+  if (!src || !/^https?:\/\//i.test(src)) return null;
+  try {
+    const res = await fetch(src, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (!bytes.byteLength || bytes.byteLength > MAX_LOGO_BYTES) return null;
+    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+    const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
+    if (!isPng && !isJpg) return null; // SVG/WebP нормализуются в PNG на клиенте
+    const img = isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+    const k = Math.min(maxW / img.width, maxH / img.height);
+    return { img, w: img.width * k, h: img.height * k };
+  } catch {
+    return null;
+  }
+}
+
 
 function money(n: number): string {
   // Intl.NumberFormat в воркере доступен; не используем символ валюты в
