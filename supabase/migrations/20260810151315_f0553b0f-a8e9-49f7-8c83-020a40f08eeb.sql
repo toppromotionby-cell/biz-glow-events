@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.set_finance_doc_number() FROM anon, authenticated, PUBLIC;
