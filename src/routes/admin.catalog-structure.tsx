@@ -144,7 +144,7 @@ function CatalogStructurePage() {
             const ok = await confirm({
               title: "Удалить направление?",
               description: `«${cat.name}» исчезнет из меню и фильтров. Позиции каталога останутся.`,
-              confirmLabel: "Удалить",
+              confirmText: "Удалить",
               destructive: true,
             });
             if (ok) removeCategory.mutate(cat.id);

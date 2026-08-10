@@ -51,6 +51,7 @@ const GROUPS: NavGroup[] = [
   {
     label: "Контент",
     items: [
+      { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Layers },
       { to: "/admin/catalog/zones", label: "Зоны", icon: Package },
       { to: "/admin/catalog/tech_equipment", label: "Оборудование", icon: Wrench },
       { to: "/admin/catalog/services", label: "Услуги", icon: Sparkles },
