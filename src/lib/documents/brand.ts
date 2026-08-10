@@ -57,14 +57,14 @@ export const DOC_FONT_PT: FontScale = Object.fromEntries(
 export const DOC_LAYOUT = {
   pageWidthPt: 595.28,
   pageHeightPt: 841.89,
-  marginXPt: 42,
-  marginTopPt: 48,
-  marginBottomPt: 48,
+  marginXPt: 34,
+  marginTopPt: 34,
+  marginBottomPt: 34,
   accentBarPt: 4,
   radiusPx: 10,
-  cardPaddingPt: 12,
-  qtyColumnPx: 78,
-  lineHeight: 1.35,
+  cardPaddingPt: 9,
+  qtyColumnPx: 70,
+  lineHeight: 1.3,
 } as const;
 
 /** #RRGGBB → компоненты 0..1 для pdf-lib. */
