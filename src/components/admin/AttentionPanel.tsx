@@ -26,18 +26,26 @@ export function AttentionPanel() {
     staleTime: 30_000,
     queryFn: async () => {
       const dayAgo = new Date(Date.now() - 86400_000).toISOString();
-      const [newOrders, inquiries, stale, unpaid, testimonials] = await Promise.all([
+      const threeDaysAgo = new Date(Date.now() - 3 * 86400_000).toISOString();
+      const today = new Date().toISOString().slice(0, 10);
+      const inWeek = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10);
+      const active = ["new", "in_progress", "confirmed"];
+      const [newOrders, stale, unpaid, unassigned, frozen, eventSoon, testimonials] = await Promise.all([
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new"),
-        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "consultation"),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new").lt("created_at", dayAgo),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
+        supabase.from("orders").select("id", { count: "exact", head: true }).is("manager_id", null).in("status", active),
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "in_progress").lt("updated_at", threeDaysAgo),
+        supabase.from("orders").select("id", { count: "exact", head: true }).in("status", active).gte("event_date", today).lte("event_date", inWeek),
         supabase.from("testimonials").select("id", { count: "exact", head: true }).eq("published", false),
       ]);
       return {
         newOrders: newOrders.count ?? 0,
-        inquiries: inquiries.count ?? 0,
         stale: stale.count ?? 0,
         unpaid: unpaid.count ?? 0,
+        unassigned: unassigned.count ?? 0,
+        frozen: frozen.count ?? 0,
+        eventSoon: eventSoon.count ?? 0,
         testimonials: testimonials.count ?? 0,
       };
     },
@@ -45,11 +53,14 @@ export function AttentionPanel() {
 
   const items: AttentionItem[] = ([
     { key: "stale", label: "Без ответа больше суток", count: data?.stale ?? 0, to: "/admin/orders", icon: Clock, tone: "danger" },
+    { key: "eventSoon", label: "Мероприятие в ближайшие 7 дней", count: data?.eventSoon ?? 0, to: "/admin/orders", icon: CalendarClock, tone: "danger" },
+    { key: "unassigned", label: "Без ответственного", count: data?.unassigned ?? 0, to: "/admin/orders", icon: UserX, tone: "warning" },
     { key: "new", label: "Новые заказы", count: data?.newOrders ?? 0, to: "/admin/orders", icon: Inbox, tone: "warning" },
-    { key: "inq", label: "Запросы на консультацию", count: data?.inquiries ?? 0, to: "/admin/orders", icon: AlertTriangle, tone: "warning" },
+    { key: "frozen", label: "В работе без движения 3+ дня", count: data?.frozen ?? 0, to: "/admin/orders", icon: AlertTriangle, tone: "warning" },
     { key: "unpaid", label: "Подтверждены, ждут оплату", count: data?.unpaid ?? 0, to: "/admin/orders", icon: AlertTriangle, tone: "info" },
     { key: "rev", label: "Отзывы на модерации", count: data?.testimonials ?? 0, to: "/admin/testimonials", icon: MessageSquareQuote, tone: "info" },
   ] as AttentionItem[]).filter((i) => i.count > 0);
+
 
 
   return (
