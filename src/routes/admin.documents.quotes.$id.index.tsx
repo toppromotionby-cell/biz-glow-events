@@ -680,7 +680,7 @@ function Page() {
                 <AccordionItem value="layout" className="border border-border/60 rounded-xl px-3">
                   <AccordionTrigger className="text-sm font-medium">Шаблон и блоки документа</AccordionTrigger>
                   <AccordionContent className="pb-4">
-                    <QuoteBlocksEditor template={quote.template} blocks={quote.blocks} onChange={(p) => patch(p)} />
+                    <QuoteBlocksEditor template={quote.template} blocks={quote.blocks} onChange={(p) => patch(p)} issues={blockIssues} />
                   </AccordionContent>
                 </AccordionItem>
 
