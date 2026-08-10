@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const ROLES = ["admin", "manager", "content_editor", "marketer"] as const;
+const ROLES = ["admin", "manager", "accountant", "content_editor"] as const;
 const RoleSchema = z.enum(ROLES);
 
 async function assertAdmin(userId: string): Promise<void> {

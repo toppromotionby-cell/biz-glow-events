@@ -1,3 +1,4 @@
+import { assertPermission } from "@/lib/authz";
 // Server functions для блока «Приглашения новым клиентам».
 // Заменили старый полноценный CRUD кампаний на простой сценарий:
 // staff (admin/manager) отправляет фирменное письмо-приглашение
@@ -35,15 +36,8 @@ function generateToken(): string {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function assertStaff(supabase: any, userId: string): Promise<void> {
-  const { data } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-  const ok = (data ?? []).some((r: { role: string }) =>
-    ["admin", "manager"].includes(r.role),
-  );
-  if (!ok) throw new Error("Доступ запрещён: требуется роль admin или manager");
+async function assertStaff(supabase: unknown, userId: string): Promise<void> {
+  await assertPermission({ supabase, userId } as never, "marketing.manage");
 }
 
 // ── Превью HTML ───────────────────────────────────────────────────

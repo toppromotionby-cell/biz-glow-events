@@ -1,4 +1,4 @@
-// Admin layout: проверка роли admin/manager/marketer/content_editor.
+// Admin layout: доступ по правам роли (admin/manager/accountant/content_editor).
 // Сайдбар сворачивается (cookie от SidebarProvider), на мобильных — off-canvas.
 import { createFileRoute, Outlet, useNavigate, useLocation, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
@@ -12,8 +12,8 @@ import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AdminCommandPalette, CommandPaletteTrigger } from "@/components/admin/AdminCommandPalette";
 import { DocumentViewerProvider } from "@/hooks/use-document-viewer";
+import { isStaffRoles, permissionForPath, firstAllowedAdminPath, permissionsForRoles } from "@/lib/permissions";
 
-const STAFF_ROLES = ["admin", "manager", "marketer", "content_editor"] as const;
 
 export const Route = createFileRoute("/admin")({
   // Сессия Supabase хранится в localStorage — на сервере её нет, поэтому
@@ -30,11 +30,15 @@ export const Route = createFileRoute("/admin")({
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
-    const isStaff = (roles ?? []).some((r) =>
-      (STAFF_ROLES as readonly string[]).includes(r.role as string),
-    );
-    if (!isStaff) {
+    const roleList = (roles ?? []).map((r) => r.role as string);
+    if (!isStaffRoles(roleList)) {
       throw redirect({ to: "/profile" });
+    }
+    // Раздел недоступен этой роли — уводим на первый доступный.
+    const need = permissionForPath(location.pathname);
+    const perms = permissionsForRoles(roleList);
+    if (need && !perms.has(need)) {
+      throw redirect({ to: firstAllowedAdminPath(perms) });
     }
   },
   head: () => ({ meta: [{ title: "Админ-панель — event-hub.by" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -66,7 +70,7 @@ const CRUMBS: { match: RegExp; label: string }[] = [
 
 function AdminLayout() {
   const { user, loading: authLoading } = useAuth();
-  const { loading, isStaff } = useRoles();
+  const { loading, isStaff, perms } = useRoles();
   const navigate = useNavigate();
   const loc = useLocation();
 
@@ -79,8 +83,15 @@ function AdminLayout() {
     if (!isStaff) {
       toast.error("Нет доступа к админ-панели");
       navigate({ to: "/profile" });
+      return;
     }
-  }, [authLoading, loading, isStaff, user, navigate]);
+    // Роль могли изменить прямо сейчас — проверяем доступ к текущему разделу.
+    const need = permissionForPath(loc.pathname);
+    if (need && !perms.has(need)) {
+      toast.error("Раздел недоступен для вашей роли");
+      navigate({ to: firstAllowedAdminPath(perms) });
+    }
+  }, [authLoading, loading, isStaff, user, navigate, loc.pathname, perms]);
 
   const crumb = useMemo(
     () => CRUMBS.find((c) => c.match.test(loc.pathname))?.label ?? "Админ-панель",

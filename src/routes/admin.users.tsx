@@ -15,18 +15,13 @@ import { toast } from "sonner";
 import { Loader2, Plus, X, Search, UserCog, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/AdminTable";
+import { ROLE_LABEL, ROLE_DESCRIPTION } from "@/lib/permissions";
 
-const ROLE_LABEL: Record<string, string> = {
-  admin: "Администратор",
-  manager: "Менеджер",
-  content_editor: "Редактор",
-  marketer: "Маркетолог",
-};
 const ROLE_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   admin: "default",
   manager: "secondary",
+  accountant: "secondary",
   content_editor: "outline",
-  marketer: "outline",
 };
 
 const COLS = [
@@ -109,6 +104,22 @@ function UsersAdminPage() {
           className="pl-9"
         />
       </div>
+
+      <div className="glass rounded-xl p-4">
+        <div className="text-sm font-medium mb-2">Что открывает каждая роль</div>
+        <ul className="space-y-1.5 text-xs text-muted-foreground">
+          {ALL_ROLES.map((r) => (
+            <li key={r}>
+              <Badge variant={ROLE_VARIANT[r] ?? "outline"} className="mr-2">{ROLE_LABEL[r] ?? r}</Badge>
+              {ROLE_DESCRIPTION[r]}
+            </li>
+          ))}
+        </ul>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          Изменение роли применяется сразу — пользователю не нужно перезаходить.
+        </p>
+      </div>
+
 
       {error && (
         <div className="glass rounded-xl p-4 text-sm text-destructive">{(error as Error).message}</div>

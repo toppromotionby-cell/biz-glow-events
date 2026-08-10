@@ -1,3 +1,4 @@
+import { assertPermission } from "@/lib/authz";
 // submitOrder: создаёт заявку с позициями. Возвращает id заявки.
 // SECURITY:
 //  - цены позиций перепроверяются из каталога (pricing.from) — клиентские игнорируются;
@@ -837,10 +838,7 @@ async function sendOrderConfirmationEmailAndLog(
 }
 
 async function assertAdminOrManager(supabase: SupabaseClient<Database>, userId: string) {
-  const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (isAdmin) return;
-  const { data: isManager } = await supabase.rpc("has_role", { _user_id: userId, _role: "manager" });
-  if (!isManager) throw new Error("Доступ запрещён");
+  await assertPermission({ supabase, userId } as never, "orders.manage");
 }
 
 export const confirmOrderAdmin = createServerFn({ method: "POST" })

@@ -1,3 +1,4 @@
+import { assertPermission } from "@/lib/authz";
 // Server functions for admin email-template editor.
 // All functions are admin/manager-gated via has_role().
 import { createServerFn } from '@tanstack/react-start'
@@ -30,16 +31,8 @@ export interface TemplateInfo {
   } | null
 }
 
-async function assertStaff(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-  if (error) throw new Error('Не удалось проверить роль')
-  const roles = (data ?? []).map((r: { role: string }) => r.role)
-  if (!roles.includes('admin') && !roles.includes('manager')) {
-    throw new Error('Доступ запрещён')
-  }
+async function assertStaff(supabase: unknown, userId: string) {
+  await assertPermission({ supabase, userId } as never, "system.manage")
 }
 
 function defaultsFor(key: string): { displayName: string; defaultSubject: string; variables: Record<string, string>; category: TemplateCategory } {

@@ -1,3 +1,4 @@
+import { assertPermission } from "@/lib/authz";
 // Server functions для публичных настроек сайта (соц. ссылки).
 // Чтение — публично (TanStack-серверный publishable клиент).
 // Запись — только admin/manager.
@@ -46,10 +47,8 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(async (
   };
 });
 
-async function assertStaff(supabase: any, userId: string): Promise<void> {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const ok = (data ?? []).some((r: { role: string }) => ["admin", "manager"].includes(r.role));
-  if (!ok) throw new Error("Доступ запрещён: требуется роль admin или manager");
+async function assertStaff(supabase: unknown, userId: string): Promise<void> {
+  await assertPermission({ supabase, userId } as never, "system.manage");
 }
 
 export const updateSiteSettings = createServerFn({ method: "POST" })

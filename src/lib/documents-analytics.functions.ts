@@ -1,16 +1,10 @@
+import { assertPermission } from "@/lib/authz";
 // Этап 4 плана «Документы»: мини-аналитика и напоминания по документам.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertStaff(context: {
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> };
-  userId: string;
-}) {
-  const [{ data: isAdmin }, { data: isManager }] = await Promise.all([
-    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
-    context.supabase.rpc("has_role", { _user_id: context.userId, _role: "manager" }),
-  ]);
-  if (!isAdmin && !isManager) throw new Error("Forbidden");
+async function assertStaff(context: { supabase: unknown; userId: string }) {
+  await assertPermission(context as never, "documents.manage");
 }
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
