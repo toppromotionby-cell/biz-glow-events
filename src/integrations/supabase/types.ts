@@ -381,30 +381,42 @@ export type Database = {
       }
       catalog_sections: {
         Row: {
+          auto_hidden: boolean
+          category_ids: string[]
           created_at: string
           description: string
           icon: string
           key: string
+          kind: string
+          slug: string | null
           sort_order: number
           title: string
           updated_at: string
           visible: boolean
         }
         Insert: {
+          auto_hidden?: boolean
+          category_ids?: string[]
           created_at?: string
           description?: string
           icon?: string
           key: string
+          kind?: string
+          slug?: string | null
           sort_order?: number
           title: string
           updated_at?: string
           visible?: boolean
         }
         Update: {
+          auto_hidden?: boolean
+          category_ids?: string[]
           created_at?: string
           description?: string
           icon?: string
           key?: string
+          kind?: string
+          slug?: string | null
           sort_order?: number
           title?: string
           updated_at?: string
