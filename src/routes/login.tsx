@@ -93,7 +93,7 @@ function LoginPage() {
           </Button>
         </form>
         <p className="text-sm text-center mt-6 text-muted-foreground">
-          Нет аккаунта? <Link to="/register" className="text-accent">Зарегистрироваться</Link>
+          Личный кабинет создаётся автоматически после первого заказа — доступ придёт на вашу почту.
         </p>
       </div>
     </div>
