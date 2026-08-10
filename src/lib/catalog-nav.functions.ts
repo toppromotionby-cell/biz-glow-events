@@ -116,7 +116,7 @@ export const getCatalogNavigation = createServerFn({ method: "GET" }).handler(as
     const c = countMap.get(key);
     return {
       key,
-      kind: "native",
+      kind: "native" as const,
       slug: null,
       title: s.title,
       description: s.description ?? "",
@@ -149,7 +149,7 @@ export const getCatalogNavigation = createServerFn({ method: "GET" }).handler(as
       .filter((c) => c.count > 0);
     return {
       key: s.key,
-      kind: "virtual",
+      kind: "virtual" as const,
       slug: s.slug,
       title: s.title,
       description: s.description ?? "",
