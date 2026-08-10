@@ -7,7 +7,7 @@ import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
 
-import type { Quote, QuoteItem } from "@/lib/quotes-model";
+import type { Quote, QuoteItem, QuoteCheck, QuoteCheckScope } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
 import { vatRateLabel } from "@/lib/documents/vat";
 import {
