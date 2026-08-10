@@ -461,7 +461,7 @@ function drawHeader(
   const logo = ctx.logo ?? null;
   const layout = ctx.logoLayout ?? DEFAULT_LOGO_LAYOUT;
   const place = logo ? computeLogoPlacement(layout, logo.aspect) : null;
-  let leftX: number = MARGIN_X;
+  const leftX: number = MARGIN_X;
   if (logo && place) {
     ctx.page.drawImage(logo.img, {
       x: place.x,
@@ -469,7 +469,6 @@ function drawHeader(
       width: place.w,
       height: place.h,
     });
-    leftX = place.textX;
   }
 
   // Тип/номер/дата справа — считаем первыми, чтобы знать ширину левой колонки
@@ -485,20 +484,41 @@ function drawHeader(
   const validText = extra.validUntil ? `действительно до ${extra.validUntil}` : "";
   const validW = validText ? ctx.regular.widthOfTextAtSize(validText, F_DOC_DATE) : 0;
   const rightBlockW = Math.max(kindW, numW, dateW, validW);
-  const leftMaxW = Math.max(120, rightX - rightBlockW - 20 - leftX);
+  const rightBlockH = validText ? 60 : 46;
 
-  // Бренд слева — дисплейным шрифтом, как в HTML-превью
+  // Текстовый блок (бренд + реквизиты) — всегда под логотипом, выравнивание как у логотипа.
+  const textAlign = place ? place.textAlign : "left";
+  const textTop = place ? place.textTop : 0;
+  // Пока текст идёт вровень с правой колонкой — ограничиваем ширину, ниже неё занимаем всю строку.
+  const textMaxW =
+    textTop < rightBlockH
+      ? Math.max(120, rightX - rightBlockW - 20 - leftX)
+      : rightX - leftX;
+  const alignedX = (lineW: number) =>
+    textAlign === "center"
+      ? leftX + (textMaxW - lineW) / 2
+      : textAlign === "right"
+        ? leftX + textMaxW - lineW
+        : leftX;
+
+  // Бренд — дисплейным шрифтом, как в HTML-превью.
   // Логотип заменяет текстовое название бренда: пишем бренд только когда логотипа нет.
   const brand = safe(settings.company_brand);
   const showBrand = !logo;
+  let textY = PAGE_H - MARGIN_TOP - textTop;
   if (showBrand) {
+    const bFont = displayFont(ctx, brand);
+    textY -= F22 * 0.8;
     ctx.page.drawText(brand, {
-      x: leftX,
-      y: PAGE_H - MARGIN_TOP - F22 * 0.8,
+      x: alignedX(bFont.widthOfTextAtSize(brand, F22)),
+      y: textY,
       size: F22,
-      font: displayFont(ctx, brand),
+      font: bFont,
       color: TEXT,
     });
+    textY -= 14;
+  } else {
+    textY -= DOC_FONT_PT.small;
   }
 
   // Юрлицо + УНП и адрес — двумя строками, с переносом по ширине колонки
@@ -506,14 +526,21 @@ function drawHeader(
     safe(settings.company_unp) ? ` · УНП ${safe(settings.company_unp)}` : ""
   }`;
   const subLines = [
-    ...wrapText(ctx.regular, legalLine, DOC_FONT_PT.small, leftMaxW),
-    ...wrapText(ctx.regular, safe(settings.company_address), DOC_FONT_PT.small, leftMaxW),
+    ...wrapText(ctx.regular, legalLine, DOC_FONT_PT.small, textMaxW),
+    ...wrapText(ctx.regular, safe(settings.company_address), DOC_FONT_PT.small, textMaxW),
   ].filter((l) => l.trim() !== "");
-  let subY = PAGE_H - MARGIN_TOP - (showBrand ? F22 * 0.8 + 14 : Math.max(14, (place?.reserve ?? 0) + 2));
+  let subY = textY;
   for (const line of subLines) {
-    ctx.page.drawText(line, { x: leftX, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED });
+    ctx.page.drawText(line, {
+      x: alignedX(ctx.regular.widthOfTextAtSize(line, DOC_FONT_PT.small)),
+      y: subY,
+      size: DOC_FONT_PT.small,
+      font: ctx.regular,
+      color: MUTED,
+    });
     subY -= DOC_FONT_PT.small * LH_TEXT;
   }
+
 
   drawTracked(ctx.page, kindUpper, {
     x: rightX - kindW,
