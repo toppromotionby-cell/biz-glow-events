@@ -385,7 +385,9 @@ export function buildQuoteHtmlDoc(
         return `<div class="cover ${template === "premium" ? "cover-dark" : ""}">
           <h1>${esc(applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers))}</h1>
           ${text ? `<p>${esc(text)}</p>` : ""}
-        </div>`;
+        </div>
+        ${chkList(scopeChecks("doc"))}`;
+
       case "client":
         return `${heading(b)}<div class="card">
           <div class="label">Заказчик</div>
