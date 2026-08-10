@@ -65,7 +65,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
     toast.success(`${LABEL[type]} добавлено в корзину`);
   });
   return (
-    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex flex-col">
+    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex h-full flex-col">
       <Link to={CATALOG_SLUG_ROUTE[type]} params={{ slug: item.slug }} className="block">
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (

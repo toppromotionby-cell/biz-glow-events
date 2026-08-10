@@ -53,7 +53,7 @@ export function RelatedItems({ type, currentId, category }: {
 function Card({ item, onOpen }: { item: CatalogRow; onOpen: () => void }) {
   const from = priceFrom(item.pricing);
   return (
-    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group">
+    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex h-full flex-col">
       <button type="button" onClick={onOpen} className="block w-full text-left" aria-label={`Открыть ${item.title}`}>
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (
