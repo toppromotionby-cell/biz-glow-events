@@ -355,67 +355,81 @@ function SectionCard({
           Сохранить раздел
         </Button>
 
-        {isVirtual ? (
-          <div className="border-t border-border/50 pt-4 space-y-2">
-            <div className="text-sm font-medium">Что входит в раздел</div>
-            <div className="max-h-64 overflow-y-auto rounded-md border border-border/50 p-2 space-y-1">
-              {allCategories.map((c) => (
-                <label key={c.id} className="flex items-center gap-2 text-sm py-1">
-                  <Checkbox
-                    checked={section.category_ids.includes(c.id)}
-                    onCheckedChange={(v) =>
-                      onSaveSection({
-                        categoryIds: v
-                          ? [...section.category_ids, c.id]
-                          : section.category_ids.filter((x) => x !== c.id),
-                      })
-                    }
-                  />
-                  <span className="flex-1">{c.name}</span>
-                  <span className="text-xs text-muted-foreground">{c.count}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="border-t border-border/50 pt-4 space-y-2">
-            <div className="text-sm font-medium">Направления</div>
-            {categories.length === 0 && (
-              <p className="text-sm text-muted-foreground">Пока нет направлений.</p>
-            )}
-            {categories.map((cat, i) => (
-              <CategoryRowEditor
-                key={cat.id}
-                cat={cat}
-                onSave={(patch) => onSaveCategory(cat.id, patch)}
-                onRemove={() => onRemoveCategory(cat)}
-                onUp={i > 0 ? () => move(i, -1) : undefined}
-                onDown={i < categories.length - 1 ? () => move(i, 1) : undefined}
-              />
-            ))}
+        <Collapsible open={listOpen} onOpenChange={toggleList} className="border-t border-border/50 pt-4">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-md px-1 py-1.5 text-sm font-medium transition-colors hover:bg-muted/50"
+            >
+              <ChevronDown className={`h-4 w-4 transition-transform ${listOpen ? "" : "-rotate-90"}`} />
+              {isVirtual ? "Что входит в раздел" : "Направления"}
+              <span className="text-xs font-normal text-muted-foreground">
+                · {isVirtual ? section.category_ids.length : categories.length}
+              </span>
+            </button>
+          </CollapsibleTrigger>
 
-            <div className="flex gap-2 pt-2">
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Новое направление"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newName.trim()) {
-                    onAddCategory(newName.trim());
-                    setNewName("");
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                onClick={() => { if (newName.trim()) { onAddCategory(newName.trim()); setNewName(""); } }}
-                disabled={!newName.trim()}
-              >
-                <Plus className="h-4 w-4 mr-1" />Добавить
-              </Button>
-            </div>
-          </div>
-        )}
+          <CollapsibleContent className="space-y-2 pt-2">
+            {isVirtual ? (
+              <div className="max-h-64 overflow-y-auto rounded-md border border-border/50 p-2 space-y-1">
+                {allCategories.map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 text-sm py-1">
+                    <Checkbox
+                      checked={section.category_ids.includes(c.id)}
+                      onCheckedChange={(v) =>
+                        onSaveSection({
+                          categoryIds: v
+                            ? [...section.category_ids, c.id]
+                            : section.category_ids.filter((x) => x !== c.id),
+                        })
+                      }
+                    />
+                    <span className="flex-1">{c.name}</span>
+                    <span className="text-xs text-muted-foreground">{c.count}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <>
+                {categories.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Пока нет направлений.</p>
+                )}
+                {categories.map((cat, i) => (
+                  <CategoryRowEditor
+                    key={cat.id}
+                    cat={cat}
+                    onSave={(patch) => onSaveCategory(cat.id, patch)}
+                    onRemove={() => onRemoveCategory(cat)}
+                    onUp={i > 0 ? () => move(i, -1) : undefined}
+                    onDown={i < categories.length - 1 ? () => move(i, 1) : undefined}
+                  />
+                ))}
+
+                <div className="flex gap-2 pt-2">
+                  <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Новое направление"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newName.trim()) {
+                        onAddCategory(newName.trim());
+                        setNewName("");
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => { if (newName.trim()) { onAddCategory(newName.trim()); setNewName(""); } }}
+                    disabled={!newName.trim()}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />Добавить
+                  </Button>
+                </div>
+              </>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
       </CardContent>
     </Card>
   );
