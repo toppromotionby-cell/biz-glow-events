@@ -292,12 +292,29 @@ export function BlockEditDialog({
           )}
 
           {target === "footer" && (
-            <Field label="Текст подвала">
+            <Field
+              label="Текст подвала"
+              hint={
+                (draft.texts?.footer ?? "") === settings.quote_footer && !quote.texts.footer
+                  ? "Значение по умолчанию из настроек документов. После сохранения текст закрепится за этим КП."
+                  : "Поддерживаются плейсхолдеры вида {{client_name}}"
+              }
+            >
               <Textarea
                 rows={3}
                 value={draft.texts?.footer ?? ""}
                 onChange={(e) => set({ texts: { ...(draft.texts ?? quote.texts), footer: e.target.value } })}
               />
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => set({ texts: { ...(draft.texts ?? quote.texts), footer: "" } })}
+                >
+                  Сбросить к настройкам
+                </Button>
+              </div>
             </Field>
           )}
 
