@@ -1,6 +1,6 @@
 // Справочник компаний (несколько юрлиц) для документов: карточки-компании,
 // редактирование реквизитов, логотипа, подписи, печати и НДС.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Building2, Plus, Trash2, Star, StarOff, Loader2 } from "lucide-react";
@@ -38,29 +38,59 @@ export function CompanyProfilesManager() {
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState<CompanyProfileInput | null>(null);
+  // "new" — открыт черновик новой компании: авто-выбор существующей его не затирает.
+  const [mode, setMode] = useState<"view" | "new">("view");
+  const initialized = useRef(false);
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!companies?.length) return;
-    if (activeId && companies.some((c) => c.id === activeId)) return;
-    const first = companies.find((c) => c.is_default) ?? companies[0];
-    setActiveId(first.id);
-    setDraft({ ...first });
-  }, [companies, activeId]);
+    if (!companies) return;
+    // Авто-выбор только при первой загрузке списка.
+    if (!initialized.current) {
+      initialized.current = true;
+      if (companies.length) {
+        const first = companies.find((c) => c.is_default) ?? companies[0];
+        setActiveId(first.id);
+        setDraft({ ...first });
+      }
+      return;
+    }
+    // Выбранная компания исчезла (удалили) — сбрасываем, но не мешаем созданию новой.
+    if (mode === "view" && activeId && !companies.some((c) => c.id === activeId)) {
+      setActiveId(null);
+      setDraft(null);
+    }
+  }, [companies, activeId, mode]);
 
   const pick = (c: CompanyProfile) => {
+    setMode("view");
     setActiveId(c.id);
     setDraft({ ...c });
   };
 
   const addNew = () => {
+    setMode("new");
     setActiveId(null);
-    setDraft({ ...emptyCompanyProfile(), name: "Новая компания" });
+    setDraft({
+      ...emptyCompanyProfile(),
+      name: "Новая компания",
+      is_default: !companies?.length,
+    });
+    setTimeout(() => nameRef.current?.focus(), 0);
+  };
+
+  const cancelNew = () => {
+    setMode("view");
+    const first = companies?.find((c) => c.is_default) ?? companies?.[0] ?? null;
+    setActiveId(first?.id ?? null);
+    setDraft(first ? { ...first } : null);
   };
 
   const save = useMutation({
     mutationFn: async (input: CompanyProfileInput) => saveFn({ data: input }),
     onSuccess: (row) => {
       notify.success("Компания сохранена");
+      setMode("view");
       setActiveId(row.id);
       setDraft({ ...row });
       qc.invalidateQueries({ queryKey: ["company-profiles"] });
@@ -72,6 +102,7 @@ export function CompanyProfilesManager() {
     mutationFn: async (id: string) => delFn({ data: { id } }),
     onSuccess: () => {
       notify.success("Компания удалена");
+      setMode("view");
       setActiveId(null);
       setDraft(null);
       qc.invalidateQueries({ queryKey: ["company-profiles"] });
@@ -79,8 +110,11 @@ export function CompanyProfilesManager() {
     onError: (e: Error) => notify.error(e.message || "Не удалось удалить компанию"),
   });
 
+  const saveError = save.error instanceof Error ? save.error.message : null;
+
   const set = <K extends keyof CompanyProfileInput>(key: K, value: CompanyProfileInput[K]) =>
     setDraft((d) => (d ? { ...d, [key]: value } : d));
+
 
   if (isLoading) {
     return (
