@@ -356,6 +356,36 @@ function drawParagraph(
   }
 }
 
+/**
+ * Финальное примечание (условия/срок действия). В отличие от drawParagraph
+ * не переносится на новую страницу из-за пары строк: сначала пробуем ужать
+ * кегль и занять нижнее поле до линии футера.
+ */
+function drawTrailingNote(
+  ctx: DocCtx,
+  text: string,
+  opts: { size?: number; color?: ReturnType<typeof rgb> } = {},
+) {
+  const clean = safe(text).trim();
+  if (!clean) return;
+  const base = opts.size ?? 9.5;
+  const color = opts.color ?? MUTED;
+  const maxW = PAGE_W - MARGIN_X * 2;
+  const floor = MARGIN_BOTTOM - 6; // чуть выше линии футера
+  for (const size of [base, base - 0.5, base - 1, base - 1.5]) {
+    if (size < 7.5) break;
+    const lines = wrapText(ctx.regular, clean, size, maxW);
+    const h = lines.length * size * 1.35;
+    if (ctx.y - h < floor) continue;
+    for (const line of lines) {
+      ctx.page.drawText(line, { x: MARGIN_X, y: ctx.y - size, size, font: ctx.regular, color });
+      ctx.y -= size * 1.35;
+    }
+    return;
+  }
+  drawParagraph(ctx, clean, { size: base, color });
+}
+
 function divider(ctx: DocCtx, color = LINE) {
   ensureSpace(ctx, 8);
   ctx.y -= 4;
