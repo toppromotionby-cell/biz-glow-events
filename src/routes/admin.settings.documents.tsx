@@ -14,12 +14,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { notify } from "@/lib/notify";
-import { BRAND_ACCENTS } from "@/lib/documents/brand";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
 import { CompanyProfilesManager } from "@/components/admin/documents/CompanyProfilesManager";
 import { QUOTE_TEMPLATES, QUOTE_TEMPLATE_LABELS, type QuoteTemplate } from "@/lib/quote-blocks";
@@ -119,8 +117,8 @@ function DocumentSettingsPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Настройки документов"
-        subtitle="Реквизиты, банк, подписант и шаблоны для КП, счёта и договора. Сохраняются автоматически."
+        title="Компании"
+        subtitle="Юрлица с реквизитами, банком, подписантом и логотипом, а также шаблоны КП, счёта, договора и акта. Сохраняются автоматически."
         icon={<FileCog className="h-6 w-6" />}
         action={
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -133,9 +131,6 @@ function DocumentSettingsPage() {
       <Tabs defaultValue="companies" className="space-y-4">
         <TabsList className="bg-card/60 border border-border/50 flex flex-wrap h-auto">
           <TabsTrigger value="companies">Компании</TabsTrigger>
-          <TabsTrigger value="company">Общие реквизиты</TabsTrigger>
-          <TabsTrigger value="bank">Банк</TabsTrigger>
-          <TabsTrigger value="signer">Подписант</TabsTrigger>
           <TabsTrigger value="quote">КП</TabsTrigger>
           <TabsTrigger value="invoice">Счёт</TabsTrigger>
           <TabsTrigger value="contract">Договор</TabsTrigger>
@@ -147,66 +142,15 @@ function DocumentSettingsPage() {
             <div className="mb-4">
               <h2 className="text-sm font-medium">Компании</h2>
               <p className="text-xs text-muted-foreground">
-                Добавьте все свои юрлица: реквизиты, логотип, подпись, печать и НДС. В любом документе
-                достаточно выбрать компанию — остальное подставится автоматически.
+                Добавьте все свои юрлица: реквизиты, банк, подписанта, логотип, подпись, печать и НДС.
+                В любом документе достаточно выбрать компанию — остальное подставится автоматически.
+                Реквизиты основной компании используются, когда компания в документе не выбрана.
               </p>
             </div>
             <CompanyProfilesManager />
           </div>
         </TabsContent>
 
-        <TabsContent value="company">
-          <Card title="Общие реквизиты (запасной вариант)" preview="quote" onPreview={openPreview}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Юр. название" value={form.company_legal_name} onChange={(v) => update("company_legal_name", v)} />
-              <Field label="Бренд (для шапки)" value={form.company_brand} onChange={(v) => update("company_brand", v)} />
-              <Field label="УНП" value={form.company_unp} onChange={(v) => update("company_unp", v)} />
-              <Field label="Юридический адрес" value={form.company_address} onChange={(v) => update("company_address", v)} />
-              <Field label="Телефон" value={form.company_phone} onChange={(v) => update("company_phone", v)} />
-              <Field label="E-mail" type="email" value={form.company_email} onChange={(v) => update("company_email", v)} />
-              <Field label="Сайт" value={form.company_website} onChange={(v) => update("company_website", v)} />
-              <LogoHeaderDesigner
-                logoUrl={form.logo_url ?? null}
-                onLogoChange={(v) => update("logo_url", v)}
-                layout={form.logo_layout}
-                onLayoutChange={(l) => update("logo_layout", l)}
-                brand={form.company_brand}
-                legalLine={`${form.company_legal_name} · ${form.company_address}`}
-                accent={form.accent_color}
-              />
-              <Field label="Акцентный цвет" value={form.accent_color} onChange={(v) => update("accent_color", v)} placeholder="#FF7500">
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <div className="h-10 w-10 rounded-md border border-border/60" style={{ background: form.accent_color }} aria-hidden />
-                  {BRAND_ACCENTS.map((c) => (
-                    <button key={c.hex} type="button" title={`${c.label} ${c.hex}`} onClick={() => update("accent_color", c.hex)}
-                      className="h-6 w-6 rounded-full border border-border/60 transition hover:scale-110" style={{ background: c.hex }} />
-                  ))}
-                </div>
-              </Field>
-
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="bank">
-          <Card title="Банковские реквизиты" preview="invoice" onPreview={openPreview}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Наименование банка" value={form.bank_name} onChange={(v) => update("bank_name", v)} />
-              <Field label="БИК" value={form.bank_bic} onChange={(v) => update("bank_bic", v)} />
-              <Field label="Расчётный счёт (IBAN)" value={form.bank_account} onChange={(v) => update("bank_account", v)} className="md:col-span-2" />
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="signer">
-          <Card title="Подписант" preview="contract" onPreview={openPreview}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field label="ФИО" value={form.signer_name} onChange={(v) => update("signer_name", v)} />
-              <Field label="Должность" value={form.signer_title} onChange={(v) => update("signer_title", v)} />
-              <Field label="Действует на основании" value={form.signer_basis} onChange={(v) => update("signer_basis", v)} placeholder="Устава / Доверенности №…" />
-            </div>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="quote">
           <Card title="Коммерческое предложение" preview="quote" onPreview={openPreview}>

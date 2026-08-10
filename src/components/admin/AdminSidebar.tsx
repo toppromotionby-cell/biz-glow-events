@@ -46,7 +46,7 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/documents", label: "Все документы", icon: FileStack, exact: true, perm: "documents.manage" },
 
       { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain, perm: "documents.knowledge" },
-      { to: "/admin/settings/documents", label: "Реквизиты и шаблоны", icon: FileCog, perm: "documents.settings" },
+      { to: "/admin/settings/documents", label: "Компании", icon: FileCog, perm: "documents.settings" },
     ],
   },
   {
