@@ -35,7 +35,6 @@ import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactsRouteImport } from './routes/contacts'
-import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CasesRouteImport } from './routes/cases'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CalculatorRouteImport } from './routes/calculator'
@@ -234,11 +233,6 @@ const CookiesRoute = CookiesRouteImport.update({
 const ContactsRoute = ContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompareRoute = CompareRouteImport.update({
-  id: '/compare',
-  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CasesRoute = CasesRouteImport.update({
@@ -607,7 +601,6 @@ export interface FileRoutesByFullPath {
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
-  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
@@ -704,7 +697,6 @@ export interface FileRoutesByTo {
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
-  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
@@ -802,7 +794,6 @@ export interface FileRoutesById {
   '/calculator': typeof CalculatorRoute
   '/cart': typeof CartRoute
   '/cases': typeof CasesRouteWithChildren
-  '/compare': typeof CompareRoute
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
@@ -902,7 +893,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/cart'
     | '/cases'
-    | '/compare'
     | '/contacts'
     | '/cookies'
     | '/delivery'
@@ -999,7 +989,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/cart'
     | '/cases'
-    | '/compare'
     | '/contacts'
     | '/cookies'
     | '/delivery'
@@ -1096,7 +1085,6 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/cart'
     | '/cases'
-    | '/compare'
     | '/contacts'
     | '/cookies'
     | '/delivery'
@@ -1195,7 +1183,6 @@ export interface RootRouteChildren {
   CalculatorRoute: typeof CalculatorRoute
   CartRoute: typeof CartRoute
   CasesRoute: typeof CasesRouteWithChildren
-  CompareRoute: typeof CompareRoute
   ContactsRoute: typeof ContactsRoute
   CookiesRoute: typeof CookiesRoute
   DeliveryRoute: typeof DeliveryRoute
@@ -1425,13 +1412,6 @@ declare module '@tanstack/react-router' {
       path: '/contacts'
       fullPath: '/contacts'
       preLoaderRoute: typeof ContactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compare': {
-      id: '/compare'
-      path: '/compare'
-      fullPath: '/compare'
-      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cases': {
@@ -2115,7 +2095,6 @@ const rootRouteChildren: RootRouteChildren = {
   CalculatorRoute: CalculatorRoute,
   CartRoute: CartRoute,
   CasesRoute: CasesRouteWithChildren,
-  CompareRoute: CompareRoute,
   ContactsRoute: ContactsRoute,
   CookiesRoute: CookiesRoute,
   DeliveryRoute: DeliveryRoute,
@@ -2165,13 +2144,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

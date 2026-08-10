@@ -1,6 +1,6 @@
 // Модальное окно «Подробнее» для позиции каталога.
 // Содержит ключевые данные: медиа (фото + видео), цены, занятость, требования,
-// состав и доп. опции, а также инлайн-запрос КП без переходов на другие страницы.
+// состав и доп. опции, а также инлайн-заявку без переходов на другие страницы.
 import { useEffect, useMemo, useState } from "react";
 import { SearchX, ShoppingCart, FileText, Play, Maximize2, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -168,7 +168,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
     videos.length > 0 ? `${videos.length} видео` : "",
   ].filter(Boolean);
 
-  // Данные позиции для формы КП — чтобы клиент не вводил их повторно.
+  // Данные позиции для формы заявки — чтобы клиент не вводил их повторно.
   const quoteDetails = [
     { label: "Позиция", value: item.title },
     item.category ? { label: "Категория", value: item.category } : null,
@@ -402,7 +402,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                       : "border border-primary/40 text-foreground hover:bg-primary/10"
                   }`}
                 >
-                  <FileText className="h-4 w-4" /> Запросить КП
+                  <FileText className="h-4 w-4" /> Оставить заявку
                 </button>
                 <CompareButton
                   variant="full"
@@ -523,7 +523,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                 : "border border-primary/40 text-foreground hover:bg-primary/10"
             }`}
           >
-            <FileText className="h-4 w-4" /> КП
+            <FileText className="h-4 w-4" /> Заявка
           </button>
         </div>
       </div>
