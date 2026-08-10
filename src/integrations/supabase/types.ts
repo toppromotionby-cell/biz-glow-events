@@ -526,7 +526,10 @@ export type Database = {
           singleton: boolean
           updated_at: string
           updated_by: string | null
+          vat_as_line: boolean
+          vat_mode: string
           vat_note: string
+          vat_rate: number
         }
         Insert: {
           accent_color?: string
@@ -560,7 +563,10 @@ export type Database = {
           singleton?: boolean
           updated_at?: string
           updated_by?: string | null
+          vat_as_line?: boolean
+          vat_mode?: string
           vat_note?: string
+          vat_rate?: number
         }
         Update: {
           accent_color?: string
@@ -594,7 +600,10 @@ export type Database = {
           singleton?: boolean
           updated_at?: string
           updated_by?: string | null
+          vat_as_line?: boolean
+          vat_mode?: string
           vat_note?: string
+          vat_rate?: number
         }
         Relationships: []
       }
@@ -1741,7 +1750,9 @@ export type Database = {
           total: number
           updated_at: string
           valid_until: string | null
+          vat_as_line: boolean
           vat_enabled: boolean
+          vat_mode: string
           vat_rate: number
           venue: string
           viewed_at: string | null
@@ -1787,7 +1798,9 @@ export type Database = {
           total?: number
           updated_at?: string
           valid_until?: string | null
+          vat_as_line?: boolean
           vat_enabled?: boolean
+          vat_mode?: string
           vat_rate?: number
           venue?: string
           viewed_at?: string | null
@@ -1833,7 +1846,9 @@ export type Database = {
           total?: number
           updated_at?: string
           valid_until?: string | null
+          vat_as_line?: boolean
           vat_enabled?: boolean
+          vat_mode?: string
           vat_rate?: number
           venue?: string
           viewed_at?: string | null
@@ -2026,7 +2041,10 @@ export type Database = {
           updated_at: string
           valid_until_override: string | null
           validity_days: number
+          vat_as_line: boolean
+          vat_mode: string
           vat_note: string
+          vat_rate: number
           venue: string
           viewed_at: string | null
         }
@@ -2076,7 +2094,10 @@ export type Database = {
           updated_at?: string
           valid_until_override?: string | null
           validity_days?: number
+          vat_as_line?: boolean
+          vat_mode?: string
           vat_note?: string
+          vat_rate?: number
           venue?: string
           viewed_at?: string | null
         }
@@ -2126,7 +2147,10 @@ export type Database = {
           updated_at?: string
           valid_until_override?: string | null
           validity_days?: number
+          vat_as_line?: boolean
+          vat_mode?: string
           vat_note?: string
+          vat_rate?: number
           venue?: string
           viewed_at?: string | null
         }
