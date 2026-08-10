@@ -655,11 +655,17 @@ function Page() {
                       </div>
                     </Field>
 
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <ImageField label="Логотип" value={quote.logo_url} onChange={(v) => patch({ logo_url: v })} />
+                    <LogoUploader
+                      label="Логотип"
+                      value={quote.logo_url}
+                      onChange={(v) => patch({ logo_url: v })}
+                      hint="Любой формат — обрежем поля, подгоним размер и вставим в шапку КП (HTML и PDF)."
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />
                       <ImageField label="Печать" value={quote.stamp_url} onChange={(v) => patch({ stamp_url: v })} />
                     </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       {([
                         ["company_legal_name", "Юр. название"],
