@@ -63,7 +63,7 @@ export function SiteHeader() {
   const { isStaff } = useRoles();
 
   const { count } = useCart();
-  const { count: wishCount } = useWishlist();
+
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrolling, setScrolling] = useState(false);
