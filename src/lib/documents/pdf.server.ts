@@ -1830,8 +1830,10 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
+  applyDensity("comfortable");
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
   const ctx = await createCtx(quote.logo_url || eff.logo_url, quote.client_logo_url, quote.logo_layout);
+
   const t = computePromoTotals(quote, items);
   drawHeader(
     ctx,
