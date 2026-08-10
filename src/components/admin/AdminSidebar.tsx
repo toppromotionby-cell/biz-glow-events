@@ -52,7 +52,7 @@ const GROUPS: NavGroup[] = [
   {
     label: "Каталог",
     items: [
-      { to: "/admin/catalog/zones", label: "Каталог", icon: Package, perm: "content.manage" },
+      { to: "/admin/catalog/zones", label: "Каталог", icon: Package, matchPrefix: "/admin/catalog/", perm: "content.manage" },
       { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Layers, perm: "content.manage" },
     ],
   },
