@@ -40,7 +40,6 @@ export interface CatalogPageConfig {
     buildDescription: (it: {
       title: string;
       seo_description?: string | null;
-      short_description?: string | null;
     }) => string;
   };
   /** Демо-данные, если БД пуста. */

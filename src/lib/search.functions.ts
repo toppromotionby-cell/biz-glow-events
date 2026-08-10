@@ -37,16 +37,16 @@ export const globalSearch = createServerFn({ method: "GET" })
       ...KINDS.map(async (kind) => {
         const { data: rows } = await supabaseAdmin
           .from(kind)
-          .select("id,slug,title,short_description,description,category,photo_urls")
+          .select("id,slug,title,description,category,photo_urls")
           .eq("published", true)
-          .or(`title.ilike.${like},short_description.ilike.${like},description.ilike.${like},category.ilike.${like}`)
+          .or(`title.ilike.${like},description.ilike.${like},category.ilike.${like}`)
           .limit(5);
         for (const r of rows ?? []) {
           hits.push({
             id: r.id, kind, slug: r.slug, title: r.title,
-            excerpt: r.short_description ?? null,
+            excerpt: toCardExcerpt(r.description) || null,
             image: r.photo_urls?.[0] ?? null,
-            score: scoreHit(q, r.title, r.short_description ?? r.description ?? null),
+            score: scoreHit(q, r.title, r.description ?? null),
           });
         }
       }),

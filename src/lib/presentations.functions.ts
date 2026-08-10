@@ -214,7 +214,7 @@ async function loadCatalogCards(
     [...byTable.entries()].map(async ([table, ids]) => {
       const { data } = await supabaseAdmin
         .from(table as "zones")
-        .select("id,title,short_description,description,photo_urls,features,pricing")
+        .select("id,title,description,photo_urls,features,pricing")
         .in("id", ids);
       for (const r of ((data ?? []) as unknown as Row[])) {
         const pricing = (r.pricing ?? {}) as { from?: number; unit?: string };
@@ -228,7 +228,7 @@ async function loadCatalogCards(
           : [];
         map.set(`${table}:${String(r.id)}`, {
           title: String(r.title ?? ""),
-          description: String(r.short_description ?? r.description ?? ""),
+          description: toCardExcerpt(r.description as string | null, 220),
           image: photos[0] ?? null,
           features: features.slice(0, 6),
           unit: String(pricing.unit ?? "шт."),

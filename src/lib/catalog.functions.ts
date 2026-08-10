@@ -48,7 +48,6 @@ export type CatalogRow = {
   id: string;
   slug: string;
   title: string;
-  short_description: string | null;
   description: string | null;
   photo_urls: string[] | null;
   video_urls: string[] | null;
@@ -62,7 +61,7 @@ export type CatalogRow = {
   category: string | null;
 };
 
-const SELECT = "id,slug,title,short_description,description,photo_urls,video_urls,pricing,features,extras,faq,requirements,seo_title,seo_description,category";
+const SELECT = "id,slug,title,description,photo_urls,video_urls,pricing,features,extras,faq,requirements,seo_title,seo_description,category";
 
 export const listCatalog = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ type: z.enum(TYPES) }).parse(i))

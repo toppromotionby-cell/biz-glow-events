@@ -304,7 +304,7 @@ export const searchCatalogForQuote = createServerFn({ method: "GET" })
 
     const results = await Promise.all(
       tables.map(async (table) => {
-        let q = supabaseAdmin.from(table as "zones").select("id,title,pricing,short_description").order("sort_order").limit(term ? 20 : 12);
+        let q = supabaseAdmin.from(table as "zones").select("id,title,pricing,description").order("sort_order").limit(term ? 20 : 12);
         if (term) q = q.ilike("title", `%${term}%`);
         const { data: rows } = await q;
         return ((rows ?? []) as unknown as Array<Record<string, unknown>>).map((r) => {
@@ -315,7 +315,7 @@ export const searchCatalogForQuote = createServerFn({ method: "GET" })
             title: String(r.title ?? ""),
             price: Number(pricing.from ?? 0),
             unit: String(pricing.unit ?? "шт."),
-            description: String(r.short_description ?? ""),
+            description: toCardExcerpt(r.description as string | null, 220),
           } satisfies CatalogHit;
         });
       }),
