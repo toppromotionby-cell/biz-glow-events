@@ -6,8 +6,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, History, Plus, Search, Send,
-  Settings2, Eye, BookmarkPlus, FileCheck2,
+  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
