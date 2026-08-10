@@ -140,7 +140,7 @@ function DocumentSettingsPage() {
               <Field label="Телефон" value={form.company_phone} onChange={(v) => update("company_phone", v)} />
               <Field label="E-mail" type="email" value={form.company_email} onChange={(v) => update("company_email", v)} />
               <Field label="Сайт" value={form.company_website} onChange={(v) => update("company_website", v)} />
-              <Field label="URL логотипа (опционально)" value={form.logo_url ?? ""} onChange={(v) => update("logo_url", v || null)} placeholder="https://…/logo.png" />
+              <LogoUploader value={form.logo_url ?? null} onChange={(v) => update("logo_url", v)} />
               <Field label="Акцентный цвет" value={form.accent_color} onChange={(v) => update("accent_color", v)} placeholder="#FF7500">
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div className="h-10 w-10 rounded-md border border-border/60" style={{ background: form.accent_color }} aria-hidden />
