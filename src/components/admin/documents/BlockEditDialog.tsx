@@ -186,7 +186,7 @@ export function BlockEditDialog({
         <div className="space-y-3">
           {target === "header" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Номер (пусто = авто)">
+              <Field label="Номер (пусто = авто)" hint={`Сейчас в документе: № ${quoteNumberDisplay(merged)}`}>
                 <Input value={draft.quote_number ?? ""} onChange={(e) => set({ quote_number: e.target.value })} />
               </Field>
               <Field label="Дата документа">
@@ -199,7 +199,10 @@ export function BlockEditDialog({
                   onChange={(e) => set({ validity_days: Math.max(0, Math.round(n(e.target.value))) })}
                 />
               </Field>
-              <Field label="Действительно до (вручную)">
+              <Field
+                label="Действительно до (вручную)"
+                hint={quoteValidUntil(merged) ? `В документе: ${quoteValidUntil(merged)}` : undefined}
+              >
                 <Input
                   type="date"
                   value={draft.valid_until_override ?? ""}
@@ -211,18 +214,23 @@ export function BlockEditDialog({
 
           {target === "cover" && (
             <>
-              <Field label="Заголовок документа">
+              <Field label="Заголовок документа" hint="Пусто = «Предложение по организации мероприятия»">
                 <Input value={draft.title ?? ""} onChange={(e) => set({ title: e.target.value })} />
               </Field>
               <Field label="Вступительный текст" hint="Поддерживаются плейсхолдеры вида {{client_name}}">
                 <Textarea
                   rows={5}
-                  value={currentBlock?.content ?? draft.texts?.intro ?? ""}
+                  value={(currentBlock ? currentBlock.content : draft.texts?.intro) || ""}
                   onChange={(e) =>
                     currentBlock
                       ? setBlock({ content: e.target.value })
                       : set({ texts: { ...(draft.texts ?? quote.texts), intro: e.target.value } })
                   }
+                />
+                <PlaceholderPreview
+                  text={(currentBlock ? currentBlock.content : draft.texts?.intro) || ""}
+                  map={map}
+                  numbers={numbers}
                 />
               </Field>
             </>
