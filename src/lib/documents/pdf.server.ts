@@ -1134,6 +1134,21 @@ export async function buildStandaloneQuotePdf(
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
+  const c = {
+    legal: eff.company_legal_name,
+    brand: eff.company_brand,
+    unp: eff.company_unp,
+    address: eff.company_address,
+    phone: eff.company_phone,
+    email: eff.company_email,
+    website: eff.company_website,
+    bank_name: eff.bank_name,
+    bank_bic: eff.bank_bic,
+    bank_account: eff.bank_account,
+    signer_name: eff.signer_name,
+    signer_title: eff.signer_title,
+    signer_basis: eff.signer_basis,
+  };
 
   const ctx = await createCtx(
     quote.design.show_logo ? (quote.logo_url || settings.logo_url) : null,
