@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Plus, Search, Trash2, X } from "lucide-react";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { CatalogTabs } from "@/components/admin/CatalogTabs";
+
 import { AdminListPanel } from "@/components/admin/AdminListPanel";
 import { AdminEmptyEditor } from "@/components/admin/AdminEditorShell";
 import {
@@ -152,7 +154,9 @@ function CatalogInner({ table }: { table: CatalogTable }) {
 
   return (
     <div className="space-y-5">
+      <CatalogTabs />
       <AdminPageHeader
+
         title={CATALOG_LABELS[table]}
         subtitle={`${items.length} ${pluralRecords(items.length)}`}
         action={

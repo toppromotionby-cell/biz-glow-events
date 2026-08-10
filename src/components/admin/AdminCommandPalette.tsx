@@ -17,23 +17,22 @@ import {
 
 const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard, hint: "g d" },
-  { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, hint: "g o" },
+  { to: "/admin/orders", label: "Заказы и запросы", icon: ShoppingCart, hint: "g o" },
   { to: "/admin/calendar", label: "Календарь", icon: Calendar },
-  { to: "/admin/catalog/zones", label: "Каталог · Зоны", icon: Package, hint: "g c" },
-  { to: "/admin/catalog/tech_equipment", label: "Каталог · Оборудование", icon: Package },
-  { to: "/admin/catalog/services", label: "Каталог · Услуги", icon: Package },
-  { to: "/admin/catalog/production_items", label: "Каталог · Производство", icon: Package },
-  { to: "/admin/catalog/attractions", label: "Каталог · Аттракционы", icon: Package },
+  { to: "/admin/documents", label: "Документы", icon: FileText },
+  { to: "/admin/catalog/zones", label: "Каталог", icon: Package, hint: "g c" },
+  { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Package },
   { to: "/admin/cases", label: "Кейсы", icon: Trophy },
   { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
   { to: "/admin/blog", label: "Блог", icon: Newspaper },
-  
+
   { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail },
   { to: "/admin/promo", label: "Промокоды", icon: Tag },
   { to: "/admin/users", label: "Пользователи", icon: UserCog },
   { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
   { to: "/admin/audit", label: "Аудит", icon: FileText },
 ];
+
 
 const TABLES = ["zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 const TABLE_LABEL: Record<(typeof TABLES)[number], string> = {
@@ -82,8 +81,9 @@ export function AdminCommandPalette() {
       const like = `%${term}%`;
       const { data } = await supabase
         .from("orders")
-        .select("id,client_name,client_email,status,total")
-        .or(`client_name.ilike.${like},client_email.ilike.${like},client_phone.ilike.${like}`)
+        .select("id,order_number,client_name,client_email,status,total")
+        .or(`order_number.ilike.${like},client_name.ilike.${like},client_email.ilike.${like},client_phone.ilike.${like}`)
+
         .order("created_at", { ascending: false })
         .limit(8);
       return data ?? [];
@@ -158,13 +158,14 @@ export function AdminCommandPalette() {
               {orders.map((o) => (
                 <CommandItem
                   key={o.id}
-                  value={`order ${o.client_name} ${o.client_email} ${o.id}`}
+                  value={`order ${o.order_number ?? ""} ${o.client_name} ${o.client_email} ${o.id}`}
                   onSelect={() => go("/admin/orders/$id", { id: o.id })}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2 opacity-70" />
                   <div className="flex flex-col min-w-0">
-                    <span className="truncate">{o.client_name || "Без имени"}</span>
+                    <span className="truncate">{o.order_number ? `№ ${o.order_number} · ` : ""}{o.client_name || "Без имени"}</span>
                     <span className="text-xs text-muted-foreground truncate">{o.client_email} · {o.status}</span>
+
                   </div>
                 </CommandItem>
               ))}

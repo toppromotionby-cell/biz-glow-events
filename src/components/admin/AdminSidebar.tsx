@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
   Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
-  Wrench, Sparkles, Factory, FileStack,
+  FileStack,
   Brain,
   Layers,
 } from "lucide-react";
@@ -27,7 +27,7 @@ import { useRoles } from "@/hooks/use-roles";
 import type { Permission } from "@/lib/permissions";
 
 type BadgeKey = "newOrders" | "newInquiries" | "pendingTestimonials";
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey; perm?: Permission };
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; matchPrefix?: string; badgeKey?: BadgeKey; perm?: Permission };
 type NavGroup = { label: string; items: NavItem[] };
 
 
@@ -36,8 +36,7 @@ const GROUPS: NavGroup[] = [
     label: "Операции",
     items: [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
-      { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, badgeKey: "newOrders", perm: "orders.manage" },
-      { to: "/admin/orders?kind=inquiry", label: "Запросы", icon: Bell, badgeKey: "newInquiries", perm: "orders.manage" },
+      { to: "/admin/orders", label: "Заказы и запросы", icon: ShoppingCart, badgeKey: "newOrders", perm: "orders.manage" },
       { to: "/admin/calendar", label: "Календарь", icon: Calendar, perm: "orders.manage" },
     ],
   },
@@ -51,19 +50,21 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Каталог",
+    items: [
+      { to: "/admin/catalog/zones", label: "Каталог", icon: Package, matchPrefix: "/admin/catalog/", perm: "content.manage" },
+      { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Layers, perm: "content.manage" },
+    ],
+  },
+  {
     label: "Контент",
     items: [
-      { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Layers, perm: "content.manage" },
-      { to: "/admin/catalog/zones", label: "Зоны", icon: Package, perm: "content.manage" },
-      { to: "/admin/catalog/tech_equipment", label: "Оборудование", icon: Wrench, perm: "content.manage" },
-      { to: "/admin/catalog/services", label: "Услуги", icon: Sparkles, perm: "content.manage" },
-      { to: "/admin/catalog/production_items", label: "Производство", icon: Factory, perm: "content.manage" },
-      { to: "/admin/catalog/attractions", label: "Аттракционы", icon: Package, perm: "content.manage" },
       { to: "/admin/cases", label: "Кейсы", icon: Trophy, perm: "content.manage" },
       { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials", perm: "content.manage" },
       { to: "/admin/blog", label: "Блог", icon: Newspaper, perm: "content.manage" },
     ],
   },
+
 
   {
     label: "Маркетинг",
@@ -110,8 +111,10 @@ function useSidebarBadges() {
 
 function isItemActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.to;
+  if (item.matchPrefix && pathname.startsWith(item.matchPrefix)) return true;
   return pathname === item.to || pathname.startsWith(item.to + "/");
 }
+
 
 export function AdminSidebar() {
   const loc = useLocation();

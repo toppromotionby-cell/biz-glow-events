@@ -10,6 +10,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { fmtCurrency, fmtDateTimeShort } from "@/lib/formatters";
 import { displayOrderNumber } from "@/lib/order-number";
 import { ProdHealthBanner } from "@/components/admin/ProdHealthBanner";
+import { AttentionPanel } from "@/components/admin/AttentionPanel";
+
 import { DEV_OVERLAYS_ENABLED } from "@/lib/debug-flags";
 
 export const Route = createFileRoute("/admin/")({
@@ -102,6 +104,9 @@ function AdminDashboard() {
       </header>
 
       {DEV_OVERLAYS_ENABLED && <ProdHealthBanner />}
+
+      <AttentionPanel />
+
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
