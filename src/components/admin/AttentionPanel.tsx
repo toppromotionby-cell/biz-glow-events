@@ -43,13 +43,14 @@ export function AttentionPanel() {
     },
   });
 
-  const items: AttentionItem[] = [
+  const items: AttentionItem[] = ([
     { key: "stale", label: "Без ответа больше суток", count: data?.stale ?? 0, to: "/admin/orders", icon: Clock, tone: "danger" },
     { key: "new", label: "Новые заказы", count: data?.newOrders ?? 0, to: "/admin/orders", icon: Inbox, tone: "warning" },
     { key: "inq", label: "Запросы на консультацию", count: data?.inquiries ?? 0, to: "/admin/orders", icon: AlertTriangle, tone: "warning" },
     { key: "unpaid", label: "Подтверждены, ждут оплату", count: data?.unpaid ?? 0, to: "/admin/orders", icon: AlertTriangle, tone: "info" },
     { key: "rev", label: "Отзывы на модерации", count: data?.testimonials ?? 0, to: "/admin/testimonials", icon: MessageSquareQuote, tone: "info" },
-  ].filter((i) => i.count > 0);
+  ] as AttentionItem[]).filter((i) => i.count > 0);
+
 
   return (
     <section className="glass rounded-2xl p-5">
