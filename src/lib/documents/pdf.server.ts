@@ -369,8 +369,9 @@ function divider(ctx: DocCtx, color = LINE) {
 }
 
 function gap(ctx: DocCtx, n: number) {
-  ctx.y -= n;
+  ctx.y -= n * D;
 }
+
 
 /** Ширина строки с межбуквенным интервалом (как letter-spacing в CSS). */
 function trackedWidth(font: PDFFont, text: string, size: number, tracking: number): number {
