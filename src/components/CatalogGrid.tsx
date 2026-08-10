@@ -393,15 +393,28 @@ function CatalogCard({
               <span className="text-xs sm:text-sm text-muted-foreground">BYN</span>
             </div>
           </PriceGate>
-          <button
-            type="button"
-            onClick={onOpen}
-            aria-label={`Подробнее: ${item.title}`}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-5 py-2 text-sm font-medium text-foreground transition hover:bg-primary/20 hover:border-primary/60"
-          >
-            <Info className="h-4 w-4 text-primary" aria-hidden="true" />
-            Подробнее
-          </button>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpen}
+              aria-label={`Подробнее: ${item.title}`}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-5 py-2 text-sm font-medium text-foreground transition hover:bg-primary/20 hover:border-primary/60"
+            >
+              <Info className="h-4 w-4 text-primary" aria-hidden="true" />
+              Подробнее
+            </button>
+            <CompareButton
+              item={{
+                id: item.slug,
+                entity_type: entityType,
+                slug: item.slug,
+                title: item.title,
+                image: item.image,
+                priceFrom: item.priceFrom,
+              }}
+            />
+          </div>
+
 
         </div>
       </div>
