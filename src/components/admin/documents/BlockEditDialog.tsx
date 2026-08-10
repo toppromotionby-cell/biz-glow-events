@@ -100,7 +100,7 @@ export function BlockEditDialog({
     });
     setItem(edit.target === "item" ? (items.find((i) => i.id === edit.id) ?? null) : null);
     setSectionName(edit.target === "section" ? (edit.id ?? "") : "");
-  }, [edit, quote, items]);
+  }, [edit, quote, items, settings]);
 
   if (!edit) return null;
 
