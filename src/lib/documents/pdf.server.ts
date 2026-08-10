@@ -689,7 +689,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       titleLines.length * F11 * 1.3 + (descLines.length + bulletLines.length) * SMALL * 1.3;
 
     const restWrapped = cols.map((c, i) =>
-      i === 0 ? [] : wrapText(ctx.regular, cell(c.key), F11, c.width - cellPadX * 2),
+      i === richIdx ? [] : wrapText(ctx.regular, cell(c.key), F11, c.width - cellPadX * 2),
     );
     const restH = Math.max(...restWrapped.map((w) => w.length), 1) * F11 * 1.3;
     const rowH = Math.max(rowMinH, Math.max(firstBlockH, restH) + 9);
@@ -702,28 +702,33 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       color: LINE,
     });
 
-    // первая колонка
+    // колонка с названием
     let cy = ctx.y - 5;
     for (const line of titleLines) {
-      ctx.page.drawText(line, { x: startX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
+      ctx.page.drawText(line, { x: richX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
       cy -= F11 * 1.3;
     }
     for (const line of descLines) {
-      ctx.page.drawText(line, { x: startX + cellPadX, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
+      ctx.page.drawText(line, { x: richX + cellPadX, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
       cy -= SMALL * 1.3;
     }
     for (const line of bulletLines) {
-      ctx.page.drawText(line, { x: startX + cellPadX + 8, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
+      ctx.page.drawText(line, { x: richX + cellPadX + 8, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
       cy -= SMALL * 1.3;
     }
 
     // остальные колонки
-    cx = startX + firstCol.width;
-    for (let i = 1; i < cols.length; i++) {
+    cx = startX;
+    for (let i = 0; i < cols.length; i++) {
       const c = cols[i];
+      if (i === richIdx) {
+        cx += c.width;
+        continue;
+      }
       const lines = restWrapped[i];
       const blockH = Math.max(lines.length, 1) * F11 * 1.3;
       let ly = c.valign === "middle" ? ctx.y - Math.max(5, (rowH - blockH) / 2) : ctx.y - 5;
+      const color = c.key === "idx" ? MUTED : TEXT;
       for (const line of lines) {
         let tx = cx + cellPadX;
         if (c.align === "right") {
@@ -733,11 +738,12 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
           const w = ctx.regular.widthOfTextAtSize(line, F11);
           tx = cx + (c.width - w) / 2;
         }
-        ctx.page.drawText(line, { x: tx, y: ly - F11, size: F11, font: ctx.regular, color: TEXT });
+        ctx.page.drawText(line, { x: tx, y: ly - F11, size: F11, font: ctx.regular, color });
         ly -= F11 * 1.3;
       }
       cx += c.width;
     }
+
     ctx.y -= rowH;
   }
 }
