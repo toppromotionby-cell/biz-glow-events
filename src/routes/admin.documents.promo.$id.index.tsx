@@ -624,6 +624,32 @@ function EditorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Сохранение как шаблон */}
+      <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Сохранить как шаблон</DialogTitle></DialogHeader>
+          <Field label="Название шаблона">
+            <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} />
+          </Field>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTemplateOpen(false)}>Отмена</Button>
+            <Button
+              onClick={async () => {
+                const name = templateName.trim();
+                if (!name) return toast.error("Введите название");
+                await saveTpl({ data: { id, name } });
+                setTemplateOpen(false);
+                toast.success("Шаблон сохранён");
+              }}
+            >
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {confirmDialog}
     </TooltipProvider>
   );
 }
