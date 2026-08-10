@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   FileStack, Plus, Search, Download, FileSignature, Megaphone, Brain, ArrowRight,
-  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2,
+  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2, BookmarkPlus,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import {
-  listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus,
+  listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus, setDocumentTemplate,
   type DocumentRow,
 } from "@/lib/documents-overview.functions";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
@@ -110,6 +110,14 @@ function Page() {
     mutationFn: (v: { r: DocumentRow; status: "draft" | "sent" | "accepted" | "rejected" }) =>
       statusFn({ data: { kind: v.r.kind, id: v.r.id, status: v.status } }),
     onSuccess: () => { toast.success("Статус обновлён"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const tplFn = useServerFn(setDocumentTemplate);
+  const toggleTemplate = useMutation({
+    mutationFn: (v: { r: DocumentRow; isTemplate: boolean }) =>
+      tplFn({ data: { kind: v.r.kind, id: v.r.id, isTemplate: v.isTemplate, name: v.r.title } }),
+    onSuccess: (_d, v) => { toast.success(v.isTemplate ? "Сохранено как шаблон" : "Убрано из шаблонов"); refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
