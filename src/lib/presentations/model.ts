@@ -29,6 +29,17 @@ export const TEMPLATE_LABELS: Record<PresentationTemplate, string> = {
 
 export type SlideSpec = { label: string; value: string };
 
+/** Ручное переопределение стороны фотоблока. */
+export type SlideImageLayout = "auto" | "left" | "right" | "top" | "none";
+
+export const IMAGE_LAYOUT_LABELS: Record<SlideImageLayout, string> = {
+  auto: "Авто",
+  left: "Фото слева",
+  right: "Фото справа",
+  top: "Фото сверху",
+  none: "Только текст",
+};
+
 export type SlideContent = {
   /** Основной текст (описание позиции или текст слайда). */
   description: string;
@@ -41,6 +52,10 @@ export type SlideContent = {
   priceUnit: string;
   qty: number | null;
   sku: string;
+  /** Фотографии слайда (до 5), первая — главная. */
+  images: string[];
+  /** Раскладка фотоблока. */
+  imageLayout: SlideImageLayout;
   /** Тумблеры видимости блоков. */
   showDescription: boolean;
   showIncludes: boolean;
@@ -48,6 +63,7 @@ export type SlideContent = {
   showPrice: boolean;
   showImage: boolean;
 };
+
 
 export type PresentationSlide = {
   id: string;
