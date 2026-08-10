@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-
-export const PROD_URL = "https://event-hub.by";
+import { PROD_URL } from "@/lib/prod-health";
 
 /**
  * Проверка прода выполняется на сервере, чтобы не упираться в CORS
