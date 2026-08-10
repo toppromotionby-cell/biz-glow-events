@@ -6,6 +6,8 @@ import {
   type Presentation,
   type PresentationSlide,
 } from "@/lib/presentations/model";
+import { SLIDE_W } from "@/lib/presentations/design";
+import { fitSlide } from "@/lib/presentations/fit";
 
 const W = 10; // дюймы, 16:9 => 10 x 5.625
 const H = 5.625;
