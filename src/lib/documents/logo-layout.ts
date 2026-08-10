@@ -78,14 +78,22 @@ export type LogoPlacement = {
   x: number;
   /** Отступ верхнего края логотипа от верхнего поля страницы, pt (вниз). */
   top: number;
-  /** X, с которого начинается текст бренда. */
+  /** X, с которого начинается текст бренда/реквизитов (левый край текстового блока). */
   textX: number;
+  /** Правая граница текстового блока, pt от левого края страницы. */
+  textRight: number;
+  /** Горизонтальное выравнивание текстового блока (совпадает с логотипом). */
+  textAlign: LogoAlign;
+  /** Отступ верха текстового блока от верхнего поля страницы, pt (вниз). */
+  textTop: number;
   /** Высота, которую шапка должна зарезервировать под логотип, pt. */
   reserve: number;
 };
 
 /**
  * Считает геометрию логотипа в шапке.
+ * Реквизиты (бренд/юрлицо/адрес) всегда располагаются ПОД логотипом
+ * и выравниваются по горизонтали так же, как логотип.
  * @param aspect отношение ширины к высоте исходного изображения (w/h)
  */
 export function computeLogoPlacement(layout: LogoLayout, aspect: number): LogoPlacement {
@@ -104,10 +112,14 @@ export function computeLogoPlacement(layout: LogoLayout, aspect: number): LogoPl
   x = Math.min(Math.max(x + layout.offsetX, 4), pageWidthPt - w - 4);
 
   const top = Math.max(0, layout.offsetY);
-  const textX = layout.align === "left" ? Math.max(marginXPt, x + w + layout.gap) : marginXPt;
+  // Текст всегда под логотипом: gap — вертикальный отступ.
+  const textTop = top + h + layout.gap * 0.5;
+  const textX = marginXPt;
+  const textRight = pageWidthPt - marginXPt;
 
-  return { w, h, x, top, textX, reserve: top + h };
+  return { w, h, x, top, textX, textRight, textAlign: layout.align, textTop, reserve: textTop };
 }
+
 
 /** Коэффициент перевода pt страницы в «пиксели макета» HTML-превью. */
 export const LOGO_PT_TO_PX = 1.48;
