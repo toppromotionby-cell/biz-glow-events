@@ -570,6 +570,18 @@ export function buildQuoteHtmlDoc(
   .sign-line { margin-top:26px; border-top:1px solid var(--line); padding-top:3px; color:var(--muted); font-size:var(--fs-small); }
   .sign img { max-height:46px; display:block; margin-top:4px; }
   .footer { margin-top:12px; padding-top:7px; border-top:1px solid var(--line); color:var(--muted); font-size:var(--fs-footer); }
+  /* Инлайн-предупреждения превью: не попадают в печать и PDF */
+  .chk-list { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .chk-list.chk-right { justify-content:flex-end; }
+  .chk { display:inline-flex; align-items:center; gap:4px; font-size:var(--fs-micro); line-height:1.25; padding:2px 6px; border-radius:999px; border:1px solid; }
+  .chk-ic { display:inline-flex; align-items:center; justify-content:center; width:12px; height:12px; border-radius:50%; font-weight:700; font-size:9px; color:#fff; }
+  .chk-error { color:#991b1b; background:#fef2f2; border-color:#fecaca; }
+  .chk-error .chk-ic { background:#dc2626; }
+  .chk-warn { color:#92400e; background:#fffbeb; border-color:#fde68a; }
+  .chk-warn .chk-ic { background:#d97706; }
+  tr.chk-row-error td { background:#fef2f2; }
+  tr.chk-row-warn td { background:#fffbeb; }
+  @media print { .chk-list { display:none !important; } tr.chk-row td { background:transparent !important; } }
   @media print { body { background:#fff; } .sheet { max-width:none; padding:0; } }
   ${
     editable
