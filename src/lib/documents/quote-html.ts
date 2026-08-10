@@ -521,8 +521,8 @@ export function buildQuoteHtmlDoc(
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
 <style>
-  :root { ${scaledVars(docCssVars(esc(accent)))}; ${templateVars(template)}
-    --gap-k:${print.blockGap}; --row-k:${print.rowGap}; --lh:${print.lineHeight}; }
+  :root { ${densityRootVars()}; ${scaledVars(docCssVars(esc(accent)))}; ${templateVars(template)}
+    --gap-k:calc(${print.blockGap} * var(--dk)); --row-k:calc(${print.rowGap} * var(--dk)); --lh:${print.lineHeight}; }
   @page { size: A4; margin: ${printPageMarginCss(print)}; }
   * { box-sizing: border-box; }
   body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:var(--fs-body); line-height:var(--lh); }
