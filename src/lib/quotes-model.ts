@@ -9,8 +9,11 @@ import {
   type QuoteBlock,
   type QuoteTemplate,
 } from "@/lib/quote-blocks";
+import { computeVat, vatConfig, type VatMode } from "@/lib/documents/vat";
 
 export * from "@/lib/quote-blocks";
+export * from "@/lib/documents/vat";
+
 
 export const QUOTE_STATUSES = ["draft", "sent", "accepted", "rejected"] as const;
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
