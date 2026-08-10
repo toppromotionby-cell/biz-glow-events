@@ -41,14 +41,12 @@ const NAV = [...CATALOG_NAV, ...SECONDARY_NAV];
 // Ключевые пункты, которые остаются в десктопной шапке рядом с «Каталогом».
 const PRIMARY_NAV = [
   { to: "/cases", label: "Кейсы", key: "header.nav.cases" },
-  { to: "/calculator", label: "Калькулятор", key: "header.nav.calculator" },
   { to: "/blog", label: "Блог", key: "header.nav.blog" },
   { to: "/contacts", label: "Контакты", key: "header.nav.contacts" },
 ] as const;
 
 const INFO_LINKS = [
   { to: "/partners", label: "Агентствам", footerKey: "footer.info.partners" },
-  { to: "/calculator", label: "Калькулятор сметы", footerKey: "footer.info.calculator" },
   { to: "/delivery", label: "Доставка и оплата", footerKey: "footer.info.delivery" },
   { to: "/faq", label: "Частые вопросы", footerKey: "footer.info.faq" },
   { to: "/terms-rental", label: "Условия аренды", footerKey: "footer.info.terms" },

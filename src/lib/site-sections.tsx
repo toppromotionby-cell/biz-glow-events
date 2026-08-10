@@ -58,7 +58,6 @@ export const SECTION_REGISTRY = [
   { key: "footer.catalog.contacts_link", label: "Подвал → Каталог: «Контакты»", group: "Подвал" },
   { key: "footer.info", label: "Подвал: Блок «Информация»", group: "Подвал" },
   { key: "footer.info.partners", label: "Подвал → Информация: «Агентствам»", group: "Подвал" },
-  { key: "footer.info.calculator", label: "Подвал → Информация: «Калькулятор сметы»", group: "Подвал" },
   { key: "footer.info.delivery", label: "Подвал → Информация: «Доставка и оплата»", group: "Подвал" },
   { key: "footer.info.faq", label: "Подвал → Информация: «Частые вопросы»", group: "Подвал" },
   { key: "footer.info.terms", label: "Подвал → Информация: «Условия аренды»", group: "Подвал" },
