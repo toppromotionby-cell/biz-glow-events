@@ -14,6 +14,7 @@ export const SECTION_REGISTRY = [
   { key: "home.values", label: "Главная: Ценности", group: "Главная" },
   { key: "home.cases", label: "Главная: Кейсы", group: "Главная" },
   { key: "home.estimator", label: "Главная: Калькулятор гостей", group: "Главная" },
+  { key: "home.packages", label: "Главная: Подбор пакета под бюджет", group: "Главная" },
   { key: "home.testimonials", label: "Главная: Отзывы", group: "Главная" },
   { key: "home.blog", label: "Главная: Блог", group: "Главная" },
   { key: "home.cta", label: "Главная: CTA-блок", group: "Главная" },
