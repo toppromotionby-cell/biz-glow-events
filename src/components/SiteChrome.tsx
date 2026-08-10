@@ -166,14 +166,9 @@ export function SiteHeader() {
                 </Toggleable>
               </>
             ) : (
-              <>
-                <Toggleable sectionKey="header.login" as="span">
-                  <Link to="/login"><Button variant="ghost" size="sm">Войти</Button></Link>
-                </Toggleable>
-                <Toggleable sectionKey="header.register" as="span">
-                  <Link to="/register"><Button size="sm" className="bg-gradient-primary glow-primary">Регистрация</Button></Link>
-                </Toggleable>
-              </>
+              <Toggleable sectionKey="header.login" as="span">
+                <Link to="/login"><Button size="sm" className="bg-gradient-primary glow-primary">Войти</Button></Link>
+              </Toggleable>
             )}
           </div>
 
