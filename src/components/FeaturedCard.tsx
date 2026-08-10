@@ -7,6 +7,7 @@
 //  - skeleton удерживает геометрию, пока подписываются URL из Storage;
 //  - цена публичная, как в каталоге (без PriceGate).
 import { useEffect, useRef, useState } from "react";
+import { Info } from "lucide-react";
 import { MediaShield } from "@/components/MediaShield";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import { useClampedText } from "@/components/ui/ClampedTitle";
@@ -200,6 +201,15 @@ export function FeaturedCard({
         </p>
         <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40 min-h-[3.25rem] sm:min-h-[3.5rem]">
           <PriceBlock price={price} />
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`Подробнее: ${item.title}`}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-5 py-2 text-sm font-medium text-foreground transition hover:bg-primary/20 hover:border-primary/60"
+          >
+            <Info className="h-4 w-4 text-primary" aria-hidden="true" />
+            Подробнее
+          </button>
         </div>
       </div>
 

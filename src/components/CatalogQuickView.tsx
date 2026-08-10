@@ -295,11 +295,6 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
                 </button>
               )}
 
-              {!needsSelection && type !== "services" && (
-                <div className="flex gap-2 pt-1">
-                  <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} />
-                </div>
-              )}
             </div>
 
             {features.length > 0 && (
@@ -387,9 +382,6 @@ function Body({ item, type, onClose }: { item: CatalogRow; basePath: string; typ
               </>
             )}
           </button>
-          {!needsSelection && type !== "services" && (
-            <WishlistButton entity_type={type} id={effectiveId} slug={item.slug} title={effectiveTitle} price={unitPrice} image={photos[0] ?? null} compact />
-          )}
         </div>
       </div>
     </div>
