@@ -97,9 +97,12 @@ export function LogoHeaderPreview({
 }) {
   const aspect = useAspect(logoUrl);
   const place = logoUrl ? computeLogoPlacement(layout, aspect) : null;
-  const textX = place ? place.textX : MARGIN_X;
+  // Текст бренда и реквизиты — всегда под логотипом, выравнивание как у логотипа.
+  const textTop = place ? place.textTop : 2;
+  const textAlign = place ? place.textAlign : "left";
   // Есть логотип — текст бренда в шапке не печатается.
   const hideBrand = Boolean(logoUrl);
+
 
   return (
     <div
@@ -156,21 +159,29 @@ export function LogoHeaderPreview({
         </>
       )}
 
-      {/* бренд и реквизиты */}
-      {!hideBrand && (
-        <div
-          className="absolute font-semibold leading-none text-[#111827]"
-          style={{ left: pctX(textX), top: pctY(MARGIN_TOP + 2), fontSize: fs(20) }}
-        >
-          {brand || "Бренд"}
-        </div>
-      )}
+      {/* бренд и реквизиты — под логотипом */}
       <div
-        className="absolute leading-none text-[#6b7280]"
-        style={{ left: pctX(textX), top: pctY(MARGIN_TOP + 24), fontSize: fs(10), maxWidth: pctX(PAGE_W / 2) }}
+        className="absolute"
+        style={{
+          left: pctX(MARGIN_X),
+          right: pctX(MARGIN_X),
+          top: pctY(MARGIN_TOP + textTop),
+          textAlign,
+        }}
       >
-        {legalLine}
+        {!hideBrand && (
+          <div className="font-semibold leading-none text-[#111827]" style={{ fontSize: fs(20) }}>
+            {brand || "Бренд"}
+          </div>
+        )}
+        <div
+          className="leading-tight text-[#6b7280]"
+          style={{ fontSize: fs(10), marginTop: pctY(hideBrand ? 2 : 10) }}
+        >
+          {legalLine}
+        </div>
       </div>
+
 
       {/* правая колонка */}
       <div

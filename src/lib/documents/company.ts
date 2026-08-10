@@ -47,6 +47,20 @@ export function resolveCompany(
   return out;
 }
 
+/** Строка реквизитов под логотипом: юрлицо · УНП · адрес. */
+export function companyRequisitesLine(
+  overrides: CompanyOverrides | null | undefined,
+  settings: DocumentSettings,
+): string {
+  const c = resolveCompany(overrides, settings);
+  return [
+    `${c.company_legal_name}${c.company_unp ? ` · УНП ${c.company_unp}` : ""}`.trim(),
+    c.company_address,
+  ]
+    .filter((s) => s && s.trim() !== "")
+    .join(" · ");
+}
+
 /** Настройки документа с подставленными реквизитами конкретного документа. */
 export function applyCompanyOverrides(
   settings: DocumentSettings,
@@ -54,3 +68,4 @@ export function applyCompanyOverrides(
 ): DocumentSettings {
   return { ...settings, ...resolveCompany(overrides, settings) };
 }
+

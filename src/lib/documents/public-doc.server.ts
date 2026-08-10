@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loadDocumentSettings } from "@/lib/documents/render.server";
 import { buildQuoteHtmlDoc, quoteFileName, quoteNumberDisplay } from "@/lib/documents/quote-html";
 import { buildPromoQuoteHtmlDoc } from "@/lib/documents/promo-quote-html";
+import { companyRequisitesLine } from "@/lib/documents/company";
 import { buildStandaloneQuotePdf, buildPromoQuotePdf } from "@/lib/documents/pdf.server";
 import { normalizeQuote, normalizeItem, type Quote, type QuoteItem } from "@/lib/quotes-model";
 import {
@@ -13,7 +14,7 @@ import {
 
 export type PublicDoc =
   | { kind: "quote"; quote: Quote; items: QuoteItem[]; settings: Awaited<ReturnType<typeof loadDocumentSettings>> }
-  | { kind: "promo"; quote: PromoQuote; items: PromoItem[] };
+  | { kind: "promo"; quote: PromoQuote; items: PromoItem[]; settings: Awaited<ReturnType<typeof loadDocumentSettings>> };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -45,12 +46,15 @@ export async function loadPublicDoc(token: string): Promise<PublicDoc | null> {
     .from("promo_quotes").select("*").eq("public_token", token).eq("is_template", false).maybeSingle();
   if (p) {
     const row = p as Record<string, unknown>;
-    const { data: items } = await supabaseAdmin
-      .from("promo_quote_items").select("*").eq("quote_id", row.id as string).order("sort_order");
+    const [{ data: items }, settings] = await Promise.all([
+      supabaseAdmin.from("promo_quote_items").select("*").eq("quote_id", row.id as string).order("sort_order"),
+      loadDocumentSettings(supabaseAdmin as never, (row.company_id as string | null) ?? null),
+    ]);
     return {
       kind: "promo",
       quote: normalizePromoQuote(row),
       items: ((items ?? []) as Record<string, unknown>[]).map(normalizePromoItem),
+      settings,
     };
   }
   return null;
@@ -107,7 +111,7 @@ const ACCENT = "#FF7500";
 export function buildPublicPage(doc: PublicDoc, token: string, opts: { justResponded?: boolean } = {}): string {
   const base = doc.kind === "quote"
     ? buildQuoteHtmlDoc(doc.quote, doc.items, doc.settings)
-    : buildPromoQuoteHtmlDoc(doc.quote, doc.items);
+    : buildPromoQuoteHtmlDoc(doc.quote, doc.items, companyRequisitesLine(doc.quote.company_overrides, doc.settings));
 
   const responded = String(doc.quote.client_response ?? "") || (opts.justResponded ? "accepted" : "");
   const decided = responded === "accepted" || responded === "rejected";
