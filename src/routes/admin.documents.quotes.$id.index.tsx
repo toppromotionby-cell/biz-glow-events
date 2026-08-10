@@ -201,6 +201,7 @@ function Page() {
               discount_type: quote.discount_type, discount_value: num(quote.discount_value),
               prepayment_type: quote.prepayment_type, prepayment_value: num(quote.prepayment_value),
               delivery_amount: num(quote.delivery_amount), vat_note: quote.vat_note ?? "",
+              vat_mode: quote.vat_mode, vat_rate: num(quote.vat_rate), vat_as_line: quote.vat_as_line,
         };
         // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
         // остальные поля сохраняются, а поле подсветится в списке проверок.
