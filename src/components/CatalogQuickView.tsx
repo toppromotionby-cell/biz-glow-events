@@ -17,7 +17,6 @@ import { CatalogProse } from "@/components/CatalogProse";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
-import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { QuickLeadRequest } from "@/components/catalog/QuickLeadRequest";
 
 import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
@@ -366,7 +365,6 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                 </TabsContent>
 
                 <TabsContent value="availability" className="pt-3">
-                  <AvailabilityCalendar entityType={type} itemId={item.id} />
                 </TabsContent>
 
                 {hasRequirements && (
@@ -438,7 +436,6 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                   {hasRequirements && <TabsTrigger value="requirements" className="flex-1">Требования</TabsTrigger>}
                 </TabsList>
                 <TabsContent value="availability" className="pt-3">
-                  <AvailabilityCalendar entityType={type} itemId={item.id} />
                 </TabsContent>
                 {hasRequirements && (
                   <TabsContent value="requirements" className="pt-3">
