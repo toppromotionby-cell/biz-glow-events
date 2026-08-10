@@ -1,7 +1,7 @@
 // Правая панель редактора: настройки выбранного слайда.
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import {
-  SLIDE_TYPE_LABELS, type PresentationSlide, type SlideContent, type SlideType,
+  IMAGE_LAYOUT_LABELS, MAX_IMAGES, SLIDE_TYPE_LABELS,
+  type PresentationSlide, type SlideContent, type SlideImageLayout, type SlideType,
 } from "@/lib/presentations/model";
 
 export function SlideSettingsPanel({
