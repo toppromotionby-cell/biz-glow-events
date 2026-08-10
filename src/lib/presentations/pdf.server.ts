@@ -110,8 +110,11 @@ async function embedImage(pdf: PDFDocument, url: string | null): Promise<PDFImag
   }
 }
 
-/** Слайд с уже разрешённым абсолютным URL картинки. */
-export type ResolvedSlide = PresentationSlide & { resolved_image_url: string | null };
+/** Слайд с уже разрешёнными абсолютными URL фотографий (до 5). */
+export type ResolvedSlide = PresentationSlide & {
+  resolved_image_url: string | null;
+  resolved_images: string[];
+};
 
 export async function buildPresentationPdf(
   presentation: Presentation,
@@ -141,9 +144,17 @@ export async function buildPresentationPdf(
   for (const [index, slide] of visible.entries()) {
     const page = pdf.addPage([W, H]);
     page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: t.bg });
-    const img = slide.content.showImage ? await embedImage(pdf, slide.resolved_image_url) : null;
+    const sources = slide.content.showImage
+      ? (slide.resolved_images.length
+          ? slide.resolved_images
+          : [slide.resolved_image_url].filter((v): v is string => !!v))
+      : [];
+    const images: (PDFImage | null)[] = [];
+    for (const src of sources.slice(0, MAX_SLIDE_PHOTOS)) {
+      images.push(await embedImage(pdf, src));
+    }
     await drawSlide({
-      page, slide, img, logo, brand, theme: t,
+      page, slide, images, logo, brand, theme: t,
       fonts: { regular, bold, display },
       company, presentation,
       index, total: visible.length,
@@ -152,6 +163,7 @@ export async function buildPresentationPdf(
 
   return await pdf.save();
 }
+
 
 type DrawArgs = {
   page: PDFPage;
