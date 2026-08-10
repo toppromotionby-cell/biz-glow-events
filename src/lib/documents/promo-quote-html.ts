@@ -222,7 +222,7 @@ export const PROMO_DOC_CSS = `
 @media print { .promo-doc [data-edit]:hover { outline: none; } .promo-doc { font-size: 11px; } }
 `;
 
-export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[]): string {
+export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[], companyLine?: string): string {
   const t = computePromoTotals(quote, items);
   return `<!doctype html>
 <html lang="ru"><head><meta charset="utf-8" />
