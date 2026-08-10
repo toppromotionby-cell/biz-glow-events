@@ -311,9 +311,17 @@ export function BlockEditDialog({
           )}
 
           {target === "section" && (
-            <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
-              <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
-            </Field>
+            <div className="space-y-3">
+              <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
+                <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
+              </Field>
+              <Summary
+                rows={[
+                  ["Позиций в разделе", String(sectionItems.length)],
+                  ["Сумма раздела", money(sectionItems.reduce((s, it) => s + it.qty * it.price, 0)), true],
+                ]}
+              />
+            </div>
           )}
 
           {target === "totals" && (
