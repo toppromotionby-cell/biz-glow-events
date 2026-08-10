@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Link2, Mail, Eye, Loader2 } from "lucide-react";
+import { Link2, Mail, Eye, Loader2, AlertTriangle } from "lucide-react";
 
 export type ShareState = {
   token: string;
