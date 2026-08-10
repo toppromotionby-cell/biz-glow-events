@@ -6,7 +6,6 @@ import { MediaShield } from "@/components/MediaShield";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
-import { WishlistButton } from "@/components/WishlistButton";
 import { RelatedItems } from "@/components/RelatedItems";
 import { CatalogSkeleton } from "@/components/CatalogSkeleton";
 import { CatalogSocialProof } from "@/components/CatalogSocialProof";
@@ -298,14 +297,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
                     unit={itemUnit}
                   />
                 )}
-                <WishlistButton
-                  entity_type={entityType}
-                  id={effectiveId}
-                  slug={item.slug}
-                  title={effectiveTitle}
-                  price={effectivePrice}
-                  image={item.photo_urls?.[0] ?? null}
-                />
                 {!isByRequest && (
                   <Link to="/cart" className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground">Перейти в корзину →</Link>
                 )}
