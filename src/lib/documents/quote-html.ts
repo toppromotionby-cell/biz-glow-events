@@ -655,5 +655,5 @@ export function buildQuoteHtmlDoc(
 })();
 <\/script>`
       : ""
-  }</body></html>`;
+  }${autoFitScript(print)}</body></html>`;
 }
