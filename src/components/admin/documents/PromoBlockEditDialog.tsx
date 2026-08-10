@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field } from "@/components/admin/Field";
+import { normalizeVatMode } from "@/lib/documents/vat";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { normalizeVatMode, type PromoDiscountType, type PromoItem, type PromoQuote } from "@/lib/promo-quote-model";
+import { type PromoDiscountType, type PromoItem, type PromoQuote } from "@/lib/promo-quote-model";
 
 export type PromoEditTarget = { target: string; id: string | null };
 
