@@ -286,9 +286,16 @@ function Page() {
   }, [quote, items, id, save, qc]);
 
   const previewHtml = useMemo(
-    () => (quote && totals ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings, { editable: inlineEdit }) : ""),
-    [quote, items, settings, totals, inlineEdit],
+    () =>
+      quote && totals
+        ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings, {
+            editable: inlineEdit,
+            checks,
+          })
+        : "",
+    [quote, items, settings, totals, inlineEdit, checks],
   );
+
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
   if (error || !quote || !totals) return <div className="p-8 text-destructive">{(error as Error)?.message ?? "КП не найдено"}</div>;
