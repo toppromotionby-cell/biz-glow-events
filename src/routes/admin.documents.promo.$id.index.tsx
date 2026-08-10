@@ -1,3 +1,4 @@
+import { useRoles } from "@/hooks/use-roles";
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -97,7 +98,10 @@ function EditorPage() {
   const [items, setItems] = useState<PromoItem[]>([]);
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const [showCost, setShowCost] = useState(false);
+  const { can } = useRoles();
+  const canCost = can("documents.cost_margin");
+  const [showCostRaw, setShowCost] = useState(false);
+  const showCost = showCostRaw && canCost;
   const [snippetDraft, setSnippetDraft] = useState<{ name: string; section: string; items: PromoItem[] } | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -403,10 +407,12 @@ function EditorPage() {
             <TabsContent value="items" className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <PromoItemsToolbar items={items} onChange={patchItems} />
-                <Label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Switch checked={showCost} onCheckedChange={setShowCost} />
-                  Себестоимость и маржа
-                </Label>
+                {canCost && (
+                  <Label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Switch checked={showCost} onCheckedChange={setShowCost} />
+                    Себестоимость и маржа
+                  </Label>
+                )}
               </div>
               <PromoItemsTable
                 items={items}

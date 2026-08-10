@@ -1,3 +1,4 @@
+import { useRoles } from "@/hooks/use-roles";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -163,7 +164,10 @@ function Page() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [catalogType, setCatalogType] = useState("all");
   const [catalogTerm, setCatalogTerm] = useState("");
-  const [showCost, setShowCost] = useState(true);
+  const { can } = useRoles();
+  const canCost = can("documents.cost_margin");
+  const [showCostRaw, setShowCost] = useState(true);
+  const showCost = showCostRaw && canCost;
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const dirtyRef = useRef(false);
@@ -450,10 +454,12 @@ function Page() {
 
 
             <TabsContent value="items" className="space-y-3 pt-3">
-              <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
-                Показывать себестоимость и маржу
-                <Switch checked={showCost} onCheckedChange={setShowCost} />
-              </label>
+              {canCost && (
+                <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
+                  Показывать себестоимость и маржу
+                  <Switch checked={showCost} onCheckedChange={setShowCost} />
+                </label>
+              )}
               <QuoteItemsPanel
                 items={items}
                 onChange={patchItems}
