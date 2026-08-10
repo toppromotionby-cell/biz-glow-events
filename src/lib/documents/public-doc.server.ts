@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loadDocumentSettings } from "@/lib/documents/render.server";
 import { buildQuoteHtmlDoc, quoteFileName, quoteNumberDisplay } from "@/lib/documents/quote-html";
 import { buildPromoQuoteHtmlDoc } from "@/lib/documents/promo-quote-html";
+import { companyRequisitesLine } from "@/lib/documents/company";
 import { buildStandaloneQuotePdf, buildPromoQuotePdf } from "@/lib/documents/pdf.server";
 import { normalizeQuote, normalizeItem, type Quote, type QuoteItem } from "@/lib/quotes-model";
 import {
@@ -107,7 +108,7 @@ const ACCENT = "#FF7500";
 export function buildPublicPage(doc: PublicDoc, token: string, opts: { justResponded?: boolean } = {}): string {
   const base = doc.kind === "quote"
     ? buildQuoteHtmlDoc(doc.quote, doc.items, doc.settings)
-    : buildPromoQuoteHtmlDoc(doc.quote, doc.items);
+    : buildPromoQuoteHtmlDoc(doc.quote, doc.items, companyRequisitesLine(doc.quote.company_overrides, doc.settings));
 
   const responded = String(doc.quote.client_response ?? "") || (opts.justResponded ? "accepted" : "");
   const decided = responded === "accepted" || responded === "rejected";
