@@ -14,12 +14,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { notify } from "@/lib/notify";
-import { BRAND_ACCENTS } from "@/lib/documents/brand";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
 import { CompanyProfilesManager } from "@/components/admin/documents/CompanyProfilesManager";
 import { QUOTE_TEMPLATES, QUOTE_TEMPLATE_LABELS, type QuoteTemplate } from "@/lib/quote-blocks";
