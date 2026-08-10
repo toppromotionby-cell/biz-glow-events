@@ -163,6 +163,23 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
     videos.length > 0 ? `${videos.length} видео` : "",
   ].filter(Boolean);
 
+  // Данные позиции для формы КП — чтобы клиент не вводил их повторно.
+  const quoteDetails = [
+    { label: "Позиция", value: item.title },
+    item.category ? { label: "Категория", value: item.category } : null,
+    !isHourMode && activeTier?.label ? { label: "Пакет", value: String(activeTier.label) } : null,
+    isHourMode ? { label: "Часов", value: `${hours}` } : null,
+    total > 0
+      ? { label: "Расчёт", value: formatBYNTotal(total) }
+      : from !== null
+        ? { label: "Цена от", value: formatBYNTotal(from) }
+        : { label: "Цена", value: "по запросу" },
+    unitLabel ? { label: "Единица", value: unitLabel } : null,
+    qtyKind ? { label: "Количество", value: `${effectiveQty}` } : null,
+    slides.length ? { label: "Медиа", value: `${photos.length} фото / ${videos.length} видео` } : null,
+    hasRequirements ? { label: "Требования", value: "указаны в карточке" } : null,
+  ].filter(Boolean) as { label: string; value: string }[];
+
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(true);
 
@@ -430,7 +447,13 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
 
         {quoteOpen && (
           <section id="quickview-quote" className="mt-6">
-            <QuickQuoteRequest subject={effectiveTitle} source={`quickview:${type}`} />
+            <QuickQuoteRequest
+              subject={effectiveTitle}
+              source={`quickview:${type}`}
+              details={quoteDetails}
+              itemUrl={typeof window !== "undefined" ? `${window.location.origin}${detailPath}` : detailPath}
+              defaultNotes={item.requirements?.trim() ? `Требования по позиции учтены: ${item.requirements.trim().slice(0, 300)}` : ""}
+            />
           </section>
         )}
 

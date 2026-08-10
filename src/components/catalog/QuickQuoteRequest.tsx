@@ -64,10 +64,19 @@ function Field({
 export function QuickQuoteRequest({
   subject,
   source,
+  details = [],
+  itemUrl,
+  defaultNotes,
   onDone,
 }: {
   subject: string;
   source: string;
+  /** Ключевые данные позиции: цена/пакет, требования, медиа — уходят в заявку. */
+  details?: { label: string; value: string }[];
+  /** Ссылка на карточку позиции — менеджер сразу видит, о чём речь. */
+  itemUrl?: string;
+  /** Предзаполненный комментарий. */
+  defaultNotes?: string;
   onDone?: () => void;
 }) {
   const submit = useServerFn(submitLead);
@@ -75,6 +84,7 @@ export function QuickQuoteRequest({
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
 
   function handleBlurValidate(name: string, value: string) {
     const msg = validate(name, value);
@@ -120,7 +130,12 @@ export function QuickQuoteRequest({
           client_phone: String(fd.get("client_phone") ?? "").trim(),
           client_email: String(fd.get("client_email") ?? "").trim(),
           client_company: String(fd.get("client_company") ?? "").trim() || null,
-          notes: [`Запрос КП: ${subject}`, comment].filter(Boolean).join("\n\n"),
+          notes: [
+            `Запрос КП: ${subject}`,
+            details.length ? details.map((d) => `${d.label}: ${d.value}`).join("\n") : "",
+            itemUrl ? `Позиция: ${itemUrl}` : "",
+            comment,
+          ].filter(Boolean).join("\n\n"),
           event_date: String(fd.get("event_date") ?? "") || null,
           event_end_date: String(fd.get("event_end_date") ?? "") || null,
           source,
@@ -165,6 +180,19 @@ export function QuickQuoteRequest({
           Без регистрации. Предмет запроса: <span className="text-foreground">{subject}</span>
         </p>
       </div>
+      {details.length > 0 && (
+        <div className="rounded-lg border border-border/60 bg-background/40 p-3">
+          <div className="text-xs font-medium mb-1.5">Данные позиции подставлены автоматически</div>
+          <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-2 text-xs">
+            {details.map((d) => (
+              <div key={d.label} className="flex justify-between gap-2">
+                <dt className="text-muted-foreground">{d.label}</dt>
+                <dd className="text-right text-foreground">{d.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
       <div className="grid sm:grid-cols-2 gap-3">
         <Field label="Имя *" name="client_name" error={errors.client_name} onBlurValidate={handleBlurValidate} />
         <Field label="Телефон *" name="client_phone" type="tel" error={errors.client_phone} onBlurValidate={handleBlurValidate} />
@@ -182,6 +210,7 @@ export function QuickQuoteRequest({
         <textarea
           name="notes"
           rows={2}
+          defaultValue={defaultNotes ?? ""}
           className="mt-1 w-full rounded-md bg-background/50 border border-border px-3 py-2 text-sm"
           placeholder="Площадка, количество гостей, пожелания"
         />

@@ -150,7 +150,11 @@ export function useCheckoutSubmit({
         clearCart();
         onClearDraft();
         toast.success("Заказ оформлен");
-        navigate({ to: "/order/success/$id", params: { id: res.id } });
+        navigate({
+          to: "/order/success/$id",
+          params: { id: res.id },
+          search: res.token ? { t: res.token } : {},
+        });
         return { ok: true as const, id: res.id };
       } catch (err) {
         toast.error(humanizeError(err));

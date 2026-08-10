@@ -9,6 +9,9 @@ import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/order/success/$id")({
   component: OrderSuccess,
+  validateSearch: (search: Record<string, unknown>) => ({
+    t: typeof search.t === "string" ? search.t : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Заказ оформлен — event-hub.by" },
@@ -19,6 +22,7 @@ export const Route = createFileRoute("/order/success/$id")({
 
 function OrderSuccess() {
   const { id } = Route.useParams();
+  const { t: token } = Route.useSearch();
   const { isAuthenticated } = useAuth();
 
   const { data } = useQuery({
@@ -69,6 +73,23 @@ function OrderSuccess() {
             </div>
           </a>
         </div>
+
+        {token && (
+          <div className="glass rounded-xl p-4 text-left space-y-2">
+            <div className="text-sm font-medium">Кабинет заказа доступен сразу</div>
+            <p className="text-xs text-muted-foreground">
+              Статус, состав и документы по этому заказу — без регистрации, по личной ссылке.
+              Сохраните её: мы также продублировали ссылку в письме.
+            </p>
+            <Link
+              to="/my/$token"
+              params={{ token }}
+              className="inline-flex items-center gap-2 rounded-md bg-gradient-primary px-4 py-2 text-sm font-medium text-primary-foreground glow-primary"
+            >
+              <FileText className="h-4 w-4" /> Открыть мой заказ
+            </Link>
+          </div>
+        )}
 
         {!isAuthenticated && (
           <div className="glass rounded-xl p-4 text-left space-y-2">

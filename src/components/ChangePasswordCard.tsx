@@ -14,22 +14,27 @@ const schema = z.object({
 }).refine((v) => v.password === v.confirm, { message: "Пароли не совпадают", path: ["confirm"] });
 type Form = z.infer<typeof schema>;
 
-export function ChangePasswordCard() {
+export function ChangePasswordCard({ onSuccess, title = "Смена пароля" }: { onSuccess?: () => void; title?: string } = {}) {
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<Form>({ resolver: zodResolver(schema) });
 
   const onSubmit = async ({ password }: Form) => {
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
+    // Снимаем флаг временного пароля тем же запросом.
+    const { error } = await supabase.auth.updateUser({
+      password,
+      data: { must_change_password: false },
+    });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     reset();
     toast.success("Пароль обновлён");
+    onSuccess?.();
   };
 
   return (
     <div className="glass rounded-xl p-5">
-      <h3 className="font-semibold mb-3">Смена пароля</h3>
+      <h3 className="font-semibold mb-3">{title}</h3>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="new-password" className="text-xs">Новый пароль</Label>
