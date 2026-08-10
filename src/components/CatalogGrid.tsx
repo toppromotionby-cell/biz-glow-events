@@ -20,6 +20,18 @@ const SORT_LABELS: Record<SortKey, string> = {
   "title-asc": "По названию (А–Я)",
 };
 
+/** Ценовые диапазоны для быстрой фильтрации (BYN). 0 = «цена по запросу». */
+type PriceKey = "all" | "lt500" | "500-1500" | "gt1500" | "request";
+
+const PRICE_FILTERS: { key: PriceKey; label: string; test: (p: number) => boolean }[] = [
+  { key: "all", label: "Любая цена", test: () => true },
+  { key: "lt500", label: "до 500 BYN", test: (p) => p > 0 && p < 500 },
+  { key: "500-1500", label: "500–1500 BYN", test: (p) => p >= 500 && p <= 1500 },
+  { key: "gt1500", label: "от 1500 BYN", test: (p) => p > 1500 },
+  { key: "request", label: "По запросу", test: (p) => !p },
+];
+
+
 export function CatalogGrid({
   items,
   category,
