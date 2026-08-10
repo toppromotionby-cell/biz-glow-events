@@ -242,7 +242,11 @@ function templateVars(template: string): string {
 }
 
 /** Опции рендера: editable включает подсветку блоков и двойной клик в live-превью. */
-export type QuoteHtmlOptions = { editable?: boolean };
+export type QuoteHtmlOptions = {
+  editable?: boolean;
+  /** Проверки документа — показываются прямо в превью рядом с проблемными местами. */
+  checks?: QuoteCheck[];
+};
 
 export function buildQuoteHtmlDoc(
   quote: Quote,
@@ -256,6 +260,30 @@ export function buildQuoteHtmlDoc(
     editable
       ? ` data-edit="${esc(target)}"${id != null ? ` data-edit-id="${esc(id)}"` : ""}${label ? ` data-edit-label="${esc(label)}"` : ""}`
       : "";
+
+  // ==== Инлайн-предупреждения превью ====
+  const allChecks = (opts.checks ?? []).filter((c) => c.level === "error" || c.level === "warn");
+  const checksByItem = new Map<string, QuoteCheck[]>();
+  const scopeChecks = (scope: QuoteCheckScope) => allChecks.filter((c) => c.scope === scope && !c.refId);
+  for (const ch of allChecks) {
+    if (ch.scope === "item" && ch.refId) {
+      if (!checksByItem.has(ch.refId)) checksByItem.set(ch.refId, []);
+      checksByItem.get(ch.refId)!.push(ch);
+    }
+  }
+  /** Значок с текстом причины. Не печатается. */
+  const chkList = (list: QuoteCheck[], cls = "") =>
+    list.length
+      ? `<div class="chk-list ${cls}">${list
+          .map(
+            (ch) =>
+              `<span class="chk chk-${ch.level}" title="${esc(ch.message)}"><span class="chk-ic">${
+                ch.level === "error" ? "!" : "?"
+              }</span>${esc(ch.message)}</span>`,
+          )
+          .join("")}</div>`
+      : "";
+
   const c = quoteCompany(quote, settings);
   const accent = (quote.design.accent_color || settings.accent_color || BRAND_ACCENT).trim();
   const t = computeTotals(quote, items);
