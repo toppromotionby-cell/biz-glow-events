@@ -814,7 +814,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       const size = isSub ? SMALL : F12;
       const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
       const lines = wrapText(font, label, size, labelW);
-      return Math.max((isSub ? 18 : 24) * D, lines.length * size * LH + (isSub ? 8 : 12) * D);
+      return Math.max((isSub ? 18 : 24) * RD, lines.length * size * LH + (isSub ? 8 : 12) * RD);
     }
     const titleW = firstCol.width - cellPadX * 2;
     const titleLines = wrapText(ctx.bold, cellOf(r, firstCol.key), F11, titleW);
@@ -833,7 +833,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       ) *
       F11 *
       1.3;
-    return Math.max(rowMinH, Math.max(firstBlockH, restH) + 9 * D);
+    return Math.max(rowMinH, Math.max(firstBlockH, restH) + 9 * RD);
   };
 
   // rows
@@ -870,7 +870,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         thickness: 0.4,
         color: LINE,
       });
-      let ly = ctx.y - (isSub ? 5 : 8) * D;
+      let ly = ctx.y - (isSub ? 5 : 8) * RD;
       for (const line of lines) {
         ctx.page.drawText(line, {
           x: startX + cellPadX,
@@ -890,7 +890,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         const w = vFont.widthOfTextAtSize(lastVal, vSize);
         ctx.page.drawText(lastVal, {
           x: startX + totalW - cellPadX - w,
-          y: ctx.y - (isSub ? 5 : 8) * D - vSize,
+          y: ctx.y - (isSub ? 5 : 8) * RD - vSize,
           size: vSize,
           font: vFont,
           color: TEXT,
@@ -920,7 +920,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     });
 
     // колонка с названием
-    let cy = ctx.y - 5 * D;
+    let cy = ctx.y - 5 * RD;
     for (const line of titleLines) {
       ctx.page.drawText(line, { x: richX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
       cy -= F11 * LH;
@@ -944,7 +944,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       }
       const lines = restWrapped[i];
       const blockH = Math.max(lines.length, 1) * F11 * LH;
-      let ly = c.valign === "middle" ? ctx.y - Math.max(5 * D, (rowH - blockH) / 2) : ctx.y - 5 * D;
+      let ly = c.valign === "middle" ? ctx.y - Math.max(5 * RD, (rowH - blockH) / 2) : ctx.y - 5 * RD;
       const color = c.key === "idx" ? MUTED : TEXT;
       for (const line of lines) {
         let tx = cx + cellPadX;
