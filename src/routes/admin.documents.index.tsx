@@ -7,14 +7,22 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   FileStack, Plus, Search, Download, FileSignature, Megaphone, Brain, ArrowRight,
+  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/admin/StatusPill";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
-import { listAllDocuments, type DocumentRow } from "@/lib/documents-overview.functions";
+import {
+  listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus,
+  type DocumentRow,
+} from "@/lib/documents-overview.functions";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
 
 export const Route = createFileRoute("/admin/documents/")({ component: Page });
