@@ -217,11 +217,7 @@ export function SiteHeader() {
 
                 <div className="border-t border-border/50 px-2 py-3">
                   <div className="px-3 pb-2 text-xs uppercase tracking-wide text-muted-foreground">Быстрые действия</div>
-                  <SheetClose asChild>
-                    <Link to="/calculator" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
-                      <span>Калькулятор сметы</span>
-                    </Link>
-                  </SheetClose>
+
                   <SheetClose asChild>
                     <Link to="/cart" className="flex items-center justify-between px-3 py-3 rounded-md hover:bg-primary/10 transition">
                       <span className="flex items-center gap-3"><ShoppingCart className="h-4 w-4" /> Корзина</span>
