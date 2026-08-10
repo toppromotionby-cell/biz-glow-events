@@ -1846,7 +1846,7 @@ async function renderQuotePdf(
     quote.validity_days && !/действительн/i.test(footerText)
       ? `Предложение действительно ${quote.validity_days} дней. `
       : "";
-  drawParagraph(ctx, `${validity}${footerText}`, { size: 9.5, color: MUTED });
+  drawTrailingNote(ctx, `${validity}${footerText}`, { size: 9.5, color: MUTED });
 
   drawFooter(ctx, eff);
   const pages = ctx.pdf.getPageCount();
