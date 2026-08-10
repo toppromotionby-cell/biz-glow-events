@@ -91,8 +91,8 @@ function ComparePage() {
 
           <div className="overflow-x-auto">
             <div
-              className="grid gap-4 min-w-[36rem]"
-              style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(15rem, 1fr))` }}
+              className="grid gap-4 justify-start"
+              style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(15rem, 20rem))` }}
             >
               {rows.map(({ meta, data }) => {
                 const price = data ? minPriceFromPricing(data.pricing) : meta.priceFrom ?? null;
