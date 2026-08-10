@@ -353,9 +353,24 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     color: MUTED,
   });
 
-  ctx.y = PAGE_H - MARGIN_TOP - 58;
+  // Высокий логотип может «вылезти» ниже текста — учитываем это
+  ctx.y = PAGE_H - MARGIN_TOP - Math.max(58, (logo?.h ?? 0) + 14);
   divider(ctx);
+
+  // Логотип клиента (промо-КП) — справа под разделителем
+  const cl = ctx.clientLogo ?? null;
+  if (cl) {
+    ctx.y -= 6;
+    ctx.page.drawImage(cl.img, {
+      x: PAGE_W - MARGIN_X - cl.w,
+      y: ctx.y - cl.h,
+      width: cl.w,
+      height: cl.h,
+    });
+    ctx.y -= cl.h + 6;
+  }
 }
+
 
 function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
   const footer = `${settings.company_legal_name} · ${settings.company_phone} · ${settings.company_email} · ${settings.company_website}`;
