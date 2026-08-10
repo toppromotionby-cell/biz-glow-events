@@ -394,8 +394,10 @@ export function CompanyProfilesManager() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
+
 }
 
 function F({
