@@ -93,12 +93,12 @@ const SURFACE = c01(hexToRgb01(DOC_COLORS.surface));
 // A4 в pt (72 dpi)
 const PAGE_W = DOC_LAYOUT.pageWidthPt;
 const PAGE_H = DOC_LAYOUT.pageHeightPt;
-let MARGIN_X = DOC_LAYOUT.marginXPt;
-let MARGIN_TOP = DOC_LAYOUT.marginTopPt;
-let MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
+let MARGIN_X: number = DOC_LAYOUT.marginXPt;
+let MARGIN_TOP: number = DOC_LAYOUT.marginTopPt;
+let MARGIN_BOTTOM: number = DOC_LAYOUT.marginBottomPt;
 
 // Межстрочные интервалы и множители отступов — задаются пресетом печати.
-let LH = DOC_LAYOUT.lineHeight;       // базовый интервал (таблица, плотный текст)
+let LH: number = DOC_LAYOUT.lineHeight;       // базовый интервал (таблица, плотный текст)
 let LH_TEXT = LH + 0.05;              // обычный текст
 let LH_LOOSE = LH + 0.15;             // абзацы / карточки
 let LH_TOTAL = LH + 0.2;              // строки блока «итого»
