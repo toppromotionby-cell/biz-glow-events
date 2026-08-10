@@ -51,6 +51,12 @@ function ProfilePage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+
+  useEffect(() => {
+    const meta = user?.user_metadata as { must_change_password?: boolean } | undefined;
+    setMustChangePassword(Boolean(meta?.must_change_password));
+  }, [user]);
 
   const updateFn = useServerFn(updateOwnOrder);
   const deleteFn = useServerFn(deleteOwnOrder);
@@ -185,6 +191,25 @@ function ProfilePage() {
   }
 
   if (loading || !profile) return <div className="container mx-auto px-4 py-16">Загрузка...</div>;
+
+  // Временный пароль из письма — до смены кабинет закрыт.
+  if (mustChangePassword) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-md space-y-4">
+        <div className="glass-strong rounded-2xl p-6 space-y-2">
+          <h1 className="text-2xl font-display font-bold gradient-text">Задайте свой пароль</h1>
+          <p className="text-sm text-muted-foreground">
+            Вы вошли с временным паролем из письма. Придумайте постоянный пароль — после этого
+            откроется личный кабинет.
+          </p>
+        </div>
+        <ChangePasswordCard
+          title="Новый пароль"
+          onSuccess={() => setMustChangePassword(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl space-y-8">
