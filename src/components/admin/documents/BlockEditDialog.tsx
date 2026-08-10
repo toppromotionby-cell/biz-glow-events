@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Field } from "@/components/admin/Field";
 import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { normalizeVatMode, type Quote, type QuoteItem } from "@/lib/quotes-model";
+import { computeTotals, normalizeVatMode, type Quote, type QuoteItem, type QuoteTexts } from "@/lib/quotes-model";
+import { buildNumericValues, buildPlaceholderValues, quoteNumberDisplay, quoteValidUntil } from "@/lib/documents/quote-html";
+import { applyPlaceholders } from "@/lib/quote-blocks";
 import type { CompanyOverrides } from "@/lib/documents/company";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 
@@ -27,9 +29,44 @@ const TITLES: Record<string, string> = {
   footer: "Подвал документа",
 };
 
+/** Какой текст из quote.texts подставляет превью, если у блока нет своего. */
+const BLOCK_TEXT_FALLBACK: Partial<Record<string, keyof QuoteTexts>> = {
+  cover: "intro",
+  included: "included",
+  excluded: "excluded",
+  timeline: "timeline",
+  terms: "terms",
+};
+
 function n(v: string): number {
   const x = Number(String(v).replace(",", "."));
   return Number.isFinite(x) ? x : 0;
+}
+
+const money = (v: number) =>
+  `${new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0)} BYN`;
+
+/** Сводка «как в превью»: только чтение. */
+function Summary({ rows }: { rows: Array<[string, string, boolean?]> }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm">
+      {rows.map(([k, v, strong]) => (
+        <div key={k} className={`flex justify-between gap-4 py-0.5 ${strong ? "font-semibold" : ""}`}>
+          <span className="text-muted-foreground">{k}</span>
+          <span className="tabular-nums">{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlaceholderPreview({ text, map, numbers }: { text: string; map: Record<string, string>; numbers: Record<string, number> }) {
+  if (!/\{\{/.test(text || "")) return null;
+  return (
+    <div className="mt-1 text-xs text-muted-foreground">
+      Как будет в документе: {applyPlaceholders(text, map, numbers)}
+    </div>
+  );
 }
 
 export function BlockEditDialog({
