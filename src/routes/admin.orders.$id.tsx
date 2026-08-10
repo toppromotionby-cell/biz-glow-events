@@ -22,8 +22,11 @@ import {
   ArrowLeft, Clock, Trash2, Mail, FileText, MoreHorizontal, Phone, Copy,
   Send, Download, ChevronDown, CheckCircle2, Circle, MessageSquare, Paperclip,
   CalendarDays, Building2, User as UserIcon, Link2, Plus,
+  History as HistoryIcon,
 } from "lucide-react";
 import { OrderAttachments } from "@/components/admin/OrderAttachments";
+import { RecordHistory } from "@/components/admin/RecordHistory";
+
 import { OrderAssignee } from "@/components/admin/OrderAssignee";
 import { OrderPaymentDialog } from "@/components/admin/OrderPaymentDialog";
 import { OrderItemsEditor } from "@/components/admin/OrderItemsEditor";
