@@ -15,6 +15,7 @@ import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { QuickQuoteForm } from "@/components/QuickQuoteForm";
 import { trackView } from "@/lib/recent";
+import { signalDemand } from "@/lib/demand";
 import { useSectionEnabled } from "@/lib/site-sections";
 import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare, Check } from "lucide-react";
 import { PriceTableView, getTiers } from "@/components/PriceTable";
@@ -55,6 +56,9 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
     }, 5000);
     return () => window.clearInterval(id);
   }, [photos.length, galleryHover, lightbox]);
+  useEffect(() => {
+    signalDemand(entityType, item.id, "view");
+  }, [entityType, item.id]);
   const from = priceFrom(item.pricing);
   const features = asArray<string>(item.features);
   const faq = asArray<{ q?: string; a?: string }>(item.faq);

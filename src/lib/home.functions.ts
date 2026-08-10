@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getDemandScores } from "@/lib/demand.server";
 
 type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 
@@ -75,9 +76,8 @@ async function buildPopularityScores(): Promise<Map<string, number>> {
     async () => {
       const { data } = await supabaseAdmin
         .from("order_items")
-        .select("entity_type, entity_id, qty, orders!inner(user_id, created_at)")
+        .select("entity_type, entity_id, qty, orders!inner(created_at)")
         .gte("orders.created_at", since)
-        .not("orders.user_id", "is", null)
         .limit(2000);
       return (data ?? []) as Array<{ entity_type: string; entity_id: string | null; qty: number | null }>;
     },
@@ -94,7 +94,6 @@ async function buildPopularityScores(): Promise<Map<string, number>> {
       const { data } = await supabaseAdmin
         .from("cart_drafts")
         .select("items, user_id")
-        .not("user_id", "is", null)
         .limit(2000);
       return (data ?? []) as Array<{ items: unknown }>;
     },
@@ -109,6 +108,10 @@ async function buildPopularityScores(): Promise<Map<string, number>> {
       bump(et, id, WEIGHT_CART * Math.max(1, qty));
     }
   }
+
+  // Сигналы спроса: просмотры, «Подробнее», запросы КП, корзина, заказы (в т.ч. гостевые).
+  const demand = await safe("popularity.demand", () => getDemandScores(), new Map<string, number>());
+  for (const [k, v] of demand) scores.set(k, (scores.get(k) ?? 0) + v);
 
   return scores;
 }

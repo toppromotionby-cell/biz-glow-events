@@ -252,6 +252,24 @@ export const submitOrder = createServerFn({ method: "POST" })
       throw new Error("Не удалось сохранить позиции заявки.");
     }
 
+    // Сигнал спроса: заказанные позиции поднимаются в рекомендациях и калькуляторе.
+    try {
+      const { recordDemand } = await import("@/lib/demand.server");
+      await recordDemand(
+        rows
+          .filter((r) => r.entity_id)
+          .map((r) => ({
+            entity_type: r.entity_type as "zones",
+            entity_id: r.entity_id as string,
+            event: "order" as const,
+            qty: r.qty,
+          })),
+      );
+    } catch (err) {
+      console.error("[submitOrder] demand signal failed:", err);
+    }
+
+
     // 4. Промокод — инкрементируем ТОЛЬКО после успешного создания позиций.
     let promoApplied: string | null = null;
     if (data.promo_code) {

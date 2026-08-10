@@ -159,3 +159,25 @@ export function priceForHours(pricing: HourPricing, hours: number): number {
   return chosen.price;
 }
 
+
+// ---------- Минимальная цена позиции ----------
+// pricing бывает объектом ({from, price_from, min, base}) или массивом тарифов.
+export function minPriceFromPricing(pricing: unknown): number | null {
+  if (!pricing) return null;
+  if (Array.isArray(pricing)) {
+    let min: number | null = null;
+    for (const r of pricing as Array<{ price?: unknown }>) {
+      const p = Number(r?.price);
+      if (Number.isFinite(p) && p > 0 && (min === null || p < min)) min = p;
+    }
+    return min;
+  }
+  if (typeof pricing === "object") {
+    const p = pricing as Record<string, unknown>;
+    for (const k of ["from", "price_from", "priceFrom", "min", "base", "price"]) {
+      const v = Number(p[k]);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+  }
+  return null;
+}

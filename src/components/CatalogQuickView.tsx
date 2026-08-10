@@ -23,6 +23,7 @@ import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceFo
 import { addToCart } from "@/lib/cart";
 import { toast } from "sonner";
 import { priceFrom } from "@/lib/utils";
+import { signalDemand } from "@/lib/demand";
 
 function asArray<T = unknown>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
@@ -102,6 +103,9 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
   const videos = item.video_urls ?? [];
   const features = asArray<string>(item.features);
   const from = priceFrom(item.pricing);
+  useEffect(() => {
+    signalDemand(type, item.id, "detail");
+  }, [type, item.id]);
 
   const slides = useMemo<Slide[]>(
     () => [
@@ -452,6 +456,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
               source={`quickview:${type}`}
               details={quoteDetails}
               itemUrl={typeof window !== "undefined" ? `${window.location.origin}${detailPath}` : detailPath}
+              demand={{ entity_type: type, entity_id: item.id }}
               defaultNotes={item.requirements?.trim() ? `Требования по позиции учтены: ${item.requirements.trim().slice(0, 300)}` : ""}
             />
           </section>
