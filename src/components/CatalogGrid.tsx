@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
-import { CompareButton } from "@/components/CompareButton";
 
 import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
@@ -10,7 +9,7 @@ import { useClampedText } from "@/components/ui/ClampedTitle";
 
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
-import { Info, X, ShoppingCart, ArrowUpDown } from "lucide-react";
+import { Info, X, ArrowUpDown } from "lucide-react";
 
 type SortKey = "default" | "price-asc" | "price-desc" | "title-asc";
 
@@ -257,7 +256,7 @@ export function CatalogGrid({
                 item={it}
                 category={category}
                 activeTags={activeTags}
-                entityType={entityType}
+                
                 onOpen={() => setOpenSlug(it.slug)}
                 onToggleTag={toggleTag}
               />
@@ -313,14 +312,12 @@ function CatalogCard({
   item,
   category,
   activeTags,
-  entityType,
   onOpen,
   onToggleTag,
 }: {
   item: CatalogItem;
   category: string;
   activeTags: string[];
-  entityType: CatalogType;
   onOpen: () => void;
   onToggleTag: (t: string) => void;
 }) {
@@ -444,31 +441,12 @@ function CatalogCard({
             <button
               type="button"
               onClick={onOpen}
-              aria-label={`В смету: ${item.title}`}
+              aria-label={`Подробнее: ${item.title}`}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
-              <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-              В смету
+              <Info className="h-4 w-4" aria-hidden="true" />
+              Подробнее
             </button>
-            <button
-              type="button"
-              onClick={onOpen}
-              aria-label={`Подробнее: ${item.title}`}
-              title="Подробнее"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/10 text-foreground transition hover:bg-primary/20 hover:border-primary/60"
-            >
-              <Info className="h-4 w-4 text-primary" aria-hidden="true" />
-            </button>
-            <CompareButton
-              item={{
-                id: item.slug,
-                entity_type: entityType,
-                slug: item.slug,
-                title: item.title,
-                image: item.image,
-                priceFrom: item.priceFrom,
-              }}
-            />
           </div>
 
 

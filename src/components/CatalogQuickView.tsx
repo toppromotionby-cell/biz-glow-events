@@ -1,6 +1,6 @@
 // Модальное окно «Подробнее» для позиции каталога.
 // Содержит ключевые данные: медиа (фото + видео), цены, занятость, требования,
-// состав и доп. опции, а также инлайн-запрос КП без переходов на другие страницы.
+// состав и доп. опции, а также инлайн-заявку без переходов на другие страницы.
 import { useEffect, useMemo, useState } from "react";
 import { SearchX, ShoppingCart, FileText, Play, Maximize2, ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -18,8 +18,8 @@ import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
-import { QuickQuoteRequest } from "@/components/catalog/QuickQuoteRequest";
-import { CompareButton } from "@/components/CompareButton";
+import { QuickLeadRequest } from "@/components/catalog/QuickLeadRequest";
+
 import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
 import { toast } from "sonner";
@@ -168,7 +168,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
     videos.length > 0 ? `${videos.length} видео` : "",
   ].filter(Boolean);
 
-  // Данные позиции для формы КП — чтобы клиент не вводил их повторно.
+  // Данные позиции для формы заявки — чтобы клиент не вводил их повторно.
   const quoteDetails = [
     { label: "Позиция", value: item.title },
     item.category ? { label: "Категория", value: item.category } : null,
@@ -402,20 +402,8 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                       : "border border-primary/40 text-foreground hover:bg-primary/10"
                   }`}
                 >
-                  <FileText className="h-4 w-4" /> Запросить КП
+                  <FileText className="h-4 w-4" /> Оставить заявку
                 </button>
-                <CompareButton
-                  variant="full"
-                  className="w-full"
-                  item={{
-                    id: item.id,
-                    entity_type: type,
-                    slug: item.slug,
-                    title: item.title,
-                    image: item.photo_urls?.[0] ?? null,
-                    priceFrom: priceFrom(item.pricing),
-                  }}
-                />
               </div>
             </div>
 
@@ -464,7 +452,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
 
         {quoteOpen && (
           <section id="quickview-quote" className="mt-6">
-            <QuickQuoteRequest
+            <QuickLeadRequest
               subject={effectiveTitle}
               source={`quickview:${type}`}
               details={quoteDetails}
@@ -523,7 +511,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                 : "border border-primary/40 text-foreground hover:bg-primary/10"
             }`}
           >
-            <FileText className="h-4 w-4" /> КП
+            <FileText className="h-4 w-4" /> Заявка
           </button>
         </div>
       </div>

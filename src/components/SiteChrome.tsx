@@ -3,10 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown, GitCompare, Send } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown, Send } from "lucide-react";
 
 import { useCart } from "@/lib/cart";
-import { useCompare } from "@/lib/compare";
 import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
@@ -51,7 +50,7 @@ export function SiteHeader() {
   
 
   const { count } = useCart();
-  const { count: compareCount } = useCompare();
+  
   const catalogSections = useCatalogNav();
 
   const [open, setOpen] = useState(false);
@@ -142,12 +141,6 @@ export function SiteHeader() {
 
 
 
-            {compareCount > 0 && (
-              <Link to="/compare" aria-label={`Сравнение, ${compareCount} позиций`} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                <GitCompare className="h-4 w-4" aria-hidden="true" />
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{compareCount}</span>
-              </Link>
-            )}
             <Toggleable sectionKey="header.cart" as="span">
               <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
                 <ShoppingCart className="h-4 w-4" aria-hidden="true" />
@@ -177,12 +170,6 @@ export function SiteHeader() {
           <div className="flex md:hidden items-center gap-1">
             
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
-            {compareCount > 0 && (
-              <Link to="/compare" aria-label={`Сравнение, ${compareCount} позиций`} className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                <GitCompare className="h-5 w-5" aria-hidden="true" />
-                <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{compareCount}</span>
-              </Link>
-            )}
             <Toggleable sectionKey="header.cart" as="span">
               <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md hover:bg-primary/10 transition">
                 <ShoppingCart className="h-5 w-5" aria-hidden="true" />
