@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
-type BadgeKey = "newOrders" | "newInquiries" | "todayBookings" | "pendingTestimonials";
+type BadgeKey = "newOrders" | "newInquiries" | "pendingTestimonials";
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey };
 type NavGroup = { label: string; items: NavItem[] };
 
@@ -36,8 +36,7 @@ const GROUPS: NavGroup[] = [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
       { to: "/admin/orders", label: "Заказы (CRM)", icon: ShoppingCart, badgeKey: "newOrders" },
       { to: "/admin/orders?kind=inquiry", label: "Запросы", icon: Bell, badgeKey: "newInquiries" },
-      { to: "/admin/calendar", label: "Календарь", icon: Calendar, badgeKey: "todayBookings" },
-      { to: "/admin/availability", label: "Занятость", icon: CalendarClock },
+      { to: "/admin/calendar", label: "Календарь", icon: Calendar },
     ],
   },
   {
