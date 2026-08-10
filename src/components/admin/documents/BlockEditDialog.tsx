@@ -294,6 +294,19 @@ export function BlockEditDialog({
                   }
                 />
               </Field>
+              <div className="sm:col-span-2">
+                <Summary
+                  rows={[
+                    ["Сумма строки", money(item.qty * item.price), true],
+                    ...(item.cost
+                      ? ([
+                          ["Себестоимость строки", money(item.qty * (item.cost ?? 0))],
+                          ["Маржа", money(item.qty * (item.price - (item.cost ?? 0)))],
+                        ] as Array<[string, string]>)
+                      : []),
+                  ]}
+                />
+              </div>
             </div>
           )}
 
