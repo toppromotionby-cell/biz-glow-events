@@ -28,7 +28,17 @@ function nf(n: number): string {
   );
 }
 
-export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): string {
+export function buildPromoQuoteBody(
+  quote: PromoQuote,
+  items: PromoItem[],
+  opts: { editable?: boolean } = {},
+): string {
+  const editable = opts.editable === true;
+  /** Метка редактируемой зоны — только для live-превью в админке. */
+  const ed = (target: string, id?: string, label?: string) =>
+    editable
+      ? ` data-edit="${esc(target)}"${id != null ? ` data-edit-id="${esc(id)}"` : ""}${label ? ` data-edit-label="${esc(label)}"` : ""}`
+      : "";
   const t = computePromoTotals(quote, items);
   const sections = groupBySection(items);
   const accent = /^#[0-9a-fA-F]{3,8}$/.test(quote.accent_color) ? quote.accent_color : BRAND_ACCENT;
@@ -46,7 +56,7 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
   const rowsHtml = sections
     .map((sec) => {
       const head = sec.name
-        ? `<tr class="sec"><td colspan="${colCount}">${esc(sec.name)}</td></tr>`
+        ? `<tr class="sec"${ed("section", sec.name, "Раздел")}><td colspan="${colCount}">${esc(sec.name)}</td></tr>`
         : "";
       const body = sec.items
         .map((it) => {
@@ -62,7 +72,7 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
           if (quote.show_notes) cells.push(`<td class="c-note">${esc(it.note)}</td>`);
-          return `<tr>${cells.join("")}</tr>`;
+          return `<tr${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
         })
         .join("");
       const sub =
@@ -144,7 +154,7 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
   return `
 <div class="promo-doc" style="--accent:${esc(accent)}">
   <div class="head">
-    <div class="meta">${meta}</div>
+    <div class="meta"${ed("meta", undefined, "Шапка КП")}>${meta}</div>
     <div class="logos">
       ${quote.logo_url ? `<span style="${logoWrapStyle(quote.logo_layout)}"><img style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url)}" alt="Логотип" /></span>` : ""}
       ${quote.client_logo_url ? `<img src="${esc(quote.client_logo_url)}" alt="Логотип клиента" />` : ""}
@@ -155,8 +165,8 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
     <thead><tr>${cols.map((c) => `<th class="${c.cls}">${esc(c.label)}</th>`).join("")}</tr></thead>
     <tbody>${rowsHtml || `<tr><td colspan="${colCount}" class="empty">Позиции не добавлены</td></tr>`}${extraRows.join("")}</tbody>
   </table>
-  <table class="totals"><tbody>${totalsRows}</tbody></table>
-  ${quote.footer_note ? `<div class="footer-note">${esc(quote.footer_note).replaceAll("\n", "<br/>")}</div>` : ""}
+  <table class="totals"${ed("totals", undefined, "Итоги")}><tbody>${totalsRows}</tbody></table>
+  ${quote.footer_note ? `<div class="footer-note"${ed("footer", undefined, "Примечание")}>${esc(quote.footer_note).replaceAll("\n", "<br/>")}</div>` : ""}
 </div>`.trim();
 }
 
@@ -186,7 +196,9 @@ export const PROMO_DOC_CSS = `
 .promo-doc .totals .val { text-align: right; white-space: nowrap; background: #fff8ea; }
 .promo-doc .totals .grand td { font-size: 13px; }
 .promo-doc .footer-note { margin-top: 16px; color: #45454d; font-size: 11px; }
-@media print { .promo-doc { font-size: 11px; } }
+[data-edit] { cursor: pointer; }
+.promo-doc [data-edit]:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media print { .promo-doc [data-edit]:hover { outline: none; } .promo-doc { font-size: 11px; } }
 `;
 
 export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[]): string {
