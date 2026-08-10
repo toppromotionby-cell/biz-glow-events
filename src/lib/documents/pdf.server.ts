@@ -1816,7 +1816,9 @@ async function renderQuotePdf(
   drawParagraph(ctx, `${validity}${footerText}`, { size: 9.5, color: MUTED });
 
   drawFooter(ctx, eff);
-  return await ctx.pdf.save();
+  const pages = ctx.pdf.getPageCount();
+  return { bytes: await ctx.pdf.save(), pages };
+
 }
 
 
