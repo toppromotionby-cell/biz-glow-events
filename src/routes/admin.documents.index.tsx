@@ -158,7 +158,7 @@ function Page() {
         }
       />
 
-      {!templates && (
+      {view === "docs" && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Черновики" value={counts?.draft ?? 0} onClick={() => setStatus("draft")} />
           <StatCard label="Ждут ответа клиента" value={counts?.awaiting ?? 0} onClick={() => setStatus("sent")} />
@@ -169,20 +169,30 @@ function Page() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-border/60 p-0.5">
-          <Button size="sm" variant={templates ? "ghost" : "secondary"} onClick={() => setTemplates(false)}>
-            Документы
-          </Button>
-          <Button size="sm" variant={templates ? "secondary" : "ghost"} onClick={() => { setTemplates(true); setStatus("all"); }}>
-            Шаблоны
-          </Button>
-        </div>
-        <div className="inline-flex rounded-lg border border-border/60 p-0.5">
-          {(["all", "quote", "promo"] as const).map((k) => (
-            <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
-              {k === "all" ? "Все типы" : k === "quote" ? "КП" : "КП промо"}
+          {([
+            { key: "docs", label: "Документы" },
+            { key: "templates", label: "Шаблоны" },
+            { key: "orders", label: "Счета и договоры" },
+          ] as const).map((v) => (
+            <Button
+              key={v.key}
+              size="sm"
+              variant={view === v.key ? "secondary" : "ghost"}
+              onClick={() => { setView(v.key); setStatus("all"); }}
+            >
+              {v.label}
             </Button>
           ))}
         </div>
+        {view !== "orders" && (
+          <div className="inline-flex rounded-lg border border-border/60 p-0.5">
+            {(["all", "quote", "promo"] as const).map((k) => (
+              <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
+                {k === "all" ? "Все типы" : k === "quote" ? "КП" : "КП промо"}
+              </Button>
+            ))}
+          </div>
+        )}
         <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -192,7 +202,7 @@ function Page() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        {!templates && (
+        {view === "docs" && (
           <div className="inline-flex flex-wrap gap-1">
             {FILTERS.map((f) => (
               <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => setStatus(f.key)}>
@@ -202,6 +212,7 @@ function Page() {
           </div>
         )}
       </div>
+
 
 
       <div className="overflow-hidden rounded-xl border border-border/60">
