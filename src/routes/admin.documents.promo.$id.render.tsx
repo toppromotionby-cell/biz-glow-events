@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireStaff } from "@/lib/admin-route-guard";
 import { loadDocumentSettings } from "@/lib/documents/render.server";
 import { buildPromoQuoteHtmlDoc } from "@/lib/documents/promo-quote-html";
+import { companyRequisitesLine } from "@/lib/documents/company";
 import { buildPromoQuotePdf } from "@/lib/documents/pdf.server";
 import { buildPdfResponse } from "@/lib/documents/pdf-http.server";
 import { normalizePromoItem, normalizePromoQuote, promoFileName } from "@/lib/promo-quote-model";
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/admin/documents/promo/$id/render")({
         }
 
 
-        return new Response(buildPromoQuoteHtmlDoc(quote, items), {
+        return new Response(buildPromoQuoteHtmlDoc(quote, items, companyRequisitesLine(quote.company_overrides, settings)), {
           status: 200,
           headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
         });

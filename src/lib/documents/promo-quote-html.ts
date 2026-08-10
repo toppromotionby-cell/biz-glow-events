@@ -234,7 +234,7 @@ export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[], co
   ${PROMO_DOC_CSS}
   @media print { body { background: #fff; padding: 0; } .sheet { box-shadow: none; max-width: none; padding: 0; } }
 </style></head>
-<body><div class="sheet">${buildPromoQuoteBody(quote, items)}</div>
+<body><div class="sheet">${buildPromoQuoteBody(quote, items, { companyLine })}</div>
 <!-- Итого: ${formatMoney(t.totalWithVat, quote.currency)} -->
 </body></html>`;
 }
