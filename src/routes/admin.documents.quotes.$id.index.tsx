@@ -379,7 +379,11 @@ function Page() {
               {QUOTE_STATUSES.map((s) => <SelectItem key={s} value={s}>{QUOTE_STATUS_LABELS[s]}</SelectItem>)}
             </SelectContent>
           </Select>
-          <QuoteShareActions share={shareState} onSend={onSendToClient} />
+          <QuoteShareActions
+            share={shareState}
+            onSend={onSendToClient}
+            issues={checks.filter((c) => c.level === "error").map((c) => c.message)}
+          />
           <Button size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render?format=pdf`, { name: "КП.pdf" })}>
             <Download className="h-4 w-4 mr-1.5" />PDF
           </Button>
