@@ -44,6 +44,8 @@ import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { VatSettings } from "@/components/admin/VatSettings";
+import { LogoUploader } from "@/components/admin/LogoUploader";
+
 
 export const Route = createFileRoute("/admin/documents/promo/$id/")({ component: EditorPage });
 
@@ -185,14 +187,8 @@ function EditorPage() {
     queryFn: () => listVersions({ data: { quoteId: id } }),
   });
 
-  const uploadLogo = async (file: File, field: "logo_url" | "client_logo_url") => {
-    const path = `promo-quotes/${id}/${field}-${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-    const { error: upErr } = await supabase.storage.from("catalog-media").upload(path, file, { upsert: true });
-    if (upErr) return toast.error(upErr.message);
-    const { data: pub } = supabase.storage.from("catalog-media").getPublicUrl(path);
-    patchQuote({ [field]: pub.publicUrl } as Partial<PromoQuote>);
-    toast.success("Логотип загружен");
-  };
+
+
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
   if (error || !quote || !totals) {
@@ -531,13 +527,18 @@ function EditorPage() {
                 <Input type="color" value={quote.accent_color} onChange={(e) => patchQuote({ accent_color: e.target.value })} className="h-10 w-20 p-1" />
               </Field>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Логотип агентства">
-                  <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadLogo(f, "logo_url"); }} />
-                </Field>
-                <Field label="Логотип клиента">
-                  <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadLogo(f, "client_logo_url"); }} />
-                </Field>
+                <LogoUploader
+                  label="Логотип агентства"
+                  value={quote.logo_url}
+                  onChange={(v) => patchQuote({ logo_url: v })}
+                />
+                <LogoUploader
+                  label="Логотип клиента"
+                  value={quote.client_logo_url}
+                  onChange={(v) => patchQuote({ client_logo_url: v })}
+                />
               </div>
+
               <Field label="Примечание в подвале">
                 <Textarea value={quote.footer_note} onChange={(e) => patchQuote({ footer_note: e.target.value })} className="min-h-[80px]" />
               </Field>

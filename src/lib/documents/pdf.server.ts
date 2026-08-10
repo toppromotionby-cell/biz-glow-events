@@ -3,7 +3,7 @@
 // (Inter Regular/Bold + Space Grotesk Bold — те же шрифты, что и в HTML-превью);
 // кириллица в Standard 14 шрифтах PDF не работает, поэтому встраиваем TTF
 // подмножеством (subset:true).
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import type { DocOrder, DocItem, DocKind } from "@/lib/documents/build.server";
@@ -97,6 +97,8 @@ const F_DOC_DATE = DOC_FONT_PT.docDate;
 const F_LABEL = DOC_FONT_PT.cardLabel;
 const F_FOOTER = DOC_FONT_PT.footer;
 
+type FittedLogo = { img: PDFImage; w: number; h: number };
+
 type DocCtx = {
   pdf: PDFDocument;
   regular: PDFFont;
@@ -106,7 +108,46 @@ type DocCtx = {
   page: PDFPage;
   y: number;
   pageNum: number;
+
+  /** Логотип компании в шапке (если загружен и доступен). */
+  logo?: FittedLogo | null;
+  /** Логотип клиента (промо-КП) — рисуется справа под шапкой. */
+  clientLogo?: FittedLogo | null;
 };
+
+// Габариты логотипа в шапке (pt). Пропорции сохраняются, картинка вписывается.
+const HEADER_LOGO_MAX_H = 34;
+const HEADER_LOGO_MAX_W = 150;
+const MAX_LOGO_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Загружает логотип по URL и встраивает в PDF, вписывая в бокс maxW×maxH.
+ * Ошибки сети/формата не ломают документ — логотип просто не рисуется.
+ */
+async function embedLogo(
+  pdf: PDFDocument,
+  url: string | null | undefined,
+  maxW = HEADER_LOGO_MAX_W,
+  maxH = HEADER_LOGO_MAX_H,
+): Promise<FittedLogo | null> {
+  const src = (url ?? "").trim();
+  if (!src || !/^https?:\/\//i.test(src)) return null;
+  try {
+    const res = await fetch(src, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (!bytes.byteLength || bytes.byteLength > MAX_LOGO_BYTES) return null;
+    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+    const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
+    if (!isPng && !isJpg) return null; // SVG/WebP нормализуются в PNG на клиенте
+    const img = isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+    const k = Math.min(maxW / img.width, maxH / img.height);
+    return { img, w: img.width * k, h: img.height * k };
+  } catch {
+    return null;
+  }
+}
+
 
 function money(n: number): string {
   // Intl.NumberFormat в воркере доступен; не используем символ валюты в
@@ -248,10 +289,23 @@ function drawTracked(
 }
 
 function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
+  // Логотип слева (если загружен) — вписан в бокс, пропорции сохранены
+  const logo = ctx.logo ?? null;
+  let leftX = MARGIN_X;
+  if (logo) {
+    ctx.page.drawImage(logo.img, {
+      x: MARGIN_X,
+      y: PAGE_H - MARGIN_TOP - logo.h + 2,
+      width: logo.w,
+      height: logo.h,
+    });
+    leftX = MARGIN_X + logo.w + 12;
+  }
+
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
   const brand = safe(settings.company_brand);
   ctx.page.drawText(brand, {
-    x: MARGIN_X,
+    x: leftX,
     y: PAGE_H - MARGIN_TOP - F22 * 0.8,
     size: F22,
     font: displayFont(ctx, brand),
@@ -261,8 +315,9 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
   const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
   ctx.page.drawText(
     `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
-    { x: MARGIN_X, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
+    { x: leftX, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
   );
+
 
   // Тип/номер/дата справа
   const rightX = PAGE_W - MARGIN_X;
@@ -298,9 +353,24 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     color: MUTED,
   });
 
-  ctx.y = PAGE_H - MARGIN_TOP - 58;
+  // Высокий логотип может «вылезти» ниже текста — учитываем это
+  ctx.y = PAGE_H - MARGIN_TOP - Math.max(58, (logo?.h ?? 0) + 14);
   divider(ctx);
+
+  // Логотип клиента (промо-КП) — справа под разделителем
+  const cl = ctx.clientLogo ?? null;
+  if (cl) {
+    ctx.y -= 6;
+    ctx.page.drawImage(cl.img, {
+      x: PAGE_W - MARGIN_X - cl.w,
+      y: ctx.y - cl.h,
+      width: cl.w,
+      height: cl.h,
+    });
+    ctx.y -= cl.h + 6;
+  }
 }
+
 
 function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
   const footer = `${settings.company_legal_name} · ${settings.company_phone} · ${settings.company_email} · ${settings.company_website}`;
@@ -583,7 +653,7 @@ function header(order: DocOrder) {
   };
 }
 
-async function createCtx(): Promise<DocCtx> {
+async function createCtx(logoUrl?: string | null, clientLogoUrl?: string | null): Promise<DocCtx> {
   const [regBytes, boldBytes, dispBytes] = [loadRegular(), loadBold(), loadDisplay()];
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -593,17 +663,29 @@ async function createCtx(): Promise<DocCtx> {
   const display = await pdf.embedFont(dispBytes, { subset: true });
   // ставим как default fallback на StandardFonts (на всякий случай — для emoji не нужно).
   void StandardFonts;
-  const ctx: DocCtx = { pdf, regular, bold, display, page: pdf.addPage([PAGE_W, PAGE_H]), y: 0, pageNum: 1 };
+  const [logo, clientLogo] = await Promise.all([
+    embedLogo(pdf, logoUrl),
+    embedLogo(pdf, clientLogoUrl, 120, 28),
+  ]);
+  const ctx: DocCtx = {
+    pdf, regular, bold, display,
+    page: pdf.addPage([PAGE_W, PAGE_H]),
+    y: 0,
+    pageNum: 1,
+    logo,
+    clientLogo,
+  };
 
   ctx.y = PAGE_H - MARGIN_TOP;
   ctx.page.drawRectangle({ x: 0, y: PAGE_H - 4, width: PAGE_W, height: 4, color: ACCENT });
   return ctx;
 }
 
+
 // === Builders для каждого вида документа ===
 
 async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Коммерческое предложение", num, date, settings);
 
@@ -656,7 +738,7 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
 }
 
 async function buildInvoice(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Счёт-фактура", num, date, settings);
 
@@ -760,7 +842,7 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
 }
 
 async function buildContract(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Договор", num, date, settings);
 
@@ -859,7 +941,7 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
 }
 
 async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Акт оказанных услуг", num, date, settings);
 
@@ -1042,7 +1124,7 @@ export async function buildStandaloneQuotePdf(
     signer_title: c.signer_title,
   };
 
-  const ctx = await createCtx();
+  const ctx = await createCtx(quote.design.show_logo ? (quote.logo_url || settings.logo_url) : null);
   drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff);
 
   const map = buildPlaceholderValues(quote, items, settings);
@@ -1267,7 +1349,7 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(quote.logo_url || settings.logo_url, quote.client_logo_url);
   const t = computePromoTotals(quote, items);
   drawHeader(
     ctx,
