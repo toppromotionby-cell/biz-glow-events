@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
 import { PriceFactorsPopup } from "@/components/PriceFactorsPopup";
 import { CatalogProse } from "@/components/CatalogProse";
+import { toCardExcerpt } from "@/lib/rich-text";
 import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { safeJsonLd } from "@/lib/seo-jsonld";
 import { QuantityStepper } from "@/components/QuantityStepper";
@@ -189,7 +190,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
           <header>
             {item.category && <div className="text-xs uppercase tracking-wide text-primary">{item.category}</div>}
             <h1 className="mt-1 text-3xl font-display font-bold gradient-text">{item.title}</h1>
-            {item.short_description && <p className="mt-2 text-muted-foreground">{item.short_description}</p>}
           </header>
 
 
@@ -511,7 +511,7 @@ export function productJsonLd(item: CatalogRow, ctx?: { basePath?: string; baseL
       {
         "@type": "Product",
         name: item.title,
-        description: item.short_description ?? item.description ?? undefined,
+        description: toCardExcerpt(item.description, 300) || undefined,
         image: item.photo_urls ?? undefined,
         brand: { "@type": "Brand", name: "event-hub.by" },
         url: itemUrl,

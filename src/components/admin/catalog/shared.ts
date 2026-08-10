@@ -17,6 +17,6 @@ export function draftIssues(it: Row): string[] {
   const issues: string[] = [];
   if (!it.photo_urls?.length) issues.push("нет фото");
   if (!getTiers(it.pricing).length) issues.push("нет цены");
-  if (!it.short_description && !it.description) issues.push("нет описания");
+  if (!it.description) issues.push("нет описания");
   return issues;
 }

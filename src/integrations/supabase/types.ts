@@ -29,7 +29,6 @@ export type Database = {
           requirements: string | null
           seo_description: string | null
           seo_title: string | null
-          short_description: string | null
           slug: string
           sort_order: number
           title: string
@@ -50,7 +49,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug: string
           sort_order?: number
           title: string
@@ -71,7 +69,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug?: string
           sort_order?: number
           title?: string
@@ -1842,7 +1839,6 @@ export type Database = {
           requirements: string | null
           seo_description: string | null
           seo_title: string | null
-          short_description: string | null
           slug: string
           sort_order: number
           title: string
@@ -1863,7 +1859,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug: string
           sort_order?: number
           title: string
@@ -1884,7 +1879,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug?: string
           sort_order?: number
           title?: string
@@ -2608,7 +2602,6 @@ export type Database = {
           requirements: string | null
           seo_description: string | null
           seo_title: string | null
-          short_description: string | null
           slug: string
           sort_order: number
           title: string
@@ -2629,7 +2622,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug: string
           sort_order?: number
           title: string
@@ -2650,7 +2642,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug?: string
           sort_order?: number
           title?: string
@@ -2805,7 +2796,6 @@ export type Database = {
           requirements: string | null
           seo_description: string | null
           seo_title: string | null
-          short_description: string | null
           slug: string
           sort_order: number
           title: string
@@ -2826,7 +2816,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug: string
           sort_order?: number
           title: string
@@ -2847,7 +2836,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug?: string
           sort_order?: number
           title?: string
@@ -3019,7 +3007,6 @@ export type Database = {
           requirements: string | null
           seo_description: string | null
           seo_title: string | null
-          short_description: string | null
           slug: string
           sort_order: number
           title: string
@@ -3040,7 +3027,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug: string
           sort_order?: number
           title: string
@@ -3061,7 +3047,6 @@ export type Database = {
           requirements?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          short_description?: string | null
           slug?: string
           sort_order?: number
           title?: string

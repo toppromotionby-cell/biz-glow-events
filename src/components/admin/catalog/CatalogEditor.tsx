@@ -90,7 +90,7 @@ export function CatalogEditor({
 
   const buildPatch = (state: FormState): CatalogUpdate => ({
     title: state.title, slug: state.slug, category: state.category,
-    short_description: state.short_description, description: state.description,
+    description: state.description,
     requirements: state.requirements, seo_title: state.seo_title, seo_description: state.seo_description,
     published: state.published, photo_urls: state.photo_urls ?? [], video_urls: state.video_urls ?? [],
     pricing: state.pricing ?? {}, features: state.features ?? [], extras: state.extras ?? [], faq: state.faq ?? [],
@@ -270,14 +270,6 @@ export function CatalogEditor({
         Цена «от» автоматически: {minPrice !== null ? fmtCurrency(minPrice) : "по запросу"}
       </div>
 
-      <Field label="Краткое описание">
-        <Textarea
-          rows={2}
-          className="border-primary/60 focus-visible:border-primary focus-visible:ring-primary/30"
-          value={form.short_description ?? ""}
-          onChange={(e) => setForm({ ...form, short_description: e.target.value })}
-        />
-      </Field>
       <Field label="Описание">
         <Textarea
           rows={6}

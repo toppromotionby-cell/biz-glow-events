@@ -8,7 +8,7 @@ export type HomeFeatured = {
   id: string;
   slug: string;
   title: string;
-  short_description: string | null;
+  description: string | null;
   photo_urls: string[] | null;
   basePath: string;
   pricing: JsonValue;
@@ -127,7 +127,7 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async (): P
           async () => {
             const { data } = await supabaseAdmin
               .from(t.name)
-              .select("id, slug, title, short_description, photo_urls, pricing, updated_at")
+              .select("id, slug, title, description, photo_urls, pricing, updated_at")
               .eq("published", true)
               .order("updated_at", { ascending: false })
               .limit(40);
@@ -135,7 +135,7 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async (): P
               id: string;
               slug: string;
               title: string;
-              short_description: string | null;
+              description: string | null;
               photo_urls: string[] | null;
               pricing: JsonValue;
               updated_at: string;
