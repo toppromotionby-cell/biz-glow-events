@@ -16,7 +16,7 @@ import { CONTACT } from "@/lib/contacts";
 import { SocialIcons } from "@/components/SocialIcons";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { CatalogMegaMenu, CategoryChip, useCatalogNav } from "@/components/catalog/CatalogNav";
+import { CatalogMegaMenu, useCatalogNav } from "@/components/catalog/CatalogNav";
 
 // Второстепенные разделы — остаются в мобильном меню и футере.
 const SECONDARY_NAV = [
@@ -192,28 +192,15 @@ export function SiteHeader() {
                 <Toggleable sectionKey="header.nav" as="div">
                   <nav aria-label="Мобильная навигация" className="px-2 pb-4 flex flex-col">
                     {catalogSections.map((section) => (
-                      <div key={section.key}>
-                        <SheetClose asChild>
-                          <Link
-                            to={section.basePath}
-                            className="block px-3 py-3 rounded-md text-base text-foreground hover:bg-primary/10 transition"
-                            activeProps={{ className: "bg-primary/15 text-foreground" }}
-                          >
-                            {section.title}
-                          </Link>
-                        </SheetClose>
-                        {section.categories.length > 0 && (
-                          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
-                            {section.categories.slice(0, 8).map((c) => (
-                              <SheetClose asChild key={c.id}>
-                                <span>
-                                  <CategoryChip section={section} name={c.name} count={c.count} />
-                                </span>
-                              </SheetClose>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <SheetClose key={section.key} asChild>
+                        <Link
+                          to={section.basePath}
+                          className="block px-3 py-3 rounded-md text-base text-foreground hover:bg-primary/10 transition"
+                          activeProps={{ className: "bg-primary/15 text-foreground" }}
+                        >
+                          {section.title}
+                        </Link>
+                      </SheetClose>
                     ))}
                     {SECONDARY_NAV.map((n) => (
                       <Toggleable key={n.to} sectionKey={n.key} as="div">
