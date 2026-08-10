@@ -100,7 +100,7 @@ function EditorPage() {
   const [snippetDraft, setSnippetDraft] = useState<{ name: string; section: string; items: PromoItem[] } | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
-  const { confirm, dialog: confirmDialog } = useConfirmCompat();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const history = useRef<Snapshot[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
