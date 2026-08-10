@@ -31,9 +31,30 @@ function nf(n: number): string {
 export function buildPromoQuoteBody(
   quote: PromoQuote,
   items: PromoItem[],
-  opts: { editable?: boolean; companyLine?: string } = {},
+  opts: { editable?: boolean; companyLine?: string; checks?: PromoCheck[] } = {},
 ): string {
   const editable = opts.editable === true;
+  // Инлайн-предупреждения превью: привязаны к индексу позиции, в печать не идут.
+  const allChecks = opts.checks ?? [];
+  const checksByIndex = new Map<number, PromoCheck[]>();
+  for (const ch of allChecks) {
+    if (ch.itemIndex == null) continue;
+    if (!checksByIndex.has(ch.itemIndex)) checksByIndex.set(ch.itemIndex, []);
+    checksByIndex.get(ch.itemIndex)!.push(ch);
+  }
+  const globalChecks = allChecks.filter((c) => c.itemIndex == null);
+  const chkList = (list: PromoCheck[]) =>
+    list.length
+      ? `<div class="chk-list">${list
+          .map(
+            (ch) =>
+              `<span class="chk chk-${ch.level}" title="${esc(ch.message)}"><span class="chk-ic">${
+                ch.level === "error" ? "!" : "?"
+              }</span>${esc(ch.message)}</span>`,
+          )
+          .join("")}</div>`
+      : "";
+
 
   /** Метка редактируемой зоны — только для live-превью в админке. */
   const ed = (target: string, id?: string, label?: string) =>
