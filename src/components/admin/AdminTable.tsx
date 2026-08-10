@@ -29,8 +29,10 @@ export function AdminTable({
 }) {
   if (isLoading) {
     return (
-      <div className={`glass rounded-xl overflow-hidden p-8 text-center text-muted-foreground ${className ?? ""}`}>
-        {loadingText}
+      <div className={`glass rounded-xl overflow-hidden p-4 space-y-2 ${className ?? ""}`} aria-busy="true" aria-label={loadingText}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-9 rounded-md bg-muted/30 animate-pulse" />
+        ))}
       </div>
     );
   }
@@ -45,7 +47,8 @@ export function AdminTable({
     <div className={`glass rounded-xl overflow-hidden ${className ?? ""}`}>
       <div className="overflow-x-auto">
         <table className={`w-full text-${textSize}`}>
-          <thead className="admin-table-head">
+          <thead className="admin-table-head sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+
             <tr>
               {columns.map((c) => (
                 <th key={c.key} className={`text-left p-3 ${c.className ?? ""}`}>{c.label}</th>
