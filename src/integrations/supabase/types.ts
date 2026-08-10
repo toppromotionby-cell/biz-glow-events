@@ -517,6 +517,7 @@ export type Database = {
           contract_sections: Json
           invoice_footer: string
           invoice_validity_days: number
+          logo_layout: Json
           logo_url: string | null
           quote_footer: string
           quote_validity_days: number
@@ -554,6 +555,7 @@ export type Database = {
           contract_sections?: Json
           invoice_footer?: string
           invoice_validity_days?: number
+          logo_layout?: Json
           logo_url?: string | null
           quote_footer?: string
           quote_validity_days?: number
@@ -591,6 +593,7 @@ export type Database = {
           contract_sections?: Json
           invoice_footer?: string
           invoice_validity_days?: number
+          logo_layout?: Json
           logo_url?: string | null
           quote_footer?: string
           quote_validity_days?: number
@@ -1731,6 +1734,7 @@ export type Database = {
           footer_note: string
           id: string
           is_template: boolean
+          logo_layout: Json
           logo_url: string | null
           management_amount: number
           management_enabled: boolean
@@ -1779,6 +1783,7 @@ export type Database = {
           footer_note?: string
           id?: string
           is_template?: boolean
+          logo_layout?: Json
           logo_url?: string | null
           management_amount?: number
           management_enabled?: boolean
@@ -1827,6 +1832,7 @@ export type Database = {
           footer_note?: string
           id?: string
           is_template?: boolean
+          logo_layout?: Json
           logo_url?: string | null
           management_amount?: number
           management_enabled?: boolean
@@ -2021,6 +2027,7 @@ export type Database = {
           guests_count: number | null
           id: string
           is_template: boolean
+          logo_layout: Json
           logo_url: string | null
           order_id: string | null
           prepayment_type: string
@@ -2074,6 +2081,7 @@ export type Database = {
           guests_count?: number | null
           id?: string
           is_template?: boolean
+          logo_layout?: Json
           logo_url?: string | null
           order_id?: string | null
           prepayment_type?: string
@@ -2127,6 +2135,7 @@ export type Database = {
           guests_count?: number | null
           id?: string
           is_template?: boolean
+          logo_layout?: Json
           logo_url?: string | null
           order_id?: string | null
           prepayment_type?: string

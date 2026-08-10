@@ -10,6 +10,7 @@ import {
   type QuoteTemplate,
 } from "@/lib/quote-blocks";
 import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
+import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 
 export * from "@/lib/quote-blocks";
 export * from "@/lib/documents/vat";
@@ -209,6 +210,7 @@ export type Quote = {
   event_notes: string;
   company_overrides: QuoteCompanyOverrides;
   logo_url: string | null;
+  logo_layout: LogoLayout;
   signature_url: string | null;
   stamp_url: string | null;
   texts: QuoteTexts;
@@ -489,6 +491,7 @@ export const quotePatchSchema = z.object({
   event_notes: z.string().max(3000).optional(),
   company_overrides: z.record(z.string(), z.string()).optional(),
   logo_url: z.string().max(1000).nullable().optional(),
+  logo_layout: z.unknown().optional().transform(normalizeLogoLayout),
   signature_url: z.string().max(1000).nullable().optional(),
   stamp_url: z.string().max(1000).nullable().optional(),
   texts: z.record(z.string(), z.string()).optional(),
@@ -530,6 +533,7 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     company_overrides: (row.company_overrides ?? {}) as QuoteCompanyOverrides,
     texts: { ...DEFAULT_QUOTE_TEXTS, ...((row.texts ?? {}) as Partial<QuoteTexts>) },
     design: { ...DEFAULT_QUOTE_DESIGN, ...((row.design ?? {}) as Partial<QuoteDesign>) },
+    logo_layout: normalizeLogoLayout(row.logo_layout),
     template: normalizeTemplate(row.template),
     blocks: normalizeBlocks(row.blocks, normalizeTemplate(row.template)),
     discount_value: num(row.discount_value),
