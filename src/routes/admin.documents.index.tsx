@@ -87,6 +87,41 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const { confirm, dialog } = useConfirm();
+  const dupFn = useServerFn(duplicateDocument);
+  const delFn = useServerFn(deleteDocument);
+  const statusFn = useServerFn(setDocumentStatus);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-documents-overview"] });
+
+  const duplicate = useMutation({
+    mutationFn: (r: DocumentRow) => dupFn({ data: { kind: r.kind, id: r.id } }),
+    onSuccess: (t) => { toast.success("Создана копия"); created.mutate(t); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: (r: DocumentRow) => delFn({ data: { kind: r.kind, id: r.id } }),
+    onSuccess: () => { toast.success("Документ удалён"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const changeStatus = useMutation({
+    mutationFn: (v: { r: DocumentRow; status: "draft" | "sent" | "accepted" | "rejected" }) =>
+      statusFn({ data: { kind: v.r.kind, id: v.r.id, status: v.status } }),
+    onSuccess: () => { toast.success("Статус обновлён"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const askDelete = async (r: DocumentRow) => {
+    const ok = await confirm({
+      title: "Удалить документ?",
+      description: `${r.number} · ${r.client}. Действие нельзя отменить.`,
+      confirmText: "Удалить",
+      destructive: true,
+    });
+    if (ok) remove.mutate(r);
+  };
+
   return (
     <div className="space-y-5">
       <AdminPageHeader
