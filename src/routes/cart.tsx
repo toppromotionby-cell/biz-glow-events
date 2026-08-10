@@ -33,14 +33,30 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
+function validateField(name: string, value: string, clientType: ClientType): string | null {
+  const v = value.trim();
+  switch (name) {
+    case "client_name":
+      return v.length < 2 ? "Укажите ваше имя (минимум 2 символа)" : null;
+    case "client_phone":
+      return v.length < 5 ? "Укажите корректный телефон" : null;
+    case "client_email":
+      return /.+@.+\..+/.test(v) ? null : "Укажите корректный email";
+    case "client_company":
+      return clientType === "company" && !v ? "Укажите название компании" : null;
+    default:
+      return null;
+  }
+}
+
 function CartPage() {
   const { items, count, total } = useCart();
-  const { isAuthenticated } = useAuth();
   const formRef = useRef<HTMLFormElement>(null);
   const [clientType, setClientType] = useState<ClientType>("individual");
   const [promo, setPromo] = useState<(PromoValidation & { valid: true }) | null>(null);
   const [reqOpen, setReqOpen] = useState(false);
   const [contactDraft, setContactDraft] = useState<Contact | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const discount = promo?.discount_amount ?? 0;
   const finalTotal = Math.max(0, total - discount);
 
@@ -52,6 +68,16 @@ function CartPage() {
     onClearDraft: clearDraft,
   });
 
+  function handleFieldBlur(name: string, value: string) {
+    const msg = validateField(name, value, clientType);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (msg) next[name] = msg;
+      else delete next[name];
+      return next;
+    });
+  }
+
   async function finalSubmitWith(contact: Contact, req: Requisites) {
     const res = await submitOrderWith(contact, req);
     if (res.ok) setReqOpen(false);
@@ -60,7 +86,6 @@ function CartPage() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (items.length === 0) return;
-    if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы оформить заказ.")) return;
     const form = e.currentTarget;
     const fd = new FormData(form);
     saveDraft(fd);
@@ -73,14 +98,16 @@ function CartPage() {
       event_end_date: String(fd.get("event_end_date") ?? "") || null,
       notes: String(fd.get("notes") ?? "").trim() || null,
     };
-    const missing: { field: string; label: string }[] = [];
-    if (contact.client_name.length < 2) missing.push({ field: "client_name", label: "Укажите ваше имя (минимум 2 символа)" });
-    if (contact.client_phone.length < 5) missing.push({ field: "client_phone", label: "Укажите корректный телефон" });
-    if (!/.+@.+\..+/.test(contact.client_email)) missing.push({ field: "client_email", label: "Укажите корректный email" });
-    if (clientType === "company" && !contact.client_company) missing.push({ field: "client_company", label: "Укажите название компании" });
-    if (missing.length > 0) {
-      toast.error(missing[0].label);
-      const el = form.querySelector<HTMLInputElement>(`[name="${missing[0].field}"]`);
+    const nextErrors: Record<string, string> = {};
+    for (const field of ["client_name", "client_phone", "client_email", "client_company"]) {
+      const msg = validateField(field, String(fd.get(field) ?? ""), clientType);
+      if (msg) nextErrors[field] = msg;
+    }
+    setErrors(nextErrors);
+    const firstField = Object.keys(nextErrors)[0];
+    if (firstField) {
+      toast.error(nextErrors[firstField]);
+      const el = form.querySelector<HTMLInputElement>(`[name="${firstField}"]`);
       el?.focus();
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
@@ -92,6 +119,8 @@ function CartPage() {
       void finalSubmitWith(contact, EMPTY_REQUISITES);
     }
   }
+
+
 
   async function finalSubmit(req: Requisites) {
     if (!contactDraft) return;
