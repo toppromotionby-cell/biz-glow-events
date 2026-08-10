@@ -43,8 +43,7 @@ const GROUPS: NavGroup[] = [
     label: "Документы",
     items: [
       { to: "/admin/documents", label: "Все документы", icon: FileStack, exact: true },
-      { to: "/admin/documents/quotes", label: "Коммерческие предложения", icon: FileSignature },
-      { to: "/admin/documents/promo", label: "КП промо", icon: Megaphone },
+
       { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain },
       { to: "/admin/settings/documents", label: "Реквизиты и шаблоны", icon: FileCog },
     ],
