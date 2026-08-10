@@ -65,6 +65,7 @@ import { Route as AdminPromoRouteImport } from './routes/admin.promo'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMailAccountsRouteImport } from './routes/admin.mail-accounts'
+import { Route as AdminCatalogStructureRouteImport } from './routes/admin.catalog-structure'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
 import { Route as AdminCampaignsRouteImport } from './routes/admin.campaigns'
@@ -382,6 +383,11 @@ const AdminMailAccountsRoute = AdminMailAccountsRouteImport.update({
   path: '/mail-accounts',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCatalogStructureRoute = AdminCatalogStructureRouteImport.update({
+  id: '/catalog-structure',
+  path: '/catalog-structure',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogRoute = AdminCatalogRouteImport.update({
   id: '/catalog',
   path: '/catalog',
@@ -616,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/admin/campaigns': typeof AdminCampaignsRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
+  '/admin/catalog-structure': typeof AdminCatalogStructureRoute
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
@@ -709,6 +716,7 @@ export interface FileRoutesByTo {
   '/admin/campaigns': typeof AdminCampaignsRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
+  '/admin/catalog-structure': typeof AdminCatalogStructureRoute
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/promo': typeof AdminPromoRoute
@@ -803,6 +811,7 @@ export interface FileRoutesById {
   '/admin/campaigns': typeof AdminCampaignsRoute
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
+  '/admin/catalog-structure': typeof AdminCatalogStructureRoute
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
@@ -899,6 +908,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns'
     | '/admin/cases'
     | '/admin/catalog'
+    | '/admin/catalog-structure'
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
@@ -992,6 +1002,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns'
     | '/admin/cases'
     | '/admin/catalog'
+    | '/admin/catalog-structure'
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/promo'
@@ -1085,6 +1096,7 @@ export interface FileRouteTypes {
     | '/admin/campaigns'
     | '/admin/cases'
     | '/admin/catalog'
+    | '/admin/catalog-structure'
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1586,6 +1598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMailAccountsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/catalog-structure': {
+      id: '/admin/catalog-structure'
+      path: '/catalog-structure'
+      fullPath: '/admin/catalog-structure'
+      preLoaderRoute: typeof AdminCatalogStructureRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog': {
       id: '/admin/catalog'
       path: '/catalog'
@@ -1893,6 +1912,7 @@ interface AdminRouteChildren {
   AdminCampaignsRoute: typeof AdminCampaignsRoute
   AdminCasesRoute: typeof AdminCasesRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
+  AdminCatalogStructureRoute: typeof AdminCatalogStructureRoute
   AdminMailAccountsRoute: typeof AdminMailAccountsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
@@ -1922,6 +1942,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCampaignsRoute: AdminCampaignsRoute,
   AdminCasesRoute: AdminCasesRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
+  AdminCatalogStructureRoute: AdminCatalogStructureRoute,
   AdminMailAccountsRoute: AdminMailAccountsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
