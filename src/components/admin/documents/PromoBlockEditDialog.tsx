@@ -99,6 +99,14 @@ export function PromoBlockEditDialog({
   if (!edit) return null;
   const set = (p: Partial<PromoQuote>) => setDraft((d) => ({ ...d, ...p }));
 
+  // Живые значения «как в превью».
+  const merged: PromoQuote = { ...quote, ...draft } as PromoQuote;
+  const draftItems = item ? items.map((it) => (it.id === item.id ? item : it)) : items;
+  const totals = computePromoTotals(merged, draftItems);
+  const cur = merged.currency || "BYN";
+  const sectionItems = target === "section" ? items.filter((it) => it.section === (edit.id ?? "")) : [];
+
+
   const submit = () => {
     if (target === "item" && item) onSaveItems(items.map((it) => (it.id === item.id ? item : it)));
     else if (target === "section") {
