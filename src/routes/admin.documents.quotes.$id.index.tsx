@@ -265,6 +265,9 @@ function Page() {
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
   if (error || !quote || !totals) return <div className="p-8 text-destructive">{(error as Error)?.message ?? "КП не найдено"}</div>;
 
+  const printPreset = resolvePrintPreset(quote.template, settings.quote_print_presets, quote.design);
+
+
   const addItem = (init?: Partial<QuoteItem>) =>
     patchItems([
       ...items,
