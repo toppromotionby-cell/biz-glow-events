@@ -1969,7 +1969,7 @@ export async function buildPromoQuotePdf(
 
   if (quote.footer_note) {
     gap(ctx, 4);
-    drawParagraph(ctx, quote.footer_note, { size: 9.5, color: MUTED });
+    drawTrailingNote(ctx, quote.footer_note, { size: 9.5, color: MUTED });
   }
 
   drawFooter(ctx, eff);
