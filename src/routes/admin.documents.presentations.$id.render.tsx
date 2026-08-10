@@ -65,14 +65,25 @@ export const Route = createFileRoute("/admin/documents/presentations/$id/render"
 
         const paths = [
           ...slides.map((s) => s.image_url).filter((v): v is string => !!v),
+          ...slides.flatMap((s) => s.content.images ?? []),
           ...(company?.logo_url ? [company.logo_url] : []),
         ];
         const urls = await resolveUrls(paths);
 
-        const resolved: ResolvedSlide[] = slides.map((s) => ({
-          ...s,
-          resolved_image_url: s.image_url ? (urls.get(s.image_url) ?? null) : null,
-        }));
+        const resolved: ResolvedSlide[] = slides.map((s) => {
+          const list = [
+            ...(s.image_url ? [s.image_url] : []),
+            ...(s.content.images ?? []),
+          ];
+          const unique = Array.from(new Set(list));
+          return {
+            ...s,
+            resolved_image_url: s.image_url ? (urls.get(s.image_url) ?? null) : null,
+            resolved_images: unique
+              .map((p) => urls.get(p) ?? null)
+              .filter((v): v is string => !!v),
+          };
+        });
         const logoUrl = company?.logo_url ? (urls.get(company.logo_url) ?? null) : null;
 
         return buildPdfResponse({
