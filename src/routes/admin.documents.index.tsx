@@ -267,30 +267,42 @@ function Page() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => duplicate.mutate(r)}>
-                          <Copy className="mr-2 h-4 w-4" />Дублировать
+                          <Copy className="mr-2 h-4 w-4" />
+                          {templates ? "Создать документ из шаблона" : "Дублировать"}
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => toggleTemplate.mutate({ r, isTemplate: !templates })}
+                        >
+                          <BookmarkPlus className="mr-2 h-4 w-4" />
+                          {templates ? "Убрать из шаблонов" : "Сохранить как шаблон"}
+                        </DropdownMenuItem>
+                        {!templates && (
+                          <>
+                            <DropdownMenuSeparator />
+                            {r.status !== "sent" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "sent" })}>
+                                <Send className="mr-2 h-4 w-4" />Отметить отправленным
+                              </DropdownMenuItem>
+                            )}
+                            {r.status !== "accepted" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "accepted" })}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />Согласовано
+                              </DropdownMenuItem>
+                            )}
+                            {r.status !== "rejected" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "rejected" })}>
+                                <XCircle className="mr-2 h-4 w-4" />Отклонено
+                              </DropdownMenuItem>
+                            )}
+                            {r.status !== "draft" && (
+                              <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "draft" })}>
+                                <Undo2 className="mr-2 h-4 w-4" />Вернуть в черновик
+                              </DropdownMenuItem>
+                            )}
+                          </>
+                        )}
                         <DropdownMenuSeparator />
-                        {r.status !== "sent" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "sent" })}>
-                            <Send className="mr-2 h-4 w-4" />Отметить отправленным
-                          </DropdownMenuItem>
-                        )}
-                        {r.status !== "accepted" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "accepted" })}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />Согласовано
-                          </DropdownMenuItem>
-                        )}
-                        {r.status !== "rejected" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "rejected" })}>
-                            <XCircle className="mr-2 h-4 w-4" />Отклонено
-                          </DropdownMenuItem>
-                        )}
-                        {r.status !== "draft" && (
-                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "draft" })}>
-                            <Undo2 className="mr-2 h-4 w-4" />Вернуть в черновик
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
+
                         <DropdownMenuItem className="text-destructive" onClick={() => void askDelete(r)}>
                           <Trash2 className="mr-2 h-4 w-4" />Удалить
                         </DropdownMenuItem>
