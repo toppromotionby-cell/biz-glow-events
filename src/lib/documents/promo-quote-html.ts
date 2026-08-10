@@ -3,6 +3,7 @@ import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { vatRateLabel } from "@/lib/documents/vat";
 
 import { BRAND_ACCENT } from "@/lib/documents/brand";
+import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
 import {
   computePromoTotals,
   formatMoney,
