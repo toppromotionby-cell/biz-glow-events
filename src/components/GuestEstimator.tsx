@@ -1,13 +1,12 @@
 // Калькулятор сметы на главной: прежний вид (ползунки + модули),
 // но модули и цены строятся из реальных опубликованных позиций каталога.
 import { useMemo, useState } from "react";
-import { Calculator, Users, Clock, Sparkles, ArrowRight } from "lucide-react";
+import { Calculator, Users, Clock, Sparkles, ArrowRight, Check } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCalculatorCatalog, type CalcItem } from "@/lib/calculator.functions";
 
