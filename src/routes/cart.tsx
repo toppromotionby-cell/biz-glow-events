@@ -5,7 +5,6 @@ import { useCart } from "@/lib/cart";
 import { type PromoValidation } from "@/lib/promo.functions";
 import { CartCrossSell } from "@/components/CartCrossSell";
 import { fmtCurrency } from "@/lib/formatters";
-import { fmtCurrency } from "@/lib/formatters";
 import { CheckoutSteps } from "@/components/cart/CheckoutSteps";
 import { EmptyCart } from "@/components/cart/EmptyCart";
 import { CartItemsPanel } from "@/components/cart/CartItemsPanel";
