@@ -1839,12 +1839,12 @@ async function renderQuotePdf(
       case "totals": {
         gap(ctx, 8);
         drawSummary(ctx, [
-          { label: "Стоимость позиций", value: money(t.subtotal) },
+          { label: `Стоимость позиций${t.vatEnabled ? " (без НДС)" : ""}`, value: money(t.subtotal) },
           ...(t.discount ? [{ label: "Скидка", value: `− ${money(t.discount)}` }] : []),
           ...(t.delivery ? [{ label: "Доставка и логистика", value: money(t.delivery) }] : []),
           ...(t.vatEnabled
             ? [
-                { label: "Сумма без НДС", value: money(t.net) },
+                ...(t.discount || t.delivery ? [{ label: "Сумма без НДС", value: money(t.net) }] : []),
                 { label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) },
               ]
             : []),
