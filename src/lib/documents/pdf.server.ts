@@ -1451,7 +1451,9 @@ export async function buildOrderDocPdf(
   items: DocItem[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
+  applyDensity("comfortable");
   if (kind === "quote") return buildQuote(order, items, settings);
+
   if (kind === "invoice") return buildInvoice(order, items, settings);
   if (kind === "contract") return buildContract(order, items, settings);
   return buildAct(order, items, settings);
