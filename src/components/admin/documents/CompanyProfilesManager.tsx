@@ -377,6 +377,11 @@ export function CompanyProfilesManager() {
               </Button>
             )}
           </div>
+          {saveError && (
+            <p className="text-sm text-destructive" role="alert">
+              {saveError}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -387,15 +392,18 @@ function F({
   label,
   value,
   onChange,
+  inputRef,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  inputRef?: React.Ref<HTMLInputElement>;
 }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input ref={inputRef} value={value} onChange={(e) => onChange(e.target.value)} />
+
     </div>
   );
 }
