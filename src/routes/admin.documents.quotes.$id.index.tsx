@@ -164,6 +164,21 @@ function Page() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const dirtyRef = useRef(false);
+  const previewRef = useRef<HTMLIFrameElement>(null);
+  const [inlineEdit, setInlineEdit] = useState(true);
+  const [edit, setEdit] = useState<DocEditTarget | null>(null);
+
+  // Двойной клик по блоку в превью открывает диалог редактирования этого блока.
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== previewRef.current?.contentWindow) return;
+      const d = e.data as { source?: string; type?: string; target?: string; id?: string | null };
+      if (d?.source !== "doc-preview" || d.type !== "doc-edit" || !d.target) return;
+      setEdit({ target: d.target, id: d.id ?? null });
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     if (data) { setQuote(data.quote); setItems(data.items); dirtyRef.current = false; setState("idle"); }
