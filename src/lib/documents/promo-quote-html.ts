@@ -190,8 +190,11 @@ export const PROMO_DOC_CSS = `
 .promo-doc { font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: #16161a; font-size: 12px; }
 .promo-doc .head { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .promo-doc .meta div { border: 1px solid #d8d8dd; padding: 5px 8px; margin-bottom: -1px; background: #f6f6f7; max-width: 460px; }
-.promo-doc .logos { display: flex; gap: 16px; align-items: center; }
+.promo-doc .logos { display: flex; gap: 16px; align-items: flex-start; }
 .promo-doc .logos img { max-height: 64px; max-width: 240px; object-fit: contain; }
+.promo-doc .logo-col { display: block; }
+.promo-doc .logo-col .req { margin-top: 4px; max-width: 260px; font-size: 10px; line-height: 1.35; color: #5a5a63; }
+
 .promo-doc .docnum { margin: 16px 0 8px; font-weight: 700; font-size: 13px; }
 .promo-doc table { width: 100%; border-collapse: collapse; }
 .promo-doc .grid th { background: var(--accent); color: #16161a; font-weight: 700; text-align: center; border: 1px solid #b9b9bf; padding: 6px 6px; }
