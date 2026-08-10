@@ -570,16 +570,24 @@ type Col = {
   key: string;
 };
 
-function drawTable(
-  ctx: DocCtx,
-  cols: Col[],
-  rows: Array<Record<string, string>>,
-) {
+/**
+ * Строка таблицы. Служебные поля (с префиксом `_`) повторяют оформление
+ * HTML-превью: заголовок раздела, подытог раздела, описание и список
+ * «что входит» под названием позиции.
+ */
+type TableRow = Record<string, string | string[] | undefined> & {
+  _kind?: "section" | "subtotal";
+  _desc?: string;
+  _bullets?: string[];
+};
+
+function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
   const startX = MARGIN_X;
   const cellPadX = 6;
   const headerH = 22;
   const rowMinH = 18;
+  const SMALL = F11 - 1;
 
   // header
   ensureSpace(ctx, headerH + rowMinH);
@@ -610,30 +618,108 @@ function drawTable(
   }
   ctx.y -= headerH;
 
+  const firstCol = cols[0];
+
   // rows
   for (const r of rows) {
-    // высчитываем wrap для всех ячеек
-    const wrapped = cols.map((c) =>
-      wrapText(ctx.regular, r[c.key] ?? "", F11, c.width - cellPadX * 2),
+    const kind = r._kind;
+    const cell = (key: string) => (typeof r[key] === "string" ? (r[key] as string) : "");
+
+    if (kind === "section" || kind === "subtotal") {
+      const label = cell(firstCol.key);
+      const isSub = kind === "subtotal";
+      const font = isSub ? ctx.regular : displayFont(ctx, label);
+      const size = isSub ? SMALL : F12;
+      const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
+      const lines = wrapText(font, label, size, labelW);
+      const rowH = Math.max(isSub ? 18 : 24, lines.length * size * 1.3 + (isSub ? 8 : 12));
+      ensureSpace(ctx, rowH);
+      if (isSub) {
+        ctx.page.drawRectangle({ x: startX, y: ctx.y - rowH, width: totalW, height: rowH, color: SURFACE });
+      }
+      ctx.page.drawLine({
+        start: { x: startX, y: ctx.y - rowH },
+        end: { x: startX + totalW, y: ctx.y - rowH },
+        thickness: 0.4,
+        color: LINE,
+      });
+      let ly = ctx.y - (isSub ? 5 : 8);
+      for (const line of lines) {
+        ctx.page.drawText(line, {
+          x: startX + cellPadX,
+          y: ly - size,
+          size,
+          font,
+          color: isSub ? MUTED : TEXT,
+        });
+        ly -= size * 1.3;
+      }
+      // сумма подытога — справа
+      const last = cols.at(-1);
+      const lastVal = last ? cell(last.key) : "";
+      if (last && lastVal) {
+        const vFont = isSub ? ctx.bold : ctx.regular;
+        const vSize = isSub ? SMALL : F11;
+        const w = vFont.widthOfTextAtSize(lastVal, vSize);
+        ctx.page.drawText(lastVal, {
+          x: startX + totalW - cellPadX - w,
+          y: ctx.y - (isSub ? 5 : 8) - vSize,
+          size: vSize,
+          font: vFont,
+          color: TEXT,
+        });
+      }
+      ctx.y -= rowH;
+      continue;
+    }
+
+    // обычная позиция: название — полужирным, описание и «что входит» — мельче и серым
+    const titleText = cell(firstCol.key);
+    const titleW = firstCol.width - cellPadX * 2;
+    const titleLines = wrapText(ctx.bold, titleText, F11, titleW);
+    const descLines = r._desc ? wrapText(ctx.regular, r._desc, SMALL, titleW) : [];
+    const bulletLines = (r._bullets ?? []).flatMap((b) =>
+      wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
     );
-    const linesCount = Math.max(...wrapped.map((w) => w.length), 1);
-    const rowH = Math.max(rowMinH, linesCount * F11 * 1.3 + 8);
+    const firstBlockH =
+      titleLines.length * F11 * 1.3 + (descLines.length + bulletLines.length) * SMALL * 1.3;
+
+    const restWrapped = cols.map((c, i) =>
+      i === 0 ? [] : wrapText(ctx.regular, cell(c.key), F11, c.width - cellPadX * 2),
+    );
+    const restH = Math.max(...restWrapped.map((w) => w.length), 1) * F11 * 1.3;
+    const rowH = Math.max(rowMinH, Math.max(firstBlockH, restH) + 9);
 
     ensureSpace(ctx, rowH);
-    // нижняя линия
     ctx.page.drawLine({
       start: { x: startX, y: ctx.y - rowH },
       end: { x: startX + totalW, y: ctx.y - rowH },
       thickness: 0.4,
       color: LINE,
     });
-    cx = startX;
-    for (let i = 0; i < cols.length; i++) {
+
+    // первая колонка
+    let cy = ctx.y - 5;
+    for (const line of titleLines) {
+      ctx.page.drawText(line, { x: startX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
+      cy -= F11 * 1.3;
+    }
+    for (const line of descLines) {
+      ctx.page.drawText(line, { x: startX + cellPadX, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
+      cy -= SMALL * 1.3;
+    }
+    for (const line of bulletLines) {
+      ctx.page.drawText(line, { x: startX + cellPadX + 8, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
+      cy -= SMALL * 1.3;
+    }
+
+    // остальные колонки
+    cx = startX + firstCol.width;
+    for (let i = 1; i < cols.length; i++) {
       const c = cols[i];
-      const lines = wrapped[i];
+      const lines = restWrapped[i];
       const blockH = Math.max(lines.length, 1) * F11 * 1.3;
-      let cy =
-        c.valign === "middle" ? ctx.y - Math.max(4, (rowH - blockH) / 2) : ctx.y - 4;
+      let ly = c.valign === "middle" ? ctx.y - Math.max(5, (rowH - blockH) / 2) : ctx.y - 5;
       for (const line of lines) {
         let tx = cx + cellPadX;
         if (c.align === "right") {
@@ -643,14 +729,15 @@ function drawTable(
           const w = ctx.regular.widthOfTextAtSize(line, F11);
           tx = cx + (c.width - w) / 2;
         }
-        ctx.page.drawText(line, { x: tx, y: cy - F11, size: F11, font: ctx.regular, color: TEXT });
-        cy -= F11 * 1.3;
+        ctx.page.drawText(line, { x: tx, y: ly - F11, size: F11, font: ctx.regular, color: TEXT });
+        ly -= F11 * 1.3;
       }
       cx += c.width;
     }
     ctx.y -= rowH;
   }
 }
+
 
 // === Сводный блок «итого» (как в HTML-превью: справа, белый фон, акцентная строка «Итого») ===
 function drawSummary(
