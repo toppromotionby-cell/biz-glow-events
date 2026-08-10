@@ -57,6 +57,15 @@ export type QuoteDesign = {
   show_requisites: boolean;
   show_item_includes: boolean;
   show_section_subtotals: boolean;
+  /** Переопределения печати (мм / множители), см. documents/print-preset. */
+  print_margin_top_mm?: number;
+  print_margin_bottom_mm?: number;
+  print_margin_x_mm?: number;
+  print_line_height?: number;
+  print_block_gap?: number;
+  print_row_gap?: number;
+  print_font_scale?: number;
+  print_max_pages?: number;
 };
 
 export const DEFAULT_QUOTE_DESIGN: QuoteDesign = {
@@ -487,7 +496,7 @@ export const quotePatchSchema = z.object({
   signature_url: z.string().max(1000).nullable().optional(),
   stamp_url: z.string().max(1000).nullable().optional(),
   texts: z.record(z.string(), z.string()).optional(),
-  design: z.record(z.string(), z.union([z.string(), z.boolean()])).optional(),
+  design: z.record(z.string(), z.union([z.string(), z.boolean(), z.number()])).optional(),
   template: z.enum(QUOTE_TEMPLATES).optional(),
   blocks: z
     .array(
