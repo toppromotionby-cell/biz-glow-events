@@ -217,7 +217,7 @@ export function blankSlide(type: SlideType, position: number): PresentationSlide
     title: titles[type],
     subtitle: "",
     image_url: null,
-    content: { ...EMPTY_CONTENT, includes: [], specs: [] },
+    content: { ...EMPTY_CONTENT, includes: [], specs: [], images: [] },
     entity_type: null,
     entity_id: null,
     quote_item_id: null,
