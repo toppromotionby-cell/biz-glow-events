@@ -376,6 +376,29 @@ export function BlockEditDialog({
                   </Button>
                 </div>
               </Field>
+              <Summary
+                rows={[
+                  ["Позиции", money(totals.subtotal)],
+                  ...(totals.discount ? ([["Скидка", `− ${money(totals.discount)}`]] as Array<[string, string]>) : []),
+                  ...(totals.delivery ? ([["Доставка", money(totals.delivery)]] as Array<[string, string]>) : []),
+                  ...(totals.vatEnabled
+                    ? ([
+                        ["Без НДС", money(totals.net)],
+                        [`НДС ${totals.vatRate}%`, money(totals.vat)],
+                      ] as Array<[string, string]>)
+                    : []),
+                  ["Итого к оплате", money(totals.total), true],
+                  ...(totals.prepayment
+                    ? ([
+                        ["Предоплата", money(totals.prepayment)],
+                        ["Остаток", money(totals.balance)],
+                      ] as Array<[string, string]>)
+                    : []),
+                  ...(totals.cost
+                    ? ([["Маржа", `${money(totals.margin)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
+                    : []),
+                ]}
+              />
             </div>
           )}
 
@@ -384,6 +407,7 @@ export function BlockEditDialog({
               <Field label="Заголовок блока"><Input value={currentBlock.title} onChange={(e) => setBlock({ title: e.target.value })} /></Field>
               <Field label="Содержимое" hint="Каждая строка — отдельный пункт списка / абзац">
                 <Textarea rows={8} value={currentBlock.content} onChange={(e) => setBlock({ content: e.target.value })} />
+                <PlaceholderPreview text={currentBlock.content} map={map} numbers={numbers} />
               </Field>
             </>
           )}
