@@ -28,11 +28,6 @@ export function DocumentViewerDialog({
                 <Button size="sm" variant="outline" onClick={() => void downloadBlob(doc.blob, doc.name)}>
                   <Download className="mr-1.5 h-4 w-4" />Скачать
                 </Button>
-                <Button asChild size="sm" variant="ghost">
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-1.5 h-4 w-4" />В новой вкладке
-                  </a>
-                </Button>
               </>
             )}
           </div>
