@@ -190,6 +190,13 @@ function HomePage() {
         <Toggleable sectionKey="home.estimator"><Suspense fallback={null}><GuestEstimator /></Suspense></Toggleable>
       </InView>
 
+      {/* PACKAGE BUILDER */}
+      <InView minHeight={400}>
+        <Toggleable sectionKey="home.packages"><Suspense fallback={null}><PackageBuilder /></Suspense></Toggleable>
+      </InView>
+
+
+
       {/* TESTIMONIALS */}
       <InView minHeight={320}>
         <Toggleable sectionKey="home.testimonials"><Suspense fallback={null}><TestimonialsTeaser /></Suspense></Toggleable>
