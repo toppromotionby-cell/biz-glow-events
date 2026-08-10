@@ -19,6 +19,8 @@ import { BRAND_ACCENTS } from "@/lib/documents/brand";
 import { supabase } from "@/integrations/supabase/client";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { VatSettings } from "@/components/admin/VatSettings";
+import { LogoUploader } from "@/components/admin/LogoUploader";
+
 import {
   getDocumentSettings,
   updateDocumentSettings,
