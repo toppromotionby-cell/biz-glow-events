@@ -168,7 +168,7 @@ export async function buildPresentationPdf(
 type DrawArgs = {
   page: PDFPage;
   slide: ResolvedSlide;
-  img: PDFImage | null;
+  images: (PDFImage | null)[];
   logo: PDFImage | null;
   brand: string;
   theme: Theme;
@@ -180,7 +180,7 @@ type DrawArgs = {
 };
 
 async function drawSlide(a: DrawArgs) {
-  const { page, slide, img, logo, brand, theme: t, fonts, company, presentation, index, total } = a;
+  const { page, slide, images, logo, brand, theme: t, fonts, company, presentation, index, total } = a;
   const c = slide.content;
 
   const drawLines = (
