@@ -3,10 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown, GitCompare, Send } from "lucide-react";
+import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown, Send } from "lucide-react";
 
 import { useCart } from "@/lib/cart";
-import { useCompare } from "@/lib/compare";
 import { SearchTrigger } from "@/components/SearchTrigger";
 import { Toggleable } from "@/lib/site-sections";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader, SheetClose } from "@/components/ui/sheet";
