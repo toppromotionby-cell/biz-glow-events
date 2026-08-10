@@ -109,7 +109,22 @@ export function SiteHeader() {
               aria-label="Основная навигация"
               className={`hidden md:flex items-center gap-6 text-sm ${!isAuthenticated ? "justify-center" : ""}`}
             >
-              {NAV.map(n => (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded">
+                  Каталог
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64">
+                  {CATALOG_NAV.map((n) => (
+                    <Toggleable key={n.to} sectionKey={n.key} as="div">
+                      <DropdownMenuItem asChild>
+                        <Link to={n.to} className="w-full cursor-pointer">{n.label}</Link>
+                      </DropdownMenuItem>
+                    </Toggleable>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {PRIMARY_NAV.map(n => (
                 <Toggleable key={n.to} sectionKey={n.key} as="span">
                   <Link to={n.to} className="text-muted-foreground hover:text-foreground transition" activeProps={{ className: "text-foreground" }}>
                     {n.label}
@@ -122,14 +137,7 @@ export function SiteHeader() {
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
             <Toggleable sectionKey="header.search" as="span"><SearchTrigger /></Toggleable>
-            <Toggleable sectionKey="header.wishlist" as="span">
-              <Link to="/wishlist" aria-label={wishCount > 0 ? `Избранное, ${wishCount} позиций` : "Избранное"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                <Heart className="h-4 w-4" aria-hidden="true" />
-                {wishCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{wishCount}</span>
-                )}
-              </Link>
-            </Toggleable>
+
 
 
             <Toggleable sectionKey="header.cart" as="span">
