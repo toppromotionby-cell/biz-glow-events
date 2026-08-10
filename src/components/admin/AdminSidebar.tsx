@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
   Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
-  Wrench, Sparkles, Factory, FileStack,
+  FileStack,
   Brain,
   Layers,
 } from "lucide-react";
