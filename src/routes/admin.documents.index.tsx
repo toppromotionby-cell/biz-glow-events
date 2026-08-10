@@ -7,14 +7,22 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   FileStack, Plus, Search, Download, FileSignature, Megaphone, Brain, ArrowRight,
+  MoreHorizontal, Copy, Trash2, Send, CheckCircle2, XCircle, Undo2,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/admin/StatusPill";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
-import { listAllDocuments, type DocumentRow } from "@/lib/documents-overview.functions";
+import {
+  listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus,
+  type DocumentRow,
+} from "@/lib/documents-overview.functions";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
 
 export const Route = createFileRoute("/admin/documents/")({ component: Page });
@@ -78,6 +86,41 @@ function Page() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const { confirm, dialog } = useConfirm();
+  const dupFn = useServerFn(duplicateDocument);
+  const delFn = useServerFn(deleteDocument);
+  const statusFn = useServerFn(setDocumentStatus);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-documents-overview"] });
+
+  const duplicate = useMutation({
+    mutationFn: (r: DocumentRow) => dupFn({ data: { kind: r.kind, id: r.id } }),
+    onSuccess: (t) => { toast.success("Создана копия"); created.mutate(t); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: (r: DocumentRow) => delFn({ data: { kind: r.kind, id: r.id } }),
+    onSuccess: () => { toast.success("Документ удалён"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const changeStatus = useMutation({
+    mutationFn: (v: { r: DocumentRow; status: "draft" | "sent" | "accepted" | "rejected" }) =>
+      statusFn({ data: { kind: v.r.kind, id: v.r.id, status: v.status } }),
+    onSuccess: () => { toast.success("Статус обновлён"); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const askDelete = async (r: DocumentRow) => {
+    const ok = await confirm({
+      title: "Удалить документ?",
+      description: `${r.number} · ${r.client}. Действие нельзя отменить.`,
+      confirmText: "Удалить",
+      destructive: true,
+    });
+    if (ok) remove.mutate(r);
+  };
 
   return (
     <div className="space-y-5">
@@ -202,6 +245,43 @@ function Page() {
                     <Button variant="ghost" size="icon" title="Открыть" onClick={() => openDoc(r)}>
                       <ArrowRight className="h-4 w-4" />
                     </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" title="Действия">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => duplicate.mutate(r)}>
+                          <Copy className="mr-2 h-4 w-4" />Дублировать
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {r.status !== "sent" && (
+                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "sent" })}>
+                            <Send className="mr-2 h-4 w-4" />Отметить отправленным
+                          </DropdownMenuItem>
+                        )}
+                        {r.status !== "accepted" && (
+                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "accepted" })}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />Согласовано
+                          </DropdownMenuItem>
+                        )}
+                        {r.status !== "rejected" && (
+                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "rejected" })}>
+                            <XCircle className="mr-2 h-4 w-4" />Отклонено
+                          </DropdownMenuItem>
+                        )}
+                        {r.status !== "draft" && (
+                          <DropdownMenuItem onClick={() => changeStatus.mutate({ r, status: "draft" })}>
+                            <Undo2 className="mr-2 h-4 w-4" />Вернуть в черновик
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive" onClick={() => void askDelete(r)}>
+                          <Trash2 className="mr-2 h-4 w-4" />Удалить
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </td>
               </tr>
@@ -215,6 +295,7 @@ function Page() {
         onOpenChange={setCreateOpen}
         onCreated={(t) => { setCreateOpen(false); created.mutate(t); }}
       />
+      {dialog}
     </div>
   );
 }
