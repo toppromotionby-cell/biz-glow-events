@@ -97,9 +97,12 @@ export function LogoHeaderPreview({
 }) {
   const aspect = useAspect(logoUrl);
   const place = logoUrl ? computeLogoPlacement(layout, aspect) : null;
-  const textX = place ? place.textX : MARGIN_X;
+  // Текст бренда и реквизиты — всегда под логотипом, выравнивание как у логотипа.
+  const textTop = place ? place.textTop : 2;
+  const textAlign = place ? place.textAlign : "left";
   // Есть логотип — текст бренда в шапке не печатается.
   const hideBrand = Boolean(logoUrl);
+
 
   return (
     <div
