@@ -338,21 +338,92 @@ export const submitOrder = createServerFn({ method: "POST" })
             event: acc.created ? "account_created" : "account_linked",
             payload: { email: data.client_email },
           });
-          await sendAccountAccessEmail({
-            to: data.client_email,
-            clientName: data.client_name,
-            orderId: order.id,
-            orderNumber: order.order_number,
-            tempPassword: acc.tempPassword,
-          });
+          // Антидубль: одно письмо с доступом на заказ и не чаще раза в 15 минут
+          // на адрес — повторные заказы не спамят и не «палят» пароль лишний раз.
+          const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+          const { data: recent } = await supabaseAdmin
+            .from("email_send_log")
+            .select("id, message_id, created_at")
+            .eq("template_name", "account-access")
+            .eq("recipient_email", data.client_email.trim().toLowerCase())
+            .or(`created_at.gte.${since},message_id.eq.account-access-${order.id}`)
+            .limit(1);
+          if (recent && recent.length > 0) {
+            console.warn("[submitOrder] account access email skipped (duplicate/cooldown)");
+          } else {
+            await sendAccountAccessEmail({
+              to: data.client_email,
+              clientName: data.client_name,
+              orderId: order.id,
+              orderNumber: order.order_number,
+              tempPassword: acc.tempPassword,
+            });
+          }
         }
       } catch (e) {
         console.error("[submitOrder] account provisioning failed:", e);
       }
     }
 
-    return { id: order.id, total };
+    return { id: order.id, total, token: order.clarification_token ?? null };
   });
+
+// ===== Гостевой кабинет заказа по токену из письма/ссылки =====
+
+export const getOrderByToken = createServerFn({ method: "GET" })
+  .inputValidator((input) => z.object({ token: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_number, status, total, paid, event_date, created_at, client_name, client_email, notes")
+      .eq("clarification_token", data.token)
+      .maybeSingle();
+    if (!order) return null;
+
+    const [{ data: items }, { data: timeline }, { data: attachments }, { data: quotes }] = await Promise.all([
+      supabaseAdmin.from("order_items").select("id, title, qty, price, start_date, end_date").eq("order_id", order.id),
+      supabaseAdmin.from("order_timeline").select("id, event, created_at").eq("order_id", order.id).order("created_at", { ascending: true }),
+      supabaseAdmin.from("order_attachments").select("id, kind, file_name, file_path, created_at").eq("order_id", order.id).order("created_at", { ascending: false }),
+      supabaseAdmin.from("quotes").select("id, quote_number, title, public_token, sent_at").eq("order_id", order.id).not("sent_at", "is", null),
+    ]);
+
+    const documents: { id: string; name: string; url: string }[] = [];
+    for (const a of attachments ?? []) {
+      const { data: signed } = await supabaseAdmin.storage
+        .from("order-attachments")
+        .createSignedUrl(a.file_path, 60 * 60);
+      if (signed?.signedUrl) {
+        documents.push({ id: a.id, name: a.file_name || a.kind, url: signed.signedUrl });
+      }
+    }
+    for (const q of quotes ?? []) {
+      documents.push({
+        id: q.id,
+        name: `Коммерческое предложение ${q.quote_number ?? ""}`.trim(),
+        url: `/kp/${q.public_token}`,
+      });
+    }
+
+    return {
+      id: order.id,
+      orderNumber: order.order_number,
+      status: order.status as string,
+      total: Number(order.total ?? 0),
+      paid: Number(order.paid ?? 0),
+      eventDate: order.event_date,
+      createdAt: order.created_at,
+      clientName: order.client_name,
+      clientEmail: order.client_email,
+      notes: order.notes,
+      items: (items ?? []).map((i) => ({
+        id: i.id, title: i.title, qty: i.qty, price: Number(i.price ?? 0),
+        start_date: i.start_date, end_date: i.end_date,
+      })),
+      timeline: (timeline ?? []).map((t) => ({ id: t.id, event: t.event, created_at: t.created_at })),
+      documents,
+    };
+  });
+
 
 
 // ===== User self-service: edit / cancel own order =====
