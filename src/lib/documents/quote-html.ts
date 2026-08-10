@@ -5,6 +5,7 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
+import { vatRateLabel } from "@/lib/documents/vat";
 import {
   applyPlaceholders,
   defaultBlocksForTemplate,
