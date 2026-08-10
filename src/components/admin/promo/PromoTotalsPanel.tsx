@@ -26,7 +26,7 @@ export function PromoTotalsPanel({
         />
       )}
       <Separator className="my-2" />
-      <Line label={totals.vatEnabled ? "Сумма без НДС" : "Всего"} value={formatMoney(totals.net, c)} />
+      <Line label={totals.vatEnabled ? "Стоимость позиций (без НДС)" : "Всего"} value={formatMoney(totals.net, c)} />
       {totals.vatEnabled && <Line label={`НДС ${totals.vatRate}%`} value={formatMoney(totals.vat, c)} />}
       <div className="mt-2 flex items-baseline justify-between">
         <span className="font-semibold">Итого</span>
