@@ -31,9 +31,10 @@ function nf(n: number): string {
 export function buildPromoQuoteBody(
   quote: PromoQuote,
   items: PromoItem[],
-  opts: { editable?: boolean } = {},
+  opts: { editable?: boolean; companyLine?: string } = {},
 ): string {
   const editable = opts.editable === true;
+
   /** Метка редактируемой зоны — только для live-превью в админке. */
   const ed = (target: string, id?: string, label?: string) =>
     editable
