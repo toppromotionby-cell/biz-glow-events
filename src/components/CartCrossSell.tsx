@@ -12,7 +12,6 @@ import { addToCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
 import { toast } from "sonner";
 import { formatBYN, priceFrom as priceFromUtil } from "@/lib/utils";
-import { useRequireAuth } from "@/hooks/use-require-auth";
 
 const LABEL: Record<CatalogType, string> = {
   zones: "Зона",
@@ -51,8 +50,7 @@ export function CartCrossSell({ presentTypes }: { presentTypes: CartEntityType[]
 
 function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
   const price = priceFrom(item.pricing);
-  const requireAuth = useRequireAuth();
-  const add = requireAuth(() => {
+  const add = (() => {
     addToCart({
       id: item.id,
       entity_type: type,

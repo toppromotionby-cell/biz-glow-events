@@ -6,7 +6,6 @@ import { readUtm } from "@/lib/utm";
 import { DateField } from "@/components/DateField";
 import { trackLead } from "@/lib/analytics";
 import { useAuth } from "@/hooks/use-auth";
-import { ensureAuthOrPrompt } from "@/hooks/use-require-auth";
 
 const SUBJECT_KEY = "lead_subject_v1";
 
@@ -29,7 +28,6 @@ export function LeadForm({ source = "contacts" }: { source?: string }) {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы отправить заявку.")) return;
     const fd = new FormData(e.currentTarget);
     const utm = readUtm() ?? {};
     setLoading(true);

@@ -8,7 +8,6 @@ import { submitLead } from "@/lib/leads.functions";
 import { readUtm } from "@/lib/utm";
 import { trackLead } from "@/lib/analytics";
 import { useAuth } from "@/hooks/use-auth";
-import { ensureAuthOrPrompt } from "@/hooks/use-require-auth";
 
 export function QuickQuoteForm({
   itemTitle,
@@ -27,7 +26,6 @@ export function QuickQuoteForm({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!ensureAuthOrPrompt(isAuthenticated, "Войдите, чтобы получить расчёт.")) return;
     if (!name.trim() || !phone.trim()) {
       toast.error("Укажите имя и телефон");
       return;

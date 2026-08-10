@@ -9,7 +9,6 @@ import { AutoBreadcrumbs } from "@/components/AutoBreadcrumbs";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { SiteSectionsProvider } from "@/lib/site-sections";
 import { DeferredGlobals } from "@/components/DeferredGlobals";
-import { AuthPromptDialog } from "@/components/AuthPromptDialog";
 import { NotFoundView, ErrorView } from "@/components/ErrorBoundaries";
 
 
@@ -161,7 +160,6 @@ function RootComponent() {
           <SiteFooter />
           <DeferredGlobals />
           <DynamicToaster />
-          <AuthPromptDialog />
         </div>
       </SiteSectionsProvider>
     </QueryClientProvider>

@@ -2,7 +2,6 @@ import { toast } from "sonner";
 import { ShoppingCart, Check } from "lucide-react";
 import { addToCart, removeFromCart, useCart, type CartEntityType } from "@/lib/cart";
 import { trackAddToCart } from "@/lib/analytics";
-import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export function AddToCartButton({
   entity_type, id, slug, title, price, image, unit,
@@ -16,9 +15,8 @@ export function AddToCartButton({
   unit?: string | null;
 }) {
   const { items } = useCart();
-  const requireAuth = useRequireAuth();
   const inCart = items.some((c) => c.id === id && c.entity_type === entity_type);
-  const onClick = requireAuth(() => {
+  const onClick = (() => {
     if (inCart) {
       removeFromCart(id, entity_type);
       toast.success(`«${title}» убрано из корзины`);

@@ -20,7 +20,6 @@ import { ChevronLeft, ChevronRight, ShoppingCart, MessageSquare, Check } from "l
 import { PriceTableView, getTiers } from "@/components/PriceTable";
 import { addToCart } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";
-import { openAuthPrompt } from "@/lib/auth-prompt";
 import { trackViewItem, trackAddToCart, trackLead } from "@/lib/analytics";
 import { toast } from "sonner";
 import { priceFrom, formatBYN } from "@/lib/utils";
@@ -100,7 +99,6 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
   const { isAuthenticated } = useAuth();
   function handlePrimaryOrder() {
     if (needsSelection) return;
-    if (!isAuthenticated) { openAuthPrompt({ reason: "Войдите, чтобы оформить заказ или отправить запрос." }); return; }
     if (isByRequest) {
       try { localStorage.setItem("lead_subject_v1", effectiveTitle); } catch {}
       trackLead("by_request_button");
