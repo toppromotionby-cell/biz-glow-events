@@ -752,3 +752,81 @@ export async function sendQuoteShareEmail(p: QuoteShareEmailPayload): Promise<{ 
   }
   return enqueue({ to, subject, html, label: "quote-share", messageId });
 }
+
+// ===== Клиенту: доступ в личный кабинет (после заказа) =====
+
+export type AccountAccessEmailPayload = {
+  to: string;
+  clientName?: string | null;
+  orderId: string;
+  orderNumber?: string | null;
+  /** Временный пароль. null — аккаунт уже существовал, пароль не менялся. */
+  tempPassword: string | null;
+};
+
+export async function sendAccountAccessEmail(
+  p: AccountAccessEmailPayload,
+): Promise<{ ok: boolean; error?: string }> {
+  const to = (p.to ?? "").trim();
+  if (!to) return { ok: false, error: "no client email" };
+
+  const loginUrl = `https://${FROM_DOMAIN}/login`;
+  const resetUrl = `https://${FROM_DOMAIN}/forgot-password`;
+  const orderLabel = orderDisplayId(p.orderId, p.orderNumber);
+  const subject = p.tempPassword
+    ? `Доступ в личный кабинет — заказ ${orderLabel}`
+    : `Заказ ${orderLabel} добавлен в ваш личный кабинет`;
+
+  const credentials = p.tempPassword
+    ? `
+    <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.accentBorder};border-radius:12px;padding:16px 18px;margin:0 0 20px">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%">
+        ${metaRow("Логин", `<span style="font-family:ui-monospace,monospace">${escapeHtml(to)}</span>`)}
+        ${metaRow("Пароль", `<span style="font-family:ui-monospace,monospace;font-size:16px;letter-spacing:0.04em">${escapeHtml(p.tempPassword)}</span>`)}
+      </table>
+      <div style="font-size:12px;color:${BRAND.muted};margin-top:10px;line-height:1.55">
+        Пароль временный — смените его в кабинете после первого входа.
+      </div>
+    </div>`
+    : `
+    <div style="background:${BRAND.surfaceAlt};border:1px solid ${BRAND.border};border-radius:12px;padding:16px 18px;margin:0 0 20px">
+      <div style="font-size:14px;color:${BRAND.textSoft};line-height:1.7">
+        У вас уже есть кабинет с логином
+        <span style="font-family:ui-monospace,monospace;color:${BRAND.text}">${escapeHtml(to)}</span>.
+        Войдите под своим паролем — заказ уже там. Забыли пароль?
+        <a href="${resetUrl}" style="color:${BRAND.accent}">Восстановите доступ</a>.
+      </div>
+    </div>`;
+
+  const body = `
+    ${sectionLabel("Личный кабинет")}
+    <div style="font-family:${FONT_DISPLAY};font-size:22px;font-weight:700;color:${BRAND.text};margin:0 0 12px">
+      Здравствуйте${p.clientName ? `, ${escapeHtml(p.clientName)}` : ""}!
+    </div>
+    <div style="font-size:14px;color:${BRAND.textSoft};line-height:1.7;margin:0 0 18px">
+      Мы приняли заказ <strong style="color:${BRAND.text}">${escapeHtml(orderLabel)}</strong>
+      и открыли для вас личный кабинет: там видно статус заказа, состав и историю обращений.
+    </div>
+    ${credentials}
+    <a href="${loginUrl}" style="display:inline-block;background:${BRAND.accent};color:#16110a;text-decoration:none;padding:13px 26px;border-radius:12px;font-weight:700;font-size:14px;font-family:${FONT_DISPLAY}">Войти в кабинет</a>
+    <div style="font-size:12px;color:${BRAND.muted};margin:16px 0 0;word-break:break-all">${loginUrl}</div>
+    <p style="margin:22px 0 0;font-size:13px;color:${BRAND.muted};line-height:1.55">
+      Если вы не оформляли заказ — просто проигнорируйте это письмо.
+    </p>`;
+
+  const html = brandShell({
+    title: subject,
+    previewText: p.tempPassword
+      ? `Данные для входа в личный кабинет по заказу ${orderLabel}`
+      : `Заказ ${orderLabel} добавлен в ваш личный кабинет`,
+    body,
+  });
+
+  return enqueue({
+    to,
+    subject,
+    html,
+    label: "account-access",
+    messageId: `account-access-${p.orderId}`,
+  });
+}

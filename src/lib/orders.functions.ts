@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail, buildClientOrderConfirmedEmail, stripActiveLinks } from "@/lib/admin-email.server";
+import { notifyAdminOrderEmail, notifyClientOrderConfirmedEmail, buildClientOrderConfirmedEmail, stripActiveLinks, sendAccountAccessEmail } from "@/lib/admin-email.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { optionalSupabaseAuth } from "@/lib/optional-auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -318,6 +318,37 @@ export const submitOrder = createServerFn({ method: "POST" })
         notes: data.notes ?? null,
         items: resolved.map(i => ({ title: i.title, qty: i.qty, price: i.price })),
       }).catch((e) => console.error("[submitOrder] email fallback failed:", e));
+    }
+
+    // 5. Личный кабинет: если заказ оформлен гостем — заводим аккаунт по email
+    //    и отправляем данные для входа. Сбой не влияет на созданный заказ.
+    if (!userId) {
+      try {
+        const { ensureClientAccount } = await import("@/lib/account-provision.server");
+        const acc = await ensureClientAccount({
+          email: data.client_email,
+          fullName: data.client_name,
+          phone: data.client_phone,
+          company: data.client_company ?? data.company_legal_name ?? null,
+        });
+        if (acc.userId) {
+          await supabaseAdmin.from("orders").update({ user_id: acc.userId }).eq("id", order.id);
+          await supabaseAdmin.from("order_timeline").insert({
+            order_id: order.id,
+            event: acc.created ? "account_created" : "account_linked",
+            payload: { email: data.client_email },
+          });
+          await sendAccountAccessEmail({
+            to: data.client_email,
+            clientName: data.client_name,
+            orderId: order.id,
+            orderNumber: order.order_number,
+            tempPassword: acc.tempPassword,
+          });
+        }
+      } catch (e) {
+        console.error("[submitOrder] account provisioning failed:", e);
+      }
     }
 
     return { id: order.id, total };
