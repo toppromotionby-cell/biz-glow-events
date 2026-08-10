@@ -9,7 +9,7 @@ import {
   type QuoteBlock,
   type QuoteTemplate,
 } from "@/lib/quote-blocks";
-import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
+import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
 
@@ -301,39 +301,80 @@ export function computeTotals(
 }
 
 
-export type QuoteCheck = { level: "error" | "warn" | "info"; message: string };
+/** Область, к которой относится проверка — используется для перехода к нужной вкладке. */
+export type QuoteCheckScope = "doc" | "client" | "item" | "block" | "totals";
+
+export type QuoteCheck = {
+  level: "error" | "warn" | "info";
+  message: string;
+  /** Машинный код правила. */
+  code?: string;
+  scope?: QuoteCheckScope;
+  /** id позиции / блока, к которому относится замечание. */
+  refId?: string;
+  itemIndex?: number;
+};
 
 /** Проверки документа перед отправкой клиенту. */
 export function checkQuote(quote: Quote, items: QuoteItem[]): QuoteCheck[] {
   const out: QuoteCheck[] = [];
   const totals = computeTotals(quote, items);
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
 
   if (!quote.client_company.trim() && !quote.client_name.trim()) {
-    out.push({ level: "error", message: "Не указан заказчик (компания или контактное лицо)" });
+    out.push({ level: "error", code: "client_missing", scope: "client", message: "Не указан заказчик (компания или контактное лицо)" });
   }
-  if (!items.length) out.push({ level: "error", message: "В предложении нет ни одной позиции" });
-  if (!quote.title.trim()) out.push({ level: "warn", message: "Не заполнена тема предложения" });
-  if (!quote.validity_days) out.push({ level: "warn", message: "Не указан срок действия предложения" });
-  if (!quote.event_date) out.push({ level: "warn", message: "Не указана дата мероприятия" });
-  if (!quote.client_email.trim()) out.push({ level: "warn", message: "Нет e-mail заказчика — отправка письмом недоступна" });
+  if (!items.length) out.push({ level: "error", code: "items_empty", scope: "item", message: "В предложении нет ни одной позиции" });
+  if (!quote.title.trim()) out.push({ level: "warn", code: "title_missing", scope: "doc", message: "Не заполнена тема предложения" });
+  if (!quote.validity_days) out.push({ level: "warn", code: "validity_missing", scope: "doc", message: "Не указан срок действия предложения" });
+  if (!quote.event_date) out.push({ level: "warn", code: "event_date_missing", scope: "client", message: "Не указана дата мероприятия" });
+  if (!quote.client_email.trim()) {
+    out.push({ level: "warn", code: "client_email_missing", scope: "client", message: "Нет e-mail заказчика — отправка письмом недоступна" });
+  } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(quote.client_email.trim())) {
+    out.push({ level: "error", code: "client_email_invalid", scope: "client", message: "Некорректный e-mail заказчика" });
+  }
 
-  const zero = items.filter((it) => num(it.price) <= 0);
-  if (zero.length) {
-    out.push({
-      level: "warn",
-      message: zero.length === 1 ? `Нулевая цена: ${zero[0]!.title || "позиция без названия"}` : `Нулевая цена у ${zero.length} позиций`,
-    });
-  }
-  const noTitle = items.filter((it) => !it.title.trim()).length;
-  if (noTitle) out.push({ level: "error", message: `Позиции без названия: ${noTitle}` });
+  // Построчные проверки: без них превью показывает нули и пустые строки.
+  sorted.forEach((it, i) => {
+    const label = it.title.trim() || `строка ${i + 1}`;
+    const ref = { scope: "item" as const, refId: it.id, itemIndex: i };
+    if (!it.title.trim()) out.push({ level: "error", code: "item_title", message: `Строка ${i + 1}: нет названия позиции`, ...ref });
+    if (num(it.price) < 0 || num(it.qty) < 0) {
+      out.push({ level: "error", code: "item_negative", message: `${label}: отрицательное количество или цена`, ...ref });
+    } else {
+      if (num(it.price) === 0) out.push({ level: "warn", code: "item_price_zero", message: `${label}: не указана цена — в сумму попадёт 0`, ...ref });
+      if (num(it.qty) === 0) out.push({ level: "warn", code: "item_qty_zero", message: `${label}: количество 0 — строка не попадёт в итог`, ...ref });
+    }
+    if (!it.unit.trim()) out.push({ level: "warn", code: "item_unit", message: `${label}: не указана единица измерения`, ...ref });
+    if (num(it.cost) > 0 && num(it.cost) > num(it.price)) {
+      out.push({ level: "warn", code: "item_cost", message: `${label}: себестоимость выше цены`, ...ref });
+    }
+  });
 
   if (totals.discount >= totals.subtotal && totals.subtotal > 0) {
-    out.push({ level: "error", message: "Скидка не может быть равна или больше суммы позиций" });
+    out.push({ level: "error", code: "discount_too_big", scope: "totals", message: "Скидка не может быть равна или больше суммы позиций" });
+  }
+  if (totals.total <= 0 && items.length > 0) {
+    out.push({ level: "error", code: "total_zero", scope: "totals", message: "Итог документа равен нулю — проверьте цены, скидку и доставку" });
+  }
+  if (totals.prepayment > totals.total && totals.total > 0) {
+    out.push({ level: "error", code: "prepayment_too_big", scope: "totals", message: "Предоплата больше итоговой суммы" });
+  }
+  for (const v of checkVatConfig(quote)) {
+    out.push({ level: v.level, code: v.code, scope: "totals", message: v.message });
   }
   if (totals.cost > 0 && totals.marginPct < 15) {
-    out.push({ level: "warn", message: `Низкая маржа: ${totals.marginPct.toFixed(1)}%` });
+    out.push({ level: "warn", code: "low_margin", scope: "totals", message: `Низкая маржа: ${totals.marginPct.toFixed(1)}%` });
   }
   return out;
+}
+
+/** Короткая сводка по проверкам: сколько ошибок и предупреждений. */
+export function summarizeChecks(checks: QuoteCheck[]): { errors: number; warns: number } {
+  return {
+    errors: checks.filter((c) => c.level === "error").length,
+    warns: checks.filter((c) => c.level === "warn").length,
+  };
 }
 
 /** Разбор таблицы, скопированной из Excel: название / кол-во / ед. / цена [/ себестоимость]. */

@@ -51,6 +51,7 @@ import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
 import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
+import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
 
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
@@ -196,8 +197,26 @@ function Page() {
     () => (quote ? computeTotals(quote, items) : null),
     [quote, items],
   );
-  const checks = useMemo(() => (quote ? checkQuote(quote, items) : []), [quote, items]);
+  const checks = useMemo(
+    () => (quote ? checkQuoteDocument(quote, items, settings) : []),
+    [quote, items, settings],
+  );
   const errorsCount = checks.filter((c) => c.level === "error").length;
+  const warnsCount = checks.filter((c) => c.level === "warn").length;
+  const itemIssues = useMemo(() => itemIssueMap(checks), [checks]);
+  const blockIssues = useMemo(() => blockIssueMap(checks), [checks]);
+  const [tab, setTab] = useState("items");
+
+  // Переход от замечания к полю, которое его вызвало.
+  const gotoCheck = (c: { scope?: string; refId?: string }) => {
+    const target = c.scope === "item" ? "items" : c.scope === "client" ? "client" : c.scope === "totals" ? "money" : c.scope === "block" ? "doc" : "doc";
+    setTab(target);
+    if (!c.refId) return;
+    setTimeout(() => {
+      const el = document.querySelector(c.scope === "item" ? `[data-item-id="${c.refId}"]` : `#block-${c.refId}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+  };
 
   const patch = (p: Partial<Quote>) => { dirtyRef.current = true; setState("dirty"); setQuote((q) => (q ? { ...q, ...p } : q)); };
   const patchItems = (next: QuoteItem[]) => { dirtyRef.current = true; setState("dirty"); setItems(next); };
@@ -360,7 +379,11 @@ function Page() {
               {QUOTE_STATUSES.map((s) => <SelectItem key={s} value={s}>{QUOTE_STATUS_LABELS[s]}</SelectItem>)}
             </SelectContent>
           </Select>
-          <QuoteShareActions share={shareState} onSend={onSendToClient} />
+          <QuoteShareActions
+            share={shareState}
+            onSend={onSendToClient}
+            issues={checks.filter((c) => c.level === "error").map((c) => c.message)}
+          />
           <Button size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render?format=pdf`, { name: "КП.pdf" })}>
             <Download className="h-4 w-4 mr-1.5" />PDF
           </Button>
@@ -395,7 +418,21 @@ function Page() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* ЛЕВО: вкладки */}
         <div className="space-y-3">
-          <Tabs defaultValue="items">
+          {(errorsCount > 0 || warnsCount > 0) && (
+            <button
+              type="button"
+              onClick={() => setTab("checks")}
+              className={`w-full text-left rounded-xl border px-3 py-2 text-xs flex items-center gap-2 ${
+                errorsCount > 0 ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-amber-500/50 bg-amber-500/10 text-amber-700"
+              }`}
+            >
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              {errorsCount > 0
+                ? `Не хватает данных: ${errorsCount} ошибк(и) — суммы и блоки в превью могут быть некорректны`
+                : `Предупреждений: ${warnsCount} — проверьте перед отправкой`}
+            </button>
+          )}
+          <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="items">Состав ({items.length})</TabsTrigger>
               <TabsTrigger value="client">Клиент и событие</TabsTrigger>
@@ -403,9 +440,14 @@ function Page() {
               <TabsTrigger value="doc">Документ</TabsTrigger>
               <TabsTrigger value="checks">
                 Проверки
-                {errorsCount > 0 && <Badge variant="destructive" className="ml-1.5 h-4 px-1 text-[10px]">{errorsCount}</Badge>}
+                {errorsCount > 0 ? (
+                  <Badge variant="destructive" className="ml-1.5 h-4 px-1 text-[10px]">{errorsCount}</Badge>
+                ) : warnsCount > 0 ? (
+                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{warnsCount}</Badge>
+                ) : null}
               </TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="items" className="space-y-3 pt-3">
               <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
@@ -415,6 +457,7 @@ function Page() {
               <QuoteItemsPanel
                 items={items}
                 onChange={patchItems}
+                issues={itemIssues}
                 showCost={showCost}
                 toolbar={
                   <>
@@ -641,7 +684,7 @@ function Page() {
                 <AccordionItem value="layout" className="border border-border/60 rounded-xl px-3">
                   <AccordionTrigger className="text-sm font-medium">Шаблон и блоки документа</AccordionTrigger>
                   <AccordionContent className="pb-4">
-                    <QuoteBlocksEditor template={quote.template} blocks={quote.blocks} onChange={(p) => patch(p)} />
+                    <QuoteBlocksEditor template={quote.template} blocks={quote.blocks} onChange={(p) => patch(p)} issues={blockIssues} />
                   </AccordionContent>
                 </AccordionItem>
 
@@ -737,19 +780,44 @@ function Page() {
             </TabsContent>
 
             <TabsContent value="checks" className="space-y-4 pt-3">
-              <div className="rounded-xl border border-border/60 p-3 space-y-2">
-                <h2 className="text-sm font-medium">Проверка перед отправкой</h2>
+              <div className="rounded-xl border border-border/60 p-3 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-medium">Проверка перед отправкой</h2>
+                  <span className="text-xs text-muted-foreground">
+                    {errorsCount} ошибок · {warnsCount} предупреждений
+                  </span>
+                </div>
                 {!checks.length && (
                   <p className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />Всё заполнено, можно отправлять клиенту
                   </p>
                 )}
-                {checks.map((c, i) => (
-                  <p key={i} className={`flex items-start gap-2 text-sm ${c.level === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{c.message}
-                  </p>
-                ))}
+                {(["error", "warn", "info"] as const).map((lvl) => {
+                  const group = checks.filter((c) => c.level === lvl);
+                  if (!group.length) return null;
+                  const title = lvl === "error" ? "Ошибки — суммы или блоки будут некорректны" : lvl === "warn" ? "Предупреждения" : "Подсказки";
+                  return (
+                    <div key={lvl} className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{title}</p>
+                      {group.map((c, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => gotoCheck(c)}
+                          className={`w-full text-left flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted/60 transition ${
+                            lvl === "error" ? "text-destructive" : lvl === "warn" ? "text-amber-600" : "text-muted-foreground"
+                          }`}
+                        >
+                          {lvl === "info" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                          <span className="flex-1">{c.message}</span>
+                          <span className="text-[10px] text-muted-foreground shrink-0">перейти →</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
+
 
               <div className="rounded-xl border border-border/60 p-3 space-y-2">
                 <div className="flex items-center justify-between">

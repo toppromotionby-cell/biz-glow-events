@@ -2,7 +2,7 @@
 // Browser-safe: используется формой, live-превью, PDF и XLSX — одна логика расчётов.
 import { z } from "zod";
 import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
-import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
+import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
 
@@ -253,7 +253,16 @@ export function checkPromoQuote(q: PromoQuote, items: PromoItem[]): PromoCheck[]
     else if (lineTotal(it) === 0) out.push({ level: "warn", message: `${label}: нулевая сумма`, itemIndex: i });
     if (it.cost > 0 && it.cost * lineQty(it) > lineTotal(it))
       out.push({ level: "warn", message: `${label}: себестоимость выше цены`, itemIndex: i });
+    if (!it.unit.trim()) out.push({ level: "warn", message: `${label}: не указана единица измерения`, itemIndex: i });
   });
+
+  // Итоги и НДС: без этих данных превью покажет некорректные суммы.
+  const totals = computePromoTotals(q, items);
+  if (items.length && totals.itemsSum <= 0) out.push({ level: "error", message: "Сумма позиций равна нулю — проверьте цены и количества" });
+  if (totals.discount >= totals.gross && totals.gross > 0) out.push({ level: "error", message: "Скидка равна или больше суммы предложения" });
+  if (q.commission_enabled && num(q.commission_rate) <= 0) out.push({ level: "warn", message: "Комиссия включена, но ставка не задана" });
+  if (q.management_enabled && num(q.management_amount) <= 0) out.push({ level: "warn", message: "Управление проектом включено, но сумма не задана" });
+  for (const v of checkVatConfig(q)) out.push({ level: v.level, message: v.message });
   return out;
 }
 

@@ -270,6 +270,7 @@ function EditorPage() {
 
           <QuoteShareActions
             share={shareState}
+            issues={errors.map((c) => c.message)}
             onSend={async (input) => {
               await sendPromo({ data: { id, ...input } });
               await refetch();
