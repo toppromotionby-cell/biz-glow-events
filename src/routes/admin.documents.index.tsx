@@ -213,9 +213,60 @@ function Page() {
         )}
       </div>
 
+      {view === "orders" && (
+        <div className="overflow-hidden rounded-xl border border-border/60">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left">Тип</th>
+                <th className="px-3 py-2 text-left">Файл</th>
+                <th className="px-3 py-2 text-left">Заказ</th>
+                <th className="px-3 py-2 text-left">Клиент</th>
+                <th className="px-3 py-2 text-left">Создан</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {orderDocs.isLoading && (
+                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Загрузка…</td></tr>
+              )}
+              {!orderDocs.isLoading && !(orderDocs.data ?? []).length && (
+                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Документов по заказам пока нет</td></tr>
+              )}
+              {(orderDocs.data ?? []).map((d) => (
+                <tr key={d.id} className="border-t border-border/50 transition-colors hover:bg-muted/30">
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{ORDER_DOC_LABELS[d.kind] ?? d.kind}</td>
+                  <td className="px-3 py-2">{d.fileName}</td>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                    <Link to="/admin/orders/$id" params={{ id: d.orderId }} className="hover:text-primary">
+                      {d.orderNumber.replaceAll("/", ".")}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">{d.client}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{fmtDate(d.createdAt)}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Скачать"
+                        disabled={!d.url}
+                        onClick={() => d.url && viewer.openDocument(d.url, { name: d.fileName })}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-
+      {view !== "orders" && (
       <div className="overflow-hidden rounded-xl border border-border/60">
+
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
