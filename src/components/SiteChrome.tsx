@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/hooks/use-auth";
-import { useRoles } from "@/hooks/use-roles";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown } from "lucide-react";
@@ -48,7 +47,7 @@ const INFO_LINKS = [
 
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
-  const { isStaff } = useRoles();
+  
 
   const { count } = useCart();
   const catalogSections = useCatalogNav();
@@ -134,13 +133,6 @@ export function SiteHeader() {
             </Toggleable>
             {isAuthenticated ? (
               <>
-                {isStaff && (
-                  <Link to="/admin">
-                    <Button variant="outline" size="sm" className="border-primary/40 text-primary hover:bg-primary/10">
-                      <ShieldCheck className="h-4 w-4 mr-1" />Админка
-                    </Button>
-                  </Link>
-                )}
                 <Toggleable sectionKey="header.account" as="span">
                   <Link to="/profile"><Button variant="ghost" size="sm"><User className="h-4 w-4 mr-1" />Кабинет</Button></Link>
                 </Toggleable>
@@ -241,15 +233,6 @@ export function SiteHeader() {
                 <div className="mt-auto border-t border-border/50 p-4 flex flex-col gap-2" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
                   {isAuthenticated ? (
                     <>
-                      {isStaff && (
-                        <SheetClose asChild>
-                          <Link to="/admin">
-                            <Button variant="outline" className="w-full border-primary/40 text-primary">
-                              <ShieldCheck className="h-4 w-4 mr-2" />Админ-панель
-                            </Button>
-                          </Link>
-                        </SheetClose>
-                      )}
                       <Toggleable sectionKey="header.account" as="div">
 
                         <SheetClose asChild>
