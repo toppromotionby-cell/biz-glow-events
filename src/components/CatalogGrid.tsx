@@ -241,11 +241,31 @@ export function CatalogGrid({
       )}
 
       {filtered.length === 0 ? (
-        <div className="glass rounded-2xl p-10 text-center text-muted-foreground">
-          Ничего не найдено по выбранным тегам.{" "}
-          <button onClick={() => setActiveTags([])} className="text-primary hover:underline">
+        <div className="glass rounded-2xl p-8 text-center">
+          <p className="text-muted-foreground">Ничего не найдено по выбранным фильтрам.</p>
+          <button
+            onClick={() => { setActiveTags([]); setActiveCategory(null); }}
+            className="mt-3 inline-flex items-center justify-center rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          >
             Сбросить фильтры
           </button>
+          {items.length > 0 && (
+            <div className="mt-8 text-left">
+              <p className="mb-3 text-sm font-semibold text-foreground">Популярные позиции раздела</p>
+              <div className="grid-cards">
+                {items.slice(0, 6).map((it) => (
+                  <CatalogCard
+                    key={it.slug}
+                    item={it}
+                    category={category}
+                    activeTags={[]}
+                    onOpen={() => setOpenSlug(it.slug)}
+                    onToggleTag={toggleTag}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <>
