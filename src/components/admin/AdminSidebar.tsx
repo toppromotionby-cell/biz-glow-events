@@ -27,7 +27,7 @@ import { useRoles } from "@/hooks/use-roles";
 import type { Permission } from "@/lib/permissions";
 
 type BadgeKey = "newOrders" | "newInquiries" | "pendingTestimonials";
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: BadgeKey; perm?: Permission };
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; matchPrefix?: string; badgeKey?: BadgeKey; perm?: Permission };
 type NavGroup = { label: string; items: NavItem[] };
 
 
