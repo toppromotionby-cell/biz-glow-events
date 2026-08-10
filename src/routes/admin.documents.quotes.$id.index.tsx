@@ -43,6 +43,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { VatSettings } from "@/components/admin/VatSettings";
+import { LogoUploader } from "@/components/admin/LogoUploader";
+
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
 
