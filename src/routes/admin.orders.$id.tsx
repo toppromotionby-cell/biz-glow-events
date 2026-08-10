@@ -231,9 +231,10 @@ function OrderDetail() {
                 value={order.status}
                 onValueChange={(v) => updateStatus.mutate(v as OrderStatus)}
               >
-                {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => (
-                  <DropdownMenuRadioItem key={k} value={k}>{v}</DropdownMenuRadioItem>
+                {orderStatusOptions(order.status).map((o) => (
+                  <DropdownMenuRadioItem key={o.value} value={o.value}>{o.label}</DropdownMenuRadioItem>
                 ))}
+
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
