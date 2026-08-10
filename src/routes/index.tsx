@@ -96,7 +96,7 @@ function HomePage() {
       {/* DIRECTIONS */}
       <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 pb-16 md:pb-20">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [grid-auto-rows:1fr]">
+        <div className="grid-tiles">
           {sections.map((section, i) => (
             <CatalogSectionTile key={section.key} section={section} index={i} />
           ))}
@@ -249,7 +249,7 @@ function HomePage() {
             Выберите направление и оформите заявку — мы соберём смету и свяжемся в течение 24 часов.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 [grid-auto-rows:1fr]">
+        <div className="grid-tiles">
           {sections.map((section) => (
             <DirectionCard
               key={section.key}

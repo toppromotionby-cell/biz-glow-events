@@ -41,7 +41,7 @@ export function CartCrossSell({ presentTypes }: { presentTypes: CartEntityType[]
     <section className="mt-10">
       <h2 className="text-xl font-display font-semibold mb-3">Часто берут вместе</h2>
       <p className="text-sm text-muted-foreground mb-4">Дополните заявку — менеджер всё посчитает в одном договоре.</p>
-      <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <ul className="grid-tiles">
         {items.map(i => <Card key={i.id} item={i} type={target} />)}
       </ul>
     </section>
@@ -65,7 +65,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
     toast.success(`${LABEL[type]} добавлено в корзину`);
   });
   return (
-    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex flex-col">
+    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex h-full flex-col">
       <Link to={CATALOG_SLUG_ROUTE[type]} params={{ slug: item.slug }} className="block">
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (

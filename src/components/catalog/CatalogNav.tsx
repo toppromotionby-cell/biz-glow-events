@@ -160,7 +160,7 @@ export function CatalogSectionCard({ section, index }: { section: CatalogNavSect
 export function CatalogMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
   const sections = useCatalogNav();
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid-tiles">
       {sections.map((section, i) => {
         const Icon = sectionIcon(section.icon);
         return (

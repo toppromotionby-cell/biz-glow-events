@@ -1,7 +1,7 @@
 // Skeleton для списка каталога — снижает CLS и улучшает воспринимаемую скорость.
 export function CatalogSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className="grid-cards">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="glass rounded-2xl overflow-hidden animate-pulse">
           <div className="aspect-[4/3] bg-muted/40" />

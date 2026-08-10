@@ -34,7 +34,7 @@ export function RelatedItems({ type, currentId, category }: {
   return (
     <section className="mt-16">
       <h2 className="text-2xl font-display font-semibold mb-5">Похожие позиции</h2>
-      <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <ul className="grid-tiles">
         {items.map(i => <Card key={i.id} item={i} onOpen={() => setOpenSlug(i.slug)} />)}
       </ul>
       {openSlug && (
@@ -53,7 +53,7 @@ export function RelatedItems({ type, currentId, category }: {
 function Card({ item, onOpen }: { item: CatalogRow; onOpen: () => void }) {
   const from = priceFrom(item.pricing);
   return (
-    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group">
+    <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex h-full flex-col">
       <button type="button" onClick={onOpen} className="block w-full text-left" aria-label={`Открыть ${item.title}`}>
         <div className="aspect-[16/10] bg-surface overflow-hidden">
           {item.photo_urls?.[0] && (
