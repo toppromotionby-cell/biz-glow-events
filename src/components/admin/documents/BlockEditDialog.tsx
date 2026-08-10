@@ -92,7 +92,10 @@ export function BlockEditDialog({
       vat_rate: quote.vat_rate,
       vat_as_line: quote.vat_as_line,
       company_overrides: quote.company_overrides,
-      texts: quote.texts,
+      // «Редактирую то, что вижу»: если у КП своего текста нет — подставляем
+      // унаследованное значение из общих настроек документов (как в превью).
+      vat_note: quote.vat_note || settings.vat_note,
+      texts: { ...quote.texts, footer: quote.texts.footer || settings.quote_footer },
       blocks: quote.blocks,
     });
     setItem(edit.target === "item" ? (items.find((i) => i.id === edit.id) ?? null) : null);
