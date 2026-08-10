@@ -49,17 +49,22 @@ export const listPresentations = createServerFn({ method: "GET" })
         companyId: z.string().uuid().nullable().optional(),
         quoteId: z.string().uuid().nullable().optional(),
         status: z.string().max(20).optional(),
+        sort: z.enum(["updated", "created", "title"]).optional(),
       })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<PresentationListRow[]> => {
     await assertStaff(context as never);
 
+    const sort = data.sort ?? "updated";
+    const orderCol = sort === "title" ? "title" : sort === "created" ? "created_at" : "updated_at";
+
     let q = context.supabase
       .from("presentations")
       .select("*, presentation_slides(id)")
-      .order("updated_at", { ascending: false })
+      .order(orderCol, { ascending: sort === "title" })
       .limit(200);
+
 
     const term = (data.search ?? "").trim();
     if (term) q = q.ilike("title", `%${term}%`);
