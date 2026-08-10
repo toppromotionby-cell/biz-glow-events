@@ -18,8 +18,8 @@ import { ExtrasBlock } from "@/components/ExtrasBlock";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { HourPriceSlider } from "@/components/HourPriceSlider";
 import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
-import { QuickQuoteRequest } from "@/components/catalog/QuickQuoteRequest";
-import { CompareButton } from "@/components/CompareButton";
+import { QuickLeadRequest } from "@/components/catalog/QuickLeadRequest";
+
 import { detectQuantityKind, maxQtyFor, unitFromPricing, parseHourTiers, priceForHours, pluralizeUnit, formatBYNTotal } from "@/lib/pricing";
 import { addToCart } from "@/lib/cart";
 import { toast } from "sonner";
@@ -464,7 +464,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
 
         {quoteOpen && (
           <section id="quickview-quote" className="mt-6">
-            <QuickQuoteRequest
+            <QuickLeadRequest
               subject={effectiveTitle}
               source={`quickview:${type}`}
               details={quoteDetails}

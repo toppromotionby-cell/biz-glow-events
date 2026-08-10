@@ -6,7 +6,6 @@ import { MediaShield } from "@/components/MediaShield";
 import { StorageImg, StorageVideo } from "@/components/StorageMedia";
 import { PriceGate } from "@/components/PriceGate";
 import { AddToCartButton } from "@/components/AddToCartButton";
-import { CompareButton } from "@/components/CompareButton";
 
 import { RelatedItems } from "@/components/RelatedItems";
 import { CatalogSkeleton } from "@/components/CatalogSkeleton";

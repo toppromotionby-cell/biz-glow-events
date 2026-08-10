@@ -8,7 +8,6 @@ const SEGMENT_LABELS: Record<string, string> = {
   services: "Услуги",
   production: "Производство",
   cases: "Кейсы",
-  compare: "Сравнение",
 
   blog: "Блог",
   about: "О нас",
