@@ -204,10 +204,21 @@ function EditorPage() {
   const warnings = checks.filter((c) => c.level === "warn");
   const [inlineEdit, setInlineEdit] = useState(true);
   const [edit, setEdit] = useState<PromoEditTarget | null>(null);
+  /** Реквизиты компании — печатаются под логотипом в шапке. */
+  const companyLine = useMemo(() => {
+    const c = resolveCompany(quote?.company_overrides ?? null, settings);
+    return [
+      `${c.company_legal_name}${c.company_unp ? ` · УНП ${c.company_unp}` : ""}`.trim(),
+      c.company_address,
+    ]
+      .filter((s) => s && s.trim() !== "")
+      .join(" · ");
+  }, [quote?.company_overrides, settings]);
   const previewHtml = useMemo(
-    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit }) : ""),
-    [quote, items, inlineEdit],
+    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit, companyLine }) : ""),
+    [quote, items, inlineEdit, companyLine],
   );
+
 
   /** Двойной клик по блоку превью открывает точечное редактирование. */
   const onPreviewDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
