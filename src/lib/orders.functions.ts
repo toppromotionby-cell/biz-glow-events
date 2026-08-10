@@ -131,10 +131,11 @@ async function notifyTelegram(text: string): Promise<{ ok: boolean; error?: stri
 }
 
 export const submitOrder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([optionalSupabaseAuth])
   .inputValidator((input) => OrderSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+
     // 0. Серверная валидация даты — не позволяем прошлые даты.
     if (data.event_date) {
       const today = new Date();
