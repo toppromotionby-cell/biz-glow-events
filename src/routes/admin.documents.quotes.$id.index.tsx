@@ -776,19 +776,44 @@ function Page() {
             </TabsContent>
 
             <TabsContent value="checks" className="space-y-4 pt-3">
-              <div className="rounded-xl border border-border/60 p-3 space-y-2">
-                <h2 className="text-sm font-medium">Проверка перед отправкой</h2>
+              <div className="rounded-xl border border-border/60 p-3 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-medium">Проверка перед отправкой</h2>
+                  <span className="text-xs text-muted-foreground">
+                    {errorsCount} ошибок · {warnsCount} предупреждений
+                  </span>
+                </div>
                 {!checks.length && (
                   <p className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />Всё заполнено, можно отправлять клиенту
                   </p>
                 )}
-                {checks.map((c, i) => (
-                  <p key={i} className={`flex items-start gap-2 text-sm ${c.level === "error" ? "text-destructive" : "text-muted-foreground"}`}>
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{c.message}
-                  </p>
-                ))}
+                {(["error", "warn", "info"] as const).map((lvl) => {
+                  const group = checks.filter((c) => c.level === lvl);
+                  if (!group.length) return null;
+                  const title = lvl === "error" ? "Ошибки — суммы или блоки будут некорректны" : lvl === "warn" ? "Предупреждения" : "Подсказки";
+                  return (
+                    <div key={lvl} className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{title}</p>
+                      {group.map((c, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => gotoCheck(c)}
+                          className={`w-full text-left flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted/60 transition ${
+                            lvl === "error" ? "text-destructive" : lvl === "warn" ? "text-amber-600" : "text-muted-foreground"
+                          }`}
+                        >
+                          {lvl === "info" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                          <span className="flex-1">{c.message}</span>
+                          <span className="text-[10px] text-muted-foreground shrink-0">перейти →</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
+
 
               <div className="rounded-xl border border-border/60 p-3 space-y-2">
                 <div className="flex items-center justify-between">
