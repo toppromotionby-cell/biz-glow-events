@@ -309,7 +309,11 @@ function EditorPage() {
                 <DropdownMenuItem
                   key={v.id}
                   onClick={async () => {
-                    if (!window.confirm("Восстановить эту версию? Текущие данные будут заменены.")) return;
+                    const ok = await confirm({
+                      title: "Восстановить эту версию?",
+                      description: "Текущие данные документа будут заменены содержимым версии.",
+                    });
+                    if (!ok) return;
                     await restoreVersion({ data: { versionId: v.id } });
                     await refetch();
                     toast.success("Версия восстановлена");
@@ -329,14 +333,18 @@ function EditorPage() {
                 <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={async () => {
-                  const name = window.prompt("Название шаблона", quote.project || "Шаблон промо-КП");
-                  if (!name) return;
-                  await saveTpl({ data: { id, name } });
-                  toast.success("Шаблон сохранён");
+                onClick={() => {
+                  setTemplateName(quote.project || "Шаблон промо-КП");
+                  setTemplateOpen(true);
                 }}
               >
                 Сохранить как шаблон
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin/documents/knowledge">
+                  <Brain className="mr-2 h-4 w-4" />База знаний подсказок
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
