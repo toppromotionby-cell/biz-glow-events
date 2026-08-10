@@ -91,18 +91,49 @@ const MARGIN_X = DOC_LAYOUT.marginXPt;
 const MARGIN_TOP = DOC_LAYOUT.marginTopPt;
 const MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
 
-// Кегли: те же, что в HTML-превью, переведённые в pt
-const F11 = DOC_FONT_PT.small;
-const F12 = DOC_FONT_PT.body;
-const F13 = DOC_FONT_PT.section;
-const F16 = DOC_FONT_PT.total;
-const F22 = DOC_FONT_PT.brand;
-const F_COVER = DOC_FONT_PT.coverTitle;
-const F_DOC_KIND = DOC_FONT_PT.docKind;
-const F_DOC_NUM = DOC_FONT_PT.docNum;
-const F_DOC_DATE = DOC_FONT_PT.docDate;
-const F_LABEL = DOC_FONT_PT.cardLabel;
-const F_FOOTER = DOC_FONT_PT.footer;
+// Кегли: те же, что в HTML-превью, переведённые в pt.
+// Плотность (density) позволяет уплотнить документ, чтобы он влез в меньшее
+// число листов: 1 = «комфортно» (как превью), 0.94 = «компактно», 0.88 = «плотно».
+export type DocDensity = "comfortable" | "compact" | "dense";
+export const DOC_DENSITY_SCALE: Record<DocDensity, number> = {
+  comfortable: 1,
+  compact: 0.94,
+  dense: 0.88,
+};
+
+/** Текущий множитель плотности (отступы, высоты строк). */
+let D = 1;
+
+let F11 = DOC_FONT_PT.small;
+let F12 = DOC_FONT_PT.body;
+let F13 = DOC_FONT_PT.section;
+let F16 = DOC_FONT_PT.total;
+let F22 = DOC_FONT_PT.brand;
+let F_COVER = DOC_FONT_PT.coverTitle;
+let F_DOC_KIND = DOC_FONT_PT.docKind;
+let F_DOC_NUM = DOC_FONT_PT.docNum;
+let F_DOC_DATE = DOC_FONT_PT.docDate;
+let F_LABEL = DOC_FONT_PT.cardLabel;
+let F_FOOTER = DOC_FONT_PT.footer;
+
+/** Пересчитать шкалу кеглей и отступов под выбранную плотность. */
+function applyDensity(density: DocDensity) {
+  const k = DOC_DENSITY_SCALE[density];
+  D = k;
+  const s = (v: number) => Math.round(v * (0.5 + k / 2) * 10) / 10; // кегли ужимаем мягче отступов
+  F11 = s(DOC_FONT_PT.small);
+  F12 = s(DOC_FONT_PT.body);
+  F13 = s(DOC_FONT_PT.section);
+  F16 = s(DOC_FONT_PT.total);
+  F22 = s(DOC_FONT_PT.brand);
+  F_COVER = s(DOC_FONT_PT.coverTitle);
+  F_DOC_KIND = s(DOC_FONT_PT.docKind);
+  F_DOC_NUM = s(DOC_FONT_PT.docNum);
+  F_DOC_DATE = s(DOC_FONT_PT.docDate);
+  F_LABEL = s(DOC_FONT_PT.cardLabel);
+  F_FOOTER = s(DOC_FONT_PT.footer);
+}
+
 
 type FittedLogo = { img: PDFImage; w: number; h: number; aspect: number };
 
