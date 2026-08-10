@@ -313,14 +313,12 @@ function CatalogCard({
   item,
   category,
   activeTags,
-  entityType,
   onOpen,
   onToggleTag,
 }: {
   item: CatalogItem;
   category: string;
   activeTags: string[];
-  entityType: CatalogType;
   onOpen: () => void;
   onToggleTag: (t: string) => void;
 }) {
