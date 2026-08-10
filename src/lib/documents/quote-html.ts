@@ -6,6 +6,8 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
+import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
+
 
 import type { Quote, QuoteItem, QuoteCheck, QuoteCheckScope } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
