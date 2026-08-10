@@ -256,8 +256,8 @@ function Page() {
   }, [quote, items, id, save, qc]);
 
   const previewHtml = useMemo(
-    () => (quote && totals ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings) : ""),
-    [quote, items, settings, totals],
+    () => (quote && totals ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings, { editable: inlineEdit }) : ""),
+    [quote, items, settings, totals, inlineEdit],
   );
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
