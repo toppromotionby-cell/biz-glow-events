@@ -593,6 +593,87 @@ function drawCard(
   ctx.y -= height + 6;
 }
 
+/**
+ * Карточка с таблицей «ключ — значение» (как `.info-table` в HTML-превью):
+ * подписи слева серым, значения справа. Используется для блока «Мероприятие»,
+ * чтобы PDF совпадал с превью по подписям и сетке.
+ */
+function drawInfoCard(
+  ctx: DocCtx,
+  label: string,
+  rows: Array<[string, string]>,
+  note?: string | null,
+  opts: { x?: number; width?: number } = {},
+) {
+  const x = opts.x ?? MARGIN_X;
+  const width = opts.width ?? PAGE_W - MARGIN_X * 2;
+  const innerW = width - 24;
+  const keyW = Math.min(150, innerW * 0.38);
+  const valW = innerW - keyW - 8;
+  const clean = rows.filter(([, v]) => !!v && String(v).trim() !== "");
+  const list: Array<[string, string]> = clean.length ? clean : [["Детали", "уточняются"]];
+
+  const wrapped = list.map(([k, v]) => ({
+    k,
+    lines: wrapText(ctx.regular, v, F11, valW),
+  }));
+  const noteLines = note ? wrapText(ctx.regular, note, F11, innerW) : [];
+  const rowsH = wrapped.reduce((s, r) => s + Math.max(1, r.lines.length) * F11 * 1.45, 0);
+  const height =
+    14 * D + 16 * D + rowsH + (noteLines.length ? 6 * D + noteLines.length * F11 * 1.35 : 0) + 12 * D;
+
+  ensureSpace(ctx, height + 6 * D);
+  roundedRect(ctx.page, {
+    x,
+    y: ctx.y - height,
+    width,
+    height,
+    radius: 10,
+    color: SURFACE,
+    borderColor: LINE,
+    borderWidth: 0.6,
+  });
+
+  let cy = ctx.y - 14 * D;
+  drawTracked(ctx.page, label.toUpperCase(), {
+    x: x + 12,
+    y: cy - 9,
+    size: F_LABEL,
+    font: ctx.bold,
+    color: ACCENT,
+    tracking: F_LABEL * 0.12,
+  });
+  cy -= 16 * D;
+
+  for (const r of wrapped) {
+    ctx.page.drawText(r.k, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
+    let vy = cy;
+    for (const line of r.lines) {
+      ctx.page.drawText(line, {
+        x: x + 12 + keyW + 8,
+        y: vy - F11,
+        size: F11,
+        font: ctx.bold,
+        color: TEXT,
+      });
+      vy -= F11 * 1.45;
+    }
+    cy -= Math.max(1, r.lines.length) * F11 * 1.45;
+  }
+
+  if (noteLines.length) {
+    cy -= 6 * D;
+    for (const line of noteLines) {
+      ctx.page.drawText(line, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
+      cy -= F11 * 1.35;
+    }
+  }
+
+  ctx.y -= height + 6 * D;
+}
+
+
+
 // === Таблица позиций ===
 type Col = {
   title: string;
