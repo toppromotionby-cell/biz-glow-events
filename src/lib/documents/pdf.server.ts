@@ -685,7 +685,7 @@ async function createCtx(logoUrl?: string | null, clientLogoUrl?: string | null)
 // === Builders для каждого вида документа ===
 
 async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Коммерческое предложение", num, date, settings);
 
@@ -738,7 +738,7 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
 }
 
 async function buildInvoice(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Счёт-фактура", num, date, settings);
 
@@ -842,7 +842,7 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
 }
 
 async function buildContract(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Договор", num, date, settings);
 
@@ -941,7 +941,7 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
 }
 
 async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(settings.logo_url);
   const { num, date } = header(order);
   drawHeader(ctx, "Акт оказанных услуг", num, date, settings);
 
@@ -1124,7 +1124,7 @@ export async function buildStandaloneQuotePdf(
     signer_title: c.signer_title,
   };
 
-  const ctx = await createCtx();
+  const ctx = await createCtx(quote.design.show_logo ? (quote.logo_url || settings.logo_url) : null);
   drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff);
 
   const map = buildPlaceholderValues(quote, items, settings);
@@ -1349,7 +1349,7 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
-  const ctx = await createCtx();
+  const ctx = await createCtx(quote.logo_url || settings.logo_url, quote.client_logo_url);
   const t = computePromoTotals(quote, items);
   drawHeader(
     ctx,
