@@ -400,7 +400,7 @@ function OrderDetail() {
                   <Paperclip className="h-3.5 w-3.5" />Вложения
                 </TabsTrigger>
                 <TabsTrigger value="history" className="gap-1.5">
-                  <History className="h-3.5 w-3.5" />История
+                  <HistoryIcon className="h-3.5 w-3.5" />История
                 </TabsTrigger>
 
               </TabsList>
