@@ -47,7 +47,7 @@ const INFO_LINKS = [
 
 export function SiteHeader() {
   const { isAuthenticated } = useAuth();
-  const { isStaff } = useRoles();
+  
 
   const { count } = useCart();
   const catalogSections = useCatalogNav();
