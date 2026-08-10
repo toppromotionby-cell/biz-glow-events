@@ -221,3 +221,118 @@ export const deleteVirtualSection = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export type StructureSection = {
+  key: string;
+  title: string;
+  description: string;
+  icon: string;
+  sort_order: number;
+  visible: boolean;
+  kind: "native" | "virtual";
+  slug: string | null;
+  category_ids: string[];
+  auto_hidden: boolean;
+  count: number;
+};
+
+export type StructureCategory = {
+  id: string;
+  entity_type: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  visible: boolean;
+  count: number;
+};
+
+/** Полный срез структуры для админки: разделы, направления и счётчики позиций. */
+export const getStructureOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: sections }, { data: cats }, counts] = await Promise.all([
+      supabaseAdmin
+        .from("catalog_sections")
+        .select("key,title,description,icon,sort_order,visible,kind,slug,category_ids,auto_hidden")
+        .order("sort_order", { ascending: true }),
+      supabaseAdmin
+        .from("catalog_categories")
+        .select("id,entity_type,name,description,sort_order,visible")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true }),
+      loadCounts(supabaseAdmin),
+    ]);
+
+    const catRows: StructureCategory[] = ((cats ?? []) as Record<string, unknown>[]).map((c) => ({
+      id: String(c['id']),
+      entity_type: String(c['entity_type']),
+      name: String(c['name'] ?? ""),
+      description: String(c['description'] ?? ""),
+      sort_order: Number(c['sort_order'] ?? 0),
+      visible: c['visible'] !== false,
+      count: counts.get(String(c['entity_type']) as CatalogType)?.get(String(c['name'] ?? "").trim().toLowerCase()) ?? 0,
+    }));
+
+    const byId = new Map(catRows.map((c) => [c.id, c]));
+
+    const sectionRows: StructureSection[] = ((sections ?? []) as Record<string, unknown>[]).map((s) => {
+      const kind = (s['kind'] === "virtual" ? "virtual" : "native") as "native" | "virtual";
+      const ids = (s['category_ids'] as string[] | null) ?? [];
+      const total =
+        kind === "native"
+          ? Array.from(counts.get(String(s['key']) as CatalogType)?.values() ?? []).reduce((a, b) => a + b, 0)
+          : ids.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0);
+      return {
+        key: String(s['key']),
+        title: String(s['title'] ?? ""),
+        description: String(s['description'] ?? ""),
+        icon: String(s['icon'] ?? ""),
+        sort_order: Number(s['sort_order'] ?? 0),
+        visible: s['visible'] !== false,
+        kind,
+        slug: (s['slug'] as string | null) ?? null,
+        category_ids: ids,
+        auto_hidden: s['auto_hidden'] === true,
+        count: total,
+      };
+    });
+
+    return { sections: sectionRows, categories: catRows };
+  });
+
+/** Обновление раздела (название/описание/иконка/видимость/состав направлений). */
+export const updateSection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        key: z.string().min(1),
+        title: z.string().min(1).max(80).optional(),
+        description: z.string().max(240).optional(),
+        icon: z.string().max(40).optional(),
+        visible: z.boolean().optional(),
+        sort_order: z.number().int().optional(),
+        categoryIds: z.array(z.string().uuid()).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const patch: {
+      title?: string; description?: string; icon?: string;
+      visible?: boolean; sort_order?: number; category_ids?: string[]; auto_hidden?: boolean;
+    } = {};
+    if (data.title !== undefined) patch.title = data.title.trim();
+    if (data.description !== undefined) patch.description = data.description.trim();
+    if (data.icon !== undefined) patch.icon = data.icon;
+    if (data.visible !== undefined) patch.visible = data.visible;
+    if (data.sort_order !== undefined) patch.sort_order = data.sort_order;
+    if (data.categoryIds !== undefined) {
+      patch.category_ids = data.categoryIds;
+      patch.auto_hidden = data.categoryIds.length === 0;
+    }
+    const { error } = await supabaseAdmin.from("catalog_sections").update(patch).eq("key", data.key);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
