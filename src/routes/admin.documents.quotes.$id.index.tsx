@@ -48,6 +48,7 @@ import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
+import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
@@ -163,6 +164,21 @@ function Page() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const dirtyRef = useRef(false);
+  const previewRef = useRef<HTMLIFrameElement>(null);
+  const [inlineEdit, setInlineEdit] = useState(true);
+  const [edit, setEdit] = useState<DocEditTarget | null>(null);
+
+  // Двойной клик по блоку в превью открывает диалог редактирования этого блока.
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== previewRef.current?.contentWindow) return;
+      const d = e.data as { source?: string; type?: string; target?: string; id?: string | null };
+      if (d?.source !== "doc-preview" || d.type !== "doc-edit" || !d.target) return;
+      setEdit({ target: d.target, id: d.id ?? null });
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     if (data) { setQuote(data.quote); setItems(data.items); dirtyRef.current = false; setState("idle"); }
@@ -240,8 +256,8 @@ function Page() {
   }, [quote, items, id, save, qc]);
 
   const previewHtml = useMemo(
-    () => (quote && totals ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings) : ""),
-    [quote, items, settings, totals],
+    () => (quote && totals ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings, { editable: inlineEdit }) : ""),
+    [quote, items, settings, totals, inlineEdit],
   );
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
@@ -741,12 +757,26 @@ function Page() {
 
         {/* ПРАВО: живое превью */}
         <div className="xl:sticky xl:top-4 h-[calc(100vh-8rem)] rounded-xl border border-border/60 overflow-hidden bg-background">
-          <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2 text-xs text-muted-foreground">
-            <Eye className="h-3.5 w-3.5" /> Живое превью документа
+          <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Живое превью документа</span>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
+              <span>Редактирование двойным кликом</span>
+            </label>
           </div>
-          <iframe title="Превью КП" srcDoc={previewHtml} className="w-full h-[calc(100%-2.25rem)] bg-white" />
+          <iframe ref={previewRef} title="Превью КП" srcDoc={previewHtml} className="w-full h-[calc(100%-2.25rem)] bg-white" />
         </div>
       </div>
+
+      <BlockEditDialog
+        edit={edit}
+        quote={quote}
+        items={items}
+        settings={settings}
+        onClose={() => setEdit(null)}
+        onSaveQuote={(p) => { patch(p); toast.success("Блок обновлён"); }}
+        onSaveItems={(next) => { patchItems(next); toast.success("Позиция обновлена"); }}
+      />
 
       <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
         <DialogContent className="max-w-md">

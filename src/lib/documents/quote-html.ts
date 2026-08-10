@@ -240,7 +240,21 @@ function templateVars(template: string): string {
   return `--cover-bg:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,#fff),#fff); --cover-border:color-mix(in srgb,var(--accent) 30%,#fff); --card-bg:var(--surface); --radius:14px;`;
 }
 
-export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: DocumentSettings): string {
+/** Опции рендера: editable включает подсветку блоков и двойной клик в live-превью. */
+export type QuoteHtmlOptions = { editable?: boolean };
+
+export function buildQuoteHtmlDoc(
+  quote: Quote,
+  items: QuoteItem[],
+  settings: DocumentSettings,
+  opts: QuoteHtmlOptions = {},
+): string {
+  const editable = opts.editable === true;
+  /** Метка редактируемой зоны — попадает в HTML только в режиме редактирования. */
+  const ed = (target: string, id?: string, label?: string) =>
+    editable
+      ? ` data-edit="${esc(target)}"${id != null ? ` data-edit-id="${esc(id)}"` : ""}${label ? ` data-edit-label="${esc(label)}"` : ""}`
+      : "";
   const c = quoteCompany(quote, settings);
   const accent = (quote.design.accent_color || settings.accent_color || BRAND_ACCENT).trim();
   const t = computeTotals(quote, items);
@@ -271,10 +285,10 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
 
   const tableBody = [...sections.entries()]
     .map(([section, rows]) => {
-      const head = section ? `<tr class="section-row"><td colspan="5">${esc(section)}</td></tr>` : "";
+      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${esc(section)}</td></tr>` : "";
       const body = rows
         .map(
-          (it, i) => `<tr>
+          (it, i) => `<tr${ed("item", it.id, "Позиция")}>
         <td class="idx">${i + 1}</td>
         <td>
           <div class="it-title">${esc(it.title)}</div>
@@ -315,7 +329,7 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
 
   const heading = (b: QuoteBlock) => `<h2 class="section">${esc(b.title || "")}</h2>`;
 
-  const renderBlock = (b: QuoteBlock): string => {
+  const renderBlockInner = (b: QuoteBlock): string => {
     const text = blockText(b, quote, map, numbers);
     switch (b.type) {
       case "cover":
@@ -402,6 +416,29 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
     }
   };
 
+  /** Зоны редактирования: тип блока -> цель диалога в админке. */
+  const BLOCK_EDIT_TARGET: Partial<Record<QuoteBlock["type"], { target: string; label: string; useId?: boolean }>> = {
+    cover: { target: "cover", label: "Заголовок и вступление" },
+    client: { target: "client", label: "Заказчик" },
+    event: { target: "event", label: "Мероприятие" },
+    totals: { target: "totals", label: "Итоги и оплата" },
+    requisites: { target: "company", label: "Реквизиты" },
+    signature: { target: "company", label: "Реквизиты" },
+    included: { target: "block", label: "Текстовый блок", useId: true },
+    excluded: { target: "block", label: "Текстовый блок", useId: true },
+    timeline: { target: "block", label: "Текстовый блок", useId: true },
+    terms: { target: "block", label: "Текстовый блок", useId: true },
+    text: { target: "block", label: "Текстовый блок", useId: true },
+  };
+
+  const renderBlock = (b: QuoteBlock): string => {
+    const html = renderBlockInner(b);
+    if (!editable || !html.trim()) return html;
+    const cfg = BLOCK_EDIT_TARGET[b.type];
+    if (!cfg) return html;
+    return `<div${ed(cfg.target, cfg.useId ? b.id : undefined, cfg.label)}>${html}</div>`;
+  };
+
   // Тумблеры оформления по-прежнему работают как «жёсткое» выключение блока.
   const hidden = new Set<string>();
   if (!quote.design.show_cover) hidden.add("cover");
@@ -477,16 +514,27 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
   .sign img { max-height:60px; display:block; margin-top:6px; }
   .footer { margin-top:24px; padding-top:10px; border-top:1px solid var(--line); color:var(--muted); font-size:var(--fs-footer); }
   @media print { body { background:#fff; } .sheet { max-width:none; padding:0; } }
+  ${
+    editable
+      ? `
+  [data-edit] { position:relative; cursor:pointer; border-radius:6px; transition:box-shadow .12s ease, background .12s ease; }
+  [data-edit]:hover { box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 55%,#fff); background:color-mix(in srgb,var(--accent) 5%,#fff); }
+  tr[data-edit]:hover > td { background:color-mix(in srgb,var(--accent) 7%,#fff); }
+  .edit-hint { position:fixed; z-index:9; left:0; top:0; padding:2px 8px; border-radius:999px; background:var(--accent); color:#fff; font-size:11px; font-family:"Inter",system-ui,sans-serif; pointer-events:none; opacity:0; transition:opacity .1s ease; white-space:nowrap; }
+  .edit-hint.on { opacity:1; }
+  @media print { [data-edit]:hover { box-shadow:none; background:none; } .edit-hint { display:none; } }`
+      : ""
+  }
 </style></head>
-<body><div class="sheet">
+<body${editable ? ' class="editable"' : ""}><div class="sheet">
   <div class="bar"></div>
   <div class="head">
-    <div>
+    <div${ed("company", undefined, "Реквизиты и логотип")}>
       ${quote.design.show_logo && (quote.logo_url || settings.logo_url) ? `<div style="${logoWrapStyle(quote.logo_layout)}"><img class="logo" style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url || settings.logo_url)}" alt="" /></div>` : ""}
       ${quote.design.show_logo && (quote.logo_url || settings.logo_url) ? "" : `<div class="brand">${esc(c.brand)}</div>`}
       <div class="brand-sub">${esc(c.legal)}${c.unp ? ` · УНП ${esc(c.unp)}` : ""}<br/>${esc(c.address)}</div>
     </div>
-    <div class="right">
+    <div class="right"${ed("header", undefined, "Номер и даты")}>
       <div class="doc-kind">Коммерческое предложение</div>
       <div class="doc-num">№ ${esc(num)}</div>
       <div class="doc-date">от ${esc(fmtDate(quote.doc_date))}</div>
@@ -496,9 +544,37 @@ export function buildQuoteHtmlDoc(quote: Quote, items: QuoteItem[], settings: Do
 
   ${bodyHtml}
 
-  <div class="footer">
+  <div class="footer"${ed("footer", undefined, "Подвал документа")}>
     ${esc(applyPlaceholders(quote.texts.footer || settings.quote_footer, map, numbers))}
     <div style="margin-top:4px;">${esc(c.legal)} · ${esc(c.phone)} · ${esc(c.email)} · ${esc(c.website)}</div>
   </div>
-</div></body></html>`;
+</div>${
+    editable
+      ? `<div class="edit-hint" id="edit-hint">Двойной клик — редактировать</div>
+<script>
+(function(){
+  var hint = document.getElementById('edit-hint');
+  var current = null;
+  document.addEventListener('mouseover', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-edit]') : null;
+    if (el === current) return;
+    current = el;
+    if (!el) { hint.classList.remove('on'); return; }
+    var r = el.getBoundingClientRect();
+    hint.textContent = (el.getAttribute('data-edit-label') || 'Блок') + ' · двойной клик';
+    hint.style.left = Math.max(6, r.left) + 'px';
+    hint.style.top = Math.max(6, r.top - 20) + 'px';
+    hint.classList.add('on');
+  });
+  document.addEventListener('mouseleave', function(){ hint.classList.remove('on'); });
+  document.addEventListener('dblclick', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-edit]') : null;
+    if (!el) return;
+    e.preventDefault();
+    parent.postMessage({ source: 'doc-preview', type: 'doc-edit', target: el.getAttribute('data-edit'), id: el.getAttribute('data-edit-id') || null }, '*');
+  });
+})();
+<\/script>`
+      : ""
+  }</body></html>`;
 }

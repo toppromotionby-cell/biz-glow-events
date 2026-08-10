@@ -48,6 +48,7 @@ import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoUploader } from "@/components/admin/LogoUploader";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
+import { PromoBlockEditDialog, type PromoEditTarget } from "@/components/admin/documents/PromoBlockEditDialog";
 import { getQuoteDocSettings } from "@/lib/quotes.functions";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { resolveCompany } from "@/lib/documents/company";
@@ -195,7 +196,20 @@ function EditorPage() {
   const checks = useMemo(() => (quote ? checkPromoQuote(quote, items) : []), [quote, items]);
   const errors = checks.filter((c) => c.level === "error");
   const warnings = checks.filter((c) => c.level === "warn");
-  const previewHtml = useMemo(() => (quote ? buildPromoQuoteBody(quote, items) : ""), [quote, items]);
+  const [inlineEdit, setInlineEdit] = useState(true);
+  const [edit, setEdit] = useState<PromoEditTarget | null>(null);
+  const previewHtml = useMemo(
+    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit }) : ""),
+    [quote, items, inlineEdit],
+  );
+
+  /** Двойной клик по блоку превью открывает точечное редактирование. */
+  const onPreviewDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!inlineEdit) return;
+    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-edit]");
+    if (!el) return;
+    setEdit({ target: el.dataset.edit ?? "", id: el.dataset.editId ?? null });
+  };
 
   const versions = useQuery({
     queryKey: ["promo-versions", id],
@@ -582,16 +596,29 @@ function EditorPage() {
           {/* ПРАВО: итоги и превью */}
           <div className="space-y-3 xl:sticky xl:top-20 xl:self-start">
             <PromoTotalsPanel quote={quote} totals={totals} showMargin={showCost} />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Eye className="h-3.5 w-3.5" />Превью документа
+            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" />Превью документа</span>
+              <label className="flex items-center gap-2">
+                <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
+                Правка по двойному клику
+              </label>
             </div>
             <div className="max-h-[70vh] overflow-auto rounded-xl border border-border bg-white p-4">
               <style>{PROMO_DOC_CSS}</style>
-              <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              <div onDoubleClick={onPreviewDoubleClick} dangerouslySetInnerHTML={{ __html: previewHtml }} />
             </div>
           </div>
         </div>
       </div>
+
+      <PromoBlockEditDialog
+        edit={edit}
+        quote={quote}
+        items={items}
+        onClose={() => setEdit(null)}
+        onSaveQuote={patchQuote}
+        onSaveItems={patchItems}
+      />
 
       <Dialog open={!!snippetDraft} onOpenChange={(o) => !o && setSnippetDraft(null)}>
         <DialogContent>
