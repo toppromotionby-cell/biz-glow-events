@@ -8,6 +8,7 @@ import {
   AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, History, Plus, Search, Send,
   Settings2, Eye, BookmarkPlus, FileCheck2,
 } from "lucide-react";
+import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -672,35 +673,11 @@ function Page() {
                       <ImageField label="Печать" value={quote.stamp_url} onChange={(v) => patch({ stamp_url: v })} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      {([
-                        ["company_legal_name", "Юр. название"],
-                        ["company_brand", "Бренд"],
-                        ["company_unp", "УНП"],
-                        ["company_address", "Адрес"],
-                        ["company_phone", "Телефон"],
-                        ["company_email", "E-mail"],
-                        ["company_website", "Сайт"],
-                        ["bank_name", "Банк"],
-                        ["bank_bic", "БИК"],
-                        ["bank_account", "Расчётный счёт"],
-                        ["signer_name", "Подписант"],
-                        ["signer_title", "Должность подписанта"],
-                      ] as const).map(([key, label]) => (
-                        <Field key={key} label={label}>
-                          <Input
-                            placeholder={String(settings[key] ?? "")}
-                            value={quote.company_overrides[key] ?? ""}
-                            onChange={(e) => patch({ company_overrides: { ...quote.company_overrides, [key]: e.target.value } })}
-                          />
-                        </Field>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs text-muted-foreground">Пустые поля берутся из общих настроек документов.</p>
-                      <Button type="button" size="sm" variant="ghost" className="shrink-0"
-                        onClick={() => patch({ company_overrides: {} })}>Сбросить реквизиты</Button>
-                    </div>
+                    <CompanyOverridesEditor
+                      value={quote.company_overrides}
+                      onChange={(v) => patch({ company_overrides: v })}
+                      settings={settings}
+                    />
 
                   </AccordionContent>
                 </AccordionItem>
