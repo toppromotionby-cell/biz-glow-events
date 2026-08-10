@@ -157,10 +157,19 @@ export function buildPromoQuoteBody(
   <div class="head">
     <div class="meta"${ed("meta", undefined, "Шапка КП")}>${meta}</div>
     <div class="logos">
-      ${quote.logo_url ? `<span style="${logoWrapStyle(quote.logo_layout)}"><img style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url)}" alt="Логотип" /></span>` : ""}
+      ${
+        quote.logo_url
+          ? `<div class="logo-col" style="${logoWrapStyle(quote.logo_layout)}"><img style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url)}" alt="Логотип" />${
+              opts.companyLine ? `<div class="req">${esc(opts.companyLine)}</div>` : ""
+            }</div>`
+          : opts.companyLine
+            ? `<div class="logo-col"><div class="req">${esc(opts.companyLine)}</div></div>`
+            : ""
+      }
       ${quote.client_logo_url ? `<img src="${esc(quote.client_logo_url)}" alt="Логотип клиента" />` : ""}
     </div>
   </div>
+
   <div class="docnum">КП № ${esc(promoNumberDisplay(quote))}</div>
   <table class="grid">
     <thead><tr>${cols.map((c) => `<th class="${c.cls}">${esc(c.label)}</th>`).join("")}</tr></thead>
