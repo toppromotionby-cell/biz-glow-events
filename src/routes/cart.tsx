@@ -157,6 +157,9 @@ function CartPage() {
             draft={draft}
             finalTotal={finalTotal}
             onSubmit={onSubmit}
+            errors={errors}
+            onFieldBlur={handleFieldBlur}
+
           />
         </div>
       )}
