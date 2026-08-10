@@ -209,7 +209,7 @@ function AdminDashboard() {
           <CalendarDays className="h-5 w-5 text-primary" />
           <div>
             <div className="font-medium">Календарь</div>
-            <div className="text-xs text-muted-foreground">Бронирования</div>
+            <div className="text-xs text-muted-foreground">Даты мероприятий</div>
           </div>
         </Link>
         <Link to="/admin/blog" className="glass rounded-xl p-4 hover:border-primary/40 transition flex items-center gap-3">
