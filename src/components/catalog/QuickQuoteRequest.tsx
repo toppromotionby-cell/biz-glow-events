@@ -8,6 +8,7 @@ import { Loader2, CheckCircle2 } from "lucide-react";
 import { submitLead } from "@/lib/leads.functions";
 import { readUtm } from "@/lib/utm";
 import { trackLead } from "@/lib/analytics";
+import { signalDemand, type DemandEntity } from "@/lib/demand";
 import { DateField } from "@/components/DateField";
 
 type Errors = Record<string, string>;
@@ -67,6 +68,7 @@ export function QuickQuoteRequest({
   details = [],
   itemUrl,
   defaultNotes,
+  demand,
   onDone,
 }: {
   subject: string;
@@ -77,6 +79,8 @@ export function QuickQuoteRequest({
   itemUrl?: string;
   /** Предзаполненный комментарий. */
   defaultNotes?: string;
+  /** Позиция каталога — для учёта спроса. */
+  demand?: { entity_type: DemandEntity; entity_id: string };
   onDone?: () => void;
 }) {
   const submit = useServerFn(submitLead);
