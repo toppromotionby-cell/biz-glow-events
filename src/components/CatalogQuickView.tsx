@@ -389,7 +389,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                       className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition"
                     >
                       <ShoppingCart className="h-4 w-4" />
-                      Заказать{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(total)}` : ""}
+                      В корзину{(qtyKind || isHourMode) ? ` — ${formatBYNTotal(total)}` : ""}
                     </button>
                   )
                 )}
@@ -499,7 +499,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ShoppingCart className="h-4 w-4" />
-              {needsSelection ? "Выберите позицию" : `Заказать — ${formatBYNTotal(total || unitPrice)}`}
+              {needsSelection ? "Выберите позицию" : `В корзину — ${formatBYNTotal(total || unitPrice)}`}
             </button>
           )}
           <button
