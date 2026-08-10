@@ -364,6 +364,33 @@ export type Database = {
         }
         Relationships: []
       }
+      demand_events: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event: string
+          id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event: string
+          id?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event?: string
+          id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       doc_contacts: {
         Row: {
           address: string
