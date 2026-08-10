@@ -25,14 +25,18 @@ export type ShareState = {
 type Props = {
   share: ShareState;
   onSend: (input: { email: string; note: string; attachPdf: boolean }) => Promise<void>;
+  /** Критичные замечания документа: показываем предупреждение перед отправкой. */
+  issues?: string[];
 };
 
-export function QuoteShareActions({ share, onSend }: Props) {
+export function QuoteShareActions({ share, onSend, issues = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(share.email);
   const [note, setNote] = useState("");
   const [attachPdf, setAttachPdf] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const blocked = issues.length > 0 && !confirmed;
 
   const url = share.token ? `${typeof window !== "undefined" ? window.location.origin : ""}/kp/${share.token}` : "";
 
