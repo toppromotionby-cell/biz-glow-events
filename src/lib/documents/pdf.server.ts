@@ -18,6 +18,12 @@ import {
   mixWithWhite,
 } from "@/lib/documents/brand";
 import {
+  BASE_PRINT_PRESET,
+  mmToPt,
+  resolvePrintPreset,
+  type DocPrintPreset,
+} from "@/lib/documents/print-preset";
+import {
   DEFAULT_LOGO_LAYOUT,
   computeLogoPlacement,
   normalizeLogoLayout,
