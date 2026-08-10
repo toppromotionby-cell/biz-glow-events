@@ -142,12 +142,6 @@ export function SiteHeader() {
 
 
 
-            {compareCount > 0 && (
-              <Link to="/compare" aria-label={`Сравнение, ${compareCount} позиций`} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
-                <GitCompare className="h-4 w-4" aria-hidden="true" />
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">{compareCount}</span>
-              </Link>
-            )}
             <Toggleable sectionKey="header.cart" as="span">
               <Link to="/cart" aria-label={count > 0 ? `Корзина, ${count} позиций` : "Корзина"} className="relative inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-primary/10 transition">
                 <ShoppingCart className="h-4 w-4" aria-hidden="true" />
