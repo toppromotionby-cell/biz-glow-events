@@ -23,16 +23,21 @@ export function CookieConsent() {
 
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 glass-strong rounded-2xl p-5 shadow-elegant animate-in fade-in slide-in-from-bottom-4">
-      <p className="text-sm text-foreground/90 mb-3">
-        Мы используем cookies для аналитики и улучшения сайта. Подробнее в{" "}
-        <a href="/privacy" className="text-accent underline">политике конфиденциальности</a>.
-      </p>
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={() => decide("reject")}>Отклонить</Button>
-        <Button size="sm" onClick={() => decide("accept")} className="bg-gradient-primary glow-primary">
-          Принять
-        </Button>
+    <div
+      className="fixed inset-x-0 z-50 px-3 animate-in fade-in slide-in-from-bottom-2"
+      style={{ bottom: "calc(0.5rem + env(safe-area-inset-bottom) + var(--mobile-bar-h, 0px))" }}
+      role="region"
+      aria-label="Согласие на использование cookies"
+    >
+      <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 rounded-xl glass-strong px-4 py-2.5 shadow-elegant">
+        <p className="text-xs text-foreground/85">
+          Используем cookies для аналитики.{" "}
+          <a href="/privacy" className="text-accent underline">Политика конфиденциальности</a>.
+        </p>
+        <div className="flex shrink-0 gap-2">
+          <Button size="sm" variant="ghost" onClick={() => decide("reject")}>Отклонить</Button>
+          <Button size="sm" onClick={() => decide("accept")} className="bg-gradient-primary">Принять</Button>
+        </div>
       </div>
     </div>
   );
