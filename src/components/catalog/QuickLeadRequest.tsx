@@ -62,7 +62,7 @@ function Field({
   );
 }
 
-export function QuickQuoteRequest({
+export function QuickLeadRequest({
   subject,
   source,
   details = [],
@@ -135,7 +135,7 @@ export function QuickQuoteRequest({
           client_email: String(fd.get("client_email") ?? "").trim(),
           client_company: String(fd.get("client_company") ?? "").trim() || null,
           notes: [
-            `Запрос КП: ${subject}`,
+            `Заявка: ${subject}`,
             details.length ? details.map((d) => `${d.label}: ${d.value}`).join("\n") : "",
             itemUrl ? `Позиция: ${itemUrl}` : "",
             comment,
@@ -154,7 +154,7 @@ export function QuickQuoteRequest({
       trackLead("quickview");
       if (demand) signalDemand(demand.entity_type, demand.entity_id, "quote", { once: false });
       setDone(true);
-      toast.success("Запрос отправлен — подготовим КП и свяжемся с вами.");
+      toast.success("Заявка отправлена — свяжемся с вами и подготовим расчёт.");
       onDone?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Ошибка отправки");
@@ -180,7 +180,7 @@ export function QuickQuoteRequest({
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className="glass rounded-xl p-4 space-y-3">
       <div>
-        <h3 className="text-sm font-semibold">Запросить КП</h3>
+        <h3 className="text-sm font-semibold">Оставить заявку</h3>
         <p className="text-xs text-muted-foreground">
           Без регистрации. Предмет запроса: <span className="text-foreground">{subject}</span>
         </p>
@@ -230,7 +230,7 @@ export function QuickQuoteRequest({
         className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-primary px-5 py-2.5 text-sm font-medium text-primary-foreground glow-primary disabled:opacity-60"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-        {loading ? "Отправляем..." : "Отправить запрос КП"}
+        {loading ? "Отправляем..." : "Отправить заявку"}
       </button>
     </form>
   );
