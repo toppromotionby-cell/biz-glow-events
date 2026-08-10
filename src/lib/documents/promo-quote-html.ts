@@ -89,14 +89,24 @@ export function buildPromoQuoteBody(
                   .map((x) => `<li>${esc(x.text)}${x.note ? ` — ${esc(x.note)}` : ""}</li>`)
                   .join("")}</ul>`
               : "";
-          const cells: string[] = [`<td class="c-title">${esc(it.title)}${inc}</td>`, `<td class="c-unit">${esc(it.unit)}</td>`];
+          const rowChecks = checksByIndex.get(items.indexOf(it)) ?? [];
+          const rowCls = rowChecks.some((c) => c.level === "error")
+            ? " chk-row chk-row-error"
+            : rowChecks.length
+              ? " chk-row chk-row-warn"
+              : "";
+          const cells: string[] = [
+            `<td class="c-title">${esc(it.title)}${inc}${chkList(rowChecks)}</td>`,
+            `<td class="c-unit">${esc(it.unit)}</td>`,
+          ];
           if (quote.show_qty) cells.push(`<td class="c-num">${nf(it.qty).replace(",00", "")}</td>`);
           if (quote.show_total_qty) cells.push(`<td class="c-num">${nf(lineQty(it)).replace(",00", "")}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
           if (quote.show_notes) cells.push(`<td class="c-note">${esc(it.note)}</td>`);
-          return `<tr${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
+          return `<tr class="${rowCls.trim()}"${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
         })
+
         .join("");
       const sub =
         quote.show_section_subtotals && sec.name && sec.items.length > 1
