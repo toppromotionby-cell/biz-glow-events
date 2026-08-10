@@ -653,7 +653,7 @@ function header(order: DocOrder) {
   };
 }
 
-async function createCtx(): Promise<DocCtx> {
+async function createCtx(logoUrl?: string | null, clientLogoUrl?: string | null): Promise<DocCtx> {
   const [regBytes, boldBytes, dispBytes] = [loadRegular(), loadBold(), loadDisplay()];
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -663,12 +663,24 @@ async function createCtx(): Promise<DocCtx> {
   const display = await pdf.embedFont(dispBytes, { subset: true });
   // ставим как default fallback на StandardFonts (на всякий случай — для emoji не нужно).
   void StandardFonts;
-  const ctx: DocCtx = { pdf, regular, bold, display, page: pdf.addPage([PAGE_W, PAGE_H]), y: 0, pageNum: 1 };
+  const [logo, clientLogo] = await Promise.all([
+    embedLogo(pdf, logoUrl),
+    embedLogo(pdf, clientLogoUrl, 120, 28),
+  ]);
+  const ctx: DocCtx = {
+    pdf, regular, bold, display,
+    page: pdf.addPage([PAGE_W, PAGE_H]),
+    y: 0,
+    pageNum: 1,
+    logo,
+    clientLogo,
+  };
 
   ctx.y = PAGE_H - MARGIN_TOP;
   ctx.page.drawRectangle({ x: 0, y: PAGE_H - 4, width: PAGE_W, height: 4, color: ACCENT });
   return ctx;
 }
+
 
 // === Builders для каждого вида документа ===
 
