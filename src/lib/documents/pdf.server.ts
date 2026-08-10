@@ -289,10 +289,23 @@ function drawTracked(
 }
 
 function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
+  // Логотип слева (если загружен) — вписан в бокс, пропорции сохранены
+  const logo = ctx.logo ?? null;
+  let leftX = MARGIN_X;
+  if (logo) {
+    ctx.page.drawImage(logo.img, {
+      x: MARGIN_X,
+      y: PAGE_H - MARGIN_TOP - logo.h + 2,
+      width: logo.w,
+      height: logo.h,
+    });
+    leftX = MARGIN_X + logo.w + 12;
+  }
+
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
   const brand = safe(settings.company_brand);
   ctx.page.drawText(brand, {
-    x: MARGIN_X,
+    x: leftX,
     y: PAGE_H - MARGIN_TOP - F22 * 0.8,
     size: F22,
     font: displayFont(ctx, brand),
@@ -302,8 +315,9 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
   const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
   ctx.page.drawText(
     `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
-    { x: MARGIN_X, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
+    { x: leftX, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
   );
+
 
   // Тип/номер/дата справа
   const rightX = PAGE_W - MARGIN_X;
