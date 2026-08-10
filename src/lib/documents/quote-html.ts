@@ -487,12 +487,16 @@ export function buildQuoteHtmlDoc(
   };
 
   const renderBlock = (b: QuoteBlock): string => {
-    const html = renderBlockInner(b);
+    const inner = renderBlockInner(b);
+    const blockChecks = allChecks.filter((c) => c.scope === "block" && c.refId === b.id);
+    // Замечания к блоку показываем даже у пустого блока — иначе проблему в превью не видно.
+    const html = inner.trim() || blockChecks.length ? `${inner}${chkList(blockChecks)}` : inner;
     if (!editable || !html.trim()) return html;
     const cfg = BLOCK_EDIT_TARGET[b.type];
     if (!cfg) return html;
     return `<div${ed(cfg.target, cfg.useId ? b.id : undefined, cfg.label)}>${html}</div>`;
   };
+
 
   // Тумблеры оформления по-прежнему работают как «жёсткое» выключение блока.
   const hidden = new Set<string>();
