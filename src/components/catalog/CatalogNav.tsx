@@ -115,3 +115,47 @@ export function CatalogSectionCard({ section, index }: { section: CatalogNavSect
     </div>
   );
 }
+
+/** Мега-меню «Каталог» для десктопной шапки. */
+export function CatalogMegaMenu({ onNavigate }: { onNavigate?: () => void }) {
+  const sections = useCatalogNav();
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {sections.map((section, i) => {
+        const Icon = sectionIcon(section.icon);
+        return (
+          <div key={section.key} className="min-w-0">
+            <Link
+              to={section.basePath}
+              onClick={onNavigate}
+              className="flex items-center gap-2 font-medium hover:text-primary transition"
+            >
+              <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br ${sectionGradient(i)}`}>
+                <Icon className="h-3.5 w-3.5 text-primary-foreground" />
+              </span>
+              <span className="truncate">{section.title}</span>
+              {section.count > 0 && <span className="text-xs text-muted-foreground">{section.count}</span>}
+            </Link>
+            {section.categories.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {section.categories.slice(0, 6).map((c) => (
+                  <li key={c.id}>
+                    <Link
+                      to={section.basePath}
+                      search={{ category: c.name }}
+                      onClick={onNavigate}
+                      className="block truncate text-sm text-muted-foreground hover:text-foreground transition"
+                    >
+                      {c.name}
+                      <span className="ml-1 text-[10px] opacity-60">{c.count}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
