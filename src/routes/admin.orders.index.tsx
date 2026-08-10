@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadCsv, toCsv } from "@/lib/csv";
-import { Download, Search, ExternalLink, Clock, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
+import { Download, Search, Clock, Plus, Trash2, CheckCircle2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/order-status";
@@ -483,14 +483,6 @@ function DesktopOrdersTable({
                           <Mail className="h-4 w-4" />
                         </button>
                       )}
-                      <Link
-                        to="/admin/orders/$id"
-                        params={{ id: o.id }}
-                        aria-label={`Открыть полную страницу заказа ${o.client_name}`}
-                        className="inline-flex items-center text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button

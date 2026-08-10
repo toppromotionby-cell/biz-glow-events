@@ -1,7 +1,6 @@
 // Липкий хедер модалки заказа: id, статус, возраст в статусе, ссылка на полную страницу
 // и контекстное меню действий. Все мутации поднимаются через onAction.
-import { Link } from "@tanstack/react-router";
-import { ExternalLink, MoreHorizontal, CheckCircle2, MailCheck, Trash2, Clock } from "lucide-react";
+import { MoreHorizontal, CheckCircle2, MailCheck, Trash2, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -50,12 +49,6 @@ export function OrderHeader({ order, onStatusChange, onConfirm, onResendEmail, o
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            to="/admin/orders/$id" params={{ id: order.id }}
-            className="text-xs inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
-          >
-            <ExternalLink className="h-3 w-3" /><span className="hidden sm:inline">Полная страница</span>
-          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Действия">
