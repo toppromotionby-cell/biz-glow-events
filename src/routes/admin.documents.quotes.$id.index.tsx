@@ -315,7 +315,7 @@ function Page() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button asChild variant="ghost" size="icon"><Link to="/admin/documents/quotes"><ArrowLeft className="h-4 w-4" /></Link></Button>
+          <Button asChild variant="ghost" size="icon"><Link to="/admin/documents"><ArrowLeft className="h-4 w-4" /></Link></Button>
           <div className="min-w-0">
             <h1 className="admin-h1 truncate">КП №{quoteNumberDisplay(quote)}</h1>
             <p className="text-xs text-muted-foreground truncate">
@@ -337,17 +337,34 @@ function Page() {
             </SelectContent>
           </Select>
           <QuoteShareActions share={shareState} onSend={onSendToClient} />
-          <Button variant="outline" size="sm" onClick={onMarkSent}><Send className="h-4 w-4 mr-1.5" />Отправлено</Button>
-          <Button variant="outline" size="sm" onClick={() => setTemplateOpen(true)}><BookmarkPlus className="h-4 w-4 mr-1.5" />В шаблоны</Button>
-          <Button variant="outline" size="sm" onClick={onCreateOrder}>
-            <FileCheck2 className="h-4 w-4 mr-1.5" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}>
-            <ExternalLink className="h-4 w-4 mr-1.5" />HTML
-          </Button>
           <Button size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render?format=pdf`, { name: "КП.pdf" })}>
             <Download className="h-4 w-4 mr-1.5" />PDF
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm"><MoreHorizontal className="h-4 w-4 mr-1.5" />Ещё</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuItem onClick={onMarkSent}>
+                <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onCreateOrder}>
+                <FileCheck2 className="mr-2 h-4 w-4" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />HTML-версия
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
+                <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в шаблоны
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/documents/knowledge"><Brain className="mr-2 h-4 w-4" />База знаний подсказок</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
