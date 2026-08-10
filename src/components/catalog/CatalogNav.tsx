@@ -14,11 +14,11 @@ export const catalogNavQueryOptions = queryOptions({
 
 /** Фолбэк на случай ошибки БД — навигация никогда не должна исчезать. */
 export const FALLBACK_NAV: CatalogNavSection[] = [
-  { key: "zones", title: "Интерактивные зоны", description: "", icon: "Cpu", basePath: "/zones", count: 0, categories: [] },
-  { key: "tech_equipment", title: "Техническое оснащение", description: "", icon: "Music", basePath: "/equipment", count: 0, categories: [] },
-  { key: "services", title: "Услуги", description: "", icon: "Lightbulb", basePath: "/services", count: 0, categories: [] },
-  { key: "production_items", title: "Производство", description: "", icon: "Package", basePath: "/production", count: 0, categories: [] },
-  { key: "attractions", title: "Аттракционы", description: "", icon: "Ferris", basePath: "/attractions", count: 0, categories: [] },
+  { key: "zones", kind: "native", slug: null, title: "Интерактивные зоны", description: "", icon: "Cpu", basePath: "/zones", count: 0, categories: [] },
+  { key: "tech_equipment", kind: "native", slug: null, title: "Техническое оснащение", description: "", icon: "Music", basePath: "/equipment", count: 0, categories: [] },
+  { key: "services", kind: "native", slug: null, title: "Услуги", description: "", icon: "Lightbulb", basePath: "/services", count: 0, categories: [] },
+  { key: "production_items", kind: "native", slug: null, title: "Производство", description: "", icon: "Package", basePath: "/production", count: 0, categories: [] },
+  { key: "attractions", kind: "native", slug: null, title: "Аттракционы", description: "", icon: "Ferris", basePath: "/attractions", count: 0, categories: [] },
 ];
 
 const ICONS = {
@@ -30,6 +30,19 @@ const ICONS = {
   FerrisWheel,
   Sparkles,
 } as const;
+
+/**
+ * Пропсы ссылки на раздел: базовые разделы ведут на свой путь,
+ * свои (виртуальные) — на витрину /catalog/$slug.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function sectionLink(section: CatalogNavSection, category?: string): any {
+  const search = category ? { search: { category } } : {};
+  if (section.kind === "virtual" && section.slug) {
+    return { to: "/catalog/$slug", params: { slug: section.slug }, ...search };
+  }
+  return { to: section.basePath, ...search };
+}
 
 export function sectionIcon(name: string) {
   return ICONS[name as keyof typeof ICONS] ?? Sparkles;
@@ -67,8 +80,7 @@ export function CategoryChip({
 }) {
   return (
     <Link
-      to={section.basePath}
-      search={{ category: name }}
+      {...sectionLink(section, name)}
       onClick={onNavigate}
       className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2.5 py-1 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition"
     >
@@ -96,7 +108,7 @@ export function CatalogSectionTile({
   const Icon = sectionIcon(section.icon);
   return (
     <Link
-      to={section.basePath}
+      {...sectionLink(section)}
       onClick={onNavigate}
       className="group glass rounded-xl p-4 flex h-full flex-col gap-3 hover:border-primary/50 transition-all duration-200"
     >
@@ -130,7 +142,7 @@ export function CatalogSectionCard({ section, index }: { section: CatalogNavSect
           <Icon className="h-6 w-6 text-primary-foreground" />
         </div>
         <div className="min-w-0 flex-1">
-          <Link to={section.basePath} className="font-semibold text-lg leading-snug text-balance hover:text-primary transition">
+          <Link {...sectionLink(section)} className="font-semibold text-lg leading-snug text-balance hover:text-primary transition">
             {section.title}
           </Link>
           {section.description && (
@@ -147,7 +159,7 @@ export function CatalogSectionCard({ section, index }: { section: CatalogNavSect
         </div>
       )}
 
-      <Link to={section.basePath} className="mt-4 inline-flex items-center text-sm text-primary font-medium">
+      <Link {...sectionLink(section)} className="mt-4 inline-flex items-center text-sm text-primary font-medium">
         Перейти в раздел
         {section.count > 0 && <span className="ml-1 text-muted-foreground">({section.count})</span>}
         <ArrowRight className="ml-1 h-3 w-3" />
