@@ -29,7 +29,7 @@ export function AttentionPanel() {
       const threeDaysAgo = new Date(Date.now() - 3 * 86400_000).toISOString();
       const today = new Date().toISOString().slice(0, 10);
       const inWeek = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10);
-      const active = ["new", "in_progress", "confirmed"];
+      const active = ["new", "in_progress", "confirmed"] as const;
       const [newOrders, stale, unpaid, unassigned, frozen, eventSoon, testimonials] = await Promise.all([
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new"),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "new").lt("created_at", dayAgo),
