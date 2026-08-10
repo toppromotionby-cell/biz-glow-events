@@ -1156,7 +1156,7 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
   }
 
   gap(ctx, 8);
-  drawParagraph(
+  drawTrailingNote(
     ctx,
     `${settings.quote_footer} Предложение действительно ${settings.quote_validity_days} дней. ${settings.vat_note}.`,
     { size: 9.5, color: MUTED },
