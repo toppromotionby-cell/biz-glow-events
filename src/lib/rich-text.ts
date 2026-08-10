@@ -97,14 +97,8 @@ export function excerpt(text: string, maxLength = 140): string {
   return (lastSpace > maxLength * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[,.;:—–-]+$/, "") + "…";
 }
 
-/** Короткий человеческий текст для карточки из произвольного описания. */
-export function toCardExcerpt(
-  shortDescription?: string | null,
-  description?: string | null,
-  maxLength = 140,
-): string {
-  const short = (shortDescription ?? "").trim();
-  if (short) return excerpt(isHtml(short) ? htmlToPlainText(short) : short, maxLength);
+/** Короткий человеческий текст для карточки из основного описания. */
+export function toCardExcerpt(description?: string | null, maxLength = 140): string {
   const full = (description ?? "").trim();
   if (!full) return "";
   const plain = isHtml(full) ? htmlToPlainText(full) : full;
@@ -113,3 +107,4 @@ export function toCardExcerpt(
   const body = paragraphs.find((p) => p.length > 60) ?? paragraphs[0] ?? "";
   return excerpt(body, maxLength);
 }
+
