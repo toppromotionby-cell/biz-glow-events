@@ -359,7 +359,14 @@ function drawTracked(
   }
 }
 
-function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
+function drawHeader(
+  ctx: DocCtx,
+  kind: string,
+  num: string,
+  date: string,
+  settings: DocumentSettings,
+  extra: { validUntil?: string } = {},
+) {
   // Логотип — позиция, размер и отступы задаются в настройках документа
   const logo = ctx.logo ?? null;
   const layout = ctx.logoLayout ?? DEFAULT_LOGO_LAYOUT;
@@ -375,6 +382,21 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     leftX = place.textX;
   }
 
+  // Тип/номер/дата справа — считаем первыми, чтобы знать ширину левой колонки
+  const rightX = PAGE_W - MARGIN_X;
+  const kindUpper = kind.toUpperCase();
+  const kindTracking = F_DOC_KIND * 0.14;
+  const kindW = trackedWidth(ctx.bold, kindUpper, F_DOC_KIND, kindTracking);
+  const numText = `№ ${num}`;
+  const numFont = displayFont(ctx, numText);
+  const numW = numFont.widthOfTextAtSize(numText, F_DOC_NUM);
+  const dateText = `от ${date}`;
+  const dateW = ctx.regular.widthOfTextAtSize(dateText, F_DOC_DATE);
+  const validText = extra.validUntil ? `действительно до ${extra.validUntil}` : "";
+  const validW = validText ? ctx.regular.widthOfTextAtSize(validText, F_DOC_DATE) : 0;
+  const rightBlockW = Math.max(kindW, numW, dateW, validW);
+  const leftMaxW = Math.max(120, rightX - rightBlockW - 20 - leftX);
+
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
   // Логотип заменяет текстовое название бренда: пишем бренд только когда логотипа нет.
   const brand = safe(settings.company_brand);
@@ -389,20 +411,20 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     });
   }
 
-  const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
-  ctx.page.drawText(
-    `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
-    { x: leftX, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
-  );
+  // Юрлицо + УНП и адрес — двумя строками, с переносом по ширине колонки
+  const legalLine = `${safe(settings.company_legal_name)}${
+    safe(settings.company_unp) ? ` · УНП ${safe(settings.company_unp)}` : ""
+  }`;
+  const subLines = [
+    ...wrapText(ctx.regular, legalLine, DOC_FONT_PT.small, leftMaxW),
+    ...wrapText(ctx.regular, safe(settings.company_address), DOC_FONT_PT.small, leftMaxW),
+  ].filter((l) => l.trim() !== "");
+  let subY = PAGE_H - MARGIN_TOP - (showBrand ? F22 * 0.8 + 14 : Math.max(14, (place?.reserve ?? 0) + 2));
+  for (const line of subLines) {
+    ctx.page.drawText(line, { x: leftX, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED });
+    subY -= DOC_FONT_PT.small * 1.35;
+  }
 
-
-
-
-  // Тип/номер/дата справа
-  const rightX = PAGE_W - MARGIN_X;
-  const kindUpper = kind.toUpperCase();
-  const kindTracking = F_DOC_KIND * 0.14;
-  const kindW = trackedWidth(ctx.bold, kindUpper, F_DOC_KIND, kindTracking);
   drawTracked(ctx.page, kindUpper, {
     x: rightX - kindW,
     y: PAGE_H - MARGIN_TOP - 4,
@@ -411,9 +433,6 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     color: ACCENT,
     tracking: kindTracking,
   });
-  const numText = `№ ${num}`;
-  const numFont = displayFont(ctx, numText);
-  const numW = numFont.widthOfTextAtSize(numText, F_DOC_NUM);
   ctx.page.drawText(numText, {
     x: rightX - numW,
     y: PAGE_H - MARGIN_TOP - 24,
@@ -421,9 +440,6 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     font: numFont,
     color: TEXT,
   });
-
-  const dateText = `от ${date}`;
-  const dateW = ctx.regular.widthOfTextAtSize(dateText, F_DOC_DATE);
   ctx.page.drawText(dateText, {
     x: rightX - dateW,
     y: PAGE_H - MARGIN_TOP - 40,
@@ -431,10 +447,21 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
     font: ctx.regular,
     color: MUTED,
   });
+  if (validText) {
+    ctx.page.drawText(validText, {
+      x: rightX - validW,
+      y: PAGE_H - MARGIN_TOP - 54,
+      size: F_DOC_DATE,
+      font: ctx.regular,
+      color: MUTED,
+    });
+  }
 
   // Высокий логотип может «вылезти» ниже текста — учитываем это
-  ctx.y = PAGE_H - MARGIN_TOP - Math.max(58, (place?.reserve ?? 0) + 14);
+  const leftBottom = PAGE_H - subY;
+  ctx.y = PAGE_H - Math.max(MARGIN_TOP + (validText ? 66 : 58), leftBottom + 6, MARGIN_TOP + (place?.reserve ?? 0) + 14);
   divider(ctx);
+
 
   // Логотип клиента (промо-КП) — справа под разделителем
   const cl = ctx.clientLogo ?? null;
