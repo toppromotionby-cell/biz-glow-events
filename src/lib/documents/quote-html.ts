@@ -400,6 +400,7 @@ export function buildQuoteHtmlDoc(
             .filter(Boolean)
             .map((l) => `<div class="line">${esc(l)}</div>`)
             .join("")}
+          ${chkList(scopeChecks("client"))}
         </div>`;
       case "event":
         return `${heading(b)}<div class="card">
@@ -412,7 +413,8 @@ export function buildQuoteHtmlDoc(
         return `${heading(b)}<table>
           <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
           <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}${vatRow}</tbody>
-        </table>`;
+        </table>
+        ${chkList(scopeChecks("item"))}`;
       case "totals":
         return `<div class="totals">
           <div class="row"><span>Стоимость позиций</span><span>${money(t.subtotal)}</span></div>
@@ -422,7 +424,9 @@ export function buildQuoteHtmlDoc(
           <div class="row total"><span>${t.vatEnabled ? "Итого с НДС" : "Итого"}</span><span>${money(t.total)}</span></div>
           ${t.prepayment ? `<div class="row"><span>Предоплата</span><span>${money(t.prepayment)}</span></div><div class="row"><span>Остаток</span><span>${money(t.balance)}</span></div>` : ""}
         </div>
+        ${chkList(scopeChecks("totals"), "chk-right")}
         <div class="words">${esc(amountToWords(t.total))}. ${esc(vatFootNote)}</div>`;
+
       case "included":
       case "excluded":
         return text ? `${heading(b)}<ul>${lines(text)}</ul>` : "";
