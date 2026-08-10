@@ -364,8 +364,7 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
                   )}
                 </TabsContent>
 
-                <TabsContent value="availability" className="pt-3">
-                </TabsContent>
+
 
                 {hasRequirements && (
                   <TabsContent value="requirements" className="pt-3">
