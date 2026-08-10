@@ -38,9 +38,10 @@ export function OrderHeader({ order, onStatusChange, onConfirm, onResendEmail, o
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+            {orderStatusOptions(order.status).map((s) => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
             ))}
+
           </SelectContent>
         </Select>
 
