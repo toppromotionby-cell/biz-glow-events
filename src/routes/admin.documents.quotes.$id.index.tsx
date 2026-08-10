@@ -51,6 +51,7 @@ import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
 import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
+import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
 
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
@@ -196,8 +197,26 @@ function Page() {
     () => (quote ? computeTotals(quote, items) : null),
     [quote, items],
   );
-  const checks = useMemo(() => (quote ? checkQuote(quote, items) : []), [quote, items]);
+  const checks = useMemo(
+    () => (quote ? checkQuoteDocument(quote, items, settings) : []),
+    [quote, items, settings],
+  );
   const errorsCount = checks.filter((c) => c.level === "error").length;
+  const warnsCount = checks.filter((c) => c.level === "warn").length;
+  const itemIssues = useMemo(() => itemIssueMap(checks), [checks]);
+  const blockIssues = useMemo(() => blockIssueMap(checks), [checks]);
+  const [tab, setTab] = useState("items");
+
+  // Переход от замечания к полю, которое его вызвало.
+  const gotoCheck = (c: { scope?: string; refId?: string }) => {
+    const target = c.scope === "item" ? "items" : c.scope === "client" ? "client" : c.scope === "totals" ? "money" : c.scope === "block" ? "doc" : "doc";
+    setTab(target);
+    if (!c.refId) return;
+    setTimeout(() => {
+      const el = document.querySelector(c.scope === "item" ? `[data-item-id="${c.refId}"]` : `#block-${c.refId}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+  };
 
   const patch = (p: Partial<Quote>) => { dirtyRef.current = true; setState("dirty"); setQuote((q) => (q ? { ...q, ...p } : q)); };
   const patchItems = (next: QuoteItem[]) => { dirtyRef.current = true; setState("dirty"); setItems(next); };

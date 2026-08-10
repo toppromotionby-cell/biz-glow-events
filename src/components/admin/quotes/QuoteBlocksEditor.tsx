@@ -35,6 +35,8 @@ type Props = {
   template: QuoteTemplate;
   blocks: QuoteBlock[];
   onChange: (patch: { template?: QuoteTemplate; blocks?: QuoteBlock[] }) => void;
+  /** Замечания валидации по id блока (пустой блок, битая формула, нет данных). */
+  issues?: Record<string, Array<{ level: "error" | "warn" | "info"; message: string }>>;
 };
 
 const PLACEHOLDER_GROUPS = [...new Set(QUOTE_PLACEHOLDERS.map((p) => p.group))];
@@ -65,7 +67,7 @@ function PlaceholderMenu({ onPick }: { onPick: (token: string) => void }) {
   );
 }
 
-export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
+export function QuoteBlocksEditor({ template, blocks, onChange, issues }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [blockErrors, setBlockErrors] = useState<Record<string, boolean>>({});
 
@@ -204,8 +206,18 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
       <div className="space-y-2">
         {list.map((b, i) => {
           const editable = EDITABLE_BLOCK_TYPES.includes(b.type);
+          const blockIssues = issues?.[b.id] ?? [];
+          const level = blockIssues.some((x) => x.level === "error") ? "error" : blockIssues.some((x) => x.level === "warn") ? "warn" : null;
           return (
-            <div key={b.id} className={`rounded-xl border p-3 space-y-2 ${b.enabled ? "border-border/60" : "border-dashed border-border/60 opacity-60"}`}>
+            <div
+              id={`block-${b.id}`}
+              key={b.id}
+              className={`rounded-xl border p-3 space-y-2 ${
+                level === "error" ? "border-destructive/60 bg-destructive/5"
+                  : level === "warn" ? "border-amber-500/50 bg-amber-500/5"
+                  : b.enabled ? "border-border/60" : "border-dashed border-border/60 opacity-60"
+              }`}
+            >
               <div className="flex items-center gap-2">
                 <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Input
@@ -214,6 +226,9 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
                   className="h-8 text-sm"
                   placeholder={QUOTE_BLOCK_LABELS[b.type]}
                 />
+                {level && (
+                  <AlertTriangle className={`h-4 w-4 shrink-0 ${level === "error" ? "text-destructive" : "text-amber-600"}`} />
+                )}
                 <Badge variant="secondary" className="text-[10px] shrink-0">{QUOTE_BLOCK_LABELS[b.type]}</Badge>
                 <Switch checked={b.enabled} onCheckedChange={(v) => update(b.id, { enabled: v })} />
                 <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => move(i, -1)} disabled={i === 0}>
@@ -263,6 +278,15 @@ export function QuoteBlocksEditor({ template, blocks, onChange }: Props) {
                 </div>
               )}
 
+              {blockIssues.length > 0 && (
+                <ul className="space-y-0.5 text-[11px]">
+                  {blockIssues.map((x, k) => (
+                    <li key={k} className={x.level === "error" ? "text-destructive" : x.level === "warn" ? "text-amber-600" : "text-muted-foreground"}>
+                      {x.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           );
         })}

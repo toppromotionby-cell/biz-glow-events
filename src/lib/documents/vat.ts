@@ -106,3 +106,35 @@ export function vatNoteText(v: VatResult, money: (n: number) => string, fallback
   if (!v.enabled) return fallback;
   return `В том числе НДС ${vatRateLabel(v.rate)}% — ${money(v.vat)}`;
 }
+
+/** Проблема конфигурации НДС для панели проверок документа. */
+export type VatIssue = { level: "error" | "warn"; message: string; code: string };
+
+/**
+ * Валидация настроек НДС документа: несогласованные режим/ставка приводят
+ * к некорректным суммам в превью и в PDF.
+ */
+export function checkVatConfig(source: {
+  vat_mode?: unknown;
+  vat_rate?: unknown;
+  vat_as_line?: unknown;
+}): VatIssue[] {
+  const out: VatIssue[] = [];
+  const mode = normalizeVatMode(source.vat_mode);
+  const raw = Number(source.vat_rate);
+  const hasRate = Number.isFinite(raw) && raw > 0;
+
+  if (mode !== "none" && !hasRate) {
+    out.push({ level: "error", code: "vat_rate_missing", message: "Включён НДС, но ставка не задана — в документ уйдёт ставка по умолчанию 20%" });
+  }
+  if (mode !== "none" && hasRate && raw > 30) {
+    out.push({ level: "warn", code: "vat_rate_odd", message: `Необычная ставка НДС — ${vatRateLabel(raw)}%. Проверьте значение` });
+  }
+  if (mode === "none" && hasRate && raw !== DEFAULT_VAT_RATE) {
+    out.push({ level: "warn", code: "vat_rate_unused", message: `Ставка НДС ${vatRateLabel(raw)}% указана, но режим «Без НДС» — налог не будет посчитан` });
+  }
+  if (mode === "none" && Boolean(source.vat_as_line)) {
+    out.push({ level: "warn", code: "vat_line_unused", message: "Включена строка НДС в таблице, но режим «Без НДС» — строка не появится" });
+  }
+  return out;
+}

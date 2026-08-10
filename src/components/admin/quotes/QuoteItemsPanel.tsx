@@ -36,11 +36,14 @@ export function QuoteItemsPanel({
   onChange,
   showCost,
   toolbar,
+  issues,
 }: {
   items: QuoteItem[];
   onChange: (next: QuoteItem[]) => void;
   showCost: boolean;
   toolbar?: ReactNode;
+  /** Замечания валидации по id позиции: подсвечивают строки с неполными данными. */
+  issues?: Record<string, Array<{ level: "error" | "warn" | "info"; message: string }>>;
 }) {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -188,8 +191,18 @@ export function QuoteItemsPanel({
 
             {!isCollapsed && (
               <div className="divide-y divide-border/50">
-                {list.map((it) => (
-                  <div key={it.id} className="px-2 py-2">
+                {list.map((it) => {
+                  const rowIssues = issues?.[it.id] ?? [];
+                  const rowLevel = rowIssues.some((x) => x.level === "error") ? "error" : rowIssues.length ? "warn" : null;
+                  return (
+                  <div
+                    key={it.id}
+                    data-item-id={it.id}
+                    className={`px-2 py-2 ${
+                      rowLevel === "error" ? "bg-destructive/5 border-l-2 border-l-destructive"
+                        : rowLevel === "warn" ? "bg-amber-500/5 border-l-2 border-l-amber-500" : ""
+                    }`}
+                  >
                     <div className="flex items-center gap-1">
                       <div className="flex flex-col text-muted-foreground">
                         <button type="button" className="hover:text-foreground" onClick={() => move(it.id, -1)} aria-label="Выше">
@@ -313,8 +326,19 @@ export function QuoteItemsPanel({
                         />
                       </div>
                     )}
+
+                    {rowIssues.length > 0 && (
+                      <ul className="ml-6 mt-1 space-y-0.5 text-[11px]">
+                        {rowIssues.map((x, i) => (
+                          <li key={i} className={x.level === "error" ? "text-destructive" : "text-amber-600"}>
+                            {x.message}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
                 {!list.length && (
                   <p className="px-3 py-3 text-sm text-muted-foreground">В разделе нет позиций</p>
                 )}
