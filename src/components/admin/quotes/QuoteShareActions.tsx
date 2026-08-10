@@ -73,8 +73,9 @@ export function QuoteShareActions({ share, onSend, issues = [] }: Props) {
       <Button variant="outline" size="sm" asChild disabled={!url}>
         <a href={url || "#"} target="_blank" rel="noreferrer"><Eye className="h-4 w-4 mr-1.5" />Как клиент</a>
       </Button>
-      <Button variant="outline" size="sm" onClick={() => { setEmail(share.email); setOpen(true); }}>
+      <Button variant="outline" size="sm" onClick={() => { setEmail(share.email); setConfirmed(false); setOpen(true); }}>
         <Mail className="h-4 w-4 mr-1.5" />Отправить
+        {issues.length > 0 && <Badge variant="destructive" className="ml-1.5 h-4 px-1 text-[10px]">{issues.length}</Badge>}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -86,6 +87,21 @@ export function QuoteShareActions({ share, onSend, issues = [] }: Props) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {issues.length > 0 && (
+              <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive space-y-1">
+                <div className="flex items-center gap-2 font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5" />В документе не хватает данных
+                </div>
+                <ul className="space-y-0.5">
+                  {issues.slice(0, 6).map((m, i) => <li key={i}>• {m}</li>)}
+                  {issues.length > 6 && <li>… ещё {issues.length - 6}</li>}
+                </ul>
+                <label className="mt-1 flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+                  Понимаю риск, отправить как есть
+                </label>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="share-email">E-mail клиента</Label>
               <Input id="share-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@company.by" />
@@ -101,8 +117,9 @@ export function QuoteShareActions({ share, onSend, issues = [] }: Props) {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>Отмена</Button>
-            <Button onClick={submit} disabled={busy}>
-              {busy && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}Отправить
+            <Button onClick={submit} disabled={busy || blocked}>
+              {busy && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+              {issues.length ? "Всё равно отправить" : "Отправить"}
             </Button>
           </DialogFooter>
         </DialogContent>
