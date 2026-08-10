@@ -188,28 +188,32 @@ function roundedRect(
   },
 ) {
   const r = Math.max(0, Math.min(opts.radius ?? 6, opts.width / 2, opts.height / 2));
-  const { x, y, width: w, height: h } = opts;
+  const { x, width: w, height: h } = opts;
+  // drawSvgPath использует SVG-координаты (ось Y вниз): передаём -y, чтобы
+  // путь совпал с обычной системой координат PDF.
+  const y = -opts.y;
   const k = 0.5523 * r;
   const d = [
     `M ${x + r} ${y}`,
     `L ${x + w - r} ${y}`,
-    `C ${x + w - r + k} ${y} ${x + w} ${y + r - k} ${x + w} ${y + r}`,
-    `L ${x + w} ${y + h - r}`,
-    `C ${x + w} ${y + h - r + k} ${x + w - r + k} ${y + h} ${x + w - r} ${y + h}`,
-    `L ${x + r} ${y + h}`,
-    `C ${x + r - k} ${y + h} ${x} ${y + h - r + k} ${x} ${y + h - r}`,
-    `L ${x} ${y + r}`,
-    `C ${x} ${y + r - k} ${x + r - k} ${y} ${x + r} ${y}`,
+    `C ${x + w - r + k} ${y} ${x + w} ${y - r + k} ${x + w} ${y - r}`,
+    `L ${x + w} ${y - h + r}`,
+    `C ${x + w} ${y - h + r - k} ${x + w - r + k} ${y - h} ${x + w - r} ${y - h}`,
+    `L ${x + r} ${y - h}`,
+    `C ${x + r - k} ${y - h} ${x} ${y - h + r - k} ${x} ${y - h + r}`,
+    `L ${x} ${y - r}`,
+    `C ${x} ${y - r + k} ${x + r - k} ${y} ${x + r} ${y}`,
     "Z",
   ].join(" ");
   page.drawSvgPath(d, {
     x: 0,
-    y: PAGE_H,
+    y: 0,
     ...(opts.color ? { color: opts.color } : {}),
     ...(opts.borderColor ? { borderColor: opts.borderColor } : {}),
     borderWidth: opts.borderWidth ?? 0,
     scale: 1,
   });
+
 }
 
 /** Верхняя акцентная полоса — как градиент в HTML-превью (набор сегментов). */
