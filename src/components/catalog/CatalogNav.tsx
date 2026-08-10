@@ -80,6 +80,46 @@ export function CategoryChip({
   );
 }
 
+/**
+ * Компактная карточка-ссылка раздела: используется в модалке выбора каталога
+ * и в блоке «Направления» на главной. Единый стиль с /catalog.
+ */
+export function CatalogSectionTile({
+  section,
+  index,
+  onNavigate,
+}: {
+  section: CatalogNavSection;
+  index: number;
+  onNavigate?: () => void;
+}) {
+  const Icon = sectionIcon(section.icon);
+  return (
+    <Link
+      to={section.basePath}
+      onClick={onNavigate}
+      className="group glass rounded-xl p-4 flex h-full flex-col gap-3 hover:border-primary/50 transition-all duration-200"
+    >
+      <div className="flex items-start gap-3">
+        <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${sectionGradient(index)} group-hover:glow-primary transition`}>
+          <Icon className="h-5 w-5 text-primary-foreground" />
+        </span>
+        <span className="min-w-0 flex-1 font-semibold leading-snug text-balance group-hover:text-primary transition">
+          {section.title}
+        </span>
+      </div>
+      {section.description && (
+        <p className="text-sm leading-relaxed text-muted-foreground line-clamp-2 text-pretty">{section.description}</p>
+      )}
+      <span className="mt-auto inline-flex items-center text-xs font-medium text-primary">
+        Перейти
+        {section.count > 0 && <span className="ml-1 text-muted-foreground">({section.count})</span>}
+        <ArrowRight className="ml-1 h-3 w-3" />
+      </span>
+    </Link>
+  );
+}
+
 /** Карточка раздела для страницы /catalog. */
 export function CatalogSectionCard({ section, index }: { section: CatalogNavSection; index: number }) {
   const Icon = sectionIcon(section.icon);
