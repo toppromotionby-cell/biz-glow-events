@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Field } from "@/components/admin/Field";
 import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { normalizeVatMode, type Quote, type QuoteItem } from "@/lib/quotes-model";
+import { computeTotals, normalizeVatMode, type Quote, type QuoteItem, type QuoteTexts } from "@/lib/quotes-model";
+import { buildNumericValues, buildPlaceholderValues, quoteNumberDisplay, quoteValidUntil } from "@/lib/documents/quote-html";
+import { applyPlaceholders } from "@/lib/quote-blocks";
 import type { CompanyOverrides } from "@/lib/documents/company";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 
@@ -27,9 +29,44 @@ const TITLES: Record<string, string> = {
   footer: "Подвал документа",
 };
 
+/** Какой текст из quote.texts подставляет превью, если у блока нет своего. */
+const BLOCK_TEXT_FALLBACK: Partial<Record<string, keyof QuoteTexts>> = {
+  cover: "intro",
+  included: "included",
+  excluded: "excluded",
+  timeline: "timeline",
+  terms: "terms",
+};
+
 function n(v: string): number {
   const x = Number(String(v).replace(",", "."));
   return Number.isFinite(x) ? x : 0;
+}
+
+const money = (v: number) =>
+  `${new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0)} BYN`;
+
+/** Сводка «как в превью»: только чтение. */
+function Summary({ rows }: { rows: Array<[string, string, boolean?]> }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm">
+      {rows.map(([k, v, strong]) => (
+        <div key={k} className={`flex justify-between gap-4 py-0.5 ${strong ? "font-semibold" : ""}`}>
+          <span className="text-muted-foreground">{k}</span>
+          <span className="tabular-nums">{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlaceholderPreview({ text, map, numbers }: { text: string; map: Record<string, string>; numbers: Record<string, number> }) {
+  if (!/\{\{/.test(text || "")) return null;
+  return (
+    <div className="mt-1 text-xs text-muted-foreground">
+      Как будет в документе: {applyPlaceholders(text, map, numbers)}
+    </div>
+  );
 }
 
 export function BlockEditDialog({
@@ -96,7 +133,14 @@ export function BlockEditDialog({
       // унаследованное значение из общих настроек документов (как в превью).
       vat_note: quote.vat_note || settings.vat_note,
       texts: { ...quote.texts, footer: quote.texts.footer || settings.quote_footer },
-      blocks: quote.blocks,
+      // Блоки без своего текста показывают в превью запасной текст из quote.texts —
+      // подставляем его в форму, чтобы редактировалось именно видимое содержимое.
+      blocks: quote.blocks.map((b) => {
+        if (b.content?.trim()) return b;
+        const key = BLOCK_TEXT_FALLBACK[b.type];
+        const fallback = key ? quote.texts[key] : "";
+        return fallback ? { ...b, content: fallback } : b;
+      }),
     });
     setItem(edit.target === "item" ? (items.find((i) => i.id === edit.id) ?? null) : null);
     setSectionName(edit.target === "section" ? (edit.id ?? "") : "");
@@ -110,6 +154,15 @@ export function BlockEditDialog({
     set({ blocks: (draft.blocks ?? quote.blocks).map((b) => (b.id === block.id ? { ...b, ...p } : b)) });
   };
   const currentBlock = block ? (draft.blocks ?? quote.blocks).find((b) => b.id === block.id) ?? block : null;
+
+  // Живые значения «как в превью»: считаем тем же кодом, что и документ.
+  const merged: Quote = { ...quote, ...draft } as Quote;
+  const draftItems = item ? items.map((it) => (it.id === item.id ? item : it)) : items;
+  const totals = computeTotals(merged, draftItems);
+  const map = buildPlaceholderValues(merged, draftItems, settings);
+  const numbers = buildNumericValues(merged, draftItems);
+  const sectionItems = target === "section" ? items.filter((it) => (it.section ?? "") === (edit.id ?? "")) : [];
+
 
   const submit = () => {
     if (target === "item" && item) {
@@ -133,7 +186,7 @@ export function BlockEditDialog({
         <div className="space-y-3">
           {target === "header" && (
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Номер (пусто = авто)">
+              <Field label="Номер (пусто = авто)" hint={`Сейчас в документе: № ${quoteNumberDisplay(merged)}`}>
                 <Input value={draft.quote_number ?? ""} onChange={(e) => set({ quote_number: e.target.value })} />
               </Field>
               <Field label="Дата документа">
@@ -146,7 +199,10 @@ export function BlockEditDialog({
                   onChange={(e) => set({ validity_days: Math.max(0, Math.round(n(e.target.value))) })}
                 />
               </Field>
-              <Field label="Действительно до (вручную)">
+              <Field
+                label="Действительно до (вручную)"
+                hint={quoteValidUntil(merged) ? `В документе: ${quoteValidUntil(merged)}` : undefined}
+              >
                 <Input
                   type="date"
                   value={draft.valid_until_override ?? ""}
@@ -158,18 +214,23 @@ export function BlockEditDialog({
 
           {target === "cover" && (
             <>
-              <Field label="Заголовок документа">
+              <Field label="Заголовок документа" hint="Пусто = «Предложение по организации мероприятия»">
                 <Input value={draft.title ?? ""} onChange={(e) => set({ title: e.target.value })} />
               </Field>
               <Field label="Вступительный текст" hint="Поддерживаются плейсхолдеры вида {{client_name}}">
                 <Textarea
                   rows={5}
-                  value={currentBlock?.content ?? draft.texts?.intro ?? ""}
+                  value={(currentBlock ? currentBlock.content : draft.texts?.intro) || ""}
                   onChange={(e) =>
                     currentBlock
                       ? setBlock({ content: e.target.value })
                       : set({ texts: { ...(draft.texts ?? quote.texts), intro: e.target.value } })
                   }
+                />
+                <PlaceholderPreview
+                  text={(currentBlock ? currentBlock.content : draft.texts?.intro) || ""}
+                  map={map}
+                  numbers={numbers}
                 />
               </Field>
             </>
@@ -233,13 +294,34 @@ export function BlockEditDialog({
                   }
                 />
               </Field>
+              <div className="sm:col-span-2">
+                <Summary
+                  rows={[
+                    ["Сумма строки", money(item.qty * item.price), true],
+                    ...(item.cost
+                      ? ([
+                          ["Себестоимость строки", money(item.qty * (item.cost ?? 0))],
+                          ["Маржа", money(item.qty * (item.price - (item.cost ?? 0)))],
+                        ] as Array<[string, string]>)
+                      : []),
+                  ]}
+                />
+              </div>
             </div>
           )}
 
           {target === "section" && (
-            <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
-              <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
-            </Field>
+            <div className="space-y-3">
+              <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
+                <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
+              </Field>
+              <Summary
+                rows={[
+                  ["Позиций в разделе", String(sectionItems.length)],
+                  ["Сумма раздела", money(sectionItems.reduce((s, it) => s + it.qty * it.price, 0)), true],
+                ]}
+              />
+            </div>
           )}
 
           {target === "totals" && (
@@ -294,6 +376,29 @@ export function BlockEditDialog({
                   </Button>
                 </div>
               </Field>
+              <Summary
+                rows={[
+                  ["Позиции", money(totals.subtotal)],
+                  ...(totals.discount ? ([["Скидка", `− ${money(totals.discount)}`]] as Array<[string, string]>) : []),
+                  ...(totals.delivery ? ([["Доставка", money(totals.delivery)]] as Array<[string, string]>) : []),
+                  ...(totals.vatEnabled
+                    ? ([
+                        ["Без НДС", money(totals.net)],
+                        [`НДС ${totals.vatRate}%`, money(totals.vat)],
+                      ] as Array<[string, string]>)
+                    : []),
+                  ["Итого к оплате", money(totals.total), true],
+                  ...(totals.prepayment
+                    ? ([
+                        ["Предоплата", money(totals.prepayment)],
+                        ["Остаток", money(totals.balance)],
+                      ] as Array<[string, string]>)
+                    : []),
+                  ...(totals.cost
+                    ? ([["Маржа", `${money(totals.margin)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
+                    : []),
+                ]}
+              />
             </div>
           )}
 
@@ -302,6 +407,7 @@ export function BlockEditDialog({
               <Field label="Заголовок блока"><Input value={currentBlock.title} onChange={(e) => setBlock({ title: e.target.value })} /></Field>
               <Field label="Содержимое" hint="Каждая строка — отдельный пункт списка / абзац">
                 <Textarea rows={8} value={currentBlock.content} onChange={(e) => setBlock({ content: e.target.value })} />
+                <PlaceholderPreview text={currentBlock.content} map={map} numbers={numbers} />
               </Field>
             </>
           )}
@@ -320,6 +426,7 @@ export function BlockEditDialog({
                 value={draft.texts?.footer ?? ""}
                 onChange={(e) => set({ texts: { ...(draft.texts ?? quote.texts), footer: e.target.value } })}
               />
+              <PlaceholderPreview text={draft.texts?.footer ?? ""} map={map} numbers={numbers} />
               <div className="mt-2">
                 <Button
                   type="button"

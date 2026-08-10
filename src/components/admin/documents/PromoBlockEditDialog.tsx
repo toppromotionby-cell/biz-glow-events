@@ -8,7 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Field } from "@/components/admin/Field";
 import { normalizeVatMode } from "@/lib/documents/vat";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { type PromoDiscountType, type PromoItem, type PromoQuote } from "@/lib/promo-quote-model";
+import {
+  computePromoTotals,
+  lineCost,
+  lineTotal,
+  type PromoDiscountType,
+  type PromoItem,
+  type PromoQuote,
+} from "@/lib/promo-quote-model";
 
 export type PromoEditTarget = { target: string; id: string | null };
 
@@ -24,6 +31,23 @@ const n = (v: string) => {
   const x = Number(String(v).replace(",", "."));
   return Number.isFinite(x) ? x : 0;
 };
+
+const money = (v: number, currency = "BYN") =>
+  `${new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0)} ${currency}`;
+
+/** Сводка «как в превью»: только чтение. */
+function Summary({ rows }: { rows: Array<[string, string, boolean?]> }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm">
+      {rows.map(([k, v, strong]) => (
+        <div key={k} className={`flex justify-between gap-4 py-0.5 ${strong ? "font-semibold" : ""}`}>
+          <span className="text-muted-foreground">{k}</span>
+          <span className="tabular-nums">{v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function PromoBlockEditDialog({
   edit,
@@ -74,6 +98,14 @@ export function PromoBlockEditDialog({
 
   if (!edit) return null;
   const set = (p: Partial<PromoQuote>) => setDraft((d) => ({ ...d, ...p }));
+
+  // Живые значения «как в превью».
+  const merged: PromoQuote = { ...quote, ...draft } as PromoQuote;
+  const draftItems = item ? items.map((it) => (it.id === item.id ? item : it)) : items;
+  const totals = computePromoTotals(merged, draftItems);
+  const cur = merged.currency || "BYN";
+  const sectionItems = target === "section" ? items.filter((it) => it.section === (edit.id ?? "")) : [];
+
 
   const submit = () => {
     if (target === "item" && item) onSaveItems(items.map((it) => (it.id === item.id ? item : it)));
@@ -133,13 +165,34 @@ export function PromoBlockEditDialog({
                   }
                 />
               </Field>
+              <div className="sm:col-span-2">
+                <Summary
+                  rows={[
+                    ["Сумма строки", money(lineTotal(item), cur), true],
+                    ...(item.cost
+                      ? ([
+                          ["Себестоимость", money(lineCost(item), cur)],
+                          ["Маржа", money(lineTotal(item) - lineCost(item), cur)],
+                        ] as Array<[string, string]>)
+                      : []),
+                  ]}
+                />
+              </div>
             </div>
           )}
 
           {target === "section" && (
-            <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
-              <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
-            </Field>
+            <div className="space-y-3">
+              <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
+                <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
+              </Field>
+              <Summary
+                rows={[
+                  ["Позиций в разделе", String(sectionItems.length)],
+                  ["Сумма раздела", money(sectionItems.reduce((s, it) => s + lineTotal(it), 0), cur), true],
+                ]}
+              />
+            </div>
           )}
 
           {target === "totals" && (
@@ -168,6 +221,28 @@ export function PromoBlockEditDialog({
                     ...(p.asLine !== undefined ? { vat_as_line: p.asLine } : {}),
                   })
                 }
+              />
+              <Summary
+                rows={[
+                  ["Позиции", money(totals.itemsSum, cur)],
+                  ...(totals.commission
+                    ? ([[merged.commission_label || "Комиссия", money(totals.commission, cur)]] as Array<[string, string]>)
+                    : []),
+                  ...(totals.management
+                    ? ([[merged.management_label || "Менеджмент", money(totals.management, cur)]] as Array<[string, string]>)
+                    : []),
+                  ...(totals.discount ? ([["Скидка", `− ${money(totals.discount, cur)}`]] as Array<[string, string]>) : []),
+                  ...(totals.vatEnabled
+                    ? ([
+                        ["Без НДС", money(totals.net, cur)],
+                        [`НДС ${totals.vatRate}%`, money(totals.vat, cur)],
+                      ] as Array<[string, string]>)
+                    : []),
+                  ["Итого", money(totals.totalWithVat, cur), true],
+                  ...(totals.costSum
+                    ? ([["Маржа", `${money(totals.margin, cur)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
+                    : []),
+                ]}
               />
             </div>
           )}
