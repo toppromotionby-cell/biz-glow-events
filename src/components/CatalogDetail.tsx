@@ -192,6 +192,20 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             {item.short_description && <p className="mt-2 text-muted-foreground">{item.short_description}</p>}
           </header>
 
+          <CompareButton
+            variant="full"
+            className="w-full"
+            item={{
+              id: item.id,
+              entity_type: entityType,
+              slug: item.slug,
+              title: item.title,
+              image: item.photo_urls?.[0] ?? null,
+              priceFrom: from ?? null,
+            }}
+          />
+
+
           <div className="glass rounded-xl p-5 space-y-3">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Стоимость актуальна в безналичном расчете</span>
