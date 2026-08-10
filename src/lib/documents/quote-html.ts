@@ -419,10 +419,10 @@ export function buildQuoteHtmlDoc(
         ${chkList(scopeChecks("item"))}`;
       case "totals":
         return `<div class="totals">
-          <div class="row"><span>Стоимость позиций</span><span>${money(t.subtotal)}</span></div>
+          <div class="row"><span>Стоимость позиций${t.vatEnabled ? " (без НДС)" : ""}</span><span>${money(t.subtotal)}</span></div>
           ${t.discount ? `<div class="row"><span>Скидка</span><span>−${money(t.discount)}</span></div>` : ""}
           ${t.delivery ? `<div class="row"><span>Доставка и логистика</span><span>${money(t.delivery)}</span></div>` : ""}
-          ${t.vatEnabled ? `<div class="row"><span>Сумма без НДС</span><span>${money(t.net)}</span></div><div class="row"><span>НДС ${vatRateLabel(t.vatRate)}%</span><span>${money(t.vat)}</span></div>` : ""}
+          ${t.vatEnabled ? `${t.discount || t.delivery ? `<div class="row"><span>Сумма без НДС</span><span>${money(t.net)}</span></div>` : ""}<div class="row"><span>НДС ${vatRateLabel(t.vatRate)}%</span><span>${money(t.vat)}</span></div>` : ""}
           <div class="row total"><span>${t.vatEnabled ? "Итого с НДС" : "Итого"}</span><span>${money(t.total)}</span></div>
           ${t.prepayment ? `<div class="row"><span>Предоплата</span><span>${money(t.prepayment)}</span></div><div class="row"><span>Остаток</span><span>${money(t.balance)}</span></div>` : ""}
         </div>
