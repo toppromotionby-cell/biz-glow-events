@@ -296,14 +296,14 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
               )}
             </header>
 
-            {/* Цены / занятость / требования */}
+            {/* Цены / требования */}
             <div className="glass rounded-xl p-4 space-y-3 hidden md:block">
               <Tabs defaultValue="price">
                 <TabsList className="w-full">
                   <TabsTrigger value="price" className="flex-1">Цены</TabsTrigger>
-                  <TabsTrigger value="availability" className="flex-1">Занятость</TabsTrigger>
                   {hasRequirements && <TabsTrigger value="requirements" className="flex-1">Требования</TabsTrigger>}
                 </TabsList>
+
 
                 <TabsContent value="price" className="space-y-3 pt-3">
                   <div className="text-xs text-muted-foreground">Стоимость актуальна в безналичном расчёте</div>
