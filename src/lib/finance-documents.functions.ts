@@ -34,6 +34,7 @@ export type FinanceDocument = {
   notes: string;
   order_id: string | null;
   quote_id: string | null;
+  company_id: string | null;
   order_number: string | null;
   versions_count: number;
   created_at: string;
@@ -98,6 +99,7 @@ function mapRow(raw: Record<string, unknown>): FinanceDocument {
     total: num(raw.total),
     paid: num(raw.paid),
     notes: str(raw.notes),
+    company_id: raw.company_id ? String(raw.company_id) : null,
     order_id: raw.order_id ? String(raw.order_id) : null,
     quote_id: raw.quote_id ? String(raw.quote_id) : null,
     order_number: order ? str(order.order_number) || null : null,
@@ -175,9 +177,16 @@ export const createFinanceDocument = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     await assertStaff(context as never);
 
+    const { data: defaultCompany } = await context.supabase
+      .from("company_profiles")
+      .select("id")
+      .eq("is_default", true)
+      .maybeSingle();
+
     const row: Record<string, unknown> = {
       kind: data.kind,
       status: "draft",
+      company_id: (defaultCompany as { id?: string } | null)?.id ?? null,
       created_by: context.userId,
       order_id: data.orderId ?? null,
       quote_id: data.quoteId ?? null,
@@ -261,6 +270,7 @@ export const updateFinanceDocument = createServerFn({ method: "POST" })
         client_email: string;
         client_address: string;
         items: FinanceItem[];
+        company_id: string | null;
       }>;
       snapshot?: boolean;
     }) =>
@@ -281,6 +291,7 @@ export const updateFinanceDocument = createServerFn({ method: "POST" })
             client_email: z.string().max(200).optional(),
             client_address: z.string().max(300).optional(),
             items: z.array(itemSchema).optional(),
+            company_id: z.string().uuid().nullish(),
           }),
         })
         .parse(d),

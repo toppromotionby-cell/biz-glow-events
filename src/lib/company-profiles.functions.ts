@@ -1,0 +1,114 @@
+// Server fns для справочника компаний (несколько юрлиц).
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPermission, hasPermission } from "@/lib/authz";
+import { normalizeCompanyProfile, type CompanyProfile } from "@/lib/documents/company-profile";
+import { normalizeLogoLayout } from "@/lib/documents/logo-layout";
+import { DEFAULT_VAT_RATE } from "@/lib/documents/vat";
+
+const ProfileSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1, "Укажите название компании").max(160),
+  is_default: z.boolean().default(false),
+  sort_order: z.coerce.number().int().min(0).max(999).default(0),
+  company_legal_name: z.string().trim().max(200).default(""),
+  company_brand: z.string().trim().max(200).default(""),
+  company_unp: z.string().trim().max(50).default(""),
+  company_address: z.string().trim().max(300).default(""),
+  company_phone: z.string().trim().max(50).default(""),
+  company_email: z.string().trim().max(200).default(""),
+  company_website: z.string().trim().max(200).default(""),
+  logo_url: z.string().trim().max(500).nullable().default(null),
+  signature_url: z.string().trim().max(500).nullable().default(null),
+  stamp_url: z.string().trim().max(500).nullable().default(null),
+  logo_layout: z.unknown().optional().transform(normalizeLogoLayout),
+  accent_color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается hex-цвет")
+    .default("#FF7500"),
+  bank_name: z.string().trim().max(200).default(""),
+  bank_bic: z.string().trim().max(50).default(""),
+  bank_account: z.string().trim().max(100).default(""),
+  signer_name: z.string().trim().max(200).default(""),
+  signer_title: z.string().trim().max(100).default(""),
+  signer_basis: z.string().trim().max(100).default(""),
+  vat_mode: z.enum(["none", "add", "included"]).default("none"),
+  vat_rate: z.coerce.number().min(0).max(30).default(DEFAULT_VAT_RATE),
+  vat_as_line: z.boolean().default(false),
+  vat_note: z.string().trim().max(200).default(""),
+});
+
+/** Список компаний — доступен всем, кто работает с документами. */
+export const listCompanyProfiles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CompanyProfile[]> => {
+    const canDocs = await hasPermission(context as never, "documents.manage");
+    if (!canDocs) await assertPermission(context as never, "documents.finance");
+
+    const { data, error } = await context.supabase
+      .from("company_profiles")
+      .select("*")
+      .order("sort_order")
+      .order("created_at");
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as Record<string, unknown>[]).map(normalizeCompanyProfile);
+  });
+
+/** Создание или обновление компании. */
+export const saveCompanyProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ProfileSchema.parse(d))
+  .handler(async ({ data, context }): Promise<CompanyProfile> => {
+    await assertPermission(context as never, "documents.settings");
+    const { id, ...payload } = data;
+
+    if (payload.is_default) {
+      // Уникальный частичный индекс не даст двум компаниям быть основными.
+      let reset = context.supabase
+        .from("company_profiles")
+        .update({ is_default: false })
+        .eq("is_default", true);
+      if (id) reset = reset.neq("id", id);
+      const { error: rErr } = await reset;
+      if (rErr) throw new Error(rErr.message);
+    }
+
+    const q = id
+      ? context.supabase.from("company_profiles").update(payload).eq("id", id).select("*").single()
+      : context.supabase.from("company_profiles").insert(payload).select("*").single();
+    const { data: row, error } = await q;
+    if (error) throw new Error(error.message);
+    return normalizeCompanyProfile(row as Record<string, unknown>);
+  });
+
+/** Удаление компании. Документы, где она выбрана, вернутся к общим настройкам. */
+export const deleteCompanyProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertPermission(context as never, "documents.settings");
+    const { error } = await context.supabase.from("company_profiles").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Сделать компанию основной (подставляется в новые документы). */
+export const setDefaultCompanyProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertPermission(context as never, "documents.settings");
+    const { error: rErr } = await context.supabase
+      .from("company_profiles")
+      .update({ is_default: false })
+      .eq("is_default", true)
+      .neq("id", data.id);
+    if (rErr) throw new Error(rErr.message);
+    const { error } = await context.supabase
+      .from("company_profiles")
+      .update({ is_default: true })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

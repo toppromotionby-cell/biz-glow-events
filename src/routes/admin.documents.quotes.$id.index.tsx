@@ -50,6 +50,7 @@ import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
+import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
@@ -153,7 +154,11 @@ function Page() {
   const makeOrder = useServerFn(createOrderFromQuote);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-quote", id], queryFn: () => load({ data: { id } }) });
-  const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({ queryKey: ["admin-quote-settings"], queryFn: () => loadSettings() });
+  const activeCompanyId = data?.quote?.company_id ?? null;
+  const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({
+    queryKey: ["admin-quote-settings", activeCompanyId],
+    queryFn: () => loadSettings({ data: { companyId: activeCompanyId } }),
+  });
   const { data: versions = [] } = useQuery({ queryKey: ["admin-quote-versions", id], queryFn: () => loadVersions({ data: { quoteId: id } }) });
 
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -773,6 +778,11 @@ function Page() {
                       <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />
                       <ImageField label="Печать" value={quote.stamp_url} onChange={(v) => patch({ stamp_url: v })} />
                     </div>
+
+                    <CompanySelect
+                      value={quote.company_id}
+                      onChange={(companyId) => patch({ company_id: companyId })}
+                    />
 
                     <CompanyOverridesEditor
                       value={quote.company_overrides}

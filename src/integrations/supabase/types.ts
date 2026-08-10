@@ -424,6 +424,99 @@ export type Database = {
         }
         Relationships: []
       }
+      company_profiles: {
+        Row: {
+          accent_color: string
+          bank_account: string
+          bank_bic: string
+          bank_name: string
+          company_address: string
+          company_brand: string
+          company_email: string
+          company_legal_name: string
+          company_phone: string
+          company_unp: string
+          company_website: string
+          created_at: string
+          id: string
+          is_default: boolean
+          logo_layout: Json
+          logo_url: string | null
+          name: string
+          signature_url: string | null
+          signer_basis: string
+          signer_name: string
+          signer_title: string
+          sort_order: number
+          stamp_url: string | null
+          updated_at: string
+          vat_as_line: boolean
+          vat_mode: string
+          vat_note: string
+          vat_rate: number
+        }
+        Insert: {
+          accent_color?: string
+          bank_account?: string
+          bank_bic?: string
+          bank_name?: string
+          company_address?: string
+          company_brand?: string
+          company_email?: string
+          company_legal_name?: string
+          company_phone?: string
+          company_unp?: string
+          company_website?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          logo_layout?: Json
+          logo_url?: string | null
+          name?: string
+          signature_url?: string | null
+          signer_basis?: string
+          signer_name?: string
+          signer_title?: string
+          sort_order?: number
+          stamp_url?: string | null
+          updated_at?: string
+          vat_as_line?: boolean
+          vat_mode?: string
+          vat_note?: string
+          vat_rate?: number
+        }
+        Update: {
+          accent_color?: string
+          bank_account?: string
+          bank_bic?: string
+          bank_name?: string
+          company_address?: string
+          company_brand?: string
+          company_email?: string
+          company_legal_name?: string
+          company_phone?: string
+          company_unp?: string
+          company_website?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          logo_layout?: Json
+          logo_url?: string | null
+          name?: string
+          signature_url?: string | null
+          signer_basis?: string
+          signer_name?: string
+          signer_title?: string
+          sort_order?: number
+          stamp_url?: string | null
+          updated_at?: string
+          vat_as_line?: boolean
+          vat_mode?: string
+          vat_note?: string
+          vat_rate?: number
+        }
+        Relationships: []
+      }
       demand_events: {
         Row: {
           created_at: string
@@ -861,6 +954,7 @@ export type Database = {
           client_name: string
           client_phone: string
           client_unp: string
+          company_id: string | null
           created_at: string
           created_by: string | null
           doc_date: string
@@ -886,6 +980,7 @@ export type Database = {
           client_name?: string
           client_phone?: string
           client_unp?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           doc_date?: string
@@ -911,6 +1006,7 @@ export type Database = {
           client_name?: string
           client_phone?: string
           client_unp?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           doc_date?: string
@@ -930,6 +1026,13 @@ export type Database = {
           versions?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "finance_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "finance_documents_order_id_fkey"
             columns: ["order_id"]
@@ -1904,6 +2007,7 @@ export type Database = {
           commission_enabled: boolean
           commission_label: string
           commission_rate: number
+          company_id: string | null
           company_overrides: Json
           contact_email: string
           contact_name: string
@@ -1954,6 +2058,7 @@ export type Database = {
           commission_enabled?: boolean
           commission_label?: string
           commission_rate?: number
+          company_id?: string | null
           company_overrides?: Json
           contact_email?: string
           contact_name?: string
@@ -2004,6 +2109,7 @@ export type Database = {
           commission_enabled?: boolean
           commission_label?: string
           commission_rate?: number
+          company_id?: string | null
           company_overrides?: Json
           contact_email?: string
           contact_name?: string
@@ -2045,7 +2151,15 @@ export type Database = {
           venue?: string
           viewed_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quote_block_snippets: {
         Row: {
@@ -2197,6 +2311,7 @@ export type Database = {
           client_phone: string
           client_response: string
           client_unp: string
+          company_id: string | null
           company_overrides: Json
           created_at: string
           created_by: string | null
@@ -2251,6 +2366,7 @@ export type Database = {
           client_phone?: string
           client_response?: string
           client_unp?: string
+          company_id?: string | null
           company_overrides?: Json
           created_at?: string
           created_by?: string | null
@@ -2305,6 +2421,7 @@ export type Database = {
           client_phone?: string
           client_response?: string
           client_unp?: string
+          company_id?: string | null
           company_overrides?: Json
           created_at?: string
           created_by?: string | null
@@ -2350,6 +2467,13 @@ export type Database = {
           viewed_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_order_id_fkey"
             columns: ["order_id"]

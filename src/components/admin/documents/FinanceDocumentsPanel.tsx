@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Plus, Download, MoreHorizontal, Trash2, Wallet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Building2 } from "lucide-react";
+import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { Label } from "@/components/ui/label";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
@@ -52,6 +54,7 @@ export function FinanceDocumentsPanel({ search }: { search: string }) {
   const [kind, setKind] = useState<"all" | FinanceKind>("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [payFor, setPayFor] = useState<FinanceDocument | null>(null);
+  const [companyFor, setCompanyFor] = useState<FinanceDocument | null>(null);
 
   const list = useServerFn(listFinanceDocuments);
   const updateFn = useServerFn(updateFinanceDocument);
@@ -173,6 +176,10 @@ export function FinanceDocumentsPanel({ search }: { search: string }) {
                               {s.label}
                             </DropdownMenuItem>
                           ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setCompanyFor(r)}>
+                          <Building2 className="mr-2 h-4 w-4" />Компания документа
+                        </DropdownMenuItem>
                         {r.kind === "invoice" && (
                           <>
                             <DropdownMenuSeparator />
@@ -207,6 +214,14 @@ export function FinanceDocumentsPanel({ search }: { search: string }) {
       </div>
 
       <CreateFinanceDialog open={createOpen} onOpenChange={setCreateOpen} onCreated={refresh} />
+      <CompanyDialog
+        doc={companyFor}
+        onClose={() => setCompanyFor(null)}
+        onSave={(companyId) => {
+          if (companyFor) update.mutate({ id: companyFor.id, patch: { company_id: companyId } });
+          setCompanyFor(null);
+        }}
+      />
       <PaymentDialog
         doc={payFor}
         onClose={() => setPayFor(null)}
@@ -217,6 +232,36 @@ export function FinanceDocumentsPanel({ search }: { search: string }) {
       />
       {dialog}
     </div>
+  );
+}
+
+function CompanyDialog({
+  doc, onClose, onSave,
+}: { doc: FinanceDocument | null; onClose: () => void; onSave: (companyId: string | null) => void }) {
+  const [companyId, setCompanyId] = useState<string | null>(null);
+
+  return (
+    <Dialog
+      open={!!doc}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+        else if (doc) setCompanyId(doc.company_id);
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Компания документа</DialogTitle>
+          <DialogDescription>
+            Реквизиты, логотип, подпись, печать и НДС подставятся из выбранной компании.
+          </DialogDescription>
+        </DialogHeader>
+        <CompanySelect value={companyId} onChange={(id) => setCompanyId(id)} />
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Отмена</Button>
+          <Button onClick={() => onSave(companyId)}>Сохранить</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

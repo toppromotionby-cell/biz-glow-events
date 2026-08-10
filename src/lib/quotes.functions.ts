@@ -121,6 +121,10 @@ export const createQuote = createServerFn({ method: "POST" })
       }
     }
 
+    const { data: defaultCompany } = await context.supabase
+      .from("company_profiles").select("id").eq("is_default", true).maybeSingle();
+    if ((defaultCompany as { id?: string } | null)?.id) base.company_id = (defaultCompany as { id: string }).id;
+
     const { data: created, error } = await context.supabase.from("quotes").insert(base).select("id").single();
     if (error) throw new Error(error.message);
     const quoteId = (created as { id: string }).id;
@@ -341,11 +345,14 @@ export const listOrdersForQuote = createServerFn({ method: "GET" })
 // Реквизиты компании для превью КП (staff-доступ, admin-клиент только на чтение).
 export const getQuoteDocSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: { companyId?: string | null } | undefined) =>
+    z.object({ companyId: z.string().uuid().nullish() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     await assertStaff(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { loadDocumentSettings } = await import("@/lib/documents/render.server");
-    return await loadDocumentSettings(supabaseAdmin as never);
+    return await loadDocumentSettings(supabaseAdmin as never, data.companyId ?? null);
   });
 
 // --- Библиотека переиспользуемых блоков (сниппетов) ---
@@ -614,7 +621,7 @@ export const sendQuoteToClient = createServerFn({ method: "POST" })
     let pdf: { filename: string; bytes: Uint8Array } | null = null;
     if (data.attachPdf !== false) {
       try {
-        const settings = await loadDocumentSettings(supabaseAdmin as never);
+        const settings = await loadDocumentSettings(supabaseAdmin as never, quote.company_id);
         pdf = { filename: quoteFileName(quote), bytes: await buildStandaloneQuotePdf(quote, items, settings) };
       } catch (error) {
         console.error("[quote-email] requested PDF build failed", { quoteId: data.id, error });

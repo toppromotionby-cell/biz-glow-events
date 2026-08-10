@@ -15,12 +15,12 @@ export const Route = createFileRoute("/admin/documents/quotes/$id/render")({
         const auth = await requireStaff(request);
         if (auth instanceof Response) return auth;
 
-        const [{ data: row }, { data: itemRows }, settings] = await Promise.all([
+        const [{ data: row }, { data: itemRows }] = await Promise.all([
           supabaseAdmin.from("quotes").select("*").eq("id", params.id).maybeSingle(),
           supabaseAdmin.from("quote_items").select("*").eq("quote_id", params.id).order("sort_order"),
-          loadDocumentSettings(supabaseAdmin as never),
         ]);
         if (!row) return new Response("Not found", { status: 404 });
+        const settings = await loadDocumentSettings(supabaseAdmin as never, (row as { company_id?: string | null }).company_id ?? null);
 
         const quote = normalizeQuote(row as Record<string, unknown>);
         const items = ((itemRows ?? []) as Record<string, unknown>[]).map(normalizeItem);

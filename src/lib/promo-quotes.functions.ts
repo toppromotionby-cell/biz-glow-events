@@ -124,7 +124,12 @@ export const createPromoQuote = createServerFn({ method: "POST" })
 
     const { data: created, error } = await context.supabase
       .from("promo_quotes")
-      .insert({ created_by: context.userId, project: "Новый проект" })
+      .insert({
+        created_by: context.userId,
+        project: "Новый проект",
+        company_id: ((await context.supabase
+          .from("company_profiles").select("id").eq("is_default", true).maybeSingle()).data as { id?: string } | null)?.id ?? null,
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -514,7 +519,7 @@ export const sendPromoQuoteToClient = createServerFn({ method: "POST" })
     let pdf: { filename: string; bytes: Uint8Array } | null = null;
     if (data.attachPdf !== false) {
       try {
-        const settings = await loadDocumentSettings(supabaseAdmin as never);
+        const settings = await loadDocumentSettings(supabaseAdmin as never, quote.company_id);
         pdf = { filename: promoFileName(quote, "pdf"), bytes: await buildPromoQuotePdf(quote, items, settings) };
       } catch (error) {
         console.error("[promo-email] requested PDF build failed", { quoteId: data.id, error });

@@ -205,6 +205,7 @@ export type Quote = {
   event_format: string;
   setup_note: string;
   event_notes: string;
+  company_id: string | null;
   company_overrides: QuoteCompanyOverrides;
   logo_url: string | null;
   logo_layout: LogoLayout;
@@ -527,6 +528,7 @@ export const quotePatchSchema = z.object({
   event_format: z.string().max(200).optional(),
   setup_note: z.string().max(500).optional(),
   event_notes: z.string().max(3000).optional(),
+  company_id: z.string().uuid().nullable().optional(),
   company_overrides: z.record(z.string(), z.string()).optional(),
   logo_url: z.string().max(1000).nullable().optional(),
   logo_layout: z
@@ -572,6 +574,7 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     event_time_start: normalizeTime(row.event_time_start),
     event_time_end: normalizeTime(row.event_time_end),
     status: (QUOTE_STATUSES as readonly string[]).includes(String(row.status)) ? (row.status as QuoteStatus) : "draft",
+    company_id: row.company_id ? String(row.company_id) : null,
     company_overrides: normalizeCompanyOverrides(row.company_overrides),
     texts: { ...DEFAULT_QUOTE_TEXTS, ...((row.texts ?? {}) as Partial<QuoteTexts>) },
     design: { ...DEFAULT_QUOTE_DESIGN, ...((row.design ?? {}) as Partial<QuoteDesign>) },
