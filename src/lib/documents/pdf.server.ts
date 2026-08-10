@@ -3,7 +3,7 @@
 // (Inter Regular/Bold + Space Grotesk Bold — те же шрифты, что и в HTML-превью);
 // кириллица в Standard 14 шрифтах PDF не работает, поэтому встраиваем TTF
 // подмножеством (subset:true).
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import type { DocOrder, DocItem, DocKind } from "@/lib/documents/build.server";
