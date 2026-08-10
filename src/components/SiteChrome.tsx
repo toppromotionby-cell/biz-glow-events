@@ -112,16 +112,11 @@ export function SiteHeader() {
                   Каталог
                   <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64">
-                  {CATALOG_NAV.map((n) => (
-                    <Toggleable key={n.to} sectionKey={n.key} as="div">
-                      <DropdownMenuItem asChild>
-                        <Link to={n.to} className="w-full cursor-pointer">{n.label}</Link>
-                      </DropdownMenuItem>
-                    </Toggleable>
-                  ))}
+                <DropdownMenuContent align="start" className="w-[min(90vw,880px)] p-4">
+                  <CatalogMegaMenu />
                 </DropdownMenuContent>
               </DropdownMenu>
+
               {PRIMARY_NAV.map(n => (
                 <Toggleable key={n.to} sectionKey={n.key} as="span">
                   <Link to={n.to} className="text-muted-foreground hover:text-foreground transition" activeProps={{ className: "text-foreground" }}>
