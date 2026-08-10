@@ -22,7 +22,7 @@ export function FloatingContacts() {
       <SupportChat open={chatOpen} onClose={() => setChatOpen(false)} hideTrigger />
       <div
         className="fixed z-40 right-4 sm:right-6"
-        style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+        style={{ bottom: "calc(1rem + env(safe-area-inset-bottom) + var(--mobile-bar-h, 0px))" }}
         aria-live="polite"
       >
         {open && !chatOpen && (
