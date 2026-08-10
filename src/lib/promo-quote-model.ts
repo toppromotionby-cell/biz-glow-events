@@ -4,6 +4,7 @@ import { z } from "zod";
 import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
 import { computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
+import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
 
 export { normalizeIncludes };
 export type { QuoteItemInclude };
@@ -38,6 +39,7 @@ export type PromoQuote = {
   logo_url: string | null;
   client_logo_url: string | null;
   logo_layout: LogoLayout;
+  company_overrides: CompanyOverrides;
   accent_color: string;
   show_qty: boolean;
   show_total_qty: boolean;
@@ -113,6 +115,7 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     logo_url: row.logo_url ? String(row.logo_url) : null,
     client_logo_url: row.client_logo_url ? String(row.client_logo_url) : null,
     logo_layout: normalizeLogoLayout(row.logo_layout),
+    company_overrides: normalizeCompanyOverrides(row.company_overrides),
     accent_color: str(row.accent_color, "#F5A623"),
     show_qty: row.show_qty !== false,
     show_total_qty: row.show_total_qty !== false,
@@ -203,6 +206,7 @@ export const promoQuotePatchSchema = z
     logo_url: z.string().max(1000).nullable(),
     client_logo_url: z.string().max(1000).nullable(),
     logo_layout: z.unknown().transform(normalizeLogoLayout),
+    company_overrides: z.unknown().transform(normalizeCompanyOverrides),
     accent_color: z.string().max(20),
     show_qty: z.boolean(),
     show_total_qty: z.boolean(),
