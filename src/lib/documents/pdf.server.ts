@@ -18,6 +18,13 @@ import {
   mixWithWhite,
 } from "@/lib/documents/brand";
 import {
+  DEFAULT_LOGO_LAYOUT,
+  computeLogoPlacement,
+  normalizeLogoLayout,
+  type LogoLayout,
+} from "@/lib/documents/logo-layout";
+
+import {
   computePromoTotals,
   groupBySection,
   lineQty,
@@ -97,7 +104,7 @@ const F_DOC_DATE = DOC_FONT_PT.docDate;
 const F_LABEL = DOC_FONT_PT.cardLabel;
 const F_FOOTER = DOC_FONT_PT.footer;
 
-type FittedLogo = { img: PDFImage; w: number; h: number };
+type FittedLogo = { img: PDFImage; w: number; h: number; aspect: number };
 
 type DocCtx = {
   pdf: PDFDocument;
@@ -113,11 +120,13 @@ type DocCtx = {
   logo?: FittedLogo | null;
   /** Логотип клиента (промо-КП) — рисуется справа под шапкой. */
   clientLogo?: FittedLogo | null;
+  /** Настройки размещения логотипа в шапке. */
+  logoLayout: LogoLayout;
 };
 
 // Габариты логотипа в шапке (pt). Пропорции сохраняются, картинка вписывается.
-const HEADER_LOGO_MAX_H = 34;
-const HEADER_LOGO_MAX_W = 150;
+const HEADER_LOGO_MAX_H = DEFAULT_LOGO_LAYOUT.maxH;
+const HEADER_LOGO_MAX_W = DEFAULT_LOGO_LAYOUT.maxW;
 const MAX_LOGO_BYTES = 4 * 1024 * 1024;
 
 /**
@@ -142,11 +151,12 @@ async function embedLogo(
     if (!isPng && !isJpg) return null; // SVG/WebP нормализуются в PNG на клиенте
     const img = isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
     const k = Math.min(maxW / img.width, maxH / img.height);
-    return { img, w: img.width * k, h: img.height * k };
+    return { img, w: img.width * k, h: img.height * k, aspect: img.width / img.height };
   } catch {
     return null;
   }
 }
+
 
 
 function money(n: number): string {
@@ -289,34 +299,41 @@ function drawTracked(
 }
 
 function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settings: DocumentSettings) {
-  // Логотип слева (если загружен) — вписан в бокс, пропорции сохранены
+  // Логотип — позиция, размер и отступы задаются в настройках документа
   const logo = ctx.logo ?? null;
-  let leftX = MARGIN_X;
-  if (logo) {
+  const layout = ctx.logoLayout ?? DEFAULT_LOGO_LAYOUT;
+  const place = logo ? computeLogoPlacement(layout, logo.aspect) : null;
+  let leftX: number = MARGIN_X;
+  if (logo && place) {
     ctx.page.drawImage(logo.img, {
-      x: MARGIN_X,
-      y: PAGE_H - MARGIN_TOP - logo.h + 2,
-      width: logo.w,
-      height: logo.h,
+      x: place.x,
+      y: PAGE_H - MARGIN_TOP - place.top - place.h + 2,
+      width: place.w,
+      height: place.h,
     });
-    leftX = MARGIN_X + logo.w + 12;
+    leftX = place.textX;
   }
 
   // Бренд слева — дисплейным шрифтом, как в HTML-превью
   const brand = safe(settings.company_brand);
-  ctx.page.drawText(brand, {
-    x: leftX,
-    y: PAGE_H - MARGIN_TOP - F22 * 0.8,
-    size: F22,
-    font: displayFont(ctx, brand),
-    color: TEXT,
-  });
+  const showBrand = !(logo && layout.hideBrandText);
+  if (showBrand) {
+    ctx.page.drawText(brand, {
+      x: leftX,
+      y: PAGE_H - MARGIN_TOP - F22 * 0.8,
+      size: F22,
+      font: displayFont(ctx, brand),
+      color: TEXT,
+    });
+  }
 
   const subY = PAGE_H - MARGIN_TOP - F22 * 0.8 - 14;
   ctx.page.drawText(
     `${safe(settings.company_legal_name)} · ${safe(settings.company_address)}`,
     { x: leftX, y: subY, size: DOC_FONT_PT.small, font: ctx.regular, color: MUTED },
   );
+
+
 
 
   // Тип/номер/дата справа
@@ -354,7 +371,7 @@ function drawHeader(ctx: DocCtx, kind: string, num: string, date: string, settin
   });
 
   // Высокий логотип может «вылезти» ниже текста — учитываем это
-  ctx.y = PAGE_H - MARGIN_TOP - Math.max(58, (logo?.h ?? 0) + 14);
+  ctx.y = PAGE_H - MARGIN_TOP - Math.max(58, (place?.reserve ?? 0) + 14);
   divider(ctx);
 
   // Логотип клиента (промо-КП) — справа под разделителем
@@ -653,7 +670,12 @@ function header(order: DocOrder) {
   };
 }
 
-async function createCtx(logoUrl?: string | null, clientLogoUrl?: string | null): Promise<DocCtx> {
+async function createCtx(
+  logoUrl?: string | null,
+  clientLogoUrl?: string | null,
+  logoLayoutRaw?: unknown,
+): Promise<DocCtx> {
+  const logoLayout = normalizeLogoLayout(logoLayoutRaw);
   const [regBytes, boldBytes, dispBytes] = [loadRegular(), loadBold(), loadDisplay()];
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -664,7 +686,7 @@ async function createCtx(logoUrl?: string | null, clientLogoUrl?: string | null)
   // ставим как default fallback на StandardFonts (на всякий случай — для emoji не нужно).
   void StandardFonts;
   const [logo, clientLogo] = await Promise.all([
-    embedLogo(pdf, logoUrl),
+    embedLogo(pdf, logoUrl, logoLayout.maxW, logoLayout.maxH),
     embedLogo(pdf, clientLogoUrl, 120, 28),
   ]);
   const ctx: DocCtx = {
@@ -674,7 +696,9 @@ async function createCtx(logoUrl?: string | null, clientLogoUrl?: string | null)
     pageNum: 1,
     logo,
     clientLogo,
+    logoLayout,
   };
+
 
   ctx.y = PAGE_H - MARGIN_TOP;
   ctx.page.drawRectangle({ x: 0, y: PAGE_H - 4, width: PAGE_W, height: 4, color: ACCENT });
@@ -685,7 +709,7 @@ async function createCtx(logoUrl?: string | null, clientLogoUrl?: string | null)
 // === Builders для каждого вида документа ===
 
 async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx(settings.logo_url);
+  const ctx = await createCtx(settings.logo_url, null, settings.logo_layout);
   const { num, date } = header(order);
   drawHeader(ctx, "Коммерческое предложение", num, date, settings);
 
@@ -738,7 +762,7 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
 }
 
 async function buildInvoice(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx(settings.logo_url);
+  const ctx = await createCtx(settings.logo_url, null, settings.logo_layout);
   const { num, date } = header(order);
   drawHeader(ctx, "Счёт-фактура", num, date, settings);
 
@@ -842,7 +866,7 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
 }
 
 async function buildContract(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx(settings.logo_url);
+  const ctx = await createCtx(settings.logo_url, null, settings.logo_layout);
   const { num, date } = header(order);
   drawHeader(ctx, "Договор", num, date, settings);
 
@@ -941,7 +965,7 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
 }
 
 async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
-  const ctx = await createCtx(settings.logo_url);
+  const ctx = await createCtx(settings.logo_url, null, settings.logo_layout);
   const { num, date } = header(order);
   drawHeader(ctx, "Акт оказанных услуг", num, date, settings);
 
@@ -1124,7 +1148,11 @@ export async function buildStandaloneQuotePdf(
     signer_title: c.signer_title,
   };
 
-  const ctx = await createCtx(quote.design.show_logo ? (quote.logo_url || settings.logo_url) : null);
+  const ctx = await createCtx(
+    quote.design.show_logo ? (quote.logo_url || settings.logo_url) : null,
+    null,
+    quote.logo_layout,
+  );
   drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff);
 
   const map = buildPlaceholderValues(quote, items, settings);
@@ -1349,7 +1377,7 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
-  const ctx = await createCtx(quote.logo_url || settings.logo_url, quote.client_logo_url);
+  const ctx = await createCtx(quote.logo_url || settings.logo_url, quote.client_logo_url, quote.logo_layout);
   const t = computePromoTotals(quote, items);
   drawHeader(
     ctx,

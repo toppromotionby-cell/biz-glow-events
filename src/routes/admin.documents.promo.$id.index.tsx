@@ -45,6 +45,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoUploader } from "@/components/admin/LogoUploader";
+import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 
 
 export const Route = createFileRoute("/admin/documents/promo/$id/")({ component: EditorPage });
@@ -526,18 +527,22 @@ function EditorPage() {
               <Field label="Акцентный цвет">
                 <Input type="color" value={quote.accent_color} onChange={(e) => patchQuote({ accent_color: e.target.value })} className="h-10 w-20 p-1" />
               </Field>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <LogoUploader
-                  label="Логотип агентства"
-                  value={quote.logo_url}
-                  onChange={(v) => patchQuote({ logo_url: v })}
-                />
-                <LogoUploader
-                  label="Логотип клиента"
-                  value={quote.client_logo_url}
-                  onChange={(v) => patchQuote({ client_logo_url: v })}
-                />
-              </div>
+              <LogoHeaderDesigner
+                label="Логотип агентства"
+                logoUrl={quote.logo_url}
+                onLogoChange={(v) => patchQuote({ logo_url: v })}
+                layout={quote.logo_layout}
+                onLayoutChange={(l) => patchQuote({ logo_layout: l })}
+                brand={quote.project || "Event Hub"}
+                legalLine={quote.client_name || "Клиент"}
+                accent={quote.accent_color}
+                docNum={quote.doc_number || "000"}
+              />
+              <LogoUploader
+                label="Логотип клиента"
+                value={quote.client_logo_url}
+                onChange={(v) => patchQuote({ client_logo_url: v })}
+              />
 
               <Field label="Примечание в подвале">
                 <Textarea value={quote.footer_note} onChange={(e) => patchQuote({ footer_note: e.target.value })} className="min-h-[80px]" />

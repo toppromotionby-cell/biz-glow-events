@@ -1,5 +1,7 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
+import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { vatRateLabel } from "@/lib/documents/vat";
+
 import { BRAND_ACCENT } from "@/lib/documents/brand";
 import {
   computePromoTotals,
@@ -144,7 +146,7 @@ export function buildPromoQuoteBody(quote: PromoQuote, items: PromoItem[]): stri
   <div class="head">
     <div class="meta">${meta}</div>
     <div class="logos">
-      ${quote.logo_url ? `<img src="${esc(quote.logo_url)}" alt="Логотип" />` : ""}
+      ${quote.logo_url ? `<span style="${logoWrapStyle(quote.logo_layout)}"><img style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url)}" alt="Логотип" /></span>` : ""}
       ${quote.client_logo_url ? `<img src="${esc(quote.client_logo_url)}" alt="Логотип клиента" />` : ""}
     </div>
   </div>

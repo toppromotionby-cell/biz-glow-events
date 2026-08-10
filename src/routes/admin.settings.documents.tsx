@@ -19,7 +19,7 @@ import { BRAND_ACCENTS } from "@/lib/documents/brand";
 import { supabase } from "@/integrations/supabase/client";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { LogoUploader } from "@/components/admin/LogoUploader";
+import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 
 import {
   getDocumentSettings,
@@ -142,7 +142,15 @@ function DocumentSettingsPage() {
               <Field label="Телефон" value={form.company_phone} onChange={(v) => update("company_phone", v)} />
               <Field label="E-mail" type="email" value={form.company_email} onChange={(v) => update("company_email", v)} />
               <Field label="Сайт" value={form.company_website} onChange={(v) => update("company_website", v)} />
-              <LogoUploader value={form.logo_url ?? null} onChange={(v) => update("logo_url", v)} />
+              <LogoHeaderDesigner
+                logoUrl={form.logo_url ?? null}
+                onLogoChange={(v) => update("logo_url", v)}
+                layout={form.logo_layout}
+                onLayoutChange={(l) => update("logo_layout", l)}
+                brand={form.company_brand}
+                legalLine={`${form.company_legal_name} · ${form.company_address}`}
+                accent={form.accent_color}
+              />
               <Field label="Акцентный цвет" value={form.accent_color} onChange={(v) => update("accent_color", v)} placeholder="#FF7500">
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div className="h-10 w-10 rounded-md border border-border/60" style={{ background: form.accent_color }} aria-hidden />

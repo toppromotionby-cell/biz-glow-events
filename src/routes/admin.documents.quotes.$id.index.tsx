@@ -43,7 +43,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { LogoUploader } from "@/components/admin/LogoUploader";
+import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
 
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
@@ -655,11 +655,17 @@ function Page() {
                       </div>
                     </Field>
 
-                    <LogoUploader
+                    <LogoHeaderDesigner
                       label="Логотип"
-                      value={quote.logo_url}
-                      onChange={(v) => patch({ logo_url: v })}
                       hint="Любой формат — обрежем поля, подгоним размер и вставим в шапку КП (HTML и PDF)."
+                      logoUrl={quote.logo_url}
+                      onLogoChange={(v) => patch({ logo_url: v })}
+                      layout={quote.logo_layout}
+                      onLayoutChange={(l) => patch({ logo_layout: l })}
+                      brand={quote.company_overrides.company_brand || settings.company_brand}
+                      legalLine={`${quote.company_overrides.company_legal_name || settings.company_legal_name} · ${quote.company_overrides.company_address || settings.company_address}`}
+                      accent={quote.design.accent_color || settings.accent_color}
+                      docNum={quote.quote_number || "000"}
                     />
                     <div className="grid gap-3 sm:grid-cols-2">
                       <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />

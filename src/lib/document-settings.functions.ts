@@ -3,6 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
+import {
+  DEFAULT_LOGO_LAYOUT,
+  normalizeLogoLayout,
+  type LogoLayout,
+} from "@/lib/documents/logo-layout";
 
 export type DocumentSettings = {
   company_legal_name: string;
@@ -13,6 +18,7 @@ export type DocumentSettings = {
   company_email: string;
   company_website: string;
   logo_url: string | null;
+  logo_layout: LogoLayout;
   accent_color: string;
   bank_name: string;
   bank_bic: string;
@@ -48,6 +54,7 @@ export const DEFAULT_DOCUMENT_SETTINGS: DocumentSettings = {
   company_email: "hello@event-hub.by",
   company_website: "event-hub.by",
   logo_url: null,
+  logo_layout: DEFAULT_LOGO_LAYOUT,
   accent_color: "#FF7500",
   bank_name: "",
   bank_bic: "",
@@ -92,6 +99,7 @@ const SettingsSchema = z.object({
   company_email: z.string().trim().email().max(200),
   company_website: z.string().trim().max(200),
   logo_url: z.string().trim().max(500).nullable().optional(),
+  logo_layout: z.unknown().optional().transform(normalizeLogoLayout),
   accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Ожидается hex-цвет, напр. #FF7500"),
   bank_name: z.string().trim().max(200),
   bank_bic: z.string().trim().max(50),
@@ -170,5 +178,6 @@ function normalize(row: Record<string, unknown>): DocumentSettings {
     vat_mode: normalizeVatMode(row.vat_mode),
     vat_rate: Number(row.vat_rate) || DEFAULT_VAT_RATE,
     vat_as_line: row.vat_as_line === true,
+    logo_layout: normalizeLogoLayout(row.logo_layout),
   };
 }
