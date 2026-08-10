@@ -618,7 +618,11 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   }
   ctx.y -= headerH;
 
-  const firstCol = cols[0];
+  // «Богатая» колонка (название позиции) — может быть не первой, если есть №
+  const richIdx = Math.max(0, cols.findIndex((c) => c.key === "title"));
+  const firstCol = cols[richIdx];
+  const richX = startX + cols.slice(0, richIdx).reduce((s, c) => s + c.width, 0);
+
 
   // rows
   for (const r of rows) {
