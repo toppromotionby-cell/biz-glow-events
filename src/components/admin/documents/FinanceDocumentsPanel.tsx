@@ -35,6 +35,13 @@ const TONE: Record<string, "muted" | "info" | "success" | "danger"> = {
   cancelled: "danger",
 };
 
+const TAB_LABELS: Record<"all" | FinanceKind, string> = {
+  all: "Все",
+  invoice: "Счета",
+  contract: "Договоры",
+  act: "Акты",
+};
+
 const statusLabel = (kind: FinanceKind, status: string) =>
   FINANCE_STATUSES[kind].find((s) => s.key === status)?.label ?? status;
 
@@ -78,7 +85,7 @@ export function FinanceDocumentsPanel({ search }: { search: string }) {
         <div className="inline-flex rounded-lg border border-border/60 p-0.5">
           {(["all", "invoice", "contract", "act"] as const).map((k) => (
             <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
-              {k === "all" ? "Все" : `${FINANCE_KIND_LABELS[k]}а`.replace("Счёта", "Счета").replace("Договора", "Договоры").replace("Акта", "Акты")}
+              {TAB_LABELS[k]}
             </Button>
           ))}
         </div>
