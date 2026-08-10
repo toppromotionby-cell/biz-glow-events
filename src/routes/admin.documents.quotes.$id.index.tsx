@@ -48,6 +48,7 @@ import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
+import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
