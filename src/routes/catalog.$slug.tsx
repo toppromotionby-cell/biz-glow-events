@@ -5,6 +5,9 @@ import { getVirtualSection } from "@/lib/catalog-nav.functions";
 import { rowsToItems } from "@/lib/catalog-adapter";
 import { CatalogGrid } from "@/components/CatalogGrid";
 import { CATALOG_PAGE_CONFIG, type CatalogBasePath } from "@/lib/catalog-page-config";
+import type { CatalogRow } from "@/lib/catalog.functions";
+
+type Group = { type: string; basePath: string; categories: string[]; rows: CatalogRow[] };
 
 export const Route = createFileRoute("/catalog/$slug")({
   loader: async ({ params }) => {
@@ -44,7 +47,7 @@ export const Route = createFileRoute("/catalog/$slug")({
 });
 
 function VirtualSectionPage() {
-  const data = Route.useLoaderData();
+  const data = Route.useLoaderData() as { title: string; description: string; groups: Group[] };
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -68,7 +71,7 @@ function VirtualSectionPage() {
                 category={config.category}
                 basePath={config.basePath}
                 entityType={config.type}
-                categories={group.categories.map((name) => ({ id: name, name }))}
+                categories={group.categories.map((name: string) => ({ id: name, name }))}
               />
             </section>
           );

@@ -56,6 +56,7 @@ import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as GeoCityRouteImport } from './routes/geo.$city'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as CatalogSlugRouteImport } from './routes/catalog.$slug'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AttractionsSlugRouteImport } from './routes/attractions.$slug'
@@ -337,6 +338,11 @@ const EquipmentSlugRoute = EquipmentSlugRouteImport.update({
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogSlugRoute = CatalogSlugRouteImport.update({
+  id: '/catalog/$slug',
+  path: '/catalog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CasesSlugRoute = CasesSlugRouteImport.update({
@@ -639,6 +645,7 @@ export interface FileRoutesByFullPath {
   '/attractions/$slug': typeof AttractionsSlugRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
+  '/catalog/$slug': typeof CatalogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -733,6 +740,7 @@ export interface FileRoutesByTo {
   '/attractions/$slug': typeof AttractionsSlugRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
+  '/catalog/$slug': typeof CatalogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -830,6 +838,7 @@ export interface FileRoutesById {
   '/attractions/$slug': typeof AttractionsSlugRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
+  '/catalog/$slug': typeof CatalogSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -928,6 +937,7 @@ export interface FileRouteTypes {
     | '/attractions/$slug'
     | '/blog/$slug'
     | '/cases/$slug'
+    | '/catalog/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1022,6 +1032,7 @@ export interface FileRouteTypes {
     | '/attractions/$slug'
     | '/blog/$slug'
     | '/cases/$slug'
+    | '/catalog/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1118,6 +1129,7 @@ export interface FileRouteTypes {
     | '/attractions/$slug'
     | '/blog/$slug'
     | '/cases/$slug'
+    | '/catalog/$slug'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1197,6 +1209,7 @@ export interface RootRouteChildren {
   TestimonialsRoute: typeof TestimonialsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   ZonesRoute: typeof ZonesRouteWithChildren
+  CatalogSlugRoute: typeof CatalogSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   GeoCityRoute: typeof GeoCityRoute
   InquiryTokenRoute: typeof InquiryTokenRoute
@@ -1546,6 +1559,13 @@ declare module '@tanstack/react-router' {
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog/$slug': {
+      id: '/catalog/$slug'
+      path: '/catalog/$slug'
+      fullPath: '/catalog/$slug'
+      preLoaderRoute: typeof CatalogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cases/$slug': {
@@ -2100,6 +2120,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestimonialsRoute: TestimonialsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   ZonesRoute: ZonesRouteWithChildren,
+  CatalogSlugRoute: CatalogSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   GeoCityRoute: GeoCityRoute,
   InquiryTokenRoute: InquiryTokenRoute,
