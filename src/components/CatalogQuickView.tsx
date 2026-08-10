@@ -428,22 +428,14 @@ function Body({ item, type, basePath, onClose }: { item: CatalogRow; basePath: s
 
             {hasExtras && <ExtrasBlock extras={extras} variant="modal" />}
 
-            {/* Мобильные вкладки занятости/требований */}
-            <div className="md:hidden space-y-3">
-              <Tabs defaultValue="availability">
-                <TabsList className="w-full">
-                  <TabsTrigger value="availability" className="flex-1">Занятость</TabsTrigger>
-                  {hasRequirements && <TabsTrigger value="requirements" className="flex-1">Требования</TabsTrigger>}
-                </TabsList>
-                <TabsContent value="availability" className="pt-3">
-                </TabsContent>
-                {hasRequirements && (
-                  <TabsContent value="requirements" className="pt-3">
-                    <CatalogProse requirements={item.requirements} variant="modal" />
-                  </TabsContent>
-                )}
-              </Tabs>
-            </div>
+            {/* Требования (мобильные) */}
+            {hasRequirements && (
+              <div className="md:hidden glass rounded-xl p-4 space-y-2">
+                <div className="text-sm font-semibold">Требования</div>
+                <CatalogProse requirements={item.requirements} variant="modal" />
+              </div>
+            )}
+
           </aside>
         </div>
 
