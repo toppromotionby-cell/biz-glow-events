@@ -152,6 +152,7 @@ export function QuickQuoteRequest({
         },
       });
       trackLead("quickview");
+      if (demand) signalDemand(demand.entity_type, demand.entity_id, "quote", { once: false });
       setDone(true);
       toast.success("Запрос отправлен — подготовим КП и свяжемся с вами.");
       onDone?.();
