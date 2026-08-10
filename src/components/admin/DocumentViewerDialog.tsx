@@ -1,6 +1,6 @@
 // Диалог просмотра документа: PDF/HTML в iframe + кнопки скачать / открыть во вкладке.
 // Загрузка и открытие вкладки происходят по клику пользователя, поэтому браузер их не блокирует.
-import { Download, ExternalLink, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { downloadBlob } from "@/lib/download";
@@ -27,11 +27,6 @@ export function DocumentViewerDialog({
               <>
                 <Button size="sm" variant="outline" onClick={() => void downloadBlob(doc.blob, doc.name)}>
                   <Download className="mr-1.5 h-4 w-4" />Скачать
-                </Button>
-                <Button asChild size="sm" variant="ghost">
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-1.5 h-4 w-4" />В новой вкладке
-                  </a>
                 </Button>
               </>
             )}
