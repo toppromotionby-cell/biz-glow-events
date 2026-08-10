@@ -31,9 +31,10 @@ type Theme = {
 };
 
 function color(hex: string): ReturnType<typeof rgb> {
-  const [r, g, b] = hexToRgb01(hex);
+  const { r, g, b } = hexToRgb01(hex);
   return rgb(r, g, b);
 }
+
 
 function themeOf(template: Presentation["template"], accentHex: string): Theme {
   const accent = color(accentHex);
