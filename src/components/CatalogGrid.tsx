@@ -10,7 +10,16 @@ import { useClampedText } from "@/components/ui/ClampedTitle";
 
 import type { CatalogItem } from "@/lib/catalog-mock";
 import type { CatalogType } from "@/lib/catalog.functions";
-import { Info, X } from "lucide-react";
+import { Info, X, ShoppingCart, ArrowUpDown } from "lucide-react";
+
+type SortKey = "default" | "price-asc" | "price-desc" | "title-asc";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  default: "По умолчанию",
+  "price-asc": "Сначала дешевле",
+  "price-desc": "Сначала дороже",
+  "title-asc": "По названию (А–Я)",
+};
 
 export function CatalogGrid({
   items,
@@ -31,6 +40,7 @@ export function CatalogGrid({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<PerPage>(30);
+  const [sort, setSort] = useState<SortKey>("default");
 
   // Категории фильтра берём из админского справочника, но показываем
   // только те, по которым реально есть опубликованные позиции.
@@ -99,7 +109,7 @@ export function CatalogGrid({
   }, [activeTags, activeCategory, page, perPage]);
 
   // Reset page when filter changes
-  useEffect(() => { setPage(1); }, [activeTags, activeCategory, perPage]);
+  useEffect(() => { setPage(1); }, [activeTags, activeCategory, perPage, sort]);
 
   const toggleTag = (t: string) =>
     setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
@@ -113,8 +123,23 @@ export function CatalogGrid({
     if (activeTags.length) {
       result = result.filter((it) => activeTags.every((t) => it.tags?.includes(t)));
     }
+    if (sort !== "default") {
+      // Позиции «по запросу» (цена 0) всегда в конце при сортировке по цене.
+      const byPrice = (dir: 1 | -1) => (a: CatalogItem, b: CatalogItem) => {
+        const pa = a.priceFrom || 0;
+        const pb = b.priceFrom || 0;
+        if (!pa !== !pb) return pa ? -1 : 1;
+        return (pa - pb) * dir;
+      };
+      result = [...result].sort(
+        sort === "title-asc"
+          ? (a, b) => a.title.localeCompare(b.title, "ru")
+          : byPrice(sort === "price-asc" ? 1 : -1),
+      );
+    }
     return result;
-  }, [items, activeTags, activeCategory]);
+  }, [items, activeTags, activeCategory, sort]);
+
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const currentPage = Math.min(page, pageCount);
@@ -164,6 +189,26 @@ export function CatalogGrid({
           })}
         </div>
       )}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Найдено позиций: <span className="font-semibold text-foreground">{filtered.length}</span>
+        </p>
+        <label className="inline-flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+          <ArrowUpDown className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only sm:not-sr-only">Сортировка</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className="glass rounded-md border border-primary/20 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+              <option key={k} value={k} className="bg-background text-foreground">
+                {SORT_LABELS[k]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       {topTags.length > 1 && (
         <div className="mb-6 flex flex-wrap items-center gap-2">
           {topTags.map((t) => {
@@ -399,11 +444,20 @@ function CatalogCard({
             <button
               type="button"
               onClick={onOpen}
+              aria-label={`В смету: ${item.title}`}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+              <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+              В смету
+            </button>
+            <button
+              type="button"
+              onClick={onOpen}
               aria-label={`Подробнее: ${item.title}`}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-5 py-2 text-sm font-medium text-foreground transition hover:bg-primary/20 hover:border-primary/60"
+              title="Подробнее"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/10 text-foreground transition hover:bg-primary/20 hover:border-primary/60"
             >
               <Info className="h-4 w-4 text-primary" aria-hidden="true" />
-              Подробнее
             </button>
             <CompareButton
               item={{
@@ -416,6 +470,7 @@ function CatalogCard({
               }}
             />
           </div>
+
 
 
         </div>

@@ -113,11 +113,18 @@ function writeCache(map: SectionsMap) {
 }
 
 export function SiteSectionsProvider({ children }: { children: ReactNode }) {
-  // Гидратация из localStorage синхронно — устраняет CLS:
-  // отключённые секции не успевают мелькнуть и исчезнуть.
-  const [map, setMap] = useState<SectionsMap>(() => readCache());
+  // ВАЖНО: стартовое значение обязано совпадать с SSR ({}), иначе React
+  // ругается на hydration mismatch (сервер отрисовал одни пункты меню,
+  // клиент — другие). Кэш из localStorage применяем сразу после гидратации.
+  const [map, setMap] = useState<SectionsMap>({});
 
   useEffect(() => {
+    const cached = readCache();
+    if (Object.keys(cached).length) setMap(cached);
+  }, []);
+
+  useEffect(() => {
+
     let cancelled = false;
     (async () => {
       const { data } = await supabase.from("site_sections").select("key, enabled");

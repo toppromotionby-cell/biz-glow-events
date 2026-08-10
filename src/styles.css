@@ -423,10 +423,13 @@
        --card-title-glow   — цвет свечения (drop-shadow) */
   .card-title-gradient {
     --card-title-lines: 2;
-    --card-title-from: oklch(1 0 0);
+    /* Базируемся на семантическом токене темы: заголовок читаем и в тёмной,
+       и в светлой теме, даже если класс темы ещё не проставлен. */
+    --card-title-from: var(--color-foreground);
     --card-title-to: var(--color-primary);
-    --card-title-glow: oklch(0.72 0.20 50 / 0.28);
-    --card-title-glow-hover: oklch(0.72 0.20 50 / 0.5);
+    --card-title-glow: oklch(0.72 0.20 50 / 0.18);
+    --card-title-glow-hover: oklch(0.72 0.20 50 / 0.35);
+
 
     /* Сброс дефолтов button/a, чтобы класс работал на любом теге */
     appearance: none;
@@ -478,10 +481,11 @@
   }
   :where(.theme-light .card-title-gradient) {
     --card-title-from: oklch(0.12 0 0);
-    --card-title-to: oklch(0.65 0.20 70);
-    --card-title-glow: oklch(0.70 0.19 70 / 0.2);
-    --card-title-glow-hover: oklch(0.70 0.19 70 / 0.35);
+    --card-title-to: oklch(0.55 0.18 60);
+    --card-title-glow: oklch(0.70 0.19 70 / 0.15);
+    --card-title-glow-hover: oklch(0.70 0.19 70 / 0.3);
   }
+
   /* Firefox / браузеры без поддержки -webkit-box: graceful fallback */
   @supports not (-webkit-line-clamp: 2) {
     :where(.card-title-gradient) {
