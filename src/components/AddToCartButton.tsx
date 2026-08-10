@@ -29,7 +29,7 @@ export function AddToCartButton({
       trackAddToCart({ item_id: id, item_name: title, item_category: entity_type, price, quantity: 1 });
       toast.success(`«${title}» добавлено в корзину`);
     }
-  }, "Войдите, чтобы добавить позицию в корзину и оформить заказ.");
+  });
   return (
     <button
       type="button"

@@ -63,7 +63,7 @@ function Card({ item, type }: { item: CatalogRow; type: CatalogType }) {
     });
     trackAddToCart({ item_id: item.id, item_name: item.title, item_category: type, price, quantity: 1 });
     toast.success(`${LABEL[type]} добавлено в корзину`);
-  }, "Войдите, чтобы добавить позицию в корзину.");
+  });
   return (
     <li className="glass rounded-xl overflow-hidden hover:glow-primary transition group flex flex-col">
       <Link to={CATALOG_SLUG_ROUTE[type]} params={{ slug: item.slug }} className="block">
