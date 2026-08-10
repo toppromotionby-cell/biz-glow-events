@@ -94,11 +94,12 @@ const MARGIN_BOTTOM = DOC_LAYOUT.marginBottomPt;
 // Кегли: те же, что в HTML-превью, переведённые в pt.
 // Плотность (density) позволяет уплотнить документ, чтобы он влез в меньшее
 // число листов: 1 = «комфортно» (как превью), 0.94 = «компактно», 0.88 = «плотно».
-export type DocDensity = "comfortable" | "compact" | "dense";
+export type DocDensity = "comfortable" | "compact" | "dense" | "ultra";
 export const DOC_DENSITY_SCALE: Record<DocDensity, number> = {
   comfortable: 1,
   compact: 0.94,
   dense: 0.88,
+  ultra: 0.8,
 };
 
 /** Текущий множитель плотности (отступы, высоты строк). */
