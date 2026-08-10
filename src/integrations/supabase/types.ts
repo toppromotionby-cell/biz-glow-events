@@ -607,6 +607,7 @@ export type Database = {
           logo_layout: Json
           logo_url: string | null
           quote_footer: string
+          quote_print_presets: Json
           quote_validity_days: number
           signer_basis: string
           signer_name: string
@@ -645,6 +646,7 @@ export type Database = {
           logo_layout?: Json
           logo_url?: string | null
           quote_footer?: string
+          quote_print_presets?: Json
           quote_validity_days?: number
           signer_basis?: string
           signer_name?: string
@@ -683,6 +685,7 @@ export type Database = {
           logo_layout?: Json
           logo_url?: string | null
           quote_footer?: string
+          quote_print_presets?: Json
           quote_validity_days?: number
           signer_basis?: string
           signer_name?: string

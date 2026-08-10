@@ -1,0 +1,1 @@
+ALTER TABLE public.document_settings ADD COLUMN IF NOT EXISTS quote_print_presets jsonb NOT NULL DEFAULT '{}'::jsonb;

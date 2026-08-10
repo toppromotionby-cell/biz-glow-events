@@ -20,6 +20,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
+import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
+import { QUOTE_TEMPLATES, QUOTE_TEMPLATE_LABELS, type QuoteTemplate } from "@/lib/quote-blocks";
+import { DEFAULT_PRINT_PRESETS, normalizePrintPresets } from "@/lib/documents/print-preset";
 
 import {
   getDocumentSettings,
@@ -35,6 +38,7 @@ export const Route = createFileRoute("/admin/settings/documents")({
 type Section = { title: string; paragraphs: string[] };
 
 function DocumentSettingsPage() {
+  const [printTpl, setPrintTpl] = useState<QuoteTemplate>("classic");
   const getFn = useServerFn(getDocumentSettings);
   const updateFn = useServerFn(updateDocumentSettings);
   const qc = useQueryClient();
@@ -76,6 +80,10 @@ function DocumentSettingsPage() {
     setForm(next);
     persist(next);
   };
+
+  const printPresets = normalizePrintPresets(form?.quote_print_presets);
+
+
 
   // Последний заказ — чтобы можно было открыть пример КП/счёта/договора.
   const lastOrder = useQuery({
@@ -203,6 +211,27 @@ function DocumentSettingsPage() {
               />
             </div>
             <FieldArea label="Текст футера" value={form.quote_footer} onChange={(v) => update("quote_footer", v)} rows={3} />
+            <div className="mt-5 rounded-xl border border-border/60 p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium">Печать и плотность</p>
+                  <p className="text-xs text-muted-foreground">Поля страницы и интервалы применяются и к превью, и к PDF.</p>
+                </div>
+                <div className="flex gap-1">
+                  {QUOTE_TEMPLATES.map((tpl) => (
+                    <Button key={tpl} type="button" size="sm" variant={printTpl === tpl ? "secondary" : "ghost"} onClick={() => setPrintTpl(tpl)}>
+                      {QUOTE_TEMPLATE_LABELS[tpl]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <PrintPresetEditor
+                value={printPresets[printTpl]}
+                baseline={DEFAULT_PRINT_PRESETS[printTpl]}
+                resetLabel="Вернуть значения шаблона"
+                onChange={(next) => update("quote_print_presets", { ...printPresets, [printTpl]: next })}
+              />
+            </div>
           </Card>
         </TabsContent>
 

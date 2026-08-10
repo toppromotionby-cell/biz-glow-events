@@ -4,6 +4,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import {
+  DEFAULT_PRINT_PRESETS,
+  normalizePrintPresets,
+  type DocPrintPreset,
+} from "@/lib/documents/print-preset";
+import type { QuoteTemplate } from "@/lib/quote-blocks";
+import {
   DEFAULT_LOGO_LAYOUT,
   normalizeLogoLayout,
   type LogoLayout,
@@ -28,6 +34,7 @@ export type DocumentSettings = {
   signer_basis: string;
   quote_validity_days: number;
   quote_footer: string;
+  quote_print_presets: Record<QuoteTemplate, DocPrintPreset>;
   vat_mode: VatMode;
   vat_rate: number;
   vat_as_line: boolean;
@@ -65,6 +72,7 @@ export const DEFAULT_DOCUMENT_SETTINGS: DocumentSettings = {
   quote_validity_days: 14,
   quote_footer:
     "Предложение действительно 14 дней. Цены указаны без НДС, если иное не оговорено отдельно. Для подтверждения заказа свяжитесь с менеджером.",
+  quote_print_presets: DEFAULT_PRINT_PRESETS,
   vat_mode: "none",
   vat_rate: DEFAULT_VAT_RATE,
   vat_as_line: false,
@@ -109,6 +117,7 @@ const SettingsSchema = z.object({
   signer_basis: z.string().trim().min(1).max(100),
   quote_validity_days: z.coerce.number().int().min(1).max(365),
   quote_footer: z.string().trim().max(1000),
+  quote_print_presets: z.unknown().optional().transform(normalizePrintPresets),
   vat_mode: z.enum(["none", "add", "included"]).default("none"),
   vat_rate: z.coerce.number().min(0).max(30).default(DEFAULT_VAT_RATE),
   vat_as_line: z.boolean().default(false),
@@ -179,5 +188,6 @@ function normalize(row: Record<string, unknown>): DocumentSettings {
     vat_rate: Number(row.vat_rate) || DEFAULT_VAT_RATE,
     vat_as_line: row.vat_as_line === true,
     logo_layout: normalizeLogoLayout(row.logo_layout),
+    quote_print_presets: normalizePrintPresets(row.quote_print_presets),
   };
 }

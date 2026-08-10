@@ -48,6 +48,8 @@ import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
+import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
+import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 
 
@@ -262,6 +264,9 @@ function Page() {
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
   if (error || !quote || !totals) return <div className="p-8 text-destructive">{(error as Error)?.message ?? "КП не найдено"}</div>;
+
+  const printPreset = resolvePrintPreset(quote.template, settings.quote_print_presets, quote.design);
+
 
   const addItem = (init?: Partial<QuoteItem>) =>
     patchItems([
@@ -691,6 +696,17 @@ function Page() {
                         </div>
                       </div>
                     </Field>
+
+                    <div className="rounded-xl border border-border/60 p-3">
+                      <p className="mb-2 text-sm font-medium">Печать: поля и интервалы</p>
+                      <PrintPresetEditor
+                        value={printPreset}
+                        hint="Значения по умолчанию берутся из шаблона в настройках документов. Здесь — только для этого КП."
+                        resetLabel="Вернуть настройки шаблона"
+                        onReset={() => patch({ design: { ...quote.design, ...printOverridesToDesign(null) } })}
+                        onChange={(next) => patch({ design: { ...quote.design, ...printOverridesToDesign(next) } })}
+                      />
+                    </div>
 
                     <LogoHeaderDesigner
                       label="Логотип"

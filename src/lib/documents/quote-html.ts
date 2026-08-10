@@ -5,6 +5,7 @@ import { resolveCompany } from "@/lib/documents/company";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
+import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
 
 import type { Quote, QuoteItem } from "@/lib/quotes-model";
 import { computeTotals, amountToWords } from "@/lib/quotes-model";
@@ -261,6 +262,18 @@ export function buildQuoteHtmlDoc(
   const num = quoteNumberDisplay(quote);
   const validUntil = quoteValidUntil(quote);
   const template = quote.template ?? "classic";
+  // Пресет печати: поля, межстрочный интервал, плотность — те же, что в PDF.
+  const print = resolvePrintPreset(
+    template,
+    (settings as { quote_print_presets?: unknown }).quote_print_presets as never,
+    quote.design as unknown as Record<string, unknown>,
+  );
+  /** Кегли из docCssVars, масштабированные пресетом. */
+  const scaledVars = (css: string) =>
+    print.fontScale === 1
+      ? css
+      : css.replace(/(--fs-[a-z-]+):([\d.]+)px/g, (_m, k: string, v: string) =>
+          `${k}:${Math.round(Number(v) * print.fontScale * 100) / 100}px`);
   const map = buildPlaceholderValues(quote, items, settings);
   const numbers = buildNumericValues(quote, items);
 
@@ -458,11 +471,12 @@ export function buildQuoteHtmlDoc(
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
 <style>
-  :root { ${docCssVars(esc(accent))}; ${templateVars(template)} }
-  @page { size: A4; margin: 11mm 10mm; }
+  :root { ${scaledVars(docCssVars(esc(accent)))}; ${templateVars(template)}
+    --gap-k:${print.blockGap}; --row-k:${print.rowGap}; --lh:${print.lineHeight}; }
+  @page { size: A4; margin: ${printPageMarginCss(print)}; }
   * { box-sizing: border-box; }
-  body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:var(--fs-body); line-height:1.35; }
-  .sheet { max-width: 820px; margin: 0 auto; background:#fff; padding: 18px 22px 22px; }
+  body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:var(--fs-body); line-height:var(--lh); }
+  .sheet { max-width: 820px; margin: 0 auto; background:#fff; padding: calc(18px * var(--gap-k)) 22px calc(22px * var(--gap-k)); }
   h1,h2,h3 { font-family:"Space Grotesk",system-ui,sans-serif; letter-spacing:-0.02em; margin:0; }
   .bar { height:3px; background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff)); border-radius:3px; }
   .head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding:10px 0 8px; border-bottom:1px solid var(--line); }
@@ -478,14 +492,14 @@ export function buildQuoteHtmlDoc(
   .cover p { margin:5px 0 0; color:var(--body); }
   .cover.cover-dark, .cover.cover-dark h1 { color:#fff; }
   .cover.cover-dark p { color:#d1d5db; }
-  h2.section { font-size:var(--fs-section); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin:12px 0 5px; break-after:avoid; page-break-after:avoid; }
+  h2.section { font-size:var(--fs-section); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin:calc(12px * var(--gap-k)) 0 calc(5px * var(--gap-k)); break-after:avoid; page-break-after:avoid; }
   .card { border:1px solid var(--line); background:var(--card-bg); border-radius:var(--radius); padding:8px 10px; break-inside:avoid; page-break-inside:avoid; }
   .card .label { text-transform:uppercase; font-size:var(--fs-card-label); letter-spacing:.12em; color:var(--accent); font-weight:600; }
   .card .name { font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:var(--fs-card-title); margin:2px 0 3px; }
   .card .line { color:var(--muted); font-size:var(--fs-small); }
   table { width:100%; border-collapse:collapse; margin-top:4px; }
-  thead th { background:color-mix(in srgb,var(--accent) 12%,#fff); font-size:var(--fs-doc-kind); text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:5px 6px; }
-  tbody td { padding:5px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  thead th { background:color-mix(in srgb,var(--accent) 12%,#fff); font-size:var(--fs-doc-kind); text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:calc(5px * var(--row-k)) 6px; }
+  tbody td { padding:calc(5px * var(--row-k)) 6px; border-bottom:1px solid var(--line); vertical-align:top; }
   tbody tr { break-inside:avoid; page-break-inside:avoid; }
   td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   td.qty, th.qty { text-align:center; vertical-align:middle; white-space:nowrap; font-variant-numeric:tabular-nums; width:var(--qty-col); }
