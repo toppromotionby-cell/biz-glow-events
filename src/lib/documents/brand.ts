@@ -28,19 +28,19 @@ export const DOC_COLORS = {
 
 /** Кегли в «пикселях макета» (значения HTML-превью). */
 export const DOC_FONT_PX = {
-  brand: 22,
-  docKind: 9.5,
-  docNum: 18,
-  docDate: 11,
-  coverTitle: 24,
-  section: 13,
-  cardLabel: 8.5,
-  cardTitle: 13,
-  body: 12,
-  small: 11,
-  micro: 10,
-  total: 15,
-  footer: 10.5,
+  brand: 17,
+  docKind: 8.5,
+  docNum: 15,
+  docDate: 9.5,
+  coverTitle: 17,
+  section: 10.5,
+  cardLabel: 8,
+  cardTitle: 11.5,
+  body: 10.5,
+  small: 9.5,
+  micro: 8.5,
+  total: 13,
+  footer: 9,
 } as const;
 
 /** Коэффициент перевода «пикселей макета» в pt страницы A4. */
