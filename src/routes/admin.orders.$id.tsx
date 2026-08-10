@@ -396,6 +396,10 @@ function OrderDetail() {
                 <TabsTrigger value="attachments" className="gap-1.5">
                   <Paperclip className="h-3.5 w-3.5" />Вложения
                 </TabsTrigger>
+                <TabsTrigger value="history" className="gap-1.5">
+                  <History className="h-3.5 w-3.5" />История
+                </TabsTrigger>
+
               </TabsList>
 
               <TabsContent value="notes" className="mt-4 space-y-3">
