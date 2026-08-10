@@ -29,13 +29,14 @@ const BASE_PATH: Record<CatalogType, CatalogNavSection["basePath"]> = {
   attractions: "/attractions",
 };
 
-const TABLE: Record<CatalogType, string> = {
+const TABLE = {
   zones: "zones",
   tech_equipment: "tech_equipment",
   services: "services",
   production_items: "production_items",
   attractions: "attractions",
-};
+} as const;
+
 
 export const getCatalogNavigation = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
