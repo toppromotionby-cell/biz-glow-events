@@ -158,13 +158,14 @@ export function AdminCommandPalette() {
               {orders.map((o) => (
                 <CommandItem
                   key={o.id}
-                  value={`order ${o.client_name} ${o.client_email} ${o.id}`}
+                  value={`order ${o.order_number ?? ""} ${o.client_name} ${o.client_email} ${o.id}`}
                   onSelect={() => go("/admin/orders/$id", { id: o.id })}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2 opacity-70" />
                   <div className="flex flex-col min-w-0">
-                    <span className="truncate">{o.client_name || "Без имени"}</span>
+                    <span className="truncate">{o.order_number ? `№ ${o.order_number} · ` : ""}{o.client_name || "Без имени"}</span>
                     <span className="text-xs text-muted-foreground truncate">{o.client_email} · {o.status}</span>
+
                   </div>
                 </CommandItem>
               ))}
