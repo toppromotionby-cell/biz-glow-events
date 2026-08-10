@@ -153,7 +153,7 @@ export function useCheckoutSubmit({
         navigate({
           to: "/order/success/$id",
           params: { id: res.id },
-          search: { t: res.token ?? undefined } as { t?: string },
+          search: { t: res.token ?? undefined },
         });
         return { ok: true as const, id: res.id };
       } catch (err) {
