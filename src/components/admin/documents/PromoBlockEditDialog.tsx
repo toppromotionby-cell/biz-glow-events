@@ -165,13 +165,34 @@ export function PromoBlockEditDialog({
                   }
                 />
               </Field>
+              <div className="sm:col-span-2">
+                <Summary
+                  rows={[
+                    ["Сумма строки", money(lineTotal(item), cur), true],
+                    ...(item.cost
+                      ? ([
+                          ["Себестоимость", money(lineCost(item), cur)],
+                          ["Маржа", money(lineTotal(item) - lineCost(item), cur)],
+                        ] as Array<[string, string]>)
+                      : []),
+                  ]}
+                />
+              </div>
             </div>
           )}
 
           {target === "section" && (
-            <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
-              <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
-            </Field>
+            <div className="space-y-3">
+              <Field label="Название раздела" hint="Переименование применится ко всем позициям раздела">
+                <Input value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
+              </Field>
+              <Summary
+                rows={[
+                  ["Позиций в разделе", String(sectionItems.length)],
+                  ["Сумма раздела", money(sectionItems.reduce((s, it) => s + lineTotal(it), 0), cur), true],
+                ]}
+              />
+            </div>
           )}
 
           {target === "totals" && (
