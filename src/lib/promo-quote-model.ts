@@ -403,8 +403,14 @@ export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): Prom
     note: "",
     includes: [],
     exclude_from_commission: false,
+    included: true,
+    group_key: "",
+    qty_unit: "",
+    rate_unit: "",
+    is_info: false,
     sort_order: 0,
     ...patch,
+
   };
 }
 
