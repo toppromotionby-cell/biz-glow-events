@@ -221,10 +221,22 @@ function EditorPage() {
       .filter((s) => s && s.trim() !== "")
       .join(" · ");
   }, [quote?.company_overrides, settings]);
-  const previewHtml = useMemo(
-    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit, companyLine, checks }) : ""),
-    [quote, items, inlineEdit, companyLine, checks],
+  // В превью не показываем замечания по «нетронутым» пустым строкам —
+  // они только что добавлены, документ не должен сразу краснеть.
+  const previewChecks = useMemo(
+    () =>
+      checks.filter((c) => {
+        if (c.itemIndex == null) return true;
+        const it = items[c.itemIndex];
+        return !it || !isPristinePromoItem(it);
+      }),
+    [checks, items],
   );
+  const previewHtml = useMemo(
+    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit, companyLine, checks: previewChecks }) : ""),
+    [quote, items, inlineEdit, companyLine, previewChecks],
+  );
+
 
 
   /** Двойной клик по блоку превью открывает точечное редактирование. */
