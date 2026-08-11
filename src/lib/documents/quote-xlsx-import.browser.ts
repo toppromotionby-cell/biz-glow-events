@@ -114,7 +114,13 @@ export function rowsFromMatrix(matrix: unknown[][]): ImportResult {
     const row = matrix[i] ?? [];
     const title = cellText(at(row, "title"));
     const filled = row.filter((c) => cellText(c).length > 0).length;
-    if (!title) { if (filled) skipped++; continue; }
+    if (!title) {
+      // Строка-заголовок раздела: единственная заполненная ячейка без чисел.
+      const only = row.map(cellText).filter((c) => c.length > 0);
+      if (only.length === 1 && parseNumber(only[0]) === 0) { currentSection = only[0]; continue; }
+      if (filled) skipped++;
+      continue;
+    }
     // Строка-заголовок раздела: заполнено только наименование, цифр нет.
     const qty = parseNumber(at(row, "qty"));
     const price = parseNumber(at(row, "price"));
