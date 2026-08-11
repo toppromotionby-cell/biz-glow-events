@@ -1,6 +1,7 @@
 import { useRoles } from "@/hooks/use-roles";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 import { QuoteSheetPanel } from "@/components/admin/documents/QuoteSheetPanel";
+import { QuoteImportXlsxDialog } from "@/components/admin/documents/QuoteImportXlsxDialog";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -170,6 +171,7 @@ function Page() {
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [items, setItems] = useState<QuoteItem[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
   const [state, setState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [pending, setPending] = useState<string[]>([]);
@@ -458,6 +460,9 @@ function Page() {
               >
                 <FileSpreadsheet className="mr-2 h-4 w-4" />Выгрузить в Excel
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />Импорт состава из Excel
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
                 <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в библиотеку
               </DropdownMenuItem>
@@ -485,6 +490,19 @@ function Page() {
 
             <TabsContent value="items" className="space-y-3 pt-3">
               <QuoteSheetPanel quoteId={id} />
+              <QuoteImportXlsxDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                quoteId={id}
+                currentCount={items.length}
+                onImport={(imported, mode) =>
+                  patchItems(
+                    mode === "replace"
+                      ? imported.map((it, i) => ({ ...it, sort_order: i }))
+                      : [...items, ...imported].map((it, i) => ({ ...it, sort_order: i })),
+                  )
+                }
+              />
               {canCost && (
                 <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
                   Показывать себестоимость и маржу

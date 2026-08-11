@@ -19,7 +19,8 @@ function argb(hex: string, fallback = "FFF5A623"): string {
   return m ? `FF${m[1].toUpperCase()}` : fallback;
 }
 
-export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]): Promise<void> {
+/** Собирает книгу промо-КП с живыми формулами (без скачивания) — используется и в тестах. */
+export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = "Event Hub";
@@ -247,6 +248,11 @@ export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]
     r.getCell(1).alignment = { wrapText: true };
   }
 
+  return wb;
+}
+
+export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]): Promise<void> {
+  const wb = await buildPromoWorkbook(quote, items);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
