@@ -249,6 +249,7 @@ export function QuoteItemsPanel({
                           value={it.title}
                           onChange={(v) => replace(it.id, { title: v })}
                           fetcher={(term) => fetchItems(term, section)}
+                          labelOf={(h) => h.title}
                           onPick={(h) => replace(it.id, {
                             title: h.title,
                             description: h.description || it.description,
