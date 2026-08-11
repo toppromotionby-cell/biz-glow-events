@@ -178,6 +178,20 @@ export async function renderPromoToDoc(
     else if (r.kind === "extra") rowBg(i + 1, "#fbfbfc");
   });
 
+  // Вертикальное выравнивание — по центру во всей таблице.
+  styling.push({
+    updateTableCellStyle: {
+      tableRange: {
+        tableCellLocation: { tableStartLocation: { index: tableStart }, rowIndex: 0, columnIndex: 0 },
+        rowSpan: layout.rows.length + 1,
+        columnSpan: width,
+      },
+      tableCellStyle: { contentAlignment: "MIDDLE" },
+      fields: "contentAlignment",
+    },
+  });
+
+
   const fresh = await getDoc(documentId);
   const freshTable = lastTable(fresh.body?.content ?? []);
   const freshRows = freshTable?.table?.tableRows ?? [];
