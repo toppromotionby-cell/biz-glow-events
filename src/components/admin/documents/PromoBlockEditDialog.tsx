@@ -91,6 +91,8 @@ export function PromoBlockEditDialog({
   const totals = computePromoTotals(merged, draftItems);
   const cur = merged.currency || "BYN";
   const sectionItems = target === "section" ? items.filter((it) => it.section === (edit.id ?? "")) : [];
+  const rateUnit = item ? rateUnitLabel(item) : "";
+
 
 
   const submit = () => {
