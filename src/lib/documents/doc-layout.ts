@@ -50,6 +50,8 @@ export type DocRow = {
   numbers: Partial<Record<DocColumnKey, number>>;
   item?: PromoItem;
   section?: string;
+  /** Состав позиции («включено») — как в превью под наименованием. */
+  includes: string[];
   /** Позиция участвует в итоге. */
   counted: boolean;
   /** Позиция участвует в базе комиссии. */
@@ -67,6 +69,14 @@ export type DocLayout = {
   computed: PromoTotals;
   accent: string;
   dual: boolean;
+  /** Строка реквизитов компании (под логотипом). */
+  companyLine: string;
+  /** Логотипы: компании и клиента (абсолютные URL). */
+  logos: string[];
+  /** Примечание внизу документа. */
+  footerNote: string;
+  /** Текст-заглушка, если позиций нет. */
+  emptyLabel: string;
 };
 
 /** Базовые доли ширины по ключу (нормализуются по фактическому набору колонок). */
@@ -90,7 +100,13 @@ const nf = (n: number) =>
 const nq = (n: number) =>
   new Intl.NumberFormat("ru-BY", { maximumFractionDigits: 3 }).format(Number.isFinite(n) ? n : 0);
 
-export function buildDocLayout(quote: PromoQuote, items: PromoItem[]): DocLayout {
+export type DocLayoutOptions = { companyLine?: string };
+
+export function buildDocLayout(
+  quote: PromoQuote,
+  items: PromoItem[],
+  opts: DocLayoutOptions = {},
+): DocLayout {
   const computed = computePromoTotals(quote, items);
   const dual = hasSecondUnit(items);
   const rateUnit = soleRateUnit(items);
@@ -139,6 +155,7 @@ export function buildDocLayout(quote: PromoQuote, items: PromoItem[]): DocLayout
     kind,
     cells: {},
     numbers: {},
+    includes: [],
     counted: false,
     commissionable: false,
     ...extra,
@@ -155,6 +172,10 @@ export function buildDocLayout(quote: PromoQuote, items: PromoItem[]): DocLayout
           section: sec.name,
           counted: isCounted(it),
           commissionable: isCounted(it) && !it.exclude_from_commission,
+          includes:
+            quote.show_item_includes && it.includes.length
+              ? it.includes.map((x) => `• ${x.text}${x.note ? ` — ${x.note}` : ""}`)
+              : [],
           cells: {
             title: it.title.trim() || "Новая позиция",
             unit: it.unit,
@@ -223,6 +244,17 @@ export function buildDocLayout(quote: PromoQuote, items: PromoItem[]): DocLayout
     );
   }
 
+  // Прочерки в служебных строках — как в превью.
+  for (const r of rows) {
+    if (r.kind !== "extra") continue;
+    for (const c of columns) {
+      if (c.key === "title" || c.key === "amount") continue;
+      if (!r.cells[c.key]) r.cells[c.key] = "—";
+    }
+  }
+
+
+
   const validUntil = quote.valid_until
     ? new Date(`${quote.valid_until}T00:00:00`).toLocaleDateString("ru-RU")
     : "";
@@ -268,6 +300,12 @@ export function buildDocLayout(quote: PromoQuote, items: PromoItem[]): DocLayout
     computed,
     accent: /^#[0-9a-fA-F]{3,8}$/.test(quote.accent_color) ? quote.accent_color : BRAND_ACCENT,
     dual,
+    companyLine: (opts.companyLine ?? "").trim(),
+    logos: [quote.logo_url, quote.client_logo_url].filter(
+      (u): u is string => typeof u === "string" && /^https?:\/\//.test(u),
+    ),
+    footerNote: (quote.footer_note ?? "").trim(),
+    emptyLabel: "Позиции не добавлены",
   };
 }
 

@@ -68,7 +68,9 @@ export const ensurePromoSheet = createServerFn({ method: "POST" })
       sheetId = created.id;
       url = created.url;
     }
-    await writePromoSheet(sheetId, promo, itemsModel);
+    await writePromoSheet(sheetId, promo, itemsModel, {
+      companyLine: (quote.company_line as string | undefined) ?? undefined,
+    });
     await (context.supabase as never as any)
       .from("promo_quotes")
       .update({ sheet_id: sheetId, sheet_url: url, sheet_synced_at: new Date().toISOString(), sheet_snapshot: rows })
@@ -86,7 +88,9 @@ export const pushPromoToSheet = createServerFn({ method: "POST" })
     const { quote, promo, itemsModel, rows } = await loadPromo(context.supabase as never, data.id);
     const sheetId = quote.sheet_id as string | null;
     if (!sheetId) throw new Error("Для этого промо-КП ещё нет таблицы");
-    await writePromoSheet(sheetId, promo, itemsModel);
+    await writePromoSheet(sheetId, promo, itemsModel, {
+      companyLine: (quote.company_line as string | undefined) ?? undefined,
+    });
     await (context.supabase as never as any)
       .from("promo_quotes")
       .update({ sheet_synced_at: new Date().toISOString(), sheet_snapshot: rows })
@@ -204,11 +208,15 @@ export const applyPromoSheetDiff = createServerFn({ method: "POST" })
 
     // Возвращаем таблицу в согласованное состояние (у новых позиций появились id).
     try {
-      const { rows: fresh, promo: freshPromo, itemsModel: freshModel } = await loadPromo(
-        context.supabase as never,
-        data.id,
-      );
-      await writePromoSheet(sheetId, freshPromo, freshModel);
+      const {
+        rows: fresh,
+        promo: freshPromo,
+        itemsModel: freshModel,
+        quote: freshQuote,
+      } = await loadPromo(context.supabase as never, data.id);
+      await writePromoSheet(sheetId, freshPromo, freshModel, {
+        companyLine: (freshQuote.company_line as string | undefined) ?? undefined,
+      });
       await sb.from("promo_quotes").update({ sheet_snapshot: fresh }).eq("id", data.id);
     } catch (e) {
       console.error("[promo-sheets] re-push failed", e);

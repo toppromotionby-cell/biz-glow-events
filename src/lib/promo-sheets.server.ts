@@ -76,8 +76,8 @@ const empty = (fmt: Cell = {}): Cell => ({ userEnteredFormat: fmt });
 const ALIGN: Record<string, string> = { left: "LEFT", center: "CENTER", right: "RIGHT" };
 
 /** Полное описание листа: значения, формулы и оформление. */
-function buildSheetGrid(quote: PromoQuote, items: PromoItem[]) {
-  const layout = buildDocLayout(quote, items);
+function buildSheetGrid(quote: PromoQuote, items: PromoItem[], opts: { companyLine?: string } = {}) {
+  const layout = buildDocLayout(quote, items, opts);
   const font = resolveDocFont(quote.font_family) === "ubuntu" ? "Ubuntu" : "Inter";
   const visible = layout.columns.map((c) => c.key);
   const keys: string[] = [...visible, ...SERVICE_KEYS];
@@ -101,13 +101,32 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[]) {
   // 0) Скрытая строка ключей — карта колонок для обратного чтения.
   push(keys.map((k) => txt(k === visible[0] ? `__keys:${k}` : k)));
 
-  // 1) Шапка документа.
+  // 1) Шапка документа: логотипы, реквизиты, номер КП, мета.
+  let logoRow: number | null = null;
+  if (layout.logos.length) {
+    logoRow = rows.length;
+    const cells: Cell[] = Array.from({ length: visibleWidth }, () => empty());
+    cells[0] = fx(`=IMAGE("${layout.logos[0]}";1)`, { ...base, verticalAlignment: "MIDDLE" });
+    if (layout.logos[1])
+      cells[visibleWidth - 1] = fx(`=IMAGE("${layout.logos[1]}";1)`, {
+        ...base,
+        horizontalAlignment: "RIGHT",
+        verticalAlignment: "MIDDLE",
+      });
+    push(cells);
+  }
+
   const headLine = (text: string, fmt: Cell) => {
     merges.push({ row: rows.length, from: 0, to: visibleWidth });
     push([txt(text, { ...base, ...fmt })]);
   };
-  const companyLine = (quote.company_overrides as { line?: string } | null)?.line;
-  if (companyLine) headLine(String(companyLine), { textFormat: { fontFamily: font, fontSize: 9, bold: false } });
+  const companyLine =
+    layout.companyLine || (quote.company_overrides as { line?: string } | null)?.line || "";
+  if (companyLine)
+    headLine(String(companyLine), {
+      wrapStrategy: "WRAP",
+      textFormat: { fontFamily: font, fontSize: 9, bold: false },
+    });
   headLine(layout.docTitle, { textFormat: { fontFamily: font, fontSize: 13, bold: true } });
   for (const line of layout.meta)
     headLine(line, {
@@ -171,6 +190,8 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[]) {
       if (c.key === "qty") return numCell(r.numbers.qty ?? 0, fmt);
       if (c.key === "multiplier") return numCell(r.numbers.multiplier ?? 1, fmt);
       if (c.key === "price") return numCell(r.numbers.price ?? 0, fmt);
+      if (c.key === "title" && r.includes.length)
+        return txt(`${r.cells.title ?? ""}\n${r.includes.join("\n")}`, fmt);
       return txt(r.cells[c.key] ?? "", fmt);
     });
 
@@ -192,6 +213,17 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[]) {
     ];
     if (r.kind === "item") itemRowIdx.push(rows.length);
     push([...cells, ...service]);
+  }
+  if (!itemRowIdx.length) {
+    merges.push({ row: rows.length, from: 0, to: visibleWidth });
+    push([
+      txt(layout.emptyLabel, {
+        ...base,
+        borders: BORDERS,
+        horizontalAlignment: "CENTER",
+        textFormat: { fontFamily: font, fontSize: 9, italic: true },
+      }),
+    ]);
   }
   const lastDataRow = rows.length;
   push([]);
@@ -261,11 +293,11 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[]) {
     push(cells);
   }
 
-  if (quote.footer_note) {
+  if (layout.footerNote) {
     push([]);
     merges.push({ row: rows.length, from: 0, to: visibleWidth });
     push([
-      txt(quote.footer_note, {
+      txt(layout.footerNote, {
         ...base,
         wrapStrategy: "WRAP",
         textFormat: { fontFamily: font, fontSize: 9, italic: true },
@@ -273,7 +305,7 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[]) {
     ]);
   }
 
-  return { layout, rows, merges, keys, width, visibleWidth, headerRow };
+  return { layout, rows, merges, keys, width, visibleWidth, headerRow, logoRow };
 }
 
 /** Полностью перерисовывает лист «КП» в фирменном стиле. */
@@ -281,8 +313,9 @@ export async function writePromoSheet(
   spreadsheetId: string,
   quote: PromoQuote,
   items: PromoItem[],
+  opts: { companyLine?: string } = {},
 ): Promise<void> {
-  const grid = buildSheetGrid(quote, items);
+  const grid = buildSheetGrid(quote, items, opts);
   const meta = await getSheetMeta(spreadsheetId);
   const sheet = meta.sheets?.[0]?.properties;
   if (!sheet) throw new Error("В таблице нет листов");
@@ -338,6 +371,17 @@ export async function writePromoSheet(
       },
     });
   });
+
+  if (grid.logoRow != null) {
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: grid.logoRow, endIndex: grid.logoRow + 1 },
+        properties: { pixelSize: 64 },
+        fields: "pixelSize",
+      },
+    });
+  }
+
 
   for (const m of grid.merges) {
     requests.push({
@@ -398,7 +442,8 @@ export function parsePromoSheetValues(values: unknown[][]): PromoSheetRow[] {
   for (let r = 1; r < values.length; r += 1) {
     const row = values[r] ?? [];
     if (isNew && sheetStr(at(row, "__kind")) !== "item") continue;
-    const title = sheetStr(at(row, "title"));
+    // Состав позиции хранится в той же ячейке после переноса строки — отбрасываем.
+    const title = sheetStr(at(row, "title")).split("\n")[0]!.trim();
     if (!title) continue;
     const qty = sheetNum(at(row, "qty") ?? at(row, "__qty"));
     const multiplier = sheetNum(at(row, "multiplier") ?? at(row, "__mul")) || 1;
