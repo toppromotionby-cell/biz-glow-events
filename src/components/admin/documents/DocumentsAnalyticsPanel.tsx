@@ -22,6 +22,64 @@ export function DocumentsAnalyticsPanel() {
         <Metric label="Неоплаченные счета" value={String(s.invoicesUnpaid)} hint={`На сумму ${fmtMoney(s.invoicesUnpaidSum)}`} />
       </div>
 
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="rounded-xl border border-border/60">
+          <div className="border-b border-border/60 px-4 py-3 text-sm font-medium">Топ позиций в сметах</div>
+          {!data.insights.topItems.length && (
+            <div className="p-6 text-center text-sm text-muted-foreground">Пока нет данных по позициям</div>
+          )}
+          <ul className="divide-y divide-border/50">
+            {data.insights.topItems.map((it) => (
+              <li key={it.title} className="flex items-center gap-3 px-4 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm">{it.title}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    {it.section} · включают в {it.includeRate}% смет
+                  </span>
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">×{it.count}</span>
+                <span className="w-24 shrink-0 text-right text-sm tabular-nums">{fmtMoney(it.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="space-y-3">
+          <div className="rounded-xl border border-border/60">
+            <div className="border-b border-border/60 px-4 py-3 text-sm font-medium">Разделы по объёму</div>
+            {!data.insights.topSections.length && (
+              <div className="p-6 text-center text-sm text-muted-foreground">Нет данных</div>
+            )}
+            <ul className="divide-y divide-border/50">
+              {data.insights.topSections.map((s2) => (
+                <li key={s2.section} className="flex items-center gap-3 px-4 py-2">
+                  <span className="min-w-0 flex-1 truncate text-sm">{s2.section}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">×{s2.count}</span>
+                  <span className="w-24 shrink-0 text-right text-sm tabular-nums">{fmtMoney(s2.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-border/60">
+            <div className="border-b border-border/60 px-4 py-3 text-sm font-medium">Чаще всего исключают</div>
+            {!data.insights.mostExcluded.length && (
+              <div className="p-6 text-center text-sm text-muted-foreground">Все позиции идут в итог</div>
+            )}
+            <ul className="divide-y divide-border/50">
+              {data.insights.mostExcluded.map((it) => (
+                <li key={it.title} className="flex items-center gap-3 px-4 py-2">
+                  <span className="min-w-0 flex-1 truncate text-sm">{it.title}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    в итоге {it.includeRate}% · ×{it.count}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-xl border border-border/60">
         <div className="flex items-center gap-2 border-b border-border/60 px-4 py-3 text-sm font-medium">
           <Clock className="h-4 w-4 text-primary" />Напоминания
