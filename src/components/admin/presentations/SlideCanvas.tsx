@@ -11,7 +11,13 @@ import {
   type Rect, type SlideThemeTokens,
 } from "@/lib/presentations/design";
 import { fitSlide, type SlideFit } from "@/lib/presentations/fit";
-import type { PresentationSlide, PresentationTemplate } from "@/lib/presentations/model";
+import {
+  DEFAULT_PRESENTATION_LOGO_LAYOUT,
+  type PresentationLogoLayout,
+  type PresentationSlide,
+  type PresentationTemplate,
+} from "@/lib/presentations/model";
+import { fontStacks, resolveDocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 
 export { SLIDE_W, SLIDE_H, slideTheme };
 
@@ -72,13 +78,42 @@ export type SlideCanvasProps = {
   showWarnings?: boolean;
   /** Инлайн-редактирование заголовка и подзаголовка. */
   onEdit?: (patch: Partial<Pick<PresentationSlide, "title" | "subtitle">>) => void;
+  /** Логотип компании (переопределяет логотип из профиля). */
+  brandLogoUrl?: string | null;
+  /** Логотип клиента — накладывается автоматически. */
+  clientLogoUrl?: string | null;
+  logoLayout?: PresentationLogoLayout;
+  /** Шрифт презентации. */
+  fontFamily?: DocFontChoice;
 };
+
+/** Свободен ли угол слайда (не перекрыт фотоблоком). */
+function cornerFree(frames: Rect[], corner: "tr" | "tl"): boolean {
+  const zone: Rect =
+    corner === "tr"
+      ? { x: SLIDE_W - 320, y: 0, w: 320, h: 150 }
+      : { x: 0, y: 0, w: 320, h: 150 };
+  return !frames.some(
+    (f) => f.x < zone.x + zone.w && f.x + f.w > zone.x && f.y < zone.y + zone.h && f.y + f.h > zone.y,
+  );
+}
 
 export function SlideCanvas(props: SlideCanvasProps) {
   const { slide, company, template, presentationTitle, width, index, total, showWarnings, onEdit } = props;
   const scale = width / SLIDE_W;
   const theme = slideTheme(template, company?.accent_color || "#FF7500");
   const fit = fitSlide(slide);
+  const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
+  const stacks = fontStacks(resolveDocFont(props.fontFamily));
+  const brandLogo = props.brandLogoUrl ?? null;
+  const clientLogo = props.clientLogoUrl ?? null;
+  const isTitleLike = slide.type === "title" || slide.type === "contacts";
+  const showClient =
+    !!clientLogo &&
+    layout.client !== "off" &&
+    (layout.client !== "title-only" || isTitleLike);
+  const showBrandOverlay = !!brandLogo && layout.brand === "always" && !isTitleLike;
+  const clientCorner = cornerFree(fit.layout.frames, "tr") || layout.client === "always" ? "tr" : "tl";
 
   return (
     <div
@@ -93,7 +128,8 @@ export function SlideCanvas(props: SlideCanvasProps) {
           transformOrigin: "top left",
           background: theme.bg,
           color: theme.ink,
-          fontFamily: FONTS.body,
+          fontFamily: stacks.body,
+          ["--slide-font-display" as string]: stacks.display,
           position: "relative",
           overflow: "hidden",
         }}
@@ -108,6 +144,30 @@ export function SlideCanvas(props: SlideCanvasProps) {
           total={total}
           onEdit={onEdit}
         />
+        {showClient && (
+          <div
+            style={{
+              position: "absolute",
+              top: 36,
+              [clientCorner === "tr" ? "right" : "left"]: 56,
+              height: 46 * layout.scale,
+            }}
+          >
+            <Logo path={clientLogo} height={46 * layout.scale} />
+          </div>
+        )}
+        {showBrandOverlay && (
+          <div
+            style={{
+              position: "absolute",
+              top: 36,
+              [clientCorner === "tr" ? "left" : "right"]: 56,
+              height: 40 * layout.scale,
+            }}
+          >
+            <Logo path={brandLogo} height={40 * layout.scale} />
+          </div>
+        )}
       </div>
       {showWarnings && fit.warnings.length > 0 && (
         <div
@@ -172,7 +232,7 @@ function SlideBody({
   const c = slide.content;
   const ts = fit.type;
   const { layout } = fit;
-  const heading = { fontFamily: FONTS.display, letterSpacing: "-0.03em" } as const;
+  const heading = { fontFamily: "var(--slide-font-display, " + FONTS.display + ")", letterSpacing: "-0.03em" } as const;
 
   const footer = (
     <div
