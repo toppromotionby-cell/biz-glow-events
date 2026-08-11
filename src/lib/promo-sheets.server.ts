@@ -322,7 +322,27 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[], opts: { companyLi
     ]);
   }
 
-  return { layout, rows, merges, keys, width, visibleWidth, headerRow, logoRow };
+  // 5) Автообъединение: пустые ячейки прилипают к соседней слева заполненной.
+  const covered = (row: number, col: number) =>
+    merges.some((m) => m.row === row && col >= m.from && col < m.to) ||
+    rects.some((r) => row >= r.row && row < r.rowEnd && col >= r.from && col < r.to);
+  const hasValue = (cell: Cell | undefined) => cell?.userEnteredValue != null;
+
+  rows.forEach((cells, rowIdx) => {
+    let start = 0;
+    while (start < visibleWidth) {
+      if (covered(rowIdx, start)) {
+        start += 1;
+        continue;
+      }
+      let end = start + 1;
+      while (end < visibleWidth && !covered(rowIdx, end) && !hasValue(cells[end])) end += 1;
+      if (end - start > 1) merges.push({ row: rowIdx, from: start, to: end });
+      start = end;
+    }
+  });
+
+  return { layout, rows, merges, rects, keys, width, visibleWidth, headerRow, headStart, headEnd };
 }
 
 /** Полностью перерисовывает лист «КП» в фирменном стиле. */
