@@ -36,6 +36,7 @@ import {
   formatTotalQty,
   formatNumber,
   hasSecondUnit,
+  isServiceOnlyRow,
   rateUnitLabel,
   soleRateUnit,
   lineTotal,
