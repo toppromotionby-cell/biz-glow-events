@@ -30,13 +30,16 @@ app.get("/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
 function buildImap(cfg, over = {}) {
   const host = over.imap_host ?? cfg.imap_host;
   const secure = over.imap_secure ?? cfg.imap_secure ?? true;
+  const fast = over.fast_timeouts === true;
   return new ImapFlow({
     host,
     port: over.imap_port ?? cfg.imap_port ?? 993,
     secure,
     auth: { user: over.username ?? cfg.username, pass: cfg.password },
     logger: false,
-    socketTimeout: 60_000,
+    connectionTimeout: fast ? 8_000 : 20_000,
+    greetingTimeout: fast ? 8_000 : 20_000,
+    socketTimeout: fast ? 12_000 : 60_000,
     tls: { servername: host, rejectUnauthorized: (over.allow_invalid_cert ?? cfg.allow_invalid_cert) ? false : true },
   });
 }
@@ -45,18 +48,33 @@ function buildSmtp(cfg, over = {}) {
   const host = over.smtp_host ?? cfg.smtp_host;
   const secure = over.smtp_secure ?? cfg.smtp_secure ?? true;
   const port = over.smtp_port ?? cfg.smtp_port ?? 465;
+  const fast = over.fast_timeouts === true;
   return nodemailer.createTransport({
     host,
     port,
     secure,
     requireTLS: !secure && port !== 25,
     auth: { user: over.username ?? cfg.username, pass: cfg.password },
-    connectionTimeout: 20_000,
-    greetingTimeout: 20_000,
-    socketTimeout: 30_000,
+    connectionTimeout: fast ? 8_000 : 20_000,
+    greetingTimeout: fast ? 8_000 : 20_000,
+    socketTimeout: fast ? 12_000 : 30_000,
     tls: { servername: host, rejectUnauthorized: (over.allow_invalid_cert ?? cfg.allow_invalid_cert) ? false : true },
   });
 }
+
+// Жёсткая обёртка: не даём попытке зависнуть дольше лимита.
+function withDeadline(promise, ms, label) {
+  let timer;
+  const guard = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const e = new Error(`Таймаут ${Math.round(ms / 1000)} сек: ${label}`);
+      e.code = "ETIMEDOUT";
+      reject(e);
+    }, ms);
+  });
+  return Promise.race([promise, guard]).finally(() => clearTimeout(timer));
+}
+
 
 const FOLDER_KIND = (special) => {
   const s = (special || "").toLowerCase().replace(/^\\/, "");
