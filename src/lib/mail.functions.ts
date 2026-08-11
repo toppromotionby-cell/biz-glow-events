@@ -11,6 +11,7 @@ import {
   MailWorkerError,
   type MailAccountCfg,
 } from "@/lib/mail-worker.server";
+import { mailErrorHint, type MailStep, type MailSuggestion } from "@/lib/mail-diagnostics";
 
 type SbClient = SupabaseClient<any, any, any>;
 
@@ -104,16 +105,22 @@ export const testMailAccount = createServerFn({ method: "POST" })
       const cfg: MailAccountCfg =
         "accountId" in data ? await loadAccountCfg(context.supabase, data.accountId) : data;
 
+      type WorkerTest = {
+        ok?: boolean;
+        error?: string;
+        error_kind?: string;
+        steps?: MailStep[];
+        suggestion?: MailSuggestion | null;
+      };
+
       let ok = false;
       let status: number | null = null;
       let message = "";
       let details: unknown = null;
-      let result: { ok: boolean; error?: string } = { ok: false };
+      let result: WorkerTest = { ok: false };
 
       try {
-        result = await callMailWorker<{ ok: boolean; error?: string }>("/test", cfg, {
-          timeoutMs: 90_000,
-        });
+        result = await callMailWorker<WorkerTest>("/test", cfg, { timeoutMs: 120_000 });
         ok = result.ok === true;
         status = 200;
         message = ok ? "OK" : (result.error ?? "Unknown error");
@@ -123,14 +130,41 @@ export const testMailAccount = createServerFn({ method: "POST" })
         if (err instanceof MailWorkerError) {
           status = err.status || null;
           message = err.message;
+          if (err.data && typeof err.data === "object") result = err.data as WorkerTest;
         } else {
           message = err instanceof Error ? err.message : String(err);
         }
-        details = { error: message, status };
-        result = { ok: false, error: message };
+        details = result.steps ? result : { error: message, status };
+        result = { ...result, ok: false, error: result.error ?? message };
       }
 
+      const steps: MailStep[] = result.steps ?? [];
+      const failed = steps.find((s) => !s.ok);
+      const hint = ok
+        ? null
+        : mailErrorHint(failed?.kind ?? result.error_kind, failed?.step);
+
       const duration = Date.now() - started;
+
+      // Автоприменение рабочих настроек, найденных подбором.
+      let applied = false;
+      const sug = result.suggestion ?? null;
+      if (ok && accountId && sug) {
+        const patch: Record<string, unknown> = {};
+        if (sug.username && sug.username !== cfg.username) patch.username = sug.username;
+        if (sug.imap_port && sug.imap_port !== cfg.imap_port) patch.imap_port = sug.imap_port;
+        if (sug.imap_secure !== cfg.imap_secure) patch.imap_secure = sug.imap_secure;
+        if (sug.smtp_port && sug.smtp_port !== cfg.smtp_port) patch.smtp_port = sug.smtp_port;
+        if (sug.smtp_secure !== cfg.smtp_secure) patch.smtp_secure = sug.smtp_secure;
+        if (Object.keys(patch).length > 0) {
+          const { error: applyErr } = await context.supabase
+            .from("mail_accounts")
+            .update(patch as never)
+            .eq("id", accountId);
+          if (applyErr) console.error("mail settings auto-apply failed:", applyErr.message);
+          else applied = true;
+        }
+      }
 
       if (accountId) {
         const logRow = {
@@ -149,7 +183,7 @@ export const testMailAccount = createServerFn({ method: "POST" })
               .from("mail_accounts")
               .update({
                 status: ok ? "active" : "error",
-                sync_error: ok ? null : message.slice(0, 1000),
+                sync_error: ok ? null : `${message}${hint ? ` — ${hint}` : ""}`.slice(0, 1000),
                 last_sync_at: ok ? new Date().toISOString() : undefined,
               } as never)
               .eq("id", accountId),
@@ -165,9 +199,14 @@ export const testMailAccount = createServerFn({ method: "POST" })
         ok,
         status_code: status,
         message,
+        hint,
+        steps: toJson(steps) as unknown as MailStep[],
+        suggestion: sug,
+        applied,
         duration_ms: duration,
         error: result.error ?? null,
       };
+
     } catch (fatal) {
       const msg = fatal instanceof Error ? fatal.message : String(fatal);
       return {

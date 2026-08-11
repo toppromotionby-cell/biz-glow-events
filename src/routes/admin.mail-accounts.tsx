@@ -14,6 +14,7 @@ import {
 } from "@/lib/mail-accounts.functions";
 import { accountCreateSchema, accountUpdateSchema } from "@/lib/mail-accounts.schema";
 import { testMailAccount, listMailAccountChecks } from "@/lib/mail.functions";
+import { MAIL_PRESETS, type MailTestResult } from "@/lib/mail-diagnostics";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,7 @@ function MailAccountsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<(MailTestResult & { email?: string }) | null>(null);
 
   const saveM = useMutation({
     mutationFn: async (f: FormState) => {
@@ -158,23 +160,23 @@ function MailAccountsPage() {
   async function handleTest(id: string) {
     setTestingId(id);
     try {
-      const raw = (await test({ data: { accountId: id } })) as
-        | {
-            ok?: boolean;
-            status_code?: number | null;
-            message?: string;
-            error?: string;
-          }
-        | undefined;
-      const r = raw ?? {};
+      const raw = (await test({ data: { accountId: id } })) as MailTestResult | undefined;
       if (!raw) {
         toast.error("Не удалось получить ответ от сервера");
       } else {
-        const detail = `${r.status_code ?? "—"} · ${r.message ?? r.error ?? ""}`.trim();
-        if (r.ok) toast.success(`Соединение OK · ${detail}`);
-        else if (r.status_code === 504)
+        const email = accounts.find((a) => a.id === id)?.email;
+        setTestResult({ ...raw, email });
+        if (raw.ok) {
+          toast.success(
+            raw.applied
+              ? "Соединение OK — настройки подобраны и сохранены"
+              : "Соединение OK",
+          );
+        } else if (raw.status_code === 504) {
           toast.error("Воркер просыпается — попробуйте ещё раз через 10–20 секунд");
-        else toast.error(`Ошибка: ${detail}`);
+        } else {
+          toast.error(raw.hint ?? raw.message ?? "Ошибка подключения");
+        }
       }
     } catch (e) {
       toast.error("Ошибка: " + (e instanceof Error ? e.message : String(e)));
@@ -285,6 +287,8 @@ function MailAccountsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TestResultDialog value={testResult} onClose={() => setTestResult(null)} />
 
       <AccountDialog
         value={editing}
@@ -404,15 +408,43 @@ function AccountDialog({
 }) {
   const [form, setForm] = useState<FormState>(value ?? EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [preset, setPreset] = useState<string | null>(null);
+  const presetNote = MAIL_PRESETS.find((p) => p.id === preset)?.note ?? null;
+
+  function applyPreset(id: string) {
+    const p = MAIL_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setPreset(id);
+    setErrors({});
+    setForm((f) => ({
+      ...f,
+      imap_host: p.imap_host,
+      imap_port: p.imap_port,
+      imap_secure: p.imap_secure,
+      smtp_host: p.smtp_host,
+      smtp_port: p.smtp_port,
+      smtp_secure: p.smtp_secure,
+      username: p.loginIsEmail ? f.email || f.username : f.username,
+    }));
+  }
   useEffect(() => {
     if (value) {
       setForm(value);
       setErrors({});
+      setPreset(MAIL_PRESETS.find((p) => p.imap_host === value.imap_host)?.id ?? null);
     }
   }, [value]);
 
   function update<K extends keyof FormState>(k: K, v: FormState[K]) {
-    setForm((f) => ({ ...f, [k]: v }));
+    setForm((f) => {
+      const next = { ...f, [k]: v } as FormState;
+      // Для провайдеров, где логин = адрес ящика, держим поле логина синхронным.
+      const p = MAIL_PRESETS.find((x) => x.id === preset);
+      if (k === "email" && p?.loginIsEmail && (!f.username || f.username === f.email)) {
+        next.username = String(v);
+      }
+      return next;
+    });
     if (errors[k as string]) {
       setErrors((e) => {
         const n = { ...e };
@@ -460,9 +492,31 @@ function AccountDialog({
         <DialogHeader>
           <DialogTitle>{value?.id ? "Редактировать ящик" : "Новый ящик"}</DialogTitle>
           <DialogDescription>
-            Для Gmail/Yandex/Mail.ru используйте пароль приложения, а не основной пароль аккаунта.
+            Выберите провайдера — хосты и порты подставятся автоматически. Для hoster.by логин — полный
+            адрес ящика, пароль — от самого ящика (не от личного кабинета).
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Пресет:</span>
+          {MAIL_PRESETS.map((p) => (
+            <Button
+              key={p.id}
+              type="button"
+              size="sm"
+              variant={preset === p.id ? "default" : "outline"}
+              onClick={() => applyPreset(p.id)}
+            >
+              {p.label}
+            </Button>
+          ))}
+          <Button type="button" size="sm" variant={preset === null ? "default" : "outline"} onClick={() => setPreset(null)}>
+            Вручную
+          </Button>
+        </div>
+        {presetNote && (
+          <p className="text-xs text-muted-foreground rounded-md border bg-muted/40 p-3">{presetNote}</p>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Email" error={errors.email}>
@@ -549,5 +603,71 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
+  );
+}
+
+function TestResultDialog({
+  value,
+  onClose,
+}: {
+  value: (MailTestResult & { email?: string }) | null;
+  onClose: () => void;
+}) {
+  const steps = value?.steps ?? [];
+  return (
+    <Dialog open={!!value} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {value?.ok ? "Подключение работает" : "Подключение не удалось"}
+          </DialogTitle>
+          <DialogDescription>
+            {value?.email ? `${value.email} · ` : ""}
+            {value?.duration_ms != null ? `${Math.round(value.duration_ms / 100) / 10} c` : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          {steps.map((s) => (
+            <div key={s.step} className="flex gap-2 text-sm">
+              {s.ok ? (
+                <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              )}
+              <div className="min-w-0">
+                <div className="font-medium uppercase text-xs tracking-wider">
+                  {s.step === "imap" ? "IMAP · входящие" : "SMTP · отправка"}
+                </div>
+                <div className="text-muted-foreground break-words">
+                  {s.ok ? s.detail : (s.message ?? "ошибка")}
+                </div>
+                {!s.ok && s.response && (
+                  <div className="text-xs text-muted-foreground/80 break-words">{s.response}</div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {!value?.ok && value?.hint && (
+            <p className="text-sm rounded-md border border-destructive/40 bg-destructive/10 p-3">
+              {value.hint}
+            </p>
+          )}
+          {value?.ok && value.applied && (
+            <p className="text-sm rounded-md border bg-muted/40 p-3">
+              Рабочие параметры подобраны автоматически и сохранены в ящике.
+            </p>
+          )}
+          {steps.length === 0 && (
+            <p className="text-sm text-muted-foreground break-words">{value?.message}</p>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Закрыть</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
