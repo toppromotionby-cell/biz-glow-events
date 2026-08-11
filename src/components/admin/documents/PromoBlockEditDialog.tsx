@@ -15,12 +15,15 @@ import { normalizeVatMode } from "@/lib/documents/vat";
 import { VatSettings } from "@/components/admin/VatSettings";
 import {
   computePromoTotals,
+  explainLine,
   lineCost,
   lineTotal,
+  rateUnitLabel,
   type PromoDiscountType,
   type PromoItem,
   type PromoQuote,
 } from "@/lib/promo-quote-model";
+
 
 export type PromoEditTarget = { target: string; id: string | null };
 
