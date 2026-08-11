@@ -1,4 +1,5 @@
 import { useRoles } from "@/hooks/use-roles";
+import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -626,10 +627,16 @@ function EditorPage() {
             <PromoTotalsPanel quote={quote} totals={totals} showMargin={showCost} />
             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" />Превью документа</span>
-              <label className="flex items-center gap-2">
-                <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
-                Правка по двойному клику
-              </label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2">
+                  <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
+                  Правка по двойному клику
+                </label>
+                <DetachedPreviewButton
+                  html={`<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>${PROMO_DOC_CSS}</style></head><body style="background:#fff;padding:24px">${previewHtml}</body></html>`}
+                  title={`Превью · ${quote.title || "КП промо"}`}
+                />
+              </div>
             </div>
             <div className="max-h-[70vh] overflow-auto rounded-xl border border-border bg-white p-4">
               <style>{PROMO_DOC_CSS}</style>
