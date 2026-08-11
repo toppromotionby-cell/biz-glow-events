@@ -155,6 +155,15 @@ export async function harvestKnowledge(input: KnowledgeHarvest): Promise<void> {
     }
 
     await Promise.allSettled(jobs);
+
+    // Периодическая фоновая уборка: база знаний хранит только востребованные данные.
+    if (Math.random() < 0.05) {
+      try {
+        await runKnowledgeHygiene();
+      } catch (err) {
+        console.error("[doc-knowledge] auto hygiene failed", err);
+      }
+    }
   } catch (error) {
     console.error("[doc-knowledge] harvest failed", error);
   }
