@@ -109,3 +109,23 @@ export const syncCatalogKnowledgeFn = createServerFn({ method: "POST" })
     const { syncCatalogKnowledge } = await import("@/lib/doc-knowledge.server");
     return syncCatalogKnowledge();
   });
+
+import type { ItemBrowseHit } from "@/lib/doc-knowledge.server";
+
+export type { ItemBrowseHit };
+
+/** Каталог позиций базы знаний для массового добавления в КП/смету. */
+export const browseKnowledgeItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      term: z.string().max(200).optional(),
+      section: z.string().max(120).optional(),
+      limit: z.number().int().min(1).max(200).optional(),
+    }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<{ rows: ItemBrowseHit[]; sections: string[] }> => {
+    await assertStaff(context as never);
+    const { browseItems } = await import("@/lib/doc-knowledge.server");
+    return browseItems(data);
+  });
