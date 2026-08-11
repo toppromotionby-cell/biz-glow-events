@@ -158,7 +158,8 @@ export const createPromoQuote = createServerFn({ method: "POST" })
       group_key: String(it.group_key ?? ""),
       qty_unit: String(it.qty_unit ?? ""),
       rate_unit: String(it.rate_unit ?? ""),
-      rate_qty: Number(it.rate_qty ?? it.multiplier ?? 1),
+      rate_qty: Number(it.multiplier ?? 1),
+
       is_info: it.is_info === true,
       sort_order: i,
     }));
