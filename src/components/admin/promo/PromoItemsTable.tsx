@@ -17,8 +17,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SortableList } from "@/components/admin/SortableList";
-import { SuggestInput } from "@/components/admin/SuggestInput";
-import { useDocSuggest } from "@/hooks/use-doc-suggest";
+import { NumField, TextCommitField } from "@/components/admin/field-kit";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
   duplicatePromoSection, formatMoney, isCounted, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
@@ -42,7 +41,6 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const [deleteSection, setDeleteSection] = useState<string | null>(null);
 
   const sectionNames = useMemo(() => listPromoSections(items), [items]);
-  const { fetchItems } = useDocSuggest();
   const sections = useMemo(
     () =>
       sectionNames.map((name) => ({
@@ -382,9 +380,6 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
         </AlertDialogContent>
       </AlertDialog>
 
-      <datalist id="promo-section-suggestions">
-        {PROMO_SECTION_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
-      </datalist>
     </div>
   );
 }
