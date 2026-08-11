@@ -71,13 +71,30 @@ export function buildPromoQuoteBody(
   const sections = groupBySection(items);
   const accent = /^#[0-9a-fA-F]{3,8}$/.test(quote.accent_color) ? quote.accent_color : BRAND_ACCENT;
 
+  // Вторая единица («час», «смена») показывается отдельными колонками — только
+  // если она заполнена хотя бы у одной позиции. Иначе таблица как раньше.
+  const dual = hasSecondUnit(items);
+  const rateUnit = soleRateUnit(items);
+
   const cols: Array<{ label: string; cls: string }> = [{ label: "Наименование", cls: "c-title" }];
   cols.push({ label: "Ед. изм.", cls: "c-unit" });
   if (quote.show_qty) cols.push({ label: "Кол-во", cls: "c-num" });
+  if (dual) {
+    cols.push({ label: "Ед. 2", cls: "c-unit" });
+    cols.push({ label: "Кол-во 2", cls: "c-num" });
+  }
   if (quote.show_total_qty) cols.push({ label: "Всего", cls: "c-num" });
-  cols.push({ label: "Цена за ед.", cls: "c-money" });
+  cols.push({ label: rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.", cls: "c-money" });
   cols.push({ label: `Всего${t.vatMode === "add" ? ", без НДС" : t.vatMode === "included" ? ", с НДС" : ""}`, cls: "c-money" });
   if (quote.show_notes) cols.push({ label: "Примечания", cls: "c-note" });
+
+  /** Ячейки «Ед. изм. … Всего» для служебных строк (управление, комиссия, НДС). */
+  const midCells = (unit: string) =>
+    `<td class="c-unit">${esc(unit)}</td>` +
+    (quote.show_qty ? '<td class="c-num">—</td>' : "") +
+    (dual ? '<td class="c-unit">—</td><td class="c-num">—</td>' : "") +
+    (quote.show_total_qty ? '<td class="c-num">—</td>' : "");
+
 
   const colCount = cols.length;
 
