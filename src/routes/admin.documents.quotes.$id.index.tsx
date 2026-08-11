@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ArrowLeft, Download, ExternalLink, History, Plus, Search, Send,
-  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation,
+  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation, FileSpreadsheet,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -448,6 +448,16 @@ function Page() {
                 <ExternalLink className="mr-2 h-4 w-4" />HTML-версия
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={async () => {
+                  try {
+                    const { exportQuoteXlsx } = await import("@/lib/documents/quote-xlsx.browser");
+                    await exportQuoteXlsx(quote, items);
+                  } catch (e) { toast.error((e as Error).message); }
+                }}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />Выгрузить в Excel
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
                 <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в библиотеку
               </DropdownMenuItem>
