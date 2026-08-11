@@ -34,6 +34,10 @@ import {
   computePromoTotals,
   groupBySection,
   formatTotalQty,
+  formatNumber,
+  hasSecondUnit,
+  rateUnitLabel,
+  soleRateUnit,
   lineTotal,
   promoNumberDisplay,
   type PromoItem as PromoItemT,
@@ -1957,20 +1961,32 @@ export async function buildPromoQuotePdf(
   gap(ctx, 6);
   const tableW = PAGE_W - MARGIN_X * 2;
   const showNotes = quote.show_notes;
+  // Вторая единица («час», «смена») — отдельные колонки, только если она задана.
+  const dual = hasSecondUnit(items);
+  const rateUnit = soleRateUnit(items);
+  const priceTitle = rateUnit ? `Цена за ${rateUnit}` : "Цена";
+  const dualCols: Col[] = dual
+    ? [
+        { title: "Ед. 2", key: "unit2", width: tableW * 0.08, align: "center" },
+        { title: "Кол-во 2", key: "qty2", width: tableW * 0.08, align: "center" },
+      ]
+    : [];
   const cols: Col[] = showNotes
     ? [
-        { title: "Наименование", key: "title", width: tableW * 0.3 },
-        { title: "Ед. изм.", key: "unit", width: tableW * 0.11, align: "center" },
+        { title: "Наименование", key: "title", width: tableW * (dual ? 0.24 : 0.3) },
+        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.09 : 0.11), align: "center" },
         { title: "Кол-во", key: "qty", width: tableW * 0.08, align: "center" },
-        { title: "Цена", key: "price", width: tableW * 0.12, align: "right" },
+        ...dualCols,
+        { title: priceTitle, key: "price", width: tableW * 0.12, align: "right" },
         { title: "Сумма", key: "sum", width: tableW * 0.13, align: "right" },
-        { title: "Примечания", key: "note", width: tableW * 0.26 },
+        { title: "Примечания", key: "note", width: tableW * (dual ? 0.18 : 0.26) },
       ]
     : [
-        { title: "Наименование", key: "title", width: tableW * 0.46 },
-        { title: "Ед. изм.", key: "unit", width: tableW * 0.14, align: "center" },
+        { title: "Наименование", key: "title", width: tableW * (dual ? 0.34 : 0.46) },
+        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.11 : 0.14), align: "center" },
         { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center" },
-        { title: "Цена", key: "price", width: tableW * 0.15, align: "right" },
+        ...dualCols,
+        { title: priceTitle, key: "price", width: tableW * 0.15, align: "right" },
         { title: "Сумма", key: "sum", width: tableW * 0.15, align: "right" },
       ];
 
@@ -1985,7 +2001,9 @@ export async function buildPromoQuotePdf(
             ? it.includes.map((inc) => `${safe(inc.text)}${inc.note ? ` — ${safe(inc.note)}` : ""}`)
             : undefined,
         unit: safe(it.unit),
-        qty: formatTotalQty(it),
+        qty: dual ? formatNumber(it.qty) : formatTotalQty(it),
+        unit2: rateUnitLabel(it) || "—",
+        qty2: rateUnitLabel(it) ? formatNumber(it.multiplier) : "—",
         price: it.price ? money(it.price) : "",
         sum: lineTotal(it) ? money(lineTotal(it)) : "",
         note: safe(it.note),

@@ -333,6 +333,21 @@ export function formatTotalQty(it: PromoItem): string {
   return u ? `${nfQty(lineQty(it))} ${u}` : nfQty(lineQty(it));
 }
 
+/** Есть ли в документе хотя бы одна позиция со второй единицей («час», «смена»). */
+export function hasSecondUnit(items: PromoItem[]): boolean {
+  return items.some((it) => rateUnitLabel(it) !== "");
+}
+
+/** Единственная вторая единица на весь документ («час») либо «», если их несколько. */
+export function soleRateUnit(items: PromoItem[]): string {
+  const set = new Set(items.map(rateUnitLabel).filter(Boolean));
+  return set.size === 1 ? [...set][0]! : "";
+}
+
+/** Число без единицы — для отдельных колонок «Кол-во» / «Кол-во 2». */
+export const formatNumber = (n: number) => nfQty(num(n, 0));
+
+
 /** «2 чел × 4 час × 25 = 200» — человекочитаемая расшифровка строки. */
 export function explainLine(it: PromoItem): string {
   const parts = [formatQty(it)];

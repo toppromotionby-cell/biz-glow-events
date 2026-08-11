@@ -4,6 +4,9 @@ import { downloadBlob } from "@/lib/download";
 import {
   computePromoTotals,
   groupBySection,
+  hasSecondUnit,
+  rateUnitLabel,
+  soleRateUnit,
   lineQty,
   lineTotal,
   promoFileName,
@@ -31,14 +34,21 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
   const t = computePromoTotals(quote, items);
 
   // ==== колонки ====
-  type ColKey = "title" | "unit" | "qty" | "total_qty" | "price" | "sum" | "note";
+  // Вторая единица («час», «смена») — отдельные колонки, только если она заполнена.
+  const dual = hasSecondUnit(items);
+  const rateUnit = soleRateUnit(items);
+  type ColKey = "title" | "unit" | "qty" | "unit2" | "qty2" | "total_qty" | "price" | "sum" | "note";
   const cols: Array<{ key: ColKey; header: string; width: number }> = [
     { key: "title", header: "Наименование", width: 46 },
     { key: "unit", header: "Ед. изм.", width: 14 },
   ];
   if (quote.show_qty) cols.push({ key: "qty", header: "Кол-во", width: 9 });
+  if (dual) {
+    cols.push({ key: "unit2", header: "Ед. 2", width: 10 });
+    cols.push({ key: "qty2", header: "Кол-во 2", width: 10 });
+  }
   if (quote.show_total_qty) cols.push({ key: "total_qty", header: "Всего", width: 9 });
-  cols.push({ key: "price", header: "Цена за ед.", width: 14 });
+  cols.push({ key: "price", header: rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.", width: 14 });
   cols.push({ key: "sum", header: `Всего${quote.vat_enabled ? ", без НДС" : ""}`, width: 16 });
   if (quote.show_notes) cols.push({ key: "note", header: "Примечания", width: 60 });
   ws.columns = cols.map((c) => ({ width: c.width }));
@@ -106,6 +116,8 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
         title: `${it.title}${incText}`,
         unit: it.unit,
         qty: it.qty,
+        unit2: rateUnitLabel(it),
+        qty2: rateUnitLabel(it) ? it.multiplier : "",
         total_qty: lineQty(it),
         price: it.price,
         sum: null,
@@ -117,7 +129,9 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
       const qtyRef = quote.show_total_qty
         ? `${colLetter("total_qty")}${rn}`
         : quote.show_qty
-          ? `${colLetter("qty")}${rn}`
+          ? dual && rateUnitLabel(it)
+            ? `${colLetter("qty")}${rn}*${colLetter("qty2")}${rn}`
+            : `${colLetter("qty")}${rn}`
           : null;
       const sumCell = row.getCell(cols.findIndex((c) => c.key === "sum") + 1);
       sumCell.value = qtyRef
@@ -130,8 +144,16 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
         cell.alignment = { vertical: "top", wrapText: true };
       });
       if (quote.show_qty) row.getCell(cols.findIndex((c) => c.key === "qty") + 1).alignment = { horizontal: "center" };
-      if (quote.show_total_qty)
-        row.getCell(cols.findIndex((c) => c.key === "total_qty") + 1).alignment = { horizontal: "center" };
+      if (quote.show_total_qty) {
+        const tq = row.getCell(cols.findIndex((c) => c.key === "total_qty") + 1);
+        tq.alignment = { horizontal: "center" };
+        if (dual && rateUnitLabel(it))
+          tq.value = {
+            formula: `${colLetter("qty")}${rn}*${colLetter("qty2")}${rn}`,
+            result: lineQty(it),
+          };
+      }
+      if (dual) row.getCell(cols.findIndex((c) => c.key === "qty2") + 1).alignment = { horizontal: "center" };
       row.getCell(cols.findIndex((c) => c.key === "price") + 1).numFmt = NUM_FMT;
       sumCell.numFmt = NUM_FMT;
     }
