@@ -37,7 +37,13 @@ async function loadPromo(supabase: never, id: string) {
     note: it.note,
     rate_unit: it.rate_unit,
   }));
-  return { quote: quote as Row, rawItems: ((items ?? []) as Row[]), rows };
+  return {
+    quote: quote as Row,
+    promo: normalizePromoQuote(quote as Row),
+    itemsModel: raw,
+    rawItems: ((items ?? []) as Row[]),
+    rows,
+  };
 }
 
 function sheetTitle(quote: Row) {
@@ -52,8 +58,8 @@ export const ensurePromoSheet = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ url: string; sheetId: string }> => {
     await assertStaff(context);
-    const { createPromoSpreadsheet, writePromoRows } = await import("@/lib/promo-sheets.server");
-    const { quote, rows } = await loadPromo(context.supabase as never, data.id);
+    const { createPromoSpreadsheet, writePromoSheet } = await import("@/lib/promo-sheets.server");
+    const { quote, promo, itemsModel, rows } = await loadPromo(context.supabase as never, data.id);
 
     let sheetId = (quote.sheet_id as string | null) ?? null;
     let url = (quote.sheet_url as string | null) ?? null;
@@ -62,7 +68,7 @@ export const ensurePromoSheet = createServerFn({ method: "POST" })
       sheetId = created.id;
       url = created.url;
     }
-    await writePromoRows(sheetId, rows);
+    await writePromoSheet(sheetId, promo, itemsModel);
     await (context.supabase as never as any)
       .from("promo_quotes")
       .update({ sheet_id: sheetId, sheet_url: url, sheet_synced_at: new Date().toISOString(), sheet_snapshot: rows })
@@ -76,11 +82,11 @@ export const pushPromoToSheet = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     await assertStaff(context);
-    const { writePromoRows } = await import("@/lib/promo-sheets.server");
-    const { quote, rows } = await loadPromo(context.supabase as never, data.id);
+    const { writePromoSheet } = await import("@/lib/promo-sheets.server");
+    const { quote, promo, itemsModel, rows } = await loadPromo(context.supabase as never, data.id);
     const sheetId = quote.sheet_id as string | null;
     if (!sheetId) throw new Error("Для этого промо-КП ещё нет таблицы");
-    await writePromoRows(sheetId, rows);
+    await writePromoSheet(sheetId, promo, itemsModel);
     await (context.supabase as never as any)
       .from("promo_quotes")
       .update({ sheet_synced_at: new Date().toISOString(), sheet_snapshot: rows })
@@ -124,7 +130,7 @@ export const applyPromoSheetDiff = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ applied: number; total: number }> => {
     await assertStaff(context);
     const sb = context.supabase as never as any;
-    const { readPromoRows, diffPromoRows, writePromoRows } = await import("@/lib/promo-sheets.server");
+    const { readPromoRows, diffPromoRows, writePromoSheet } = await import("@/lib/promo-sheets.server");
     const { quote, rawItems, rows } = await loadPromo(context.supabase as never, data.id);
     const sheetId = quote.sheet_id as string | null;
     if (!sheetId) throw new Error("Для этого промо-КП ещё нет таблицы");
