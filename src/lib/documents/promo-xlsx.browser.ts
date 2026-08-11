@@ -289,7 +289,25 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
     r.getCell(1).alignment = { wrapText: true };
   }
 
+  // Ширины узких колонок — по самому длинному значению.
+  cols.forEach((c, i) => {
+    if (c.key === "title" || c.key === "note") return;
+    let max = c.header.length;
+    ws.eachRow((row) => {
+      const v = row.getCell(i + 1).value;
+      const text =
+        v && typeof v === "object" && "result" in v
+          ? String((v as { result?: unknown }).result ?? "")
+          : v == null
+            ? ""
+            : String(v);
+      if (text.length < 40) max = Math.max(max, text.length);
+    });
+    ws.getColumn(i + 1).width = Math.min(20, Math.max(8, max + 2));
+  });
+
   return wb;
+
 }
 
 export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]): Promise<void> {
