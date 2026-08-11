@@ -96,6 +96,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
+import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
@@ -550,6 +551,12 @@ const ApiPublicHooksSlaOrdersRoute = ApiPublicHooksSlaOrdersRouteImport.update({
   path: '/api/public/hooks/sla-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksKnowledgeHygieneRoute =
+  ApiPublicHooksKnowledgeHygieneRouteImport.update({
+    id: '/api/public/hooks/knowledge-hygiene',
+    path: '/api/public/hooks/knowledge-hygiene',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOrdersIdQuoteRoute = AdminOrdersIdQuoteRouteImport.update({
   id: '/quote',
   path: '/quote',
@@ -696,6 +703,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -794,6 +802,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -895,6 +904,7 @@ export interface FileRoutesById {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -997,6 +1007,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1095,6 +1106,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1195,6 +1207,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1261,6 +1274,7 @@ export interface RootRouteChildren {
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
+  ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1880,6 +1894,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSlaOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/knowledge-hygiene': {
+      id: '/api/public/hooks/knowledge-hygiene'
+      path: '/api/public/hooks/knowledge-hygiene'
+      fullPath: '/api/public/hooks/knowledge-hygiene'
+      preLoaderRoute: typeof ApiPublicHooksKnowledgeHygieneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/orders/$id/quote': {
       id: '/admin/orders/$id/quote'
       path: '/quote'
@@ -2202,6 +2223,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
+  ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
@@ -2212,3 +2234,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
