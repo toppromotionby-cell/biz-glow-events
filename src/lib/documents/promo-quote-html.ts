@@ -265,8 +265,8 @@ export const PROMO_DOC_CSS = `
 .promo-doc .chk-warn .chk-ic { background: #d97706; }
 .promo-doc tr.chk-row-error td { background: #fef2f2; }
 .promo-doc tr.chk-row-warn td { background: #fffbeb; }
-@media print { .promo-doc .c-empty { color: #9ca3af; font-style: italic; }
-.promo-doc .chk-list { display: none !important; } .promo-doc tr.chk-row td { background: transparent !important; } }
+@media print { .promo-doc .chk-list { display: none !important; } .promo-doc tr.chk-row td { background: transparent !important; } .promo-doc .c-empty { display: none; } }
+
 [data-edit] { cursor: pointer; }
 .promo-doc [data-edit]:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media print { .promo-doc [data-edit]:hover { outline: none; } .promo-doc { font-size: 11px; } }
