@@ -110,8 +110,16 @@ function describeError(err) {
 
 // ───────────── /test ─────────────
 // Пошаговая проверка IMAP + SMTP с автоподбором логина/порта/шифрования.
+// Ограничена общим бюджетом времени, чтобы клиент никогда не «висел».
+const TEST_BUDGET_MS = 45_000;
+const RETRYABLE = new Set(["refused", "timeout", "tls", "unknown", "command_failed"]);
+
 app.post("/test", async (req, res) => {
   const cfg = req.body || {};
+  const deadline = Date.now() + TEST_BUDGET_MS;
+  const timeLeft = () => deadline - Date.now();
+  const outOfTime = () => timeLeft() <= 2_000;
+
   const steps = [];
   const email = String(cfg.email || "");
   const login = String(cfg.username || email);
@@ -142,72 +150,98 @@ app.post("/test", async (req, res) => {
     });
   };
 
+  const timedOutStep = (step) => ({
+    step,
+    ok: false,
+    kind: "timeout",
+    code: "ETIMEDOUT",
+    message: `Превышено время проверки (${Math.round(TEST_BUDGET_MS / 1000)} сек) на шаге ${step.toUpperCase()}`,
+    response: null,
+  });
+
   let imapOk = null; // { username, imap_port, imap_secure, allow_invalid_cert, folders }
   let imapErr = null;
+  let ranOutOnImap = false;
 
-  for (const user of logins) {
+  outer: for (const user of logins) {
     for (const variant of dedupe(imapVariants, ["imap_port", "imap_secure"])) {
       for (const allow_invalid_cert of [false, true]) {
-        const over = { ...variant, username: user, allow_invalid_cert };
+        if (outOfTime()) { ranOutOnImap = true; break outer; }
+        const over = { ...variant, username: user, allow_invalid_cert, fast_timeouts: true };
         const imap = buildImap(cfg, over);
         try {
-          await imap.connect();
+          await withDeadline(imap.connect(), Math.min(15_000, timeLeft()), "IMAP-соединение");
           let folders = 0;
           try {
-            const list = await imap.list();
+            const list = await withDeadline(imap.list(), Math.min(10_000, timeLeft()), "список папок");
             folders = list.length;
           } catch {
             /* список папок необязателен для успеха */
           }
           imapOk = { ...over, folders };
           try { await imap.logout(); } catch { /* noop */ }
-          break;
+          break outer;
         } catch (err) {
           imapErr = { ...describeError(err), tried: over };
-          try { await imap.logout(); } catch { /* noop */ }
-          // Неверный пароль — нет смысла перебирать порты для этого логина
-          if (imapErr.kind === "auth") break;
-          // Сертификат перепроверяем с allow_invalid_cert, иначе выходим из цикла
+          try { imap.close(); } catch { /* noop */ }
+          // Неверный пароль — перебор бессмысленен
+          if (imapErr.kind === "auth") break outer;
+          // Нет такого хоста — порты перебирать тоже бессмысленно
+          if (imapErr.kind === "dns") break outer;
+          // Сертификат перепроверяем с allow_invalid_cert, иначе — следующий порт
           if (imapErr.kind !== "tls") break;
         }
       }
-      if (imapOk || imapErr?.kind === "auth") break;
+      if (!RETRYABLE.has(imapErr?.kind ?? "unknown")) break;
     }
-    if (imapOk) break;
   }
 
-  steps.push(
-    imapOk
-      ? { step: "imap", ok: true, detail: `${imapOk.username} · порт ${imapOk.imap_port}${imapOk.imap_secure ? " · SSL" : " · STARTTLS"} · папок: ${imapOk.folders}` }
-      : { step: "imap", ok: false, ...(imapErr ?? { kind: "unknown", message: "нет попыток" }) },
-  );
+  if (!imapOk && (ranOutOnImap || outOfTime()) && !imapErr) {
+    steps.push(timedOutStep("imap"));
+  } else {
+    steps.push(
+      imapOk
+        ? { step: "imap", ok: true, detail: `${imapOk.username} · порт ${imapOk.imap_port}${imapOk.imap_secure ? " · SSL" : " · STARTTLS"} · папок: ${imapOk.folders}` }
+        : { step: "imap", ok: false, ...(imapErr ?? { kind: "unknown", message: "нет попыток" }) },
+    );
+  }
 
   // SMTP проверяем логином, который подошёл для IMAP (или исходным)
   const smtpLogin = imapOk?.username ?? login;
   let smtpOk = null;
   let smtpErr = null;
-  for (const variant of dedupe(smtpVariants, ["smtp_port", "smtp_secure"])) {
+  let ranOutOnSmtp = false;
+
+  smtpLoop: for (const variant of dedupe(smtpVariants, ["smtp_port", "smtp_secure"])) {
     for (const allow_invalid_cert of [false, true]) {
-      const over = { ...variant, username: smtpLogin, allow_invalid_cert };
+      if (outOfTime()) { ranOutOnSmtp = true; break smtpLoop; }
+      const over = { ...variant, username: smtpLogin, allow_invalid_cert, fast_timeouts: true };
+      let smtp;
       try {
-        const smtp = buildSmtp(cfg, over);
-        await smtp.verify();
+        smtp = buildSmtp(cfg, over);
+        await withDeadline(smtp.verify(), Math.min(15_000, timeLeft()), "SMTP-проверка");
         smtpOk = over;
-        break;
+        break smtpLoop;
       } catch (err) {
         smtpErr = { ...describeError(err), tried: over };
-        if (smtpErr.kind === "auth") break;
+        if (smtpErr.kind === "auth" || smtpErr.kind === "dns") break smtpLoop;
         if (smtpErr.kind !== "tls") break;
+      } finally {
+        try { smtp?.close(); } catch { /* noop */ }
       }
     }
-    if (smtpOk || smtpErr?.kind === "auth") break;
+    if (!RETRYABLE.has(smtpErr?.kind ?? "unknown")) break;
   }
 
-  steps.push(
-    smtpOk
-      ? { step: "smtp", ok: true, detail: `порт ${smtpOk.smtp_port}${smtpOk.smtp_secure ? " · SSL" : " · STARTTLS"}` }
-      : { step: "smtp", ok: false, ...(smtpErr ?? { kind: "unknown", message: "нет попыток" }) },
-  );
+  if (!smtpOk && ranOutOnSmtp && !smtpErr) {
+    steps.push(timedOutStep("smtp"));
+  } else {
+    steps.push(
+      smtpOk
+        ? { step: "smtp", ok: true, detail: `порт ${smtpOk.smtp_port}${smtpOk.smtp_secure ? " · SSL" : " · STARTTLS"}` }
+        : { step: "smtp", ok: false, ...(smtpErr ?? { kind: "unknown", message: "нет попыток" }) },
+    );
+  }
 
   const ok = !!imapOk && !!smtpOk;
   const suggestion = ok
@@ -230,6 +264,7 @@ app.post("/test", async (req, res) => {
     error_kind: ok ? undefined : failed?.kind,
   });
 });
+
 
 
 
