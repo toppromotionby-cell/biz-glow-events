@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Brain, Search, Trash2, Eraser } from "lucide-react";
+import { Brain, Search, Trash2, Eraser, RefreshCw } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import {
-  listKnowledgeRows, deleteKnowledgeRows, countStaleKnowledge, pruneStaleKnowledge,
+  listKnowledgeRows, deleteKnowledgeRows, countStaleKnowledge, pruneStaleKnowledge, syncCatalogKnowledgeFn,
   type KbRow, type KbSort, type KbTable,
 } from "@/lib/doc-knowledge.functions";
 
@@ -37,14 +37,27 @@ const num = (v: unknown) => (v == null ? 0 : Number(v));
 
 function Page() {
   const [tab, setTab] = useState<KbTable>("contacts");
+  const syncCatalog = useServerFn(syncCatalogKnowledgeFn);
+  const syncMut = useMutation({
+    mutationFn: (): Promise<{ synced: number }> => syncCatalog() as Promise<{ synced: number }>,
+    onSuccess: (r) => toast.success(`Синхронизировано позиций каталога: ${r.synced}`),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         icon={<Brain className="h-5 w-5" />}
         title="База знаний"
-        subtitle="Данные, накопленные из КП, КП промо и документов по заказам. Удаление не меняет сами документы."
+        subtitle="Данные, накопленные из КП, КП промо, заказов, презентаций и каталога сайта. Удаление не меняет сами документы."
+        action={
+          <Button variant="outline" onClick={() => syncMut.mutate()} disabled={syncMut.isPending}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncMut.isPending ? "animate-spin" : ""}`} />
+            Синхронизировать с каталогом
+          </Button>
+        }
       />
+
       <Tabs value={tab} onValueChange={(v) => setTab(v as KbTable)}>
         <TabsList>
           <TabsTrigger value="contacts">Контрагенты</TabsTrigger>

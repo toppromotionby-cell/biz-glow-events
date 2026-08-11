@@ -433,7 +433,16 @@ export const savePresentation = createServerFn({ method: "POST" })
       if (insErr) throw new Error(insErr.message);
     }
 
+    // База знаний: тексты слайдов становятся подсказками в документах.
+    try {
+      const { harvestFromPresentation } = await import("@/lib/doc-knowledge.server");
+      await harvestFromPresentation(data.slides.map((sl) => ({ title: sl.title, subtitle: sl.subtitle })));
+    } catch (e) {
+      console.error("[savePresentation] knowledge harvest failed:", e);
+    }
+
     return { ok: true };
+
   });
 
 /* ---------------- Дублирование и удаление ---------------- */

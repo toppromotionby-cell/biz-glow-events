@@ -101,3 +101,11 @@ export const pruneStaleKnowledge = createServerFn({ method: "POST" })
     const { pruneStale } = await import("@/lib/doc-knowledge.server");
     return { deleted: await pruneStale(data.table, data.months ?? 6) };
   });
+
+export const syncCatalogKnowledgeFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ synced: number }> => {
+    await assertStaff(context as never);
+    const { syncCatalogKnowledge } = await import("@/lib/doc-knowledge.server");
+    return syncCatalogKnowledge();
+  });
