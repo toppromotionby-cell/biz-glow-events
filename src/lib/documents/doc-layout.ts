@@ -13,7 +13,6 @@ import {
   lineTotal,
   promoNumberDisplay,
   rateUnitLabel,
-  soleRateUnit,
   type PromoItem,
   type PromoQuote,
   type PromoTotals,
@@ -155,7 +154,6 @@ export function buildDocLayout(
 ): DocLayout {
   const computed = computePromoTotals(quote, items);
   const dual = hasSecondUnit(items);
-  void soleRateUnit;
 
   const keys: DocColumnKey[] = ["title", "unit"];
   if (quote.show_qty) keys.push("qty");
