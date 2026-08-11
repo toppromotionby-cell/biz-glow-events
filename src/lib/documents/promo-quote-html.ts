@@ -10,6 +10,10 @@ import {
   computePromoTotals,
   formatMoney,
   groupBySection,
+  hasSecondUnit,
+  soleRateUnit,
+  formatNumber,
+  rateUnitLabel,
   formatQty,
   formatTotalQty,
   lineTotal,
@@ -121,7 +125,13 @@ export function buildPromoQuoteBody(
             `<td class="c-title">${it.title.trim() ? esc(it.title) : '<span class="c-empty">Новая позиция</span>'}${inc}${chkList(rowChecks)}</td>`,
             `<td class="c-unit">${esc(it.unit)}</td>`,
           ];
-          if (quote.show_qty) cells.push(`<td class="c-num">${esc(formatQty(it))}</td>`);
+          if (quote.show_qty)
+            cells.push(`<td class="c-num">${esc(dual ? formatNumber(it.qty) : formatQty(it))}</td>`);
+          if (dual) {
+            const ru = rateUnitLabel(it);
+            cells.push(`<td class="c-unit">${ru ? esc(ru) : "—"}</td>`);
+            cells.push(`<td class="c-num">${ru ? esc(formatNumber(it.multiplier)) : "—"}</td>`);
+          }
           if (quote.show_total_qty) cells.push(`<td class="c-num">${esc(formatTotalQty(it))}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
@@ -144,18 +154,14 @@ export function buildPromoQuoteBody(
   const extraRows: string[] = [];
   if (quote.management_enabled) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(quote.management_label)}</td><td class="c-unit">услуга</td>${
-        quote.show_qty ? '<td class="c-num">—</td>' : ""
-      }${quote.show_total_qty ? '<td class="c-num">—</td>' : ""}<td class="c-money"></td><td class="c-money">${nf(
+      `<tr class="extra"><td class="c-title">${esc(quote.management_label)}</td>${midCells("услуга")}<td class="c-money"></td><td class="c-money">${nf(
         t.management,
       )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
     );
   }
   if (quote.commission_enabled) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(quote.commission_label)}</td><td class="c-unit">—</td>${
-        quote.show_qty ? '<td class="c-num">—</td>' : ""
-      }${quote.show_total_qty ? '<td class="c-num">—</td>' : ""}<td class="c-money"></td><td class="c-money">${nf(
+      `<tr class="extra"><td class="c-title">${esc(quote.commission_label)}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(
         t.commission,
       )}</td>${quote.show_notes ? `<td class="c-note">${nf(quote.commission_rate).replace(",00", "")} %</td>` : ""}</tr>`,
     );
@@ -165,9 +171,7 @@ export function buildPromoQuoteBody(
     extraRows.push(
       `<tr class="extra"><td class="c-title">${esc(
         t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
-      )}</td><td class="c-unit">—</td>${quote.show_qty ? '<td class="c-num">—</td>' : ""}${
-        quote.show_total_qty ? '<td class="c-num">—</td>' : ""
-      }<td class="c-money"></td><td class="c-money">${nf(t.vat)}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
+      )}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(t.vat)}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
     );
   }
 
