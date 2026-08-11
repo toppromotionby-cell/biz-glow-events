@@ -1,7 +1,14 @@
 // Синхронизация состава КП с Google Таблицами через Lovable connector gateway.
-// Только серверный код: читает LOVABLE_API_KEY и GOOGLE_SHEETS_API_KEY.
+// Транспорт общий с промо-КП: @/lib/sheets-gateway.server.
+import {
+  createSheetDocument,
+  rangePath,
+  sheetNum,
+  sheetStr,
+  sheetsGateway,
+} from "@/lib/sheets-gateway.server";
 
-const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
+export { SheetSyncError } from "@/lib/sheets-gateway.server";
 
 export const SHEET_TAB = "Состав";
 export const SHEET_HEADER = [
@@ -27,55 +34,10 @@ export type SheetItemRow = {
   cost: number;
 };
 
-export class SheetSyncError extends Error {
-  status: number;
-  constructor(message: string, status = 500) {
-    super(message);
-    this.status = status;
-  }
-}
+const gateway = sheetsGateway;
+const num = sheetNum;
+const str = sheetStr;
 
-function keys() {
-  const lovable = process.env["LOVABLE_API_KEY"];
-  const conn = process.env["GOOGLE_SHEETS_API_KEY"];
-  if (!lovable || !conn) {
-    throw new SheetSyncError("Подключение к Google Таблицам не настроено", 400);
-  }
-  return { lovable, conn };
-}
-
-/** Диапазон в пути: колонки нельзя перекодировать (двоеточие должно остаться живым). */
-function rangePath(range: string) {
-  return encodeURIComponent(range).replace(/%3A/g, ":");
-}
-
-async function gateway<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
-  const { lovable, conn } = keys();
-  const res = await fetch(`${GATEWAY}${path}`, {
-    method: init?.method ?? "GET",
-    headers: {
-      Authorization: `Bearer ${lovable}`,
-      "X-Connection-Api-Key": conn,
-      "Content-Type": "application/json",
-    },
-    body: init?.body ? JSON.stringify(init.body) : undefined,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    console.error(`[quote-sheets] gateway ${res.status}: ${text}`);
-    if (res.status === 404) throw new SheetSyncError("Таблица не найдена — возможно, она удалена. Создайте её заново.", 404);
-    if (res.status === 403) throw new SheetSyncError("Нет доступа к таблице. Проверьте подключение Google-аккаунта.", 403);
-    if (res.status === 429) throw new SheetSyncError("Google временно ограничил запросы. Повторите через минуту.", 429);
-    throw new SheetSyncError(`Google Таблицы вернули ошибку (${res.status})`, res.status);
-  }
-  return (await res.json()) as T;
-}
-
-const num = (v: unknown) => {
-  const n = Number(String(v ?? "").replace(/\s/g, "").replace(",", "."));
-  return Number.isFinite(n) ? n : 0;
-};
-const str = (v: unknown) => String(v ?? "").trim();
 
 export function itemsToRows(items: SheetItemRow[]): (string | number)[][] {
   return items.map((it) => [it.id, it.section, it.title, it.description, it.qty, it.unit, it.price, it.cost]);
