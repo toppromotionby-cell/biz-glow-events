@@ -54,6 +54,7 @@ import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/prin
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
 import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
+import { SaveToLibraryDialog } from "@/components/admin/documents/SaveToLibraryDialog";
 import { DocAppearanceSection } from "@/components/admin/documents/DocAppearanceSection";
 
 
@@ -180,7 +181,6 @@ function Page() {
   const [showCostRaw, setShowCost] = useState(true);
   const showCost = showCostRaw && canCost;
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [templateName, setTemplateName] = useState("");
   const dirtyRef = useRef(false);
   const previewRef = useRef<HTMLIFrameElement>(null);
   const [inlineEdit, setInlineEdit] = useState(true);
@@ -331,27 +331,18 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
-  const onSaveTemplate = async () => {
+  const onSaveToLibrary = async (name: string, scope: "shared" | "type") => {
     try {
-      await makeTemplate({ data: { id, name: templateName.trim() || quote.title || "Шаблон КП" } });
-      setTemplateOpen(false);
-      setTemplateName("");
-      qc.invalidateQueries({ queryKey: ["admin-quotes"] });
-      toast.success("Шаблон сохранён");
+      if (scope === "shared") {
+        await saveSample({ data: { source: "quote", docId: id, name } });
+        toast.success("Образец сметы сохранён");
+      } else {
+        await makeTemplate({ data: { id, name } });
+        qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+        toast.success("Шаблон сохранён");
+      }
     } catch (e) { toast.error((e as Error).message); }
   };
-
-  const onSaveSample = async () => {
-    try {
-      await saveSample({
-        data: { source: "quote", docId: id, name: templateName.trim() || quote.title || "Образец сметы" },
-      });
-      setTemplateOpen(false);
-      setTemplateName("");
-      toast.success("Образец сметы сохранён");
-    } catch (e) { toast.error((e as Error).message); }
-  };
-
 
   const onMarkSent = async () => {
     try {
@@ -458,7 +449,7 @@ function Page() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
-                <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в шаблоны
+                <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в библиотеку
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/admin/documents/knowledge"><Brain className="mr-2 h-4 w-4" />База знаний подсказок</Link>
@@ -848,22 +839,13 @@ function Page() {
         onSaveItems={(next) => { patchItems(next); toast.success("Позиция обновлена"); }}
       />
 
-      <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Сохранить как шаблон</DialogTitle></DialogHeader>
-          <Field label="Название шаблона">
-            <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Например: Корпоратив под ключ" />
-          </Field>
-          <p className="text-xs text-muted-foreground">
-            Образец сметы доступен при создании любого документа — и КП, и КП промо.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTemplateOpen(false)}>Отмена</Button>
-            <Button variant="outline" onClick={onSaveSample}>Сохранить как образец</Button>
-            <Button onClick={onSaveTemplate}>Сохранить</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SaveToLibraryDialog
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+        defaultName={quote.title || "Шаблон КП"}
+        typeLabel="КП"
+        onSave={onSaveToLibrary}
+      />
 
     </div>
   );
