@@ -138,7 +138,19 @@ export const testMailAccount = createServerFn({ method: "POST" })
         result = { ...result, ok: false, error: result.error ?? message };
       }
 
-      const steps: MailStep[] = result.steps ?? [];
+      const steps: MailStep[] =
+        result.steps && result.steps.length > 0
+          ? result.steps
+          : ok
+            ? []
+            : [
+                {
+                  step: "imap",
+                  ok: false,
+                  kind: status === 504 ? "timeout" : (result.error_kind ?? "unknown"),
+                  message,
+                },
+              ];
       const failed = steps.find((s) => !s.ok);
       const hint = ok
         ? null
