@@ -2619,6 +2619,10 @@ export type Database = {
           responded_at: string | null
           sent_at: string | null
           setup_note: string
+          sheet_id: string | null
+          sheet_snapshot: Json | null
+          sheet_synced_at: string | null
+          sheet_url: string | null
           signature_url: string | null
           stamp_url: string | null
           status: string
@@ -2675,6 +2679,10 @@ export type Database = {
           responded_at?: string | null
           sent_at?: string | null
           setup_note?: string
+          sheet_id?: string | null
+          sheet_snapshot?: Json | null
+          sheet_synced_at?: string | null
+          sheet_url?: string | null
           signature_url?: string | null
           stamp_url?: string | null
           status?: string
@@ -2731,6 +2739,10 @@ export type Database = {
           responded_at?: string | null
           sent_at?: string | null
           setup_note?: string
+          sheet_id?: string | null
+          sheet_snapshot?: Json | null
+          sheet_synced_at?: string | null
+          sheet_url?: string | null
           signature_url?: string | null
           stamp_url?: string | null
           status?: string
