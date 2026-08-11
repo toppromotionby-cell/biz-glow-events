@@ -27,23 +27,34 @@ app.use((req, res, next) => {
 app.get("/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
 // ───────────── helpers ─────────────
-function buildImap(cfg) {
+function buildImap(cfg, over = {}) {
+  const host = over.imap_host ?? cfg.imap_host;
+  const secure = over.imap_secure ?? cfg.imap_secure ?? true;
   return new ImapFlow({
-    host: cfg.imap_host,
-    port: cfg.imap_port ?? 993,
-    secure: cfg.imap_secure ?? true,
-    auth: { user: cfg.username, pass: cfg.password },
+    host,
+    port: over.imap_port ?? cfg.imap_port ?? 993,
+    secure,
+    auth: { user: over.username ?? cfg.username, pass: cfg.password },
     logger: false,
     socketTimeout: 60_000,
+    tls: { servername: host, rejectUnauthorized: over.allow_invalid_cert ? false : true },
   });
 }
 
-function buildSmtp(cfg) {
+function buildSmtp(cfg, over = {}) {
+  const host = over.smtp_host ?? cfg.smtp_host;
+  const secure = over.smtp_secure ?? cfg.smtp_secure ?? true;
+  const port = over.smtp_port ?? cfg.smtp_port ?? 465;
   return nodemailer.createTransport({
-    host: cfg.smtp_host,
-    port: cfg.smtp_port ?? 465,
-    secure: cfg.smtp_secure ?? true,
-    auth: { user: cfg.username, pass: cfg.password },
+    host,
+    port,
+    secure,
+    requireTLS: !secure && port !== 25,
+    auth: { user: over.username ?? cfg.username, pass: cfg.password },
+    connectionTimeout: 20_000,
+    greetingTimeout: 20_000,
+    socketTimeout: 30_000,
+    tls: { servername: host, rejectUnauthorized: over.allow_invalid_cert ? false : true },
   });
 }
 
@@ -58,21 +69,151 @@ const FOLDER_KIND = (special) => {
   return "custom";
 };
 
+// Разбор ошибки в машиночитаемый вид (imapflow / nodemailer / node net).
+function describeError(err) {
+  const raw = String(err?.message || err || "unknown");
+  const code = String(err?.code || err?.responseCode || "");
+  const response = String(err?.response || err?.responseText || "");
+  const authFailed =
+    err?.authenticationFailed === true ||
+    code === "AUTHENTICATIONFAILED" ||
+    code === "EAUTH" ||
+    /auth|login|credential|password/i.test(response) ||
+    /invalid credentials|authentication fail/i.test(raw);
+  let kind = "unknown";
+  if (authFailed) kind = "auth";
+  else if (/ENOTFOUND|EAI_AGAIN/.test(code)) kind = "dns";
+  else if (/ECONNREFUSED|EHOSTUNREACH|ENETUNREACH/.test(code)) kind = "refused";
+  else if (/ETIMEDOUT|ESOCKET|timeout/i.test(code + raw)) kind = "timeout";
+  else if (/CERT|SELF_SIGNED|ALTNAME|SSL|TLS|wrong version number/i.test(code + raw)) kind = "tls";
+  else if (/Command failed/i.test(raw)) kind = "command_failed";
+  return { kind, code: code || null, message: raw, response: response || null };
+}
+
 // ───────────── /test ─────────────
-// Verify IMAP + SMTP credentials work.
+// Пошаговая проверка IMAP + SMTP с автоподбором логина/порта/шифрования.
 app.post("/test", async (req, res) => {
-  const cfg = req.body;
-  try {
-    const imap = buildImap(cfg);
-    await imap.connect();
-    await imap.logout();
-    const smtp = buildSmtp(cfg);
-    await smtp.verify();
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(400).json({ ok: false, error: String(err?.message || err) });
+  const cfg = req.body || {};
+  const steps = [];
+  const email = String(cfg.email || "");
+  const login = String(cfg.username || email);
+  const shortLogin = login.includes("@") ? login.split("@")[0] : login;
+
+  const logins = [...new Set([login, email, shortLogin].filter(Boolean))];
+
+  // Кандидаты IMAP: как задано → 993/SSL → 143/STARTTLS
+  const imapVariants = [
+    { imap_port: cfg.imap_port ?? 993, imap_secure: cfg.imap_secure ?? true },
+    { imap_port: 993, imap_secure: true },
+    { imap_port: 143, imap_secure: false },
+  ];
+  const smtpVariants = [
+    { smtp_port: cfg.smtp_port ?? 465, smtp_secure: cfg.smtp_secure ?? true },
+    { smtp_port: 465, smtp_secure: true },
+    { smtp_port: 587, smtp_secure: false },
+    { smtp_port: 25, smtp_secure: false },
+  ];
+
+  const dedupe = (arr, keys) => {
+    const seen = new Set();
+    return arr.filter((v) => {
+      const k = keys.map((x) => String(v[x])).join("|");
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  };
+
+  let imapOk = null; // { username, imap_port, imap_secure, allow_invalid_cert, folders }
+  let imapErr = null;
+
+  for (const user of logins) {
+    for (const variant of dedupe(imapVariants, ["imap_port", "imap_secure"])) {
+      for (const allow_invalid_cert of [false, true]) {
+        const over = { ...variant, username: user, allow_invalid_cert };
+        const imap = buildImap(cfg, over);
+        try {
+          await imap.connect();
+          let folders = 0;
+          try {
+            const list = await imap.list();
+            folders = list.length;
+          } catch {
+            /* список папок необязателен для успеха */
+          }
+          imapOk = { ...over, folders };
+          try { await imap.logout(); } catch { /* noop */ }
+          break;
+        } catch (err) {
+          imapErr = { ...describeError(err), tried: over };
+          try { await imap.logout(); } catch { /* noop */ }
+          // Неверный пароль — нет смысла перебирать порты для этого логина
+          if (imapErr.kind === "auth") break;
+          // Сертификат перепроверяем с allow_invalid_cert, иначе выходим из цикла
+          if (imapErr.kind !== "tls") break;
+        }
+      }
+      if (imapOk || imapErr?.kind === "auth") break;
+    }
+    if (imapOk) break;
   }
+
+  steps.push(
+    imapOk
+      ? { step: "imap", ok: true, detail: `${imapOk.username} · порт ${imapOk.imap_port}${imapOk.imap_secure ? " · SSL" : " · STARTTLS"} · папок: ${imapOk.folders}` }
+      : { step: "imap", ok: false, ...(imapErr ?? { kind: "unknown", message: "нет попыток" }) },
+  );
+
+  // SMTP проверяем логином, который подошёл для IMAP (или исходным)
+  const smtpLogin = imapOk?.username ?? login;
+  let smtpOk = null;
+  let smtpErr = null;
+  for (const variant of dedupe(smtpVariants, ["smtp_port", "smtp_secure"])) {
+    for (const allow_invalid_cert of [false, true]) {
+      const over = { ...variant, username: smtpLogin, allow_invalid_cert };
+      try {
+        const smtp = buildSmtp(cfg, over);
+        await smtp.verify();
+        smtpOk = over;
+        break;
+      } catch (err) {
+        smtpErr = { ...describeError(err), tried: over };
+        if (smtpErr.kind === "auth") break;
+        if (smtpErr.kind !== "tls") break;
+      }
+    }
+    if (smtpOk || smtpErr?.kind === "auth") break;
+  }
+
+  steps.push(
+    smtpOk
+      ? { step: "smtp", ok: true, detail: `порт ${smtpOk.smtp_port}${smtpOk.smtp_secure ? " · SSL" : " · STARTTLS"}` }
+      : { step: "smtp", ok: false, ...(smtpErr ?? { kind: "unknown", message: "нет попыток" }) },
+  );
+
+  const ok = !!imapOk && !!smtpOk;
+  const suggestion = ok
+    ? {
+        username: imapOk.username,
+        imap_port: imapOk.imap_port,
+        imap_secure: imapOk.imap_secure,
+        smtp_port: smtpOk.smtp_port,
+        smtp_secure: smtpOk.smtp_secure,
+        allow_invalid_cert: !!(imapOk.allow_invalid_cert || smtpOk.allow_invalid_cert),
+      }
+    : null;
+
+  const failed = steps.find((s) => !s.ok);
+  res.status(ok ? 200 : 400).json({
+    ok,
+    steps,
+    suggestion,
+    error: ok ? undefined : `${failed?.step?.toUpperCase() ?? ""}: ${failed?.message ?? "unknown"}`,
+    error_kind: ok ? undefined : failed?.kind,
+  });
 });
+
+
 
 // ───────────── /folders ─────────────
 // List all IMAP folders with special-use info + counts.
