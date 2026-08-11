@@ -646,6 +646,25 @@ function TestResultDialog({
                 {!s.ok && s.response && (
                   <div className="text-xs text-muted-foreground/80 break-words">{s.response}</div>
                 )}
+                {!!s.attempts?.length && (
+                  <div className="mt-2 space-y-1">
+                    {s.attempts.map((attempt, index) => {
+                      const port = s.step === "imap"
+                        ? attempt.tried?.imap_port
+                        : attempt.tried?.smtp_port;
+                      const secure = s.step === "imap"
+                        ? attempt.tried?.imap_secure
+                        : attempt.tried?.smtp_secure;
+                      return (
+                        <div key={`${s.step}-${index}`} className="text-xs text-muted-foreground">
+                          {attempt.ok ? "✓" : "×"} порт {String(port ?? "—")} · {secure ? "SSL" : "STARTTLS"}
+                          {attempt.phase ? ` · ${attempt.phase.toUpperCase()}` : ""}
+                          {attempt.duration_ms != null ? ` · ${Math.round(attempt.duration_ms / 100) / 10} c` : ""}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           ))}

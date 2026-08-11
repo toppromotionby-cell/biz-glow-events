@@ -109,17 +109,22 @@ function describeError(err) {
 }
 
 // ───────────── /test ─────────────
-// Пошаговая проверка IMAP + SMTP с автоподбором логина/порта/шифрования.
-// Ограничена общим бюджетом времени, чтобы клиент никогда не «висел».
-const TEST_BUDGET_MS = 45_000;
+// Пошаговая проверка IMAP + SMTP. Бюджеты независимы: медленный IMAP
+// больше не может «съесть» всё время и создать ложный SMTP timeout.
+const IMAP_BUDGET_MS = 18_000;
+const SMTP_BUDGET_MS = 20_000;
 const RETRYABLE = new Set(["refused", "timeout", "tls", "unknown", "command_failed"]);
+
+function errorPhase(kind) {
+  if (kind === "dns") return "dns";
+  if (kind === "refused" || kind === "timeout") return "tcp";
+  if (kind === "tls") return "tls";
+  if (kind === "auth" || kind === "command_failed") return "auth";
+  return "unknown";
+}
 
 app.post("/test", async (req, res) => {
   const cfg = req.body || {};
-  const deadline = Date.now() + TEST_BUDGET_MS;
-  const timeLeft = () => deadline - Date.now();
-  const outOfTime = () => timeLeft() <= 2_000;
-
   const steps = [];
   const email = String(cfg.email || "");
   const login = String(cfg.username || email);
@@ -133,11 +138,12 @@ app.post("/test", async (req, res) => {
     { imap_port: 993, imap_secure: true },
     { imap_port: 143, imap_secure: false },
   ];
+  const isHoster = /(^|\.)hoster\.by$/i.test(String(cfg.smtp_host || ""));
   const smtpVariants = [
     { smtp_port: cfg.smtp_port ?? 465, smtp_secure: cfg.smtp_secure ?? true },
     { smtp_port: 465, smtp_secure: true },
     { smtp_port: 587, smtp_secure: false },
-    { smtp_port: 25, smtp_secure: false },
+    ...(isHoster ? [] : [{ smtp_port: 25, smtp_secure: false }]),
   ];
 
   const dedupe = (arr, keys) => {
@@ -150,39 +156,48 @@ app.post("/test", async (req, res) => {
     });
   };
 
-  const timedOutStep = (step) => ({
+  const timedOutStep = (step, budgetMs, attempts) => ({
     step,
     ok: false,
     kind: "timeout",
     code: "ETIMEDOUT",
-    message: `Превышено время проверки (${Math.round(TEST_BUDGET_MS / 1000)} сек) на шаге ${step.toUpperCase()}`,
+    phase: "tcp",
+    message: `Превышено время проверки (${Math.round(budgetMs / 1000)} сек) на шаге ${step.toUpperCase()}`,
     response: null,
+    attempts,
   });
 
   let imapOk = null; // { username, imap_port, imap_secure, allow_invalid_cert, folders }
   let imapErr = null;
   let ranOutOnImap = false;
+  const imapAttempts = [];
+  const imapDeadline = Date.now() + IMAP_BUDGET_MS;
+  const imapTimeLeft = () => imapDeadline - Date.now();
+  const imapOutOfTime = () => imapTimeLeft() <= 1_000;
 
   outer: for (const user of logins) {
     for (const variant of dedupe(imapVariants, ["imap_port", "imap_secure"])) {
       for (const allow_invalid_cert of [false, true]) {
-        if (outOfTime()) { ranOutOnImap = true; break outer; }
+        if (imapOutOfTime()) { ranOutOnImap = true; break outer; }
         const over = { ...variant, username: user, allow_invalid_cert, fast_timeouts: true };
         const imap = buildImap(cfg, over);
+        const attemptStarted = Date.now();
         try {
-          await withDeadline(imap.connect(), Math.min(15_000, timeLeft()), "IMAP-соединение");
+          await withDeadline(imap.connect(), Math.min(8_000, imapTimeLeft()), "IMAP-соединение");
           let folders = 0;
           try {
-            const list = await withDeadline(imap.list(), Math.min(10_000, timeLeft()), "список папок");
+            const list = await withDeadline(imap.list(), Math.min(5_000, imapTimeLeft()), "список папок");
             folders = list.length;
           } catch {
             /* список папок необязателен для успеха */
           }
           imapOk = { ...over, folders };
+          imapAttempts.push({ ok: true, phase: "list", duration_ms: Date.now() - attemptStarted, tried: over });
           try { await imap.logout(); } catch { /* noop */ }
           break outer;
         } catch (err) {
           imapErr = { ...describeError(err), tried: over };
+          imapAttempts.push({ ok: false, phase: errorPhase(imapErr.kind), duration_ms: Date.now() - attemptStarted, ...imapErr });
           try { imap.close(); } catch { /* noop */ }
           // Неверный пароль — перебор бессмысленен
           if (imapErr.kind === "auth") break outer;
@@ -196,13 +211,13 @@ app.post("/test", async (req, res) => {
     }
   }
 
-  if (!imapOk && (ranOutOnImap || outOfTime()) && !imapErr) {
-    steps.push(timedOutStep("imap"));
+  if (!imapOk && ranOutOnImap && !imapErr) {
+    steps.push(timedOutStep("imap", IMAP_BUDGET_MS, imapAttempts));
   } else {
     steps.push(
       imapOk
-        ? { step: "imap", ok: true, detail: `${imapOk.username} · порт ${imapOk.imap_port}${imapOk.imap_secure ? " · SSL" : " · STARTTLS"} · папок: ${imapOk.folders}` }
-        : { step: "imap", ok: false, ...(imapErr ?? { kind: "unknown", message: "нет попыток" }) },
+        ? { step: "imap", ok: true, detail: `${imapOk.username} · порт ${imapOk.imap_port}${imapOk.imap_secure ? " · SSL" : " · STARTTLS"} · папок: ${imapOk.folders}`, attempts: imapAttempts }
+        : { step: "imap", ok: false, ...(imapErr ?? { kind: "unknown", message: "нет попыток" }), phase: errorPhase(imapErr?.kind), attempts: imapAttempts },
     );
   }
 
@@ -211,19 +226,26 @@ app.post("/test", async (req, res) => {
   let smtpOk = null;
   let smtpErr = null;
   let ranOutOnSmtp = false;
+  const smtpAttempts = [];
+  const smtpDeadline = Date.now() + SMTP_BUDGET_MS;
+  const smtpTimeLeft = () => smtpDeadline - Date.now();
+  const smtpOutOfTime = () => smtpTimeLeft() <= 1_000;
 
   smtpLoop: for (const variant of dedupe(smtpVariants, ["smtp_port", "smtp_secure"])) {
     for (const allow_invalid_cert of [false, true]) {
-      if (outOfTime()) { ranOutOnSmtp = true; break smtpLoop; }
+      if (smtpOutOfTime()) { ranOutOnSmtp = true; break smtpLoop; }
       const over = { ...variant, username: smtpLogin, allow_invalid_cert, fast_timeouts: true };
       let smtp;
+      const attemptStarted = Date.now();
       try {
         smtp = buildSmtp(cfg, over);
-        await withDeadline(smtp.verify(), Math.min(15_000, timeLeft()), "SMTP-проверка");
+        await withDeadline(smtp.verify(), Math.min(8_000, smtpTimeLeft()), "SMTP-проверка");
         smtpOk = over;
+        smtpAttempts.push({ ok: true, phase: "auth", duration_ms: Date.now() - attemptStarted, tried: over });
         break smtpLoop;
       } catch (err) {
         smtpErr = { ...describeError(err), tried: over };
+        smtpAttempts.push({ ok: false, phase: errorPhase(smtpErr.kind), duration_ms: Date.now() - attemptStarted, ...smtpErr });
         if (smtpErr.kind === "auth" || smtpErr.kind === "dns") break smtpLoop;
         if (smtpErr.kind !== "tls") break;
       } finally {
@@ -233,13 +255,17 @@ app.post("/test", async (req, res) => {
     if (!RETRYABLE.has(smtpErr?.kind ?? "unknown")) break;
   }
 
+  const smtpPortsTimedOut = [...new Set(smtpAttempts.filter((a) => !a.ok && a.kind === "timeout").map((a) => a.tried?.smtp_port))];
+  const smtpEgressBlocked = !smtpOk && imapOk && smtpPortsTimedOut.includes(465) && smtpPortsTimedOut.includes(587);
   if (!smtpOk && ranOutOnSmtp && !smtpErr) {
-    steps.push(timedOutStep("smtp"));
+    steps.push(timedOutStep("smtp", SMTP_BUDGET_MS, smtpAttempts));
   } else {
     steps.push(
       smtpOk
-        ? { step: "smtp", ok: true, detail: `порт ${smtpOk.smtp_port}${smtpOk.smtp_secure ? " · SSL" : " · STARTTLS"}` }
-        : { step: "smtp", ok: false, ...(smtpErr ?? { kind: "unknown", message: "нет попыток" }) },
+        ? { step: "smtp", ok: true, detail: `порт ${smtpOk.smtp_port}${smtpOk.smtp_secure ? " · SSL" : " · STARTTLS"}`, attempts: smtpAttempts }
+        : smtpEgressBlocked
+          ? { step: "smtp", ok: false, kind: "smtp_egress_blocked", phase: "tcp", code: "ETIMEDOUT", message: "Хостинг mail-worker блокирует исходящие SMTP-соединения на портах 465 и 587", response: null, attempts: smtpAttempts }
+          : { step: "smtp", ok: false, ...(smtpErr ?? { kind: "unknown", message: "нет попыток" }), phase: errorPhase(smtpErr?.kind), attempts: smtpAttempts },
     );
   }
 
