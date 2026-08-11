@@ -524,14 +524,14 @@ const FIELD_LABELS: Record<keyof PromoSheetRow, string> = {
   title: "Наименование",
   unit: "Ед.",
   qty: "Кол-во",
-  multiplier: "Кол-во (2-я ед.)",
+  multiplier: "Кол-во",
   price: "Цена",
   cost: "Себестоимость",
   included: "В итог",
   exclude_from_commission: "Без комиссии",
   is_info: "Справочно",
   note: "Примечание",
-  rate_unit: "Ед. изм. (2-я)",
+  rate_unit: "Ед. изм.",
 };
 
 export function diffPromoRows(dbItems: PromoSheetRow[], sheetItems: PromoSheetRow[]): PromoSheetDiffRow[] {

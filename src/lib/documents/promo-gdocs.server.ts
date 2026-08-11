@@ -342,11 +342,20 @@ export async function readPromoDocRows(documentId: string): Promise<PromoDocPars
 
   const header = (rows[0]!.tableCells ?? []).map((c) => cellText(c));
   const idx = (label: string) => header.findIndex((h) => h.toLowerCase().startsWith(label.toLowerCase()));
+  // Заголовки второй единицы теперь такие же («Ед. изм.» / «Кол-во»), поэтому
+  // колонки различаем по порядку вхождения, а не по тексту.
+  const all = (label: string) =>
+    header.reduce<number[]>((acc, h, i) => {
+      if (h.toLowerCase().startsWith(label.toLowerCase())) acc.push(i);
+      return acc;
+    }, []);
+  const units = all("Ед. изм");
+  const qtys = all("Кол-во");
   const iTitle = Math.max(0, idx("Наименование"));
-  const iUnit = idx("Ед. изм");
-  const iQty = header.findIndex((h) => h === "Кол-во");
-  const iRateUnit = idx("Ед. 2");
-  const iMul = idx("Кол-во 2");
+  const iUnit = units[0] ?? -1;
+  const iQty = qtys[0] ?? -1;
+  const iRateUnit = units[1] ?? -1;
+  const iMul = qtys[1] ?? -1;
   const iPrice = idx("Цена");
   const iNote = idx("Примеч");
 
