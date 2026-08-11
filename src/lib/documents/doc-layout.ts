@@ -155,7 +155,7 @@ export function buildDocLayout(
 ): DocLayout {
   const computed = computePromoTotals(quote, items);
   const dual = hasSecondUnit(items);
-  const rateUnit = soleRateUnit(items);
+  void soleRateUnit;
 
   const keys: DocColumnKey[] = ["title", "unit"];
   if (quote.show_qty) keys.push("qty");
