@@ -32,9 +32,9 @@ export function Summary({ rows }: { rows: SummaryRow[] }) {
   );
 }
 
-export type IncludeLine = { text: string; note?: string };
+export type IncludeLine = { text: string; note: string };
 
-export const includesToText = (list: IncludeLine[] | null | undefined) =>
+export const includesToText = (list: Array<{ text: string; note?: string }> | null | undefined) =>
   (list ?? []).map((i) => (i.note ? `${i.text} — ${i.note}` : i.text)).join("\n");
 
 export const textToIncludes = (value: string): IncludeLine[] =>
@@ -54,7 +54,7 @@ export function IncludesEditor({
   rows = 4,
   className = "sm:col-span-2",
 }: {
-  value: IncludeLine[] | null | undefined;
+  value: Array<{ text: string; note?: string }> | null | undefined;
   onChange: (next: IncludeLine[]) => void;
   rows?: number;
   className?: string;
