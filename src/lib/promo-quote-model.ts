@@ -365,11 +365,13 @@ export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTota
   const subtotal = round2(gross - discount);
   const v = computeVat(subtotal, vatConfig(q));
   const vat = v.vat;
-  const costSum = round2(items.reduce((s, it) => s + lineCost(it), 0));
+  const costSum = round2(counted.reduce((s, it) => s + lineCost(it), 0));
   const margin = round2(v.net - costSum);
   return {
     itemsSum,
+    optionsSum: optionsSum(items),
     commissionBase,
+
     commission,
     management,
     gross,
