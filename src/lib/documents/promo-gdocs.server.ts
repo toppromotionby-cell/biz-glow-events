@@ -119,7 +119,7 @@ function footerText(quote: PromoQuote, t: ReturnType<typeof computePromoTotals>)
   lines.push(`${t.vatEnabled ? "Стоимость позиций (без НДС)" : "Всего"}: ${nf(t.net)}`);
   if (t.vatEnabled) lines.push(`НДС ${t.vatRate}%: ${nf(t.vat)}`);
   lines.push(`Итого${t.vatEnabled ? ", с НДС" : ""}: ${nf(t.totalWithVat)} ${quote.currency}`);
-  if (quote.footer_text) lines.push("", quote.footer_text);
+  if (quote.footer_note) lines.push("", quote.footer_note);
   return "\n" + lines.join("\n") + "\n";
 }
 
