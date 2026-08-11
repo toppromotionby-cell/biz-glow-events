@@ -8,6 +8,7 @@ import {
   groupBySection,
   hasSecondUnit,
   isCounted,
+  isServiceOnlyRow,
   lineQty,
   lineTotal,
   promoNumberDisplay,
@@ -56,6 +57,8 @@ export type DocRow = {
   counted: boolean;
   /** Позиция участвует в базе комиссии. */
   commissionable: boolean;
+  /** Строка-услуга: ячейки единиц/количеств объединяются в одну со словом «услуга». */
+  serviceRow?: boolean;
 };
 
 export type DocTotalLine = { label: string; value: number; grand?: boolean; sign?: "minus" };
@@ -172,6 +175,7 @@ export function buildDocLayout(
           section: sec.name,
           counted: isCounted(it),
           commissionable: isCounted(it) && !it.exclude_from_commission,
+          serviceRow: isServiceOnlyRow(it),
           includes:
             quote.show_item_includes && it.includes.length
               ? it.includes.map((x) => `• ${x.text}${x.note ? ` — ${x.note}` : ""}`)

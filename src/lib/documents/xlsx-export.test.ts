@@ -155,10 +155,13 @@ describe("выгрузка промо-КП в Excel", () => {
     const wb = await buildPromoWorkbook(quote, items);
     const ws = wb.worksheets[0];
 
+    // Строка «Реквизит» — услуга с кол-вом 1: её ячейки единиц объединены,
+    // поэтому сумма ссылается только на цену.
     const rowFormulas = cellsOf(ws).filter((c) => isFormula(c.value) && /^D\d+\*E\d+$/.test(c.value.formula));
-    expect(rowFormulas).toHaveLength(items.length);
+    expect(rowFormulas).toHaveLength(1);
     expect((rowFormulas[0].value as any).result).toBeCloseTo(2 * 3 * 100, 2);
-    expect((rowFormulas[1].value as any).result).toBeCloseTo(500, 2);
+    const serviceFormula = cellsOf(ws).filter((c) => isFormula(c.value) && /^E\d+$/.test(c.value.formula));
+    expect((serviceFormula[0].value as any).result).toBeCloseTo(500, 2);
   });
 
   it("комиссия считается только по позициям, не исключённым из комиссии", async () => {
