@@ -179,30 +179,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                       <div className="flex items-center gap-1">
                         <div>{handle}</div>
                         <div className="flex-1">
-                          <SuggestInput
+                          <Input
                             value={it.title}
-                            onChange={(v) => replace(it.id, { title: v })}
-                            fetcher={(term) => fetchItems(term, name)}
-                            labelOf={(h) => h.title}
-                            onPick={(h) => replace(it.id, {
-                              title: h.title,
-                              unit: h.unit || it.unit,
-                              price: h.price || it.price,
-                              cost: h.cost || it.cost,
-                              note: h.description || it.note,
-                              includes: h.includes.length ? h.includes : it.includes,
-                            })}
-                            render={(h) => (
-                              <>
-                                <div className="font-medium">{h.title}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {[h.section, h.unit].filter(Boolean).join(" · ")}
-                                </div>
-                              </>
-                            )}
+                            onChange={(e) => replace(it.id, { title: e.target.value })}
                             placeholder="Наименование позиции"
+                            aria-label="Наименование позиции"
                             className="h-9"
                           />
+
                         </div>
                         <div className="flex w-[120px] flex-col items-end">
                           <span className="text-sm tabular-nums">{formatMoney(lineTotal(it), currency)}</span>
