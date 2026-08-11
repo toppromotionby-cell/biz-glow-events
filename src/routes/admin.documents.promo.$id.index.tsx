@@ -662,46 +662,27 @@ function EditorPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Сохранение как шаблон */}
-      <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Сохранить как шаблон</DialogTitle></DialogHeader>
-          <Field label="Название шаблона">
-            <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} />
-          </Field>
-          <p className="text-xs text-muted-foreground">
-            Шаблон доступен только в КП промо. Образец сметы можно применить и к обычному КП.
-          </p>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setTemplateOpen(false)}>Отмена</Button>
-            <Button
-              variant="outline"
-              onClick={async () => {
-                const name = templateName.trim();
-                if (!name) return toast.error("Введите название");
-                try {
-                  await saveSample({ data: { source: "promo", docId: id, name } });
-                  setTemplateOpen(false);
-                  toast.success("Образец сметы сохранён");
-                } catch (e) { toast.error((e as Error).message); }
-              }}
-            >
-              Сохранить как образец
-            </Button>
-            <Button
-              onClick={async () => {
-                const name = templateName.trim();
-                if (!name) return toast.error("Введите название");
-                await saveTpl({ data: { id, name } });
-                setTemplateOpen(false);
-                toast.success("Шаблон сохранён");
-              }}
-            >
-              Сохранить
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Сохранение в библиотеку */}
+      <SaveToLibraryDialog
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+        defaultName={quote.project || "Шаблон промо-КП"}
+        typeLabel="КП промо"
+        onSave={async (name, scope) => {
+          try {
+            if (scope === "shared") {
+              await saveSample({ data: { source: "promo", docId: id, name } });
+              toast.success("Образец сметы сохранён");
+            } else {
+              await saveTpl({ data: { id, name } });
+              toast.success("Шаблон сохранён");
+            }
+          } catch (e) {
+            toast.error((e as Error).message);
+          }
+        }}
+      />
+
 
 
       {confirmDialog}
