@@ -500,6 +500,52 @@ export async function browseItems(opts: {
       : [],
   })) as ItemBrowseHit[];
 
+  // Этап 5: в один список подмешиваем живой каталог сайта (по названию, без дублей).
+  const seen = new Set(rows.map((r) => r.title.trim().toLowerCase()));
+  const CATALOG: Array<{ table: "zones" | "services" | "tech_equipment" | "production_items" | "attractions"; label: string }> = [
+    { table: "zones", label: "Зоны" },
+    { table: "services", label: "Услуги" },
+    { table: "tech_equipment", label: "Оборудование" },
+    { table: "production_items", label: "Продакшн" },
+    { table: "attractions", label: "Аттракционы" },
+  ];
+  if (rows.length < limit) {
+    const { minPriceFromPricing, unitFromPricing } = await import("@/lib/pricing");
+    const catalogRows = await Promise.all(
+      CATALOG.map(async (c) => {
+        if (sec && sec !== c.label) return [];
+        try {
+          let cq = supabaseAdmin
+            .from(c.table)
+            .select("id,title,description,pricing")
+            .eq("published", true)
+            .limit(40);
+          if (t) cq = cq.ilike("title", `%${t}%`);
+          const { data: cdata } = await cq;
+          return ((cdata ?? []) as Array<Record<string, unknown>>).map((r) => ({
+            id: `catalog:${c.table}:${String(r["id"])}`,
+            section: c.label,
+            title: s(r["title"]),
+            description: s(r["description"]).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200),
+            unit: unitFromPricing(r["pricing"]) || "шт",
+            price: minPriceFromPricing(r["pricing"]) ?? 0,
+            cost: 0,
+            usage_count: 0,
+            includes: [],
+          })) as ItemBrowseHit[];
+        } catch {
+          return [] as ItemBrowseHit[];
+        }
+      }),
+    );
+    for (const hit of catalogRows.flat()) {
+      const key = hit.title.trim().toLowerCase();
+      if (!hit.title || seen.has(key) || rows.length >= limit) continue;
+      seen.add(key);
+      rows.push(hit);
+    }
+  }
+
   const { data: secData } = await supabaseAdmin
     .from("doc_item_catalog")
     .select("section")
@@ -507,6 +553,7 @@ export async function browseItems(opts: {
   const sections = Array.from(
     new Set(((secData ?? []) as Array<{ section: string | null }>).map((r) => s(r.section)).filter(Boolean)),
   ).sort((a, b) => a.localeCompare(b, "ru"));
+  for (const c of CATALOG) if (!sections.includes(c.label)) sections.push(c.label);
 
   return { rows, sections };
 }
