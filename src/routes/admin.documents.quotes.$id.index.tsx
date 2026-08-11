@@ -505,6 +505,7 @@ function Page() {
 
 
             <TabsContent value="items" className="space-y-3 pt-3">
+              <QuoteSheetPanel quoteId={id} />
               {canCost && (
                 <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
                   Показывать себестоимость и маржу
