@@ -474,35 +474,15 @@ function Page() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* ЛЕВО: вкладки */}
         <div className="space-y-3">
-          {(errorsCount > 0 || warnsCount > 0) && (
-            <button
-              type="button"
-              onClick={() => setTab("checks")}
-              className={`w-full text-left rounded-xl border px-3 py-2 text-xs flex items-center gap-2 ${
-                errorsCount > 0 ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-amber-500/50 bg-amber-500/10 text-amber-700"
-              }`}
-            >
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-              {errorsCount > 0
-                ? `Не хватает данных: ${errorsCount} ошибк(и) — суммы и блоки в превью могут быть некорректны`
-                : `Предупреждений: ${warnsCount} — проверьте перед отправкой`}
-            </button>
-          )}
+          <DocStatusBar checks={checks} onGoto={gotoCheck} />
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="items">Состав ({items.length})</TabsTrigger>
-              <TabsTrigger value="client">Клиент и событие</TabsTrigger>
+              <TabsTrigger value="client">Клиент</TabsTrigger>
               <TabsTrigger value="money">Финансы</TabsTrigger>
-              <TabsTrigger value="doc">Документ</TabsTrigger>
-              <TabsTrigger value="checks">
-                Проверки
-                {errorsCount > 0 ? (
-                  <Badge variant="destructive" className="ml-1.5 h-4 px-1 text-[10px]">{errorsCount}</Badge>
-                ) : warnsCount > 0 ? (
-                  <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">{warnsCount}</Badge>
-                ) : null}
-              </TabsTrigger>
+              <TabsTrigger value="doc">Оформление</TabsTrigger>
             </TabsList>
+
 
 
             <TabsContent value="items" className="space-y-3 pt-3">
