@@ -45,7 +45,7 @@ export function PromoItemsToolbar({
     picked: Array<{ title: string; section: string; unit: string; price: number; cost: number; description: string; includes: Array<{ text: string; note: string }> }>,
     section: string,
   ) => {
-    const created = picked.map((h, i) =>
+    const created = picked.map((h) =>
       newPromoItem(section || h.section || "", {
         title: h.title,
         unit: h.unit || "услуга",
