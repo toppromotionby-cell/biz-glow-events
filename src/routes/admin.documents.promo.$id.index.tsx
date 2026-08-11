@@ -2,6 +2,8 @@ import { useRoles } from "@/hooks/use-roles";
 import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
+import { DocAppearanceSection } from "@/components/admin/documents/DocAppearanceSection";
+
 
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
