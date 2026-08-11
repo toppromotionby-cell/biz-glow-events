@@ -8,20 +8,12 @@ import { hexToRgb01 } from "@/lib/documents/brand";
 import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
 import { MAX_SLIDE_PHOTOS, SLIDE_W } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
-import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
-import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
-import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
+import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
+import { resolveDocFont } from "@/lib/documents/doc-font";
 
 const W = 960;
 const H = 540;
 const PAD = 56;
-
-function decodeBase64(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
-  return out;
-}
 
 type Theme = {
   bg: ReturnType<typeof rgb>;
@@ -123,16 +115,20 @@ export async function buildPresentationPdf(
   slides: ResolvedSlide[],
   company: CompanyProfile | null,
   logoUrl: string | null,
+  clientLogoUrl: string | null = null,
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const regular = await pdf.embedFont(decodeBase64(INTER_REGULAR_B64), { subset: true });
-  const bold = await pdf.embedFont(decodeBase64(INTER_BOLD_B64), { subset: true });
-  const display = await pdf.embedFont(decodeBase64(SPACE_GROTESK_BOLD_B64), { subset: true });
+  const set = pdfFontSet(resolveDocFont(presentation.font_family));
+  const regular = await pdf.embedFont(set.regular, { subset: true });
+  const bold = await pdf.embedFont(set.bold, { subset: true });
+  const display = await pdf.embedFont(set.display, { subset: true });
 
   pdf.setTitle(presentation.title);
   const t = themeOf(presentation.template, company?.accent_color ?? "#FF7500");
   const logo = await embedImage(pdf, logoUrl);
+  const clientLogo = await embedImage(pdf, clientLogoUrl);
+  const layout = presentation.logo_layout;
   const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
 
   const visible = slides.filter((s) => s.is_visible);
@@ -156,7 +152,7 @@ export async function buildPresentationPdf(
       images.push(await embedImage(pdf, src));
     }
     await drawSlide({
-      page, slide, images, logo, brand, theme: t,
+      page, slide, images, logo, clientLogo, layout, brand, theme: t,
       fonts: { regular, bold, display },
       company, presentation,
       index, total: visible.length,
@@ -172,6 +168,8 @@ type DrawArgs = {
   slide: ResolvedSlide;
   images: (PDFImage | null)[];
   logo: PDFImage | null;
+  clientLogo: PDFImage | null;
+  layout: Presentation["logo_layout"];
   brand: string;
   theme: Theme;
   fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont };
@@ -182,7 +180,7 @@ type DrawArgs = {
 };
 
 async function drawSlide(a: DrawArgs) {
-  const { page, slide, images, logo, brand, theme: t, fonts, company, presentation, index, total } = a;
+  const { page, slide, images, logo, clientLogo, layout, brand, theme: t, fonts, company, presentation, index, total } = a;
   const c = slide.content;
 
   const drawLines = (
