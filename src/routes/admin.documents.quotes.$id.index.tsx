@@ -32,6 +32,8 @@ import {
   listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
   saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
+import { saveEstimateTemplate } from "@/lib/estimate-templates.functions";
+
 import {
   checkQuote, computeTotals, emptyQuoteItem, num, quotePatchSchema, normalizeTime, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
   type Quote, type QuoteItem, type QuoteStatus,
@@ -149,6 +151,8 @@ function Page() {
   const makeVersion = useServerFn(createQuoteVersion);
   const rollback = useServerFn(restoreQuoteVersion);
   const makeTemplate = useServerFn(saveQuoteAsTemplate);
+  const saveSample = useServerFn(saveEstimateTemplate);
+
   const markSent = useServerFn(markQuoteSent);
   const sendToClient = useServerFn(sendQuoteToClient);
   const makeOrder = useServerFn(createOrderFromQuote);
@@ -334,6 +338,18 @@ function Page() {
       toast.success("Шаблон сохранён");
     } catch (e) { toast.error((e as Error).message); }
   };
+
+  const onSaveSample = async () => {
+    try {
+      await saveSample({
+        data: { source: "quote", docId: id, name: templateName.trim() || quote.title || "Образец сметы" },
+      });
+      setTemplateOpen(false);
+      setTemplateName("");
+      toast.success("Образец сметы сохранён");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
 
   const onMarkSent = async () => {
     try {
@@ -891,12 +907,17 @@ function Page() {
           <Field label="Название шаблона">
             <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Например: Корпоратив под ключ" />
           </Field>
+          <p className="text-xs text-muted-foreground">
+            Образец сметы доступен при создании любого документа — и КП, и КП промо.
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTemplateOpen(false)}>Отмена</Button>
+            <Button variant="outline" onClick={onSaveSample}>Сохранить как образец</Button>
             <Button onClick={onSaveTemplate}>Сохранить</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

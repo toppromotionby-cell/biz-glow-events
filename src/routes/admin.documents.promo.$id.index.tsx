@@ -35,6 +35,8 @@ import {
   sendPromoQuoteToClient,
   savePromoQuote, savePromoSnippet, savePromoTemplate,
 } from "@/lib/promo-quotes.functions";
+import { saveEstimateTemplate } from "@/lib/estimate-templates.functions";
+
 import {
   PROMO_STATUS_LABELS, PROMO_STATUSES, checkPromoQuote, computePromoTotals, promoNumberDisplay,
   promoValidityState, type PromoDiscountType, type PromoItem, type PromoQuote, type PromoStatus,
@@ -77,6 +79,8 @@ function EditorPage() {
   const get = useServerFn(getPromoQuote);
   const save = useServerFn(savePromoQuote);
   const saveTpl = useServerFn(savePromoTemplate);
+  const saveSample = useServerFn(saveEstimateTemplate);
+
   const saveSnippet = useServerFn(savePromoSnippet);
   const listVersions = useServerFn(listPromoVersions);
   const makeVersion = useServerFn(createPromoVersion);
@@ -687,8 +691,25 @@ function EditorPage() {
           <Field label="Название шаблона">
             <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} />
           </Field>
+          <p className="text-xs text-muted-foreground">
+            Шаблон доступен только в КП промо. Образец сметы можно применить и к обычному КП.
+          </p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setTemplateOpen(false)}>Отмена</Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const name = templateName.trim();
+                if (!name) return toast.error("Введите название");
+                try {
+                  await saveSample({ data: { source: "promo", docId: id, name } });
+                  setTemplateOpen(false);
+                  toast.success("Образец сметы сохранён");
+                } catch (e) { toast.error((e as Error).message); }
+              }}
+            >
+              Сохранить как образец
+            </Button>
             <Button
               onClick={async () => {
                 const name = templateName.trim();
@@ -703,6 +724,7 @@ function EditorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       {confirmDialog}
     </TooltipProvider>

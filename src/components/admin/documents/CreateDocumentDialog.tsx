@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { createQuote, createQuoteFromTemplate, listOrdersForQuote, listQuotes } from "@/lib/quotes.functions";
 import { createPromoQuote, listPromoQuotes } from "@/lib/promo-quotes.functions";
+import { createDocFromEstimateTemplate, listEstimateTemplates } from "@/lib/estimate-templates.functions";
 import { PROMO_PRESETS } from "@/lib/promo-quote-model";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
+
 
 export type CreatedDoc = { kind: "quote" | "promo"; id: string };
 
@@ -51,6 +53,16 @@ export function CreateDocumentDialog({ open, onOpenChange, onCreated }: Props) {
     queryFn: () => promoTemplates({ data: { templates: true } }),
     enabled: open && step === "promo",
   });
+
+  const samplesFn = useServerFn(listEstimateTemplates);
+  const fromSample = useServerFn(createDocFromEstimateTemplate);
+  const { data: samples = [] } = useQuery({
+    queryKey: ["create-doc-samples"],
+    queryFn: () => samplesFn({ data: { kind: "any" } }),
+    enabled: open && step !== "kind",
+  });
+
+
 
   const busy = useMutation({
     mutationFn: async (task: () => Promise<CreatedDoc>) => task(),
@@ -207,6 +219,40 @@ export function CreateDocumentDialog({ open, onOpenChange, onCreated }: Props) {
         )}
 
         {step !== "kind" && (
+          <div>
+            <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">Образцы смет</div>
+            <div className="max-h-40 divide-y divide-border/60 overflow-auto rounded-md border border-border/60">
+              {samples.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={busy.isPending}
+                  className="w-full px-3 py-2 text-left transition-colors hover:bg-muted/50"
+                  onClick={() =>
+                    run(async () => {
+                      const res = await fromSample({ data: { templateId: s.id, target: step === "promo" ? "promo" : "quote" } });
+                      return { kind: res.kind, id: res.id };
+                    })
+                  }
+                >
+                  <div className="text-sm font-medium">{s.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {s.items_count} поз. · <span className="tabular-nums">{fmtMoney(Number(s.total ?? 0))}</span>
+                    {s.description ? ` · ${s.description}` : ""}
+                  </div>
+                </button>
+              ))}
+              {!samples.length && (
+                <div className="p-3 text-sm text-muted-foreground">
+                  Образцов пока нет. Сохраните готовую смету как образец в редакторе документа.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {step !== "kind" && (
+
           <Button variant="ghost" size="sm" onClick={() => setStep("kind")}>Назад к выбору типа</Button>
         )}
       </DialogContent>
