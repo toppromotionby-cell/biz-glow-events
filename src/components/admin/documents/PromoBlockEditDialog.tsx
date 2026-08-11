@@ -1,11 +1,16 @@
 // Диалог редактирования блока промо-КП, открываемый двойным кликом в превью документа.
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field } from "@/components/admin/Field";
+import {
+  DocDialogShell,
+  IncludesEditor,
+  Summary,
+  money as fmtMoney,
+  parseNum,
+} from "@/components/admin/documents/doc-form-kit";
 import { normalizeVatMode } from "@/lib/documents/vat";
 import { VatSettings } from "@/components/admin/VatSettings";
 import {
@@ -26,28 +31,6 @@ const TITLES: Record<string, string> = {
   totals: "Итоги, скидка и НДС",
   footer: "Примечание в подвале",
 };
-
-const n = (v: string) => {
-  const x = Number(String(v).replace(",", "."));
-  return Number.isFinite(x) ? x : 0;
-};
-
-const money = (v: number, currency = "BYN") =>
-  `${new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0)} ${currency}`;
-
-/** Сводка «как в превью»: только чтение. */
-function Summary({ rows }: { rows: Array<[string, string, boolean?]> }) {
-  return (
-    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm">
-      {rows.map(([k, v, strong]) => (
-        <div key={k} className={`flex justify-between gap-4 py-0.5 ${strong ? "font-semibold" : ""}`}>
-          <span className="text-muted-foreground">{k}</span>
-          <span className="tabular-nums">{v}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function PromoBlockEditDialog({
   edit,
@@ -117,11 +100,7 @@ export function PromoBlockEditDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{TITLES[target] ?? "Редактирование"}</DialogTitle></DialogHeader>
-
-        <div className="space-y-3">
+    <DocDialogShell title={TITLES[target] ?? "Редактирование"} onClose={onClose} onSubmit={submit}>
           {target === "meta" && (
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Проект"><Input value={draft.project ?? ""} onChange={(e) => set({ project: e.target.value })} /></Field>
@@ -141,38 +120,20 @@ export function PromoBlockEditDialog({
               <Field label="Наименование" className="sm:col-span-2"><Input value={item.title} onChange={(e) => setItem({ ...item, title: e.target.value })} /></Field>
               <Field label="Раздел"><Input value={item.section} onChange={(e) => setItem({ ...item, section: e.target.value })} /></Field>
               <Field label="Ед. изм."><Input value={item.unit} onChange={(e) => setItem({ ...item, unit: e.target.value })} /></Field>
-              <Field label="Кол-во"><Input inputMode="decimal" value={String(item.qty)} onChange={(e) => setItem({ ...item, qty: n(e.target.value) })} /></Field>
-              <Field label="Множитель (дни/смены)"><Input inputMode="decimal" value={String(item.multiplier)} onChange={(e) => setItem({ ...item, multiplier: n(e.target.value) })} /></Field>
-              <Field label="Цена за ед."><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: n(e.target.value) })} /></Field>
-              <Field label="Себестоимость"><Input inputMode="decimal" value={String(item.cost)} onChange={(e) => setItem({ ...item, cost: n(e.target.value) })} /></Field>
+              <Field label="Кол-во"><Input inputMode="decimal" value={String(item.qty)} onChange={(e) => setItem({ ...item, qty: parseNum(e.target.value) })} /></Field>
+              <Field label="Множитель (дни/смены)"><Input inputMode="decimal" value={String(item.multiplier)} onChange={(e) => setItem({ ...item, multiplier: parseNum(e.target.value) })} /></Field>
+              <Field label="Цена за ед."><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: parseNum(e.target.value) })} /></Field>
+              <Field label="Себестоимость"><Input inputMode="decimal" value={String(item.cost)} onChange={(e) => setItem({ ...item, cost: parseNum(e.target.value) })} /></Field>
               <Field label="Примечание" className="sm:col-span-2"><Textarea rows={2} value={item.note} onChange={(e) => setItem({ ...item, note: e.target.value })} /></Field>
-              <Field label="Что входит" className="sm:col-span-2" hint="По строке на пункт">
-                <Textarea
-                  rows={4}
-                  value={item.includes.map((i) => (i.note ? `${i.text} — ${i.note}` : i.text)).join("\n")}
-                  onChange={(e) =>
-                    setItem({
-                      ...item,
-                      includes: e.target.value
-                        .split(/\r?\n/)
-                        .map((l) => l.trim())
-                        .filter(Boolean)
-                        .map((l) => {
-                          const [text, ...rest] = l.split(" — ");
-                          return { text: (text ?? "").trim(), note: rest.join(" — ").trim() };
-                        }),
-                    })
-                  }
-                />
-              </Field>
+              <IncludesEditor value={item.includes} onChange={(includes) => setItem({ ...item, includes })} />
               <div className="sm:col-span-2">
                 <Summary
                   rows={[
-                    ["Сумма строки", money(lineTotal(item), cur), true],
+                    ["Сумма строки", fmtMoney(lineTotal(item), cur), true],
                     ...(item.cost
                       ? ([
-                          ["Себестоимость", money(lineCost(item), cur)],
-                          ["Маржа", money(lineTotal(item) - lineCost(item), cur)],
+                          ["Себестоимость", fmtMoney(lineCost(item), cur)],
+                          ["Маржа", fmtMoney(lineTotal(item) - lineCost(item), cur)],
                         ] as Array<[string, string]>)
                       : []),
                   ]}
@@ -189,7 +150,7 @@ export function PromoBlockEditDialog({
               <Summary
                 rows={[
                   ["Позиций в разделе", String(sectionItems.length)],
-                  ["Сумма раздела", money(sectionItems.reduce((s, it) => s + lineTotal(it), 0), cur), true],
+                  ["Сумма раздела", fmtMoney(sectionItems.reduce((s, it) => s + lineTotal(it), 0), cur), true],
                 ]}
               />
             </div>
@@ -208,9 +169,9 @@ export function PromoBlockEditDialog({
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Значение скидки"><Input inputMode="decimal" value={String(draft.discount_value ?? 0)} onChange={(e) => set({ discount_value: n(e.target.value) })} /></Field>
-                <Field label="Комиссия, %"><Input inputMode="decimal" value={String(draft.commission_rate ?? 0)} onChange={(e) => set({ commission_rate: n(e.target.value), commission_enabled: n(e.target.value) > 0 })} /></Field>
-                <Field label="Менеджмент, сумма"><Input inputMode="decimal" value={String(draft.management_amount ?? 0)} onChange={(e) => set({ management_amount: n(e.target.value), management_enabled: n(e.target.value) > 0 })} /></Field>
+                <Field label="Значение скидки"><Input inputMode="decimal" value={String(draft.discount_value ?? 0)} onChange={(e) => set({ discount_value: parseNum(e.target.value) })} /></Field>
+                <Field label="Комиссия, %"><Input inputMode="decimal" value={String(draft.commission_rate ?? 0)} onChange={(e) => set({ commission_rate: parseNum(e.target.value), commission_enabled: parseNum(e.target.value) > 0 })} /></Field>
+                <Field label="Менеджмент, сумма"><Input inputMode="decimal" value={String(draft.management_amount ?? 0)} onChange={(e) => set({ management_amount: parseNum(e.target.value), management_enabled: parseNum(e.target.value) > 0 })} /></Field>
               </div>
               <VatSettings
                 value={{ mode: normalizeVatMode(draft.vat_mode ?? quote.vat_mode), rate: draft.vat_rate ?? quote.vat_rate, asLine: draft.vat_as_line ?? quote.vat_as_line }}
@@ -224,23 +185,23 @@ export function PromoBlockEditDialog({
               />
               <Summary
                 rows={[
-                  ["Позиции", money(totals.itemsSum, cur)],
+                  ["Позиции", fmtMoney(totals.itemsSum, cur)],
                   ...(totals.commission
-                    ? ([[merged.commission_label || "Комиссия", money(totals.commission, cur)]] as Array<[string, string]>)
+                    ? ([[merged.commission_label || "Комиссия", fmtMoney(totals.commission, cur)]] as Array<[string, string]>)
                     : []),
                   ...(totals.management
-                    ? ([[merged.management_label || "Менеджмент", money(totals.management, cur)]] as Array<[string, string]>)
+                    ? ([[merged.management_label || "Менеджмент", fmtMoney(totals.management, cur)]] as Array<[string, string]>)
                     : []),
-                  ...(totals.discount ? ([["Скидка", `− ${money(totals.discount, cur)}`]] as Array<[string, string]>) : []),
+                  ...(totals.discount ? ([["Скидка", `− ${fmtMoney(totals.discount, cur)}`]] as Array<[string, string]>) : []),
                   ...(totals.vatEnabled
                     ? ([
-                        ["Без НДС", money(totals.net, cur)],
-                        [`НДС ${totals.vatRate}%`, money(totals.vat, cur)],
+                        ["Без НДС", fmtMoney(totals.net, cur)],
+                        [`НДС ${totals.vatRate}%`, fmtMoney(totals.vat, cur)],
                       ] as Array<[string, string]>)
                     : []),
-                  ["Итого", money(totals.totalWithVat, cur), true],
+                  ["Итого", fmtMoney(totals.totalWithVat, cur), true],
                   ...(totals.costSum
-                    ? ([["Маржа", `${money(totals.margin, cur)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
+                    ? ([["Маржа", `${fmtMoney(totals.margin, cur)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
                     : []),
                 ]}
               />
@@ -252,13 +213,6 @@ export function PromoBlockEditDialog({
               <Textarea rows={4} value={draft.footer_note ?? ""} onChange={(e) => set({ footer_note: e.target.value })} />
             </Field>
           )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Отмена</Button>
-          <Button onClick={submit}>Сохранить</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </DocDialogShell>
   );
 }
