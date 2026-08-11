@@ -344,8 +344,15 @@ export function soleRateUnit(items: PromoItem[]): string {
   return set.size === 1 ? [...set][0]! : "";
 }
 
-/** Число без единицы — для отдельных колонок «Кол-во» / «Кол-во 2». */
+/** Число без единицы — для отдельных колонок «Кол-во». */
 export const formatNumber = (n: number) => nfQty(num(n, 0));
+
+/** Строка-услуга: ед. «услуга», кол-во 1 и без второй единицы — ячейки объединяются. */
+export function isServiceOnlyRow(it: PromoItem): boolean {
+  const u = qtyUnitLabel(it).toLowerCase().replace(/\./g, "").trim();
+  return (u === "услуга" || u === "усл") && num(it.qty, 0) === 1 && rateUnitLabel(it) === "";
+}
+
 
 
 /** «2 чел × 4 час × 25 = 200» — человекочитаемая расшифровка строки. */
