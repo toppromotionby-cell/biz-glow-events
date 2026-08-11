@@ -182,6 +182,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                             value={it.title}
                             onChange={(v) => replace(it.id, { title: v })}
                             fetcher={(term) => fetchItems(term, name)}
+                            labelOf={(h) => h.title}
                             onPick={(h) => replace(it.id, {
                               title: h.title,
                               unit: h.unit || it.unit,
