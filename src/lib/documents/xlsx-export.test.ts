@@ -189,7 +189,7 @@ describe("выгрузка промо-КП в Excel", () => {
     expect(t.optionsSum).toBeCloseTo(1000, 2);
 
     const wb = await buildPromoWorkbook(quote, items);
-    const total = labelledTotal(wb.worksheets[0], "Итого");
+    const total = labelledTotal(wb.worksheets[0], "Итого:");
     expect((total as any).result).toBeCloseTo(t.totalWithVat, 2);
   });
 

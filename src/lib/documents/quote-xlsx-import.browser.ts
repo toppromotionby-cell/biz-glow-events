@@ -121,8 +121,10 @@ export function rowsFromMatrix(matrix: unknown[][]): ImportResult {
     if (filled === 1 && qty === 0 && price === 0) { currentSection = title; continue; }
     if (/^(итог|всего|сумма|итого)/i.test(title)) { skipped++; continue; }
 
+    const sectionCell = cellText(at(row, "section"));
+    if (sectionCell) currentSection = sectionCell;
     rows.push({
-      section: cellText(at(row, "section")) || currentSection,
+      section: sectionCell || currentSection,
       title,
       description: cellText(at(row, "description")),
       unit: cellText(at(row, "unit")) || "шт.",
