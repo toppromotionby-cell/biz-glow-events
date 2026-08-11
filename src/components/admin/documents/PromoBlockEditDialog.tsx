@@ -125,7 +125,7 @@ export function PromoBlockEditDialog({
               <Field label="Цена за ед."><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: parseNum(e.target.value) })} /></Field>
               <Field label="Себестоимость"><Input inputMode="decimal" value={String(item.cost)} onChange={(e) => setItem({ ...item, cost: parseNum(e.target.value) })} /></Field>
               <Field label="Примечание" className="sm:col-span-2"><Textarea rows={2} value={item.note} onChange={(e) => setItem({ ...item, note: e.target.value })} /></Field>
-              <IncludesEditor value={item.includes} onChange={(includes) => setItem({ ...item, includes: includes.map((i) => ({ text: i.text, note: i.note ?? "" })) })} />
+              <IncludesEditor value={item.includes} onChange={(includes) => setItem({ ...item, includes })} />
               <div className="sm:col-span-2">
                 <Summary
                   rows={[
