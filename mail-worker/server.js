@@ -37,7 +37,7 @@ function buildImap(cfg, over = {}) {
     auth: { user: over.username ?? cfg.username, pass: cfg.password },
     logger: false,
     socketTimeout: 60_000,
-    tls: { servername: host, rejectUnauthorized: over.allow_invalid_cert ? false : true },
+    tls: { servername: host, rejectUnauthorized: (over.allow_invalid_cert ?? cfg.allow_invalid_cert) ? false : true },
   });
 }
 
@@ -54,7 +54,7 @@ function buildSmtp(cfg, over = {}) {
     connectionTimeout: 20_000,
     greetingTimeout: 20_000,
     socketTimeout: 30_000,
-    tls: { servername: host, rejectUnauthorized: over.allow_invalid_cert ? false : true },
+    tls: { servername: host, rejectUnauthorized: (over.allow_invalid_cert ?? cfg.allow_invalid_cert) ? false : true },
   });
 }
 
