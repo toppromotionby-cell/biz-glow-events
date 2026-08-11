@@ -1,0 +1,2 @@
+ALTER TABLE public.promo_quotes ADD COLUMN IF NOT EXISTS gdoc_id text, ADD COLUMN IF NOT EXISTS gdoc_url text;
+ALTER TABLE public.quotes ADD COLUMN IF NOT EXISTS gdoc_id text, ADD COLUMN IF NOT EXISTS gdoc_url text;
