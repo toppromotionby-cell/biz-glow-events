@@ -54,6 +54,16 @@ export function CreateDocumentDialog({ open, onOpenChange, onCreated }: Props) {
     enabled: open && step === "promo",
   });
 
+  const samplesFn = useServerFn(listEstimateTemplates);
+  const fromSample = useServerFn(createDocFromEstimateTemplate);
+  const { data: samples = [] } = useQuery({
+    queryKey: ["create-doc-samples"],
+    queryFn: () => samplesFn({ data: { kind: "any" } }),
+    enabled: open && step !== "kind",
+  });
+
+
+
   const busy = useMutation({
     mutationFn: async (task: () => Promise<CreatedDoc>) => task(),
     onSuccess: (doc) => onCreated(doc),
