@@ -108,7 +108,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
         const sum = list.filter(isCounted).reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[name];
         return (
-          <div key={name || "__none"} className="rounded-xl border border-border">
+          <div key={`sec-${secIdx}`} className="rounded-xl border border-border">
             <div className="flex items-center gap-2 border-b border-border/60 bg-muted/30 p-2">
               <Button
                 size="icon"
