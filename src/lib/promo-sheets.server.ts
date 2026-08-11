@@ -1,33 +1,41 @@
-// Синхронизация состава промо-КП с Google Таблицами.
-// Схема позиций промо: множитель, «в итог», исключение из комиссии.
+// Промо-КП в Google Таблице: лист выглядит как документ (шапка, мета, таблица
+// позиций с живыми формулами, итоги), а служебные поля живут в скрытых
+// колонках справа — по ним лист читается обратно и приводится к единому виду.
 import {
+  colLetter,
   createSheetDocument,
+  getSheetMeta,
   rangePath,
   sheetBool,
+  sheetColor,
   sheetNum,
   sheetStr,
+  sheetsBatchUpdate,
   sheetsGateway,
 } from "@/lib/sheets-gateway.server";
+import { buildDocLayout, type DocColumnKey } from "@/lib/documents/doc-layout";
+import { resolveDocFont } from "@/lib/documents/doc-font";
+import type { PromoItem, PromoQuote } from "@/lib/promo-quote-model";
 
 export { SheetSyncError } from "@/lib/sheets-gateway.server";
 
-export const PROMO_SHEET_TAB = "Состав";
-export const PROMO_SHEET_HEADER = [
-  "ID позиции",
-  "Раздел",
-  "Наименование",
-  "Ед.",
-  "Кол-во",
-  "Кол-во 2 (множитель)",
-  "Цена",
-  "Себестоимость",
-  "В итог (1/0)",
-  "Без комиссии (1/0)",
-  "Справочно (1/0)",
-  "Примечание",
-  "Ед. 2",
-];
-const LAST_COL = "M";
+export const PROMO_SHEET_TAB = "КП";
+
+/** Служебные (скрытые) колонки — по ним таблица читается обратно. */
+const SERVICE_KEYS = [
+  "__kind",
+  "__id",
+  "__section",
+  "__qty",
+  "__mul",
+  "__rate_unit",
+  "__cost",
+  "__included",
+  "__excl",
+  "__info",
+  "__net",
+  "__comm",
+] as const;
 
 export type PromoSheetRow = {
   id: string;
@@ -45,78 +53,372 @@ export type PromoSheetRow = {
   rate_unit: string;
 };
 
-const flag = (v: boolean) => (v ? 1 : 0);
+const MONEY_FMT = { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } };
+const BORDER = { style: "SOLID", color: sheetColor("#d8d8dd") };
+const BORDERS = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
 
-export function promoItemsToRows(items: PromoSheetRow[]): (string | number)[][] {
-  return items.map((it) => [
-    it.id,
-    it.section,
-    it.title,
-    it.unit,
-    it.qty,
-    it.multiplier,
-    it.price,
-    it.cost,
-    flag(it.included),
-    flag(it.exclude_from_commission),
-    flag(it.is_info),
-    it.note,
-    it.rate_unit,
+type Cell = Record<string, unknown>;
+
+const txt = (v: string, fmt: Cell = {}): Cell => ({
+  userEnteredValue: { stringValue: v },
+  userEnteredFormat: fmt,
+});
+const numCell = (v: number, fmt: Cell = {}): Cell => ({
+  userEnteredValue: { numberValue: Number.isFinite(v) ? v : 0 },
+  userEnteredFormat: fmt,
+});
+const fx = (f: string, fmt: Cell = {}): Cell => ({
+  userEnteredValue: { formulaValue: f },
+  userEnteredFormat: fmt,
+});
+const empty = (fmt: Cell = {}): Cell => ({ userEnteredFormat: fmt });
+
+const ALIGN: Record<string, string> = { left: "LEFT", center: "CENTER", right: "RIGHT" };
+
+/** Полное описание листа: значения, формулы и оформление. */
+function buildSheetGrid(quote: PromoQuote, items: PromoItem[]) {
+  const layout = buildDocLayout(quote, items);
+  const font = resolveDocFont(quote.font_family) === "ubuntu" ? "Ubuntu" : "Inter";
+  const visible = layout.columns.map((c) => c.key);
+  const keys: string[] = [...visible, ...SERVICE_KEYS];
+  const colOf = (key: string) => keys.indexOf(key);
+  const width = keys.length;
+  const visibleWidth = visible.length;
+
+  /** Ссылка на колонку значения: видимая, иначе служебная. */
+  const refCol = (key: DocColumnKey, fallback: string) =>
+    colLetter(visible.includes(key) ? colOf(key) : colOf(fallback));
+
+  const base = { textFormat: { fontFamily: font, fontSize: 9 }, verticalAlignment: "TOP" };
+  const rows: Cell[][] = [];
+  const merges: Array<{ row: number; from: number; to: number }> = [];
+  const pad = (cells: Cell[]) => {
+    while (cells.length < width) cells.push(empty());
+    return cells;
+  };
+  const push = (cells: Cell[]) => rows.push(pad(cells));
+
+  // 0) Скрытая строка ключей — карта колонок для обратного чтения.
+  push(keys.map((k) => txt(k === visible[0] ? `__keys:${k}` : k)));
+
+  // 1) Шапка документа.
+  const headLine = (text: string, fmt: Cell) => {
+    merges.push({ row: rows.length, from: 0, to: visibleWidth });
+    push([txt(text, { ...base, ...fmt })]);
+  };
+  const companyLine = (quote.company_overrides as { line?: string } | null)?.line;
+  if (companyLine) headLine(String(companyLine), { textFormat: { fontFamily: font, fontSize: 9, bold: false } });
+  headLine(layout.docTitle, { textFormat: { fontFamily: font, fontSize: 13, bold: true } });
+  for (const line of layout.meta)
+    headLine(line, {
+      backgroundColor: sheetColor("#f6f6f7"),
+      borders: BORDERS,
+      textFormat: { fontFamily: font, fontSize: 9 },
+    });
+  push([]);
+
+  // 2) Заголовок таблицы.
+  const headerRow = rows.length;
+  push([
+    ...layout.columns.map((c) =>
+      txt(c.label, {
+        backgroundColor: sheetColor(layout.accent),
+        borders: BORDERS,
+        horizontalAlignment: "CENTER",
+        wrapStrategy: "WRAP",
+        textFormat: { fontFamily: font, fontSize: 9, bold: true },
+      }),
+    ),
+    ...SERVICE_KEYS.map((k) => txt(k)),
   ]);
+
+  // 3) Позиции.
+  const itemRowIdx: number[] = [];
+  const firstDataRow = rows.length;
+  for (const r of layout.rows) {
+    const rowNum = rows.length + 1; // A1-нотация
+    const bg =
+      r.kind === "section"
+        ? sheetColor("#e7e7ea")
+        : r.kind === "subtotal"
+          ? sheetColor("#f4f4f6")
+          : r.kind === "extra"
+            ? sheetColor("#fbfbfc")
+            : undefined;
+    const bold = r.kind === "section" || r.kind === "subtotal";
+    const cellFmt = (align: string, money: boolean): Cell => ({
+      ...base,
+      ...(bg ? { backgroundColor: bg } : {}),
+      borders: BORDERS,
+      horizontalAlignment: ALIGN[align],
+      wrapStrategy: "WRAP",
+      textFormat: { fontFamily: font, fontSize: 9, bold, italic: r.kind === "extra" },
+      ...(money ? MONEY_FMT : {}),
+    });
+
+    const cells: Cell[] = layout.columns.map((c) => {
+      const fmt = cellFmt(c.align, c.money);
+      if (r.kind !== "item") {
+        const n = r.numbers[c.key];
+        if (n != null && c.money) return numCell(n, fmt);
+        return txt(r.cells[c.key] ?? "", fmt);
+      }
+      const qtyRef = `${refCol("qty", "__qty")}${rowNum}`;
+      const mulRef = `${refCol("multiplier", "__mul")}${rowNum}`;
+      const priceRef = `${colLetter(colOf("price"))}${rowNum}`;
+      if (c.key === "total_qty") return fx(`=${qtyRef}*${mulRef}`, fmt);
+      if (c.key === "amount") return fx(`=${qtyRef}*${mulRef}*${priceRef}`, fmt);
+      if (c.key === "qty") return numCell(r.numbers.qty ?? 0, fmt);
+      if (c.key === "multiplier") return numCell(r.numbers.multiplier ?? 1, fmt);
+      if (c.key === "price") return numCell(r.numbers.price ?? 0, fmt);
+      return txt(r.cells[c.key] ?? "", fmt);
+    });
+
+    const it = r.item;
+    const amountRef = `${colLetter(colOf("amount"))}${rowNum}`;
+    const service: Cell[] = [
+      txt(r.kind),
+      txt(it?.id ?? ""),
+      txt(r.section ?? ""),
+      numCell(it ? it.qty : 0),
+      numCell(it ? it.multiplier || 1 : 1),
+      txt(it?.rate_unit ?? ""),
+      numCell(it?.cost ?? 0),
+      txt(it ? (it.included ? "1" : "0") : ""),
+      txt(it ? (it.exclude_from_commission ? "1" : "0") : ""),
+      txt(it ? (it.is_info ? "1" : "0") : ""),
+      r.kind === "item" && r.counted ? fx(`=${amountRef}`) : numCell(0),
+      r.kind === "item" && r.commissionable ? fx(`=${amountRef}`) : numCell(0),
+    ];
+    if (r.kind === "item") itemRowIdx.push(rows.length);
+    push([...cells, ...service]);
+  }
+  const lastDataRow = rows.length;
+  push([]);
+
+  // 4) Итоги — формулы поверх скрытых колонок «в итог» и «в базу комиссии».
+  const netCol = colLetter(colOf("__net"));
+  const commCol = colLetter(colOf("__comm"));
+  const range = (col: string) => `${col}${firstDataRow + 1}:${col}${lastDataRow}`;
+  const itemsSum = itemRowIdx.length ? `SUM(${range(netCol)})` : "0";
+  const commBase = itemRowIdx.length ? `SUM(${range(commCol)})` : "0";
+  const management = quote.management_enabled ? String(layout.computed.management) : "0";
+  const commission = quote.commission_enabled ? `(${commBase})*${quote.commission_rate}/100` : "0";
+  const gross = `(${itemsSum})+${management}+${commission}`;
+  const discount =
+    quote.discount_type === "percent"
+      ? `(${gross})*${Math.min(quote.discount_value, 100)}/100`
+      : quote.discount_type === "fixed"
+        ? String(layout.computed.discount)
+        : "0";
+  const subtotal = `(${gross})-(${discount})`;
+  const rate = layout.computed.vatRate;
+  const netExpr =
+    layout.computed.vatMode === "included" ? `(${subtotal})/(1+${rate}/100)` : `${subtotal}`;
+  const vatExpr =
+    !layout.computed.vatEnabled
+      ? "0"
+      : layout.computed.vatMode === "included"
+        ? `(${subtotal})-(${netExpr})`
+        : `(${subtotal})*${rate}/100`;
+  const grandExpr =
+    layout.computed.vatMode === "included" ? `${subtotal}` : `(${netExpr})+(${vatExpr})`;
+
+  const totalsExpr: Array<{ label: string; expr: string; grand?: boolean }> = [];
+  if (layout.computed.discount > 0)
+    totalsExpr.push({ label: layout.totals[0]!.label, expr: `-(${discount})` });
+  totalsExpr.push({
+    label: layout.computed.vatEnabled ? "Стоимость позиций (без НДС)" : "Всего",
+    expr: netExpr,
+  });
+  if (layout.computed.vatEnabled)
+    totalsExpr.push({ label: `НДС ${rate}%`, expr: vatExpr });
+  totalsExpr.push({
+    label: `Итого${layout.computed.vatEnabled ? ", с НДС" : ""}, ${quote.currency}`,
+    expr: grandExpr,
+    grand: true,
+  });
+
+  const labelCol = Math.max(0, visibleWidth - 2);
+  for (const t of totalsExpr) {
+    const cells: Cell[] = Array.from({ length: visibleWidth }, () => empty());
+    if (labelCol < visibleWidth - 1) merges.push({ row: rows.length, from: 0, to: visibleWidth - 1 });
+    cells[0] = txt(`${t.label}:`, {
+      ...base,
+      backgroundColor: sheetColor(layout.accent),
+      borders: BORDERS,
+      horizontalAlignment: "RIGHT",
+      textFormat: { fontFamily: font, fontSize: t.grand ? 11 : 9, bold: true },
+    });
+    cells[visibleWidth - 1] = fx(t.expr.startsWith("-") ? `=${t.expr}` : `=${t.expr}`, {
+      ...base,
+      backgroundColor: sheetColor("#fff8ea"),
+      borders: BORDERS,
+      horizontalAlignment: "RIGHT",
+      textFormat: { fontFamily: font, fontSize: t.grand ? 11 : 9, bold: t.grand === true },
+      ...MONEY_FMT,
+    });
+    push(cells);
+  }
+
+  if (quote.footer_note) {
+    push([]);
+    merges.push({ row: rows.length, from: 0, to: visibleWidth });
+    push([
+      txt(quote.footer_note, {
+        ...base,
+        wrapStrategy: "WRAP",
+        textFormat: { fontFamily: font, fontSize: 9, italic: true },
+      }),
+    ]);
+  }
+
+  return { layout, rows, merges, keys, width, visibleWidth, headerRow };
 }
 
-export function promoRowsToItems(values: unknown[][]): PromoSheetRow[] {
-  return values
-    .slice(1)
-    .map((r) => ({
-      id: sheetStr(r?.[0]),
-      section: sheetStr(r?.[1]),
-      title: sheetStr(r?.[2]),
-      unit: sheetStr(r?.[3]) || "услуга",
-      qty: sheetNum(r?.[4]),
-      multiplier: sheetNum(r?.[5]) || 1,
-      price: sheetNum(r?.[6]),
-      cost: sheetNum(r?.[7]),
-      included: sheetBool(r?.[8], true),
-      exclude_from_commission: sheetBool(r?.[9], false),
-      is_info: sheetBool(r?.[10], false),
-      note: sheetStr(r?.[11]),
-      rate_unit: sheetStr(r?.[12]),
-    }))
-    .filter((r) => r.title.length > 0);
+/** Полностью перерисовывает лист «КП» в фирменном стиле. */
+export async function writePromoSheet(
+  spreadsheetId: string,
+  quote: PromoQuote,
+  items: PromoItem[],
+): Promise<void> {
+  const grid = buildSheetGrid(quote, items);
+  const meta = await getSheetMeta(spreadsheetId);
+  const sheet = meta.sheets?.[0]?.properties;
+  if (!sheet) throw new Error("В таблице нет листов");
+  const sheetId = sheet.sheetId;
+
+  const requests: unknown[] = [
+    {
+      updateSheetProperties: {
+        properties: {
+          sheetId,
+          title: PROMO_SHEET_TAB,
+          gridProperties: {
+            rowCount: Math.max(grid.rows.length + 20, 60),
+            columnCount: grid.width + 2,
+            frozenRowCount: grid.headerRow + 1,
+          },
+        },
+        fields: "title,gridProperties(rowCount,columnCount,frozenRowCount)",
+      },
+    },
+    { unmergeCells: { range: { sheetId } } },
+    { updateCells: { range: { sheetId }, fields: "*" } },
+    {
+      updateCells: {
+        start: { sheetId, rowIndex: 0, columnIndex: 0 },
+        rows: grid.rows.map((cells) => ({ values: cells })),
+        fields: "userEnteredValue,userEnteredFormat",
+      },
+    },
+    // Строка ключей — служебная, прячем её.
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 },
+        properties: { hiddenByUser: true },
+        fields: "hiddenByUser",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "COLUMNS", startIndex: grid.visibleWidth, endIndex: grid.width },
+        properties: { hiddenByUser: true },
+        fields: "hiddenByUser",
+      },
+    },
+  ];
+
+  grid.layout.columns.forEach((c, i) => {
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "COLUMNS", startIndex: i, endIndex: i + 1 },
+        properties: { pixelSize: Math.max(64, Math.round(c.width * 1000)) },
+        fields: "pixelSize",
+      },
+    });
+  });
+
+  for (const m of grid.merges) {
+    requests.push({
+      mergeCells: {
+        range: { sheetId, startRowIndex: m.row, endRowIndex: m.row + 1, startColumnIndex: m.from, endColumnIndex: m.to },
+        mergeType: "MERGE_ROWS",
+      },
+    });
+  }
+
+  await sheetsBatchUpdate(spreadsheetId, requests);
 }
 
 export async function createPromoSpreadsheet(title: string) {
   return createSheetDocument(title, PROMO_SHEET_TAB);
 }
 
-/** Полностью перезаписывает лист «Состав». */
-export async function writePromoRows(spreadsheetId: string, items: PromoSheetRow[]): Promise<void> {
-  await sheetsGateway(
-    `/spreadsheets/${spreadsheetId}/values/${rangePath(`${PROMO_SHEET_TAB}!A1:${LAST_COL}1000`)}:clear`,
-    { method: "POST", body: {} },
+const LEGACY_HEADER_KEYS = [
+  "__id",
+  "__section",
+  "title",
+  "unit",
+  "qty",
+  "multiplier",
+  "price",
+  "__cost",
+  "__included",
+  "__excl",
+  "__info",
+  "note",
+  "__rate_unit",
+];
+
+/** Читает лист обратно: и новый оформленный вид, и старый «сырой». */
+export async function readPromoRows(spreadsheetId: string): Promise<PromoSheetRow[]> {
+  const meta = await getSheetMeta(spreadsheetId);
+  const tab = meta.sheets?.[0]?.properties.title ?? PROMO_SHEET_TAB;
+  const res = await sheetsGateway<{ values?: unknown[][] }>(
+    `/spreadsheets/${spreadsheetId}/values/${rangePath(`'${tab}'!A1:AZ2000`)}?valueRenderOption=UNFORMATTED_VALUE`,
   );
-  const range = `${PROMO_SHEET_TAB}!A1:${LAST_COL}${items.length + 1}`;
-  await sheetsGateway(
-    `/spreadsheets/${spreadsheetId}/values/${rangePath(range)}?valueInputOption=USER_ENTERED`,
-    {
-      method: "PUT",
-      body: {
-        range,
-        majorDimension: "ROWS",
-        values: [PROMO_SHEET_HEADER, ...promoItemsToRows(items)],
-      },
-    },
-  );
+  return parsePromoSheetValues(res.values ?? []);
 }
 
-export async function readPromoRows(spreadsheetId: string): Promise<PromoSheetRow[]> {
-  const res = await sheetsGateway<{ values?: unknown[][] }>(
-    `/spreadsheets/${spreadsheetId}/values/${rangePath(
-      `${PROMO_SHEET_TAB}!A1:${LAST_COL}1000`,
-    )}?valueRenderOption=UNFORMATTED_VALUE`,
-  );
-  return promoRowsToItems(res.values ?? []);
+/** Парсер значений листа → строки состава (чистая функция, покрыта тестами). */
+export function parsePromoSheetValues(values: unknown[][]): PromoSheetRow[] {
+  if (!values.length) return [];
+  const first = values[0] ?? [];
+  const isNew = sheetStr(first[0]).startsWith("__keys:");
+  const keys = isNew
+    ? first.map((v, i) => (i === 0 ? sheetStr(v).replace(/^__keys:/, "") : sheetStr(v)))
+    : LEGACY_HEADER_KEYS;
+  const at = (row: unknown[], key: string) => {
+    const i = keys.indexOf(key);
+    return i >= 0 ? row[i] : undefined;
+  };
+
+  const out: PromoSheetRow[] = [];
+  for (let r = 1; r < values.length; r += 1) {
+    const row = values[r] ?? [];
+    if (isNew && sheetStr(at(row, "__kind")) !== "item") continue;
+    const title = sheetStr(at(row, "title"));
+    if (!title) continue;
+    const qty = sheetNum(at(row, "qty") ?? at(row, "__qty"));
+    const multiplier = sheetNum(at(row, "multiplier") ?? at(row, "__mul")) || 1;
+    out.push({
+      id: sheetStr(at(row, "__id")),
+      section: sheetStr(at(row, "__section")),
+      title,
+      unit: sheetStr(at(row, "unit")) || "услуга",
+      qty,
+      multiplier,
+      price: sheetNum(at(row, "price")),
+      cost: sheetNum(at(row, "__cost")),
+      included: sheetBool(at(row, "__included"), true),
+      exclude_from_commission: sheetBool(at(row, "__excl"), false),
+      is_info: sheetBool(at(row, "__info"), false),
+      note: sheetStr(at(row, "note")),
+      rate_unit: sheetStr(at(row, "rate_unit") ?? at(row, "__rate_unit")),
+    });
+  }
+  return out;
 }
 
 export type PromoSheetDiffRow = {
@@ -161,7 +463,7 @@ export function diffPromoRows(dbItems: PromoSheetRow[], sheetItems: PromoSheetRo
         const a = before[k];
         const b = s[k];
         if (typeof a === "boolean" || typeof b === "boolean") return Boolean(a) !== Boolean(b);
-        if (typeof a === "number" || typeof b === "number") return Number(a) !== Number(b);
+        if (typeof a === "number" || typeof b === "number") return Math.abs(Number(a) - Number(b)) > 0.004;
         return String(a ?? "") !== String(b ?? "");
       })
       .map((k) => FIELD_LABELS[k]);
