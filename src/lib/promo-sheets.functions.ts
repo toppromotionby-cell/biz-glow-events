@@ -204,8 +204,11 @@ export const applyPromoSheetDiff = createServerFn({ method: "POST" })
 
     // Возвращаем таблицу в согласованное состояние (у новых позиций появились id).
     try {
-      const { rows: fresh } = await loadPromo(context.supabase as never, data.id);
-      await writePromoRows(sheetId, fresh);
+      const { rows: fresh, promo: freshPromo, itemsModel: freshModel } = await loadPromo(
+        context.supabase as never,
+        data.id,
+      );
+      await writePromoSheet(sheetId, freshPromo, freshModel);
       await sb.from("promo_quotes").update({ sheet_snapshot: fresh }).eq("id", data.id);
     } catch (e) {
       console.error("[promo-sheets] re-push failed", e);
