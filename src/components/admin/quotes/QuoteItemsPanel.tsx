@@ -3,7 +3,7 @@
 // себестоимость/маржа, состав позиции и вставка из Excel.
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  ChevronDown, ChevronUp, ClipboardPaste, Copy, FolderPlus, ListChecks, MoreHorizontal, Plus, Trash2,
+  BookOpen, ChevronDown, ChevronUp, ClipboardPaste, Copy, FolderPlus, ListChecks, MoreHorizontal, Plus, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/quotes-model";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import { SuggestInput } from "@/components/admin/SuggestInput";
+import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 
 function Mini({ label, width, children }: { label: string; width: string; children: ReactNode }) {
@@ -52,6 +53,7 @@ export function QuoteItemsPanel({
   const [includesFor, setIncludesFor] = useState<string | null>(null);
   const [newSectionOpen, setNewSectionOpen] = useState(false);
   const [newSection, setNewSection] = useState("");
+  const [kbSection, setKbSection] = useState<string | null>(null);
   const { fetchItems } = useDocSuggest();
 
   const sections = useMemo(() => listSections(items), [items]);
@@ -95,6 +97,27 @@ export function QuoteItemsPanel({
     onChange([...items, emptyQuoteItem(quoteId, items.length, { section })]);
   };
 
+  const addFromKnowledge = (
+    picked: Array<{ title: string; section: string; unit: string; price: number; cost: number; description: string; includes: Array<{ text: string; note: string }> }>,
+    section: string,
+  ) => {
+    const quoteId = items[0]?.quote_id ?? "";
+    const base = items.length;
+    const created = picked.map((h, i) =>
+      emptyQuoteItem(quoteId, base + i, {
+        section: section || h.section || "",
+        title: h.title,
+        qty: 1,
+        unit: h.unit || "шт",
+        price: h.price,
+        cost: h.cost,
+        description: h.description,
+        includes: h.includes.map((x) => ({ ...x })),
+      }),
+    );
+    onChange([...items, ...created]);
+  };
+
   const createSection = () => {
     const name = newSection.trim();
     if (!name) return;
@@ -130,6 +153,9 @@ export function QuoteItemsPanel({
         <Button variant="outline" size="sm" onClick={() => setPasteOpen(true)}>
           <ClipboardPaste className="mr-1.5 h-4 w-4" />Вставить из Excel
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setKbSection("")}>
+          <BookOpen className="mr-1.5 h-4 w-4" />Из базы знаний
+        </Button>
       </div>
 
       {grouped.map(([section, list]) => {
@@ -159,6 +185,10 @@ export function QuoteItemsPanel({
               <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Добавить позицию в раздел"
                 onClick={() => addInSection(section)}>
                 <Plus className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Добавить в раздел из базы знаний"
+                onClick={() => setKbSection(section)}>
+                <BookOpen className="h-4 w-4" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -397,6 +427,13 @@ export function QuoteItemsPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <KnowledgeItemsDialog
+        open={kbSection !== null}
+        onOpenChange={(v) => setKbSection(v ? (kbSection ?? "") : null)}
+        targetSection={kbSection ?? ""}
+        onAdd={addFromKnowledge}
+      />
     </div>
   );
 }

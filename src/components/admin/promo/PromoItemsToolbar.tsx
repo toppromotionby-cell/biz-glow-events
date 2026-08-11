@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ClipboardPaste, FolderPlus, Library, Trash2 } from "lucide-react";
+import { BookOpen, ClipboardPaste, FolderPlus, Library, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { deletePromoSnippet, listPromoSnippets } from "@/lib/promo-quotes.functions";
 import { newPromoItem, parsePastedPromoRows, type PromoItem } from "@/lib/promo-quote-model";
+import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
 
 export function PromoItemsToolbar({
   items, onChange,
@@ -28,6 +29,7 @@ export function PromoItemsToolbar({
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [pasteSection, setPasteSection] = useState("");
+  const [kbOpen, setKbOpen] = useState(false);
 
   const snippets = useQuery({ queryKey: ["promo-snippets"], queryFn: () => listSnippets() });
   const removeSnippet = useMutation({
@@ -37,6 +39,25 @@ export function PromoItemsToolbar({
       toast.success("Блок удалён");
     },
   });
+
+  const addFromKnowledge = (
+    picked: Array<{ title: string; section: string; unit: string; price: number; cost: number; description: string; includes: Array<{ text: string; note: string }> }>,
+    section: string,
+  ) => {
+    const created = picked.map((h, i) =>
+      newPromoItem(section || h.section || "", {
+        title: h.title,
+        unit: h.unit || "услуга",
+        price: h.price,
+        cost: h.cost,
+        note: h.description,
+        includes: h.includes.map((x) => ({ ...x })),
+        sort_order: items.length + i,
+      }),
+    );
+    onChange([...items, ...created]);
+    toast.success(`Добавлено позиций: ${created.length}`);
+  };
 
   const applyPaste = () => {
     const parsed = parsePastedPromoRows(pasteText, pasteSection.trim());
@@ -86,6 +107,12 @@ export function PromoItemsToolbar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Button size="sm" variant="outline" onClick={() => setKbOpen(true)}>
+        <BookOpen className="mr-1 h-4 w-4" />Из базы знаний
+      </Button>
+
+      <KnowledgeItemsDialog open={kbOpen} onOpenChange={setKbOpen} onAdd={addFromKnowledge} />
 
       <Popover>
         <PopoverTrigger asChild>

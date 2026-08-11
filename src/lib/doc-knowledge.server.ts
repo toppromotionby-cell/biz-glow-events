@@ -457,3 +457,56 @@ export async function harvestFromPresentation(
     ]),
   });
 }
+
+/* ---------------- Просмотр каталога позиций для конструкторов ---------------- */
+
+export type ItemBrowseHit = ItemHit & { usage_count: number };
+
+/** Поиск позиций базы знаний для массового добавления в документ. */
+export async function browseItems(opts: {
+  term?: string;
+  section?: string;
+  limit?: number;
+}): Promise<{ rows: ItemBrowseHit[]; sections: string[] }> {
+  const t = s(opts.term);
+  const sec = s(opts.section);
+  const limit = Math.min(200, Math.max(1, opts.limit ?? 60));
+
+  let q = supabaseAdmin
+    .from("doc_item_catalog")
+    .select("id,section,title,description,unit,price,cost,includes,usage_count")
+    .order("usage_count", { ascending: false })
+    .order("last_used_at", { ascending: false })
+    .limit(limit);
+  if (t) q = q.or(`title.ilike.%${t}%,description.ilike.%${t}%`);
+  if (sec) q = q.eq("section", sec);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+
+  const rows = ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    id: String(r["id"]),
+    section: s(r["section"]),
+    title: s(r["title"]),
+    description: s(r["description"]),
+    unit: s(r["unit"]) || "шт",
+    price: Number(r["price"] ?? 0),
+    cost: Number(r["cost"] ?? 0),
+    usage_count: Number(r["usage_count"] ?? 0),
+    includes: Array.isArray(r["includes"])
+      ? (r["includes"] as Array<Record<string, unknown>>).map((x) => ({
+          text: s(x?.["text"]),
+          note: s(x?.["note"]),
+        }))
+      : [],
+  })) as ItemBrowseHit[];
+
+  const { data: secData } = await supabaseAdmin
+    .from("doc_item_catalog")
+    .select("section")
+    .limit(1000);
+  const sections = Array.from(
+    new Set(((secData ?? []) as Array<{ section: string | null }>).map((r) => s(r.section)).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b, "ru"));
+
+  return { rows, sections };
+}
