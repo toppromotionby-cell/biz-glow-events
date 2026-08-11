@@ -88,8 +88,19 @@ export type PromoItem = {
   note: string;
   includes: QuoteItemInclude[];
   exclude_from_commission: boolean;
+  /** Позиция входит в итог сметы (колонка «1 — включаем, 0 — не включаем»). */
+  included: boolean;
+  /** Строки с одинаковым ключом считаются одной связкой и включаются вместе. */
+  group_key: string;
+  /** Подпись первой единицы (например «чел»); пусто — колонка не показывается. */
+  qty_unit: string;
+  /** Подпись второй единицы (например «час»). */
+  rate_unit: string;
+  /** Справочная строка без цены (информация для клиента). */
+  is_info: boolean;
   sort_order: number;
 };
+
 
 
 const num = (v: unknown, d = 0) => {
@@ -163,12 +174,17 @@ export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
     title: str(row.title),
     unit: str(row.unit, "услуга"),
     qty: num(row.qty, 1),
-    multiplier: num(row.multiplier, 1),
+    multiplier: num(row.rate_qty ?? row.multiplier, 1),
     price: num(row.price),
     cost: num(row.cost),
     note: str(row.note),
     includes: normalizeIncludes(row.includes),
     exclude_from_commission: row.exclude_from_commission === true,
+    included: row.included !== false,
+    group_key: str(row.group_key),
+    qty_unit: str(row.qty_unit),
+    rate_unit: str(row.rate_unit),
+    is_info: row.is_info === true,
     sort_order: num(row.sort_order),
   };
 }
@@ -191,8 +207,14 @@ export const promoItemSchema = z.object({
     .max(60)
     .default([]),
   exclude_from_commission: z.boolean().default(false),
+  included: z.boolean().default(true),
+  group_key: z.string().max(60).default(""),
+  qty_unit: z.string().max(40).default(""),
+  rate_unit: z.string().max(40).default(""),
+  is_info: z.boolean().default(false),
   sort_order: z.number().int().min(0).max(10000).default(0),
 });
+
 
 export const promoQuotePatchSchema = z
   .object({
