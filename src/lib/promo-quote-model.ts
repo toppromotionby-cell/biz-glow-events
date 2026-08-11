@@ -309,6 +309,41 @@ export function lineQty(it: PromoItem): number {
   return num(it.qty, 0) * num(it.multiplier, 1);
 }
 
+const nfQty = (n: number) => String(Math.round(n * 100) / 100).replace(".", ",");
+
+/** Подпись первой единицы позиции: «Ед. 1» либо основная «Ед. изм.» («чел»). */
+export function qtyUnitLabel(it: PromoItem): string {
+  return (it.qty_unit || "").trim() || (it.unit || "").trim();
+}
+
+/** Подпись второй единицы («час», «день», «смена») — пусто, если не задана. */
+export function rateUnitLabel(it: PromoItem): string {
+  return (it.rate_unit || "").trim();
+}
+
+/** «2 чел» — количество с единицей (единица опциональна). */
+export function formatQty(it: PromoItem): string {
+  const u = qtyUnitLabel(it);
+  return u ? `${nfQty(num(it.qty, 0))} ${u}` : nfQty(num(it.qty, 0));
+}
+
+/** «8 час» — общее количество (кол-во × множитель) со второй единицей, если она есть. */
+export function formatTotalQty(it: PromoItem): string {
+  const u = rateUnitLabel(it);
+  return u ? `${nfQty(lineQty(it))} ${u}` : nfQty(lineQty(it));
+}
+
+/** «2 чел × 4 час × 25 = 200» — человекочитаемая расшифровка строки. */
+export function explainLine(it: PromoItem): string {
+  const parts = [formatQty(it)];
+  const ru = rateUnitLabel(it);
+  const mult = num(it.multiplier, 1);
+  if (ru || mult !== 1) parts.push(ru ? `${nfQty(mult)} ${ru}` : nfQty(mult));
+  parts.push(nfQty(num(it.price, 0)));
+  return `${parts.join(" × ")} = ${nfQty(lineTotal(it))}`;
+}
+
+
 export function lineTotal(it: PromoItem): number {
   return round2(lineQty(it) * num(it.price, 0));
 }

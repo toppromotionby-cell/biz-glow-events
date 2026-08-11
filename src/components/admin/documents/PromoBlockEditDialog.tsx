@@ -15,12 +15,15 @@ import { normalizeVatMode } from "@/lib/documents/vat";
 import { VatSettings } from "@/components/admin/VatSettings";
 import {
   computePromoTotals,
+  explainLine,
   lineCost,
   lineTotal,
+  rateUnitLabel,
   type PromoDiscountType,
   type PromoItem,
   type PromoQuote,
 } from "@/lib/promo-quote-model";
+
 
 export type PromoEditTarget = { target: string; id: string | null };
 
@@ -88,6 +91,8 @@ export function PromoBlockEditDialog({
   const totals = computePromoTotals(merged, draftItems);
   const cur = merged.currency || "BYN";
   const sectionItems = target === "section" ? items.filter((it) => it.section === (edit.id ?? "")) : [];
+  const rateUnit = item ? rateUnitLabel(item) : "";
+
 
 
   const submit = () => {
@@ -119,14 +124,20 @@ export function PromoBlockEditDialog({
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Наименование" className="sm:col-span-2"><Input value={item.title} onChange={(e) => setItem({ ...item, title: e.target.value })} /></Field>
               <Field label="Раздел"><Input value={item.section} onChange={(e) => setItem({ ...item, section: e.target.value })} /></Field>
-              <Field label="Ед. изм."><Input value={item.unit} onChange={(e) => setItem({ ...item, unit: e.target.value })} /></Field>
+              <Field label="Ед. изм." hint="напр. чел, шт, услуга"><Input value={item.unit} onChange={(e) => setItem({ ...item, unit: e.target.value })} /></Field>
               <Field label="Кол-во"><Input inputMode="decimal" value={String(item.qty)} onChange={(e) => setItem({ ...item, qty: parseNum(e.target.value) })} /></Field>
-              <Field label="Множитель (дни/смены)"><Input inputMode="decimal" value={String(item.multiplier)} onChange={(e) => setItem({ ...item, multiplier: parseNum(e.target.value) })} /></Field>
-              <Field label="Цена за ед."><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: parseNum(e.target.value) })} /></Field>
-              <Field label="Себестоимость"><Input inputMode="decimal" value={String(item.cost)} onChange={(e) => setItem({ ...item, cost: parseNum(e.target.value) })} /></Field>
+              <Field label="Ед. 2" hint="час / день / смена — можно оставить пустым">
+                <Input value={item.rate_unit} placeholder="час" onChange={(e) => setItem({ ...item, rate_unit: e.target.value })} />
+              </Field>
+              <Field label={rateUnit ? `Кол-во (${rateUnit})` : "Множитель (дни/смены)"}>
+                <Input inputMode="decimal" value={String(item.multiplier)} onChange={(e) => setItem({ ...item, multiplier: parseNum(e.target.value) })} />
+              </Field>
+              <Field label={rateUnit ? `Цена за ${rateUnit}` : "Цена за ед."}><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: parseNum(e.target.value) })} /></Field>
+              <Field label={rateUnit ? `Себестоимость за ${rateUnit}` : "Себестоимость"} className="sm:col-span-2"><Input inputMode="decimal" value={String(item.cost)} onChange={(e) => setItem({ ...item, cost: parseNum(e.target.value) })} /></Field>
               <Field label="Примечание" className="sm:col-span-2"><Textarea rows={2} value={item.note} onChange={(e) => setItem({ ...item, note: e.target.value })} /></Field>
               <IncludesEditor value={item.includes} onChange={(includes) => setItem({ ...item, includes })} />
               <div className="sm:col-span-2">
+                <p className="mb-2 text-xs text-muted-foreground">Расчёт: {explainLine(item)} {cur}</p>
                 <Summary
                   rows={[
                     ["Сумма строки", fmtMoney(lineTotal(item), cur), true],
@@ -141,6 +152,7 @@ export function PromoBlockEditDialog({
               </div>
             </div>
           )}
+
 
           {target === "section" && (
             <div className="space-y-3">

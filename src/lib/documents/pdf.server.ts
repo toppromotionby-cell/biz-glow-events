@@ -33,7 +33,7 @@ import {
 import {
   computePromoTotals,
   groupBySection,
-  lineQty,
+  formatTotalQty,
   lineTotal,
   promoNumberDisplay,
   type PromoItem as PromoItemT,
@@ -1985,7 +1985,7 @@ export async function buildPromoQuotePdf(
             ? it.includes.map((inc) => `${safe(inc.text)}${inc.note ? ` — ${safe(inc.note)}` : ""}`)
             : undefined,
         unit: safe(it.unit),
-        qty: String(lineQty(it)),
+        qty: formatTotalQty(it),
         price: it.price ? money(it.price) : "",
         sum: lineTotal(it) ? money(lineTotal(it)) : "",
         note: safe(it.note),
