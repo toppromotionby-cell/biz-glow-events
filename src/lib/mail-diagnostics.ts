@@ -10,6 +10,16 @@ export type MailStep = {
   message?: string;
   response?: string | null;
   tried?: Record<string, string | number | boolean | null> | null;
+  phase?: "dns" | "tcp" | "tls" | "auth" | "list" | "unknown";
+  attempts?: Array<{
+    ok: boolean;
+    phase?: string;
+    duration_ms?: number;
+    kind?: string;
+    code?: string | null;
+    message?: string;
+    tried?: Record<string, string | number | boolean | null> | null;
+  }>;
 };
 
 export type MailSuggestion = {
@@ -47,6 +57,8 @@ export function mailErrorHint(kind: string | undefined, step?: string): string {
       return `${where}: сервер отклонил соединение на этом порту. Попробуйте стандартные порты: IMAP 993 (SSL), SMTP 465 (SSL) или 587 (STARTTLS).`;
     case "timeout":
       return `${where}: сервер не ответил вовремя. Возможно, порт закрыт или сервис почты недоступен — повторите через минуту.`;
+    case "smtp_egress_blocked":
+      return "IMAP работает, но сервер mail-worker не может открыть SMTP-порты 465 и 587. На бесплатном тарифе Render исходящий SMTP заблокирован: переведите сервис mail-worker на платный Starter и повторите проверку.";
     case "tls":
       return `${where}: проблема с сертификатом или шифрованием. Проверьте соответствие порта и режима SSL/STARTTLS.`;
     default:

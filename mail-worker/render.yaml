@@ -3,7 +3,8 @@ services:
     name: event-hub-mail-worker
     runtime: docker
     
-    plan: free
+    # Free web services block outbound SMTP ports 25/465/587.
+    plan: starter
     region: frankfurt
     healthCheckPath: /health
     envVars:
