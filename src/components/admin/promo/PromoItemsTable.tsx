@@ -17,8 +17,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SortableList } from "@/components/admin/SortableList";
-import { SuggestInput } from "@/components/admin/SuggestInput";
-import { useDocSuggest } from "@/hooks/use-doc-suggest";
+import { NumField, TextCommitField } from "@/components/admin/field-kit";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
   duplicatePromoSection, formatMoney, isCounted, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
@@ -42,7 +41,6 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const [deleteSection, setDeleteSection] = useState<string | null>(null);
 
   const sectionNames = useMemo(() => listPromoSections(items), [items]);
-  const { fetchItems } = useDocSuggest();
   const sections = useMemo(
     () =>
       sectionNames.map((name) => ({
@@ -108,7 +106,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
         const sum = list.filter(isCounted).reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[name];
         return (
-          <div key={name || "__none"} className="rounded-xl border border-border">
+          <div key={`sec-${secIdx}`} className="rounded-xl border border-border">
             <div className="flex items-center gap-2 border-b border-border/60 bg-muted/30 p-2">
               <Button
                 size="icon"
@@ -119,13 +117,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
               >
                 {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
-              <Input
+              <TextCommitField
                 value={name}
-                onChange={(e) => onChange(renamePromoSection(items, name, e.target.value))}
+                onCommit={(v) => onChange(renamePromoSection(items, name, v))}
                 placeholder="Название раздела"
-                list="promo-section-suggestions"
+                aria-label="Название раздела"
                 className="h-8 max-w-[280px] border-transparent bg-transparent font-medium focus-visible:border-input"
               />
+
               <span className="ml-auto text-xs text-muted-foreground">{list.length} поз.</span>
               <span className="w-[130px] text-right text-sm font-medium tabular-nums">
                 {formatMoney(sum, currency)}
@@ -178,30 +177,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                       <div className="flex items-center gap-1">
                         <div>{handle}</div>
                         <div className="flex-1">
-                          <SuggestInput
+                          <Input
                             value={it.title}
-                            onChange={(v) => replace(it.id, { title: v })}
-                            fetcher={(term) => fetchItems(term, name)}
-                            labelOf={(h) => h.title}
-                            onPick={(h) => replace(it.id, {
-                              title: h.title,
-                              unit: h.unit || it.unit,
-                              price: h.price || it.price,
-                              cost: h.cost || it.cost,
-                              note: h.description || it.note,
-                              includes: h.includes.length ? h.includes : it.includes,
-                            })}
-                            render={(h) => (
-                              <>
-                                <div className="font-medium">{h.title}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {[h.section, h.unit].filter(Boolean).join(" · ")}
-                                </div>
-                              </>
-                            )}
+                            onChange={(e) => replace(it.id, { title: e.target.value })}
                             placeholder="Наименование позиции"
+                            aria-label="Наименование позиции"
                             className="h-9"
                           />
+
                         </div>
                         <div className="flex w-[120px] flex-col items-end">
                           <span className="text-sm tabular-nums">{formatMoney(lineTotal(it), currency)}</span>
@@ -263,7 +246,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                           <Input value={it.unit} onChange={(e) => replace(it.id, { unit: e.target.value })} className="h-8" />
                         </Mini>
                         <Mini label="Кол-во" width="w-[72px]">
-                          <Input type="number" min={0} value={it.qty} onChange={(e) => replace(it.id, { qty: Number(e.target.value) })} className="h-8" />
+                          <NumField value={it.qty} onChange={(v) => replace(it.id, { qty: v })} aria-label="Количество" className="h-8" />
                         </Mini>
                         <Mini label="Ед. 2" width="w-[84px]">
                           <Input
@@ -274,15 +257,16 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                           />
                         </Mini>
                         <Mini label={it.rate_unit.trim() ? `Кол-во (${it.rate_unit.trim()})` : "×"} width="w-[76px]">
-                          <Input type="number" min={0} value={it.multiplier} onChange={(e) => replace(it.id, { multiplier: Number(e.target.value) })} className="h-8" />
+                          <NumField value={it.multiplier} onChange={(v) => replace(it.id, { multiplier: v })} aria-label="Множитель" className="h-8" />
                         </Mini>
                         <Mini label={it.rate_unit.trim() ? `Цена/${it.rate_unit.trim()}` : "Цена"} width="w-[100px]">
-                          <Input type="number" min={0} step="0.01" value={it.price} onChange={(e) => replace(it.id, { price: Number(e.target.value) })} className="h-8" />
+                          <NumField value={it.price} step="0.01" onChange={(v) => replace(it.id, { price: v })} aria-label="Цена" className="h-8" />
                         </Mini>
                         {showCost && (
                           <Mini label="Себест." width="w-[100px]">
-                            <Input type="number" min={0} step="0.01" value={it.cost} onChange={(e) => replace(it.id, { cost: Number(e.target.value) })} className="h-8" />
+                            <NumField value={it.cost} step="0.01" onChange={(v) => replace(it.id, { cost: v })} aria-label="Себестоимость" className="h-8" />
                           </Mini>
+
                         )}
                         <Mini label="Связка" width="w-[110px]">
                           <Input
@@ -396,9 +380,6 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
         </AlertDialogContent>
       </AlertDialog>
 
-      <datalist id="promo-section-suggestions">
-        {PROMO_SECTION_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
-      </datalist>
     </div>
   );
 }
