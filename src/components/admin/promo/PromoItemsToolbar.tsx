@@ -74,7 +74,10 @@ export function PromoItemsToolbar({
       <Button
         size="sm"
         variant="outline"
-        onClick={() => onChange([...items, newPromoItem(`Раздел ${new Set(items.map((i) => i.section)).size + 1}`)])}
+        onClick={() =>
+          onChange(reindexPromo([...items, newPromoItem(`Раздел ${new Set(items.map((i) => (i.section ?? "").trim())).size + 1}`)]))
+        }
+
       >
         <FolderPlus className="mr-1 h-4 w-4" />Новый раздел
       </Button>
