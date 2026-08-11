@@ -33,6 +33,27 @@ export type DocumentsAnalytics = {
     invoicesUnpaidSum: number;
   };
   reminders: DocReminder[];
+  /** Этап 5: топ позиций и разделов по документам + доля включения. */
+  insights: {
+    topItems: DocItemStat[];
+    topSections: DocSectionStat[];
+    mostExcluded: DocItemStat[];
+  };
+};
+
+export type DocItemStat = {
+  title: string;
+  section: string;
+  count: number;
+  included: number;
+  includeRate: number;
+  amount: number;
+};
+
+export type DocSectionStat = {
+  section: string;
+  count: number;
+  amount: number;
 };
 
 export const getDocumentsAnalytics = createServerFn({ method: "GET" })
@@ -40,7 +61,7 @@ export const getDocumentsAnalytics = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<DocumentsAnalytics> => {
     await assertStaff(context as never);
 
-    const [quotesRes, promoRes, itemsRes, financeRes] = await Promise.all([
+    const [quotesRes, promoRes, itemsRes, promoItemsRes, financeRes] = await Promise.all([
       context.supabase
         .from("quotes")
         .select("id,quote_number,title,client_name,client_company,status,total,sent_at,viewed_at,client_response,doc_date,validity_days,valid_until_override")
@@ -51,14 +72,47 @@ export const getDocumentsAnalytics = createServerFn({ method: "GET" })
         .select("id,doc_number,project,client_name,status,total,sent_at,viewed_at,client_response,valid_until")
         .eq("is_template", false)
         .limit(500),
-      context.supabase.from("quote_items").select("qty,price,cost").limit(5000),
+      context.supabase.from("quote_items").select("qty,price,cost,title,section,included,is_info").limit(5000),
+      context.supabase.from("promo_quote_items").select("qty,price,cost,title,section,included,is_info").limit(5000),
       context.supabase.from("finance_documents").select("id,kind,doc_number,status,total,paid,due_date,client_name,client_company").limit(500),
     ]);
 
     const quotes = (quotesRes.data ?? []) as Record<string, unknown>[];
     const promos = (promoRes.data ?? []) as Record<string, unknown>[];
     const items = (itemsRes.data ?? []) as Record<string, unknown>[];
+    const promoItems = (promoItemsRes.data ?? []) as Record<string, unknown>[];
     const finance = (financeRes.data ?? []) as Record<string, unknown>[];
+
+    /* --- Топ позиций и разделов по всем сметам --- */
+    const itemStats = new Map<string, DocItemStat>();
+    const sectionStats = new Map<string, DocSectionStat>();
+    for (const it of [...items, ...promoItems]) {
+      const title = str(it.title).trim();
+      if (!title || it.is_info === true) continue;
+      const section = str(it.section).trim() || "Без раздела";
+      const amount = num(it.qty) * num(it.price);
+      const inc = it.included !== false;
+      const key = title.toLowerCase();
+      const prev = itemStats.get(key) ?? { title, section, count: 0, included: 0, includeRate: 0, amount: 0 };
+      prev.count += 1;
+      if (inc) prev.included += 1;
+      prev.amount += inc ? amount : 0;
+      itemStats.set(key, prev);
+      const sec = sectionStats.get(section) ?? { section, count: 0, amount: 0 };
+      sec.count += 1;
+      sec.amount += inc ? amount : 0;
+      sectionStats.set(section, sec);
+    }
+    const allItemStats = [...itemStats.values()].map((r) => ({
+      ...r,
+      includeRate: r.count ? Math.round((r.included / r.count) * 100) : 0,
+    }));
+    const topItems = [...allItemStats].sort((a, b) => b.count - a.count || b.amount - a.amount).slice(0, 10);
+    const mostExcluded = allItemStats
+      .filter((r) => r.count >= 2 && r.includeRate < 100)
+      .sort((a, b) => a.includeRate - b.includeRate || b.count - a.count)
+      .slice(0, 6);
+    const topSections = [...sectionStats.values()].sort((a, b) => b.amount - a.amount || b.count - a.count).slice(0, 8);
 
     const all = [...quotes, ...promos];
     const sent = all.filter((r) => str(r.sent_at) || str(r.status) !== "draft");
@@ -170,5 +224,6 @@ export const getDocumentsAnalytics = createServerFn({ method: "GET" })
         invoicesUnpaidSum: unpaid.reduce((s, f) => s + Math.max(0, num(f.total) - num(f.paid)), 0),
       },
       reminders: reminders.slice(0, 30),
+      insights: { topItems, topSections, mostExcluded },
     };
   });
