@@ -1,6 +1,8 @@
 // Редактор презентации: миниатюры, крупный слайд, настройки, сверка с КП.
 // Автосохранение, горячие клавиши, защита от потери правок, показ на весь экран.
 import { createFileRoute, Link, useNavigate, useBlocker } from "@tanstack/react-router";
+import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
+import { PresentationBrandingPanel } from "@/components/admin/presentations/PresentationBrandingPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -266,6 +268,10 @@ function Page() {
           status: meta.status,
           template: meta.template,
           companyId: meta.company_id,
+          logoUrl: meta.logo_url,
+          clientLogoUrl: meta.client_logo_url,
+          logoLayout: meta.logo_layout,
+          fontFamily: meta.font_family,
           slides: slides.map((s, i) => ({
             id: s.id.startsWith("new-") ? undefined : s.id,
             position: i,
@@ -598,6 +604,17 @@ function Page() {
             <CompanySelect
               value={meta.company_id}
               onChange={(companyId) => patchMeta({ company_id: companyId })}
+            />
+            <DocFontSelect
+              value={meta.font_family}
+              onChange={(font_family) => patchMeta({ font_family })}
+              hint="Шрифт применяется ко всей презентации: превью, PDF и показ."
+            />
+            <PresentationBrandingPanel
+              logoUrl={meta.logo_url}
+              clientLogoUrl={meta.client_logo_url}
+              layout={meta.logo_layout}
+              onChange={(patch) => patchMeta(patch)}
             />
             <div className="space-y-1.5">
               <Label>Оформление</Label>
