@@ -409,22 +409,29 @@ export async function writePromoSheet(
     });
   });
 
-  if (grid.logoRow != null) {
-    requests.push({
-      updateDimensionProperties: {
-        range: { sheetId, dimension: "ROWS", startIndex: grid.logoRow, endIndex: grid.logoRow + 1 },
-        properties: { pixelSize: 64 },
-        fields: "pixelSize",
-      },
-    });
-  }
-
+  // Высота строк шапки — чтобы логотип (64px) поместился целиком.
+  const headCount = Math.max(1, grid.headEnd - grid.headStart);
+  requests.push({
+    updateDimensionProperties: {
+      range: { sheetId, dimension: "ROWS", startIndex: grid.headStart, endIndex: grid.headEnd },
+      properties: { pixelSize: Math.max(22, Math.ceil(64 / headCount)) },
+      fields: "pixelSize",
+    },
+  });
 
   for (const m of grid.merges) {
     requests.push({
       mergeCells: {
         range: { sheetId, startRowIndex: m.row, endRowIndex: m.row + 1, startColumnIndex: m.from, endColumnIndex: m.to },
         mergeType: "MERGE_ROWS",
+      },
+    });
+  }
+  for (const r of grid.rects) {
+    requests.push({
+      mergeCells: {
+        range: { sheetId, startRowIndex: r.row, endRowIndex: r.rowEnd, startColumnIndex: r.from, endColumnIndex: r.to },
+        mergeType: "MERGE_ALL",
       },
     });
   }
