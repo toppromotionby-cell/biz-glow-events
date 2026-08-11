@@ -2307,6 +2307,10 @@ export type Database = {
           public_token: string
           responded_at: string | null
           sent_at: string | null
+          sheet_id: string | null
+          sheet_snapshot: Json | null
+          sheet_synced_at: string | null
+          sheet_url: string | null
           show_item_includes: boolean
           show_notes: boolean
           show_qty: boolean
@@ -2359,6 +2363,10 @@ export type Database = {
           public_token?: string
           responded_at?: string | null
           sent_at?: string | null
+          sheet_id?: string | null
+          sheet_snapshot?: Json | null
+          sheet_synced_at?: string | null
+          sheet_url?: string | null
           show_item_includes?: boolean
           show_notes?: boolean
           show_qty?: boolean
@@ -2411,6 +2419,10 @@ export type Database = {
           public_token?: string
           responded_at?: string | null
           sent_at?: string | null
+          sheet_id?: string | null
+          sheet_snapshot?: Json | null
+          sheet_synced_at?: string | null
+          sheet_url?: string | null
           show_item_includes?: boolean
           show_notes?: boolean
           show_qty?: boolean
