@@ -181,7 +181,6 @@ function Page() {
   const [showCostRaw, setShowCost] = useState(true);
   const showCost = showCostRaw && canCost;
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [templateName, setTemplateName] = useState("");
   const dirtyRef = useRef(false);
   const previewRef = useRef<HTMLIFrameElement>(null);
   const [inlineEdit, setInlineEdit] = useState(true);
