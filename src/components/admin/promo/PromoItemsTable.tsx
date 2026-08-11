@@ -273,10 +273,10 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                             className="h-8"
                           />
                         </Mini>
-                        <Mini label="×" width="w-[64px]">
+                        <Mini label={it.rate_unit.trim() ? `Кол-во (${it.rate_unit.trim()})` : "×"} width="w-[76px]">
                           <Input type="number" min={0} value={it.multiplier} onChange={(e) => replace(it.id, { multiplier: Number(e.target.value) })} className="h-8" />
                         </Mini>
-                        <Mini label="Цена" width="w-[100px]">
+                        <Mini label={it.rate_unit.trim() ? `Цена/${it.rate_unit.trim()}` : "Цена"} width="w-[100px]">
                           <Input type="number" min={0} step="0.01" value={it.price} onChange={(e) => replace(it.id, { price: Number(e.target.value) })} className="h-8" />
                         </Mini>
                         {showCost && (
