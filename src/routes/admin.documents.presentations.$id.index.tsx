@@ -29,6 +29,7 @@ import { SlideCanvas } from "@/components/admin/presentations/SlideCanvas";
 import { SlideThumbRail } from "@/components/admin/presentations/SlideThumbRail";
 import { SlideSettingsPanel } from "@/components/admin/presentations/SlideSettingsPanel";
 import { PresentationCheckPanel } from "@/components/admin/presentations/PresentationCheckPanel";
+import { DocStatusBar, type DocCheckLike } from "@/components/admin/documents/DocStatusBar";
 import { PresentationFullscreen } from "@/components/admin/presentations/PresentationFullscreen";
 import { checkAgainstQuote, type QuoteItemLite } from "@/lib/presentations/check";
 import {
@@ -380,6 +381,17 @@ function Page() {
     [slides, data?.quoteItems],
   );
 
+  const statusChecks = useMemo<DocCheckLike[]>(() => {
+    const out: DocCheckLike[] = [];
+    if (!meta?.title?.trim()) out.push({ level: "error", message: "Не заполнено название презентации" });
+    const visible = slides.filter((s) => s.is_visible).length;
+    if (!visible) out.push({ level: "error", message: "Нет ни одного видимого слайда" });
+    else if (visible < 3) out.push({ level: "warn", message: "Меньше трёх слайдов — презентация выглядит незавершённой" });
+    if (!meta?.company_id) out.push({ level: "warn", message: "Не выбрана компания — реквизиты и логотип не подтянутся" });
+    if (data?.quote && check.status !== "synced") out.push({ level: "warn", message: "Состав отличается от КП — проверьте вкладку «Сверка с КП»" });
+    return out;
+  }, [meta?.title, meta?.company_id, slides, data?.quote, check.status]);
+
   if (isError) {
     return (
       <LoadFailure
@@ -541,10 +553,12 @@ function Page() {
         </div>
       </header>
 
+      <DocStatusBar checks={statusChecks} className="mb-3" okLabel="Презентация готова к показу" />
+
       <Tabs defaultValue="slides">
         <TabsList>
           <TabsTrigger value="slides">Слайды</TabsTrigger>
-          <TabsTrigger value="settings">Презентация</TabsTrigger>
+          <TabsTrigger value="settings">Оформление</TabsTrigger>
           <TabsTrigger value="check">
             Сверка с КП
             {data?.quote && check.status !== "synced" && (
