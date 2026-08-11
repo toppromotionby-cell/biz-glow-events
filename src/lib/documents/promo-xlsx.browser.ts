@@ -6,6 +6,7 @@ import {
   groupBySection,
   hasSecondUnit,
   rateUnitLabel,
+  isServiceOnlyRow,
   soleRateUnit,
   lineQty,
   lineTotal,
@@ -133,8 +134,12 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
             ? `${colLetter("qty")}${rn}*${colLetter("qty2")}${rn}`
             : `${colLetter("qty")}${rn}`
           : null;
+      // Строка-услуга: ячейки единиц/количеств объединяются, количество не участвует
+      const serviceRow = isServiceOnlyRow(it);
       const sumCell = row.getCell(cols.findIndex((c) => c.key === "sum") + 1);
-      sumCell.value = qtyRef
+      sumCell.value = serviceRow
+        ? { formula: `${colLetter("price")}${rn}`, result: it.price }
+        : qtyRef
         ? { formula: `${qtyRef}*${colLetter("price")}${rn}`, result: it.qty * it.multiplier * it.price }
         : { formula: `${colLetter("price")}${rn}`, result: it.price };
       sumRows.push(rn);
@@ -154,6 +159,15 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
           };
       }
       if (dual) row.getCell(cols.findIndex((c) => c.key === "qty2") + 1).alignment = { horizontal: "center" };
+      if (serviceRow) {
+        const lastMergeKey: ColKey = dual ? "qty2" : quote.show_qty ? "qty" : "unit";
+        if (lastMergeKey !== "unit") {
+          ws.mergeCells(`${colLetter("unit")}${rn}:${colLetter(lastMergeKey)}${rn}`);
+          const c = row.getCell(cols.findIndex((cc) => cc.key === "unit") + 1);
+          c.value = it.unit || "услуга";
+          c.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        }
+      }
       row.getCell(cols.findIndex((c) => c.key === "price") + 1).numFmt = NUM_FMT;
       sumCell.numFmt = NUM_FMT;
     }
