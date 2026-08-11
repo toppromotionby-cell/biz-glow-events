@@ -112,7 +112,7 @@ describe("выгрузка КП в Excel", () => {
   });
 
   it("НДС сверху отражается отдельной строкой и входит в итог", async () => {
-    const quote = makeQuote({ vat_mode: "added", vat_rate: 20 } as Partial<Quote>);
+    const quote = makeQuote({ vat_mode: "add", vat_rate: 20 } as Partial<Quote>);
     const items = makeItems(quote.id);
     const t = computeTotals(quote, items);
     const wb = await buildQuoteWorkbook(quote, items);
@@ -194,7 +194,7 @@ describe("выгрузка промо-КП в Excel", () => {
   });
 
   it("НДС и итог с НДС считаются формулами от промежуточной суммы", async () => {
-    const quote = makePromo({ vat_mode: "added", vat_rate: 20 });
+    const quote = makePromo({ vat_mode: "add", vat_rate: 20 });
     const items = makePromoItems();
     const t = computePromoTotals(quote, items);
     const wb = await buildPromoWorkbook(quote, items);
