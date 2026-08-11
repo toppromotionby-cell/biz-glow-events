@@ -172,7 +172,7 @@ export const saveEstimateTemplate = createServerFn({ method: "POST" })
         description: data.description ?? "",
         kind: data.source,
         strict: data.strict === true,
-        settings,
+        settings: settings as never,
         created_by: context.userId,
       })
       .select("id")
@@ -289,7 +289,7 @@ export const renameEstimateTemplate = createServerFn({ method: "POST" })
     const { id, ...patch } = data;
     const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
     if (Object.keys(clean).length) {
-      const { error } = await context.supabase.from("estimate_templates").update(clean).eq("id", id);
+      const { error } = await context.supabase.from("estimate_templates").update(clean as never).eq("id", id);
       if (error) throw new Error(error.message);
     }
     return { ok: true };
