@@ -20,9 +20,8 @@ import {
   QUOTE_SECTION_SUGGESTIONS, removeSection, renameSection, type QuoteItem,
 } from "@/lib/quotes-model";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
-import { SuggestInput } from "@/components/admin/SuggestInput";
+import { NumField, TextCommitField } from "@/components/admin/field-kit";
 import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
-import { useDocSuggest } from "@/hooks/use-doc-suggest";
 
 function Mini({ label, width, children }: { label: string; width: string; children: ReactNode }) {
   return (
@@ -55,7 +54,6 @@ export function QuoteItemsPanel({
   const [newSectionOpen, setNewSectionOpen] = useState(false);
   const [newSection, setNewSection] = useState("");
   const [kbSection, setKbSection] = useState<string | null>(null);
-  const { fetchItems } = useDocSuggest();
 
   const sections = useMemo(() => listSections(items), [items]);
   const grouped = useMemo(() => {
@@ -160,11 +158,11 @@ export function QuoteItemsPanel({
         <ClearCompositionButton count={items.length} onClear={() => onChange([])} />
       </div>
 
-      {grouped.map(([section, list]) => {
+      {grouped.map(([section, list], secIdx) => {
         const sum = list.reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[section];
         return (
-          <div key={section || "__none"} className="rounded-xl border border-border/60">
+          <div key={`sec-${secIdx}`} className="rounded-xl border border-border/60">
             <div className="flex items-center gap-2 border-b border-border/60 px-2 py-2">
               <button
                 type="button"
@@ -174,12 +172,12 @@ export function QuoteItemsPanel({
               >
                 {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </button>
-              <Input
-                list="quote-sections"
+              <TextCommitField
                 value={section}
                 placeholder={NO_SECTION}
+                aria-label="Название раздела"
                 className="h-8 flex-1 border-transparent bg-transparent px-1 font-medium focus-visible:border-input"
-                onChange={(e) => onChange(renameSection(items, section, e.target.value))}
+                onCommit={(v) => onChange(renameSection(items, section, v))}
               />
               <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                 {list.length} поз. · {fmtMoney(sum)}
@@ -245,28 +243,11 @@ export function QuoteItemsPanel({
                         </button>
                       </div>
                       <div className="flex-1">
-                        <SuggestInput
+                        <Input
                           value={it.title}
-                          onChange={(v) => replace(it.id, { title: v })}
-                          fetcher={(term) => fetchItems(term, section)}
-                          labelOf={(h) => h.title}
-                          onPick={(h) => replace(it.id, {
-                            title: h.title,
-                            description: h.description || it.description,
-                            unit: h.unit || it.unit,
-                            price: h.price || it.price,
-                            cost: h.cost || it.cost,
-                            includes: h.includes.length ? h.includes : it.includes,
-                          })}
-                          render={(h) => (
-                            <>
-                              <div className="font-medium">{h.title}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {[h.section, fmtMoney(h.price), h.unit].filter(Boolean).join(" · ")}
-                              </div>
-                            </>
-                          )}
+                          onChange={(e) => replace(it.id, { title: e.target.value })}
                           placeholder="Наименование позиции"
+                          aria-label="Наименование позиции"
                           className="h-9"
                         />
                       </div>
@@ -317,21 +298,21 @@ export function QuoteItemsPanel({
 
                     <div className="ml-6 mt-1 flex flex-wrap items-end gap-2">
                       <Mini label="Кол-во" width="w-[84px]">
-                        <Input type="number" min={0} value={it.qty}
-                          className="h-8 text-center tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                          onChange={(e) => replace(it.id, { qty: num(e.target.value) })} />
+                        <NumField value={it.qty} aria-label="Количество"
+                          className="h-8 text-center tabular-nums"
+                          onChange={(v) => replace(it.id, { qty: v })} />
                       </Mini>
                       <Mini label="Ед. изм." width="w-[92px]">
                         <Input value={it.unit} className="h-8" onChange={(e) => replace(it.id, { unit: e.target.value })} />
                       </Mini>
                       <Mini label="Цена" width="w-[110px]">
-                        <Input type="number" min={0} step="0.01" value={it.price} className="h-8"
-                          onChange={(e) => replace(it.id, { price: num(e.target.value) })} />
+                        <NumField value={it.price} step="0.01" aria-label="Цена" className="h-8"
+                          onChange={(v) => replace(it.id, { price: v })} />
                       </Mini>
                       {showCost && (
                         <Mini label="Себест." width="w-[110px]">
-                          <Input type="number" min={0} step="0.01" value={it.cost} className="h-8"
-                            onChange={(e) => replace(it.id, { cost: num(e.target.value) })} />
+                          <NumField value={it.cost} step="0.01" aria-label="Себестоимость" className="h-8"
+                            onChange={(v) => replace(it.id, { cost: v })} />
                         </Mini>
                       )}
                       <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setIncludesFor(it.id)}>
