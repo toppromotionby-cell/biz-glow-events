@@ -77,6 +77,8 @@ function EditorPage() {
   const get = useServerFn(getPromoQuote);
   const save = useServerFn(savePromoQuote);
   const saveTpl = useServerFn(savePromoTemplate);
+  const saveSample = useServerFn(saveEstimateTemplate);
+
   const saveSnippet = useServerFn(savePromoSnippet);
   const listVersions = useServerFn(listPromoVersions);
   const makeVersion = useServerFn(createPromoVersion);

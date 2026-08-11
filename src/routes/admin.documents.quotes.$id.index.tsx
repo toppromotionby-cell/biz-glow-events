@@ -335,6 +335,18 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
+  const onSaveSample = async () => {
+    try {
+      await saveSample({
+        data: { source: "quote", docId: id, name: templateName.trim() || quote.title || "Образец сметы" },
+      });
+      setTemplateOpen(false);
+      setTemplateName("");
+      toast.success("Образец сметы сохранён");
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+
   const onMarkSent = async () => {
     try {
       const res = await markSent({ data: { id } });
