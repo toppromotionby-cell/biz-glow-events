@@ -32,6 +32,8 @@ import {
   listQuoteVersions, createQuoteVersion, restoreQuoteVersion,
   saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
+import { saveEstimateTemplate } from "@/lib/estimate-templates.functions";
+
 import {
   checkQuote, computeTotals, emptyQuoteItem, num, quotePatchSchema, normalizeTime, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
   type Quote, type QuoteItem, type QuoteStatus,
