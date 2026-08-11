@@ -21,10 +21,11 @@ import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
-  duplicatePromoSection, formatMoney, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
+  duplicatePromoSection, formatMoney, isCounted, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
   movePromoSection, newPromoItem, removePromoSection, renamePromoSection, PROMO_NO_SECTION,
   PROMO_SECTION_SUGGESTIONS, type PromoItem,
 } from "@/lib/promo-quote-model";
+
 
 type Props = {
   items: PromoItem[];
@@ -104,7 +105,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
       )}
 
       {sections.map(({ name, list }, secIdx) => {
-        const sum = list.reduce((s, it) => s + lineTotal(it), 0);
+        const sum = list.filter(isCounted).reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[name];
         return (
           <div key={name || "__none"} className="rounded-xl border border-border">
@@ -173,7 +174,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                   onReorder={(ids) => reorderSection(name, ids)}
                   className="space-y-1"
                   renderItem={(it, handle) => (
-                    <div className="rounded-lg border border-transparent px-1 py-1 hover:border-border/60 hover:bg-muted/30">
+                    <div className={`rounded-lg border border-transparent px-1 py-1 hover:border-border/60 hover:bg-muted/30 ${isCounted(it) ? "" : "opacity-60"}`}>
                       <div className="flex items-center gap-1">
                         <div>{handle}</div>
                         <div className="flex-1">
