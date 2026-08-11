@@ -1,9 +1,12 @@
 // Инпут с подсказками из базы знаний документов.
-// Показывает ранее введённые значения (клиенты, позиции, тексты) при вводе/фокусе.
+// Подсказки показываются только при реальном вводе (от MIN_TERM символов)
+// и не переоткрываются после выбора варианта.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+
+const MIN_TERM = 2;
 
 interface SuggestInputProps<T> {
   value: string;
@@ -11,6 +14,8 @@ interface SuggestInputProps<T> {
   onPick: (hit: T) => void;
   fetcher: (term: string) => Promise<T[]>;
   render: (hit: T) => ReactNode;
+  /** Текстовое представление подсказки — чтобы скрывать единственный дословный дубль. */
+  labelOf?: (hit: T) => string;
   placeholder?: string;
   className?: string;
   multiline?: boolean;
@@ -19,32 +24,42 @@ interface SuggestInputProps<T> {
 }
 
 export function SuggestInput<T>({
-  value, onChange, onPick, fetcher, render,
+  value, onChange, onPick, fetcher, render, labelOf,
   placeholder, className, multiline, rows = 3, onBlurCapture,
 }: SuggestInputProps<T>) {
   const [open, setOpen] = useState(false);
   const [hits, setHits] = useState<T[]>([]);
   const [active, setActive] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
-  const focused = useRef(false);
+  // Пользователь реально печатает в поле (а не программная подстановка).
+  const typed = useRef(false);
+  // Пропустить ближайший запрос — значение изменил выбор подсказки.
+  const skipNext = useRef(false);
 
   // Дебаунс запроса подсказок.
   useEffect(() => {
-    if (!focused.current) return;
+    if (skipNext.current) { skipNext.current = false; return; }
+    if (!typed.current) return;
+    const term = value.trim();
+    if (term.length < MIN_TERM) { setHits([]); setOpen(false); return; }
+
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
-        const res = await fetcher(value);
+        const res = await fetcher(term);
         if (cancelled) return;
+        const onlyExactDupe =
+          res.length === 1 && !!labelOf &&
+          labelOf(res[0]!).trim().toLowerCase() === term.toLowerCase();
         setHits(res);
         setActive(0);
-        setOpen(res.length > 0);
+        setOpen(res.length > 0 && !onlyExactDupe);
       } catch {
         if (!cancelled) setOpen(false);
       }
     }, 220);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [value, fetcher]);
+  }, [value, fetcher, labelOf]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -54,23 +69,33 @@ export function SuggestInput<T>({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const pick = (h: T) => { onPick(h); setOpen(false); };
+  const pick = (h: T) => {
+    skipNext.current = true;
+    typed.current = false;
+    setOpen(false);
+    setHits([]);
+    onPick(h);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") { setOpen(false); return; }
     if (!open || hits.length === 0) return;
     if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => (a + 1) % hits.length); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => (a - 1 + hits.length) % hits.length); }
     else if (e.key === "Enter" && !multiline) { e.preventDefault(); pick(hits[active]!); }
-    else if (e.key === "Escape") setOpen(false);
   };
 
   const common = {
     value,
     placeholder,
     className: cn(className),
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value),
-    onFocus: () => { focused.current = true; if (hits.length) setOpen(true); },
-    onBlur: () => { onBlurCapture?.(); },
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      typed.current = true;
+      onChange(e.target.value);
+    },
+    // При фокусе не показываем устаревшие результаты — ждём ввода.
+    onFocus: () => { setOpen(false); },
+    onBlur: () => { typed.current = false; setOpen(false); onBlurCapture?.(); },
     onKeyDown,
   };
 
@@ -78,7 +103,7 @@ export function SuggestInput<T>({
     <div ref={boxRef} className="relative">
       {multiline ? <Textarea rows={rows} {...common} /> : <Input {...common} />}
       {open && hits.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover shadow-md">
+        <div className="absolute left-0 top-full z-50 mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover shadow-md">
           {hits.map((h, i) => (
             <button
               key={i}
