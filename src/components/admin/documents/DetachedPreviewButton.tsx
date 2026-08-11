@@ -9,6 +9,16 @@ import { Button } from "@/components/ui/button";
 
 const MOUNT_ID = "doc-preview-root";
 
+/** Из полного html-документа берём только содержимое <body>. */
+function bodyOf(html: string): string {
+  if (!/<body/i.test(html)) return html;
+  try {
+    return new DOMParser().parseFromString(html, "text/html").body.innerHTML;
+  } catch {
+    return html;
+  }
+}
+
 export function DetachedPreviewButton({
   html,
   title,
@@ -29,7 +39,7 @@ export function DetachedPreviewButton({
       if (!w || w.closed) return;
       const mount = w.document.getElementById(MOUNT_ID);
       if (!mount) return;
-      mount.innerHTML = html;
+      mount.innerHTML = bodyOf(html);
       if (w.document.title !== title) w.document.title = title;
     }, 150);
     return () => window.clearTimeout(timer);
