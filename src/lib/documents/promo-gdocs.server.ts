@@ -36,7 +36,7 @@ export async function renderPromoToDoc(
   items: PromoItem[],
   opts: PromoDocOptions = {},
 ): Promise<void> {
-  const layout = buildDocLayout(quote, items);
+  const layout = buildDocLayout(quote, items, { companyLine: opts.companyLine });
   const font = resolveDocFont(quote.font_family) === "ubuntu" ? "Ubuntu" : "Inter";
   const cols = layout.columns;
   const width = cols.length;
@@ -60,7 +60,7 @@ export async function renderPromoToDoc(
 
   // 2) Шапка: строка реквизитов, номер КП, мета-поля.
   const headLines: Array<{ text: string; size: number; bold: boolean }> = [];
-  if (opts.companyLine) headLines.push({ text: opts.companyLine, size: 8.5, bold: false });
+  if (layout.companyLine) headLines.push({ text: layout.companyLine, size: 8.5, bold: false });
   headLines.push({ text: layout.docTitle, size: 14, bold: true });
   for (const m of layout.meta) headLines.push({ text: m, size: 9, bold: false });
 
@@ -86,10 +86,8 @@ export async function renderPromoToDoc(
   await batchUpdate(documentId, styleReqs);
 
   // 3) Логотипы в первой строке документа.
-  const logos = [quote.logo_url, quote.client_logo_url].filter(
-    (u): u is string => typeof u === "string" && /^https?:\/\//.test(u),
-  );
-  for (const uri of logos.reverse()) {
+  const logos = layout.logos;
+  for (const uri of [...logos].reverse()) {
     try {
       await batchUpdate(documentId, [
         {
@@ -107,7 +105,21 @@ export async function renderPromoToDoc(
 
   // 4) Таблица позиций.
   const grid: string[][] = [cols.map((c) => c.label)];
-  for (const r of layout.rows) grid.push(cols.map((c) => r.cells[c.key] ?? ""));
+  /** Длина основного наименования в ячейке (для отдельного стиля состава). */
+  const titleHead: number[] = [0];
+  for (const r of layout.rows) {
+    const title = r.cells.title ?? "";
+    titleHead.push(title.length);
+    grid.push(
+      cols.map((c) =>
+        c.key === "title" && r.includes.length ? `${title}\n${r.includes.join("\n")}` : (r.cells[c.key] ?? ""),
+      ),
+    );
+  }
+  if (!layout.rows.some((r) => r.kind === "item")) {
+    titleHead.push(layout.emptyLabel.length);
+    grid.push(cols.map((c, i) => (i === 0 ? layout.emptyLabel : "")));
+  }
 
   await batchUpdate(documentId, [
     { insertTable: { rows: grid.length, columns: width, endOfSegmentLocation: { segmentId: "" } } },
@@ -201,6 +213,26 @@ export async function renderPromoToDoc(
           fields: "bold,italic,fontSize,weightedFontFamily",
         },
       });
+      // Состав позиции — мельче и серым, как в превью.
+      const inc = col.key === "title" ? (layoutRow?.includes ?? []) : [];
+      if (inc.length) {
+        const incStart = start + 1 + (titleHead[rIdx] ?? 0);
+        if (incStart < end - 1) {
+          styling.push({
+            updateTextStyle: {
+              range: { startIndex: incStart, endIndex: end - 1 },
+              textStyle: {
+                bold: false,
+                italic: false,
+                fontSize: { magnitude: 7.5, unit: "PT" },
+                foregroundColor: rgb("#6b6b73"),
+                weightedFontFamily: { fontFamily: font },
+              },
+              fields: "bold,italic,fontSize,foregroundColor,weightedFontFamily",
+            },
+          });
+        }
+      }
     });
   });
   await batchUpdate(documentId, styling);
@@ -209,26 +241,28 @@ export async function renderPromoToDoc(
   const totalsLines = layout.totals.map(
     (t) => `${t.label}: ${t.sign === "minus" ? "− " : ""}${docMoney(t.value)}${t.grand ? ` ${quote.currency}` : ""}`,
   );
-  const tailText = `\n${totalsLines.join("\n")}\n${quote.footer_note ? `\n${quote.footer_note}\n` : ""}`;
+  const totalsText = `\n${totalsLines.join("\n")}\n`;
+  const noteText = layout.footerNote ? `\n${layout.footerNote}\n` : "";
   await batchUpdate(documentId, [
-    { insertText: { endOfSegmentLocation: { segmentId: "" }, text: tailText } },
+    { insertText: { endOfSegmentLocation: { segmentId: "" }, text: totalsText + noteText } },
   ]);
 
   const withTail = await getDoc(documentId);
   const content = withTail.body?.content ?? [];
   const docEnd = content.length ? (content[content.length - 1]!.endIndex ?? 2) : 2;
-  const tailStart = Math.max(1, docEnd - tailText.length);
-  await batchUpdate(documentId, [
+  const tailStart = Math.max(1, docEnd - (totalsText.length + noteText.length));
+  const totalsEnd = Math.max(tailStart + 1, tailStart + totalsText.length - 1);
+  const tail: unknown[] = [
     {
       updateParagraphStyle: {
-        range: { startIndex: tailStart, endIndex: Math.max(tailStart + 1, docEnd - 1) },
+        range: { startIndex: tailStart, endIndex: totalsEnd },
         paragraphStyle: { alignment: "END" },
         fields: "alignment",
       },
     },
     {
       updateTextStyle: {
-        range: { startIndex: tailStart, endIndex: Math.max(tailStart + 1, docEnd - 1) },
+        range: { startIndex: tailStart, endIndex: totalsEnd },
         textStyle: {
           fontSize: { magnitude: 9.5, unit: "PT" },
           bold: true,
@@ -237,7 +271,34 @@ export async function renderPromoToDoc(
         fields: "fontSize,bold,weightedFontFamily",
       },
     },
-  ]);
+  ];
+  if (noteText) {
+    const noteStart = tailStart + totalsText.length;
+    const noteEnd = Math.max(noteStart + 1, docEnd - 1);
+    tail.push(
+      {
+        updateParagraphStyle: {
+          range: { startIndex: noteStart, endIndex: noteEnd },
+          paragraphStyle: { alignment: "START" },
+          fields: "alignment",
+        },
+      },
+      {
+        updateTextStyle: {
+          range: { startIndex: noteStart, endIndex: noteEnd },
+          textStyle: {
+            fontSize: { magnitude: 8.5, unit: "PT" },
+            bold: false,
+            italic: true,
+            foregroundColor: rgb("#6b6b73"),
+            weightedFontFamily: { fontFamily: font },
+          },
+          fields: "fontSize,bold,italic,foregroundColor,weightedFontFamily",
+        },
+      },
+    );
+  }
+  await batchUpdate(documentId, tail);
 }
 
 function lastTable(content: GDocElement[]) {
@@ -293,8 +354,9 @@ export async function readPromoDocRows(documentId: string): Promise<PromoDocPars
   let section = "";
   for (let r = 1; r < rows.length; r += 1) {
     const cells = (rows[r]!.tableCells ?? []).map((c) => cellText(c));
-    const title = cells[iTitle] ?? "";
-    if (!title) continue;
+    // Состав позиции — отдельные абзацы в той же ячейке, берём только наименование.
+    const title = (cells[iTitle] ?? "").split("\n")[0]!.trim();
+    if (!title || title === "Позиции не добавлены") continue;
     const filled = cells.filter(Boolean).length;
     if (filled === 1) {
       // Одинокая ячейка — строка раздела.
@@ -302,17 +364,19 @@ export async function readPromoDocRows(documentId: string): Promise<PromoDocPars
       continue;
     }
     if (title.startsWith("Итого по разделу")) continue;
-    const priceStr = iPrice >= 0 ? (cells[iPrice] ?? "") : "";
-    if (!priceStr && !(iQty >= 0 && cells[iQty])) continue; // служебные строки (управление, комиссия, НДС)
+    const dash = (v: string) => (v.trim() === "—" ? "" : v);
+    const priceStr = iPrice >= 0 ? dash(cells[iPrice] ?? "") : "";
+    const qtyStr = iQty >= 0 ? dash(cells[iQty] ?? "") : "";
+    if (!priceStr && !qtyStr) continue; // служебные строки (управление, комиссия, НДС)
     out.push({
       section,
       title,
-      unit: (iUnit >= 0 ? cells[iUnit] : "") || "услуга",
-      qty: iQty >= 0 ? toNum(cells[iQty] ?? "") : 0,
-      multiplier: iMul >= 0 ? toNum(cells[iMul] ?? "") || 1 : 1,
+      unit: (iUnit >= 0 ? dash(cells[iUnit] ?? "") : "") || "услуга",
+      qty: toNum(qtyStr),
+      multiplier: iMul >= 0 ? toNum(dash(cells[iMul] ?? "")) || 1 : 1,
       price: toNum(priceStr),
-      note: (iNote >= 0 ? cells[iNote] : "") ?? "",
-      rate_unit: iRateUnit >= 0 ? (cells[iRateUnit] ?? "").replace("—", "").trim() : "",
+      note: (iNote >= 0 ? dash(cells[iNote] ?? "") : "") ?? "",
+      rate_unit: iRateUnit >= 0 ? dash(cells[iRateUnit] ?? "").trim() : "",
     });
   }
   return out;
