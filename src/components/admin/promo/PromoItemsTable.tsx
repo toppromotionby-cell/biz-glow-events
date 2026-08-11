@@ -248,7 +248,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                           <Input value={it.unit} onChange={(e) => replace(it.id, { unit: e.target.value })} className="h-8" />
                         </Mini>
                         <Mini label="Кол-во" width="w-[72px]">
-                          <Input type="number" min={0} value={it.qty} onChange={(e) => replace(it.id, { qty: Number(e.target.value) })} className="h-8" />
+                          <NumField value={it.qty} onChange={(v) => replace(it.id, { qty: v })} aria-label="Количество" className="h-8" />
                         </Mini>
                         <Mini label="Ед. 2" width="w-[84px]">
                           <Input
@@ -259,15 +259,16 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                           />
                         </Mini>
                         <Mini label={it.rate_unit.trim() ? `Кол-во (${it.rate_unit.trim()})` : "×"} width="w-[76px]">
-                          <Input type="number" min={0} value={it.multiplier} onChange={(e) => replace(it.id, { multiplier: Number(e.target.value) })} className="h-8" />
+                          <NumField value={it.multiplier} onChange={(v) => replace(it.id, { multiplier: v })} aria-label="Множитель" className="h-8" />
                         </Mini>
                         <Mini label={it.rate_unit.trim() ? `Цена/${it.rate_unit.trim()}` : "Цена"} width="w-[100px]">
-                          <Input type="number" min={0} step="0.01" value={it.price} onChange={(e) => replace(it.id, { price: Number(e.target.value) })} className="h-8" />
+                          <NumField value={it.price} step="0.01" onChange={(v) => replace(it.id, { price: v })} aria-label="Цена" className="h-8" />
                         </Mini>
                         {showCost && (
                           <Mini label="Себест." width="w-[100px]">
-                            <Input type="number" min={0} step="0.01" value={it.cost} onChange={(e) => replace(it.id, { cost: Number(e.target.value) })} className="h-8" />
+                            <NumField value={it.cost} step="0.01" onChange={(v) => replace(it.id, { cost: v })} aria-label="Себестоимость" className="h-8" />
                           </Mini>
+
                         )}
                         <Mini label="Связка" width="w-[110px]">
                           <Input
