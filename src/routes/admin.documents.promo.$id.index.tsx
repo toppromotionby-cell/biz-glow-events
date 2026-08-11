@@ -634,7 +634,7 @@ function EditorPage() {
                 </label>
                 <DetachedPreviewButton
                   html={`<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>${PROMO_DOC_CSS}</style></head><body style="background:#fff;padding:24px">${previewHtml}</body></html>`}
-                  title={`Превью · ${quote.title || "КП промо"}`}
+                  title="Превью · КП промо"
                 />
               </div>
             </div>
