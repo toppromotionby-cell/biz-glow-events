@@ -252,6 +252,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                         <Mini label="Кол-во" width="w-[72px]">
                           <Input type="number" min={0} value={it.qty} onChange={(e) => replace(it.id, { qty: Number(e.target.value) })} className="h-8" />
                         </Mini>
+                        <Mini label="Ед. 2" width="w-[84px]">
+                          <Input
+                            value={it.rate_unit}
+                            placeholder="час"
+                            onChange={(e) => replace(it.id, { rate_unit: e.target.value })}
+                            className="h-8"
+                          />
+                        </Mini>
                         <Mini label="×" width="w-[64px]">
                           <Input type="number" min={0} value={it.multiplier} onChange={(e) => replace(it.id, { multiplier: Number(e.target.value) })} className="h-8" />
                         </Mini>
@@ -263,6 +271,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                             <Input type="number" min={0} step="0.01" value={it.cost} onChange={(e) => replace(it.id, { cost: Number(e.target.value) })} className="h-8" />
                           </Mini>
                         )}
+                        <Mini label="Связка" width="w-[110px]">
+                          <Input
+                            value={it.group_key}
+                            placeholder="напр. флеш-тату"
+                            onChange={(e) => replace(it.id, { group_key: e.target.value })}
+                            className="h-8"
+                          />
+                        </Mini>
                         <span className="pb-2 text-[11px] text-muted-foreground">всего: {lineQty(it)}</span>
                       </div>
 
@@ -285,12 +301,27 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                         )}
                         <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
                           <Switch
+                            checked={it.included}
+                            onCheckedChange={(v) => setIncluded(it, v)}
+                          />
+                          В итог
+                        </Label>
+                        <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <Switch
+                            checked={it.is_info}
+                            onCheckedChange={(v) => replace(it.id, { is_info: v })}
+                          />
+                          Справочно
+                        </Label>
+                        <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <Switch
                             checked={it.exclude_from_commission}
                             onCheckedChange={(v) => replace(it.id, { exclude_from_commission: v })}
                           />
                           Без комиссии
                         </Label>
                       </div>
+
 
                     </div>
                   )}
