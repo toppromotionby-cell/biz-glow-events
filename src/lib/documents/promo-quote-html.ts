@@ -1,4 +1,5 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
+import { PRICE_LABEL } from "@/lib/documents/doc-layout";
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { fontCssVars, fontLinkTags, resolveDocFont } from "@/lib/documents/doc-font";
 import { vatRateLabel } from "@/lib/documents/vat";
@@ -12,7 +13,6 @@ import {
   groupBySection,
   hasSecondUnit,
   isServiceOnlyRow,
-  soleRateUnit,
   formatNumber,
   rateUnitLabel,
   formatQty,
@@ -79,7 +79,6 @@ export function buildPromoQuoteBody(
   // Вторая единица («час», «смена») показывается отдельными колонками — только
   // если она заполнена хотя бы у одной позиции. Иначе таблица как раньше.
   const dual = hasSecondUnit(items);
-  const rateUnit = soleRateUnit(items);
 
   const cols: Array<{ label: string; cls: string }> = [{ label: "Наименование", cls: "c-title" }];
   cols.push({ label: "Ед. изм.", cls: "c-unit" });
