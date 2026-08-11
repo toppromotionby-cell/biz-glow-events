@@ -11,7 +11,8 @@ function argb(hex: string | null | undefined, fallback = "FFF5A623"): string {
   return m ? `FF${m[1].toUpperCase()}` : fallback;
 }
 
-export async function exportQuoteXlsx(quote: Quote, items: QuoteItem[]): Promise<void> {
+/** Собирает книгу с живыми формулами (без скачивания) — используется и в тестах. */
+export async function buildQuoteWorkbook(quote: Quote, items: QuoteItem[]) {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = "Event Hub";
@@ -140,6 +141,11 @@ export async function exportQuoteXlsx(quote: Quote, items: QuoteItem[]): Promise
     addTotal("Остаток:", `${t.balance}`, t.balance);
   }
 
+  return wb;
+}
+
+export async function exportQuoteXlsx(quote: Quote, items: QuoteItem[]): Promise<void> {
+  const wb = await buildQuoteWorkbook(quote, items);
   const buf = await wb.xlsx.writeBuffer();
   downloadBlob(
     new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),

@@ -19,7 +19,8 @@ function argb(hex: string, fallback = "FFF5A623"): string {
   return m ? `FF${m[1].toUpperCase()}` : fallback;
 }
 
-export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]): Promise<void> {
+/** Собирает книгу промо-КП с живыми формулами (без скачивания) — используется и в тестах. */
+export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) {
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   wb.creator = "Event Hub";
