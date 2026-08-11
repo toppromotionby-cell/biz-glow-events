@@ -1,7 +1,8 @@
 import { useRoles } from "@/hooks/use-roles";
-import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
+import { DocAppearanceSection } from "@/components/admin/documents/DocAppearanceSection";
+
 
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -10,9 +11,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, FileSpreadsheet, Save, Loader2, Info, Undo2, History, Send,
-  AlertTriangle, CheckCircle2, Eye, Percent, Brain,
+  ArrowLeft, Download, FileSpreadsheet, Info, Undo2, History, Send,
+  Eye, Percent, Brain, MoreHorizontal,
 } from "lucide-react";
+
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,12 +54,8 @@ import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { LogoUploader } from "@/components/admin/LogoUploader";
-import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
-import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { PromoBlockEditDialog, type PromoEditTarget } from "@/components/admin/documents/PromoBlockEditDialog";
 import { getQuoteDocSettings } from "@/lib/quotes.functions";
-import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { resolveCompany } from "@/lib/documents/company";
 
@@ -307,20 +305,6 @@ function EditorPage() {
           <Button size="sm" variant="ghost" onClick={undo} title="Отменить (Ctrl+Z)">
             <Undo2 className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => saveMut.mutate({ quote, items })} disabled={saveMut.isPending}>
-            {saveMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
-            Сохранить
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={async () => {
-              const { exportPromoQuoteXlsx } = await import("@/lib/documents/promo-xlsx.browser");
-              await exportPromoQuoteXlsx(quote, items).catch((e: Error) => toast.error(e.message));
-            }}
-          >
-            <FileSpreadsheet className="mr-1 h-4 w-4" />XLSX
-          </Button>
           <Button
             size="sm"
             onClick={() =>
@@ -332,10 +316,20 @@ function EditorPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline"><History className="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline"><MoreHorizontal className="mr-1.5 h-4 w-4" />Ещё</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[280px]">
+              <DropdownMenuItem
+                onClick={async () => {
+                  const { exportPromoQuoteXlsx } = await import("@/lib/documents/promo-xlsx.browser");
+                  await exportPromoQuoteXlsx(quote, items).catch((e: Error) => toast.error(e.message));
+                }}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />Выгрузить в Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuLabel>Версии</DropdownMenuLabel>
+
               <DropdownMenuItem
                 onClick={async () => {
                   await makeVersion({ data: { quoteId: id, label: `Снимок ${new Date().toLocaleString("ru-RU")}` } });
@@ -561,51 +555,41 @@ function EditorPage() {
             </TabsContent>
 
             <TabsContent value="view" className="space-y-3">
-              <Row><span className="flex items-center gap-1">Колонка «Кол-во» <Hint text="Скройте, если позиции без количества (пакетные услуги)." /></span>
-                <Switch checked={quote.show_qty} onCheckedChange={(v) => patchQuote({ show_qty: v })} /></Row>
-              <Row><span className="flex items-center gap-1">Колонка «Всего» <Hint text="Кол-во × множитель — например, человек × дней." /></span>
-                <Switch checked={quote.show_total_qty} onCheckedChange={(v) => patchQuote({ show_total_qty: v })} /></Row>
-              <Row><span>Колонка «Примечания»</span>
-                <Switch checked={quote.show_notes} onCheckedChange={(v) => patchQuote({ show_notes: v })} /></Row>
-              <Row><span className="flex items-center gap-1">Состав позиций <Hint text="Показывать в документе список «что входит» под названием позиции." /></span>
-                <Switch checked={quote.show_item_includes} onCheckedChange={(v) => patchQuote({ show_item_includes: v })} /></Row>
-              <Row><span className="flex items-center gap-1">Подытоги разделов <Hint text="Строка «Итого по разделу» после позиций раздела." /></span>
-                <Switch checked={quote.show_section_subtotals} onCheckedChange={(v) => patchQuote({ show_section_subtotals: v })} /></Row>
-              <DocFontSelect value={quote.font_family} onChange={(font_family) => patchQuote({ font_family })} />
-              <Field label="Акцентный цвет">
-                <Input type="color" value={quote.accent_color} onChange={(e) => patchQuote({ accent_color: e.target.value })} className="h-10 w-20 p-1" />
-              </Field>
-              <LogoHeaderDesigner
-                label="Логотип агентства"
-                logoUrl={quote.logo_url}
-                onLogoChange={(v) => patchQuote({ logo_url: v })}
-                layout={quote.logo_layout}
-                onLayoutChange={(l) => patchQuote({ logo_layout: l })}
-                brand={resolveCompany(quote.company_overrides, settings).company_brand}
-                legalLine={`${resolveCompany(quote.company_overrides, settings).company_legal_name} · ${resolveCompany(quote.company_overrides, settings).company_address}`}
+              <DocAppearanceSection
+                toggles={[
+                  { key: "show_qty", label: "Колонка «Кол-во»", hint: <Hint text="Скройте, если позиции без количества (пакетные услуги)." />, value: quote.show_qty, onChange: (v) => patchQuote({ show_qty: v }) },
+                  { key: "show_total_qty", label: "Колонка «Всего»", hint: <Hint text="Кол-во × множитель — например, человек × дней." />, value: quote.show_total_qty, onChange: (v) => patchQuote({ show_total_qty: v }) },
+                  { key: "show_notes", label: "Колонка «Примечания»", value: quote.show_notes, onChange: (v) => patchQuote({ show_notes: v }) },
+                  { key: "show_item_includes", label: "Состав позиций", hint: <Hint text="Показывать в документе список «что входит» под названием позиции." />, value: quote.show_item_includes, onChange: (v) => patchQuote({ show_item_includes: v }) },
+                  { key: "show_section_subtotals", label: "Подытоги разделов", hint: <Hint text="Строка «Итого по разделу» после позиций раздела." />, value: quote.show_section_subtotals, onChange: (v) => patchQuote({ show_section_subtotals: v }) },
+                ]}
+                fontFamily={quote.font_family}
+                onFontChange={(font_family) => patchQuote({ font_family })}
                 accent={quote.accent_color}
-                docNum={quote.doc_number || "000"}
-              />
-              <LogoUploader
-                label="Логотип клиента"
-                value={quote.client_logo_url}
-                onChange={(v) => patchQuote({ client_logo_url: v })}
-              />
-
-              <Separator />
-              <CompanySelect
-                value={quote.company_id}
-                onChange={(companyId) => patchQuote({ company_id: companyId })}
-              />
-              <CompanyOverridesEditor
-                value={quote.company_overrides}
-                onChange={(v) => patchQuote({ company_overrides: v })}
+                onAccentChange={(accent_color) => patchQuote({ accent_color })}
+                logo={{
+                  label: "Логотип агентства",
+                  url: quote.logo_url,
+                  onChange: (v) => patchQuote({ logo_url: v }),
+                  layout: quote.logo_layout,
+                  onLayoutChange: (l) => patchQuote({ logo_layout: l }),
+                  brand: resolveCompany(quote.company_overrides, settings).company_brand,
+                  legalLine: `${resolveCompany(quote.company_overrides, settings).company_legal_name} · ${resolveCompany(quote.company_overrides, settings).company_address}`,
+                  docNum: quote.doc_number || "000",
+                }}
+                clientLogo={{ url: quote.client_logo_url, onChange: (v) => patchQuote({ client_logo_url: v }) }}
+                companyId={quote.company_id}
+                onCompanyChange={(companyId) => patchQuote({ company_id: companyId })}
+                overrides={quote.company_overrides}
+                onOverridesChange={(v) => patchQuote({ company_overrides: v })}
                 settings={settings}
+                extra={
+                  <Field label="Примечание в подвале">
+                    <Textarea value={quote.footer_note} onChange={(e) => patchQuote({ footer_note: e.target.value })} className="min-h-[80px]" />
+                  </Field>
+                }
               />
 
-              <Field label="Примечание в подвале">
-                <Textarea value={quote.footer_note} onChange={(e) => patchQuote({ footer_note: e.target.value })} className="min-h-[80px]" />
-              </Field>
             </TabsContent>
           </Tabs>
 
