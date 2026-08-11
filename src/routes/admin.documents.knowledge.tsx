@@ -37,14 +37,27 @@ const num = (v: unknown) => (v == null ? 0 : Number(v));
 
 function Page() {
   const [tab, setTab] = useState<KbTable>("contacts");
+  const syncCatalog = useServerFn(syncCatalogKnowledgeFn);
+  const syncMut = useMutation({
+    mutationFn: () => syncCatalog(),
+    onSuccess: (r) => toast.success(`Синхронизировано позиций каталога: ${r.synced}`),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         icon={<Brain className="h-5 w-5" />}
         title="База знаний"
-        subtitle="Данные, накопленные из КП, КП промо и документов по заказам. Удаление не меняет сами документы."
+        subtitle="Данные, накопленные из КП, КП промо, заказов, презентаций и каталога сайта. Удаление не меняет сами документы."
+        actions={
+          <Button variant="outline" onClick={() => syncMut.mutate()} disabled={syncMut.isPending}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncMut.isPending ? "animate-spin" : ""}`} />
+            Синхронизировать с каталогом
+          </Button>
+        }
       />
+
       <Tabs value={tab} onValueChange={(v) => setTab(v as KbTable)}>
         <TabsList>
           <TabsTrigger value="contacts">Контрагенты</TabsTrigger>
