@@ -2,6 +2,7 @@
 // расчёт итогов и валидация. Файл browser-safe — используется и в админке,
 // и на сервере при генерации документа.
 import { z } from "zod";
+import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
 import {
   QUOTE_TEMPLATES,
   normalizeBlocks,
@@ -214,6 +215,8 @@ export type Quote = {
   texts: QuoteTexts;
   design: QuoteDesign;
   template: QuoteTemplate;
+  /** Шрифт документа: inherit — как в настройках. */
+  font_family: DocFontChoice;
   blocks: QuoteBlock[];
   discount_type: "none" | "percent" | "amount";
   discount_value: number;
@@ -541,6 +544,7 @@ export const quotePatchSchema = z.object({
   texts: z.record(z.string(), z.string()).optional(),
   design: z.record(z.string(), z.union([z.string(), z.boolean(), z.number()])).optional(),
   template: z.enum(QUOTE_TEMPLATES).optional(),
+  font_family: z.unknown().optional().transform((v) => (v === undefined ? undefined : normalizeDocFontChoice(v))),
   blocks: z
     .array(
       z.object({
@@ -580,6 +584,7 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     design: { ...DEFAULT_QUOTE_DESIGN, ...((row.design ?? {}) as Partial<QuoteDesign>) },
     logo_layout: normalizeLogoLayout(row.logo_layout),
     template: normalizeTemplate(row.template),
+    font_family: normalizeDocFontChoice(row.font_family),
     blocks: normalizeBlocks(row.blocks, normalizeTemplate(row.template)),
     discount_value: num(row.discount_value),
     prepayment_value: num(row.prepayment_value),

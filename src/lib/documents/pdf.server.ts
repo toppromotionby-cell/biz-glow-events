@@ -40,42 +40,20 @@ import {
   type PromoQuote as PromoQuoteT,
 } from "@/lib/promo-quote-model";
 
-import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
-import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
-import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
+import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
+import { resolveDocFont, type DocFont } from "@/lib/documents/doc-font";
 
 // Шрифты встроены в бандл (subset латиница+кириллица). Раньше они качались
 // по сети с публичного адреса того же воркера — такой self-subrequest иногда
 // зависал, и Cloudflare убивал запрос с 502.
-function decodeBase64(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
-  return out;
-}
 
-let regularBytes: Uint8Array | null = null;
-let boldBytes: Uint8Array | null = null;
-let displayBytes: Uint8Array | null = null;
-
-function loadRegular(): Uint8Array {
-  if (!regularBytes) regularBytes = decodeBase64(INTER_REGULAR_B64);
-  return regularBytes;
-}
-function loadBold(): Uint8Array {
-  if (!boldBytes) boldBytes = decodeBase64(INTER_BOLD_B64);
-  return boldBytes;
-}
-function loadDisplay(): Uint8Array {
-  if (!displayBytes) displayBytes = decodeBase64(SPACE_GROTESK_BOLD_B64);
-  return displayBytes;
-}
-
-/** В Space Grotesk нет кириллицы — для неё используем Inter Bold. */
+/** В Space Grotesk нет кириллицы — для неё используем Bold основного шрифта. */
 const CYRILLIC = /[\u0400-\u04FF]/;
 function displayFont(ctx: DocCtx, text: string): PDFFont {
+  if (ctx.displayCyrillic) return ctx.display;
   return CYRILLIC.test(text) ? ctx.bold : ctx.display;
 }
+
 
 
 
@@ -167,6 +145,9 @@ type DocCtx = {
   regular: PDFFont;
   bold: PDFFont;
   display: PDFFont;
+  /** Есть ли кириллица в display-шрифте. */
+  displayCyrillic: boolean;
+
 
   page: PDFPage;
   y: number;
@@ -1144,15 +1125,16 @@ async function createCtx(
   logoUrl?: string | null,
   clientLogoUrl?: string | null,
   logoLayoutRaw?: unknown,
+  font: DocFont = "brand",
 ): Promise<DocCtx> {
   const logoLayout = normalizeLogoLayout(logoLayoutRaw);
-  const [regBytes, boldBytes, dispBytes] = [loadRegular(), loadBold(), loadDisplay()];
+  const set = pdfFontSet(font);
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   // subset:true → встраиваем только использованные глифы (минимизируем вес).
-  const regular = await pdf.embedFont(regBytes, { subset: true });
-  const bold = await pdf.embedFont(boldBytes, { subset: true });
-  const display = await pdf.embedFont(dispBytes, { subset: true });
+  const regular = await pdf.embedFont(set.regular, { subset: true });
+  const bold = await pdf.embedFont(set.bold, { subset: true });
+  const display = await pdf.embedFont(set.display, { subset: true });
   // ставим как default fallback на StandardFonts (на всякий случай — для emoji не нужно).
   void StandardFonts;
   const [logo, clientLogo] = await Promise.all([
@@ -1161,6 +1143,7 @@ async function createCtx(
   ]);
   const ctx: DocCtx = {
     pdf, regular, bold, display,
+    displayCyrillic: set.displayCyrillic,
     page: pdf.addPage([PAGE_W, PAGE_H]),
     y: 0,
     pageNum: 1,
@@ -1168,6 +1151,7 @@ async function createCtx(
     clientLogo,
     logoLayout,
   };
+
 
 
   ctx.y = PAGE_H - MARGIN_TOP;
@@ -1657,7 +1641,9 @@ async function renderQuotePdf(
     quote.design.show_logo ? (quote.logo_url || settings.logo_url) : null,
     null,
     quote.logo_layout,
+    resolveDocFont(quote.font_family, (settings as { font_family?: unknown }).font_family),
   );
+
   drawHeader(ctx, "Коммерческое предложение", quoteNumberDisplay(quote), fmtDate(quote.doc_date), eff, {
     validUntil: quoteValidUntil(quote),
   });
@@ -1941,7 +1927,12 @@ export async function buildPromoQuotePdf(
     ),
   );
   const eff = applyCompanyOverrides(settings, quote.company_overrides);
-  const ctx = await createCtx(quote.logo_url || eff.logo_url, quote.client_logo_url, quote.logo_layout);
+  const ctx = await createCtx(
+    quote.logo_url || eff.logo_url,
+    quote.client_logo_url,
+    quote.logo_layout,
+    resolveDocFont(quote.font_family, (settings as { font_family?: unknown }).font_family),
+  );
 
   const t = computePromoTotals(quote, items);
   drawHeader(

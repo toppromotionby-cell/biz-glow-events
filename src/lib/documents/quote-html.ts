@@ -2,6 +2,7 @@
 // Browser-safe: используется и для live-превью в админке, и на сервере
 // (HTML-версия документа). Шрифты и токены — как на сайте (Space Grotesk / Inter).
 import { resolveCompany } from "@/lib/documents/company";
+import { fontCssVars, fontLinkTags, resolveDocFont } from "@/lib/documents/doc-font";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
@@ -257,6 +258,8 @@ export function buildQuoteHtmlDoc(
   opts: QuoteHtmlOptions = {},
 ): string {
   const editable = opts.editable === true;
+  const docFont = resolveDocFont(quote.font_family, (settings as { font_family?: unknown }).font_family);
+
   /** Метка редактируемой зоны — попадает в HTML только в режиме редактирования. */
   const ed = (target: string, id?: string, label?: string) =>
     editable
@@ -517,24 +520,22 @@ export function buildQuoteHtmlDoc(
 <html lang="ru"><head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>КП №${esc(num)} — ${esc(c.brand)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
+${fontLinkTags(docFont)}
 <style>
-  :root { ${densityRootVars()}; ${scaledVars(docCssVars(esc(accent)))}; ${templateVars(template)}
+  :root { ${densityRootVars()}; ${scaledVars(docCssVars(esc(accent)))}; ${templateVars(template)} ${fontCssVars(docFont)};
     --gap-k:calc(${print.blockGap} * var(--dk)); --row-k:calc(${print.rowGap} * var(--dk)); --lh:${print.lineHeight}; }
   @page { size: A4; margin: ${printPageMarginCss(print)}; }
   * { box-sizing: border-box; }
-  body { margin:0; background:#f3f4f6; color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:var(--fs-body); line-height:var(--lh); }
+  body { margin:0; background:#f3f4f6; color:var(--ink); font-family:var(--font-body); font-size:var(--fs-body); line-height:var(--lh); }
   .sheet { max-width: 820px; margin: 0 auto; background:#fff; padding: calc(18px * var(--gap-k)) 22px calc(22px * var(--gap-k)); }
-  h1,h2,h3 { font-family:"Space Grotesk",system-ui,sans-serif; letter-spacing:-0.02em; margin:0; }
+  h1,h2,h3 { font-family:var(--font-display); letter-spacing:-0.02em; margin:0; }
   .bar { height:3px; background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff)); border-radius:3px; }
   .head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding:10px 0 8px; border-bottom:1px solid var(--line); }
-  .brand { font-family:"Space Grotesk",system-ui,sans-serif; font-size:var(--fs-brand); font-weight:700; }
+  .brand { font-family:var(--font-display); font-size:var(--fs-brand); font-weight:700; }
   .brand-sub { color:var(--muted); font-size:var(--fs-small); margin-top:2px; }
   .logo { height:30px; width:auto; display:block; margin-bottom:4px; }
   .doc-kind { text-transform:uppercase; letter-spacing:.14em; font-size:var(--fs-doc-kind); font-weight:600; color:var(--accent); }
-  .doc-num { font-family:"Space Grotesk",system-ui,sans-serif; font-size:var(--fs-doc-num); font-weight:700; }
+  .doc-num { font-family:var(--font-display); font-size:var(--fs-doc-num); font-weight:700; }
   .doc-date { color:var(--muted); font-size:var(--fs-doc-date); }
   .right { text-align:right; }
   .cover { margin:10px 0 4px; padding:10px 12px; border-radius:var(--radius); background:var(--cover-bg); border:1px solid var(--cover-border); }
@@ -545,7 +546,7 @@ export function buildQuoteHtmlDoc(
   h2.section { font-size:var(--fs-section); text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin:calc(12px * var(--gap-k)) 0 calc(5px * var(--gap-k)); break-after:avoid; page-break-after:avoid; }
   .card { border:1px solid var(--line); background:var(--card-bg); border-radius:var(--radius); padding:8px 10px; break-inside:avoid; page-break-inside:avoid; }
   .card .label { text-transform:uppercase; font-size:var(--fs-card-label); letter-spacing:.12em; color:var(--accent); font-weight:600; }
-  .card .name { font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:var(--fs-card-title); margin:2px 0 3px; }
+  .card .name { font-family:var(--font-display); font-weight:600; font-size:var(--fs-card-title); margin:2px 0 3px; }
   .card .line { color:var(--muted); font-size:var(--fs-small); }
   table { width:100%; border-collapse:collapse; margin-top:4px; }
   thead th { background:color-mix(in srgb,var(--accent) 12%,#fff); font-size:var(--fs-doc-kind); text-transform:uppercase; letter-spacing:.08em; text-align:left; padding:calc(5px * var(--row-k)) 6px; }
@@ -563,10 +564,10 @@ export function buildQuoteHtmlDoc(
 
   .unit { color:var(--muted); font-size:var(--fs-micro); }
   .strong { font-weight:600; }
-  .section-row td { background:#fff; font-family:"Space Grotesk",system-ui,sans-serif; font-weight:600; font-size:var(--fs-body); padding-top:9px; border-bottom:1px solid var(--line); }
+  .section-row td { background:#fff; font-family:var(--font-display); font-weight:600; font-size:var(--fs-body); padding-top:9px; border-bottom:1px solid var(--line); }
   .totals { margin-top:9px; margin-left:auto; width:min(330px,100%); border:1px solid color-mix(in srgb,var(--accent) 40%,#fff); border-radius:var(--radius); overflow:hidden; break-inside:avoid; page-break-inside:avoid; }
   .totals .row { display:flex; justify-content:space-between; padding:4px 10px; font-size:var(--fs-body); }
-  .totals .row.total { background:color-mix(in srgb,var(--accent) 14%,#fff); font-weight:700; font-size:var(--fs-total); font-family:"Space Grotesk",system-ui,sans-serif; }
+  .totals .row.total { background:color-mix(in srgb,var(--accent) 14%,#fff); font-weight:700; font-size:var(--fs-total); font-family:var(--font-display); }
   .words { margin-top:5px; color:var(--muted); font-size:var(--fs-small); font-style:italic; }
   .info-table td { padding:2px 0; border:0; }
   .info-table td.k { color:var(--muted); width:160px; }
@@ -598,7 +599,7 @@ export function buildQuoteHtmlDoc(
   [data-edit] { position:relative; cursor:pointer; border-radius:6px; transition:box-shadow .12s ease, background .12s ease; }
   [data-edit]:hover { box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 55%,#fff); background:color-mix(in srgb,var(--accent) 5%,#fff); }
   tr[data-edit]:hover > td { background:color-mix(in srgb,var(--accent) 7%,#fff); }
-  .edit-hint { position:fixed; z-index:9; left:0; top:0; padding:2px 8px; border-radius:999px; background:var(--accent); color:#fff; font-size:11px; font-family:"Inter",system-ui,sans-serif; pointer-events:none; opacity:0; transition:opacity .1s ease; white-space:nowrap; }
+  .edit-hint { position:fixed; z-index:9; left:0; top:0; padding:2px 8px; border-radius:999px; background:var(--accent); color:#fff; font-size:11px; font-family:var(--font-body); pointer-events:none; opacity:0; transition:opacity .1s ease; white-space:nowrap; }
   .edit-hint.on { opacity:1; }
   @media print { [data-edit]:hover { box-shadow:none; background:none; } .edit-hint { display:none; } }`
       : ""

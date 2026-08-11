@@ -1,5 +1,44 @@
 // Модель презентаций: типы слайдов, нормализация содержимого, дефолты.
 // Файл клиент-безопасный — используется и в редакторе, и в server fns, и в PDF.
+import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
+
+/** Как накладывать логотипы на слайды. */
+export type LogoPlacement = "auto" | "always" | "title-only" | "off";
+
+export const LOGO_PLACEMENT_LABELS: Record<LogoPlacement, string> = {
+  auto: "Авто (где есть место)",
+  always: "На каждом слайде",
+  "title-only": "Только титул и контакты",
+  off: "Не показывать",
+};
+
+export type PresentationLogoLayout = {
+  brand: LogoPlacement;
+  client: LogoPlacement;
+  /** Масштаб логотипов, 0.6–1.6 (1 — базовый размер). */
+  scale: number;
+};
+
+export const DEFAULT_PRESENTATION_LOGO_LAYOUT: PresentationLogoLayout = {
+  brand: "auto",
+  client: "auto",
+  scale: 1,
+};
+
+const PLACEMENTS: LogoPlacement[] = ["auto", "always", "title-only", "off"];
+
+export function normalizePresentationLogoLayout(raw: unknown): PresentationLogoLayout {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const place = (v: unknown, d: LogoPlacement): LogoPlacement =>
+    PLACEMENTS.includes(v as LogoPlacement) ? (v as LogoPlacement) : d;
+  const scale = Number(r.scale);
+  return {
+    brand: place(r.brand, "auto"),
+    client: place(r.client, "auto"),
+    scale: Number.isFinite(scale) ? Math.min(1.6, Math.max(0.6, scale)) : 1,
+  };
+}
+
 
 export type SlideType = "title" | "product" | "text" | "section" | "contacts";
 
@@ -86,6 +125,14 @@ export type Presentation = {
   quote_id: string | null;
   status: PresentationStatus;
   template: PresentationTemplate;
+  /** Логотип компании: пусто — берётся из настроек документов. */
+  logo_url: string | null;
+  /** Логотип клиента — накладывается на слайды автоматически. */
+  client_logo_url: string | null;
+  /** Настройки размещения логотипов. */
+  logo_layout: PresentationLogoLayout;
+  /** Шрифт презентации: inherit — как в настройках документов. */
+  font_family: DocFontChoice;
   created_at: string;
   updated_at: string;
 };
@@ -190,6 +237,10 @@ export function normalizePresentation(row: Record<string, unknown>): Presentatio
     quote_id: row.quote_id ? str(row.quote_id) : null,
     status,
     template,
+    logo_url: row.logo_url ? str(row.logo_url) : null,
+    client_logo_url: row.client_logo_url ? str(row.client_logo_url) : null,
+    logo_layout: normalizePresentationLogoLayout(row.logo_layout),
+    font_family: normalizeDocFontChoice(row.font_family),
     created_at: str(row.created_at),
     updated_at: str(row.updated_at),
   };

@@ -1,6 +1,7 @@
 // Модель промо-КП (раздел «Документы → КП промо»).
 // Browser-safe: используется формой, live-превью, PDF и XLSX — одна логика расчётов.
 import { z } from "zod";
+import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
 import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
 import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
@@ -39,6 +40,8 @@ export type PromoQuote = {
   logo_url: string | null;
   client_logo_url: string | null;
   logo_layout: LogoLayout;
+  /** Шрифт документа: inherit — как в настройках. */
+  font_family: DocFontChoice;
   company_id: string | null;
   company_overrides: CompanyOverrides;
   accent_color: string;
@@ -127,6 +130,7 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
     logo_url: row.logo_url ? String(row.logo_url) : null,
     client_logo_url: row.client_logo_url ? String(row.client_logo_url) : null,
     logo_layout: normalizeLogoLayout(row.logo_layout),
+    font_family: normalizeDocFontChoice(row.font_family),
     company_id: row.company_id ? String(row.company_id) : null,
     company_overrides: normalizeCompanyOverrides(row.company_overrides),
     accent_color: str(row.accent_color, "#F5A623"),
@@ -230,6 +234,7 @@ export const promoQuotePatchSchema = z
     logo_url: z.string().max(1000).nullable(),
     client_logo_url: z.string().max(1000).nullable(),
     logo_layout: z.unknown().transform(normalizeLogoLayout),
+    font_family: z.unknown().optional().transform((v) => normalizeDocFontChoice(v)),
     company_id: z.string().uuid().nullable(),
     company_overrides: z.unknown().transform(normalizeCompanyOverrides),
     accent_color: z.string().max(20),
