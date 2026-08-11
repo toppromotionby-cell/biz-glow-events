@@ -60,6 +60,8 @@ import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
+import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
+
 
 
 export const Route = createFileRoute("/admin/documents/quotes/$id/")({ component: Page });
