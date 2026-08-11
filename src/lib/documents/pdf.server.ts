@@ -1967,8 +1967,8 @@ export async function buildPromoQuotePdf(
   const priceTitle = rateUnit ? `Цена за ${rateUnit}` : "Цена";
   const dualCols: Col[] = dual
     ? [
-        { title: "Ед. 2", key: "unit2", width: tableW * 0.08, align: "center" },
-        { title: "Кол-во 2", key: "qty2", width: tableW * 0.08, align: "center" },
+        { title: "Ед. изм.", key: "unit2", width: tableW * 0.08, align: "center" },
+        { title: "Кол-во", key: "qty2", width: tableW * 0.08, align: "center" },
       ]
     : [];
   const cols: Col[] = showNotes

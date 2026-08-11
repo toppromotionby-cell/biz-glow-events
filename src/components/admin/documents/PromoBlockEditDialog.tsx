@@ -126,7 +126,7 @@ export function PromoBlockEditDialog({
               <Field label="Раздел"><Input value={item.section} onChange={(e) => setItem({ ...item, section: e.target.value })} /></Field>
               <Field label="Ед. изм." hint="напр. чел, шт, услуга"><Input value={item.unit} onChange={(e) => setItem({ ...item, unit: e.target.value })} /></Field>
               <Field label="Кол-во"><Input inputMode="decimal" value={String(item.qty)} onChange={(e) => setItem({ ...item, qty: parseNum(e.target.value) })} /></Field>
-              <Field label="Ед. 2" hint="час / день / смена — можно оставить пустым">
+              <Field label="Ед. изм." hint="час / день / смена — можно оставить пустым">
                 <Input value={item.rate_unit} placeholder="час" onChange={(e) => setItem({ ...item, rate_unit: e.target.value })} />
               </Field>
               <Field label={rateUnit ? `Кол-во (${rateUnit})` : "Множитель (дни/смены)"}>
