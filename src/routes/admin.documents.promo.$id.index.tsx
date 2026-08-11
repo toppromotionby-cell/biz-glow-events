@@ -46,7 +46,7 @@ import {
 import { saveEstimateTemplate } from "@/lib/estimate-templates.functions";
 
 import {
-  PROMO_STATUS_LABELS, PROMO_STATUSES, checkPromoQuote, computePromoTotals, promoNumberDisplay,
+  PROMO_STATUS_LABELS, PROMO_STATUSES, checkPromoQuote, computePromoTotals, isPristinePromoItem, promoNumberDisplay,
   promoValidityState, type PromoDiscountType, type PromoItem, type PromoQuote, type PromoStatus,
 } from "@/lib/promo-quote-model";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
