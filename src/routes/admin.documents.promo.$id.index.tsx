@@ -558,51 +558,41 @@ function EditorPage() {
             </TabsContent>
 
             <TabsContent value="view" className="space-y-3">
-              <Row><span className="flex items-center gap-1">Колонка «Кол-во» <Hint text="Скройте, если позиции без количества (пакетные услуги)." /></span>
-                <Switch checked={quote.show_qty} onCheckedChange={(v) => patchQuote({ show_qty: v })} /></Row>
-              <Row><span className="flex items-center gap-1">Колонка «Всего» <Hint text="Кол-во × множитель — например, человек × дней." /></span>
-                <Switch checked={quote.show_total_qty} onCheckedChange={(v) => patchQuote({ show_total_qty: v })} /></Row>
-              <Row><span>Колонка «Примечания»</span>
-                <Switch checked={quote.show_notes} onCheckedChange={(v) => patchQuote({ show_notes: v })} /></Row>
-              <Row><span className="flex items-center gap-1">Состав позиций <Hint text="Показывать в документе список «что входит» под названием позиции." /></span>
-                <Switch checked={quote.show_item_includes} onCheckedChange={(v) => patchQuote({ show_item_includes: v })} /></Row>
-              <Row><span className="flex items-center gap-1">Подытоги разделов <Hint text="Строка «Итого по разделу» после позиций раздела." /></span>
-                <Switch checked={quote.show_section_subtotals} onCheckedChange={(v) => patchQuote({ show_section_subtotals: v })} /></Row>
-              <DocFontSelect value={quote.font_family} onChange={(font_family) => patchQuote({ font_family })} />
-              <Field label="Акцентный цвет">
-                <Input type="color" value={quote.accent_color} onChange={(e) => patchQuote({ accent_color: e.target.value })} className="h-10 w-20 p-1" />
-              </Field>
-              <LogoHeaderDesigner
-                label="Логотип агентства"
-                logoUrl={quote.logo_url}
-                onLogoChange={(v) => patchQuote({ logo_url: v })}
-                layout={quote.logo_layout}
-                onLayoutChange={(l) => patchQuote({ logo_layout: l })}
-                brand={resolveCompany(quote.company_overrides, settings).company_brand}
-                legalLine={`${resolveCompany(quote.company_overrides, settings).company_legal_name} · ${resolveCompany(quote.company_overrides, settings).company_address}`}
+              <DocAppearanceSection
+                toggles={[
+                  { key: "show_qty", label: "Колонка «Кол-во»", hint: <Hint text="Скройте, если позиции без количества (пакетные услуги)." />, value: quote.show_qty, onChange: (v) => patchQuote({ show_qty: v }) },
+                  { key: "show_total_qty", label: "Колонка «Всего»", hint: <Hint text="Кол-во × множитель — например, человек × дней." />, value: quote.show_total_qty, onChange: (v) => patchQuote({ show_total_qty: v }) },
+                  { key: "show_notes", label: "Колонка «Примечания»", value: quote.show_notes, onChange: (v) => patchQuote({ show_notes: v }) },
+                  { key: "show_item_includes", label: "Состав позиций", hint: <Hint text="Показывать в документе список «что входит» под названием позиции." />, value: quote.show_item_includes, onChange: (v) => patchQuote({ show_item_includes: v }) },
+                  { key: "show_section_subtotals", label: "Подытоги разделов", hint: <Hint text="Строка «Итого по разделу» после позиций раздела." />, value: quote.show_section_subtotals, onChange: (v) => patchQuote({ show_section_subtotals: v }) },
+                ]}
+                fontFamily={quote.font_family}
+                onFontChange={(font_family) => patchQuote({ font_family })}
                 accent={quote.accent_color}
-                docNum={quote.doc_number || "000"}
-              />
-              <LogoUploader
-                label="Логотип клиента"
-                value={quote.client_logo_url}
-                onChange={(v) => patchQuote({ client_logo_url: v })}
-              />
-
-              <Separator />
-              <CompanySelect
-                value={quote.company_id}
-                onChange={(companyId) => patchQuote({ company_id: companyId })}
-              />
-              <CompanyOverridesEditor
-                value={quote.company_overrides}
-                onChange={(v) => patchQuote({ company_overrides: v })}
+                onAccentChange={(accent_color) => patchQuote({ accent_color })}
+                logo={{
+                  label: "Логотип агентства",
+                  url: quote.logo_url,
+                  onChange: (v) => patchQuote({ logo_url: v }),
+                  layout: quote.logo_layout,
+                  onLayoutChange: (l) => patchQuote({ logo_layout: l }),
+                  brand: resolveCompany(quote.company_overrides, settings).company_brand,
+                  legalLine: `${resolveCompany(quote.company_overrides, settings).company_legal_name} · ${resolveCompany(quote.company_overrides, settings).company_address}`,
+                  docNum: quote.doc_number || "000",
+                }}
+                clientLogo={{ url: quote.client_logo_url, onChange: (v) => patchQuote({ client_logo_url: v }) }}
+                companyId={quote.company_id}
+                onCompanyChange={(companyId) => patchQuote({ company_id: companyId })}
+                overrides={quote.company_overrides}
+                onOverridesChange={(v) => patchQuote({ company_overrides: v })}
                 settings={settings}
+                extra={
+                  <Field label="Примечание в подвале">
+                    <Textarea value={quote.footer_note} onChange={(e) => patchQuote({ footer_note: e.target.value })} className="min-h-[80px]" />
+                  </Field>
+                }
               />
 
-              <Field label="Примечание в подвале">
-                <Textarea value={quote.footer_note} onChange={(e) => patchQuote({ footer_note: e.target.value })} className="min-h-[80px]" />
-              </Field>
             </TabsContent>
           </Tabs>
 
