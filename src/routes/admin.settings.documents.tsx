@@ -176,7 +176,7 @@ function DocumentSettingsPage() {
                 allowInherit={false}
                 label="Шрифт по умолчанию"
                 hint="Применяется ко всем новым документам; в каждом КП шрифт можно переопределить."
-                onChange={(v) => update("font_family", v)}
+                onChange={(v) => update("font_family", v === "inherit" ? "brand" : v)}
               />
             </div>
             <FieldArea label="Текст футера" value={form.quote_footer} onChange={(v) => update("quote_footer", v)} rows={3} />
