@@ -29,6 +29,7 @@ import {
 } from "@/lib/quote-blocks";
 import { deleteQuoteSnippet, listQuoteSnippets, saveQuoteSnippet } from "@/lib/quotes.functions";
 import { QuoteTextEditor } from "@/components/admin/quotes/QuoteTextEditor";
+import { TextSnippetMenu } from "@/components/admin/documents/TextSnippetMenu";
 
 
 type Props = {
@@ -268,7 +269,13 @@ export function QuoteBlocksEditor({ template, blocks, onChange, issues }: Props)
                     <span className="text-[11px] text-muted-foreground">
                       {b.type === "text" ? "Текст блока" : "Свой текст (пусто — берётся из «Тексты документа»)"}
                     </span>
-                    <PlaceholderMenu onPick={(token) => update(b.id, { content: `${b.content ?? ""}${b.content ? " " : ""}${token}` })} />
+                    <div className="flex items-center gap-1">
+                      <TextSnippetMenu
+                        kind="note"
+                        onPick={(value) => update(b.id, { content: `${b.content ?? ""}${b.content ? "\n" : ""}${value}` })}
+                      />
+                      <PlaceholderMenu onPick={(token) => update(b.id, { content: `${b.content ?? ""}${b.content ? " " : ""}${token}` })} />
+                    </div>
                   </div>
                   <QuoteTextEditor
                     value={b.content ?? ""}
