@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, History, Plus, Search, Send,
-  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain,
+  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -33,6 +33,7 @@ import {
   saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
 import { saveEstimateTemplate } from "@/lib/estimate-templates.functions";
+import { createPresentation } from "@/lib/presentations.functions";
 
 import {
   checkQuote, computeTotals, emptyQuoteItem, num, quotePatchSchema, normalizeTime, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
@@ -156,6 +157,7 @@ function Page() {
   const markSent = useServerFn(markQuoteSent);
   const sendToClient = useServerFn(sendQuoteToClient);
   const makeOrder = useServerFn(createOrderFromQuote);
+  const makePresentation = useServerFn(createPresentation);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["admin-quote", id], queryFn: () => load({ data: { id } }) });
   const activeCompanyId = data?.quote?.company_id ?? null;
@@ -386,6 +388,22 @@ function Page() {
 
 
 
+  // Этап 5: собрать презентацию по позициям этого КП.
+  const onBuildPresentation = async () => {
+    try {
+      const res = await makePresentation({
+        data: {
+          title: `Презентация · КП ${quoteNumberDisplay(quote)}`,
+          companyId: quote.company_id ?? null,
+          template: "light",
+          quoteId: id,
+        },
+      });
+      toast.success("Презентация создана по позициям КП");
+      navigate({ to: "/admin/documents/presentations/$id", params: { id: res.id } });
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -429,6 +447,9 @@ function Page() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onCreateOrder}>
                 <FileCheck2 className="mr-2 h-4 w-4" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onBuildPresentation}>
+                <Presentation className="mr-2 h-4 w-4" />Собрать презентацию
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}
