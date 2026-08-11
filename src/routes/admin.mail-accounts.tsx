@@ -492,8 +492,9 @@ function AccountDialog({
         <DialogHeader>
           <DialogTitle>{value?.id ? "Редактировать ящик" : "Новый ящик"}</DialogTitle>
           <DialogDescription>
-            Выберите провайдера — хосты и порты подставятся автоматически. Для hoster.by логин — полный
-            адрес ящика, пароль — от самого ящика (не от личного кабинета).
+            Выберите провайдера — хосты и порты подставятся автоматически. Для hoster.by это
+            imap.hoster.by (993, SSL) и smtp.hoster.by (465, SSL); логин — полный адрес ящика, пароль
+            — от самого ящика (не от личного кабинета).
           </DialogDescription>
         </DialogHeader>
 

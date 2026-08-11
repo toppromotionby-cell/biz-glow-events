@@ -120,7 +120,7 @@ export const testMailAccount = createServerFn({ method: "POST" })
       let result: WorkerTest = { ok: false };
 
       try {
-        result = await callMailWorker<WorkerTest>("/test", cfg, { timeoutMs: 120_000 });
+        result = await callMailWorker<WorkerTest>("/test", cfg, { timeoutMs: 70_000 });
         ok = result.ok === true;
         status = 200;
         message = ok ? "OK" : (result.error ?? "Unknown error");
@@ -138,7 +138,19 @@ export const testMailAccount = createServerFn({ method: "POST" })
         result = { ...result, ok: false, error: result.error ?? message };
       }
 
-      const steps: MailStep[] = result.steps ?? [];
+      const steps: MailStep[] =
+        result.steps && result.steps.length > 0
+          ? result.steps
+          : ok
+            ? []
+            : [
+                {
+                  step: "imap",
+                  ok: false,
+                  kind: status === 504 ? "timeout" : (result.error_kind ?? "unknown"),
+                  message,
+                },
+              ];
       const failed = steps.find((s) => !s.ok);
       const hint = ok
         ? null

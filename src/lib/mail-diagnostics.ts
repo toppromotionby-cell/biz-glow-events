@@ -42,7 +42,7 @@ export function mailErrorHint(kind: string | undefined, step?: string): string {
     case "command_failed":
       return `${where}: сервер отклонил команду входа. Чаще всего это неверный пароль ящика либо выключенный IMAP-доступ. Пересоздайте пароль ящика в панели хостинга и повторите.`;
     case "dns":
-      return `${where}: не найден почтовый сервер — проверьте адрес хоста (для hoster.by обычно mail.hoster.by или mail.ваш-домен).`;
+      return `${where}: не найден почтовый сервер — проверьте адрес хоста (для hoster.by это imap.hoster.by для входящих и smtp.hoster.by для исходящих).`;
     case "refused":
       return `${where}: сервер отклонил соединение на этом порту. Попробуйте стандартные порты: IMAP 993 (SSL), SMTP 465 (SSL) или 587 (STARTTLS).`;
     case "timeout":
@@ -70,14 +70,14 @@ export const MAIL_PRESETS: Array<{
   {
     id: "hoster",
     label: "hoster.by",
-    imap_host: "mail.hoster.by",
+    imap_host: "imap.hoster.by",
     imap_port: 993,
     imap_secure: true,
-    smtp_host: "mail.hoster.by",
+    smtp_host: "smtp.hoster.by",
     smtp_port: 465,
     smtp_secure: true,
     loginIsEmail: true,
-    note: "Логин — полный адрес ящика. Пароль — от почтового ящика (панель hoster.by → Почта → ящик → сменить пароль), не от личного кабинета. IMAP-доступ должен быть включён. Если ящик на своём домене, хост может быть mail.ваш-домен.by — тогда впишите его вручную.",
+    note: "Хосты: imap.hoster.by (993, SSL) и smtp.hoster.by (465, SSL). Логин — полный адрес ящика. Пароль — от почтового ящика (панель hoster.by → Почта → ящик → сменить пароль), не от личного кабинета. Доступ по IMAP/SMTP должен быть включён для ящика.",
   },
   {
     id: "yandex",
