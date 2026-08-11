@@ -943,6 +943,125 @@ export type Database = {
         }
         Relationships: []
       }
+      estimate_template_items: {
+        Row: {
+          cost: number
+          created_at: string
+          exclude_from_commission: boolean
+          group_key: string
+          id: string
+          included: boolean
+          includes: Json
+          is_info: boolean
+          multiplier: number
+          note: string
+          price: number
+          qty: number
+          qty_unit: string
+          rate_qty: number
+          rate_unit: string
+          section: string
+          sort_order: number
+          template_id: string
+          title: string
+          unit: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          exclude_from_commission?: boolean
+          group_key?: string
+          id?: string
+          included?: boolean
+          includes?: Json
+          is_info?: boolean
+          multiplier?: number
+          note?: string
+          price?: number
+          qty?: number
+          qty_unit?: string
+          rate_qty?: number
+          rate_unit?: string
+          section?: string
+          sort_order?: number
+          template_id: string
+          title?: string
+          unit?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          exclude_from_commission?: boolean
+          group_key?: string
+          id?: string
+          included?: boolean
+          includes?: Json
+          is_info?: boolean
+          multiplier?: number
+          note?: string
+          price?: number
+          qty?: number
+          qty_unit?: string
+          rate_qty?: number
+          rate_unit?: string
+          section?: string
+          sort_order?: number
+          template_id?: string
+          title?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimate_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          kind: string
+          name: string
+          settings: Json
+          strict: boolean
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          kind?: string
+          name: string
+          settings?: Json
+          strict?: boolean
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          kind?: string
+          name?: string
+          settings?: Json
+          strict?: boolean
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       finance_documents: {
         Row: {
           client_address: string
@@ -2009,13 +2128,19 @@ export type Database = {
           cost: number
           created_at: string
           exclude_from_commission: boolean
+          group_key: string
           id: string
+          included: boolean
           includes: Json
+          is_info: boolean
           multiplier: number
           note: string
           price: number
           qty: number
+          qty_unit: string
           quote_id: string
+          rate_qty: number
+          rate_unit: string
           section: string
           sort_order: number
           title: string
@@ -2025,13 +2150,19 @@ export type Database = {
           cost?: number
           created_at?: string
           exclude_from_commission?: boolean
+          group_key?: string
           id?: string
+          included?: boolean
           includes?: Json
+          is_info?: boolean
           multiplier?: number
           note?: string
           price?: number
           qty?: number
+          qty_unit?: string
           quote_id: string
+          rate_qty?: number
+          rate_unit?: string
           section?: string
           sort_order?: number
           title?: string
@@ -2041,13 +2172,19 @@ export type Database = {
           cost?: number
           created_at?: string
           exclude_from_commission?: boolean
+          group_key?: string
           id?: string
+          included?: boolean
           includes?: Json
+          is_info?: boolean
           multiplier?: number
           note?: string
           price?: number
           qty?: number
+          qty_unit?: string
           quote_id?: string
+          rate_qty?: number
+          rate_unit?: string
           section?: string
           sort_order?: number
           title?: string
@@ -2314,11 +2451,18 @@ export type Database = {
           description: string
           entity_id: string | null
           entity_type: string | null
+          group_key: string
           id: string
+          included: boolean
           includes: Json
+          is_info: boolean
+          multiplier: number
           price: number
           qty: number
+          qty_unit: string
           quote_id: string
+          rate_qty: number
+          rate_unit: string
           section: string
           sort_order: number
           title: string
@@ -2330,11 +2474,18 @@ export type Database = {
           description?: string
           entity_id?: string | null
           entity_type?: string | null
+          group_key?: string
           id?: string
+          included?: boolean
           includes?: Json
+          is_info?: boolean
+          multiplier?: number
           price?: number
           qty?: number
+          qty_unit?: string
           quote_id: string
+          rate_qty?: number
+          rate_unit?: string
           section?: string
           sort_order?: number
           title?: string
@@ -2346,11 +2497,18 @@ export type Database = {
           description?: string
           entity_id?: string | null
           entity_type?: string | null
+          group_key?: string
           id?: string
+          included?: boolean
           includes?: Json
+          is_info?: boolean
+          multiplier?: number
           price?: number
           qty?: number
+          qty_unit?: string
           quote_id?: string
+          rate_qty?: number
+          rate_unit?: string
           section?: string
           sort_order?: number
           title?: string
