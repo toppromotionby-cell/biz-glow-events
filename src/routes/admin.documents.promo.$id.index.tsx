@@ -371,12 +371,9 @@ function EditorPage() {
                 <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => {
-                  setTemplateName(quote.project || "Шаблон промо-КП");
-                  setTemplateOpen(true);
-                }}
+                onClick={() => setTemplateOpen(true)}
               >
-                Сохранить как шаблон
+                Сохранить в библиотеку
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
