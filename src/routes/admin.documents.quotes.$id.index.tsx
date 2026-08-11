@@ -1,4 +1,5 @@
 import { useRoles } from "@/hooks/use-roles";
+import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -781,6 +782,10 @@ function Page() {
                         </label>
                       ))}
                     </div>
+                    <DocFontSelect
+                      value={quote.font_family}
+                      onChange={(font_family) => patch({ font_family })}
+                    />
                     <Field label="Акцентный цвет (HEX)">
                       <div className="flex items-center gap-2">
                         <Input placeholder={settings.accent_color} value={quote.design.accent_color}

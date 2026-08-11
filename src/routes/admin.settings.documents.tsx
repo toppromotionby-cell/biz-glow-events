@@ -1,6 +1,7 @@
 // Настройки документов: реквизиты, банк, подписант, параметры КП/счёта/договора,
 // редактор тела договора. Сохранение с debounce 800мс + единый toast.
 import { createFileRoute } from "@tanstack/react-router";
+import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { useEffect, useState, useId, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -167,6 +168,15 @@ function DocumentSettingsPage() {
                   if (v.asLine !== undefined) update("vat_as_line", v.asLine);
                 }}
                 hint="Настройка применяется к счетам, актам и договорам, формируемым из заказов."
+              />
+            </div>
+            <div className="mt-4 max-w-sm">
+              <DocFontSelect
+                value={form.font_family}
+                allowInherit={false}
+                label="Шрифт по умолчанию"
+                hint="Применяется ко всем новым документам; в каждом КП шрифт можно переопределить."
+                onChange={(v) => update("font_family", v)}
               />
             </div>
             <FieldArea label="Текст футера" value={form.quote_footer} onChange={(v) => update("quote_footer", v)} rows={3} />

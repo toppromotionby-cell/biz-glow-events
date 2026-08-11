@@ -1,4 +1,5 @@
 import { useRoles } from "@/hooks/use-roles";
+import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -585,6 +586,7 @@ function EditorPage() {
                 <Switch checked={quote.show_item_includes} onCheckedChange={(v) => patchQuote({ show_item_includes: v })} /></Row>
               <Row><span className="flex items-center gap-1">Подытоги разделов <Hint text="Строка «Итого по разделу» после позиций раздела." /></span>
                 <Switch checked={quote.show_section_subtotals} onCheckedChange={(v) => patchQuote({ show_section_subtotals: v })} /></Row>
+              <DocFontSelect value={quote.font_family} onChange={(font_family) => patchQuote({ font_family })} />
               <Field label="Акцентный цвет">
                 <Input type="color" value={quote.accent_color} onChange={(e) => patchQuote({ accent_color: e.target.value })} className="h-10 w-20 p-1" />
               </Field>
