@@ -756,7 +756,9 @@ type Col = {
  * HTML-превью: заголовок раздела, подытог раздела, описание и список
  * «что входит» под названием позиции.
  */
-type TableRow = Record<string, string | string[] | undefined> & {
+type TableSpan = { from: string; to: string; text: string };
+
+type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
   _kind?: "section" | "subtotal";
   _desc?: string;
   _bullets?: string[];
