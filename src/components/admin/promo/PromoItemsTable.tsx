@@ -20,10 +20,11 @@ import { SortableList } from "@/components/admin/SortableList";
 import { NumField, TextCommitField } from "@/components/admin/field-kit";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
-  duplicatePromoSection, formatMoney, isCounted, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
-  movePromoSection, newPromoItem, removePromoSection, renamePromoSection, PROMO_NO_SECTION,
-  PROMO_SECTION_SUGGESTIONS, type PromoItem,
+  duplicatePromoSection, formatMoney, insertPromoItems, isCounted, lineCost, lineQty, lineTotal, listPromoSections,
+  movePromoItemToSection, movePromoSection, newPromoItem, reindexPromo, removePromoSection, renamePromoSection,
+  PROMO_NO_SECTION, PROMO_SECTION_SUGGESTIONS, type PromoItem,
 } from "@/lib/promo-quote-model";
+
 
 
 type Props = {
