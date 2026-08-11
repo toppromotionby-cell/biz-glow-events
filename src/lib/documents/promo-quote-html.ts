@@ -84,8 +84,8 @@ export function buildPromoQuoteBody(
   cols.push({ label: "Ед. изм.", cls: "c-unit" });
   if (quote.show_qty) cols.push({ label: "Кол-во", cls: "c-num" });
   if (dual) {
-    cols.push({ label: "Ед. 2", cls: "c-unit" });
-    cols.push({ label: "Кол-во 2", cls: "c-num" });
+    cols.push({ label: "Ед. изм.", cls: "c-unit" });
+    cols.push({ label: "Кол-во", cls: "c-num" });
   }
   if (quote.show_total_qty) cols.push({ label: "Всего", cls: "c-num" });
   cols.push({ label: rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.", cls: "c-money" });

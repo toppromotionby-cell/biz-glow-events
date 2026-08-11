@@ -251,7 +251,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                         <Mini label="Кол-во" width="w-[72px]">
                           <NumField value={it.qty} onChange={(v) => replace(it.id, { qty: v })} aria-label="Количество" className="h-8" />
                         </Mini>
-                        <Mini label="Ед. 2" width="w-[84px]">
+                        <Mini label="Ед. изм." width="w-[84px]">
                           <Input
                             value={it.rate_unit}
                             placeholder="час"

@@ -44,8 +44,8 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
   ];
   if (quote.show_qty) cols.push({ key: "qty", header: "Кол-во", width: 9 });
   if (dual) {
-    cols.push({ key: "unit2", header: "Ед. 2", width: 10 });
-    cols.push({ key: "qty2", header: "Кол-во 2", width: 10 });
+    cols.push({ key: "unit2", header: "Ед. изм.", width: 10 });
+    cols.push({ key: "qty2", header: "Кол-во", width: 10 });
   }
   if (quote.show_total_qty) cols.push({ key: "total_qty", header: "Всего", width: 9 });
   cols.push({ key: "price", header: rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.", width: 14 });
