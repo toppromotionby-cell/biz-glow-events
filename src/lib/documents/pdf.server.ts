@@ -38,13 +38,13 @@ import {
   hasSecondUnit,
   isServiceOnlyRow,
   rateUnitLabel,
-  soleRateUnit,
   lineTotal,
   promoNumberDisplay,
   type PromoItem as PromoItemT,
   type PromoQuote as PromoQuoteT,
 } from "@/lib/promo-quote-model";
 
+import { PRICE_LABEL } from "@/lib/documents/doc-layout";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont, type DocFont } from "@/lib/documents/doc-font";
 
@@ -765,6 +765,38 @@ type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
   /** Объединение соседних колонок в одну ячейку (например «услуга»). */
   _span?: { from: string; to: string; text: string };
 };
+
+/**
+ * Подгоняет ширины узких колонок под самый длинный текст, а остаток отдаёт
+ * «Наименованию» и «Примечаниям» (примечаниям — большая доля).
+ */
+function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
+  const flexKeys = new Set(["title", "note"]);
+  const pad = 14;
+  const measured = new Map<string, number>();
+  let narrow = 0;
+  for (const c of cols) {
+    if (flexKeys.has(c.key)) continue;
+    let w = trackedWidth(ctx.bold, c.title.toUpperCase(), F_DOC_KIND, F_DOC_KIND * 0.08);
+    for (const r of rows) {
+      if (r._span) continue;
+      const v = typeof r[c.key] === "string" ? (r[c.key] as string) : "";
+      if (v) w = Math.max(w, ctx.regular.widthOfTextAtSize(v, F11));
+    }
+    const width = Math.min(tableW * 0.18, w + pad);
+    measured.set(c.key, width);
+    narrow += width;
+  }
+  const flexCols = cols.filter((c) => flexKeys.has(c.key));
+  if (!flexCols.length) return;
+  const hasNote = flexCols.some((c) => c.key === "note");
+  const rest = Math.max(tableW * (hasNote ? 0.42 : 0.24), tableW - narrow);
+  const scale = (tableW - rest) / (narrow || 1);
+  for (const c of cols) {
+    if (flexKeys.has(c.key)) c.width = hasNote ? rest * (c.key === "note" ? 0.56 : 0.44) : rest;
+    else c.width = (measured.get(c.key) ?? 0) * scale;
+  }
+}
 
 function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
@@ -2080,7 +2112,11 @@ export async function buildPromoQuotePdf(
       note: "",
     });
   }
-  drawTable(ctx, cols, rows.length ? rows : [{ title: "Позиции не добавлены", unit: "", qty: "", price: "", sum: "", note: "" }]);
+  const tableRows = rows.length
+    ? rows
+    : [{ title: "Позиции не добавлены", unit: "", qty: "", price: "", sum: "", note: "" }];
+  fitTableCols(ctx, cols, tableRows, tableW);
+  drawTable(ctx, cols, tableRows);
 
   gap(ctx, 6);
   drawSummary(ctx, [
