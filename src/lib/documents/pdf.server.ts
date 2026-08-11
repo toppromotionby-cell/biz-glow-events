@@ -1985,32 +1985,32 @@ export async function buildPromoQuotePdf(
   const showNotes = quote.show_notes;
   // Вторая единица («час», «смена») — отдельные колонки, только если она задана.
   const dual = hasSecondUnit(items);
-  const rateUnit = soleRateUnit(items);
-  const priceTitle = rateUnit ? `Цена за ${rateUnit}` : "Цена";
+  const priceTitle = PRICE_LABEL;
   const dualCols: Col[] = dual
     ? [
-        { title: "Ед. изм.", key: "unit2", width: tableW * 0.08, align: "center" },
-        { title: "Кол-во", key: "qty2", width: tableW * 0.08, align: "center" },
+        { title: "Ед. изм.", key: "unit2", width: tableW * 0.08, align: "center", valign: "middle" },
+        { title: "Кол-во", key: "qty2", width: tableW * 0.08, align: "center", valign: "middle" },
       ]
     : [];
   const cols: Col[] = showNotes
     ? [
         { title: "Наименование", key: "title", width: tableW * (dual ? 0.24 : 0.3) },
-        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.09 : 0.11), align: "center" },
-        { title: "Кол-во", key: "qty", width: tableW * 0.08, align: "center" },
+        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.09 : 0.11), align: "center", valign: "middle" },
+        { title: "Кол-во", key: "qty", width: tableW * 0.08, align: "center", valign: "middle" },
         ...dualCols,
-        { title: priceTitle, key: "price", width: tableW * 0.12, align: "right" },
-        { title: "Сумма", key: "sum", width: tableW * 0.13, align: "right" },
-        { title: "Примечания", key: "note", width: tableW * (dual ? 0.18 : 0.26) },
+        { title: priceTitle, key: "price", width: tableW * 0.12, align: "center", valign: "middle" },
+        { title: "Сумма", key: "sum", width: tableW * 0.13, align: "center", valign: "middle" },
+        { title: "Примечания", key: "note", width: tableW * (dual ? 0.18 : 0.26), valign: "middle" },
       ]
     : [
         { title: "Наименование", key: "title", width: tableW * (dual ? 0.34 : 0.46) },
-        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.11 : 0.14), align: "center" },
-        { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center" },
+        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.11 : 0.14), align: "center", valign: "middle" },
+        { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center", valign: "middle" },
         ...dualCols,
-        { title: priceTitle, key: "price", width: tableW * 0.15, align: "right" },
-        { title: "Сумма", key: "sum", width: tableW * 0.15, align: "right" },
+        { title: priceTitle, key: "price", width: tableW * 0.15, align: "center", valign: "middle" },
+        { title: "Сумма", key: "sum", width: tableW * 0.15, align: "center", valign: "middle" },
       ];
+
 
   const rows: TableRow[] = [];
   for (const sec of groupBySection(items)) {
