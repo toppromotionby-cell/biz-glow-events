@@ -759,6 +759,8 @@ type TableRow = Record<string, string | string[] | undefined> & {
   _kind?: "section" | "subtotal";
   _desc?: string;
   _bullets?: string[];
+  /** Объединение соседних колонок в одну ячейку (например «услуга»). */
+  _span?: { from: string; to: string; text: string };
 };
 
 function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
@@ -949,11 +951,28 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       cy -= SMALL * LH;
     }
 
+    // объединённые колонки (например «услуга» вместо пустых единиц и количеств)
+    const spanFrom = r._span ? cols.findIndex((c) => c.key === r._span!.from) : -1;
+    const spanTo = r._span ? cols.findIndex((c) => c.key === r._span!.to) : -1;
+    if (r._span && spanFrom >= 0 && spanTo >= spanFrom) {
+      const sx = startX + cols.slice(0, spanFrom).reduce((s2, c) => s2 + c.width, 0);
+      const sw = cols.slice(spanFrom, spanTo + 1).reduce((s2, c) => s2 + c.width, 0);
+      const text = r._span.text;
+      const w = ctx.regular.widthOfTextAtSize(text, F11);
+      ctx.page.drawText(text, {
+        x: sx + (sw - w) / 2,
+        y: ctx.y - 5 * RD - F11,
+        size: F11,
+        font: ctx.regular,
+        color: TEXT,
+      });
+    }
+
     // остальные колонки
     let cx = startX;
     for (let i = 0; i < cols.length; i++) {
       const c = cols[i];
-      if (i === richIdx) {
+      if (i === richIdx || (spanFrom >= 0 && i >= spanFrom && i <= spanTo)) {
         cx += c.width;
         continue;
       }
@@ -2004,6 +2023,9 @@ export async function buildPromoQuotePdf(
         qty: dual ? formatNumber(it.qty) : formatTotalQty(it),
         unit2: rateUnitLabel(it) || "—",
         qty2: rateUnitLabel(it) ? formatNumber(it.multiplier) : "—",
+        _span: isServiceOnlyRow(it)
+          ? { from: "unit", to: dual ? "qty2" : "qty", text: safe(it.unit) || "услуга" }
+          : undefined,
         price: it.price ? money(it.price) : "",
         sum: lineTotal(it) ? money(lineTotal(it)) : "",
         note: safe(it.note),
@@ -2023,7 +2045,17 @@ export async function buildPromoQuotePdf(
   }
 
   if (quote.management_enabled) {
-    rows.push({ title: quote.management_label, unit: "услуга", qty: "—", price: "", sum: money(t.management), note: "" });
+    rows.push({
+      title: quote.management_label,
+      unit: "услуга",
+      qty: "—",
+      unit2: "—",
+      qty2: "—",
+      price: "",
+      sum: money(t.management),
+      note: "",
+      _span: { from: "unit", to: dual ? "qty2" : "qty", text: "услуга" },
+    });
   }
   if (quote.commission_enabled) {
     rows.push({
