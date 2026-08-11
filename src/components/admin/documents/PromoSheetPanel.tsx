@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ExternalLink, RefreshCw, Table2, Upload, AlertTriangle } from "lucide-react";
+import { ExternalLink, FileText, RefreshCw, Table2, Upload, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
   pushPromoToSheet,
   type PromoSheetDiffRow,
 } from "@/lib/promo-sheets.functions";
+import { exportPromoToGoogleDoc } from "@/lib/promo-gdocs.functions";
 
 const KIND_LABEL: Record<PromoSheetDiffRow["kind"], string> = {
   added: "Новая позиция",
@@ -54,6 +55,7 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
   const push = useServerFn(pushPromoToSheet);
   const loadDiff = useServerFn(getPromoSheetDiff);
   const apply = useServerFn(applyPromoSheetDiff);
+  const toDoc = useServerFn(exportPromoToGoogleDoc);
 
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
@@ -87,6 +89,16 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  // Выгрузка в Google Документы: документ повторяет вёрстку превью.
+  const onExportDoc = async () => {
+    setBusy(true);
+    try {
+      const res = await toDoc({ data: { id: quoteId } });
+      window.open(res.url, "_blank", "noopener");
+      toast.success("Документ обновлён");
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+
   const onApply = async () => {
     setBusy(true);
     try {
@@ -111,6 +123,9 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
           </span>
         )}
         <div className="ml-auto flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={onExportDoc} disabled={busy}>
+            <FileText className="h-4 w-4 mr-1.5" />В Google Документы
+          </Button>
           <Button size="sm" variant="outline" onClick={onOpenSheet} disabled={busy}>
             <ExternalLink className="h-4 w-4 mr-1.5" />
             {data?.connected ? "Открыть таблицу" : "Открыть в Google Таблицах"}
