@@ -66,6 +66,8 @@ export const Route = createFileRoute("/admin/documents/presentations/$id/render"
         const paths = [
           ...slides.map((s) => s.image_url).filter((v): v is string => !!v),
           ...slides.flatMap((s) => s.content.images ?? []),
+          ...(presentation.logo_url ? [presentation.logo_url] : []),
+          ...(presentation.client_logo_url ? [presentation.client_logo_url] : []),
           ...(company?.logo_url ? [company.logo_url] : []),
         ];
         const urls = await resolveUrls(paths);
@@ -84,13 +86,17 @@ export const Route = createFileRoute("/admin/documents/presentations/$id/render"
               .filter((v): v is string => !!v),
           };
         });
-        const logoUrl = company?.logo_url ? (urls.get(company.logo_url) ?? null) : null;
+        const brandLogoSrc = presentation.logo_url || company?.logo_url || null;
+        const logoUrl = brandLogoSrc ? (urls.get(brandLogoSrc) ?? brandLogoSrc) : null;
+        const clientLogoUrl = presentation.client_logo_url
+          ? (urls.get(presentation.client_logo_url) ?? presentation.client_logo_url)
+          : null;
 
         return buildPdfResponse({
           filename: presentationFileName(presentation.title, "pdf"),
           operation: "presentation",
           entityId: params.id,
-          build: () => buildPresentationPdf(presentation, resolved, company, logoUrl),
+          build: () => buildPresentationPdf(presentation, resolved, company, logoUrl, clientLogoUrl),
         });
       },
     },
