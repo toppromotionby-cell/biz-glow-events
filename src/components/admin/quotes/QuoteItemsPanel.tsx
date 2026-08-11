@@ -64,7 +64,21 @@ export function QuoteItemsPanel({
   const replace = (id: string, patch: Partial<QuoteItem>) =>
     onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
 
-  const remove = (id: string) => onChange(items.filter((it) => it.id !== id));
+  const remove = (id: string) =>
+    onChange(items.filter((it) => it.id !== id).map((it, i) => ({ ...it, sort_order: i })));
+
+  /** Вставка новых строк сразу после последней позиции их раздела. */
+  const insertInSection = (section: string, created: QuoteItem[]) => {
+    if (!created.length) return;
+    const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+    const key = (section ?? "").trim();
+    const lastIdx = sorted.map((it) => (it.section?.trim() || "")).lastIndexOf(key);
+    const next =
+      lastIdx >= 0
+        ? [...sorted.slice(0, lastIdx + 1), ...created, ...sorted.slice(lastIdx + 1)]
+        : [...sorted, ...created];
+    onChange(next.map((it, i) => ({ ...it, sort_order: i })));
+  };
 
   const duplicate = (id: string) => {
     const idx = items.findIndex((it) => it.id === id);
@@ -93,7 +107,7 @@ export function QuoteItemsPanel({
 
   const addInSection = (section: string) => {
     const quoteId = items[0]?.quote_id ?? "";
-    onChange([...items, emptyQuoteItem(quoteId, items.length, { section })]);
+    insertInSection(section, [emptyQuoteItem(quoteId, items.length, { section })]);
   };
 
   const addFromKnowledge = (
@@ -114,7 +128,7 @@ export function QuoteItemsPanel({
         includes: h.includes.map((x) => ({ ...x })),
       }),
     );
-    onChange([...items, ...created]);
+    insertInSection(section || created[0]?.section || "", created);
   };
 
   const createSection = () => {
@@ -133,7 +147,7 @@ export function QuoteItemsPanel({
     const created: QuoteItem[] = parsed.map((r, i) =>
       emptyQuoteItem(quoteId, base + i, { title: r.title, qty: r.qty, unit: r.unit, price: r.price, cost: r.cost }),
     );
-    onChange([...items, ...created]);
+    insertInSection("", created);
     setPasteText("");
     setPasteOpen(false);
   };
