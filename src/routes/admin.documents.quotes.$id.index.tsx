@@ -1,6 +1,7 @@
 import { useRoles } from "@/hooks/use-roles";
 import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
+import { QuoteSheetPanel } from "@/components/admin/documents/QuoteSheetPanel";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -505,6 +506,7 @@ function Page() {
 
 
             <TabsContent value="items" className="space-y-3 pt-3">
+              <QuoteSheetPanel quoteId={id} />
               {canCost && (
                 <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
                   Показывать себестоимость и маржу
