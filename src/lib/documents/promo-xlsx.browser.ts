@@ -248,6 +248,11 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
     r.getCell(1).alignment = { wrapText: true };
   }
 
+  return wb;
+}
+
+export async function exportPromoQuoteXlsx(quote: PromoQuote, items: PromoItem[]): Promise<void> {
+  const wb = await buildPromoWorkbook(quote, items);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
