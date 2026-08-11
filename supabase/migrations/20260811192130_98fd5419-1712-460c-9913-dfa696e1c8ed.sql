@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "deny anon support realtime" ON realtime.messages;
