@@ -329,8 +329,9 @@ export const listPromoSnippets = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<PromoSnippetRow[]> => {
     await assertStaff(context as never);
     const { data, error } = await context.supabase
-      .from("promo_item_snippets")
+      .from("doc_snippets")
       .select("id,name,description,section,items,created_at")
+      .eq("doc_type", "promo")
       .order("name");
     if (error) throw new Error(error.message);
     return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
@@ -358,12 +359,13 @@ export const savePromoSnippet = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     await assertStaff(context as never);
     const { data: created, error } = await context.supabase
-      .from("promo_item_snippets")
+      .from("doc_snippets")
       .insert({
+        doc_type: "promo",
         name: data.name,
         description: data.description,
         section: data.section,
-        items: data.items,
+        items: data.items as unknown as never,
         created_by: context.userId,
       })
       .select("id")
@@ -377,7 +379,7 @@ export const deletePromoSnippet = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     await assertStaff(context as never);
-    const { error } = await context.supabase.from("promo_item_snippets").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("doc_snippets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
