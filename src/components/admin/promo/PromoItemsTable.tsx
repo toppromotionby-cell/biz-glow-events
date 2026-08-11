@@ -56,7 +56,18 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const replace = (id: string, patch: Partial<PromoItem>) =>
     onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
 
+  /** Переключение «в итог»: если у позиции есть связка — переключаются все её строки. */
+  const setIncluded = (item: PromoItem, value: boolean) => {
+    const key = (item.group_key ?? "").trim();
+    onChange(
+      items.map((it) =>
+        (key ? (it.group_key ?? "").trim() === key : it.id === item.id) ? { ...it, included: value } : it,
+      ),
+    );
+  };
+
   const removeItem = (id: string) => onChange(items.filter((it) => it.id !== id));
+
 
   const duplicate = (id: string) => {
     const idx = items.findIndex((it) => it.id === id);
