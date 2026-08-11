@@ -8,7 +8,7 @@ import {
   getDoc,
   type GDocElement,
 } from "@/lib/documents/gdocs-gateway.server";
-import { buildDocLayout, docMoney } from "@/lib/documents/doc-layout";
+import { buildDocLayout, docMoney, type DocColumnKey } from "@/lib/documents/doc-layout";
 import { hexToRgb01 } from "@/lib/documents/brand";
 import { resolveDocFont } from "@/lib/documents/doc-font";
 import type { PromoItem, PromoQuote } from "@/lib/promo-quote-model";
