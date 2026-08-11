@@ -35,6 +35,7 @@ async function loadPromo(supabase: never, id: string) {
     exclude_from_commission: it.exclude_from_commission,
     is_info: it.is_info,
     note: it.note,
+    rate_unit: it.rate_unit,
   }));
   return { quote: quote as Row, rawItems: ((items ?? []) as Row[]), rows };
 }
@@ -175,7 +176,7 @@ export const applyPromoSheetDiff = createServerFn({ method: "POST" })
           is_info: it.is_info,
           group_key: extra?.group_key ?? "",
           qty_unit: extra?.qty_unit ?? "",
-          rate_unit: extra?.rate_unit ?? "",
+          rate_unit: it.rate_unit || extra?.rate_unit || "",
           sort_order: i,
         };
       });

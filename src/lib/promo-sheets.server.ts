@@ -18,15 +18,16 @@ export const PROMO_SHEET_HEADER = [
   "Наименование",
   "Ед.",
   "Кол-во",
-  "Множитель",
+  "Кол-во 2 (множитель)",
   "Цена",
   "Себестоимость",
   "В итог (1/0)",
   "Без комиссии (1/0)",
   "Справочно (1/0)",
   "Примечание",
+  "Ед. 2",
 ];
-const LAST_COL = "L";
+const LAST_COL = "M";
 
 export type PromoSheetRow = {
   id: string;
@@ -41,6 +42,7 @@ export type PromoSheetRow = {
   exclude_from_commission: boolean;
   is_info: boolean;
   note: string;
+  rate_unit: string;
 };
 
 const flag = (v: boolean) => (v ? 1 : 0);
@@ -59,6 +61,7 @@ export function promoItemsToRows(items: PromoSheetRow[]): (string | number)[][] 
     flag(it.exclude_from_commission),
     flag(it.is_info),
     it.note,
+    it.rate_unit,
   ]);
 }
 
@@ -78,6 +81,7 @@ export function promoRowsToItems(values: unknown[][]): PromoSheetRow[] {
       exclude_from_commission: sheetBool(r?.[9], false),
       is_info: sheetBool(r?.[10], false),
       note: sheetStr(r?.[11]),
+      rate_unit: sheetStr(r?.[12]),
     }))
     .filter((r) => r.title.length > 0);
 }
@@ -129,13 +133,14 @@ const FIELD_LABELS: Record<keyof PromoSheetRow, string> = {
   title: "Наименование",
   unit: "Ед.",
   qty: "Кол-во",
-  multiplier: "Множитель",
+  multiplier: "Кол-во 2",
   price: "Цена",
   cost: "Себестоимость",
   included: "В итог",
   exclude_from_commission: "Без комиссии",
   is_info: "Справочно",
   note: "Примечание",
+  rate_unit: "Ед. 2",
 };
 
 export function diffPromoRows(dbItems: PromoSheetRow[], sheetItems: PromoSheetRow[]): PromoSheetDiffRow[] {
