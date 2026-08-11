@@ -316,8 +316,19 @@ export function round2(n: number): number {
   return Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
 }
 
+/** Позиция участвует в расчёте итога (не «опция» и не справочная строка). */
+export function isCounted(it: PromoItem): boolean {
+  return it.included !== false && it.is_info !== true;
+}
+
+/** Сумма опциональных позиций — показывается отдельно, в итог не входит. */
+export function optionsSum(items: PromoItem[]): number {
+  return round2(items.filter((it) => !it.is_info && it.included === false).reduce((s, it) => s + lineTotal(it), 0));
+}
+
 export type PromoTotals = {
   itemsSum: number;
+  optionsSum: number;
   commissionBase: number;
   commission: number;
   management: number;
@@ -336,13 +347,15 @@ export type PromoTotals = {
 };
 
 export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTotals {
-  const itemsSum = round2(items.reduce((s, it) => s + lineTotal(it), 0));
+  const counted = items.filter(isCounted);
+  const itemsSum = round2(counted.reduce((s, it) => s + lineTotal(it), 0));
   const commissionBase = round2(
-    items.filter((it) => !it.exclude_from_commission).reduce((s, it) => s + lineTotal(it), 0),
+    counted.filter((it) => !it.exclude_from_commission).reduce((s, it) => s + lineTotal(it), 0),
   );
   const management = q.management_enabled ? round2(q.management_amount) : 0;
   const commission = q.commission_enabled ? round2((commissionBase * q.commission_rate) / 100) : 0;
   const gross = round2(itemsSum + management + commission);
+
   const discount =
     q.discount_type === "percent"
       ? round2((gross * Math.min(num(q.discount_value), 100)) / 100)
