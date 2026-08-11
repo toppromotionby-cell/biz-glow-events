@@ -3271,7 +3271,6 @@ export type Database = {
         }
         Returns: number
       }
-      owns_mail_account: { Args: { _account_id: string }; Returns: boolean }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
