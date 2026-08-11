@@ -101,32 +101,15 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[], opts: { companyLi
   // 0) Скрытая строка ключей — карта колонок для обратного чтения.
   push(keys.map((k) => txt(k === visible[0] ? `__keys:${k}` : k)));
 
-  // 1) Шапка документа: логотипы, реквизиты, номер КП, мета.
-  let logoRow: number | null = null;
-  if (layout.logos.length) {
-    logoRow = rows.length;
-    const cells: Cell[] = Array.from({ length: visibleWidth }, () => empty());
-    cells[0] = fx(`=IMAGE("${layout.logos[0]}";1)`, { ...base, verticalAlignment: "MIDDLE" });
-    if (layout.logos[1])
-      cells[visibleWidth - 1] = fx(`=IMAGE("${layout.logos[1]}";1)`, {
-        ...base,
-        horizontalAlignment: "RIGHT",
-        verticalAlignment: "MIDDLE",
-      });
-    push(cells);
-  }
+  // 1) Шапка документа: слева номер КП и мета, справа логотипы и реквизиты.
+  const rects: Array<{ row: number; rowEnd: number; from: number; to: number }> = [];
+  const logoCol = Math.max(1, visibleWidth - Math.max(1, Math.round(visibleWidth / 3)));
 
+  const headStart = rows.length;
   const headLine = (text: string, fmt: Cell) => {
-    merges.push({ row: rows.length, from: 0, to: visibleWidth });
+    merges.push({ row: rows.length, from: 0, to: logoCol });
     push([txt(text, { ...base, ...fmt })]);
   };
-  const companyLine =
-    layout.companyLine || (quote.company_overrides as { line?: string } | null)?.line || "";
-  if (companyLine)
-    headLine(String(companyLine), {
-      wrapStrategy: "WRAP",
-      textFormat: { fontFamily: font, fontSize: 9, bold: false },
-    });
   headLine(layout.docTitle, { textFormat: { fontFamily: font, fontSize: 13, bold: true } });
   for (const line of layout.meta)
     headLine(line, {
@@ -134,6 +117,40 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[], opts: { companyLi
       borders: BORDERS,
       textFormat: { fontFamily: font, fontSize: 9 },
     });
+  const headEnd = rows.length;
+
+  // Логотипы — правый блок, объединённый по высоте всей шапки (как в превью).
+  if (layout.logos.length) {
+    const span = visibleWidth - logoCol;
+    const half = layout.logos.length > 1 ? Math.max(1, Math.floor(span / 2)) : span;
+    const put = (col: number, url: string, align: string) => {
+      rows[headStart]![col] = fx(`=IMAGE("${url}";1)`, {
+        ...base,
+        horizontalAlignment: align,
+        verticalAlignment: "MIDDLE",
+      });
+    };
+    put(logoCol, layout.logos[0]!, "LEFT");
+    rects.push({ row: headStart, rowEnd: headEnd, from: logoCol, to: logoCol + half });
+    if (layout.logos[1]) {
+      put(logoCol + half, layout.logos[1]!, "RIGHT");
+      rects.push({ row: headStart, rowEnd: headEnd, from: logoCol + half, to: visibleWidth });
+    }
+  }
+
+  // Реквизиты — под логотипом, справа.
+  const companyLine =
+    layout.companyLine || (quote.company_overrides as { line?: string } | null)?.line || "";
+  if (companyLine) {
+    const cells: Cell[] = Array.from({ length: visibleWidth }, () => empty());
+    cells[logoCol] = txt(String(companyLine), {
+      ...base,
+      wrapStrategy: "WRAP",
+      textFormat: { fontFamily: font, fontSize: 8, foregroundColor: sheetColor("#5a5a63") },
+    });
+    merges.push({ row: rows.length, from: logoCol, to: visibleWidth });
+    push(cells);
+  }
   push([]);
 
   // 2) Заголовок таблицы.
@@ -305,7 +322,27 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[], opts: { companyLi
     ]);
   }
 
-  return { layout, rows, merges, keys, width, visibleWidth, headerRow, logoRow };
+  // 5) Автообъединение: пустые ячейки прилипают к соседней слева заполненной.
+  const covered = (row: number, col: number) =>
+    merges.some((m) => m.row === row && col >= m.from && col < m.to) ||
+    rects.some((r) => row >= r.row && row < r.rowEnd && col >= r.from && col < r.to);
+  const hasValue = (cell: Cell | undefined) => cell?.userEnteredValue != null;
+
+  rows.forEach((cells, rowIdx) => {
+    let start = 0;
+    while (start < visibleWidth) {
+      if (covered(rowIdx, start)) {
+        start += 1;
+        continue;
+      }
+      let end = start + 1;
+      while (end < visibleWidth && !covered(rowIdx, end) && !hasValue(cells[end])) end += 1;
+      if (end - start > 1) merges.push({ row: rowIdx, from: start, to: end });
+      start = end;
+    }
+  });
+
+  return { layout, rows, merges, rects, keys, width, visibleWidth, headerRow, headStart, headEnd };
 }
 
 /** Полностью перерисовывает лист «КП» в фирменном стиле. */
@@ -372,22 +409,29 @@ export async function writePromoSheet(
     });
   });
 
-  if (grid.logoRow != null) {
-    requests.push({
-      updateDimensionProperties: {
-        range: { sheetId, dimension: "ROWS", startIndex: grid.logoRow, endIndex: grid.logoRow + 1 },
-        properties: { pixelSize: 64 },
-        fields: "pixelSize",
-      },
-    });
-  }
-
+  // Высота строк шапки — чтобы логотип (64px) поместился целиком.
+  const headCount = Math.max(1, grid.headEnd - grid.headStart);
+  requests.push({
+    updateDimensionProperties: {
+      range: { sheetId, dimension: "ROWS", startIndex: grid.headStart, endIndex: grid.headEnd },
+      properties: { pixelSize: Math.max(22, Math.ceil(64 / headCount)) },
+      fields: "pixelSize",
+    },
+  });
 
   for (const m of grid.merges) {
     requests.push({
       mergeCells: {
         range: { sheetId, startRowIndex: m.row, endRowIndex: m.row + 1, startColumnIndex: m.from, endColumnIndex: m.to },
         mergeType: "MERGE_ROWS",
+      },
+    });
+  }
+  for (const r of grid.rects) {
+    requests.push({
+      mergeCells: {
+        range: { sheetId, startRowIndex: r.row, endRowIndex: r.rowEnd, startColumnIndex: r.from, endColumnIndex: r.to },
+        mergeType: "MERGE_ALL",
       },
     });
   }
