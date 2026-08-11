@@ -529,7 +529,22 @@ export function isPristinePromoItem(it: PromoItem): boolean {
 
 export const PROMO_NO_SECTION = "Без раздела";
 
-const reindexPromo = (items: PromoItem[]): PromoItem[] => items.map((it, i) => ({ ...it, sort_order: i }));
+export const reindexPromo = (items: PromoItem[]): PromoItem[] =>
+  items.map((it, i) => ({ ...it, sort_order: i }));
+
+/** Вставить позиции сразу после последней строки указанного раздела. */
+export function insertPromoItems(items: PromoItem[], section: string, created: PromoItem[]): PromoItem[] {
+  if (!created.length) return items;
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  const key = (section ?? "").trim();
+  const lastIdx = sorted.map((it) => (it.section ?? "").trim()).lastIndexOf(key);
+  const out =
+    lastIdx >= 0
+      ? [...sorted.slice(0, lastIdx + 1), ...created, ...sorted.slice(lastIdx + 1)]
+      : [...sorted, ...created];
+  return reindexPromo(out);
+}
+
 const secKey = (it: PromoItem) => (it.section ?? "").trim();
 
 /** Список разделов в порядке появления. */
