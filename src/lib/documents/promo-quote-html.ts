@@ -11,6 +11,7 @@ import {
   formatMoney,
   groupBySection,
   hasSecondUnit,
+  isServiceOnlyRow,
   soleRateUnit,
   formatNumber,
   rateUnitLabel,
@@ -92,11 +93,19 @@ export function buildPromoQuoteBody(
   cols.push({ label: `Всего${t.vatMode === "add" ? ", без НДС" : t.vatMode === "included" ? ", с НДС" : ""}`, cls: "c-money" });
   if (quote.show_notes) cols.push({ label: "Примечания", cls: "c-note" });
 
+  /** Сколько колонок занимает блок единиц/количеств («Ед. изм.» + «Кол-во» ×2). */
+  const unitSpan = 1 + (quote.show_qty ? 1 : 0) + (dual ? 2 : 0);
+  /** Объединённая ячейка «услуга» вместо пустых единиц и количеств. */
+  const mergedUnitCell = (label: string) =>
+    `<td class="c-unit"${unitSpan > 1 ? ` colspan="${unitSpan}"` : ""}>${esc(label)}</td>`;
+
   /** Ячейки «Ед. изм. … Всего» для служебных строк (управление, комиссия, НДС). */
   const midCells = (unit: string) =>
-    `<td class="c-unit">${esc(unit)}</td>` +
-    (quote.show_qty ? '<td class="c-num">—</td>' : "") +
-    (dual ? '<td class="c-unit">—</td><td class="c-num">—</td>' : "") +
+    (unit === "услуга"
+      ? mergedUnitCell(unit)
+      : `<td class="c-unit">${esc(unit)}</td>` +
+        (quote.show_qty ? '<td class="c-num">—</td>' : "") +
+        (dual ? '<td class="c-unit">—</td><td class="c-num">—</td>' : "")) +
     (quote.show_total_qty ? '<td class="c-num">—</td>' : "");
 
 
@@ -123,14 +132,18 @@ export function buildPromoQuoteBody(
               : "";
           const cells: string[] = [
             `<td class="c-title">${it.title.trim() ? esc(it.title) : '<span class="c-empty">Новая позиция</span>'}${inc}${chkList(rowChecks)}</td>`,
-            `<td class="c-unit">${esc(it.unit)}</td>`,
           ];
-          if (quote.show_qty)
-            cells.push(`<td class="c-num">${esc(dual ? formatNumber(it.qty) : formatQty(it))}</td>`);
-          if (dual) {
-            const ru = rateUnitLabel(it);
-            cells.push(`<td class="c-unit">${ru ? esc(ru) : "—"}</td>`);
-            cells.push(`<td class="c-num">${ru ? esc(formatNumber(it.multiplier)) : "—"}</td>`);
+          if (isServiceOnlyRow(it)) {
+            cells.push(mergedUnitCell(it.unit.trim() || "услуга"));
+          } else {
+            cells.push(`<td class="c-unit">${esc(it.unit)}</td>`);
+            if (quote.show_qty)
+              cells.push(`<td class="c-num">${esc(dual ? formatNumber(it.qty) : formatQty(it))}</td>`);
+            if (dual) {
+              const ru = rateUnitLabel(it);
+              cells.push(`<td class="c-unit">${ru ? esc(ru) : "—"}</td>`);
+              cells.push(`<td class="c-num">${ru ? esc(formatNumber(it.multiplier)) : "—"}</td>`);
+            }
           }
           if (quote.show_total_qty) cells.push(`<td class="c-num">${esc(formatTotalQty(it))}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
