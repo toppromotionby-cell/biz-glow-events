@@ -119,13 +119,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
               >
                 {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
-              <Input
+              <TextCommitField
                 value={name}
-                onChange={(e) => onChange(renamePromoSection(items, name, e.target.value))}
+                onCommit={(v) => onChange(renamePromoSection(items, name, v))}
                 placeholder="Название раздела"
-                list="promo-section-suggestions"
+                aria-label="Название раздела"
                 className="h-8 max-w-[280px] border-transparent bg-transparent font-medium focus-visible:border-input"
               />
+
               <span className="ml-auto text-xs text-muted-foreground">{list.length} поз.</span>
               <span className="w-[130px] text-right text-sm font-medium tabular-nums">
                 {formatMoney(sum, currency)}
