@@ -399,3 +399,61 @@ export async function pruneStale(table: KbTable, months = 6): Promise<number> {
   if (error) throw new Error(error.message);
   return n;
 }
+
+/* ---------------- Синхронизация с каталогом сайта ---------------- */
+
+const CATALOG_SOURCES = [
+  { table: "zones", section: "Площадки" },
+  { table: "services", section: "Услуги" },
+  { table: "tech_equipment", section: "Техника и оборудование" },
+  { table: "production_items", section: "Продакшн" },
+  { table: "attractions", section: "Аттракционы" },
+] as const;
+
+/**
+ * Переносит опубликованные карточки каталога в базу знаний документов,
+ * чтобы позиции КП/смет подставлялись из тех же данных, что видит клиент.
+ */
+export async function syncCatalogKnowledge(): Promise<{ synced: number }> {
+  const { minPriceFromPricing, unitFromPricing } = await import("@/lib/pricing");
+  let synced = 0;
+
+  for (const src of CATALOG_SOURCES) {
+    const { data, error } = await supabaseAdmin
+      .from(src.table)
+      .select("title,description,pricing")
+      .eq("published", true)
+      .limit(1000);
+    if (error) {
+      console.error(`[doc-knowledge] sync ${src.table} failed`, error.message);
+      continue;
+    }
+    const rows = (data ?? []) as Array<Record<string, unknown>>;
+    for (const r of rows) {
+      const title = s(r["title"]);
+      if (!title) continue;
+      await upsertItem({
+        section: src.section,
+        title,
+        description: s(r["description"]).slice(0, 2000),
+        unit: unitFromPricing(r["pricing"]) ?? "шт",
+        price: minPriceFromPricing(r["pricing"]) ?? 0,
+      });
+      synced += 1;
+    }
+  }
+
+  return { synced };
+}
+
+/** Накопление текстов из презентаций (заголовки и подзаголовки слайдов). */
+export async function harvestFromPresentation(
+  slides: Array<{ title?: string | null; subtitle?: string | null }>,
+): Promise<void> {
+  await harvestKnowledge({
+    texts: slides.flatMap((sl) => [
+      { kind: "section" as const, value: sl.title },
+      { kind: "note" as const, value: sl.subtitle },
+    ]),
+  });
+}
