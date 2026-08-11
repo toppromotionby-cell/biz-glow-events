@@ -383,8 +383,9 @@ export const listQuoteSnippets = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<QuoteSnippetRow[]> => {
     await assertStaff(context as never);
     const { data, error } = await context.supabase
-      .from("quote_block_snippets")
+      .from("doc_snippets")
       .select("id,name,description,block_type,title,content,condition,created_at")
+      .eq("doc_type", "quote")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(200);
@@ -406,9 +407,9 @@ export const saveQuoteSnippet = createServerFn({ method: "POST" })
       condition: data.condition,
     };
     const q = data.id
-      ? context.supabase.from("quote_block_snippets").update(payload).eq("id", data.id)
-      : context.supabase.from("quote_block_snippets").insert({ ...payload, created_by: context.userId });
-    const { data: row, error } = await q
+      ? context.supabase.from("doc_snippets").update(payload).eq("id", data.id)
+      : context.supabase.from("doc_snippets").insert({ ...payload, doc_type: "quote", created_by: context.userId });
+    const { data: row, error } = await (q as unknown as { select: (c: string) => { single: () => Promise<{ data: unknown; error: { message: string } | null }> } })
       .select("id,name,description,block_type,title,content,condition,created_at")
       .single();
     if (error) throw new Error(error.message);
@@ -420,7 +421,7 @@ export const deleteQuoteSnippet = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertStaff(context as never);
-    const { error } = await context.supabase.from("quote_block_snippets").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("doc_snippets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
