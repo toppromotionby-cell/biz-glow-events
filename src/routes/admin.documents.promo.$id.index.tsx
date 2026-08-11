@@ -1,6 +1,7 @@
 import { useRoles } from "@/hooks/use-roles";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
+import { SaveToLibraryDialog } from "@/components/admin/documents/SaveToLibraryDialog";
 import { DocAppearanceSection } from "@/components/admin/documents/DocAppearanceSection";
 
 
