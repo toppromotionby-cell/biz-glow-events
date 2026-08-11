@@ -102,6 +102,7 @@ export function SlideThumbRail({
                 width={horizontal ? 168 : 176}
                 index={i}
                 total={slides.length}
+              {...(branding ?? {})}
               />
             </button>
 

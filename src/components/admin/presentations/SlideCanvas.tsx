@@ -98,6 +98,11 @@ function cornerFree(frames: Rect[], corner: "tr" | "tl"): boolean {
   );
 }
 
+export type SlideBranding = Pick<
+  SlideCanvasProps,
+  "brandLogoUrl" | "clientLogoUrl" | "logoLayout" | "fontFamily"
+>;
+
 export function SlideCanvas(props: SlideCanvasProps) {
   const { slide, company, template, presentationTitle, width, index, total, showWarnings, onEdit } = props;
   const scale = width / SLIDE_W;

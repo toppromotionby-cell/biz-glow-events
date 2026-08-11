@@ -94,7 +94,8 @@ export function PresentationFullscreen({
             width={size.w}
             index={index}
             total={visible.length}
-          />
+          {...(branding ?? {})}
+              />
         </div>
       ) : (
         <p className="text-white/70">Нет видимых слайдов для показа</p>
