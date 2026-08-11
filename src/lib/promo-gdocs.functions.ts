@@ -42,6 +42,6 @@ export const exportPromoToGoogleDoc = createServerFn({ method: "POST" })
       await sb.from("promo_quotes").update({ gdoc_id: docId, gdoc_url: url }).eq("id", data.id);
     }
 
-    await renderPromoToDoc(docId!, quote, items, { n: (quoteRow as Row).company_line as string | undefined });
+    await renderPromoToDoc(docId!, quote, items, { companyLine: ((quoteRow as Row).company_line as string | undefined) ?? undefined });
     return { url: url ?? `https://docs.google.com/document/d/${docId}/edit` };
   });
