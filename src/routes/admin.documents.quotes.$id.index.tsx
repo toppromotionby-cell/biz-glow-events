@@ -149,6 +149,8 @@ function Page() {
   const makeVersion = useServerFn(createQuoteVersion);
   const rollback = useServerFn(restoreQuoteVersion);
   const makeTemplate = useServerFn(saveQuoteAsTemplate);
+  const saveSample = useServerFn(saveEstimateTemplate);
+
   const markSent = useServerFn(markQuoteSent);
   const sendToClient = useServerFn(sendQuoteToClient);
   const makeOrder = useServerFn(createOrderFromQuote);
