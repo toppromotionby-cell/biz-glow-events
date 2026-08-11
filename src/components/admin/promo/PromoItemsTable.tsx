@@ -65,7 +65,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
     );
   };
 
-  const removeItem = (id: string) => onChange(items.filter((it) => it.id !== id));
+  const removeItem = (id: string) => onChange(reindexPromo(items.filter((it) => it.id !== id)));
 
 
   const duplicate = (id: string) => {
@@ -73,19 +73,21 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
     if (idx < 0) return;
     const src = items[idx]!;
     const copy = { ...src, id: crypto.randomUUID(), includes: src.includes.map((x) => ({ ...x })) };
-    onChange([...items.slice(0, idx + 1), copy, ...items.slice(idx + 1)].map((it, i) => ({ ...it, sort_order: i })));
+    onChange(reindexPromo([...items.slice(0, idx + 1), copy, ...items.slice(idx + 1)]));
   };
 
   const addRow = (section: string) =>
-    onChange([...items, newPromoItem(section, { sort_order: items.length })]);
+    onChange(insertPromoItems(items, section, [newPromoItem(section)]));
 
   const addSection = () => {
     const base = "Новый раздел";
     let name = base;
     let n = 2;
     while (sectionNames.includes(name)) name = `${base} ${n++}`;
-    onChange([...items, newPromoItem(name, { sort_order: items.length })]);
+    setCollapsed((c) => ({ ...c, [name]: false }));
+    onChange(reindexPromo([...items, newPromoItem(name)]));
   };
+
 
   const reorderSection = (name: string, orderedIds: string[]) => {
     const inSection = new Map(items.filter((it) => (it.section ?? "").trim() === name).map((it) => [it.id, it]));
