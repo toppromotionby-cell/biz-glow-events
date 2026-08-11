@@ -120,7 +120,7 @@ export const testMailAccount = createServerFn({ method: "POST" })
       let result: WorkerTest = { ok: false };
 
       try {
-        result = await callMailWorker<WorkerTest>("/test", cfg, { timeoutMs: 120_000 });
+        result = await callMailWorker<WorkerTest>("/test", cfg, { timeoutMs: 70_000 });
         ok = result.ok === true;
         status = 200;
         message = ok ? "OK" : (result.error ?? "Unknown error");
