@@ -12,7 +12,8 @@ import { LogoUploader } from "@/components/admin/LogoUploader";
 import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
-import type { PrintPreset } from "@/lib/documents/print-preset";
+import type { DocPrintPreset } from "@/lib/documents/print-preset";
+import type { DocFontChoice } from "@/lib/documents/doc-font";
 
 export interface DocToggle {
   key: string;
@@ -24,13 +25,13 @@ export interface DocToggle {
 
 interface DocAppearanceSectionProps {
   toggles?: DocToggle[];
-  fontFamily: string | null;
-  onFontChange: (v: string | null) => void;
+  fontFamily: DocFontChoice;
+  onFontChange: (v: DocFontChoice) => void;
   accent: string;
   accentPlaceholder?: string;
   onAccentChange: (v: string) => void;
   print?: {
-    value: PrintPreset;
+    value: DocPrintPreset;
     onChange: (v: Parameters<typeof PrintPresetEditor>[0]["value"]) => void;
     onReset: () => void;
   };
