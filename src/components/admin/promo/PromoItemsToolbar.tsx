@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { deletePromoSnippet, listPromoSnippets } from "@/lib/promo-quotes.functions";
-import { newPromoItem, parsePastedPromoRows, type PromoItem } from "@/lib/promo-quote-model";
+import { insertPromoItems, newPromoItem, parsePastedPromoRows, reindexPromo, type PromoItem } from "@/lib/promo-quote-model";
 import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
 import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
 
@@ -53,17 +53,16 @@ export function PromoItemsToolbar({
         cost: h.cost,
         note: h.description,
         includes: h.includes.map((x) => ({ ...x })),
-        sort_order: items.length + i,
       }),
     );
-    onChange([...items, ...created]);
+    onChange(insertPromoItems(items, section || created[0]?.section || "", created));
     toast.success(`Добавлено позиций: ${created.length}`);
   };
 
   const applyPaste = () => {
     const parsed = parsePastedPromoRows(pasteText, pasteSection.trim());
     if (!parsed.length) return toast.error("Не удалось распознать строки");
-    onChange([...items, ...parsed]);
+    onChange(insertPromoItems(items, pasteSection.trim(), parsed));
     setPasteOpen(false);
     setPasteText("");
     toast.success(`Добавлено строк: ${parsed.length}`);
