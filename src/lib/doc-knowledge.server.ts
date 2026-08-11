@@ -411,7 +411,7 @@ const CATALOG_SOURCES = [
 ] as const;
 
 /**
- * Переносит опубликованные карточки каталога в базу знаний документов,
+ * Обновляет цены/описания уже накопленных позиций по данным каталога сайта,
  * чтобы позиции КП/смет подставлялись из тех же данных, что видит клиент.
  */
 export async function syncCatalogKnowledge(): Promise<{ synced: number }> {
@@ -432,13 +432,23 @@ export async function syncCatalogKnowledge(): Promise<{ synced: number }> {
     for (const r of rows) {
       const title = s(r["title"]);
       if (!title) continue;
-      await upsertItem({
-        section: src.section,
-        title,
-        description: s(r["description"]).slice(0, 2000),
-        unit: unitFromPricing(r["pricing"]) ?? "шт",
-        price: minPriceFromPricing(r["pricing"]) ?? 0,
-      });
+      // Обновляем только те позиции, которые уже реально использовались в документах:
+      // база знаний не должна дублировать весь каталог сайта.
+      const key = itemKey({ section: src.section, title });
+      const { data: existing } = await supabaseAdmin
+        .from("doc_item_catalog")
+        .select("id")
+        .eq("match_key", key)
+        .maybeSingle();
+      if (!existing) continue;
+      await supabaseAdmin
+        .from("doc_item_catalog")
+        .update({
+          description: s(r["description"]).slice(0, 2000),
+          unit: unitFromPricing(r["pricing"]) ?? "шт",
+          price: minPriceFromPricing(r["pricing"]) ?? 0,
+        })
+        .eq("id", existing.id);
       synced += 1;
     }
   }
@@ -556,4 +566,125 @@ export async function browseItems(opts: {
   for (const c of CATALOG) if (!sections.includes(c.label)) sections.push(c.label);
 
   return { rows, sections };
+}
+
+/* ---------------- Гигиена базы знаний ---------------- */
+
+export type RetentionPolicy = { minUsage: number; months: number };
+
+export const DEFAULT_RETENTION: RetentionPolicy = { minUsage: 2, months: 6 };
+
+const KB_TABLES: KbTable[] = ["contacts", "items", "texts"];
+
+/**
+ * Сливает дубли по match_key: остаётся самая используемая запись,
+ * счётчики суммируются, остальные удаляются.
+ */
+export async function mergeKnowledgeDuplicates(table: KbTable): Promise<number> {
+  const t = TABLE[table];
+  const { data, error } = await supabaseAdmin
+    .from(t)
+    .select("*")
+    .limit(5000);
+  if (error) throw new Error(error.message);
+
+  const groups = new Map<string, Array<{ id: string; usage: number; last: string }>>();
+  for (const r of (data ?? []) as Array<Record<string, unknown>>) {
+    const key = `${table === "texts" ? s(r["kind"]) : ""}|${s(r["match_key"])}`;
+    if (!s(r["match_key"])) continue;
+    const list = groups.get(key) ?? [];
+    list.push({ id: String(r["id"]), usage: Number(r["usage_count"] ?? 1), last: s(r["last_used_at"]) });
+    groups.set(key, list);
+  }
+
+  let removed = 0;
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    list.sort((a, b) => b.usage - a.usage || b.last.localeCompare(a.last));
+    const [keep, ...rest] = list;
+    if (!keep) continue;
+    const total = list.reduce((acc, x) => acc + x.usage, 0);
+    const last: string = list.map((x) => x.last).sort().at(-1) ?? keep.last;
+    await supabaseAdmin.from(t).update({ usage_count: total, last_used_at: last || undefined }).eq("id", keep.id);
+    const { error: delErr } = await supabaseAdmin.from(t).delete().in("id", rest.map((x) => x.id));
+    if (!delErr) removed += rest.length;
+  }
+  return removed;
+}
+
+/**
+ * Оставляет только востребованные записи: usage_count >= minUsage
+ * ИЛИ использованные за последние N месяцев. Остальное удаляется.
+ */
+export async function enforceRetention(
+  table: KbTable,
+  policy: RetentionPolicy = DEFAULT_RETENTION,
+): Promise<number> {
+  const cutoff = pruneCutoff(policy.months);
+  const { data, error } = await supabaseAdmin
+    .from(TABLE[table])
+    .select("id,usage_count,last_used_at")
+    .lt("usage_count", policy.minUsage)
+    .limit(5000);
+  if (error) throw new Error(error.message);
+  const ids = ((data ?? []) as Array<Record<string, unknown>>)
+    .filter((r) => {
+      const last = s(r["last_used_at"]);
+      return !last || last < cutoff;
+    })
+    .map((r) => String(r["id"]));
+  if (!ids.length) return 0;
+  const { error: delErr } = await supabaseAdmin.from(TABLE[table]).delete().in("id", ids);
+  if (delErr) throw new Error(delErr.message);
+  return ids.length;
+}
+
+export type KnowledgeHealth = {
+  table: KbTable;
+  total: number;
+  duplicates: number;
+  junk: number;
+};
+
+/** Сводка по состоянию базы знаний для админки. */
+export async function knowledgeHealth(policy: RetentionPolicy = DEFAULT_RETENTION): Promise<KnowledgeHealth[]> {
+  const out: KnowledgeHealth[] = [];
+  const cutoff = pruneCutoff(policy.months);
+  for (const table of KB_TABLES) {
+    const t = TABLE[table];
+    const { data } = await supabaseAdmin
+      .from(t)
+      .select("*")
+      .limit(5000);
+    const rows = (data ?? []) as Array<Record<string, unknown>>;
+    const seen = new Map<string, number>();
+    let junk = 0;
+    for (const r of rows) {
+      const key = `${table === "texts" ? s(r["kind"]) : ""}|${s(r["match_key"])}`;
+      seen.set(key, (seen.get(key) ?? 0) + 1);
+      const last = s(r["last_used_at"]);
+      if (Number(r["usage_count"] ?? 0) < policy.minUsage && (!last || last < cutoff)) junk += 1;
+    }
+    let duplicates = 0;
+    for (const n of seen.values()) if (n > 1) duplicates += n - 1;
+    out.push({ table, total: rows.length, duplicates, junk });
+  }
+  return out;
+}
+
+/** Полная автоматическая уборка: сначала слияние дублей, затем удаление мусора. */
+export async function runKnowledgeHygiene(
+  policy: RetentionPolicy = DEFAULT_RETENTION,
+): Promise<{ merged: number; pruned: number }> {
+  let merged = 0;
+  let pruned = 0;
+  for (const table of KB_TABLES) {
+    try {
+      merged += await mergeKnowledgeDuplicates(table);
+      pruned += await enforceRetention(table, policy);
+    } catch (err) {
+      console.error(`[doc-knowledge] hygiene ${table} failed`, err);
+    }
+  }
+  return { merged, pruned };
 }

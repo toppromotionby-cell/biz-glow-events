@@ -81,6 +81,7 @@ import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/publi
 import { Route as ApiPublicSocialClickRouteImport } from './routes/api/public/social-click'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AdminSettingsSocialRouteImport } from './routes/admin.settings.social'
+import { Route as AdminSettingsHygieneRouteImport } from './routes/admin.settings.hygiene'
 import { Route as AdminSettingsEmailsRouteImport } from './routes/admin.settings.emails'
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
@@ -468,6 +469,11 @@ const AdminSettingsSocialRoute = AdminSettingsSocialRouteImport.update({
   path: '/settings/social',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSettingsHygieneRoute = AdminSettingsHygieneRouteImport.update({
+  id: '/settings/hygiene',
+  path: '/settings/hygiene',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsEmailsRoute = AdminSettingsEmailsRouteImport.update({
   id: '/settings/emails',
   path: '/settings/emails',
@@ -677,6 +683,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
+  '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
@@ -774,6 +781,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
+  '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
@@ -874,6 +882,7 @@ export interface FileRoutesById {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
+  '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
@@ -975,6 +984,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
+    | '/admin/settings/hygiene'
     | '/admin/settings/social'
     | '/api/public/health'
     | '/api/public/social-click'
@@ -1072,6 +1082,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
+    | '/admin/settings/hygiene'
     | '/admin/settings/social'
     | '/api/public/health'
     | '/api/public/social-click'
@@ -1171,6 +1182,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
+    | '/admin/settings/hygiene'
     | '/admin/settings/social'
     | '/api/public/health'
     | '/api/public/social-click'
@@ -1763,6 +1775,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsSocialRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/settings/hygiene': {
+      id: '/admin/settings/hygiene'
+      path: '/settings/hygiene'
+      fullPath: '/admin/settings/hygiene'
+      preLoaderRoute: typeof AdminSettingsHygieneRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings/emails': {
       id: '/admin/settings/emails'
       path: '/settings/emails'
@@ -2004,6 +2023,7 @@ interface AdminRouteChildren {
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
+  AdminSettingsHygieneRoute: typeof AdminSettingsHygieneRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
   AdminDocumentsPresentationsIndexRoute: typeof AdminDocumentsPresentationsIndexRoute
@@ -2037,6 +2057,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
+  AdminSettingsHygieneRoute: AdminSettingsHygieneRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
   AdminDocumentsPresentationsIndexRoute: AdminDocumentsPresentationsIndexRoute,
@@ -2191,13 +2212,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

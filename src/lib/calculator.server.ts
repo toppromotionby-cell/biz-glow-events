@@ -2,7 +2,6 @@
 // отсортированные по рейтингу спроса.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getDemandScores, demandKey, type DemandEntity } from "@/lib/demand.server";
-import { getDocumentPopularity } from "@/lib/doc-popularity.server";
 import { minPriceFromPricing, unitFromPricing } from "@/lib/pricing";
 
 export type CalcItem = {
@@ -19,7 +18,7 @@ export type CalcItem = {
 const TABLES: DemandEntity[] = ["zones", "tech_equipment", "services", "production_items", "attractions"];
 
 export async function loadCalculatorCatalog(): Promise<CalcItem[]> {
-  const [scores, docScores] = await Promise.all([getDemandScores(), getDocumentPopularity()]);
+  const scores = await getDemandScores();
   const results = await Promise.all(
     TABLES.map(async (t) => {
       try {
@@ -39,8 +38,7 @@ export async function loadCalculatorCatalog(): Promise<CalcItem[]> {
             category: r.category,
             unit: unitFromPricing(r.pricing),
             price: minPriceFromPricing(r.pricing),
-            popularity:
-              (scores.get(demandKey(t, r.id)) ?? 0) + (docScores.get(demandKey(t, r.id)) ?? 0),
+            popularity: scores.get(demandKey(t, r.id)) ?? 0,
           }),
         );
       } catch (err) {
