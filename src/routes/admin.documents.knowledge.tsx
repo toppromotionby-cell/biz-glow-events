@@ -16,7 +16,8 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import {
   listKnowledgeRows, deleteKnowledgeRows, countStaleKnowledge, pruneStaleKnowledge, syncCatalogKnowledgeFn,
-  type KbRow, type KbSort, type KbTable,
+  knowledgeHealthFn, runKnowledgeHygieneFn, mergeKnowledgeDuplicatesFn,
+  type KbRow, type KbSort, type KbTable, type KnowledgeHealth,
 } from "@/lib/doc-knowledge.functions";
 
 export const Route = createFileRoute("/admin/documents/knowledge")({ component: Page });
@@ -58,6 +59,8 @@ function Page() {
         }
       />
 
+      <HealthPanel />
+
       <Tabs value={tab} onValueChange={(v) => setTab(v as KbTable)}>
         <TabsList>
           <TabsTrigger value="contacts">Контрагенты</TabsTrigger>
@@ -68,6 +71,105 @@ function Page() {
         <TabsContent value="items" className="mt-4"><KbPanel table="items" /></TabsContent>
         <TabsContent value="texts" className="mt-4"><KbPanel table="texts" /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+const KB_LABEL: Record<KbTable, string> = { contacts: "Контрагенты", items: "Позиции", texts: "Тексты" };
+
+/** Сводка и автоматическая уборка: остаются только часто используемые данные. */
+function HealthPanel() {
+  const qc = useQueryClient();
+  const health = useServerFn(knowledgeHealthFn);
+  const runHygiene = useServerFn(runKnowledgeHygieneFn);
+  const mergeDupes = useServerFn(mergeKnowledgeDuplicatesFn);
+  const [minUsage, setMinUsage] = useState(2);
+  const [months, setMonths] = useState(6);
+
+  const { data } = useQuery<KnowledgeHealth[]>({
+    queryKey: ["admin-kb-health", minUsage, months],
+    queryFn: () => health({ data: { minUsage, months } }) as Promise<KnowledgeHealth[]>,
+  });
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["admin-kb-health"] });
+    qc.invalidateQueries({ queryKey: ["admin-kb"] });
+  };
+
+  const hygieneMut = useMutation({
+    mutationFn: () => runHygiene({ data: { minUsage, months } }),
+    onSuccess: (r) => { toast.success(`Слито дублей: ${r.merged}, удалено мусора: ${r.pruned}`); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const mergeMut = useMutation({
+    mutationFn: (table: KbTable) => mergeDupes({ data: { table } }),
+    onSuccess: (r) => { toast.success(`Слито дублей: ${r.merged}`); refresh(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rows = data ?? [];
+  const junk = rows.reduce((a, r) => a + r.junk, 0);
+  const dupes = rows.reduce((a, r) => a + r.duplicates, 0);
+
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-medium">Состояние базы</p>
+          <p className="text-sm text-muted-foreground">
+            Хранятся записи с {minUsage}+ использованиями или использованные за последние {months} мес.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={String(minUsage)} onValueChange={(v) => setMinUsage(Number(v))}>
+            <SelectTrigger className="w-[190px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[1, 2, 3, 5].map((n) => (
+                <SelectItem key={n} value={String(n)}>Минимум использований: {n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
+            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[3, 6, 12, 24].map((n) => (
+                <SelectItem key={n} value={String(n)}>Срок хранения: {n} мес.</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={() => hygieneMut.mutate()} disabled={hygieneMut.isPending}>
+            <Eraser className="h-4 w-4 mr-2" /> Очистить портал
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {rows.map((r) => (
+          <div key={r.table} className="rounded-md border p-3 text-sm">
+            <p className="font-medium">{KB_LABEL[r.table]}</p>
+            <p className="text-muted-foreground">Записей: {r.total}</p>
+            <p className="text-muted-foreground">Дублей: {r.duplicates} · Мусора: {r.junk}</p>
+            {r.duplicates > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-2"
+                onClick={() => mergeMut.mutate(r.table)}
+                disabled={mergeMut.isPending}
+              >
+                Слить дубли
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {(junk > 0 || dupes > 0) && (
+        <p className="text-xs text-muted-foreground">
+          Кандидатов на удаление: {junk}. Дублей к слиянию: {dupes}. Уборка выполняется и автоматически раз в сутки.
+        </p>
+      )}
     </div>
   );
 }
