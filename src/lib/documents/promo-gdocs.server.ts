@@ -1,126 +1,243 @@
-// Экспорт промо-КП в Google Документы: тот же состав и порядок блоков, что и в
-// живом превью (шапка, мета, таблица позиций, итоги, подвал). Колонки «Ед. 2» и
-// «Кол-во 2» появляются только если вторая единица заполнена хотя бы у одной позиции.
+// Промо-КП в Google Документах: та же вёрстка, что в HTML-превью и PDF —
+// логотип, реквизиты, мета-блок, таблица с акцентной шапкой и разделами,
+// блок итогов и примечание. Документ также читается обратно.
 import {
   batchUpdate,
-  clearDoc,
   createDoc,
+  clearDoc,
   getDoc,
   type GDocElement,
 } from "@/lib/documents/gdocs-gateway.server";
-import {
-  computePromoTotals,
-  formatNumber,
-  groupBySection,
-  hasSecondUnit,
-  lineQty,
-  lineTotal,
-  promoNumberDisplay,
-  rateUnitLabel,
-  soleRateUnit,
-  type PromoItem,
-  type PromoQuote,
-} from "@/lib/promo-quote-model";
+import { buildDocLayout, docMoney } from "@/lib/documents/doc-layout";
+import { hexToRgb01 } from "@/lib/documents/brand";
+import { resolveDocFont } from "@/lib/documents/doc-font";
+import type { PromoItem, PromoQuote } from "@/lib/promo-quote-model";
 
-const nf = (v: number) => v.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export type PromoDocOptions = { companyLine?: string };
 
-export type PromoDocOptions = { companyLine?: string; fontFamily?: string };
+const PAGE_MARGIN_PT = 36;
+const CONTENT_WIDTH_PT = 595.28 - PAGE_MARGIN_PT * 2;
 
-/** Строки таблицы: первая — заголовок, дальше разделы и позиции. */
-function buildGrid(quote: PromoQuote, items: PromoItem[]) {
-  const t = computePromoTotals(quote, items);
-  const dual = hasSecondUnit(items);
-  const rateUnit = soleRateUnit(items);
+const rgb = (hex: string) => {
+  const c = hexToRgb01(hex);
+  return { color: { rgbColor: { red: c.r, green: c.g, blue: c.b } } };
+};
 
-  const header = ["Наименование", "Ед. изм."];
-  if (quote.show_qty) header.push("Кол-во");
-  if (dual) header.push("Ед. 2", "Кол-во 2");
-  if (quote.show_total_qty) header.push("Всего");
-  header.push(rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.");
-  header.push(`Всего${t.vatMode === "add" ? ", без НДС" : t.vatMode === "included" ? ", с НДС" : ""}`);
-  if (quote.show_notes) header.push("Примечания");
+const ALIGN: Record<string, string> = { left: "START", center: "CENTER", right: "END" };
 
-  const width = header.length;
-  const blank = () => Array.from({ length: width }, () => "");
-  const rows: string[][] = [header];
-  const boldRows: number[] = [0];
-
-  for (const sec of groupBySection(items)) {
-    if (sec.name) {
-      const r = blank();
-      r[0] = sec.name;
-      boldRows.push(rows.length);
-      rows.push(r);
-    }
-    for (const it of sec.items) {
-      const cells: string[] = [it.title.trim() || "Новая позиция", it.unit];
-      if (quote.show_qty) cells.push(formatNumber(it.qty));
-      if (dual) {
-        const ru = rateUnitLabel(it);
-        cells.push(ru || "—", ru ? formatNumber(it.multiplier) : "—");
-      }
-      if (quote.show_total_qty) cells.push(formatNumber(lineQty(it)));
-      cells.push(it.price ? nf(it.price) : "");
-      cells.push(lineTotal(it) ? nf(lineTotal(it)) : "");
-      if (quote.show_notes) cells.push(it.note);
-      rows.push(cells);
-    }
-    if (quote.show_section_subtotals && sec.name && sec.items.length > 1) {
-      const r = blank();
-      r[0] = `Итого по разделу «${sec.name}»`;
-      r[width - (quote.show_notes ? 2 : 1)] = nf(sec.items.reduce((s, it) => s + lineTotal(it), 0));
-      boldRows.push(rows.length);
-      rows.push(r);
-    }
-  }
-
-  if (quote.management_enabled) {
-    const r = blank();
-    r[0] = quote.management_label;
-    r[1] = "услуга";
-    r[width - (quote.show_notes ? 2 : 1)] = nf(t.management);
-    rows.push(r);
-  }
-  if (quote.commission_enabled) {
-    const r = blank();
-    r[0] = quote.commission_label;
-    r[width - (quote.show_notes ? 2 : 1)] = nf(t.commission);
-    rows.push(r);
-  }
-
-  return { rows, boldRows, totals: t, width };
+export async function createPromoDoc(title: string) {
+  return createDoc(title);
 }
 
-function headerText(quote: PromoQuote, opts: PromoDocOptions): string {
-  const lines: string[] = [];
-  if (opts.companyLine) lines.push(opts.companyLine);
-  lines.push(`Коммерческое предложение № ${promoNumberDisplay(quote)}`);
-  if (quote.project) lines.push(`Проект: ${quote.project}`);
-  if (quote.client_name) lines.push(`Клиент: ${quote.client_name}`);
-  if (quote.period) lines.push(`Период: ${quote.period}`);
-  if (quote.venue) lines.push(`Место проведения: ${quote.venue}`);
-  if (quote.valid_until)
-    lines.push(
-      `Предложение действительно до: ${new Date(`${quote.valid_until}T00:00:00`).toLocaleDateString("ru-RU")}`,
-    );
-  const contact = [quote.contact_name, quote.contact_role].filter(Boolean).join(", ");
-  if (contact || quote.contact_phone || quote.contact_email)
-    lines.push(
-      `Контактное лицо: ${contact}${quote.contact_phone ? `; ${quote.contact_phone}` : ""}${
-        quote.contact_email ? `; ${quote.contact_email}` : ""
-      }`,
-    );
-  return lines.join("\n") + "\n";
-}
+/** Перерисовывает документ Google Docs текущим содержимым промо-КП. */
+export async function renderPromoToDoc(
+  documentId: string,
+  quote: PromoQuote,
+  items: PromoItem[],
+  opts: PromoDocOptions = {},
+): Promise<void> {
+  const layout = buildDocLayout(quote, items);
+  const font = resolveDocFont(quote.font_family) === "ubuntu" ? "Ubuntu" : "Inter";
+  const cols = layout.columns;
+  const width = cols.length;
 
-function footerText(quote: PromoQuote, t: ReturnType<typeof computePromoTotals>): string {
-  const lines: string[] = [];
-  if (t.discount > 0) lines.push(`Скидка: − ${nf(t.discount)}`);
-  lines.push(`${t.vatEnabled ? "Стоимость позиций (без НДС)" : "Всего"}: ${nf(t.net)}`);
-  if (t.vatEnabled) lines.push(`НДС ${t.vatRate}%: ${nf(t.vat)}`);
-  lines.push(`Итого${t.vatEnabled ? ", с НДС" : ""}: ${nf(t.totalWithVat)} ${quote.currency}`);
-  if (quote.footer_note) lines.push("", quote.footer_note);
-  return "\n" + lines.join("\n") + "\n";
+  await clearDoc(documentId);
+
+  // 1) Поля страницы — как в печатном пресете.
+  await batchUpdate(documentId, [
+    {
+      updateDocumentStyle: {
+        documentStyle: {
+          marginTop: { magnitude: PAGE_MARGIN_PT, unit: "PT" },
+          marginBottom: { magnitude: PAGE_MARGIN_PT, unit: "PT" },
+          marginLeft: { magnitude: PAGE_MARGIN_PT, unit: "PT" },
+          marginRight: { magnitude: PAGE_MARGIN_PT, unit: "PT" },
+        },
+        fields: "marginTop,marginBottom,marginLeft,marginRight",
+      },
+    },
+  ]);
+
+  // 2) Шапка: строка реквизитов, номер КП, мета-поля.
+  const headLines: Array<{ text: string; size: number; bold: boolean }> = [];
+  if (opts.companyLine) headLines.push({ text: opts.companyLine, size: 8.5, bold: false });
+  headLines.push({ text: layout.docTitle, size: 14, bold: true });
+  for (const m of layout.meta) headLines.push({ text: m, size: 9, bold: false });
+
+  const headText = `\n${headLines.map((l) => l.text).join("\n")}\n`;
+  await batchUpdate(documentId, [{ insertText: { location: { index: 1 }, text: headText } }]);
+
+  const styleReqs: unknown[] = [];
+  let cursor = 2; // после первого перевода строки (там будет логотип)
+  for (const l of headLines) {
+    styleReqs.push({
+      updateTextStyle: {
+        range: { startIndex: cursor, endIndex: cursor + l.text.length },
+        textStyle: {
+          bold: l.bold,
+          fontSize: { magnitude: l.size, unit: "PT" },
+          weightedFontFamily: { fontFamily: font },
+        },
+        fields: "bold,fontSize,weightedFontFamily",
+      },
+    });
+    cursor += l.text.length + 1;
+  }
+  await batchUpdate(documentId, styleReqs);
+
+  // 3) Логотипы в первой строке документа.
+  const logos = [quote.logo_url, quote.client_logo_url].filter(
+    (u): u is string => typeof u === "string" && /^https?:\/\//.test(u),
+  );
+  for (const uri of logos.reverse()) {
+    try {
+      await batchUpdate(documentId, [
+        {
+          insertInlineImage: {
+            location: { index: 1 },
+            uri,
+            objectSize: { height: { magnitude: 46, unit: "PT" } },
+          },
+        },
+      ]);
+    } catch (e) {
+      console.warn("[gdocs] логотип не вставлен:", (e as Error).message);
+    }
+  }
+
+  // 4) Таблица позиций.
+  const grid: string[][] = [cols.map((c) => c.label)];
+  for (const r of layout.rows) grid.push(cols.map((c) => r.cells[c.key] ?? ""));
+
+  await batchUpdate(documentId, [
+    { insertTable: { rows: grid.length, columns: width, endOfSegmentLocation: { segmentId: "" } } },
+  ]);
+
+  const afterInsert = await getDoc(documentId);
+  const table = lastTable(afterInsert.body?.content ?? []);
+  if (!table?.table?.tableRows) throw new Error("Не удалось создать таблицу в документе");
+  const tableStart = table.startIndex ?? 1;
+  const cellStarts = table.table.tableRows.map((r) => (r.tableCells ?? []).map((c) => c.startIndex ?? 0));
+
+  const fill: unknown[] = [];
+  for (let r = grid.length - 1; r >= 0; r -= 1) {
+    for (let c = width - 1; c >= 0; c -= 1) {
+      const text = grid[r]?.[c] ?? "";
+      const at = cellStarts[r]?.[c];
+      if (!text || at == null) continue;
+      fill.push({ insertText: { location: { index: at + 1 }, text } });
+    }
+  }
+  await batchUpdate(documentId, fill);
+
+  // 5) Оформление таблицы: ширины, заливки, выравнивание, кегль.
+  const styling: unknown[] = [];
+  cols.forEach((c, i) => {
+    styling.push({
+      updateTableColumnProperties: {
+        tableStartLocation: { index: tableStart },
+        columnIndices: [i],
+        tableColumnProperties: {
+          widthType: "FIXED_WIDTH",
+          width: { magnitude: Math.round(c.width * CONTENT_WIDTH_PT * 10) / 10, unit: "PT" },
+        },
+        fields: "widthType,width",
+      },
+    });
+  });
+
+  const rowBg = (rowIndex: number, hex: string) =>
+    styling.push({
+      updateTableCellStyle: {
+        tableRange: {
+          tableCellLocation: { tableStartLocation: { index: tableStart }, rowIndex, columnIndex: 0 },
+          rowSpan: 1,
+          columnSpan: width,
+        },
+        tableCellStyle: { backgroundColor: rgb(hex) },
+        fields: "backgroundColor",
+      },
+    });
+
+  rowBg(0, layout.accent);
+  layout.rows.forEach((r, i) => {
+    if (r.kind === "section") rowBg(i + 1, "#e7e7ea");
+    else if (r.kind === "subtotal") rowBg(i + 1, "#f4f4f6");
+    else if (r.kind === "extra") rowBg(i + 1, "#fbfbfc");
+  });
+
+  const fresh = await getDoc(documentId);
+  const freshTable = lastTable(fresh.body?.content ?? []);
+  const freshRows = freshTable?.table?.tableRows ?? [];
+  freshRows.forEach((row, rIdx) => {
+    (row.tableCells ?? []).forEach((cell, cIdx) => {
+      const col = cols[cIdx];
+      if (!col) return;
+      const start = cell.startIndex ?? 0;
+      const end = cell.endIndex ?? start + 1;
+      if (end <= start + 1) return;
+      const layoutRow = rIdx === 0 ? null : layout.rows[rIdx - 1];
+      const bold = rIdx === 0 || layoutRow?.kind === "section" || layoutRow?.kind === "subtotal";
+      styling.push({
+        updateParagraphStyle: {
+          range: { startIndex: start, endIndex: end - 1 },
+          paragraphStyle: {
+            alignment: rIdx === 0 ? "CENTER" : ALIGN[col.align],
+            spaceAbove: { magnitude: 1, unit: "PT" },
+            spaceBelow: { magnitude: 1, unit: "PT" },
+          },
+          fields: "alignment,spaceAbove,spaceBelow",
+        },
+      });
+      styling.push({
+        updateTextStyle: {
+          range: { startIndex: start + 1, endIndex: end - 1 },
+          textStyle: {
+            bold,
+            italic: layoutRow?.kind === "extra",
+            fontSize: { magnitude: 8.5, unit: "PT" },
+            weightedFontFamily: { fontFamily: font },
+          },
+          fields: "bold,italic,fontSize,weightedFontFamily",
+        },
+      });
+    });
+  });
+  await batchUpdate(documentId, styling);
+
+  // 6) Итоги и примечание после таблицы.
+  const totalsLines = layout.totals.map(
+    (t) => `${t.label}: ${t.sign === "minus" ? "− " : ""}${docMoney(t.value)}${t.grand ? ` ${quote.currency}` : ""}`,
+  );
+  const tailText = `\n${totalsLines.join("\n")}\n${quote.footer_note ? `\n${quote.footer_note}\n` : ""}`;
+  await batchUpdate(documentId, [
+    { insertText: { endOfSegmentLocation: { segmentId: "" }, text: tailText } },
+  ]);
+
+  const withTail = await getDoc(documentId);
+  const content = withTail.body?.content ?? [];
+  const docEnd = content.length ? (content[content.length - 1]!.endIndex ?? 2) : 2;
+  const tailStart = Math.max(1, docEnd - tailText.length);
+  await batchUpdate(documentId, [
+    {
+      updateParagraphStyle: {
+        range: { startIndex: tailStart, endIndex: Math.max(tailStart + 1, docEnd - 1) },
+        paragraphStyle: { alignment: "END" },
+        fields: "alignment",
+      },
+    },
+    {
+      updateTextStyle: {
+        range: { startIndex: tailStart, endIndex: Math.max(tailStart + 1, docEnd - 1) },
+        textStyle: {
+          fontSize: { magnitude: 9.5, unit: "PT" },
+          bold: true,
+          weightedFontFamily: { fontFamily: font },
+        },
+        fields: "fontSize,bold,weightedFontFamily",
+      },
+    },
+  ]);
 }
 
 function lastTable(content: GDocElement[]) {
@@ -128,81 +245,75 @@ function lastTable(content: GDocElement[]) {
   return null;
 }
 
-/** Перезаписывает документ Google Docs текущим содержимым промо-КП. */
-export async function renderPromoToDoc(
-  documentId: string,
-  quote: PromoQuote,
-  items: PromoItem[],
-  opts: PromoDocOptions = {},
-): Promise<void> {
-  const font = opts.fontFamily || "Ubuntu";
-  const { rows, boldRows, totals, width } = buildGrid(quote, items);
-
-  await clearDoc(documentId);
-
-  // 1) Шапка и мета.
-  const head = headerText(quote, opts);
-  await batchUpdate(documentId, [{ insertText: { location: { index: 1 }, text: head } }]);
-
-  // 2) Пустая таблица нужного размера в конце документа.
-  await batchUpdate(documentId, [
-    { insertTable: { rows: rows.length, columns: width, endOfSegmentLocation: { segmentId: "" } } },
-  ]);
-
-  // 3) Заполняем ячейки с конца — тогда индексы предыдущих ячеек не смещаются.
-  const doc = await getDoc(documentId);
-  const table = lastTable(doc.body?.content ?? []);
-  if (!table?.table?.tableRows) throw new Error("Не удалось создать таблицу в документе");
-  const cellStarts = table.table.tableRows.map((r) => (r.tableCells ?? []).map((c) => c.startIndex ?? 0));
-
-  const fill: unknown[] = [];
-  for (let r = rows.length - 1; r >= 0; r -= 1) {
-    for (let c = width - 1; c >= 0; c -= 1) {
-      const text = rows[r]?.[c] ?? "";
-      const at = cellStarts[r]?.[c];
-      if (!text || at == null) continue;
-      fill.push({ insertText: { location: { index: at + 1 }, text } });
-      if (boldRows.includes(r))
-        fill.push({
-          updateTextStyle: {
-            range: { startIndex: at + 1, endIndex: at + 1 + text.length },
-            textStyle: { bold: true },
-            fields: "bold",
-          },
-        });
-    }
-  }
-  await batchUpdate(documentId, fill);
-
-  // 4) Итоги и подвал после таблицы.
-  await batchUpdate(documentId, [
-    {
-      insertText: {
-        endOfSegmentLocation: { segmentId: "" },
-        text: footerText(quote, totals),
-      },
-    },
-  ]);
-
-  // 5) Единый шрифт и компактный кегль на весь документ — как в превью.
-  const fresh = await getDoc(documentId);
-  const content = fresh.body?.content ?? [];
-  const end = content.length ? (content[content.length - 1]!.endIndex ?? 2) : 2;
-  if (end > 2)
-    await batchUpdate(documentId, [
-      {
-        updateTextStyle: {
-          range: { startIndex: 1, endIndex: end - 1 },
-          textStyle: {
-            weightedFontFamily: { fontFamily: font },
-            fontSize: { magnitude: 9, unit: "PT" },
-          },
-          fields: "weightedFontFamily,fontSize",
-        },
-      },
-    ]);
+/** Текст ячейки документа. */
+function cellText(cell: unknown): string {
+  const c = cell as { content?: Array<{ paragraph?: { elements?: Array<{ textRun?: { content?: string } }> } }> };
+  return (c.content ?? [])
+    .flatMap((el) => el.paragraph?.elements ?? [])
+    .map((e) => e.textRun?.content ?? "")
+    .join("")
+    .replace(/\u000b/g, " ")
+    .trim();
 }
 
-export async function createPromoDoc(title: string) {
-  return createDoc(title);
+export type PromoDocParsedRow = {
+  section: string;
+  title: string;
+  unit: string;
+  qty: number;
+  multiplier: number;
+  price: number;
+  note: string;
+  rate_unit: string;
+};
+
+const toNum = (v: string) => {
+  const n = Number(String(v).replace(/[\s\u00a0]/g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+};
+
+/** Читает таблицу документа обратно: позиции, разделы, значения. */
+export async function readPromoDocRows(documentId: string): Promise<PromoDocParsedRow[]> {
+  const doc = await getDoc(documentId);
+  const table = lastTable(doc.body?.content ?? []);
+  const rows = (table?.table?.tableRows ?? []) as Array<{ tableCells?: unknown[] }>;
+  if (!rows.length) return [];
+
+  const header = (rows[0]!.tableCells ?? []).map((c) => cellText(c));
+  const idx = (label: string) => header.findIndex((h) => h.toLowerCase().startsWith(label.toLowerCase()));
+  const iTitle = Math.max(0, idx("Наименование"));
+  const iUnit = idx("Ед. изм");
+  const iQty = header.findIndex((h) => h === "Кол-во");
+  const iRateUnit = idx("Ед. 2");
+  const iMul = idx("Кол-во 2");
+  const iPrice = idx("Цена");
+  const iNote = idx("Примеч");
+
+  const out: PromoDocParsedRow[] = [];
+  let section = "";
+  for (let r = 1; r < rows.length; r += 1) {
+    const cells = (rows[r]!.tableCells ?? []).map((c) => cellText(c));
+    const title = cells[iTitle] ?? "";
+    if (!title) continue;
+    const filled = cells.filter(Boolean).length;
+    if (filled === 1) {
+      // Одинокая ячейка — строка раздела.
+      if (!title.startsWith("Итого по разделу")) section = title;
+      continue;
+    }
+    if (title.startsWith("Итого по разделу")) continue;
+    const priceStr = iPrice >= 0 ? (cells[iPrice] ?? "") : "";
+    if (!priceStr && !(iQty >= 0 && cells[iQty])) continue; // служебные строки (управление, комиссия, НДС)
+    out.push({
+      section,
+      title,
+      unit: (iUnit >= 0 ? cells[iUnit] : "") || "услуга",
+      qty: iQty >= 0 ? toNum(cells[iQty] ?? "") : 0,
+      multiplier: iMul >= 0 ? toNum(cells[iMul] ?? "") || 1 : 1,
+      price: toNum(priceStr),
+      note: (iNote >= 0 ? cells[iNote] : "") ?? "",
+      rate_unit: iRateUnit >= 0 ? (cells[iRateUnit] ?? "").replace("—", "").trim() : "",
+    });
+  }
+  return out;
 }
