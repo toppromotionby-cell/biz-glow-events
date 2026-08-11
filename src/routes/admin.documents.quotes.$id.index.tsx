@@ -293,15 +293,29 @@ function Page() {
     return () => clearTimeout(t);
   }, [quote, items, id, save, qc]);
 
+  // Только что добавленные пустые строки не подсвечиваем в превью —
+  // замечания по ним остаются во вкладке «Проверки».
+  const previewChecks = useMemo(() => {
+    const pristine = new Set(
+      items
+        .filter(
+          (it) =>
+            !it.title.trim() && !it.description?.trim() && !num(it.price) && !num(it.cost) && !it.includes.length,
+        )
+        .map((it) => it.id),
+    );
+    return checks.filter((c) => !(c.refId && pristine.has(c.refId)));
+  }, [checks, items]);
+
   const previewHtml = useMemo(
     () =>
       quote && totals
         ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings, {
             editable: inlineEdit,
-            checks,
+            checks: previewChecks,
           })
         : "",
-    [quote, items, settings, totals, inlineEdit, checks],
+    [quote, items, settings, totals, inlineEdit, previewChecks],
   );
 
 

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { deletePromoSnippet, listPromoSnippets } from "@/lib/promo-quotes.functions";
-import { newPromoItem, parsePastedPromoRows, type PromoItem } from "@/lib/promo-quote-model";
+import { insertPromoItems, newPromoItem, parsePastedPromoRows, reindexPromo, type PromoItem } from "@/lib/promo-quote-model";
 import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
 import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
 
@@ -45,7 +45,7 @@ export function PromoItemsToolbar({
     picked: Array<{ title: string; section: string; unit: string; price: number; cost: number; description: string; includes: Array<{ text: string; note: string }> }>,
     section: string,
   ) => {
-    const created = picked.map((h, i) =>
+    const created = picked.map((h) =>
       newPromoItem(section || h.section || "", {
         title: h.title,
         unit: h.unit || "услуга",
@@ -53,17 +53,16 @@ export function PromoItemsToolbar({
         cost: h.cost,
         note: h.description,
         includes: h.includes.map((x) => ({ ...x })),
-        sort_order: items.length + i,
       }),
     );
-    onChange([...items, ...created]);
+    onChange(insertPromoItems(items, section || created[0]?.section || "", created));
     toast.success(`Добавлено позиций: ${created.length}`);
   };
 
   const applyPaste = () => {
     const parsed = parsePastedPromoRows(pasteText, pasteSection.trim());
     if (!parsed.length) return toast.error("Не удалось распознать строки");
-    onChange([...items, ...parsed]);
+    onChange(insertPromoItems(items, pasteSection.trim(), parsed));
     setPasteOpen(false);
     setPasteText("");
     toast.success(`Добавлено строк: ${parsed.length}`);
@@ -74,7 +73,10 @@ export function PromoItemsToolbar({
       <Button
         size="sm"
         variant="outline"
-        onClick={() => onChange([...items, newPromoItem(`Раздел ${new Set(items.map((i) => i.section)).size + 1}`)])}
+        onClick={() =>
+          onChange(reindexPromo([...items, newPromoItem(`Раздел ${new Set(items.map((i) => (i.section ?? "").trim())).size + 1}`)]))
+        }
+
       >
         <FolderPlus className="mr-1 h-4 w-4" />Новый раздел
       </Button>

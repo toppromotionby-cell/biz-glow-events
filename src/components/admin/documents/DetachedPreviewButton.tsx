@@ -1,10 +1,23 @@
 // Кнопка «Открыть в новом окне»: выносит живое превью документа в отдельное окно
-// браузера (удобно на втором мониторе). Содержимое обновляется автоматически
-// при каждом изменении документа.
+// браузера (удобно на втором мониторе). Каркас страницы пишется один раз при
+// открытии, дальше обновляется только содержимое — без мигания и без сброса
+// прокрутки. Обновления дебаунсятся, чтобы быстрый ввод не тормозил редактор.
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+
+const MOUNT_ID = "doc-preview-root";
+
+/** Из полного html-документа берём только содержимое <body>. */
+function bodyOf(html: string): string {
+  if (!/<body/i.test(html)) return html;
+  try {
+    return new DOMParser().parseFromString(html, "text/html").body.innerHTML;
+  } catch {
+    return html;
+  }
+}
 
 export function DetachedPreviewButton({
   html,
@@ -18,14 +31,18 @@ export function DetachedPreviewButton({
   const winRef = useRef<Window | null>(null);
   const [open, setOpen] = useState(false);
 
-  // Держим содержимое окна в актуальном состоянии.
+  // Держим содержимое окна в актуальном состоянии (только innerHTML контейнера).
   useEffect(() => {
-    const w = winRef.current;
-    if (!open || !w || w.closed) return;
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    w.document.title = title;
+    if (!open) return;
+    const timer = window.setTimeout(() => {
+      const w = winRef.current;
+      if (!w || w.closed) return;
+      const mount = w.document.getElementById(MOUNT_ID);
+      if (!mount) return;
+      mount.innerHTML = bodyOf(html);
+      if (w.document.title !== title) w.document.title = title;
+    }, 150);
+    return () => window.clearTimeout(timer);
   }, [html, title, open]);
 
   // Закрываем окно вместе со страницей редактора.
@@ -40,7 +57,7 @@ export function DetachedPreviewButton({
 
   const handleClick = () => {
     const existing = winRef.current;
-    if (existing && !existing.closed) {
+    if (existing && !existing.closed && existing.document.getElementById(MOUNT_ID)) {
       existing.focus();
       setOpen(true);
       return;
@@ -50,6 +67,19 @@ export function DetachedPreviewButton({
       toast.error("Браузер заблокировал новое окно — разрешите всплывающие окна для сайта");
       return;
     }
+    // Каркас пишем один раз: стили уже внутри переданного html-документа.
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    // Оборачиваем содержимое body в контейнер, который будем обновлять точечно.
+    const body = w.document.body;
+    if (body && !w.document.getElementById(MOUNT_ID)) {
+      const mount = w.document.createElement("div");
+      mount.id = MOUNT_ID;
+      while (body.firstChild) mount.appendChild(body.firstChild);
+      body.appendChild(mount);
+    }
+    w.document.title = title;
     winRef.current = w;
     setOpen(true);
   };
