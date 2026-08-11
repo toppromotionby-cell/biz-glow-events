@@ -498,15 +498,34 @@ export type PromoSection = { name: string; items: PromoItem[] };
 
 export function groupBySection(items: PromoItem[]): PromoSection[] {
   const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
+  // Все позиции одного раздела собираются в один блок, даже если в списке они
+  // идут не подряд (например, строка добавлена в конец списка).
   const out: PromoSection[] = [];
+  const byName = new Map<string, PromoSection>();
   for (const it of sorted) {
-    const name = it.section.trim();
-    const last = out[out.length - 1];
-    if (last && last.name === name) last.items.push(it);
-    else out.push({ name, items: [it] });
+    const name = (it.section ?? "").trim();
+    const found = byName.get(name);
+    if (found) found.items.push(it);
+    else {
+      const sec: PromoSection = { name, items: [it] };
+      byName.set(name, sec);
+      out.push(sec);
+    }
   }
   return out;
 }
+
+/** Позиция «не тронута»: только что добавлена и ещё ничего не заполнено. */
+export function isPristinePromoItem(it: PromoItem): boolean {
+  return (
+    !(it.title ?? "").trim() &&
+    !(it.note ?? "").trim() &&
+    num(it.price, 0) === 0 &&
+    num(it.cost, 0) === 0 &&
+    !it.includes.length
+  );
+}
+
 
 export const PROMO_NO_SECTION = "Без раздела";
 
