@@ -3,9 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Field } from "@/components/admin/Field";
+import {
+  DocDialogShell,
+  IncludesEditor,
+  Summary,
+  money as fmtMoney,
+  parseNum,
+} from "@/components/admin/documents/doc-form-kit";
 import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { computeTotals, normalizeVatMode, type Quote, type QuoteItem, type QuoteTexts } from "@/lib/quotes-model";
@@ -37,28 +43,6 @@ const BLOCK_TEXT_FALLBACK: Partial<Record<string, keyof QuoteTexts>> = {
   timeline: "timeline",
   terms: "terms",
 };
-
-function n(v: string): number {
-  const x = Number(String(v).replace(",", "."));
-  return Number.isFinite(x) ? x : 0;
-}
-
-const money = (v: number) =>
-  `${new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0)} BYN`;
-
-/** Сводка «как в превью»: только чтение. */
-function Summary({ rows }: { rows: Array<[string, string, boolean?]> }) {
-  return (
-    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm">
-      {rows.map(([k, v, strong]) => (
-        <div key={k} className={`flex justify-between gap-4 py-0.5 ${strong ? "font-semibold" : ""}`}>
-          <span className="text-muted-foreground">{k}</span>
-          <span className="tabular-nums">{v}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function PlaceholderPreview({ text, map, numbers }: { text: string; map: Record<string, string>; numbers: Record<string, number> }) {
   if (!/\{\{/.test(text || "")) return null;
@@ -177,13 +161,7 @@ export function BlockEditDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{TITLES[target] ?? "Редактирование"}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-3">
+    <DocDialogShell title={TITLES[target] ?? "Редактирование"} onClose={onClose} onSubmit={submit}>
           {target === "header" && (
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Номер (пусто = авто)" hint={`Сейчас в документе: № ${quoteNumberDisplay(merged)}`}>
@@ -196,7 +174,7 @@ export function BlockEditDialog({
                 <Input
                   type="number"
                   value={String(draft.validity_days ?? 0)}
-                  onChange={(e) => set({ validity_days: Math.max(0, Math.round(n(e.target.value))) })}
+                  onChange={(e) => set({ validity_days: Math.max(0, Math.round(parseNum(e.target.value))) })}
                 />
               </Field>
               <Field
@@ -254,7 +232,7 @@ export function BlockEditDialog({
                 <Input
                   type="number"
                   value={draft.guests_count == null ? "" : String(draft.guests_count)}
-                  onChange={(e) => set({ guests_count: e.target.value === "" ? null : Math.round(n(e.target.value)) })}
+                  onChange={(e) => set({ guests_count: e.target.value === "" ? null : Math.round(parseNum(e.target.value)) })}
                 />
               </Field>
               <Field label="Начало"><Input value={draft.event_time_start ?? ""} onChange={(e) => set({ event_time_start: e.target.value })} placeholder="10:00" /></Field>
@@ -272,36 +250,18 @@ export function BlockEditDialog({
               <Field label="Описание" className="sm:col-span-2"><Textarea rows={3} value={item.description ?? ""} onChange={(e) => setItem({ ...item, description: e.target.value })} /></Field>
               <Field label="Раздел"><Input value={item.section ?? ""} onChange={(e) => setItem({ ...item, section: e.target.value })} /></Field>
               <Field label="Единица"><Input value={item.unit ?? ""} onChange={(e) => setItem({ ...item, unit: e.target.value })} /></Field>
-              <Field label="Кол-во"><Input inputMode="decimal" value={String(item.qty)} onChange={(e) => setItem({ ...item, qty: n(e.target.value) })} /></Field>
-              <Field label="Цена, BYN"><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: n(e.target.value) })} /></Field>
-              <Field label="Себестоимость, BYN"><Input inputMode="decimal" value={String(item.cost ?? 0)} onChange={(e) => setItem({ ...item, cost: n(e.target.value) })} /></Field>
-              <Field label="Что входит" className="sm:col-span-2" hint="По строке на пункт">
-                <Textarea
-                  rows={4}
-                  value={(item.includes ?? []).map((i) => (i.note ? `${i.text} — ${i.note}` : i.text)).join("\n")}
-                  onChange={(e) =>
-                    setItem({
-                      ...item,
-                      includes: e.target.value
-                        .split(/\r?\n/)
-                        .map((line) => line.trim())
-                        .filter(Boolean)
-                        .map((line) => {
-                          const [text, ...rest] = line.split(" — ");
-                          return { text: (text ?? "").trim(), note: rest.join(" — ").trim() };
-                        }),
-                    })
-                  }
-                />
-              </Field>
+              <Field label="Кол-во"><Input inputMode="decimal" value={String(item.qty)} onChange={(e) => setItem({ ...item, qty: parseNum(e.target.value) })} /></Field>
+              <Field label="Цена, BYN"><Input inputMode="decimal" value={String(item.price)} onChange={(e) => setItem({ ...item, price: parseNum(e.target.value) })} /></Field>
+              <Field label="Себестоимость, BYN"><Input inputMode="decimal" value={String(item.cost ?? 0)} onChange={(e) => setItem({ ...item, cost: parseNum(e.target.value) })} /></Field>
+              <IncludesEditor value={item.includes} onChange={(includes) => setItem({ ...item, includes })} />
               <div className="sm:col-span-2">
                 <Summary
                   rows={[
-                    ["Сумма строки", money(item.qty * item.price), true],
+                    ["Сумма строки", fmtMoney(item.qty * item.price), true],
                     ...(item.cost
                       ? ([
-                          ["Себестоимость строки", money(item.qty * (item.cost ?? 0))],
-                          ["Маржа", money(item.qty * (item.price - (item.cost ?? 0)))],
+                          ["Себестоимость строки", fmtMoney(item.qty * (item.cost ?? 0))],
+                          ["Маржа", fmtMoney(item.qty * (item.price - (item.cost ?? 0)))],
                         ] as Array<[string, string]>)
                       : []),
                   ]}
@@ -318,7 +278,7 @@ export function BlockEditDialog({
               <Summary
                 rows={[
                   ["Позиций в разделе", String(sectionItems.length)],
-                  ["Сумма раздела", money(sectionItems.reduce((s, it) => s + it.qty * it.price, 0)), true],
+                  ["Сумма раздела", fmtMoney(sectionItems.reduce((s, it) => s + it.qty * it.price, 0)), true],
                 ]}
               />
             </div>
@@ -337,7 +297,7 @@ export function BlockEditDialog({
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Значение скидки"><Input inputMode="decimal" value={String(draft.discount_value ?? 0)} onChange={(e) => set({ discount_value: n(e.target.value) })} /></Field>
+                <Field label="Значение скидки"><Input inputMode="decimal" value={String(draft.discount_value ?? 0)} onChange={(e) => set({ discount_value: parseNum(e.target.value) })} /></Field>
                 <Field label="Предоплата">
                   <Select value={draft.prepayment_type ?? "none"} onValueChange={(v) => set({ prepayment_type: v as Quote["prepayment_type"] })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -348,8 +308,8 @@ export function BlockEditDialog({
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Значение предоплаты"><Input inputMode="decimal" value={String(draft.prepayment_value ?? 0)} onChange={(e) => set({ prepayment_value: n(e.target.value) })} /></Field>
-                <Field label="Доставка и логистика, BYN" className="sm:col-span-2"><Input inputMode="decimal" value={String(draft.delivery_amount ?? 0)} onChange={(e) => set({ delivery_amount: n(e.target.value) })} /></Field>
+                <Field label="Значение предоплаты"><Input inputMode="decimal" value={String(draft.prepayment_value ?? 0)} onChange={(e) => set({ prepayment_value: parseNum(e.target.value) })} /></Field>
+                <Field label="Доставка и логистика, BYN" className="sm:col-span-2"><Input inputMode="decimal" value={String(draft.delivery_amount ?? 0)} onChange={(e) => set({ delivery_amount: parseNum(e.target.value) })} /></Field>
               </div>
               <VatSettings
                 value={{ mode: normalizeVatMode(draft.vat_mode ?? quote.vat_mode), rate: draft.vat_rate ?? quote.vat_rate, asLine: draft.vat_as_line ?? quote.vat_as_line }}
@@ -378,24 +338,24 @@ export function BlockEditDialog({
               </Field>
               <Summary
                 rows={[
-                  ["Позиции", money(totals.subtotal)],
-                  ...(totals.discount ? ([["Скидка", `− ${money(totals.discount)}`]] as Array<[string, string]>) : []),
-                  ...(totals.delivery ? ([["Доставка", money(totals.delivery)]] as Array<[string, string]>) : []),
+                  ["Позиции", fmtMoney(totals.subtotal)],
+                  ...(totals.discount ? ([["Скидка", `− ${fmtMoney(totals.discount)}`]] as Array<[string, string]>) : []),
+                  ...(totals.delivery ? ([["Доставка", fmtMoney(totals.delivery)]] as Array<[string, string]>) : []),
                   ...(totals.vatEnabled
                     ? ([
-                        ["Без НДС", money(totals.net)],
-                        [`НДС ${totals.vatRate}%`, money(totals.vat)],
+                        ["Без НДС", fmtMoney(totals.net)],
+                        [`НДС ${totals.vatRate}%`, fmtMoney(totals.vat)],
                       ] as Array<[string, string]>)
                     : []),
-                  ["Итого к оплате", money(totals.total), true],
+                  ["Итого к оплате", fmtMoney(totals.total), true],
                   ...(totals.prepayment
                     ? ([
-                        ["Предоплата", money(totals.prepayment)],
-                        ["Остаток", money(totals.balance)],
+                        ["Предоплата", fmtMoney(totals.prepayment)],
+                        ["Остаток", fmtMoney(totals.balance)],
                       ] as Array<[string, string]>)
                     : []),
                   ...(totals.cost
-                    ? ([["Маржа", `${money(totals.margin)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
+                    ? ([["Маржа", `${fmtMoney(totals.margin)} (${totals.marginPct.toFixed(1)}%)`]] as Array<[string, string]>)
                     : []),
                 ]}
               />
@@ -447,13 +407,6 @@ export function BlockEditDialog({
               settings={settings}
             />
           )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Отмена</Button>
-          <Button onClick={submit}>Сохранить</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    </DocDialogShell>
   );
 }
