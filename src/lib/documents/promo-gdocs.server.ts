@@ -237,6 +237,39 @@ export async function renderPromoToDoc(
   });
   await batchUpdate(documentId, styling);
 
+  // 5b) Строки-услуги: объединяем ячейки единиц и количеств в одну «услуга».
+  const unitIdx = cols.findIndex((c) => c.key === "unit");
+  const lastUnitKey: DocColumnKey = layout.dual ? "multiplier" : "qty";
+  const lastUnitIdx = cols.findIndex((c) => c.key === lastUnitKey);
+  if (unitIdx >= 0 && lastUnitIdx > unitIdx) {
+    const merges = layout.rows
+      .map((r, i) =>
+        r.serviceRow
+          ? {
+              mergeTableCells: {
+                tableRange: {
+                  tableCellLocation: {
+                    tableStartLocation: { index: tableStart },
+                    rowIndex: i + 1,
+                    columnIndex: unitIdx,
+                  },
+                  rowSpan: 1,
+                  columnSpan: lastUnitIdx - unitIdx + 1,
+                },
+              },
+            }
+          : null,
+      )
+      .filter(Boolean);
+    if (merges.length) {
+      try {
+        await batchUpdate(documentId, merges as unknown[]);
+      } catch (e) {
+        console.warn("[gdocs] объединение ячеек услуг не выполнено:", (e as Error).message);
+      }
+    }
+  }
+
   // 6) Итоги и примечание после таблицы.
   const totalsLines = layout.totals.map(
     (t) => `${t.label}: ${t.sign === "minus" ? "− " : ""}${docMoney(t.value)}${t.grand ? ` ${quote.currency}` : ""}`,
@@ -362,7 +395,18 @@ export async function readPromoDocRows(documentId: string): Promise<PromoDocPars
   const out: PromoDocParsedRow[] = [];
   let section = "";
   for (let r = 1; r < rows.length; r += 1) {
-    const cells = (rows[r]!.tableCells ?? []).map((c) => cellText(c));
+    const raw = (rows[r]!.tableCells ?? []).map((c) => cellText(c));
+    // В строках-услугах ячейки единиц/количеств объединены — выравниваем хвост
+    // по правому краю, а объединённую ячейку трактуем как «услуга», кол-во 1.
+    const merged = raw.length < header.length && raw.length > 2;
+    const cells = merged
+      ? header.map((_, i) => {
+          if (i <= iUnit) return raw[i] ?? "";
+          const tail = header.length - i;
+          return tail <= raw.length - iUnit - 1 ? (raw[raw.length - tail] ?? "") : "";
+        })
+      : raw;
+    if (merged && iQty >= 0 && !cells[iQty]) cells[iQty] = "1";
     // Состав позиции — отдельные абзацы в той же ячейке, берём только наименование.
     const title = (cells[iTitle] ?? "").split("\n")[0]!.trim();
     if (!title || title === "Позиции не добавлены") continue;
