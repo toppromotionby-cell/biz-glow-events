@@ -891,12 +891,17 @@ function Page() {
           <Field label="Название шаблона">
             <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="Например: Корпоратив под ключ" />
           </Field>
+          <p className="text-xs text-muted-foreground">
+            Образец сметы доступен при создании любого документа — и КП, и КП промо.
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTemplateOpen(false)}>Отмена</Button>
+            <Button variant="outline" onClick={onSaveSample}>Сохранить как образец</Button>
             <Button onClick={onSaveTemplate}>Сохранить</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

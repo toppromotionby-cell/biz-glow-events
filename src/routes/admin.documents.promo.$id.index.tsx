@@ -687,8 +687,25 @@ function EditorPage() {
           <Field label="Название шаблона">
             <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} />
           </Field>
+          <p className="text-xs text-muted-foreground">
+            Шаблон доступен только в КП промо. Образец сметы можно применить и к обычному КП.
+          </p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setTemplateOpen(false)}>Отмена</Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const name = templateName.trim();
+                if (!name) return toast.error("Введите название");
+                try {
+                  await saveSample({ data: { source: "promo", docId: id, name } });
+                  setTemplateOpen(false);
+                  toast.success("Образец сметы сохранён");
+                } catch (e) { toast.error((e as Error).message); }
+              }}
+            >
+              Сохранить как образец
+            </Button>
             <Button
               onClick={async () => {
                 const name = templateName.trim();
@@ -703,6 +720,7 @@ function EditorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       {confirmDialog}
     </TooltipProvider>
