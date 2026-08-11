@@ -1,7 +1,7 @@
 // Лента миниатюр слайдов: выбор, перетаскивание, действия с клавиатуры.
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Copy, EyeOff, GripVertical, Trash2 } from "lucide-react";
-import { SlideCanvas } from "@/components/admin/presentations/SlideCanvas";
+import { SlideCanvas, type SlideBranding } from "@/components/admin/presentations/SlideCanvas";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import {
   SLIDE_TYPE_LABELS, type PresentationSlide, type PresentationTemplate,
@@ -13,6 +13,7 @@ export function SlideThumbRail({
   company,
   template,
   presentationTitle,
+  branding,
   horizontal,
   onSelect,
   onMove,
@@ -25,6 +26,7 @@ export function SlideThumbRail({
   company: CompanyProfile | null;
   template: PresentationTemplate;
   presentationTitle: string;
+  branding?: SlideBranding;
   horizontal?: boolean;
   onSelect: (id: string) => void;
   onMove: (id: string, dir: -1 | 1) => void;

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SlideCanvas, SLIDE_W, SLIDE_H } from "@/components/admin/presentations/SlideCanvas";
+import { SlideCanvas, SLIDE_W, SLIDE_H, type SlideBranding } from "@/components/admin/presentations/SlideCanvas";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PresentationSlide, PresentationTemplate } from "@/lib/presentations/model";
 
@@ -13,6 +13,7 @@ export function PresentationFullscreen({
   company,
   template,
   presentationTitle,
+  branding,
   onClose,
 }: {
   open: boolean;
@@ -21,6 +22,7 @@ export function PresentationFullscreen({
   company: CompanyProfile | null;
   template: PresentationTemplate;
   presentationTitle: string;
+  branding?: SlideBranding;
   onClose: () => void;
 }) {
   const visible = slides.filter((s) => s.is_visible);
