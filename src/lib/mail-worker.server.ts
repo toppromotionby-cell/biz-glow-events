@@ -13,6 +13,7 @@ export type MailAccountCfg = {
   smtp_host: string;
   smtp_port?: number;
   smtp_secure?: boolean;
+  allow_invalid_cert?: boolean;
 };
 
 type WorkerPath =
@@ -30,6 +31,8 @@ export class MailWorkerError extends Error {
     message: string,
     public readonly status: number,
     public readonly path: WorkerPath,
+    /** Разобранный JSON-ответ воркера, если он был. */
+    public readonly data: unknown = null,
   ) {
     super(message);
     this.name = "MailWorkerError";
@@ -125,7 +128,7 @@ export async function callMailWorker<T = unknown>(
           ? String((json as { error: unknown }).error)
           : "";
       const msg = errFromJson || text || `HTTP ${res.status}`;
-      throw new MailWorkerError(msg, res.status, path);
+      throw new MailWorkerError(msg, res.status, path, json);
     }
     return (json ?? {}) as T;
   };
