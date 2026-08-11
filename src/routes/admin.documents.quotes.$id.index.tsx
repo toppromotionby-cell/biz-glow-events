@@ -61,6 +61,8 @@ import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/prin
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
 import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
+import { DocAppearanceSection } from "@/components/admin/documents/DocAppearanceSection";
+
 
 
 
