@@ -128,7 +128,7 @@ export function buildDocLayout(
     rate_unit: "Ед. изм.",
     multiplier: "Кол-во",
     total_qty: "Всего",
-    price: rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.",
+    price: PRICE_LABEL,
     amount: `Всего${computed.vatMode === "add" ? ", без НДС" : computed.vatMode === "included" ? ", с НДС" : ""}`,
     note: "Примечания",
   };
@@ -139,8 +139,8 @@ export function buildDocLayout(
     rate_unit: "center",
     multiplier: "center",
     total_qty: "center",
-    price: "right",
-    amount: "right",
+    price: "center",
+    amount: "center",
     note: "left",
   };
 
@@ -152,6 +152,7 @@ export function buildDocLayout(
     align: align[key],
     money: key === "price" || key === "amount",
   }));
+
 
   const rows: DocRow[] = [];
   const row = (kind: DocRowKind, extra: Partial<DocRow> = {}): DocRow => ({
