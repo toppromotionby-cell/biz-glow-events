@@ -116,6 +116,12 @@ export const createPromoQuote = createServerFn({ method: "POST" })
         note: String(it.note ?? ""),
         includes: normalizeIncludes(it.includes),
         exclude_from_commission: it.exclude_from_commission === true,
+        included: it.included !== false,
+        group_key: String(it.group_key ?? ""),
+        qty_unit: String(it.qty_unit ?? ""),
+        rate_unit: String(it.rate_unit ?? ""),
+        rate_qty: Number(it.rate_qty ?? it.multiplier ?? 1),
+        is_info: it.is_info === true,
         sort_order: i,
       }));
       if (rows.length) await context.supabase.from("promo_quote_items").insert(rows);
@@ -148,6 +154,12 @@ export const createPromoQuote = createServerFn({ method: "POST" })
       note: it.note ?? "",
       includes: normalizeIncludes(it.includes),
       exclude_from_commission: it.exclude_from_commission === true,
+      included: it.included !== false,
+      group_key: String(it.group_key ?? ""),
+      qty_unit: String(it.qty_unit ?? ""),
+      rate_unit: String(it.rate_unit ?? ""),
+      rate_qty: Number(it.rate_qty ?? it.multiplier ?? 1),
+      is_info: it.is_info === true,
       sort_order: i,
     }));
     if (rows.length) await context.supabase.from("promo_quote_items").insert(rows);
@@ -182,6 +194,12 @@ export const savePromoQuote = createServerFn({ method: "POST" })
         note: it.note,
         includes: it.includes,
         exclude_from_commission: it.exclude_from_commission,
+        included: it.included,
+        group_key: it.group_key,
+        qty_unit: it.qty_unit,
+        rate_unit: it.rate_unit,
+        rate_qty: it.multiplier,
+        is_info: it.is_info,
         sort_order: i,
       }));
       if (rows.length) {
@@ -282,6 +300,12 @@ export const savePromoTemplate = createServerFn({ method: "POST" })
       note: String(it.note ?? ""),
       includes: normalizeIncludes(it.includes),
       exclude_from_commission: it.exclude_from_commission === true,
+      included: it.included !== false,
+      group_key: String(it.group_key ?? ""),
+      qty_unit: String(it.qty_unit ?? ""),
+      rate_unit: String(it.rate_unit ?? ""),
+      rate_qty: Number(it.rate_qty ?? it.multiplier ?? 1),
+      is_info: it.is_info === true,
       sort_order: i,
     }));
     if (rows.length) await context.supabase.from("promo_quote_items").insert(rows);
@@ -464,6 +488,12 @@ export const restorePromoVersion = createServerFn({ method: "POST" })
       note: it.note,
       includes: it.includes,
       exclude_from_commission: it.exclude_from_commission,
+      included: it.included,
+      group_key: it.group_key,
+      qty_unit: it.qty_unit,
+      rate_unit: it.rate_unit,
+      rate_qty: it.multiplier,
+      is_info: it.is_info,
       sort_order: i,
     }));
     if (items.length) await context.supabase.from("promo_quote_items").insert(items);
