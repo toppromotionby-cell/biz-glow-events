@@ -163,6 +163,53 @@ export async function buildPresentationPdf(
 }
 
 
+
+type Rect = { x: number; y: number; w: number; h: number };
+
+function intersects(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/** Габариты логотипа, вписанные в бокс с сохранением пропорций. */
+function logoSize(img: PDFImage, maxW: number, maxH: number): { w: number; h: number } {
+  const k = Math.min(maxW / img.width, maxH / img.height, 1.6);
+  return { w: img.width * k, h: img.height * k };
+}
+
+/**
+ * Кладёт логотип в первое свободное место из списка кандидатов
+ * (координаты — от левого нижнего угла страницы, как в pdf-lib).
+ */
+function placeLogo(
+  page: PDFPage,
+  img: PDFImage,
+  occupied: Rect[],
+  maxW: number,
+  maxH: number,
+  candidates: ("top-right" | "top-left" | "bottom-right" | "bottom-left")[],
+  force: boolean,
+): Rect | null {
+  const { w, h } = logoSize(img, maxW, maxH);
+  const pad = 18;
+  const spots: Record<string, Rect> = {
+    "top-right": { x: W - PAD - w, y: H - PAD - h, w, h },
+    "top-left": { x: PAD, y: H - PAD - h, w, h },
+    "bottom-right": { x: W - PAD - w, y: 20, w, h },
+    "bottom-left": { x: PAD, y: 20, w, h },
+  };
+  for (const key of candidates) {
+    const spot = spots[key];
+    const padded = { x: spot.x - pad, y: spot.y - pad, w: spot.w + pad * 2, h: spot.h + pad * 2 };
+    if (occupied.some((r) => intersects(padded, r))) continue;
+    page.drawImage(img, spot);
+    return spot;
+  }
+  if (!force) return null;
+  const spot = spots[candidates[0] ?? "top-right"];
+  page.drawImage(img, { ...spot, opacity: 0.92 });
+  return spot;
+}
+
 type DrawArgs = {
   page: PDFPage;
   slide: ResolvedSlide;
