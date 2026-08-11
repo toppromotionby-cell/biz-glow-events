@@ -436,7 +436,15 @@ function AccountDialog({
   }, [value]);
 
   function update<K extends keyof FormState>(k: K, v: FormState[K]) {
-    setForm((f) => ({ ...f, [k]: v }));
+    setForm((f) => {
+      const next = { ...f, [k]: v } as FormState;
+      // Для провайдеров, где логин = адрес ящика, держим поле логина синхронным.
+      const p = MAIL_PRESETS.find((x) => x.id === preset);
+      if (k === "email" && p?.loginIsEmail && (!f.username || f.username === f.email)) {
+        next.username = String(v);
+      }
+      return next;
+    });
     if (errors[k as string]) {
       setErrors((e) => {
         const n = { ...e };
@@ -595,5 +603,71 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
+  );
+}
+
+function TestResultDialog({
+  value,
+  onClose,
+}: {
+  value: (MailTestResult & { email?: string }) | null;
+  onClose: () => void;
+}) {
+  const steps = value?.steps ?? [];
+  return (
+    <Dialog open={!!value} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {value?.ok ? "Подключение работает" : "Подключение не удалось"}
+          </DialogTitle>
+          <DialogDescription>
+            {value?.email ? `${value.email} · ` : ""}
+            {value?.duration_ms != null ? `${Math.round(value.duration_ms / 100) / 10} c` : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          {steps.map((s) => (
+            <div key={s.step} className="flex gap-2 text-sm">
+              {s.ok ? (
+                <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              )}
+              <div className="min-w-0">
+                <div className="font-medium uppercase text-xs tracking-wider">
+                  {s.step === "imap" ? "IMAP · входящие" : "SMTP · отправка"}
+                </div>
+                <div className="text-muted-foreground break-words">
+                  {s.ok ? s.detail : (s.message ?? "ошибка")}
+                </div>
+                {!s.ok && s.response && (
+                  <div className="text-xs text-muted-foreground/80 break-words">{s.response}</div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {!value?.ok && value?.hint && (
+            <p className="text-sm rounded-md border border-destructive/40 bg-destructive/10 p-3">
+              {value.hint}
+            </p>
+          )}
+          {value?.ok && value.applied && (
+            <p className="text-sm rounded-md border bg-muted/40 p-3">
+              Рабочие параметры подобраны автоматически и сохранены в ящике.
+            </p>
+          )}
+          {steps.length === 0 && (
+            <p className="text-sm text-muted-foreground break-words">{value?.message}</p>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Закрыть</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
