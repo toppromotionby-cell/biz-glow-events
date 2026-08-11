@@ -10,7 +10,8 @@ import {
   computePromoTotals,
   formatMoney,
   groupBySection,
-  lineQty,
+  formatQty,
+  formatTotalQty,
   lineTotal,
   promoNumberDisplay,
   type PromoItem,
@@ -103,8 +104,8 @@ export function buildPromoQuoteBody(
             `<td class="c-title">${esc(it.title)}${inc}${chkList(rowChecks)}</td>`,
             `<td class="c-unit">${esc(it.unit)}</td>`,
           ];
-          if (quote.show_qty) cells.push(`<td class="c-num">${nf(it.qty).replace(",00", "")}</td>`);
-          if (quote.show_total_qty) cells.push(`<td class="c-num">${nf(lineQty(it)).replace(",00", "")}</td>`);
+          if (quote.show_qty) cells.push(`<td class="c-num">${esc(formatQty(it))}</td>`);
+          if (quote.show_total_qty) cells.push(`<td class="c-num">${esc(formatTotalQty(it))}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
           if (quote.show_notes) cells.push(`<td class="c-note">${esc(it.note)}</td>`);
