@@ -427,6 +427,13 @@ export function QuoteItemsPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <KnowledgeItemsDialog
+        open={kbSection !== null}
+        onOpenChange={(v) => setKbSection(v ? (kbSection ?? "") : null)}
+        targetSection={kbSection ?? ""}
+        onAdd={addFromKnowledge}
+      />
     </div>
   );
 }
