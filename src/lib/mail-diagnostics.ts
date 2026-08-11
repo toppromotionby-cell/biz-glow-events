@@ -9,7 +9,7 @@ export type MailStep = {
   code?: string | null;
   message?: string;
   response?: string | null;
-  tried?: Record<string, unknown>;
+  tried?: Record<string, string | number | boolean | null> | null;
 };
 
 export type MailSuggestion = {
