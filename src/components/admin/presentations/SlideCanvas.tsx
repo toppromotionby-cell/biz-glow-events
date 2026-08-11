@@ -143,6 +143,7 @@ export function SlideCanvas(props: SlideCanvasProps) {
           index={index}
           total={total}
           onEdit={onEdit}
+          brandLogo={brandLogo}
         />
         {showClient && (
           <div
@@ -217,6 +218,7 @@ function SlideBody({
   index,
   total,
   onEdit,
+  brandLogo,
 }: {
   slide: PresentationSlide;
   company: CompanyProfile | null;
@@ -226,9 +228,10 @@ function SlideBody({
   index?: number;
   total?: number;
   onEdit?: SlideCanvasProps["onEdit"];
+  brandLogo?: string | null;
 }) {
   const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
-  const logo = company?.logo_url ?? null;
+  const logo = brandLogo ?? company?.logo_url ?? null;
   const c = slide.content;
   const ts = fit.type;
   const { layout } = fit;
