@@ -301,6 +301,11 @@ export function buildDocLayout(
     }
   }
 
+  // Ширины колонок — по содержимому; остаток уходит в «Наименование»/«Примечания».
+  fitColumnWidths(columns, rows);
+
+
+
 
 
   const validUntil = quote.valid_until
