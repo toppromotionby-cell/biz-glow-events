@@ -400,6 +400,13 @@ function Page() {
         ? { text: `Сохранено в ${savedAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`, cls: "text-muted-foreground" }
         : { text: "Все изменения сохранены", cls: "text-muted-foreground" };
 
+  const branding = {
+    brandLogoUrl: meta.logo_url,
+    clientLogoUrl: meta.client_logo_url,
+    logoLayout: meta.logo_layout,
+    fontFamily: meta.font_family,
+  } as const;
+
   const rail = (
     <SlideThumbRail
       slides={slides}
@@ -413,6 +420,7 @@ function Page() {
       onReorder={reorder}
       onDuplicate={duplicateSlide}
       onDelete={(sid) => void askRemoveSlide(sid)}
+      branding={branding}
     />
   );
 
@@ -449,6 +457,7 @@ function Page() {
         total={slides.length}
         showWarnings
         onEdit={(patch) => patchSlide(current.id, patch)}
+        {...branding}
       />
       <p className="mt-2 text-xs text-muted-foreground">
         Заголовок и подзаголовок можно править прямо на слайде. Сохранение — Ctrl/Cmd + S.
@@ -674,6 +683,7 @@ function Page() {
         company={company}
         template={meta.template}
         presentationTitle={meta.title}
+        branding={branding}
         onClose={() => setPresenting(false)}
       />
 
