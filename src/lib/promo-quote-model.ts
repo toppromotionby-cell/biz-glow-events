@@ -88,8 +88,19 @@ export type PromoItem = {
   note: string;
   includes: QuoteItemInclude[];
   exclude_from_commission: boolean;
+  /** Позиция входит в итог сметы (колонка «1 — включаем, 0 — не включаем»). */
+  included: boolean;
+  /** Строки с одинаковым ключом считаются одной связкой и включаются вместе. */
+  group_key: string;
+  /** Подпись первой единицы (например «чел»); пусто — колонка не показывается. */
+  qty_unit: string;
+  /** Подпись второй единицы (например «час»). */
+  rate_unit: string;
+  /** Справочная строка без цены (информация для клиента). */
+  is_info: boolean;
   sort_order: number;
 };
+
 
 
 const num = (v: unknown, d = 0) => {
@@ -163,12 +174,17 @@ export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
     title: str(row.title),
     unit: str(row.unit, "услуга"),
     qty: num(row.qty, 1),
-    multiplier: num(row.multiplier, 1),
+    multiplier: num(row.rate_qty ?? row.multiplier, 1),
     price: num(row.price),
     cost: num(row.cost),
     note: str(row.note),
     includes: normalizeIncludes(row.includes),
     exclude_from_commission: row.exclude_from_commission === true,
+    included: row.included !== false,
+    group_key: str(row.group_key),
+    qty_unit: str(row.qty_unit),
+    rate_unit: str(row.rate_unit),
+    is_info: row.is_info === true,
     sort_order: num(row.sort_order),
   };
 }
@@ -191,8 +207,14 @@ export const promoItemSchema = z.object({
     .max(60)
     .default([]),
   exclude_from_commission: z.boolean().default(false),
+  included: z.boolean().default(true),
+  group_key: z.string().max(60).default(""),
+  qty_unit: z.string().max(40).default(""),
+  rate_unit: z.string().max(40).default(""),
+  is_info: z.boolean().default(false),
   sort_order: z.number().int().min(0).max(10000).default(0),
 });
+
 
 export const promoQuotePatchSchema = z
   .object({
@@ -294,8 +316,19 @@ export function round2(n: number): number {
   return Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
 }
 
+/** Позиция участвует в расчёте итога (не «опция» и не справочная строка). */
+export function isCounted(it: PromoItem): boolean {
+  return it.included !== false && it.is_info !== true;
+}
+
+/** Сумма опциональных позиций — показывается отдельно, в итог не входит. */
+export function optionsSum(items: PromoItem[]): number {
+  return round2(items.filter((it) => !it.is_info && it.included === false).reduce((s, it) => s + lineTotal(it), 0));
+}
+
 export type PromoTotals = {
   itemsSum: number;
+  optionsSum: number;
   commissionBase: number;
   commission: number;
   management: number;
@@ -314,13 +347,15 @@ export type PromoTotals = {
 };
 
 export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTotals {
-  const itemsSum = round2(items.reduce((s, it) => s + lineTotal(it), 0));
+  const counted = items.filter(isCounted);
+  const itemsSum = round2(counted.reduce((s, it) => s + lineTotal(it), 0));
   const commissionBase = round2(
-    items.filter((it) => !it.exclude_from_commission).reduce((s, it) => s + lineTotal(it), 0),
+    counted.filter((it) => !it.exclude_from_commission).reduce((s, it) => s + lineTotal(it), 0),
   );
   const management = q.management_enabled ? round2(q.management_amount) : 0;
   const commission = q.commission_enabled ? round2((commissionBase * q.commission_rate) / 100) : 0;
   const gross = round2(itemsSum + management + commission);
+
   const discount =
     q.discount_type === "percent"
       ? round2((gross * Math.min(num(q.discount_value), 100)) / 100)
@@ -330,11 +365,13 @@ export function computePromoTotals(q: PromoQuote, items: PromoItem[]): PromoTota
   const subtotal = round2(gross - discount);
   const v = computeVat(subtotal, vatConfig(q));
   const vat = v.vat;
-  const costSum = round2(items.reduce((s, it) => s + lineCost(it), 0));
+  const costSum = round2(counted.reduce((s, it) => s + lineCost(it), 0));
   const margin = round2(v.net - costSum);
   return {
     itemsSum,
+    optionsSum: optionsSum(items),
     commissionBase,
+
     commission,
     management,
     gross,
@@ -381,8 +418,14 @@ export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): Prom
     note: "",
     includes: [],
     exclude_from_commission: false,
+    included: true,
+    group_key: "",
+    qty_unit: "",
+    rate_unit: "",
+    is_info: false,
     sort_order: 0,
     ...patch,
+
   };
 }
 

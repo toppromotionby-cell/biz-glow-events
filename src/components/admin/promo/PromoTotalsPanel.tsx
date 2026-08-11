@@ -14,6 +14,10 @@ export function PromoTotalsPanel({
   return (
     <div className="rounded-xl border border-border bg-card p-3 text-sm">
       <Line label="Позиции" value={formatMoney(totals.itemsSum, c)} />
+      {totals.optionsSum > 0 && (
+        <Line label="Опции (не в итоге)" value={formatMoney(totals.optionsSum, c)} />
+      )}
+
       {quote.commission_enabled && (
         <Line label={`${quote.commission_label} ${quote.commission_rate}%`} value={formatMoney(totals.commission, c)} />
       )}

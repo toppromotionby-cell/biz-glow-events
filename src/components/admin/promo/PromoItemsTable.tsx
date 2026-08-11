@@ -21,10 +21,11 @@ import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
-  duplicatePromoSection, formatMoney, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
+  duplicatePromoSection, formatMoney, isCounted, lineCost, lineQty, lineTotal, listPromoSections, movePromoItemToSection,
   movePromoSection, newPromoItem, removePromoSection, renamePromoSection, PROMO_NO_SECTION,
   PROMO_SECTION_SUGGESTIONS, type PromoItem,
 } from "@/lib/promo-quote-model";
+
 
 type Props = {
   items: PromoItem[];
@@ -56,7 +57,18 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const replace = (id: string, patch: Partial<PromoItem>) =>
     onChange(items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
 
+  /** Переключение «в итог»: если у позиции есть связка — переключаются все её строки. */
+  const setIncluded = (item: PromoItem, value: boolean) => {
+    const key = (item.group_key ?? "").trim();
+    onChange(
+      items.map((it) =>
+        (key ? (it.group_key ?? "").trim() === key : it.id === item.id) ? { ...it, included: value } : it,
+      ),
+    );
+  };
+
   const removeItem = (id: string) => onChange(items.filter((it) => it.id !== id));
+
 
   const duplicate = (id: string) => {
     const idx = items.findIndex((it) => it.id === id);
@@ -93,7 +105,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
       )}
 
       {sections.map(({ name, list }, secIdx) => {
-        const sum = list.reduce((s, it) => s + lineTotal(it), 0);
+        const sum = list.filter(isCounted).reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[name];
         return (
           <div key={name || "__none"} className="rounded-xl border border-border">
@@ -162,7 +174,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                   onReorder={(ids) => reorderSection(name, ids)}
                   className="space-y-1"
                   renderItem={(it, handle) => (
-                    <div className="rounded-lg border border-transparent px-1 py-1 hover:border-border/60 hover:bg-muted/30">
+                    <div className={`rounded-lg border border-transparent px-1 py-1 hover:border-border/60 hover:bg-muted/30 ${isCounted(it) ? "" : "opacity-60"}`}>
                       <div className="flex items-center gap-1">
                         <div>{handle}</div>
                         <div className="flex-1">
@@ -252,6 +264,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                         <Mini label="Кол-во" width="w-[72px]">
                           <Input type="number" min={0} value={it.qty} onChange={(e) => replace(it.id, { qty: Number(e.target.value) })} className="h-8" />
                         </Mini>
+                        <Mini label="Ед. 2" width="w-[84px]">
+                          <Input
+                            value={it.rate_unit}
+                            placeholder="час"
+                            onChange={(e) => replace(it.id, { rate_unit: e.target.value })}
+                            className="h-8"
+                          />
+                        </Mini>
                         <Mini label="×" width="w-[64px]">
                           <Input type="number" min={0} value={it.multiplier} onChange={(e) => replace(it.id, { multiplier: Number(e.target.value) })} className="h-8" />
                         </Mini>
@@ -263,6 +283,14 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                             <Input type="number" min={0} step="0.01" value={it.cost} onChange={(e) => replace(it.id, { cost: Number(e.target.value) })} className="h-8" />
                           </Mini>
                         )}
+                        <Mini label="Связка" width="w-[110px]">
+                          <Input
+                            value={it.group_key}
+                            placeholder="напр. флеш-тату"
+                            onChange={(e) => replace(it.id, { group_key: e.target.value })}
+                            className="h-8"
+                          />
+                        </Mini>
                         <span className="pb-2 text-[11px] text-muted-foreground">всего: {lineQty(it)}</span>
                       </div>
 
@@ -285,12 +313,27 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                         )}
                         <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
                           <Switch
+                            checked={it.included}
+                            onCheckedChange={(v) => setIncluded(it, v)}
+                          />
+                          В итог
+                        </Label>
+                        <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <Switch
+                            checked={it.is_info}
+                            onCheckedChange={(v) => replace(it.id, { is_info: v })}
+                          />
+                          Справочно
+                        </Label>
+                        <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <Switch
                             checked={it.exclude_from_commission}
                             onCheckedChange={(v) => replace(it.id, { exclude_from_commission: v })}
                           />
                           Без комиссии
                         </Label>
                       </div>
+
 
                     </div>
                   )}
