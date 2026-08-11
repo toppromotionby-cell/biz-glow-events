@@ -279,6 +279,9 @@ async function drawSlide(a: DrawArgs) {
     if (contacts) {
       page.drawText(contacts, { x: PAD, y: y - 58, size: 11, font: fonts.regular, color: t.muted });
     }
+    if (clientLogo && layout.client !== "off") {
+      placeLogo(page, clientLogo, [], 170 * layout.scale, 52 * layout.scale, ["top-right"], true);
+    }
     return;
   }
 
@@ -286,6 +289,9 @@ async function drawSlide(a: DrawArgs) {
     page.drawRectangle({ x: PAD, y: H / 2 + 46, width: 66, height: 3, color: t.accent });
     let y = drawLines(wrap(fonts.display, slide.title, 34, W - PAD * 2), PAD, H / 2, 34, fonts.display, t.ink, 1.2);
     if (slide.subtitle) drawLines(wrap(fonts.regular, slide.subtitle, 16, W - PAD * 2 - 100), PAD, y - 14, 16, fonts.regular, t.muted);
+    if (clientLogo && (layout.client === "always" || layout.client === "auto")) {
+      placeLogo(page, clientLogo, [], 130 * layout.scale, 38 * layout.scale, ["top-right"], true);
+    }
     footer();
     return;
   }
@@ -296,9 +302,11 @@ async function drawSlide(a: DrawArgs) {
   const ts = fit.type;
   const px = (v: number) => v * K;
 
+  const occupied: Rect[] = [];
   fit.layout.frames.forEach((f, i) => {
     const image = images[i];
     if (!image) return;
+    occupied.push({ x: f.x * (W / SLIDE_W), y: H - (f.y + f.h) * (W / SLIDE_W), w: f.w * (W / SLIDE_W), h: f.h * (W / SLIDE_W) });
     const fw = px(f.w);
     const fh = px(f.h);
     const k = Math.max(fw / image.width, fh / image.height);
@@ -378,6 +386,22 @@ async function drawSlide(a: DrawArgs) {
     const w = fonts.bold.widthOfTextAtSize(label, 15) + 32;
     page.drawRectangle({ x, y: 64, width: w, height: 34, color: t.accent });
     page.drawText(label, { x: x + 16, y: 75, size: 15, font: fonts.bold, color: t.onAccent });
+  }
+
+  // Автоналожение логотипов: ищем свободный угол, текстовый блок и фото не перекрываем.
+  const textRect: Rect = { x, y: y - 10, w: maxW, h: H - px(box.y) - (y - 10) };
+  const busy = [...occupied, textRect];
+  if (clientLogo && layout.client !== "off" && layout.client !== "title-only") {
+    placeLogo(
+      page, clientLogo, busy, 120 * layout.scale, 34 * layout.scale,
+      ["top-right", "top-left", "bottom-right"], layout.client === "always",
+    );
+  }
+  if (logo && layout.brand === "always") {
+    placeLogo(
+      page, logo, busy, 110 * layout.scale, 30 * layout.scale,
+      ["top-left", "top-right", "bottom-right"], false,
+    );
   }
 
   footer();
