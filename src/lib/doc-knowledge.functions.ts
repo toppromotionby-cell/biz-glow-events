@@ -129,3 +129,45 @@ export const browseKnowledgeItems = createServerFn({ method: "POST" })
     const { browseItems } = await import("@/lib/doc-knowledge.server");
     return browseItems(data);
   });
+
+/* ---------------- Гигиена базы знаний ---------------- */
+
+import type { KnowledgeHealth, RetentionPolicy } from "@/lib/doc-knowledge.server";
+
+export type { KnowledgeHealth, RetentionPolicy };
+
+const policySchema = z
+  .object({ minUsage: z.number().int().min(1).max(20).optional(), months: z.number().int().min(1).max(60).optional() })
+  .optional();
+
+const toPolicy = (p?: { minUsage?: number; months?: number }): RetentionPolicy => ({
+  minUsage: p?.minUsage ?? 2,
+  months: p?.months ?? 6,
+});
+
+export const knowledgeHealthFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => policySchema.parse(d ?? undefined))
+  .handler(async ({ data, context }): Promise<KnowledgeHealth[]> => {
+    await assertStaff(context as never);
+    const { knowledgeHealth } = await import("@/lib/doc-knowledge.server");
+    return knowledgeHealth(toPolicy(data));
+  });
+
+export const runKnowledgeHygieneFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => policySchema.parse(d ?? undefined))
+  .handler(async ({ data, context }): Promise<{ merged: number; pruned: number }> => {
+    await assertStaff(context as never);
+    const { runKnowledgeHygiene } = await import("@/lib/doc-knowledge.server");
+    return runKnowledgeHygiene(toPolicy(data));
+  });
+
+export const mergeKnowledgeDuplicatesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ table: z.enum(["contacts", "items", "texts"]) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ merged: number }> => {
+    await assertStaff(context as never);
+    const { mergeKnowledgeDuplicates } = await import("@/lib/doc-knowledge.server");
+    return { merged: await mergeKnowledgeDuplicates(data.table) };
+  });

@@ -81,6 +81,7 @@ import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/publi
 import { Route as ApiPublicSocialClickRouteImport } from './routes/api/public/social-click'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AdminSettingsSocialRouteImport } from './routes/admin.settings.social'
+import { Route as AdminSettingsHygieneRouteImport } from './routes/admin.settings.hygiene'
 import { Route as AdminSettingsEmailsRouteImport } from './routes/admin.settings.emails'
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
@@ -95,6 +96,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
+import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
@@ -468,6 +470,11 @@ const AdminSettingsSocialRoute = AdminSettingsSocialRouteImport.update({
   path: '/settings/social',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSettingsHygieneRoute = AdminSettingsHygieneRouteImport.update({
+  id: '/settings/hygiene',
+  path: '/settings/hygiene',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsEmailsRoute = AdminSettingsEmailsRouteImport.update({
   id: '/settings/emails',
   path: '/settings/emails',
@@ -544,6 +551,12 @@ const ApiPublicHooksSlaOrdersRoute = ApiPublicHooksSlaOrdersRouteImport.update({
   path: '/api/public/hooks/sla-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksKnowledgeHygieneRoute =
+  ApiPublicHooksKnowledgeHygieneRouteImport.update({
+    id: '/api/public/hooks/knowledge-hygiene',
+    path: '/api/public/hooks/knowledge-hygiene',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminOrdersIdQuoteRoute = AdminOrdersIdQuoteRouteImport.update({
   id: '/quote',
   path: '/quote',
@@ -677,6 +690,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
+  '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
@@ -689,6 +703,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -774,6 +789,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
+  '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
@@ -786,6 +802,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -874,6 +891,7 @@ export interface FileRoutesById {
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
+  '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
   '/admin/settings/social': typeof AdminSettingsSocialRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/social-click': typeof ApiPublicSocialClickRoute
@@ -886,6 +904,7 @@ export interface FileRoutesById {
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
+  '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -975,6 +994,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
+    | '/admin/settings/hygiene'
     | '/admin/settings/social'
     | '/api/public/health'
     | '/api/public/social-click'
@@ -987,6 +1007,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1072,6 +1093,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
+    | '/admin/settings/hygiene'
     | '/admin/settings/social'
     | '/api/public/health'
     | '/api/public/social-click'
@@ -1084,6 +1106,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1171,6 +1194,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
+    | '/admin/settings/hygiene'
     | '/admin/settings/social'
     | '/api/public/health'
     | '/api/public/social-click'
@@ -1183,6 +1207,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
+    | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1249,6 +1274,7 @@ export interface RootRouteChildren {
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
+  ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1763,6 +1789,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsSocialRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/settings/hygiene': {
+      id: '/admin/settings/hygiene'
+      path: '/settings/hygiene'
+      fullPath: '/admin/settings/hygiene'
+      preLoaderRoute: typeof AdminSettingsHygieneRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings/emails': {
       id: '/admin/settings/emails'
       path: '/settings/emails'
@@ -1859,6 +1892,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/sla-orders'
       fullPath: '/api/public/hooks/sla-orders'
       preLoaderRoute: typeof ApiPublicHooksSlaOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/knowledge-hygiene': {
+      id: '/api/public/hooks/knowledge-hygiene'
+      path: '/api/public/hooks/knowledge-hygiene'
+      fullPath: '/api/public/hooks/knowledge-hygiene'
+      preLoaderRoute: typeof ApiPublicHooksKnowledgeHygieneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/orders/$id/quote': {
@@ -2004,6 +2044,7 @@ interface AdminRouteChildren {
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
+  AdminSettingsHygieneRoute: typeof AdminSettingsHygieneRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
   AdminDocumentsPresentationsIndexRoute: typeof AdminDocumentsPresentationsIndexRoute
@@ -2037,6 +2078,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
+  AdminSettingsHygieneRoute: AdminSettingsHygieneRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
   AdminDocumentsPresentationsIndexRoute: AdminDocumentsPresentationsIndexRoute,
@@ -2181,6 +2223,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
+  ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
@@ -2191,13 +2234,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

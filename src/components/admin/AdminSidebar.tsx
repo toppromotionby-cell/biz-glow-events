@@ -12,6 +12,7 @@ import {
   Brain,
   Layers,
   Presentation,
+  ShieldCheck,
 
 } from "lucide-react";
 import {
@@ -85,6 +86,7 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/notifications", label: "Уведомления", icon: Bell, perm: "system.manage" },
       { to: "/admin/settings/emails", label: "Шаблоны писем", icon: Mail, perm: "system.manage" },
       { to: "/admin/settings/social", label: "Соцсети", icon: Share2, perm: "system.manage" },
+      { to: "/admin/settings/hygiene", label: "Гигиена данных", icon: ShieldCheck, perm: "system.manage" },
       { to: "/admin/audit", label: "Аудит", icon: FileText, perm: "audit.view" },
     ],
   },
