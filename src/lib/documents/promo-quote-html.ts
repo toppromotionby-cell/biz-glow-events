@@ -1,5 +1,6 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
+import { fontCssVars, fontLinkTags, resolveDocFont } from "@/lib/documents/doc-font";
 import { vatRateLabel } from "@/lib/documents/vat";
 
 import { BRAND_ACCENT } from "@/lib/documents/brand";
@@ -34,9 +35,10 @@ function nf(n: number): string {
 export function buildPromoQuoteBody(
   quote: PromoQuote,
   items: PromoItem[],
-  opts: { editable?: boolean; companyLine?: string; checks?: PromoCheck[] } = {},
+  opts: { editable?: boolean; companyLine?: string; checks?: PromoCheck[]; fontDefault?: unknown } = {},
 ): string {
   const editable = opts.editable === true;
+  const docFont = resolveDocFont(quote.font_family, opts.fontDefault);
   // Инлайн-предупреждения превью: привязаны к индексу позиции, в печать не идут.
   const allChecks = opts.checks ?? [];
   const checksByIndex = new Map<number, PromoCheck[]>();
@@ -187,7 +189,7 @@ export function buildPromoQuoteBody(
 
 
   return `
-<div class="promo-doc" style="--accent:${esc(accent)}">
+<div class="promo-doc" style="--accent:${esc(accent)}; ${fontCssVars(docFont)}">
   <div class="head">
     <div class="meta"${ed("meta", undefined, "Шапка КП")}>${meta}</div>
     <div class="logos">
@@ -222,7 +224,7 @@ export function buildPromoQuoteBody(
 }
 
 export const PROMO_DOC_CSS = `
-.promo-doc { font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: #16161a; font-size: 12px; }
+.promo-doc { font-family: var(--font-body, Inter, "Helvetica Neue", Arial, sans-serif); color: #16161a; font-size: 12px; }
 .promo-doc .head { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .promo-doc .meta div { border: 1px solid #d8d8dd; padding: 5px 8px; margin-bottom: -1px; background: #f6f6f7; max-width: 460px; }
 .promo-doc .logos { display: flex; gap: 16px; align-items: flex-start; }
@@ -230,7 +232,7 @@ export const PROMO_DOC_CSS = `
 .promo-doc .logo-col { display: block; }
 .promo-doc .logo-col .req { margin-top: 4px; max-width: 260px; font-size: 10px; line-height: 1.35; color: #5a5a63; }
 
-.promo-doc .docnum { margin: 16px 0 8px; font-weight: 700; font-size: 13px; }
+.promo-doc .docnum { font-family: var(--font-display, inherit); margin: 16px 0 8px; font-weight: 700; font-size: 13px; }
 .promo-doc table { width: 100%; border-collapse: collapse; }
 .promo-doc .grid th { background: var(--accent); color: #16161a; font-weight: 700; text-align: center; border: 1px solid #b9b9bf; padding: 6px 6px; }
 .promo-doc .grid td { border: 1px solid #d8d8dd; padding: 5px 6px; vertical-align: top; }
@@ -273,6 +275,7 @@ export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[], co
 <html lang="ru"><head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>КП ${esc(promoNumberDisplay(quote))} — ${esc(quote.client_name)}</title>
+${fontLinkTags(resolveDocFont(quote.font_family))}
 <style>
   :root { ${densityRootVars()}; }
   body { margin: 0; padding: 28px; background: #f2f2f4; }

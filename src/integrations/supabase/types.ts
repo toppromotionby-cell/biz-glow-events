@@ -692,6 +692,7 @@ export type Database = {
           contract_prepayment_days: number
           contract_prepayment_pct: number
           contract_sections: Json
+          font_family: string
           invoice_footer: string
           invoice_validity_days: number
           logo_layout: Json
@@ -731,6 +732,7 @@ export type Database = {
           contract_prepayment_days?: number
           contract_prepayment_pct?: number
           contract_sections?: Json
+          font_family?: string
           invoice_footer?: string
           invoice_validity_days?: number
           logo_layout?: Json
@@ -770,6 +772,7 @@ export type Database = {
           contract_prepayment_days?: number
           contract_prepayment_pct?: number
           contract_sections?: Json
+          font_family?: string
           invoice_footer?: string
           invoice_validity_days?: number
           logo_layout?: Json
@@ -1894,10 +1897,14 @@ export type Database = {
       }
       presentations: {
         Row: {
+          client_logo_url: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
+          font_family: string
           id: string
+          logo_layout: Json
+          logo_url: string | null
           quote_id: string | null
           status: string
           template: string
@@ -1905,10 +1912,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_logo_url?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          font_family?: string
           id?: string
+          logo_layout?: Json
+          logo_url?: string | null
           quote_id?: string | null
           status?: string
           template?: string
@@ -1916,10 +1927,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_logo_url?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
+          font_family?: string
           id?: string
+          logo_layout?: Json
+          logo_url?: string | null
           quote_id?: string | null
           status?: string
           template?: string
@@ -2260,6 +2275,7 @@ export type Database = {
           discount_type: string
           discount_value: number
           doc_number: string | null
+          font_family: string
           footer_note: string
           id: string
           is_template: boolean
@@ -2311,6 +2327,7 @@ export type Database = {
           discount_type?: string
           discount_value?: number
           doc_number?: string | null
+          font_family?: string
           footer_note?: string
           id?: string
           is_template?: boolean
@@ -2362,6 +2379,7 @@ export type Database = {
           discount_type?: string
           discount_value?: number
           doc_number?: string | null
+          font_family?: string
           footer_note?: string
           id?: string
           is_template?: boolean
@@ -2587,6 +2605,7 @@ export type Database = {
           event_notes: string
           event_time_end: string
           event_time_start: string
+          font_family: string
           guests_count: number | null
           id: string
           is_template: boolean
@@ -2642,6 +2661,7 @@ export type Database = {
           event_notes?: string
           event_time_end?: string
           event_time_start?: string
+          font_family?: string
           guests_count?: number | null
           id?: string
           is_template?: boolean
@@ -2697,6 +2717,7 @@ export type Database = {
           event_notes?: string
           event_time_end?: string
           event_time_start?: string
+          font_family?: string
           guests_count?: number | null
           id?: string
           is_template?: boolean

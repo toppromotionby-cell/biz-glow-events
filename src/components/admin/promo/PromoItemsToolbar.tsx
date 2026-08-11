@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { deletePromoSnippet, listPromoSnippets } from "@/lib/promo-quotes.functions";
 import { newPromoItem, parsePastedPromoRows, type PromoItem } from "@/lib/promo-quote-model";
 import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
+import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
 
 export function PromoItemsToolbar({
   items, onChange,
@@ -107,6 +108,8 @@ export function PromoItemsToolbar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ClearCompositionButton count={items.length} onClear={() => { onChange([]); toast.success("Разделы и позиции убраны"); }} />
 
       <Button size="sm" variant="outline" onClick={() => setKbOpen(true)}>
         <BookOpen className="mr-1 h-4 w-4" />Из базы знаний

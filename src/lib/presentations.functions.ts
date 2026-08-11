@@ -1,11 +1,13 @@
 // Серверные функции раздела «Документы → Презентации».
 // Доступ — staff с правом documents.manage. Каталог читается admin-клиентом.
 import { createServerFn } from "@tanstack/react-start";
+import { normalizeDocFontChoice } from "@/lib/documents/doc-font";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertPermission } from "@/lib/authz";
 import {
   normalizePresentation,
+  normalizePresentationLogoLayout,
   normalizeSlide,
   normalizeContent,
   EMPTY_CONTENT,
@@ -391,6 +393,10 @@ export const savePresentation = createServerFn({ method: "POST" })
         status: z.enum(["draft", "ready", "archived"]),
         template: z.enum(["light", "dark", "accent"]),
         companyId: z.string().uuid().nullable().default(null),
+        logoUrl: z.string().max(1000).nullable().default(null),
+        clientLogoUrl: z.string().max(1000).nullable().default(null),
+        logoLayout: z.unknown().optional().transform(normalizePresentationLogoLayout),
+        fontFamily: z.unknown().optional().transform(normalizeDocFontChoice),
         slides: z.array(slideInput).max(200),
       })
       .parse(d),
@@ -405,6 +411,10 @@ export const savePresentation = createServerFn({ method: "POST" })
         status: data.status,
         template: data.template,
         company_id: data.companyId,
+        logo_url: data.logoUrl,
+        client_logo_url: data.clientLogoUrl,
+        logo_layout: data.logoLayout,
+        font_family: data.fontFamily,
       })
       .eq("id", data.id);
     if (upErr) throw new Error(upErr.message);

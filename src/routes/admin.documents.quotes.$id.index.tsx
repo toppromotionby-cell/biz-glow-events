@@ -1,4 +1,6 @@
 import { useRoles } from "@/hooks/use-roles";
+import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
+import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -780,6 +782,10 @@ function Page() {
                         </label>
                       ))}
                     </div>
+                    <DocFontSelect
+                      value={quote.font_family}
+                      onChange={(font_family) => patch({ font_family })}
+                    />
                     <Field label="Акцентный цвет (HEX)">
                       <div className="flex items-center gap-2">
                         <Input placeholder={settings.accent_color} value={quote.design.accent_color}
@@ -903,10 +909,13 @@ function Page() {
         <div className="xl:sticky xl:top-4 h-[calc(100vh-8rem)] rounded-xl border border-border/60 overflow-hidden bg-background">
           <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Живое превью документа</span>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
-              <span>Редактирование двойным кликом</span>
-            </label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
+                <span>Редактирование двойным кликом</span>
+              </label>
+              <DetachedPreviewButton html={previewHtml} title={`Превью · ${quote.title || "КП"}`} />
+            </div>
           </div>
           <iframe ref={previewRef} title="Превью КП" srcDoc={previewHtml} className="w-full h-[calc(100%-2.25rem)] bg-white" />
         </div>

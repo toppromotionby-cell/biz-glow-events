@@ -8,20 +8,12 @@ import { hexToRgb01 } from "@/lib/documents/brand";
 import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
 import { MAX_SLIDE_PHOTOS, SLIDE_W } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
-import { INTER_REGULAR_B64 } from "@/assets/fonts/inter-regular.base64";
-import { INTER_BOLD_B64 } from "@/assets/fonts/inter-bold.base64";
-import { SPACE_GROTESK_BOLD_B64 } from "@/assets/fonts/space-grotesk-bold.base64";
+import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
+import { resolveDocFont } from "@/lib/documents/doc-font";
 
 const W = 960;
 const H = 540;
 const PAD = 56;
-
-function decodeBase64(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
-  return out;
-}
 
 type Theme = {
   bg: ReturnType<typeof rgb>;
@@ -123,16 +115,20 @@ export async function buildPresentationPdf(
   slides: ResolvedSlide[],
   company: CompanyProfile | null,
   logoUrl: string | null,
+  clientLogoUrl: string | null = null,
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const regular = await pdf.embedFont(decodeBase64(INTER_REGULAR_B64), { subset: true });
-  const bold = await pdf.embedFont(decodeBase64(INTER_BOLD_B64), { subset: true });
-  const display = await pdf.embedFont(decodeBase64(SPACE_GROTESK_BOLD_B64), { subset: true });
+  const set = pdfFontSet(resolveDocFont(presentation.font_family));
+  const regular = await pdf.embedFont(set.regular, { subset: true });
+  const bold = await pdf.embedFont(set.bold, { subset: true });
+  const display = await pdf.embedFont(set.display, { subset: true });
 
   pdf.setTitle(presentation.title);
   const t = themeOf(presentation.template, company?.accent_color ?? "#FF7500");
   const logo = await embedImage(pdf, logoUrl);
+  const clientLogo = await embedImage(pdf, clientLogoUrl);
+  const layout = presentation.logo_layout;
   const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
 
   const visible = slides.filter((s) => s.is_visible);
@@ -156,7 +152,7 @@ export async function buildPresentationPdf(
       images.push(await embedImage(pdf, src));
     }
     await drawSlide({
-      page, slide, images, logo, brand, theme: t,
+      page, slide, images, logo, clientLogo, layout, brand, theme: t,
       fonts: { regular, bold, display },
       company, presentation,
       index, total: visible.length,
@@ -167,11 +163,60 @@ export async function buildPresentationPdf(
 }
 
 
+
+type Rect = { x: number; y: number; w: number; h: number };
+
+function intersects(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/** Габариты логотипа, вписанные в бокс с сохранением пропорций. */
+function logoSize(img: PDFImage, maxW: number, maxH: number): { w: number; h: number } {
+  const k = Math.min(maxW / img.width, maxH / img.height, 1.6);
+  return { w: img.width * k, h: img.height * k };
+}
+
+/**
+ * Кладёт логотип в первое свободное место из списка кандидатов
+ * (координаты — от левого нижнего угла страницы, как в pdf-lib).
+ */
+function placeLogo(
+  page: PDFPage,
+  img: PDFImage,
+  occupied: Rect[],
+  maxW: number,
+  maxH: number,
+  candidates: ("top-right" | "top-left" | "bottom-right" | "bottom-left")[],
+  force: boolean,
+): Rect | null {
+  const { w, h } = logoSize(img, maxW, maxH);
+  const pad = 18;
+  const spots: Record<string, Rect> = {
+    "top-right": { x: W - PAD - w, y: H - PAD - h, w, h },
+    "top-left": { x: PAD, y: H - PAD - h, w, h },
+    "bottom-right": { x: W - PAD - w, y: 20, w, h },
+    "bottom-left": { x: PAD, y: 20, w, h },
+  };
+  for (const key of candidates) {
+    const spot = spots[key];
+    const padded = { x: spot.x - pad, y: spot.y - pad, w: spot.w + pad * 2, h: spot.h + pad * 2 };
+    if (occupied.some((r) => intersects(padded, r))) continue;
+    page.drawImage(img, spot);
+    return spot;
+  }
+  if (!force) return null;
+  const spot = spots[candidates[0] ?? "top-right"];
+  page.drawImage(img, { ...spot, opacity: 0.92 });
+  return spot;
+}
+
 type DrawArgs = {
   page: PDFPage;
   slide: ResolvedSlide;
   images: (PDFImage | null)[];
   logo: PDFImage | null;
+  clientLogo: PDFImage | null;
+  layout: Presentation["logo_layout"];
   brand: string;
   theme: Theme;
   fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont };
@@ -182,7 +227,7 @@ type DrawArgs = {
 };
 
 async function drawSlide(a: DrawArgs) {
-  const { page, slide, images, logo, brand, theme: t, fonts, company, presentation, index, total } = a;
+  const { page, slide, images, logo, clientLogo, layout, brand, theme: t, fonts, company, presentation, index, total } = a;
   const c = slide.content;
 
   const drawLines = (
@@ -234,6 +279,9 @@ async function drawSlide(a: DrawArgs) {
     if (contacts) {
       page.drawText(contacts, { x: PAD, y: y - 58, size: 11, font: fonts.regular, color: t.muted });
     }
+    if (clientLogo && layout.client !== "off") {
+      placeLogo(page, clientLogo, [], 170 * layout.scale, 52 * layout.scale, ["top-right"], true);
+    }
     return;
   }
 
@@ -241,6 +289,9 @@ async function drawSlide(a: DrawArgs) {
     page.drawRectangle({ x: PAD, y: H / 2 + 46, width: 66, height: 3, color: t.accent });
     let y = drawLines(wrap(fonts.display, slide.title, 34, W - PAD * 2), PAD, H / 2, 34, fonts.display, t.ink, 1.2);
     if (slide.subtitle) drawLines(wrap(fonts.regular, slide.subtitle, 16, W - PAD * 2 - 100), PAD, y - 14, 16, fonts.regular, t.muted);
+    if (clientLogo && (layout.client === "always" || layout.client === "auto")) {
+      placeLogo(page, clientLogo, [], 130 * layout.scale, 38 * layout.scale, ["top-right"], true);
+    }
     footer();
     return;
   }
@@ -251,9 +302,11 @@ async function drawSlide(a: DrawArgs) {
   const ts = fit.type;
   const px = (v: number) => v * K;
 
+  const occupied: Rect[] = [];
   fit.layout.frames.forEach((f, i) => {
     const image = images[i];
     if (!image) return;
+    occupied.push({ x: f.x * (W / SLIDE_W), y: H - (f.y + f.h) * (W / SLIDE_W), w: f.w * (W / SLIDE_W), h: f.h * (W / SLIDE_W) });
     const fw = px(f.w);
     const fh = px(f.h);
     const k = Math.max(fw / image.width, fh / image.height);
@@ -333,6 +386,22 @@ async function drawSlide(a: DrawArgs) {
     const w = fonts.bold.widthOfTextAtSize(label, 15) + 32;
     page.drawRectangle({ x, y: 64, width: w, height: 34, color: t.accent });
     page.drawText(label, { x: x + 16, y: 75, size: 15, font: fonts.bold, color: t.onAccent });
+  }
+
+  // Автоналожение логотипов: ищем свободный угол, текстовый блок и фото не перекрываем.
+  const textRect: Rect = { x, y: y - 10, w: maxW, h: H - px(box.y) - (y - 10) };
+  const busy = [...occupied, textRect];
+  if (clientLogo && layout.client !== "off" && layout.client !== "title-only") {
+    placeLogo(
+      page, clientLogo, busy, 120 * layout.scale, 34 * layout.scale,
+      ["top-right", "top-left", "bottom-right"], layout.client === "always",
+    );
+  }
+  if (logo && layout.brand === "always") {
+    placeLogo(
+      page, logo, busy, 110 * layout.scale, 30 * layout.scale,
+      ["top-left", "top-right", "bottom-right"], false,
+    );
   }
 
   footer();

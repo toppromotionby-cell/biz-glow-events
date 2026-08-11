@@ -14,6 +14,7 @@ import {
   normalizeLogoLayout,
   type LogoLayout,
 } from "@/lib/documents/logo-layout";
+import { normalizeDocFont, type DocFont } from "@/lib/documents/doc-font";
 
 export type DocumentSettings = {
   company_legal_name: string;
@@ -25,7 +26,10 @@ export type DocumentSettings = {
   company_website: string;
   logo_url: string | null;
   logo_layout: LogoLayout;
+  /** Шрифт документов по умолчанию. */
+  font_family: DocFont;
   accent_color: string;
+
   bank_name: string;
   bank_bic: string;
   bank_account: string;
@@ -62,6 +66,7 @@ export const DEFAULT_DOCUMENT_SETTINGS: DocumentSettings = {
   company_website: "event-hub.by",
   logo_url: null,
   logo_layout: DEFAULT_LOGO_LAYOUT,
+  font_family: "brand",
   accent_color: "#FF7500",
   bank_name: "",
   bank_bic: "",
@@ -108,6 +113,7 @@ const SettingsSchema = z.object({
   company_website: z.string().trim().max(200),
   logo_url: z.string().trim().max(500).nullable().optional(),
   logo_layout: z.unknown().optional().transform(normalizeLogoLayout),
+  font_family: z.unknown().optional().transform((v) => normalizeDocFont(v)),
   accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Ожидается hex-цвет, напр. #FF7500"),
   bank_name: z.string().trim().max(200),
   bank_bic: z.string().trim().max(50),
@@ -188,6 +194,7 @@ function normalize(row: Record<string, unknown>): DocumentSettings {
     vat_rate: Number(row.vat_rate) || DEFAULT_VAT_RATE,
     vat_as_line: row.vat_as_line === true,
     logo_layout: normalizeLogoLayout(row.logo_layout),
+    font_family: normalizeDocFont(row.font_family),
     quote_print_presets: normalizePrintPresets(row.quote_print_presets),
   };
 }
