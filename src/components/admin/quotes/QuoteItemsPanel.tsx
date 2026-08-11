@@ -6,6 +6,7 @@ import {
   BookOpen, ChevronDown, ChevronUp, ClipboardPaste, Copy, FolderPlus, ListChecks, MoreHorizontal, Plus, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -156,6 +157,7 @@ export function QuoteItemsPanel({
         <Button variant="outline" size="sm" onClick={() => setKbSection("")}>
           <BookOpen className="mr-1.5 h-4 w-4" />Из базы знаний
         </Button>
+        <ClearCompositionButton count={items.length} onClear={() => onChange([])} />
       </div>
 
       {grouped.map(([section, list]) => {
