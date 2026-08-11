@@ -751,78 +751,53 @@ function Page() {
                 <AccordionItem value="brand" className="border border-border/60 rounded-xl px-3">
                   <AccordionTrigger className="text-sm font-medium"><span className="flex items-center gap-2"><Settings2 className="h-4 w-4" />Оформление и реквизиты</span></AccordionTrigger>
                   <AccordionContent className="space-y-4 pb-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      {([
+                    <DocAppearanceSection
+                      toggles={([
                         ["show_cover", "Титульный блок"],
                         ["show_requisites", "Реквизиты"],
                         ["show_signature", "Подписи"],
                         ["show_stamp", "Печать"],
                         ["show_logo", "Логотип"],
                         ["show_about", "Блок о компании"],
-                      ] as const).map(([key, label]) => (
-                        <label key={key} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
-                          {label}
-                          <Switch checked={!!quote.design[key]} onCheckedChange={(v) => patch({ design: { ...quote.design, [key]: v } })} />
-                        </label>
-                      ))}
-                    </div>
-                    <DocFontSelect
-                      value={quote.font_family}
-                      onChange={(font_family) => patch({ font_family })}
-                    />
-                    <Field label="Акцентный цвет (HEX)">
-                      <div className="flex items-center gap-2">
-                        <Input placeholder={settings.accent_color} value={quote.design.accent_color}
-                          onChange={(e) => patch({ design: { ...quote.design, accent_color: e.target.value } })} />
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {BRAND_ACCENTS.map((c) => (
-                            <button key={c.hex} type="button" title={`${c.label} ${c.hex}`}
-                              onClick={() => patch({ design: { ...quote.design, accent_color: c.hex } })}
-                              className="h-7 w-7 rounded-full border border-border/60 transition hover:scale-110"
-                              style={{ background: c.hex }} />
-                          ))}
-                        </div>
-                      </div>
-                    </Field>
-
-                    <div className="rounded-xl border border-border/60 p-3">
-                      <p className="mb-2 text-sm font-medium">Печать: поля и интервалы</p>
-                      <PrintPresetEditor
-                        value={printPreset}
-                        hint="Значения по умолчанию берутся из шаблона в настройках документов. Здесь — только для этого КП."
-                        resetLabel="Вернуть настройки шаблона"
-                        onReset={() => patch({ design: { ...quote.design, ...printOverridesToDesign(null) } })}
-                        onChange={(next) => patch({ design: { ...quote.design, ...printOverridesToDesign(next) } })}
-                      />
-                    </div>
-
-                    <LogoHeaderDesigner
-                      label="Логотип"
-                      hint="Любой формат — обрежем поля, подгоним размер и вставим в шапку КП (HTML и PDF)."
-                      logoUrl={quote.logo_url}
-                      onLogoChange={(v) => patch({ logo_url: v })}
-                      layout={quote.logo_layout}
-                      onLayoutChange={(l) => patch({ logo_layout: l })}
-                      brand={quote.company_overrides.company_brand || settings.company_brand}
-                      legalLine={`${quote.company_overrides.company_legal_name || settings.company_legal_name} · ${quote.company_overrides.company_address || settings.company_address}`}
-                      accent={quote.design.accent_color || settings.accent_color}
-                      docNum={quote.quote_number || "000"}
-                    />
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />
-                      <ImageField label="Печать" value={quote.stamp_url} onChange={(v) => patch({ stamp_url: v })} />
-                    </div>
-
-                    <CompanySelect
-                      value={quote.company_id}
-                      onChange={(companyId) => patch({ company_id: companyId })}
-                    />
-
-                    <CompanyOverridesEditor
-                      value={quote.company_overrides}
-                      onChange={(v) => patch({ company_overrides: v })}
+                      ] as const).map(([key, label]) => ({
+                        key, label,
+                        value: !!quote.design[key],
+                        onChange: (v: boolean) => patch({ design: { ...quote.design, [key]: v } }),
+                      }))}
+                      fontFamily={quote.font_family}
+                      onFontChange={(font_family) => patch({ font_family })}
+                      accent={quote.design.accent_color}
+                      accentPlaceholder={settings.accent_color}
+                      onAccentChange={(accent_color) => patch({ design: { ...quote.design, accent_color } })}
+                      print={{
+                        value: printPreset,
+                        onReset: () => patch({ design: { ...quote.design, ...printOverridesToDesign(null) } }),
+                        onChange: (next) => patch({ design: { ...quote.design, ...printOverridesToDesign(next) } }),
+                      }}
+                      logo={{
+                        label: "Логотип",
+                        hint: "Любой формат — обрежем поля, подгоним размер и вставим в шапку КП (HTML и PDF).",
+                        url: quote.logo_url,
+                        onChange: (v) => patch({ logo_url: v }),
+                        layout: quote.logo_layout,
+                        onLayoutChange: (l) => patch({ logo_layout: l }),
+                        brand: quote.company_overrides.company_brand || settings.company_brand,
+                        legalLine: `${quote.company_overrides.company_legal_name || settings.company_legal_name} · ${quote.company_overrides.company_address || settings.company_address}`,
+                        docNum: quote.quote_number || "000",
+                      }}
+                      companyId={quote.company_id}
+                      onCompanyChange={(companyId) => patch({ company_id: companyId })}
+                      overrides={quote.company_overrides}
+                      onOverridesChange={(v) => patch({ company_overrides: v })}
                       settings={settings}
+                      extra={
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <ImageField label="Подпись" value={quote.signature_url} onChange={(v) => patch({ signature_url: v })} />
+                          <ImageField label="Печать" value={quote.stamp_url} onChange={(v) => patch({ stamp_url: v })} />
+                        </div>
+                      }
                     />
+
 
                   </AccordionContent>
                 </AccordionItem>
