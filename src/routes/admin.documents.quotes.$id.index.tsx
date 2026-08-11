@@ -847,63 +847,6 @@ function Page() {
               </Accordion>
             </TabsContent>
 
-            <TabsContent value="checks" className="space-y-4 pt-3">
-              <div className="rounded-xl border border-border/60 p-3 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-sm font-medium">Проверка перед отправкой</h2>
-                  <span className="text-xs text-muted-foreground">
-                    {errorsCount} ошибок · {warnsCount} предупреждений
-                  </span>
-                </div>
-                {!checks.length && (
-                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />Всё заполнено, можно отправлять клиенту
-                  </p>
-                )}
-                {(["error", "warn", "info"] as const).map((lvl) => {
-                  const group = checks.filter((c) => c.level === lvl);
-                  if (!group.length) return null;
-                  const title = lvl === "error" ? "Ошибки — суммы или блоки будут некорректны" : lvl === "warn" ? "Предупреждения" : "Подсказки";
-                  return (
-                    <div key={lvl} className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{title}</p>
-                      {group.map((c, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => gotoCheck(c)}
-                          className={`w-full text-left flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted/60 transition ${
-                            lvl === "error" ? "text-destructive" : lvl === "warn" ? "text-amber-600" : "text-muted-foreground"
-                          }`}
-                        >
-                          {lvl === "info" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
-                          <span className="flex-1">{c.message}</span>
-                          <span className="text-[10px] text-muted-foreground shrink-0">перейти →</span>
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-
-
-              <div className="rounded-xl border border-border/60 p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h2 className="flex items-center gap-2 text-sm font-medium"><History className="h-4 w-4" />История версий</h2>
-                  <Button size="sm" variant="outline" onClick={onCreateVersion}>Сохранить версию</Button>
-                </div>
-                {!versions.length && <p className="text-sm text-muted-foreground">Версий пока нет</p>}
-                {versions.map((v) => (
-                  <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm">
-                    <div className="min-w-0">
-                      <div className="truncate">{v.label || new Date(v.created_at).toLocaleString("ru-RU")}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">{fmtMoney(v.total)}</div>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={() => onRestore(v.id)}>Восстановить</Button>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
           </Tabs>
         </div>
 
