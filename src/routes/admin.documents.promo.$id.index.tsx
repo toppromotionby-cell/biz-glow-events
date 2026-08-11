@@ -307,20 +307,6 @@ function EditorPage() {
           <Button size="sm" variant="ghost" onClick={undo} title="Отменить (Ctrl+Z)">
             <Undo2 className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => saveMut.mutate({ quote, items })} disabled={saveMut.isPending}>
-            {saveMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
-            Сохранить
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={async () => {
-              const { exportPromoQuoteXlsx } = await import("@/lib/documents/promo-xlsx.browser");
-              await exportPromoQuoteXlsx(quote, items).catch((e: Error) => toast.error(e.message));
-            }}
-          >
-            <FileSpreadsheet className="mr-1 h-4 w-4" />XLSX
-          </Button>
           <Button
             size="sm"
             onClick={() =>
@@ -332,10 +318,20 @@ function EditorPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline"><History className="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline"><MoreHorizontal className="mr-1.5 h-4 w-4" />Ещё</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[280px]">
+              <DropdownMenuItem
+                onClick={async () => {
+                  const { exportPromoQuoteXlsx } = await import("@/lib/documents/promo-xlsx.browser");
+                  await exportPromoQuoteXlsx(quote, items).catch((e: Error) => toast.error(e.message));
+                }}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />Выгрузить в Excel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuLabel>Версии</DropdownMenuLabel>
+
               <DropdownMenuItem
                 onClick={async () => {
                   await makeVersion({ data: { quoteId: id, label: `Снимок ${new Date().toLocaleString("ru-RU")}` } });
