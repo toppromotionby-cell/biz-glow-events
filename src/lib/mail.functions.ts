@@ -11,6 +11,7 @@ import {
   MailWorkerError,
   type MailAccountCfg,
 } from "@/lib/mail-worker.server";
+import { mailErrorHint, type MailStep, type MailSuggestion } from "@/lib/mail-diagnostics";
 
 type SbClient = SupabaseClient<any, any, any>;
 
