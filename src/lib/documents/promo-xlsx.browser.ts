@@ -4,6 +4,9 @@ import { downloadBlob } from "@/lib/download";
 import {
   computePromoTotals,
   groupBySection,
+  hasSecondUnit,
+  rateUnitLabel,
+  soleRateUnit,
   lineQty,
   lineTotal,
   promoFileName,
@@ -141,8 +144,16 @@ export async function buildPromoWorkbook(quote: PromoQuote, items: PromoItem[]) 
         cell.alignment = { vertical: "top", wrapText: true };
       });
       if (quote.show_qty) row.getCell(cols.findIndex((c) => c.key === "qty") + 1).alignment = { horizontal: "center" };
-      if (quote.show_total_qty)
-        row.getCell(cols.findIndex((c) => c.key === "total_qty") + 1).alignment = { horizontal: "center" };
+      if (quote.show_total_qty) {
+        const tq = row.getCell(cols.findIndex((c) => c.key === "total_qty") + 1);
+        tq.alignment = { horizontal: "center" };
+        if (dual && rateUnitLabel(it))
+          tq.value = {
+            formula: `${colLetter("qty")}${rn}*${colLetter("qty2")}${rn}`,
+            result: lineQty(it),
+          };
+      }
+      if (dual) row.getCell(cols.findIndex((c) => c.key === "qty2") + 1).alignment = { horizontal: "center" };
       row.getCell(cols.findIndex((c) => c.key === "price") + 1).numFmt = NUM_FMT;
       sumCell.numFmt = NUM_FMT;
     }
