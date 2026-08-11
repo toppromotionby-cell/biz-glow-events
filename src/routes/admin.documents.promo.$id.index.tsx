@@ -392,36 +392,19 @@ function EditorPage() {
           </DropdownMenu>
         </div>
 
-        {/* Проверки */}
-        {(errors.length > 0 || warnings.length > 0) && (
-          <div className="space-y-1 rounded-lg border border-border p-3 text-sm">
-            {errors.map((c, i) => (
-              <div key={`e${i}`} className="flex items-start gap-2 text-destructive">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{c.message}
-              </div>
-            ))}
-            {warnings.map((c, i) => (
-              <div key={`w${i}`} className="flex items-start gap-2 text-muted-foreground">
-                <Info className="mt-0.5 h-4 w-4 shrink-0" />{c.message}
-              </div>
-            ))}
-          </div>
-        )}
-        {errors.length === 0 && warnings.length === 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />Документ готов к отправке
-          </div>
-        )}
+        {/* Проверки — единая полоса, как в КП */}
+        <DocStatusBar checks={checks} />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           {/* ЛЕВО: форма */}
           <Tabs defaultValue="items" className="space-y-3">
-            <TabsList>
-              <TabsTrigger value="items">Позиции ({items.length})</TabsTrigger>
-              <TabsTrigger value="main">Проект</TabsTrigger>
+            <TabsList className="w-full justify-start overflow-x-auto">
+              <TabsTrigger value="items">Состав ({items.length})</TabsTrigger>
+              <TabsTrigger value="main">Клиент</TabsTrigger>
               <TabsTrigger value="money">Финансы</TabsTrigger>
-              <TabsTrigger value="view">Вид</TabsTrigger>
+              <TabsTrigger value="view">Оформление</TabsTrigger>
             </TabsList>
+
 
             <TabsContent value="items" className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
