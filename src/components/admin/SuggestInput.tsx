@@ -1,12 +1,15 @@
 // Инпут с подсказками из базы знаний документов.
-// Подсказки показываются только при реальном вводе (от MIN_TERM символов)
-// и не переоткрываются после выбора варианта.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+// Правило одно: список открывается только когда человек сам печатает в этом поле
+// (от MIN_TERM символов) или явно вызвал подсказки по Ctrl/Cmd+Space.
+// Любое внешнее событие — программная подстановка, перерисовка, прокрутка,
+// потеря фокуса, Escape, выбор варианта — список закрывает.
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-const MIN_TERM = 2;
+const MIN_TERM = 3;
+const DEBOUNCE_MS = 250;
 
 interface SuggestInputProps<T> {
   value: string;
@@ -14,7 +17,7 @@ interface SuggestInputProps<T> {
   onPick: (hit: T) => void;
   fetcher: (term: string) => Promise<T[]>;
   render: (hit: T) => ReactNode;
-  /** Текстовое представление подсказки — чтобы скрывать единственный дословный дубль. */
+  /** Текстовое представление подсказки — чтобы не предлагать то, что уже введено. */
   labelOf?: (hit: T) => string;
   placeholder?: string;
   className?: string;
@@ -31,54 +34,74 @@ export function SuggestInput<T>({
   const [hits, setHits] = useState<T[]>([]);
   const [active, setActive] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
-  // Пользователь реально печатает в поле (а не программная подстановка).
-  const typed = useRef(false);
-  // Пропустить ближайший запрос — значение изменил выбор подсказки.
-  const skipNext = useRef(false);
 
-  // Дебаунс запроса подсказок.
+  // Колбэки держим в ref: их идентичность меняется на каждой перерисовке
+  // таблицы позиций и не должна перезапускать логику подсказок.
+  const fetcherRef = useRef(fetcher);
+  const labelRef = useRef(labelOf);
+  fetcherRef.current = fetcher;
+  labelRef.current = labelOf;
+
+  // Взведён ли поиск: ставится только реальным вводом или ручным вызовом.
+  const armed = useRef(false);
+  // Токен ручного вызова — чтобы повторно запустить поиск по тому же тексту.
+  const [manual, setManual] = useState(0);
+
+  const close = useCallback(() => { armed.current = false; setOpen(false); }, []);
+
   useEffect(() => {
-    if (skipNext.current) { skipNext.current = false; return; }
-    if (!typed.current) return;
+    if (!armed.current) return;
     const term = value.trim();
     if (term.length < MIN_TERM) { setHits([]); setOpen(false); return; }
 
     let cancelled = false;
     const t = setTimeout(async () => {
       try {
-        const res = await fetcher(term);
-        if (cancelled) return;
-        const onlyExactDupe =
-          res.length === 1 && !!labelOf &&
-          labelOf(res[0]!).trim().toLowerCase() === term.toLowerCase();
+        const res = await fetcherRef.current(term);
+        if (cancelled || !armed.current) return;
+        const label = labelRef.current;
+        // Уже введено дословно — предлагать нечего.
+        const exact = !!label && res.some((h) => label(h).trim().toLowerCase() === term.toLowerCase());
         setHits(res);
         setActive(0);
-        setOpen(res.length > 0 && !onlyExactDupe);
+        setOpen(res.length > 0 && !exact);
       } catch {
         if (!cancelled) setOpen(false);
       }
-    }, 220);
+    }, DEBOUNCE_MS);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [value, fetcher, labelOf]);
+  }, [value, manual]);
 
   useEffect(() => {
+    if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) close();
     };
+    const onScroll = () => close();
     document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open, close]);
 
   const pick = (h: T) => {
-    skipNext.current = true;
-    typed.current = false;
-    setOpen(false);
+    close();
     setHits([]);
     onPick(h);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") { setOpen(false); return; }
+    if (e.key === " " && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      armed.current = true;
+      setManual((n) => n + 1);
+      return;
+    }
+    if (e.key === "Escape") { close(); return; }
     if (!open || hits.length === 0) return;
     if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => (a + 1) % hits.length); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => (a - 1 + hits.length) % hits.length); }
@@ -90,12 +113,12 @@ export function SuggestInput<T>({
     placeholder,
     className: cn(className),
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      typed.current = true;
+      armed.current = true;
       onChange(e.target.value);
     },
-    // При фокусе не показываем устаревшие результаты — ждём ввода.
-    onFocus: () => { setOpen(false); },
-    onBlur: () => { typed.current = false; setOpen(false); onBlurCapture?.(); },
+    // Фокус сам по себе подсказки не открывает.
+    onFocus: () => { close(); },
+    onBlur: () => { close(); onBlurCapture?.(); },
     onKeyDown,
   };
 
@@ -103,8 +126,8 @@ export function SuggestInput<T>({
     <div ref={boxRef} className="relative">
       {multiline ? <Textarea rows={rows} {...common} /> : <Input {...common} />}
       {open && hits.length > 0 && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover shadow-md">
-          {hits.map((h, i) => (
+        <div className="absolute left-0 top-full z-50 mt-1 w-full max-h-[13.5rem] overflow-auto rounded-md border bg-popover shadow-md">
+          {hits.slice(0, 5).map((h, i) => (
             <button
               key={i}
               type="button"
