@@ -296,6 +296,24 @@ export const submitOrder = createServerFn({ method: "POST" })
       payload: { items: resolved.length, total, promo: promoApplied, discrepancy: hasDiscrepancy },
     });
 
+    // База знаний: контакт и позиции заявки становятся подсказками в КП/сметах.
+    try {
+      const { harvestFromOrder } = await import("@/lib/doc-knowledge.server");
+      await harvestFromOrder(
+        {
+          client_name: data.client_name,
+          client_company: data.client_company ?? data.company_legal_name ?? "",
+          client_phone: data.client_phone,
+          client_email: data.client_email,
+          notes: data.notes ?? "",
+        },
+        resolved.map((i) => ({ entity_type: i.entity_type, title: i.title, price: i.price })),
+      );
+    } catch (e) {
+      console.error("[submitOrder] knowledge harvest failed:", e);
+    }
+
+
     const lines = resolved.map((i) => `• ${tgEsc(i.title)} × ${i.qty} — ${i.price * i.qty} BYN`).join("\n");
 
     const tgRequisites = requisitesBlock
