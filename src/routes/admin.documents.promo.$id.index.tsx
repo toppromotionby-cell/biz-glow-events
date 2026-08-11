@@ -1,5 +1,4 @@
 import { useRoles } from "@/hooks/use-roles";
-import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
 import { DocAppearanceSection } from "@/components/admin/documents/DocAppearanceSection";
@@ -12,8 +11,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, FileSpreadsheet, Loader2, Info, Undo2, History, Send,
-  AlertTriangle, CheckCircle2, Eye, Percent, Brain, MoreHorizontal,
+  ArrowLeft, Download, FileSpreadsheet, Info, Undo2, History, Send,
+  Eye, Percent, Brain, MoreHorizontal,
 } from "lucide-react";
 
 import { useConfirm } from "@/components/admin/ConfirmDialog";
@@ -55,12 +54,8 @@ import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { LogoUploader } from "@/components/admin/LogoUploader";
-import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
-import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { PromoBlockEditDialog, type PromoEditTarget } from "@/components/admin/documents/PromoBlockEditDialog";
 import { getQuoteDocSettings } from "@/lib/quotes.functions";
-import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { resolveCompany } from "@/lib/documents/company";
 

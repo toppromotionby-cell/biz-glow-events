@@ -1,5 +1,4 @@
 import { useRoles } from "@/hooks/use-roles";
-import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
 import { QuoteSheetPanel } from "@/components/admin/documents/QuoteSheetPanel";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
@@ -9,26 +8,23 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, History, Plus, Search, Send,
+  ArrowLeft, Download, ExternalLink, History, Plus, Search, Send,
   Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CompanyOverridesEditor } from "@/components/admin/CompanyOverridesEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
 import { Field } from "@/components/admin/Field";
-import { BRAND_ACCENTS } from "@/lib/documents/brand";
 
 import {
   getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
@@ -54,9 +50,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { VatSettings } from "@/components/admin/VatSettings";
-import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
-import { PrintPresetEditor } from "@/components/admin/documents/PrintPresetEditor";
-import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
