@@ -61,14 +61,7 @@ export function rowsToItems(values: unknown[][]): SheetItemRow[] {
 
 /** Создаёт таблицу для КП и возвращает её id/url. */
 export async function createSpreadsheet(title: string): Promise<{ id: string; url: string }> {
-  const res = await gateway<{ spreadsheetId: string; spreadsheetUrl: string }>("/spreadsheets", {
-    method: "POST",
-    body: {
-      properties: { title },
-      sheets: [{ properties: { title: SHEET_TAB, gridProperties: { frozenRowCount: 1 } } }],
-    },
-  });
-  return { id: res.spreadsheetId, url: res.spreadsheetUrl };
+  return createSheetDocument(title, SHEET_TAB);
 }
 
 /** Полностью перезаписывает лист «Состав». */
