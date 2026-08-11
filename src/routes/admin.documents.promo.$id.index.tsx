@@ -35,6 +35,7 @@ import {
 import { StatusPill } from "@/components/admin/StatusPill";
 import { QuoteShareActions, QuoteShareStatus, type ShareState } from "@/components/admin/quotes/QuoteShareActions";
 import { PromoItemsTable } from "@/components/admin/promo/PromoItemsTable";
+import { PromoSheetPanel } from "@/components/admin/documents/PromoSheetPanel";
 import { PromoItemsToolbar } from "@/components/admin/promo/PromoItemsToolbar";
 import { PromoTotalsPanel } from "@/components/admin/promo/PromoTotalsPanel";
 import {
@@ -400,6 +401,7 @@ function EditorPage() {
 
 
             <TabsContent value="items" className="space-y-3">
+              <PromoSheetPanel quoteId={id} />
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <PromoItemsToolbar items={items} onChange={patchItems} />
                 {canCost && (
