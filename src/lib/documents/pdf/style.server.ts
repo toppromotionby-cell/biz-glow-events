@@ -20,8 +20,17 @@ export const SURFACE = c01(hexToRgb01(DOC_COLORS.surface));
 export const PAGE_W = DOC_LAYOUT.pageWidthPt;
 export const PAGE_H = DOC_LAYOUT.pageHeightPt;
 
+type MetricSet = {
+  MARGIN_X: number; MARGIN_TOP: number; MARGIN_BOTTOM: number;
+  LH: number; LH_TEXT: number; LH_LOOSE: number; LH_TOTAL: number; LH_TIGHT: number;
+  GAP_K: number; ROW_K: number; FONT_K: number; D: number;
+  F11: number; F12: number; F13: number; F16: number; F22: number;
+  F_COVER: number; F_DOC_KIND: number; F_DOC_NUM: number; F_DOC_DATE: number;
+  F_LABEL: number; F_FOOTER: number;
+};
+
 /** Изменяемые метрики документа (поля, интервалы, кегли). */
-export const M = {
+export const M: Record<string, number> & MetricSet = {
   MARGIN_X: DOC_LAYOUT.marginXPt,
   MARGIN_TOP: DOC_LAYOUT.marginTopPt,
   MARGIN_BOTTOM: DOC_LAYOUT.marginBottomPt,

@@ -2,7 +2,7 @@
 import { rgb, type PDFFont } from "pdf-lib";
 import { displayFont, type DocCtx } from "@/lib/documents/pdf/ctx.server";
 import {
-  ensureSpace, money, newPage, roundedRect, safe, wrapText,
+  drawTracked, trackedWidth, ensureSpace, money, newPage, roundedRect, safe, wrapText,
 } from "@/lib/documents/pdf/draw.server";
 import {
   ACCENT, ACCENT_BORDER, ACCENT_SOFT, LINE, M, MUTED, PAGE_W, SURFACE, TEXT,

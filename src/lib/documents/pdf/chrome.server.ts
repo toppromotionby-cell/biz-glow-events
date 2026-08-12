@@ -5,7 +5,7 @@ import { DOC_FONT_PT } from "@/lib/documents/brand";
 import { DEFAULT_LOGO_LAYOUT, computeLogoPlacement, requisitesFontPt } from "@/lib/documents/logo-layout";
 import { displayFont, type DocCtx } from "@/lib/documents/pdf/ctx.server";
 import {
-  divider, drawTracked, ensureSpace, roundedRect, safe, wrapText,
+  divider, drawTracked, trackedWidth, ensureSpace, roundedRect, safe, wrapText,
 } from "@/lib/documents/pdf/draw.server";
 import { ACCENT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT } from "@/lib/documents/pdf/style.server";
 
