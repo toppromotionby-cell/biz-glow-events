@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, ExternalLink } from "lucide-react";
 import { SortableList } from "@/components/admin/SortableList";
 import { persistSortOrder } from "@/lib/sort-order";
+import { adminKeys } from "@/lib/query-keys";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
@@ -30,7 +31,7 @@ function AdminBlogPage() {
   const [editing, setEditing] = useState<Post | ({ id?: undefined } & BlogPostInput) | null>(null);
 
   const { data: posts = [] } = useQuery({
-    queryKey: ["admin-blog"],
+    queryKey: adminKeys.blog,
     queryFn: async () => {
       const { data, error } = await supabase.from("blog_posts").select("*")
         .order("sort_order", { ascending: true })
@@ -46,7 +47,7 @@ function AdminBlogPage() {
       const { error } = await supabase.from("blog_posts").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-blog"] }); toast.success("Удалено"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: adminKeys.blog }); toast.success("Удалено"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -77,7 +78,7 @@ function AdminBlogPage() {
           key={editing.id ?? "new"}
           initial={editing}
           onClose={() => setEditing(null)}
-          onSaved={() => { qc.invalidateQueries({ queryKey: ["admin-blog"] }); setEditing(null); }}
+          onSaved={() => { qc.invalidateQueries({ queryKey: adminKeys.blog }); setEditing(null); }}
         />
       )}
 
@@ -95,7 +96,7 @@ function AdminBlogPage() {
           onReorder={async (ids) => {
             try {
               await persistSortOrder("blog_posts", ids);
-              qc.invalidateQueries({ queryKey: ["admin-blog"] });
+              qc.invalidateQueries({ queryKey: adminKeys.blog });
             } catch (e) { toast.error((e as Error).message); throw e; }
           }}
           className="divide-y divide-border/40"

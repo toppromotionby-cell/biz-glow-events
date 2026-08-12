@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Tag } from "lucide-react";
 import { toast } from "sonner";
+import { adminKeys } from "@/lib/query-keys";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminListPanel } from "@/components/admin/AdminListPanel";
 import { AdminEditorShell, AdminEmptyEditor } from "@/components/admin/AdminEditorShell";
@@ -29,7 +30,7 @@ function Page() {
   const [sel, setSel] = useState<Row | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ["admin-promo"],
+    queryKey: adminKeys.promo,
     queryFn: async () => (await supabase.from("promo_codes").select("*").order("created_at", { ascending: false })).data ?? [],
   });
 
@@ -42,7 +43,7 @@ function Page() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["admin-promo"] }); setSel(row); },
+    onSuccess: (row) => { qc.invalidateQueries({ queryKey: adminKeys.promo }); setSel(row); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -51,7 +52,7 @@ function Page() {
       const { error } = await supabase.from("promo_codes").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-promo"] }); setSel(null); toast.success("Удалён"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: adminKeys.promo }); setSel(null); toast.success("Удалён"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -70,7 +71,7 @@ function Page() {
           isLoading={isLoading}
           emptyText="Нет промокодов"
           onReorder={async (ids) => {
-            try { await persistSortOrder("promo_codes", ids); qc.invalidateQueries({ queryKey: ["admin-promo"] }); }
+            try { await persistSortOrder("promo_codes", ids); qc.invalidateQueries({ queryKey: adminKeys.promo }); }
             catch (e) { toast.error((e as Error).message); throw e; }
           }}
           renderItem={(it, handle) => (
@@ -144,7 +145,7 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
       setSaveState("saved");
-      qc.invalidateQueries({ queryKey: ["admin-promo"] });
+      qc.invalidateQueries({ queryKey: adminKeys.promo });
       toast.success("Сохранено");
     },
     onError: (e: Error) => {

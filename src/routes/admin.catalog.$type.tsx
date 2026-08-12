@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Eye, EyeOff, Plus, Search, Trash2, X } from "lucide-react";
 import { persistSortOrder } from "@/lib/sort-order";
+import { adminKeys } from "@/lib/query-keys";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { CatalogTabs } from "@/components/admin/CatalogTabs";
 
@@ -72,7 +73,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
 
 
   const { data: items = [], isLoading } = useQuery<Row[]>({
-    queryKey: ["catalog", table],
+    queryKey: adminKeys.catalog(table),
     queryFn: async () => {
       const { data } = await supabase.from(table).select("*")
         .order("sort_order", { ascending: true })
@@ -94,7 +95,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       if (error) throw error;
       return data as Row;
     },
-    onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["catalog", table] }); setSelected(row); },
+    onSuccess: (row) => { qc.invalidateQueries({ queryKey: adminKeys.catalog(table) }); setSelected(row); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -103,7 +104,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["catalog", table] }); setSelected(null); toast.success("Удалено"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: adminKeys.catalog(table) }); setSelected(null); toast.success("Удалено"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -123,7 +124,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       if (error) throw error;
       return data as Row;
     },
-    onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["catalog", table] }); setSelected(row); toast.success("Карточка скопирована"); },
+    onSuccess: (row) => { qc.invalidateQueries({ queryKey: adminKeys.catalog(table) }); setSelected(row); toast.success("Карточка скопирована"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -135,7 +136,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       if (error) throw error;
     },
     onSuccess: (_d, published) => {
-      qc.invalidateQueries({ queryKey: ["catalog", table] });
+      qc.invalidateQueries({ queryKey: adminKeys.catalog(table) });
       toast.success(`${selectedIds.size} ${published ? "опубликовано" : "снято с публикации"}`);
       setSelectedIds(new Set());
     },
@@ -149,7 +150,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["catalog", table] });
+      qc.invalidateQueries({ queryKey: adminKeys.catalog(table) });
       toast.success(`Удалено: ${selectedIds.size}`);
       setSelectedIds(new Set());
       setSelected(null);
@@ -264,7 +265,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
               </Button>
             )}
             onReorder={q ? undefined : async (ids) => {
-              try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: ["catalog", table] }); }
+              try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: adminKeys.catalog(table) }); }
               catch (e) { toast.error((e as Error).message); throw e; }
             }}
             renderItem={(it: Row, handle) => (
@@ -289,7 +290,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
               item={selected}
               onDelete={() => remove.mutate(selected.id)}
               onDuplicate={() => duplicate.mutate(selected)}
-              onSaved={() => qc.invalidateQueries({ queryKey: ["catalog", table] })}
+              onSaved={() => qc.invalidateQueries({ queryKey: adminKeys.catalog(table) })}
             />
           ) : (
             <AdminEmptyEditor
