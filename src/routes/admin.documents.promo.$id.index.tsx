@@ -332,15 +332,6 @@ function EditorPage() {
               <Button size="sm" variant="outline"><MoreHorizontal className="mr-1.5 h-4 w-4" />Ещё</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[280px]">
-              <DropdownMenuItem
-                onClick={async () => {
-                  const { exportPromoQuoteXlsx } = await import("@/lib/documents/promo-xlsx.browser");
-                  await exportPromoQuoteXlsx(quote, items).catch((e: Error) => toast.error(e.message));
-                }}
-              >
-                <FileSpreadsheet className="mr-2 h-4 w-4" />Выгрузить в Excel
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuLabel>Версии</DropdownMenuLabel>
 
               <DropdownMenuItem
