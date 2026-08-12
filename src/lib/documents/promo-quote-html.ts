@@ -6,7 +6,9 @@ import { vatRateLabel } from "@/lib/documents/vat";
 
 import { BRAND_ACCENT } from "@/lib/documents/brand";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
-import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
+import { BASE_PRINT_PRESET, printPageMarginCss } from "@/lib/documents/print-preset";
+import { sheetCss } from "@/lib/documents/sheet";
+
 import {
   computePromoTotals,
   formatMoney,
@@ -321,10 +323,12 @@ export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[], co
 ${fontLinkTags(resolveDocFont(quote.font_family))}
 <style>
   :root { ${densityRootVars()}; }
-  body { margin: 0; padding: 28px; background: #f2f2f4; }
-  .sheet { background: #fff; max-width: 1120px; margin: 0 auto; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+  @page { size: A4; margin: ${printPageMarginCss(BASE_PRINT_PRESET)}; }
+  body { margin: 0; }
+  ${sheetCss(BASE_PRINT_PRESET)}
+
   ${PROMO_DOC_CSS}
-  @media print { body { background: #fff; padding: 0; } .sheet { box-shadow: none; max-width: none; padding: 0; } }
+
   ${DENSITY_PAGE_CSS}
 </style></head>
 <body><div class="sheet">${buildPromoQuoteBody(quote, items, { companyLine })}</div>

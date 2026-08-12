@@ -7,7 +7,9 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
+import { sheetCss } from "@/lib/documents/sheet";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
+
 
 
 import type { Quote, QuoteItem, QuoteCheck, QuoteCheckScope } from "@/lib/quotes-model";
@@ -527,7 +529,7 @@ ${fontLinkTags(docFont)}
   @page { size: A4; margin: ${printPageMarginCss(print)}; }
   * { box-sizing: border-box; }
   body { margin:0; background:#f3f4f6; color:var(--ink); font-family:var(--font-body); font-size:var(--fs-body); line-height:var(--lh); }
-  .sheet { max-width: 820px; margin: 0 auto; background:#fff; padding: calc(18px * var(--gap-k)) 22px calc(22px * var(--gap-k)); }
+  ${sheetCss(print)}
   h1,h2,h3 { font-family:var(--font-display); letter-spacing:-0.02em; margin:0; }
   .bar { height:3px; background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff)); border-radius:3px; }
   .head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding:10px 0 8px; border-bottom:1px solid var(--line); }
@@ -591,7 +593,7 @@ ${fontLinkTags(docFont)}
   tr.chk-row-error td { background:#fef2f2; }
   tr.chk-row-warn td { background:#fffbeb; }
   @media print { .chk-list { display:none !important; } tr.chk-row td { background:transparent !important; } }
-  @media print { body { background:#fff; } .sheet { max-width:none; padding:0; } }
+  
   ${DENSITY_PAGE_CSS}
   ${
     editable

@@ -3,6 +3,9 @@
 // мягкие карточки, моно-цифры, опрятный print CSS.
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
+import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
+import { sheetCss } from "@/lib/documents/sheet";
+
 
 export function esc(s: unknown): string {
   return String(s ?? "")
@@ -96,7 +99,9 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   @page { size: A4; margin: 16mm 14mm; }
   * { box-sizing: border-box; }
   body { font-family: ui-sans-serif, -apple-system, "Segoe UI", "PT Sans", Roboto, sans-serif;
-    color: #111827; margin: 0; font-size: 12px; line-height: 1.55; background: #fff; }
+    color: #111827; margin: 0; font-size: 12px; line-height: 1.55; }
+  ${sheetCss({ ...BASE_PRINT_PRESET, marginTopMm: 16, marginBottomMm: 16, marginXMm: 14 })}
+
   .accent-bar { height: 4px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #fff)); border-radius: 2px; }
   .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 0 12px; border-bottom: 1px solid #e5e7eb; }
   .brand-wrap { display: flex; align-items: center; gap: 12px; }
@@ -136,7 +141,9 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   @media print { .print-btn { display: none; } body { font-size: 11.5px; } }
 </style></head><body>
   <a class="print-btn" href="?format=pdf">Скачать PDF</a>
+  <div class="sheet">
   <div class="accent-bar"></div>
+
   <div class="head">
     <div class="brand-wrap">
       ${logo}
@@ -155,7 +162,9 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   <div class="footer">
     ${esc(settings.company_legal_name)} · ${esc(settings.company_phone)} · ${esc(settings.company_email)} · ${esc(settings.company_website)}
   </div>
+  </div>
 </body></html>`;
+
 }
 
 export function partyCard(opts: {
