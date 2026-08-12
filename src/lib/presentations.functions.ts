@@ -591,3 +591,140 @@ export const listQuotesForPresentation = createServerFn({ method: "GET" })
       company_id: r.company_id ? String(r.company_id) : null,
     }));
   });
+
+/* ---------------- Публичная ссылка ---------------- */
+
+export const setPresentationShare = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ token: string; enabled: boolean }> => {
+    await assertDocumentsStaff(context as never);
+    const { data: row, error } = await context.supabase
+      .from("presentations")
+      .update({ share_enabled: data.enabled })
+      .eq("id", data.id)
+      .select("public_token, share_enabled")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Презентация не найдена");
+    const r = row as Row;
+    return { token: String(r.public_token ?? ""), enabled: r.share_enabled === true };
+  });
+
+/* ---------------- Версии (снимки) ---------------- */
+
+export type PresentationVersion = {
+  id: string;
+  label: string;
+  created_at: string;
+};
+
+export const listPresentationVersions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<PresentationVersion[]> => {
+    await assertDocumentsStaff(context as never);
+    const { data: rows, error } = await context.supabase
+      .from("presentation_versions")
+      .select("id,label,created_at")
+      .eq("presentation_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return ((rows ?? []) as Row[]).map((r) => ({
+      id: String(r.id),
+      label: String(r.label ?? ""),
+      created_at: String(r.created_at ?? ""),
+    }));
+  });
+
+/** Снимок текущего состояния презентации (шапка + слайды). */
+export const createPresentationVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), label: z.string().trim().max(120).default("") }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    await assertDocumentsStaff(context as never);
+    const [{ data: head, error: headErr }, { data: slides, error: slidesErr }] = await Promise.all([
+      context.supabase.from("presentations").select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from("presentation_slides").select("*").eq("presentation_id", data.id).order("position"),
+    ]);
+    if (headErr) throw new Error(headErr.message);
+    if (slidesErr) throw new Error(slidesErr.message);
+    if (!head) throw new Error("Презентация не найдена");
+
+    const { data: row, error } = await context.supabase
+      .from("presentation_versions")
+      .insert({
+        presentation_id: data.id,
+        label: data.label || new Date().toLocaleString("ru-RU"),
+        snapshot: { presentation: head, slides: slides ?? [] } as never,
+        created_by: context.userId,
+      } as never)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { id: String((row as Row | null)?.id ?? "") };
+  });
+
+/** Откат к версии: шапка и слайды заменяются содержимым снимка. */
+export const restorePresentationVersion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), versionId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertDocumentsStaff(context as never);
+    const { data: row, error } = await context.supabase
+      .from("presentation_versions")
+      .select("snapshot")
+      .eq("id", data.versionId)
+      .eq("presentation_id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Версия не найдена");
+
+    const snap = ((row as Row).snapshot ?? {}) as { presentation?: Row; slides?: Row[] };
+    const head = snap.presentation ?? {};
+    const { error: upErr } = await context.supabase
+      .from("presentations")
+      .update({
+        title: head.title ?? "Без названия",
+        status: head.status ?? "draft",
+        template: head.template ?? "light",
+        company_id: head.company_id ?? null,
+        logo_url: head.logo_url ?? null,
+        client_logo_url: head.client_logo_url ?? null,
+        logo_layout: head.logo_layout ?? {},
+        font_family: head.font_family ?? "inherit",
+      } as never)
+      .eq("id", data.id);
+    if (upErr) throw new Error(upErr.message);
+
+    const { error: delErr } = await context.supabase
+      .from("presentation_slides").delete().eq("presentation_id", data.id);
+    if (delErr) throw new Error(delErr.message);
+
+    const slides = (snap.slides ?? []).map((s, i) => ({
+      presentation_id: data.id,
+      position: Number(s.position ?? i) || i,
+      type: s.type ?? "text",
+      title: s.title ?? "",
+      subtitle: s.subtitle ?? "",
+      image_url: s.image_url ?? null,
+      content_json: s.content_json ?? {},
+      entity_type: s.entity_type ?? null,
+      entity_id: s.entity_id ?? null,
+      quote_item_id: s.quote_item_id ?? null,
+      is_visible: s.is_visible !== false,
+    }));
+    if (slides.length) {
+      const { error: insErr } = await context.supabase
+        .from("presentation_slides").insert(slides as never);
+      if (insErr) throw new Error(insErr.message);
+    }
+    return { ok: true };
+  });
