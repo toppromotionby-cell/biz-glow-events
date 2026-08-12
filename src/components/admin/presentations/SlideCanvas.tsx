@@ -22,6 +22,8 @@ import {
 } from "@/lib/presentations/model";
 import { SlideLayoutOverlay } from "@/components/admin/presentations/SlideLayoutOverlay";
 import { fontStacks, resolveDocFont, type DocFontChoice } from "@/lib/documents/doc-font";
+import { staticSlideSpec, type SpecBlock } from "@/lib/presentations/slide-spec";
+
 
 export { SLIDE_W, SLIDE_H, slideTheme };
 
