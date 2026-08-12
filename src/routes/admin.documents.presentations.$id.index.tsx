@@ -324,8 +324,8 @@ function Page() {
   const slidesRef = useRef(slides);
   slidesRef.current = slides;
 
-  // Общий хук автосохранения: дебаунс, Ctrl+S, защита от ухода со страницы.
-  const saver = useEditorSave(async () => {
+  /** Записать текущее состояние на сервер (используется хуком и перед экспортом PDF). */
+  const persist = useCallback(async () => {
     const m = metaRef.current;
     if (!m) return;
     try {
@@ -363,7 +363,12 @@ function Page() {
     // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
     // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
     qc.invalidateQueries({ queryKey: ["presentations"] });
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveFn, qc]);
+
+  // Общий хук автосохранения: дебаунс, Ctrl+S, защита от ухода со страницы.
+  const saver = useEditorSave(persist);
+
   const saverRef = useRef(saver);
   saverRef.current = saver;
 
