@@ -550,41 +550,19 @@ function EditorPage() {
       label: "История",
       Icon: History,
       content: (
-        <div className="space-y-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={async () => {
-              await makeVersion({ data: { quoteId: id, label: `Снимок ${new Date().toLocaleString("ru-RU")}` } });
-              void versions.refetch();
-              toast.success("Версия сохранена");
-            }}
-          >
-            Сохранить версию
-          </Button>
-          {!versions.data?.length && <p className="text-sm text-muted-foreground">Версий пока нет</p>}
-          {versions.data?.map((v) => (
-            <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm">
-              <span className="min-w-0 truncate">{v.label}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  const ok = await confirm({
-                    title: "Восстановить эту версию?",
-                    description: "Текущие данные документа будут заменены содержимым версии.",
-                  });
-                  if (!ok) return;
-                  await restoreVersion({ data: { versionId: v.id } });
-                  await refetch();
-                  toast.success("Версия восстановлена");
-                }}
-              >
-                Восстановить
-              </Button>
-            </div>
-          ))}
-        </div>
+        <DocVersionsPanel
+          versions={(versions.data ?? []).map((v) => ({ id: v.id, label: v.label }))}
+          onCreate={async () => {
+            await makeVersion({ data: { quoteId: id, label: `Снимок ${new Date().toLocaleString("ru-RU")}` } });
+            void versions.refetch();
+            toast.success("Версия сохранена");
+          }}
+          onRestore={async (versionId) => {
+            await restoreVersion({ data: { versionId } });
+            await refetch();
+            toast.success("Версия восстановлена");
+          }}
+        />
       ),
     },
   ];
