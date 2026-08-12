@@ -41,7 +41,10 @@ export function normalizePresentationLogoLayout(raw: unknown): PresentationLogoL
 }
 
 
-export type SlideType = "title" | "product" | "text" | "section" | "contacts";
+/** Единый список типов слайдов — источник правды для UI и валидаторов. */
+export const SLIDE_TYPES = ["title", "product", "text", "section", "contacts"] as const;
+
+export type SlideType = (typeof SLIDE_TYPES)[number];
 
 export type PresentationStatus = "draft" | "ready" | "archived";
 

@@ -9,6 +9,7 @@ import {
   normalizePresentation,
   PRESENTATION_TEMPLATES,
   PRESENTATION_STATUSES,
+  SLIDE_TYPES,
   normalizePresentationLogoLayout,
   normalizeSlide,
   normalizeContent,
@@ -29,7 +30,7 @@ type Row = Record<string, unknown>;
 const slideInput = z.object({
   id: z.string().optional(),
   position: z.number().int().min(0),
-  type: z.enum(["title", "product", "text", "section", "contacts"]),
+  type: z.enum(SLIDE_TYPES),
   title: z.string().max(300).default(""),
   subtitle: z.string().max(400).default(""),
   image_url: z.string().max(1000).nullable().default(null),
