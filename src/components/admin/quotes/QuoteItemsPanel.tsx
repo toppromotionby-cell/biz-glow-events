@@ -1,9 +1,9 @@
 // Панель состава КП: разделы как самостоятельные группы (переименование,
 // перемещение, дублирование, удаление), компактные строки позиций,
-// себестоимость/маржа, состав позиции и вставка из Excel.
+// себестоимость/маржа и состав позиции.
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  BookOpen, ChevronDown, ChevronUp, ClipboardPaste, Copy, FolderPlus, ListChecks, MoreHorizontal, Plus, Trash2,
+  ChevronDown, ChevronUp, Copy, FolderPlus, ListChecks, MoreHorizontal, Plus, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
@@ -16,12 +16,11 @@ import {
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtMoney } from "@/lib/formatters";
 import {
-  duplicateSection, emptyQuoteItem, listSections, moveSection, NO_SECTION, num, parsePastedQuoteRows,
+  duplicateSection, emptyQuoteItem, listSections, moveSection, NO_SECTION, num,
   QUOTE_SECTION_SUGGESTIONS, removeSection, renameSection, type QuoteItem,
 } from "@/lib/quotes-model";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import { NumField, TextCommitField } from "@/components/admin/field-kit";
-import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
 
 function Mini({ label, width, children }: { label: string; width: string; children: ReactNode }) {
   return (
@@ -46,14 +45,11 @@ export function QuoteItemsPanel({
   /** Замечания валидации по id позиции: подсвечивают строки с неполными данными. */
   issues?: Record<string, Array<{ level: "error" | "warn" | "info"; message: string }>>;
 }) {
-  const [pasteOpen, setPasteOpen] = useState(false);
-  const [pasteText, setPasteText] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [includesFor, setIncludesFor] = useState<string | null>(null);
   const [newSectionOpen, setNewSectionOpen] = useState(false);
   const [newSection, setNewSection] = useState("");
-  const [kbSection, setKbSection] = useState<string | null>(null);
 
   const sections = useMemo(() => listSections(items), [items]);
   const grouped = useMemo(() => {
@@ -110,46 +106,12 @@ export function QuoteItemsPanel({
     insertInSection(section, [emptyQuoteItem(quoteId, items.length, { section })]);
   };
 
-  const addFromKnowledge = (
-    picked: Array<{ title: string; section: string; unit: string; price: number; cost: number; description: string; includes: Array<{ text: string; note: string }> }>,
-    section: string,
-  ) => {
-    const quoteId = items[0]?.quote_id ?? "";
-    const base = items.length;
-    const created = picked.map((h, i) =>
-      emptyQuoteItem(quoteId, base + i, {
-        section: section || h.section || "",
-        title: h.title,
-        qty: 1,
-        unit: h.unit || "шт",
-        price: h.price,
-        cost: h.cost,
-        description: h.description,
-        includes: h.includes.map((x) => ({ ...x })),
-      }),
-    );
-    insertInSection(section || created[0]?.section || "", created);
-  };
-
   const createSection = () => {
     const name = newSection.trim();
     if (!name) return;
     addInSection(name);
     setNewSection("");
     setNewSectionOpen(false);
-  };
-
-  const applyPaste = () => {
-    const parsed = parsePastedQuoteRows(pasteText);
-    if (!parsed.length) return;
-    const base = items.length;
-    const quoteId = items[0]?.quote_id ?? "";
-    const created: QuoteItem[] = parsed.map((r, i) =>
-      emptyQuoteItem(quoteId, base + i, { title: r.title, qty: r.qty, unit: r.unit, price: r.price, cost: r.cost }),
-    );
-    insertInSection("", created);
-    setPasteText("");
-    setPasteOpen(false);
   };
 
   const lineTotal = (it: QuoteItem) => num(it.qty) * num(it.price);
@@ -162,12 +124,6 @@ export function QuoteItemsPanel({
         {toolbar}
         <Button variant="outline" size="sm" onClick={() => setNewSectionOpen(true)}>
           <FolderPlus className="mr-1.5 h-4 w-4" />Добавить раздел
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setPasteOpen(true)}>
-          <ClipboardPaste className="mr-1.5 h-4 w-4" />Вставить из Excel
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setKbSection("")}>
-          <BookOpen className="mr-1.5 h-4 w-4" />Из базы знаний
         </Button>
         <ClearCompositionButton count={items.length} onClear={() => onChange([])} />
       </div>
@@ -199,10 +155,6 @@ export function QuoteItemsPanel({
               <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Добавить позицию в раздел"
                 onClick={() => addInSection(section)}>
                 <Plus className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Добавить в раздел из базы знаний"
-                onClick={() => setKbSection(section)}>
-                <BookOpen className="h-4 w-4" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -411,27 +363,6 @@ export function QuoteItemsPanel({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={pasteOpen} onOpenChange={setPasteOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader><DialogTitle>Вставить позиции из Excel</DialogTitle></DialogHeader>
-          <p className="text-xs text-muted-foreground">
-            Колонки: наименование, кол-во, ед. изм., цена, себестоимость (необязательно). Одна строка — одна позиция.
-          </p>
-          <Textarea rows={10} value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-            placeholder={"Фотозона\t1\tшт.\t900\t400"} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPasteOpen(false)}>Отмена</Button>
-            <Button onClick={applyPaste}>Добавить</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <KnowledgeItemsDialog
-        open={kbSection !== null}
-        onOpenChange={(v) => setKbSection(v ? (kbSection ?? "") : null)}
-        targetSection={kbSection ?? ""}
-        onAdd={addFromKnowledge}
-      />
     </div>
   );
 }
