@@ -289,20 +289,45 @@ export function LogoHeaderDesigner({
           ))}
         </div>
 
-        <div className="grid gap-3 pt-1 sm:grid-cols-2">
-          <SliderRow label="Макс. ширина" value={layout.maxW} limits={L.maxW} onChange={(v) => set({ maxW: v })} />
-          <SliderRow label="Макс. высота" value={layout.maxH} limits={L.maxH} onChange={(v) => set({ maxH: v })} />
-          <SliderRow label="Сдвиг по горизонтали" value={layout.offsetX} limits={L.offsetX} onChange={(v) => set({ offsetX: v })} />
-          <SliderRow label="Отступ сверху" value={layout.offsetY} limits={L.offsetY} onChange={(v) => set({ offsetY: v })} />
-          {layout.align === "left" && (
-            <SliderRow label="Отступ до текста" value={layout.gap} limits={L.gap} onChange={(v) => set({ gap: v })} />
-          )}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={layout.mode === "auto" ? "default" : "outline"}
+            onClick={() => set({ mode: "auto" })}
+          >
+            Авто-размер
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={layout.mode === "manual" ? "default" : "outline"}
+            onClick={() => set({ mode: "manual" })}
+          >
+            Вручную
+          </Button>
         </div>
 
+        {layout.mode === "manual" && (
+          <div className="grid gap-3 pt-1 sm:grid-cols-2">
+            <SliderRow label="Макс. ширина" value={layout.maxW} limits={L.maxW} onChange={(v) => set({ maxW: v })} />
+            <SliderRow label="Макс. высота" value={layout.maxH} limits={L.maxH} onChange={(v) => set({ maxH: v })} />
+            <SliderRow label="Сдвиг по горизонтали" value={layout.offsetX} limits={L.offsetX} onChange={(v) => set({ offsetX: v })} />
+            <SliderRow label="Отступ сверху" value={layout.offsetY} limits={L.offsetY} onChange={(v) => set({ offsetY: v })} />
+            {layout.align === "left" && (
+              <SliderRow label="Отступ до текста" value={layout.gap} limits={L.gap} onChange={(v) => set({ gap: v })} />
+            )}
+          </div>
+        )}
+
         <p className="pt-1 text-xs text-muted-foreground">
+          {layout.mode === "auto"
+            ? "Размер логотипа и реквизитов подбирается автоматически под свободное место шапки."
+            : "Размеры заданы вручную."}{" "}
           Пока логотип загружен, текстовое название бренда в шапке не печатается — остаётся только
           строка с юр. названием и адресом.
         </p>
+
       </div>
     </div>
   );
