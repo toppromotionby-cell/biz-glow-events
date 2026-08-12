@@ -1,7 +1,7 @@
 // Единая точка входа раздела «Документы»: все КП и КП промо в одном списке
 // со счётчиками по статусам и одним диалогом создания документа.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
