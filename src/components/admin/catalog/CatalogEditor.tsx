@@ -119,13 +119,22 @@ export function CatalogEditor({
     } catch { /* quota */ }
 
     const t = setTimeout(async () => {
+      // Невалидные поля не отправляем: показываем ошибки и ждём правок.
+      if (!validationRef.current.ok) {
+        setSaveState("error");
+        setErrorMessage("Исправьте ошибки в форме — изменения не сохраняются");
+        return;
+      }
       setSaveState("saving");
       const { error } = await supabase.from(table).update(buildPatch(form)).eq("id", item.id);
       if (error) {
+        const mapped = mapServerError(error);
+        if (mapped.field) setServerErrors((prev) => ({ ...prev, [mapped.field as string]: mapped.message }));
         setSaveState("error");
-        setErrorMessage(error.message);
+        setErrorMessage(mapped.message);
         return;
       }
+      setServerErrors({});
       try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
       dirtyRef.current = false;
       setDirty(false);
@@ -134,6 +143,7 @@ export function CatalogEditor({
       setSaveState("saved");
       onSaved();
     }, 1200);
+
 
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
