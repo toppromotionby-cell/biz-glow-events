@@ -3,6 +3,9 @@
 // мягкие карточки, моно-цифры, опрятный print CSS.
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
+import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
+import { sheetCss } from "@/lib/documents/sheet";
+
 
 export function esc(s: unknown): string {
   return String(s ?? "")
