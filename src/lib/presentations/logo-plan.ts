@@ -253,9 +253,16 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
       return true;
     });
     const free = candidates.find((slot) => cornerFree(slot, frames, full, blockedRects));
-    // Свободного угла нет — берём первый допустимый: fitIntoFree ниже
-    // либо ужмёт логотип под просвет, либо уберёт его совсем.
-    const slot = free ?? candidates[0] ?? null;
+    // Свободного угла нет — берём угол с наибольшим просветом:
+    // fitIntoFree ниже ужмёт логотип под это место.
+    const obstacles = [...blockedRects, ...(full ? [] : frames)];
+    const best = [...candidates].sort((a, b) => {
+      const fa = freeSpace(a, obstacles);
+      const fb = freeSpace(b, obstacles);
+      return fb.w * fb.h - fa.w * fa.h;
+    })[0];
+    const slot = free ?? best ?? null;
+
     if (slot) {
       client = titleLike
         ? { slot, maxW: 220 * scale, maxH: 54 * scale }
