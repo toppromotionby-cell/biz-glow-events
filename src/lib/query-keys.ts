@@ -20,6 +20,8 @@ export const adminKeys = {
   orderTimeline: (id: string) => ["order-timeline", id] as const,
   orderAttachments: (id: string) => ["order-attachments", id] as const,
   attention: ["admin-attention"] as const,
+  dashboardStats: ["admin-stats-v2"] as const,
+
   managers: ["assignable-managers"] as const,
 
   // Документы

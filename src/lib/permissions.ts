@@ -83,6 +83,7 @@ export const ROUTE_PERMISSIONS: { match: RegExp; perm: Permission }[] = [
   { match: /^\/admin\/settings/, perm: "system.manage" },
   { match: /^\/admin\/documents\/knowledge/, perm: "documents.knowledge" },
   { match: /^\/admin\/documents\/(invoices|contracts|acts|finance)/, perm: "documents.finance" },
+  { match: /^\/admin\/documents\/(quotes|promo|presentations)/, perm: "documents.manage" },
   { match: /^\/admin\/documents/, perm: "documents.manage" },
   { match: /^\/admin\/orders/, perm: "orders.manage" },
   { match: /^\/admin\/calendar/, perm: "orders.manage" },
