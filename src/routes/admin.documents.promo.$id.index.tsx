@@ -61,6 +61,8 @@ import { sheetCss } from "@/lib/documents/sheet";
 import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
 import { A4Sheet } from "@/components/admin/documents/A4Sheet";
 import { useInlineDocEdit } from "@/hooks/use-inline-doc-edit";
+import { useTableWidthSync } from "@/hooks/use-table-width-sync";
+
 
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
@@ -307,10 +309,14 @@ function EditorPage() {
 
 
   /** Двойной клик по блоку превью открывает точечное редактирование. */
-  const { containerRef: sheetRef } = useInlineDocEdit({
+  const { containerRef: sheetRef, nodeRef: sheetNodeRef } = useInlineDocEdit({
     enabled: inlineEdit,
     onEdit: (hit) => setEdit(hit),
   });
+  // Шапка, colgroup и ячейки таблицы держатся на одной сетке при любой
+  // ширине рабочего пространства.
+  useTableWidthSync(() => sheetNodeRef.current, [previewHtml]);
+
 
   const versions = useQuery({
     queryKey: ["promo-versions", id],

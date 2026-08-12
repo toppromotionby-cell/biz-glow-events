@@ -51,6 +51,35 @@ export function useInlineDocEdit({
   );
 
   // Двойной клик внутри iframe-превью.
+  //
+  // Скрипт, встроенный в разметку, работает только если превью собиралось
+  // сразу в режиме правки, а содержимое iframe обновляется через innerHTML —
+  // поэтому обработчик дополнительно вешается снаружи, прямо на документ
+  // iframe, и переустанавливается, если документ пересоздали.
+  useEffect(() => {
+    if (!frameRef) return;
+    let attached: Document | null = null;
+    const onDbl = (e: Event) => {
+      const doc = attached;
+      if (!doc) return;
+      handleNode(e.target);
+    };
+    const attach = () => {
+      const doc = frameRef.current?.contentDocument ?? null;
+      if (doc === attached) return;
+      attached?.removeEventListener("dblclick", onDbl);
+      attached = doc;
+      doc?.addEventListener("dblclick", onDbl);
+    };
+    attach();
+    const timer = window.setInterval(attach, 500);
+    return () => {
+      window.clearInterval(timer);
+      attached?.removeEventListener("dblclick", onDbl);
+    };
+  }, [frameRef, handleNode]);
+
+  // Тот же двойной клик, но приехавший сообщением от встроенного скрипта.
   useEffect(() => {
     if (!frameRef) return;
     const onMessage = (e: MessageEvent) => {
@@ -63,6 +92,7 @@ export function useInlineDocEdit({
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [frameRef]);
+
 
   return { containerRef, nodeRef, handleNode };
 }
