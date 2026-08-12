@@ -5,7 +5,9 @@ import {
   DENSITY_STEPS, slideLayout, typeScale,
   type Density, type Rect, type SlideLayout, type TypeScale,
 } from "@/lib/presentations/design";
-import type { PresentationSlide } from "@/lib/presentations/model";
+import {
+  DEFAULT_LAYOUT_OVERRIDES, partTextScale, type PresentationSlide,
+} from "@/lib/presentations/model";
 import { countLines, hasOrphanWord } from "@/lib/presentations/text-metrics";
 
 /** Перенос считаем по реальным метрикам шрифта — как в превью и в PDF. */
@@ -40,15 +42,21 @@ export function estimateTextHeight(
   const w = box.w;
   let h = 0;
 
-  const titleSize = slide.type === "section" ? ts.titleSection : ts.titleSlide;
+  const ov = c.layout ?? DEFAULT_LAYOUT_OVERRIDES;
+  const sizes = {
+    title: (slide.type === "section" ? ts.titleSection : ts.titleSlide) * partTextScale(ov.titleScale),
+    subtitle: ts.subtitle * partTextScale(ov.subtitleScale),
+    body: ts.body * partTextScale(ov.bodyScale),
+  };
+  const titleSize = sizes.title;
   h += lineCount(slide.title, titleSize, w) * titleSize * 1.14;
   if (slide.subtitle.trim()) {
-    h += 10 + lineCount(slide.subtitle, ts.subtitle, w) * ts.subtitle * 1.3;
+    h += 10 + lineCount(slide.subtitle, sizes.subtitle, w) * sizes.subtitle * 1.3;
   }
   h += ts.blockGap; // акцентная линия
 
   if (c.showDescription && c.description.trim()) {
-    h += lineCount(c.description, ts.body, w) * ts.body * ts.lineGap + ts.blockGap;
+    h += lineCount(c.description, sizes.body, w) * sizes.body * ts.lineGap + ts.blockGap;
   }
   if (c.showIncludes && c.includes.length) {
     h += ts.label * 1.6;
@@ -127,7 +135,8 @@ export function fitSlide(slide: PresentationSlide): SlideFit {
   } else if (shrink < 1) {
     warnings.push("Текст автоматически ужат, чтобы поместиться в блок");
   }
-  const titleSize = slide.type === "section" ? ts.titleSection : ts.titleSlide;
+  const titleSize = (slide.type === "section" ? ts.titleSection : ts.titleSlide)
+    * partTextScale((slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES).titleScale);
   if (hasOrphanWord(slide.title, titleSize, box.w)) {
     warnings.push("В заголовке «висячее» слово в последней строке — переформулируйте");
   }

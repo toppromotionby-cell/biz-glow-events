@@ -4,7 +4,9 @@
 // документ выглядит одинаково на экране и в файле.
 import { GRID, SLIDE_H, SLIDE_W, type TypeScale } from "@/lib/presentations/design";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
-import type { PresentationSlide } from "@/lib/presentations/model";
+import {
+  DEFAULT_LAYOUT_OVERRIDES, partTextScale, type PresentationSlide,
+} from "@/lib/presentations/model";
 
 export type SpecColor = "ink" | "muted" | "accent" | "onAccent";
 
@@ -135,6 +137,15 @@ export type StaticSpecInput = {
 
 type Stack = { blocks: SpecBlock[]; height: number };
 
+/** Кегли заголовка и подзаголовка статичного слайда с учётом ручного масштаба. */
+function partSizesOf(slide: PresentationSlide, title: number, subtitle: number) {
+  const ov = slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES;
+  return {
+    title: title * partTextScale(ov.titleScale),
+    subtitle: subtitle * partTextScale(ov.subtitleScale),
+  };
+}
+
 /** Вертикально центрирует набор блоков в области контента. */
 function center(stack: Stack): SpecBlock[] {
   const top = SPEC.padTop;
@@ -165,24 +176,25 @@ function titleSpec(a: StaticSpecInput): SpecBlock[] {
   }
 
   const title = a.slide.title || a.presentationTitle;
+  const sz = partSizesOf(a.slide, ts.titleHero, ts.subtitle);
   const titleW = Math.min(900, w);
   y += 40;
   blocks.push({
-    kind: "text", id: "title", x, y, w: titleW, size: ts.titleHero, lineHeight: 1.05,
+    kind: "text", id: "title", x, y, w: titleW, size: sz.title, lineHeight: 1.05,
     font: "display", weight: 800, color: "ink", text: title,
     placeholder: "Название презентации", align: "left",
   });
-  y += textH(title, ts.titleHero, titleW, 1.05);
+  y += textH(title, sz.title, titleW, 1.05);
 
   if (a.slide.subtitle.trim()) {
     const subW = Math.min(820, w);
     y += 20;
     blocks.push({
-      kind: "text", id: "subtitle", x, y, w: subW, size: ts.subtitle, lineHeight: 1.3,
+      kind: "text", id: "subtitle", x, y, w: subW, size: sz.subtitle, lineHeight: 1.3,
       font: "body", weight: 400, color: "muted", text: a.slide.subtitle,
       placeholder: "Подзаголовок или слоган", align: "left",
     });
-    y += textH(a.slide.subtitle, ts.subtitle, subW, 1.3);
+    y += textH(a.slide.subtitle, sz.subtitle, subW, 1.3);
   }
 
   y += 40;
@@ -222,25 +234,26 @@ function sectionSpec(a: StaticSpecInput): SpecBlock[] {
   const blocks: SpecBlock[] = [];
   let y = 0;
 
+  const sz = partSizesOf(a.slide, ts.titleSection, ts.subtitle);
   blocks.push({ kind: "rect", x, y, w: 88, h: 4, radius: SPEC.ruleRadius, color: "accent" });
   y += 4 + 26;
 
   blocks.push({
-    kind: "text", id: "title", x, y, w, size: ts.titleSection, lineHeight: 1.14,
+    kind: "text", id: "title", x, y, w, size: sz.title, lineHeight: 1.14,
     font: "display", weight: 800, color: "ink", text: a.slide.title,
     placeholder: "Название раздела", align: "left",
   });
-  y += textH(a.slide.title, ts.titleSection, w, 1.14);
+  y += textH(a.slide.title, sz.title, w, 1.14);
 
   if (a.slide.subtitle.trim()) {
     const subW = Math.min(860, w);
     y += 16;
     blocks.push({
-      kind: "text", id: "subtitle", x, y, w: subW, size: ts.subtitle, lineHeight: 1.3,
+      kind: "text", id: "subtitle", x, y, w: subW, size: sz.subtitle, lineHeight: 1.3,
       font: "body", weight: 400, color: "muted", text: a.slide.subtitle,
       placeholder: "Короткое пояснение", align: "left",
     });
-    y += textH(a.slide.subtitle, ts.subtitle, subW, 1.3);
+    y += textH(a.slide.subtitle, sz.subtitle, subW, 1.3);
   }
 
   return center({ blocks, height: y });
@@ -254,21 +267,22 @@ function contactsSpec(a: StaticSpecInput): SpecBlock[] {
   const blocks: SpecBlock[] = [];
   let y = 0;
 
+  const sz = partSizesOf(a.slide, ts.titleSection, ts.subtitle);
   blocks.push({
-    kind: "text", id: "title", x, y, w, size: ts.titleSection, lineHeight: 1.14,
+    kind: "text", id: "title", x, y, w, size: sz.title, lineHeight: 1.14,
     font: "display", weight: 800, color: "ink", text: a.slide.title,
     placeholder: "Свяжитесь с нами", align: "left",
   });
-  y += textH(a.slide.title, ts.titleSection, w, 1.14);
+  y += textH(a.slide.title, sz.title, w, 1.14);
 
   if (a.slide.subtitle.trim()) {
     y += 14;
     blocks.push({
-      kind: "text", id: "subtitle", x, y, w, size: ts.subtitle, lineHeight: 1.3,
+      kind: "text", id: "subtitle", x, y, w, size: sz.subtitle, lineHeight: 1.3,
       font: "body", weight: 400, color: "muted", text: a.slide.subtitle,
       placeholder: "Подзаголовок", align: "left",
     });
-    y += textH(a.slide.subtitle, ts.subtitle, w, 1.3);
+    y += textH(a.slide.subtitle, sz.subtitle, w, 1.3);
   }
 
   const rows = contactRows(a.company);

@@ -8,6 +8,7 @@ import type { ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DEFAULT_LAYOUT_OVERRIDES, LOGO_SCALE_MAX, LOGO_SCALE_MIN, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
+  PRICE_SCALE_MAX, PRICE_SCALE_MIN, TEXT_SCALE_MAX, TEXT_SCALE_MIN,
   clampNum, type SlideLayoutOverrides,
 } from "@/lib/presentations/model";
 
@@ -77,10 +78,21 @@ function partButtons(kind: "title" | "subtitle" | "body", l: SlideLayoutOverride
     active: cur === id,
     onClick: () => on({ [key]: cur === id ? "auto" : id } as Partial<SlideLayoutOverrides>),
   });
+  const sKey = kind === "title" ? "titleScale" : kind === "subtitle" ? "subtitleScale" : "bodyScale";
+  const size = (d: number): Btn => ({
+    key: `${kind}-size${d > 0 ? "+" : "-"}`,
+    label: d > 0 ? "Крупнее" : "Мельче",
+    Icon: d > 0 ? Plus : Minus,
+    active: false,
+    onClick: () =>
+      on({ [sKey]: clampNum((l[sKey] ?? 1) + d, TEXT_SCALE_MIN, TEXT_SCALE_MAX) } as Partial<SlideLayoutOverrides>),
+  });
   return [
     x("left", AlignLeft, "Слева"),
     x("center", AlignCenter, "По центру"),
     x("right", AlignRight, "Справа"),
+    size(-0.1),
+    size(0.1),
   ];
 }
 
@@ -113,10 +125,19 @@ function priceButtons(l: SlideLayoutOverrides, on: Props["onChange"]): Btn[] {
     active: l.priceZone === id,
     onClick: () => on({ priceZone: l.priceZone === id ? "auto" : id }),
   });
+  const step = (d: number): Btn => ({
+    key: d > 0 ? "pr-plus" : "pr-minus",
+    label: d > 0 ? "Крупнее" : "Мельче",
+    Icon: d > 0 ? Plus : Minus,
+    active: false,
+    onClick: () => on({ priceScale: clampNum((l.priceScale ?? 1) + d, PRICE_SCALE_MIN, PRICE_SCALE_MAX) }),
+  });
   return [
     z("under-text", AlignVerticalJustifyEnd, "Под текстом"),
     z("corner", AlignRight, "В углу"),
     z("beside-photo", AlignVerticalJustifyStart, "Рядом с фото"),
+    step(-0.1),
+    step(0.1),
   ];
 }
 
@@ -156,10 +177,10 @@ function resetPatch(kind: BlockKind, l: SlideLayoutOverrides): Partial<SlideLayo
     return { alignX: "auto", textZone: "auto", stretchX: false, stretchY: false, textWidth: null };
   }
   if (kind === "photo") return { photoZone: "auto", photoScale: null };
-  if (kind === "price") return { priceZone: "auto" };
-  if (kind === "title") return { titleAlignX: "auto" };
-  if (kind === "subtitle") return { subtitleAlignX: "auto" };
-  if (kind === "body") return { bodyAlignX: "auto" };
+  if (kind === "price") return { priceZone: "auto", priceScale: null };
+  if (kind === "title") return { titleAlignX: "auto", titleScale: null };
+  if (kind === "subtitle") return { subtitleAlignX: "auto", subtitleScale: null };
+  if (kind === "body") return { bodyAlignX: "auto", bodyScale: null };
   const key = kind === "brand" ? "brandLogo" : "clientLogo";
   return { [key]: { ...l[key], zone: "auto", scale: null, pos: null } } as Partial<SlideLayoutOverrides>;
 }
