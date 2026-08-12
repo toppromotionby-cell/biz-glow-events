@@ -217,6 +217,7 @@ export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
   const r = (raw ?? {}) as Record<string, unknown>;
   const ps = Number(r.photoScale);
   const tw = Number(r.textWidth);
+  const prs = Number(r.priceScale);
   return {
     photoZone: PHOTO_ZONES.includes(r.photoZone as PhotoZone) ? (r.photoZone as PhotoZone) : "auto",
     photoScale: Number.isFinite(ps) && ps > 0 ? clampNum(ps, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) : null,
@@ -229,6 +230,7 @@ export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
     stretchX: r.stretchX === true,
     stretchY: r.stretchY === true,
     priceZone: PRICE_ZONES.includes(r.priceZone as PriceZone) ? (r.priceZone as PriceZone) : "auto",
+    priceScale: Number.isFinite(prs) && prs > 0 ? clampNum(prs, PRICE_SCALE_MIN, PRICE_SCALE_MAX) : null,
     brandLogo: normLogoOverride(r.brandLogo),
     clientLogo: normLogoOverride(r.clientLogo),
   };
