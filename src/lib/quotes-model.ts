@@ -381,32 +381,6 @@ export function summarizeChecks(checks: QuoteCheck[]): { errors: number; warns: 
   };
 }
 
-/** Разбор таблицы, скопированной из Excel: название / кол-во / ед. / цена [/ себестоимость]. */
-export function parsePastedQuoteRows(text: string): Array<Pick<QuoteItem, "title" | "qty" | "unit" | "price" | "cost">> {
-  const rows: Array<Pick<QuoteItem, "title" | "qty" | "unit" | "price" | "cost">> = [];
-  for (const raw of text.split(/\r?\n/)) {
-    if (!raw.trim()) continue;
-    const cells = raw.split("\t").length > 1 ? raw.split("\t") : raw.split(/ {2,}|;/);
-    const title = (cells[0] ?? "").trim();
-    if (!title) continue;
-    const nums = cells.slice(1).map((c) => c.trim());
-    const isNum = (v: string) => v !== "" && Number.isFinite(num(v, NaN));
-    const qty = isNum(nums[0] ?? "") ? num(nums[0]) : 1;
-    const unit = nums[1] && !isNum(nums[1]) ? nums[1] : "шт.";
-    const priceCell = nums.slice(1).find((v) => isNum(v));
-    const rest = nums.slice(1).filter((v) => isNum(v));
-    rows.push({
-      title,
-      qty: qty || 1,
-      unit,
-      price: priceCell ? num(priceCell) : 0,
-      cost: rest.length > 1 ? num(rest[1]) : 0,
-    });
-  }
-  return rows;
-}
-
-
 // --- Сумма прописью (BYN) ---
 const ONES = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
 const ONES_F = ["", "одна", "две", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];

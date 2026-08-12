@@ -491,22 +491,6 @@ export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): Prom
   };
 }
 
-// Разбор вставки из Excel/таблицы: наименование [tab] кол-во [tab] цена [tab] примечание
-export function parsePastedPromoRows(text: string, section = ""): PromoItem[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const out: PromoItem[] = [];
-  for (const line of lines) {
-    const cells = line.split(/\t|;/).map((c) => c.trim());
-    if (!cells.length || !cells[0]) continue;
-    const nums = cells.slice(1).map((c) => Number(c.replace(/\s/g, "").replace(",", ".")));
-    const qty = Number.isFinite(nums[0]) ? nums[0] : 1;
-    const price = Number.isFinite(nums[1]) ? nums[1] : 0;
-    const note = cells.slice(1).find((c) => c && !Number.isFinite(Number(c.replace(",", ".")))) ?? "";
-    out.push(newPromoItem(section, { title: cells[0], qty, price, note }));
-  }
-  return out;
-}
-
 export function promoValidityState(q: PromoQuote): "none" | "active" | "expired" {
   if (!q.valid_until) return "none";
   const d = new Date(`${q.valid_until}T23:59:59`);
@@ -642,7 +626,7 @@ export function promoNumberDisplay(q: PromoQuote): string {
   return n ? n.replaceAll("/", ".") : q.id.slice(0, 8).toUpperCase();
 }
 
-export function promoFileName(q: PromoQuote, ext: "pdf" | "xlsx"): string {
+export function promoFileName(q: PromoQuote, ext: "pdf" = "pdf"): string {
   const base = `КП ${promoNumberDisplay(q)}${q.client_name ? ` — ${q.client_name}` : ""}`;
   return `${base.replace(/[\\/:*?"<>|]/g, "-")}.${ext}`;
 }
