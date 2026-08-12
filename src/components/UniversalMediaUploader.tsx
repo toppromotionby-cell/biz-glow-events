@@ -6,6 +6,7 @@ import imageCompression from "browser-image-compression";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { signedMediaUrl } from "@/lib/media-url-cache";
 
 const MAX_PHOTOS = 5;
 const MAX_VIDEOS = 5;
@@ -146,13 +147,9 @@ function MediaThumb({ path, kind, onRemove }: { path: string; kind: "photo" | "v
         setUrl(path);
         return;
       }
-      const { data, error } = await supabase.storage.from("media").createSignedUrl(path, 3600);
+      const signed = await signedMediaUrl(path);
       if (!mounted.current) return;
-      if (error || !data?.signedUrl) {
-        setUrl(null);
-        return;
-      }
-      setUrl(data.signedUrl);
+      setUrl(signed);
     })();
     return () => {
       mounted.current = false;
