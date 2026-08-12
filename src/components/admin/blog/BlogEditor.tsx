@@ -18,6 +18,7 @@ import { blogPostSchema, type BlogPostInput } from "@/lib/admin/schemas";
 import { useSlugUnique } from "@/lib/admin/use-slug-unique";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
+import { SaveStatus } from "@/components/admin/SaveStatus";
 import { slugify, cn } from "@/lib/utils";
 
 type EditorProps = {
