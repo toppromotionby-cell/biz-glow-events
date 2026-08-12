@@ -171,7 +171,6 @@ type DocCtx = {
 // Габариты логотипа в шапке (pt). Пропорции сохраняются, картинка вписывается.
 const HEADER_LOGO_MAX_H = DEFAULT_LOGO_LAYOUT.maxH;
 const HEADER_LOGO_MAX_W = DEFAULT_LOGO_LAYOUT.maxW;
-const MAX_LOGO_BYTES = 4 * 1024 * 1024;
 
 /**
  * Загружает логотип по URL и встраивает в PDF, вписывая в бокс maxW×maxH.
