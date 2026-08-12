@@ -232,6 +232,17 @@ async function drawSlide(a: DrawArgs) {
     if (clientLogo && plan.client) drawPlannedLogo(page, clientLogo, plan.client);
   };
 
+  // Горизонтальное выравнивание текста слайда (для слайдов с текстовой колонкой).
+  const alignMode =
+    slide.type === "product" || slide.type === "text" ? slideFit.layout.textAlignX : "left";
+  const alignBoxW = (slideFit.layout.textBox.w * W) / SLIDE_W;
+  const alignX = (left: number, lineW: number) =>
+    alignMode === "center"
+      ? left + (alignBoxW - lineW) / 2
+      : alignMode === "right"
+        ? left + alignBoxW - lineW
+        : left;
+
   const drawLines = (
     lines: string[],
     x: number,
@@ -324,7 +335,7 @@ async function drawSlide(a: DrawArgs) {
   if (slide.subtitle) {
     y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, t.muted);
   }
-  page.drawRectangle({ x, y: y - 14, width: 52, height: 2.5, color: t.accent });
+  page.drawRectangle({ x: alignX(x, 52), y: y - 14, width: 52, height: 2.5, color: t.accent });
   y -= px(ts.blockGap) + 14;
 
 
@@ -339,9 +350,14 @@ async function drawSlide(a: DrawArgs) {
       y -= px(ts.label) * 1.8;
     }
     for (const item of c.includes.slice(0, 9)) {
-      const lines = wrap(fonts.regular, item, bulletSize, maxW - 14);
-      page.drawText("•", { x, y, size: bulletSize, font: fonts.regular, color: t.accent });
-      y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
+      if (alignMode === "left") {
+        const lines = wrap(fonts.regular, item, bulletSize, maxW - 14);
+        page.drawText("•", { x, y, size: bulletSize, font: fonts.regular, color: t.accent });
+        y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
+      } else {
+        const lines = wrap(fonts.regular, `• ${item}`, bulletSize, maxW);
+        y = drawLines(lines, x, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
+      }
       y -= 2;
     }
     y -= px(ts.blockGap) * 0.5;
@@ -354,8 +370,9 @@ async function drawSlide(a: DrawArgs) {
       const text = `${s.label}: ${s.value}`;
       const w = fonts.regular.widthOfTextAtSize(text, chip) + 20;
       if (cx + w > x + maxW) { cx = x; y -= chip * 2.4; }
-      page.drawRectangle({ x: cx, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
-      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: t.ink });
+      const chipX = alignMode === "left" ? cx : alignX(cx, w);
+      page.drawRectangle({ x: chipX, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
+      page.drawText(text, { x: chipX + 10, y, size: chip, font: fonts.regular, color: t.ink });
       cx += w + 8;
     }
     y -= chip * 3;
@@ -379,7 +396,7 @@ async function drawSlide(a: DrawArgs) {
     const label = `${money(c.price)} / ${c.priceUnit}`;
     const w = fonts.bold.widthOfTextAtSize(label, 15) + 32;
     const pb = slideFit.layout.priceBox;
-    const bx = pb ? px(pb.x) : x;
+    const bx = pb ? px(pb.x) : alignX(x, w);
     const by = pb ? H - px(pb.y) - 34 : 64;
     page.drawRectangle({ x: bx, y: by, width: w, height: 34, color: t.accent });
     page.drawText(label, { x: bx + 16, y: by + 11, size: 15, font: fonts.bold, color: t.onAccent });
