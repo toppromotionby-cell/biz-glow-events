@@ -546,10 +546,17 @@ function Page() {
                 <Field label="Монтаж / демонтаж" className="col-span-2"><Input value={quote.setup_note ?? ""} onChange={(e) => patch({ setup_note: e.target.value })} /></Field>
                 <Field label="Комментарий" className="col-span-2"><Textarea rows={3} value={quote.event_notes ?? ""} onChange={(e) => patch({ event_notes: e.target.value })} /></Field>
               </div>
-            </TabsContent>
+        </div>
+      ),
+    },
+    {
+      id: "money",
+      label: "Финансы",
+      Icon: Wallet,
+      content: (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
 
-            <TabsContent value="money" className="space-y-3 pt-3">
-              <div className="grid grid-cols-2 gap-3">
                 <Field label="Тип скидки">
                   <Select value={quote.discount_type} onValueChange={(v) => patch({ discount_type: v as Quote["discount_type"] })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
