@@ -46,6 +46,17 @@ const STACKS: Record<DocFont, FontStacks> = {
   },
 };
 
+/** Есть ли кириллица в display-шрифте набора (Space Grotesk — нет). */
+export const DOC_FONT_DISPLAY_CYRILLIC: Record<DocFont, boolean> = {
+  brand: false,
+  ubuntu: true,
+};
+
+/** Нужно ли для строки заменить display-шрифт на основной (иначе «квадратики»). */
+export function needsBodyFallback(font: DocFont, text: string): boolean {
+  return !DOC_FONT_DISPLAY_CYRILLIC[font] && /[\u0400-\u04FF]/.test(text);
+}
+
 export function fontStacks(font: DocFont): FontStacks {
   return STACKS[font];
 }

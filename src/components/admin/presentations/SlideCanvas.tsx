@@ -60,7 +60,7 @@ function SpecBlockView({
 }: {
   block: SpecBlock;
   theme: SlideThemeTokens;
-  heading: CSSProperties;
+  heading: (text: string) => CSSProperties | null;
   logoPath: string | null;
   onEdit?: SlideCanvasProps["onEdit"];
   partAlign: (part: "title" | "subtitle" | "body") => CSSProperties;
@@ -154,7 +154,7 @@ function SpecBlockView({
     textTransform: block.uppercase ? "uppercase" : undefined,
     letterSpacing: block.letterSpacing,
     whiteSpace: "pre-wrap",
-    ...(block.font === "display" ? heading : null),
+    ...(block.font === "display" ? heading(block.text) : null),
     ...(block.id ? partAlign(block.id) : null),
   };
   // Прямо в холсте правятся только заголовок и подзаголовок; описание —
@@ -414,7 +414,14 @@ function SlideBody({
   const c = slide.content;
   const ts = fit.type;
   const { layout } = fit;
-  const heading = { fontFamily: "var(--slide-font-display, " + FONTS.display + ")", letterSpacing: "-0.03em" } as const;
+  // Кириллицы нет в фирменном display-шрифте — такие заголовки рисуем
+  // основным шрифтом, чтобы превью совпадало с PDF (там та же подмена).
+  const headingStyle: CSSProperties = {
+    fontFamily: "var(--slide-font-display, " + FONTS.display + ")",
+    letterSpacing: "-0.03em",
+  };
+  const heading = (text: string): CSSProperties | null =>
+    needsBodyFallback(docFont, text) ? { fontWeight: 700 } : headingStyle;
   // Выравнивание отдельных частей текста (Canva-подобно): auto = как у блока.
   const ov = slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES;
   const partAlign = (part: "title" | "subtitle" | "body"): CSSProperties => {
