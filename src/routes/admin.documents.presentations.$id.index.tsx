@@ -730,7 +730,7 @@ function Page() {
             onPrev={() => { const p = slides[currentIndex - 1]; if (p) setSelected(p.id); }}
             onNext={() => { const n = slides[currentIndex + 1]; if (n) setSelected(n.id); }}
             onGrid={() => setGridOpen(true)}
-            hint="Клик — выделить блок, двойной клик — править текст, стрелки двигают логотип, Ctrl/Cmd + Z — отмена."
+            hint="Клик — выделить блок, двойной клик — править его (текст или окно с данными), стрелки двигают логотип, Ctrl/Cmd + Z — отмена. Панели тянутся за разделители."
           />
           </>
         }
