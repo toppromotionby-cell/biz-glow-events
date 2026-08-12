@@ -365,15 +365,23 @@ export function rectsOverlap(a: Rect, b: Rect, gap = 0): boolean {
 const PRICE_W = 340;
 const PRICE_H = 84;
 
+/**
+ * Отступы угловых слотов логотипа в координатах холста 1280×720.
+ * Одни и те же значения использует превью и PDF — логотипы стоят одинаково.
+ */
+export const LOGO_SLOT_INSET = { top: 36, side: 56, bottom: 84 } as const;
+
 /** Область под блок цены для конкретной зоны. */
-function priceRect(zone: Exclude<PriceZone, "auto">, textBox: Rect): Rect {
+function priceRect(zone: Exclude<PriceZone, "auto">, textBox: Rect, k = 1): Rect {
+  const w = PRICE_W * k;
+  const h = PRICE_H * k;
   if (zone === "corner") {
-    return { x: SLIDE_W - GRID.marginX - PRICE_W, y: SLIDE_H - GRID.footerH - 110, w: PRICE_W, h: PRICE_H };
+    return { x: SLIDE_W - GRID.marginX - w, y: SLIDE_H - GRID.footerH - 26 - h, w, h };
   }
   if (zone === "beside-photo") {
-    return { x: SLIDE_W - GRID.marginX - PRICE_W, y: GRID.marginTop, w: PRICE_W, h: PRICE_H };
+    return { x: SLIDE_W - GRID.marginX - w, y: GRID.marginTop, w, h };
   }
-  return { x: textBox.x, y: textBox.y + textBox.h - PRICE_H, w: Math.min(PRICE_W, textBox.w), h: PRICE_H };
+  return { x: textBox.x, y: textBox.y + textBox.h - h, w: Math.min(w, textBox.w), h };
 }
 
 const PRICE_FALLBACK: Exclude<PriceZone, "auto">[] = ["corner", "beside-photo", "under-text"];
