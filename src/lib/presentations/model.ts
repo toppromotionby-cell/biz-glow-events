@@ -250,6 +250,7 @@ export function isAutoLayout(o: SlideLayoutOverrides): boolean {
     o.bodyAlignX === "auto" &&
     !o.stretchX &&
     !o.stretchY &&
+    o.priceScale === null &&
     o.priceZone === "auto" &&
     autoLogo(o.brandLogo) &&
     autoLogo(o.clientLogo)
