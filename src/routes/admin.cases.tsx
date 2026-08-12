@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UniversalMediaUploader } from "@/components/UniversalMediaUploader";
 import { toast } from "sonner";
-import { Plus, Star, Sparkles } from "lucide-react";
+import { Plus, Search, Star, Sparkles, X } from "lucide-react";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminListPanel } from "@/components/admin/AdminListPanel";
@@ -23,9 +23,16 @@ import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosav
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { useEditorHotkeys } from "@/lib/admin/use-editor-hotkeys";
 import { generateSeoDescription } from "@/lib/admin/seo";
+import { useListUrlState, matchesQuery } from "@/hooks/use-list-url-state";
+import { adminKeys } from "@/lib/query-keys";
 import type { SaveState } from "@/components/admin/SaveStatus";
 
+// Поиск и выбранный кейс живут в URL — F5 и «назад» не сбрасывают работу.
 export const Route = createFileRoute("/admin/cases")({
+  validateSearch: (search: Record<string, unknown>): { q?: string | undefined; id?: string | undefined } => ({
+    q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
+    id: typeof search["id"] === "string" && search["id"] ? (search["id"] as string) : undefined,
+  }),
   component: CasesAdmin,
 });
 
@@ -34,12 +41,22 @@ type CaseRow = Database["public"]["Tables"]["cases"]["Row"];
 
 function CasesAdmin() {
   const qc = useQueryClient();
-  const [selected, setSelected] = useState<CaseRow | null>(null);
+  const sp = Route.useSearch();
+  const routeNavigate = Route.useNavigate();
+  const patchSearch = (p: { q?: string | undefined; id?: string | undefined }) =>
+    void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...p }), replace: true });
+  const { query, setQuery, debouncedQuery, selectedId, selectId } = useListUrlState(sp, patchSearch);
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ["admin-cases"],
+    queryKey: adminKeys.cases,
     queryFn: async () => (await supabase.from("cases").select("*").order("sort_order", { ascending: true }).order("event_date", { ascending: false, nullsFirst: false }).limit(ADMIN_LIST_LIMIT)).data ?? [],
   });
+
+  const visible = useMemo(
+    () => (items as CaseRow[]).filter((it) => matchesQuery(debouncedQuery, it.title, it.slug, it.client_name)),
+    [items, debouncedQuery],
+  );
+  const selected = (items as CaseRow[]).find((it) => it.id === selectedId) ?? null;
 
   const create = useMutation({
     mutationFn: async () => {
@@ -50,7 +67,7 @@ function CasesAdmin() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["admin-cases"] }); setSelected(row); },
+    onSuccess: (row) => { qc.invalidateQueries({ queryKey: adminKeys.cases }); selectId(row.id); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -59,7 +76,7 @@ function CasesAdmin() {
       const { error } = await supabase.from("cases").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-cases"] }); setSelected(null); toast.success("Удалено"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: adminKeys.cases }); selectId(null); toast.success("Удалено"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -67,42 +84,70 @@ function CasesAdmin() {
     <div className="space-y-5">
       <AdminPageHeader
         title="Кейсы"
-        subtitle={`${items.length} записей`}
+        subtitle={debouncedQuery ? `${visible.length} из ${items.length} записей` : `${items.length} записей`}
         action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
       />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <AdminListPanel
-          items={items as CaseRow[]}
-          isLoading={isLoading}
-          onReorder={async (ids) => {
-            try { await persistSortOrder("cases", ids); qc.invalidateQueries({ queryKey: ["admin-cases"] }); }
-            catch (e) { toast.error((e as Error).message); throw e; }
-          }}
-          renderItem={(it, handle) => (
-            <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
-              {handle}
-              <button onClick={() => setSelected(it)} className="flex-1 text-left p-3 text-sm min-w-0">
-                <div className="font-medium truncate flex items-center gap-1.5">
-                  {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
-                  <span className="truncate">{it.title}</span>
-                </div>
-                <div className="text-xs opacity-70 flex items-center gap-2">
-                  <span>{it.event_date ?? "—"}</span>
-                  <StatusPill tone={it.published ? "success" : "muted"}>
-                    {it.published ? "опубликовано" : "черновик"}
-                  </StatusPill>
-                </div>
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Поиск по кейсам…"
+              aria-label="Поиск по кейсам"
+              className="pl-8 pr-8"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Очистить поиск"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
               </button>
-            </div>
-          )}
-        />
+            )}
+          </div>
+          <AdminListPanel
+            items={visible}
+            isLoading={isLoading}
+            emptyText={debouncedQuery ? "Ничего не найдено" : "Нет кейсов"}
+            // Перетаскивание доступно только без фильтра: иначе порядок сохранится неверно.
+            {...(debouncedQuery
+              ? {}
+              : {
+                  onReorder: async (ids: string[]) => {
+                    try { await persistSortOrder("cases", ids); qc.invalidateQueries({ queryKey: adminKeys.cases }); }
+                    catch (e) { toast.error((e as Error).message); throw e; }
+                  },
+                })}
+            renderItem={(it, handle) => (
+              <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
+                {handle}
+                <button onClick={() => selectId(it.id)} className="flex-1 text-left p-3 text-sm min-w-0">
+                  <div className="font-medium truncate flex items-center gap-1.5">
+                    {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
+                    <span className="truncate">{it.title}</span>
+                  </div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    <span>{it.event_date ?? "—"}</span>
+                    <StatusPill tone={it.published ? "success" : "muted"}>
+                      {it.published ? "опубликовано" : "черновик"}
+                    </StatusPill>
+                  </div>
+                </button>
+              </div>
+            )}
+          />
+        </div>
 
         <div>
           {selected ? (
             <Editor key={selected.id} item={selected}
               onDelete={() => remove.mutate(selected.id)}
-              onSaved={() => qc.invalidateQueries({ queryKey: ["admin-cases"] })}
+              onSaved={() => qc.invalidateQueries({ queryKey: adminKeys.cases })}
             />
           ) : (
             <AdminEmptyEditor
@@ -118,6 +163,7 @@ function CasesAdmin() {
 
 function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => void; onDelete: () => void }) {
   const draftKey = `cases:${item.id}`;
+
   const [form, setForm] = useState<CaseRow>(() => {
     const draft = readDraft<CaseRow>(draftKey);
     return draft ? { ...item, ...draft } : { ...item };
