@@ -248,19 +248,23 @@ function rowCells(ctx: Ctx, layout: DocLayout, r: DocRow, widths: number[]): Cel
   }
 
   if (r.kind === "subtotal") {
-    const headW = widths.slice(0, -1).reduce((s, x) => s + x, 0);
-    const lastCol = cols.at(-1)!;
-    return [
+    // Подпись занимает всё до колонки «Всего», сумма — в самой колонке сумм.
+    const amountIdx = Math.max(1, cols.findIndex((c) => c.key === "amount"));
+    const headW = widths.slice(0, amountIdx).reduce((s, x) => s + x, 0);
+    const out: Cell[] = [
       {
         lines: wrap(ctx.bold, r.cells.title ?? "", FS_BODY, headW - PAD_X * 2),
         align: "right",
         bold: true,
         color: INK,
-        span: cols.length - 1,
+        span: amountIdx,
       },
-      cell(r.cells[lastCol.key] ?? "", lastCol, { bold: true }, widths.at(-1)),
+      cell(r.cells.amount ?? "", cols[amountIdx], { bold: true }, widths[amountIdx]),
     ];
+    for (let i = amountIdx + 1; i < cols.length; i += 1) out.push(cell("", cols[i], {}, widths[i]));
+    return out;
   }
+
 
   const isExtra = r.kind === "extra";
   const out: Cell[] = [];
