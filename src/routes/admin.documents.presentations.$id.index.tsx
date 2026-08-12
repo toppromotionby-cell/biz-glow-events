@@ -664,6 +664,7 @@ function Page() {
           {current ? (
             <CanvasStage
               zoom={zoom}
+              onZoom={setZoom}
               onBackgroundClick={() => { setSelectedBlock(null); setTextEditing(false); }}
             >
               {(width) => (
@@ -708,7 +709,7 @@ function Page() {
 
         {/* Правая панель свойств */}
         {!isMobile && (
-          <aside className="hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-border/60 p-4 lg:flex">
+          <aside className="scroll-visible hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-border/60 p-4 lg:flex">
             {current ? (
               <div className="space-y-4">
                 {selectedBlock && (

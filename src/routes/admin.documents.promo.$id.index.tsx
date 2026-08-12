@@ -58,6 +58,7 @@ import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-
 import { sheetCss } from "@/lib/documents/sheet";
 import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
 import { A4Sheet } from "@/components/admin/documents/A4Sheet";
+import { useInlineDocEdit } from "@/hooks/use-inline-doc-edit";
 
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
@@ -288,12 +289,10 @@ function EditorPage() {
 
 
   /** Двойной клик по блоку превью открывает точечное редактирование. */
-  const onPreviewDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!inlineEdit) return;
-    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-edit]");
-    if (!el) return;
-    setEdit({ target: el.dataset.edit ?? "", id: el.dataset.editId ?? null });
-  };
+  const { containerRef: sheetRef } = useInlineDocEdit({
+    enabled: inlineEdit,
+    onEdit: (hit) => setEdit(hit),
+  });
 
   const versions = useQuery({
     queryKey: ["promo-versions", id],
@@ -670,7 +669,7 @@ function EditorPage() {
         sheet={() => (
           <>
             <style>{PROMO_DOC_CSS}</style>
-            <A4Sheet onDoubleClick={onPreviewDoubleClick}>
+            <A4Sheet ref={sheetRef}>
               <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
             </A4Sheet>
           </>

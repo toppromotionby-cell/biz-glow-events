@@ -7,7 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { FullscreenLayer } from "@/components/FullscreenLayer";
 import { EditorSidebar, type EditorSection } from "@/components/admin/editor/EditorSidebar";
-import { DocCanvasStage } from "@/components/admin/editor/DocCanvasStage";
+import { DocCanvasStage, type DocFitMode } from "@/components/admin/editor/DocCanvasStage";
 import { DocEditorFooter } from "@/components/admin/editor/DocEditorFooter";
 
 export type { EditorSection };
@@ -52,6 +52,7 @@ export function DocEditorShell({
     onActiveChange?.(id);
   };
   const [zoom, setZoom] = useState(1);
+  const [fitMode, setFitMode] = useState<DocFitMode>("width");
 
 
   const current = sections.find((s) => s.id === active) ?? null;
@@ -80,12 +81,16 @@ export function DocEditorShell({
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <DocCanvasStage zoom={zoom}>{sheet}</DocCanvasStage>
-            <DocEditorFooter zoom={zoom} onZoom={setZoom} hint={hint} left={footerLeft} />
+            <DocCanvasStage zoom={zoom} fitMode={fitMode} onZoom={setZoom}>{sheet}</DocCanvasStage>
+            <DocEditorFooter
+              zoom={zoom} onZoom={setZoom}
+              fitMode={fitMode} onFitMode={setFitMode}
+              hint={hint} left={footerLeft}
+            />
           </div>
 
           {rightPanel && (
-            <aside className="hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-border/60 p-4 xl:flex">
+            <aside className="scroll-visible hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-border/60 p-4 xl:flex">
               {rightPanel}
             </aside>
           )}
@@ -108,7 +113,14 @@ export function DocEditorShell({
             ))}
           </div>
           {current && (
-            <div className="max-h-[45vh] overflow-y-auto border-t border-border/60 p-3">{current.content}</div>
+            <div className="scroll-visible max-h-[45vh] overflow-y-auto border-t border-border/60 p-3">
+              {current.content}
+            </div>
+          )}
+          {rightPanel && (
+            <div className="scroll-visible max-h-[40vh] overflow-y-auto border-t border-border/60 p-3 xl:hidden">
+              {rightPanel}
+            </div>
           )}
         </div>
       </div>

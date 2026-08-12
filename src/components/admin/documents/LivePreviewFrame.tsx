@@ -62,6 +62,13 @@ export function LivePreviewFrame({
       body.appendChild(mount);
       keep.forEach((n) => body.appendChild(n));
     }
+    // Внутри редактора масштабирует сцена, поэтому собственный зум листа
+    // отключаем — иначе масштаб накладывается дважды и содержимое «съезжает».
+    const fix = doc.createElement("style");
+    fix.textContent =
+      "html,body{background:#fff!important;}body{zoom:1!important;padding:0!important;}" +
+      ".sheet{box-shadow:none!important;margin:0 auto!important;}";
+    doc.head?.appendChild(fix);
     readyRef.current = true;
   }, []);
 

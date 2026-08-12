@@ -1,5 +1,5 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
-import { PRICE_LABEL } from "@/lib/documents/doc-layout";
+import { docColumnWidths, PRICE_LABEL } from "@/lib/documents/doc-layout";
 import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
 import { fontCssVars, fontLinkTags, resolveDocFont } from "@/lib/documents/doc-font";
 import { vatRateLabel } from "@/lib/documents/vat";
@@ -111,6 +111,8 @@ export function buildPromoQuoteBody(
 
 
   const colCount = cols.length;
+  // Ширины колонок берём из общего макета документа — те же доли, что в PDF.
+  const colWidths = docColumnWidths(quote, items);
 
   const rowsHtml = sections
     .map((sec) => {
@@ -250,6 +252,7 @@ export function buildPromoQuoteBody(
 
   <div class="docnum">КП № ${esc(promoNumberDisplay(quote))}</div>
   <table class="grid">
+    <colgroup>${colWidths.map((c) => `<col style="width:${c.pct}%" />`).join("")}</colgroup>
     <thead><tr>${cols.map((c) => `<th class="${c.cls}">${esc(c.label)}</th>`).join("")}</tr></thead>
     <tbody>${rowsHtml || `<tr><td colspan="${colCount}" class="empty">Позиции не добавлены</td></tr>`}${extraRows.join("")}</tbody>
   </table>
@@ -282,12 +285,13 @@ export const PROMO_DOC_CSS = `
 .promo-doc .grid tr.sec-sub td { background: #f4f4f6; font-weight: 600; text-align: right; }
 .promo-doc .c-inc { margin: 3px 0 0; padding-left: 14px; font-size: 11px; color: #5a5a63; }
 .promo-doc .grid tr.extra td { background: #fbfbfc; font-style: italic; }
-.promo-doc table.grid { table-layout: auto; }
-.promo-doc .c-title { width: 24%; }
-.promo-doc .c-unit { width: 1%; text-align: center; white-space: nowrap; }
-.promo-doc .c-num { width: 1%; text-align: center; white-space: nowrap; }
-.promo-doc .c-money { width: 1%; text-align: center; white-space: nowrap; }
-.promo-doc .c-note { width: 38%; color: #45454d; }
+.promo-doc table.grid { table-layout: fixed; }
+.promo-doc .grid th, .promo-doc .grid td { overflow-wrap: anywhere; }
+.promo-doc .c-title { text-align: left; }
+.promo-doc .c-unit { text-align: center; }
+.promo-doc .c-num { text-align: center; font-variant-numeric: tabular-nums; }
+.promo-doc .c-money { text-align: center; font-variant-numeric: tabular-nums; }
+.promo-doc .c-note { text-align: left; color: #45454d; }
 .promo-doc .empty { text-align: center; color: #86868f; padding: 16px; }
 .promo-doc .totals { margin-top: 10px; width: 320px; margin-left: auto; }
 .promo-doc .totals td { border: 1px solid #b9b9bf; padding: 6px 8px; }
