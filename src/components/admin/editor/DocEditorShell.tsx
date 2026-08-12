@@ -2,9 +2,10 @@
 // редакторе презентаций: шапка, левый рельс разделов, лист по центру,
 // панель свойств справа и строка статуса снизу.
 import { useState, type ReactNode } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { FullscreenLayer } from "@/components/FullscreenLayer";
 import { EditorSidebar, type EditorSection } from "@/components/admin/editor/EditorSidebar";
 import { DocCanvasStage, type DocFitMode } from "@/components/admin/editor/DocCanvasStage";
@@ -72,7 +73,22 @@ export function DocEditorShell({
               )}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">{actions}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {rightPanel && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="xl:hidden">
+                    <SlidersHorizontal className="mr-1.5 h-4 w-4" />Свойства
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="scroll-visible w-[340px] max-w-[90vw] overflow-y-auto">
+                  <SheetHeader><SheetTitle>Свойства документа</SheetTitle></SheetHeader>
+                  <div className="mt-4">{rightPanel}</div>
+                </SheetContent>
+              </Sheet>
+            )}
+            {actions}
+          </div>
         </header>
 
         <div className="flex min-h-0 flex-1">
@@ -115,11 +131,6 @@ export function DocEditorShell({
           {current && (
             <div className="scroll-visible max-h-[45vh] overflow-y-auto border-t border-border/60 p-3">
               {current.content}
-            </div>
-          )}
-          {rightPanel && (
-            <div className="scroll-visible max-h-[40vh] overflow-y-auto border-t border-border/60 p-3 xl:hidden">
-              {rightPanel}
             </div>
           )}
         </div>
