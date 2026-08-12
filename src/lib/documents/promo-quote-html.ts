@@ -323,8 +323,10 @@ export function buildPromoQuoteHtmlDoc(quote: PromoQuote, items: PromoItem[], co
 ${fontLinkTags(resolveDocFont(quote.font_family))}
 <style>
   :root { ${densityRootVars()}; }
+  @page { size: A4; margin: ${printPageMarginCss(BASE_PRINT_PRESET)}; }
   body { margin: 0; }
   ${sheetCss(BASE_PRINT_PRESET)}
+
   ${PROMO_DOC_CSS}
 
   ${DENSITY_PAGE_CSS}
