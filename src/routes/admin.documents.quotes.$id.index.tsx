@@ -3,6 +3,8 @@ import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPrev
 import { LivePreviewFrame } from "@/components/admin/documents/LivePreviewFrame";
 import { useInlineDocEdit } from "@/hooks/use-inline-doc-edit";
 import { QuoteSheetPanel } from "@/components/admin/documents/QuoteSheetPanel";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
+import { deleteDocument } from "@/lib/documents-overview.functions";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -149,6 +151,22 @@ function Page() {
   const viewer = useDocumentViewer();
   const { id } = Route.useParams();
   const navigate = Route.useNavigate();
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const removeDoc = useServerFn(deleteDocument);
+  const onDeleteDocument = async () => {
+    const ok = await confirm({
+      title: "Удалить документ?",
+      description: "КП и его позиции будут удалены безвозвратно.",
+    });
+    if (!ok) return;
+    try {
+      await removeDoc({ data: { kind: "quote", id } });
+      toast.success("Документ удалён");
+      void navigate({ to: "/admin/documents" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
   const qc = useQueryClient();
   const load = useServerFn(getQuote);
   const save = useServerFn(saveQuote);
@@ -855,6 +873,10 @@ function Page() {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/admin/documents/knowledge"><Brain className="mr-2 h-4 w-4" />База знаний подсказок</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive" onClick={() => void onDeleteDocument()}>
+                <Trash2 className="mr-2 h-4 w-4" />Удалить документ
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
