@@ -28,6 +28,7 @@ import { CatalogListItem } from "@/components/admin/catalog/CatalogListItem";
 import { AttractionsMediaBackfill } from "@/components/admin/catalog/AttractionsMediaBackfill";
 
 import type { Row } from "@/components/admin/catalog/shared";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 // Поиск и открытая карточка живут в URL: ссылку можно переслать, F5 не сбрасывает работу.
 export const Route = createFileRoute("/admin/catalog/$type")({
