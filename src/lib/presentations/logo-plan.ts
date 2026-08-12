@@ -73,7 +73,7 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   // --- Логотип компании: ровно одно место ---
   let brand: LogoPlacementPlan | null = null;
   if (hasBrandLogo && layout.brand !== "off") {
-    if (titleLike) {
+    if (slideType === "title") {
       // Крупный логотип в контентной зоне, в футере его уже не рисуем.
       brand = { slot: "hero", maxW: 320 * scale, maxH: 76 * scale };
     } else if (layout.brand !== "title-only") {

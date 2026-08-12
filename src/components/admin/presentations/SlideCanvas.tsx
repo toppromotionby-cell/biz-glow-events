@@ -11,6 +11,7 @@ import {
   type Rect, type SlideThemeTokens,
 } from "@/lib/presentations/design";
 import { fitSlide, type SlideFit } from "@/lib/presentations/fit";
+import { planSlideLogos, type LogoSlot, type SlideLogoPlan } from "@/lib/presentations/logo-plan";
 import {
   DEFAULT_PRESENTATION_LOGO_LAYOUT,
   type PresentationLogoLayout,
