@@ -487,10 +487,18 @@ function Page() {
         total={slides.length}
         showWarnings
         onEdit={(patch) => patchSlide(current.id, patch)}
+        interactive
+        onLayout={(patch) =>
+          patchSlide(current.id, {
+            content: { ...current.content, layout: { ...current.content.layout, ...patch } },
+          })
+        }
         {...branding}
       />
       <p className="mt-2 text-xs text-muted-foreground">
-        Заголовок и подзаголовок можно править прямо на слайде. Сохранение — Ctrl/Cmd + S.
+        Заголовок и подзаголовок правятся прямо на слайде. Фото, текст, цену и логотипы можно
+        перетаскивать в подсвеченные зоны и менять размер угловым маркером — остальное
+        перестроится автоматически. Сохранение — Ctrl/Cmd + S.
       </p>
     </div>
   ) : (
