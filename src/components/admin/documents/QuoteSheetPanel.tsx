@@ -1,3 +1,4 @@
+import { adminKeys } from "@/lib/query-keys";
 // Панель синхронизации КП с Google Таблицами — тонкая обёртка над общим SheetSyncPanel.
 import { useServerFn } from "@tanstack/react-start";
 import {
