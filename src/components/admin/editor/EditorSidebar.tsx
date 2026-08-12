@@ -80,28 +80,3 @@ export function EditorSectionPanel({
     </div>
   );
 }
-
-/** Рельс + панель одним блоком (нерастягиваемый вариант). */
-export function EditorSidebar({
-  sections,
-  active,
-  onChange,
-}: {
-  sections: EditorSection[];
-  /** null — панель свёрнута, виден только рельс. */
-  active: string | null;
-  onChange: (id: string | null) => void;
-}) {
-  const current = sections.find((s) => s.id === active) ?? null;
-
-  return (
-    <div className="flex h-full min-h-0">
-      <EditorRail sections={sections} active={active} onChange={onChange} />
-      {current && (
-        <div className="flex shrink-0 flex-col" style={{ width: `min(${current.wide ? 420 : 290}px, 46vw)` }}>
-          <EditorSectionPanel section={current} onClose={() => onChange(null)} />
-        </div>
-      )}
-    </div>
-  );
-}
