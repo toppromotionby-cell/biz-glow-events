@@ -144,8 +144,9 @@ export async function buildPresentationPdf(
 
   pdf.setTitle(presentation.title);
   const t = themeOf(presentation.template, company?.accent_color ?? "#FF7500");
-  const logo = await embedImage(pdf, logoUrl);
-  const clientLogo = await embedImage(pdf, clientLogoUrl);
+  const cache = createImageCache();
+  const logo = await embedImage(pdf, logoUrl, cache);
+  const clientLogo = await embedImage(pdf, clientLogoUrl, cache);
   const layout = presentation.logo_layout;
   const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
 
@@ -165,10 +166,11 @@ export async function buildPresentationPdf(
           ? slide.resolved_images
           : [slide.resolved_image_url].filter((v): v is string => !!v))
       : [];
-    const images: (PDFImage | null)[] = [];
-    for (const src of sources.slice(0, MAX_SLIDE_PHOTOS)) {
-      images.push(await embedImage(pdf, src));
-    }
+    // Фото грузятся параллельно — сборка PDF не упирается в сеть.
+    const images: (PDFImage | null)[] = await Promise.all(
+      sources.slice(0, MAX_SLIDE_PHOTOS).map((src) => embedImage(pdf, src, cache)),
+    );
+
     await drawSlide({
       page, slide, images, logo, clientLogo, layout, brand, theme: t,
       fonts: { regular, bold, display },
