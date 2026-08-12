@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireStaff } from "@/lib/admin-route-guard";
+import { mediaPublicUrl } from "@/lib/media-url";
 import { buildPdfResponse } from "@/lib/documents/pdf-http.server";
 import { normalizeCompanyProfile, type CompanyProfile } from "@/lib/documents/company-profile";
 import {
@@ -11,17 +12,10 @@ import { buildPresentationPdf, type ResolvedSlide } from "@/lib/presentations/pd
 
 type Row = Record<string, unknown>;
 
-/** Приватные пути bucket `media` подписываем, абсолютные URL оставляем как есть. */
+/** Пути хранилища → публичные ссылки каталога (бакет публичный). */
 async function resolveUrls(paths: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
-  const priv = paths.filter((p) => p && !/^https?:\/\//i.test(p));
-  for (const p of paths) if (/^https?:\/\//i.test(p)) map.set(p, p);
-  if (priv.length) {
-    const { data } = await supabaseAdmin.storage.from("media").createSignedUrls(priv, 900);
-    for (const row of data ?? []) {
-      if (row.path && row.signedUrl) map.set(row.path, row.signedUrl);
-    }
-  }
+  for (const p of paths) if (p) map.set(p, mediaPublicUrl(p));
   return map;
 }
 

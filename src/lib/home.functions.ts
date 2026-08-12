@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { mediaPublicUrl } from "@/lib/media-url";
 import { getDemandScores } from "@/lib/demand.server";
 
 type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
@@ -168,31 +169,10 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async (): P
       .map((x) => x.item);
     const featured = merged.slice(0, 6);
 
-    // Подписываем фото featured (приватный bucket). Любая ошибка — оставляем как есть.
-    await safe(
-      "featured.signUrls",
-      async () => {
-        const paths = new Set<string>();
-        for (const f of featured) {
-          for (const u of f.photo_urls ?? []) {
-            if (u && !/^(https?:|blob:|data:)/i.test(u)) paths.add(u);
-          }
-        }
-        if (paths.size === 0) return;
-        const list = Array.from(paths);
-        const TTL = 60 * 60 * 24 * 7;
-        const { data, error } = await supabaseAdmin.storage.from("media").createSignedUrls(list, TTL);
-        if (error || !data) return;
-        const map = new Map<string, string>();
-        data.forEach((d, i) => { if (d.signedUrl) map.set(list[i], d.signedUrl); });
-        for (const f of featured) {
-          f.photo_urls = (f.photo_urls ?? []).map((u) =>
-            u && !/^(https?:|blob:|data:)/i.test(u) ? map.get(u) ?? u : u,
-          );
-        }
-      },
-      undefined,
-    );
+    // Каталог публичный: пути хранилища → постоянные публичные ссылки.
+    for (const f of featured) {
+      f.photo_urls = (f.photo_urls ?? []).map((u) => (u ? mediaPublicUrl(u) : u));
+    }
 
     const posts = await safe<HomeBlogTeaser[]>(
       "posts",
