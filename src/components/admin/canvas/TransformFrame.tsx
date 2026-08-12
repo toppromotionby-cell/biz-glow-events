@@ -83,10 +83,9 @@ export function TransformFrame({
             throttleResize={0}
             renderDirections={["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
             className={limit ? "moveable-limit" : undefined}
-            onDragStart={(e) => {
+            onDragStart={() => {
               start.current = { x: 0, y: 0, w: rect.w, h: rect.h };
               onGestureStart?.();
-              e.setMin?.([0, 0]);
             }}
             onDrag={(e) => {
               const ev = e.inputEvent as MouseEvent;
@@ -98,10 +97,9 @@ export function TransformFrame({
               });
             }}
             onDragEnd={() => onGestureEnd?.()}
-            onResizeStart={(e) => {
+            onResizeStart={() => {
               start.current = { x: 0, y: 0, w: Math.max(1, rect.w), h: Math.max(1, rect.h) };
               onGestureStart?.();
-              e.setOrigin?.(["%", "%"]);
             }}
             onResize={(e) => {
               const ev = e.inputEvent as MouseEvent;
