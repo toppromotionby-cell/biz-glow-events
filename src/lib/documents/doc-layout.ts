@@ -137,6 +137,23 @@ export function fitColumnWidths(columns: DocColumn[], rows: DocRow[]): void {
 }
 
 
+/**
+ * Итоговые доли ширины колонок в процентах — общий источник для HTML-превью,
+ * PDF и таблиц, чтобы колонки везде совпадали.
+ */
+export function docColumnWidths(
+  quote: PromoQuote,
+  items: PromoItem[],
+): Array<{ key: DocColumnKey; pct: number; align: DocAlign }> {
+  const layout = buildDocLayout(quote, items);
+  fitColumnWidths(layout.columns, layout.rows);
+  return layout.columns.map((c) => ({
+    key: c.key,
+    pct: Math.round(c.width * 10000) / 100,
+    align: c.align,
+  }));
+}
+
 const nf = (n: number) =>
   new Intl.NumberFormat("ru-BY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
     Number.isFinite(n) ? n : 0,

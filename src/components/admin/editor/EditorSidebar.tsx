@@ -57,7 +57,7 @@ export function EditorSidebar({
       {current && (
         <div
           className="flex shrink-0 flex-col border-r border-border/60 bg-background"
-          style={{ width: current.wide ? 420 : 290 }}
+          style={{ width: `min(${current.wide ? 420 : 290}px, 46vw)` }}
         >
 
           <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
@@ -72,7 +72,7 @@ export function EditorSidebar({
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-3">{current.content}</div>
+          <div className="scroll-visible min-h-0 flex-1 overflow-y-auto p-3">{current.content}</div>
         </div>
       )}
     </div>
