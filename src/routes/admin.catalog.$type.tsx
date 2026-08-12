@@ -81,6 +81,10 @@ function CatalogInner({ table }: { table: CatalogTable }) {
     },
   });
 
+  // После перезагрузки восстанавливаем открытую карточку из ?id=.
+  const selected = selectedRow ?? (sp.id ? (items.find((i) => i.id === sp.id) ?? null) : null);
+
+
   const create = useMutation({
     mutationFn: async (): Promise<Row> => {
       const slug = `new-${Date.now()}`;
