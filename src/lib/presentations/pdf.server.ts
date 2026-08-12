@@ -11,6 +11,10 @@ import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont } from "@/lib/documents/doc-font";
+import {
+  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock,
+} from "@/lib/presentations/slide-spec";
+
 
 const W = 960;
 const H = 540;
