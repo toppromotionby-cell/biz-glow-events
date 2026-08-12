@@ -90,6 +90,23 @@ export function CatalogEditor({
   const dirtyRef = useRef(false);
   const skipNextAutosaveRef = useRef(true);
   const { guardDialog } = useUnsavedGuard(dirty);
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
+
+  // Валидация ключевых полей: пустой заголовок или кривой slug не улетают в автосейв.
+  const validation = useMemo(() => {
+    const r = catalogItemSchema.safeParse({
+      title: form.title ?? "",
+      slug: form.slug ?? "",
+      seo_title: form.seo_title ?? "",
+      seo_description: form.seo_description ?? "",
+    });
+    return r.success ? { ok: true as const, errors: {} as FieldErrors } : { ok: false as const, errors: zodFieldErrors(r.error) };
+  }, [form.title, form.slug, form.seo_title, form.seo_description]);
+  const validationRef = useRef(validation);
+  validationRef.current = validation;
+  const errors: FieldErrors = { ...validation.errors, ...serverErrors };
+
+
 
   const buildPatch = (state: FormState): CatalogUpdate => ({
     title: state.title, slug: state.slug, category: state.category,
