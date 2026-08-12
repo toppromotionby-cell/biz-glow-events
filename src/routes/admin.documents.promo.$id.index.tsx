@@ -307,10 +307,14 @@ function EditorPage() {
 
 
   /** Двойной клик по блоку превью открывает точечное редактирование. */
-  const { containerRef: sheetRef } = useInlineDocEdit({
+  const { containerRef: sheetRef, nodeRef: sheetNodeRef } = useInlineDocEdit({
     enabled: inlineEdit,
     onEdit: (hit) => setEdit(hit),
   });
+  // Шапка, colgroup и ячейки таблицы держатся на одной сетке при любой
+  // ширине рабочего пространства.
+  useTableWidthSync(() => sheetNodeRef.current, [previewHtml]);
+
 
   const versions = useQuery({
     queryKey: ["promo-versions", id],
