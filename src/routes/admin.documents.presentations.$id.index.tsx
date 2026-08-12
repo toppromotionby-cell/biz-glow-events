@@ -6,7 +6,9 @@ import { FullscreenLayer, Z_LAYER } from "@/components/FullscreenLayer";
 
 import { PresentationBrandingPanel } from "@/components/admin/presentations/PresentationBrandingPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AUTOSAVE_DELAY, saveStatus } from "@/lib/editor/save-state";
+import { saveStatus } from "@/lib/editor/save-state";
+import { useEditorSave } from "@/hooks/use-editor-save";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
