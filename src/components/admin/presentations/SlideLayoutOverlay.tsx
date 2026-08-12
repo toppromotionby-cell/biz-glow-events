@@ -213,7 +213,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
    * Двойной клик: определяем реальный элемент под курсором (заголовок,
    * подзаголовок, описание, логотип) и выделяем именно его — как в Canva.
    */
-  const onDoubleClick = (e: ReactPointerEvent | React.MouseEvent) => {
+  const onDoubleClick = (e: { clientX: number; clientY: number; stopPropagation: () => void }) => {
     const host = hostRef.current;
     if (!host) return;
     const el = document
