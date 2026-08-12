@@ -41,17 +41,22 @@ export function normalizePresentationLogoLayout(raw: unknown): PresentationLogoL
 }
 
 
-export type SlideType = "title" | "product" | "text" | "section" | "contacts";
+/** Единый список типов слайдов — источник правды для UI и валидаторов. */
+export const SLIDE_TYPES = ["title", "product", "text", "section", "contacts"] as const;
+
+export type SlideType = (typeof SLIDE_TYPES)[number];
 
 export type PresentationStatus = "draft" | "ready" | "archived";
 
-export type PresentationTemplate =
-  | "light" | "dark" | "accent"
-  | "night" | "sunset" | "emerald" | "glow";
-
-export const PRESENTATION_TEMPLATES: PresentationTemplate[] = [
+/** Единый список шаблонов — источник правды и для UI, и для валидаторов. */
+export const PRESENTATION_TEMPLATES = [
   "light", "dark", "accent", "night", "sunset", "emerald", "glow",
-];
+] as const;
+
+export type PresentationTemplate = (typeof PRESENTATION_TEMPLATES)[number];
+
+export const PRESENTATION_STATUSES = ["draft", "ready", "archived"] as const;
+
 
 export const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
   title: "Титульный",
@@ -318,6 +323,10 @@ export type Presentation = {
   logo_layout: PresentationLogoLayout;
   /** Шрифт презентации: inherit — как в настройках документов. */
   font_family: DocFontChoice;
+  /** Постоянный токен публичной ссылки /p/<token>. */
+  public_token: string;
+  /** Доступ по публичной ссылке включён. */
+  share_enabled: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -393,7 +402,6 @@ export function normalizeContent(raw: unknown): SlideContent {
 }
 
 
-const SLIDE_TYPES: SlideType[] = ["title", "product", "text", "section", "contacts"];
 
 export function normalizeSlide(row: Record<string, unknown>, index = 0): PresentationSlide {
   const type = SLIDE_TYPES.includes(row.type as SlideType) ? (row.type as SlideType) : "text";
@@ -413,7 +421,7 @@ export function normalizeSlide(row: Record<string, unknown>, index = 0): Present
 }
 
 export function normalizePresentation(row: Record<string, unknown>): Presentation {
-  const status = (["draft", "ready", "archived"] as const).includes(row.status as PresentationStatus)
+  const status = PRESENTATION_STATUSES.includes(row.status as PresentationStatus)
     ? (row.status as PresentationStatus)
     : "draft";
   const template = PRESENTATION_TEMPLATES.includes(row.template as PresentationTemplate)
@@ -430,6 +438,8 @@ export function normalizePresentation(row: Record<string, unknown>): Presentatio
     client_logo_url: row.client_logo_url ? str(row.client_logo_url) : null,
     logo_layout: normalizePresentationLogoLayout(row.logo_layout),
     font_family: normalizeDocFontChoice(row.font_family),
+    public_token: str(row.public_token),
+    share_enabled: row.share_enabled === true,
     created_at: str(row.created_at),
     updated_at: str(row.updated_at),
   };

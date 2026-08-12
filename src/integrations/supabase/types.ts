@@ -1946,6 +1946,41 @@ export type Database = {
           },
         ]
       }
+      presentation_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          presentation_id: string
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          presentation_id: string
+          snapshot?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          presentation_id?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_versions_presentation_id_fkey"
+            columns: ["presentation_id"]
+            isOneToOne: false
+            referencedRelation: "presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presentations: {
         Row: {
           client_logo_url: string | null
@@ -1956,11 +1991,14 @@ export type Database = {
           id: string
           logo_layout: Json
           logo_url: string | null
+          public_token: string
           quote_id: string | null
+          share_enabled: boolean
           status: string
           template: string
           title: string
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           client_logo_url?: string | null
@@ -1971,11 +2009,14 @@ export type Database = {
           id?: string
           logo_layout?: Json
           logo_url?: string | null
+          public_token?: string
           quote_id?: string | null
+          share_enabled?: boolean
           status?: string
           template?: string
           title?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           client_logo_url?: string | null
@@ -1986,11 +2027,14 @@ export type Database = {
           id?: string
           logo_layout?: Json
           logo_url?: string | null
+          public_token?: string
           quote_id?: string | null
+          share_enabled?: boolean
           status?: string
           template?: string
           title?: string
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {

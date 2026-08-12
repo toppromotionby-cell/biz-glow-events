@@ -15,7 +15,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, Check, Download, FileText, Layers, ListChecks, Loader2,
-  LibraryBig, Palette, Play, Plus, RefreshCw, ShieldCheck, Undo2,
+  LibraryBig, Palette, Play, Plus, RefreshCw, Share2, ShieldCheck, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { EditorRail, EditorSectionPanel, type EditorSection } from "@/components/admin/editor/EditorSidebar";
 import { EditorWorkspace } from "@/components/admin/editor/EditorWorkspace";
 import { SlideAuditPanel } from "@/components/admin/presentations/SlideAuditPanel";
+import { PresentationSharePanel } from "@/components/admin/presentations/PresentationSharePanel";
 import { auditPresentation } from "@/lib/presentations/audit";
 import { CanvasStage } from "@/components/admin/presentations/CanvasStage";
 import { EditorStatusBar } from "@/components/admin/presentations/EditorStatusBar";
@@ -667,6 +668,20 @@ function Page() {
       Icon: ListChecks,
       dot: !!data?.quote && check.status !== "synced",
       content: checkPanel,
+    },
+    {
+      id: "share",
+      label: "Доступ",
+      Icon: Share2,
+      content: meta ? (
+        <PresentationSharePanel
+          id={meta.id}
+          token={meta.public_token}
+          enabled={meta.share_enabled}
+          onSaveBeforeSnapshot={async () => { await saverRef.current.saveNow(); }}
+          onRestored={() => void refetch()}
+        />
+      ) : null,
     },
     {
       id: "audit",
