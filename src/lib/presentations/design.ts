@@ -154,7 +154,12 @@ export type SlideLayout = {
   frames: Rect[];
   /** Область под текст. */
   textBox: Rect;
+  /** Вертикальное выравнивание текста в своей области. */
+  textAlign: "top" | "center" | "bottom";
+  /** Отдельная область под блок цены (null — цена внутри текстового блока). */
+  priceBox: Rect | null;
 };
+
 
 /** Грубая оценка «веса» текста слайда в условных символах. */
 export function textWeight(slide: PresentationSlide): number {
