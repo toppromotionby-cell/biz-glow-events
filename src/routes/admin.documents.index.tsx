@@ -374,7 +374,15 @@ function Page() {
               <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Документов не найдено</td></tr>
             )}
             {rows.map((r) => (
-              <tr key={`${r.kind}-${r.id}`} className="border-t border-border/50 transition-colors hover:bg-muted/30">
+              <tr
+                key={`${r.kind}-${r.id}`}
+                tabIndex={0}
+                role="link"
+                aria-label={`Открыть документ ${r.number}`}
+                className="cursor-pointer border-t border-border/50 transition-colors hover:bg-muted/30 focus-visible:bg-muted/40 focus-visible:outline-none"
+                onClick={() => openDoc(r)}
+                onKeyDown={(e) => { if (e.key === "Enter") openDoc(r); }}
+              >
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                     {r.kind === "quote"
@@ -383,16 +391,13 @@ function Page() {
                   </span>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap tabular-nums">
-                  <button type="button" className="hover:text-primary" onClick={() => openDoc(r)}>
-                    {r.number.replaceAll("/", ".")}
-                  </button>
+                  {r.number.replaceAll("/", ".")}
                 </td>
                 <td className="px-3 py-2">
-                  <button type="button" className="block text-left hover:text-primary" onClick={() => openDoc(r)}>
-                    <div className="font-medium">{r.client}</div>
-                    <div className="line-clamp-1 text-xs text-muted-foreground">{r.title}</div>
-                  </button>
+                  <div className="font-medium">{r.client}</div>
+                  <div className="line-clamp-1 text-xs text-muted-foreground">{r.title}</div>
                 </td>
+
                 <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                   {r.event_date ? fmtDate(r.event_date) : r.valid_until ? `до ${fmtDate(r.valid_until)}` : "—"}
                 </td>
