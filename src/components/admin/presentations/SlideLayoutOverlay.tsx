@@ -387,14 +387,16 @@ export function SlideLayoutOverlay({
             <span className="absolute -top-5 left-0 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
               {BLOCK_LABELS[selected as Kind]}
             </span>
-            {HANDLES.map((h) => (
-              <span
-                key={h.key}
-                className={`absolute h-3 w-3 rounded-full border border-background bg-primary ${h.style}`}
-                style={{ cursor: h.cursor }}
-                aria-hidden
-              />
-            ))}
+            {selected && isResizable(selected) && selectedItem?.rect &&
+              HANDLES.map((h) => (
+                <span
+                  key={h.key}
+                  onPointerDown={startHandleResize(selected, h.key, selectedItem.rect as Rect)}
+                  className={`pointer-events-auto absolute h-3 w-3 rounded-full border border-background bg-primary ${h.style}`}
+                  style={{ cursor: h.cursor, touchAction: "none" }}
+                  aria-hidden
+                />
+              ))}
           </div>
           {floatingToolbar && (
             <div
