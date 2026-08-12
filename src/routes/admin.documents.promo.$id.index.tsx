@@ -113,8 +113,9 @@ function EditorPage() {
 
   const [quote, setQuote] = useState<PromoQuote | null>(null);
   const [items, setItems] = useState<PromoItem[]>([]);
-  const [dirty, setDirty] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  /** Последний снимок, ожидающий записи на сервер. */
+  const pending = useRef<Snapshot | null>(null);
+
   const { can } = useRoles();
   const canCost = can("documents.cost_margin");
   const [showCostRaw, setShowCost] = useState(false);
