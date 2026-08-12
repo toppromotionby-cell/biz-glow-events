@@ -8,14 +8,18 @@ import {
   type LogoOverride, type PresentationLogoLayout, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
 
-export type LogoSlot = "hero" | "footer" | "tl" | "tr" | "bl" | "br";
+export type LogoSlot = "hero" | "footer" | "tl" | "tr" | "bl" | "br" | "free";
 
 export type LogoPlacementPlan = {
   slot: LogoSlot;
   /** Максимальные габариты логотипа в координатах холста 1280×720. */
   maxW: number;
   maxH: number;
+  /** Левый верхний угол для слота "free" (координаты холста 1280×720). */
+  x?: number;
+  y?: number;
 };
+
 
 export type SlideLogoPlan = {
   brand: LogoPlacementPlan | null;
