@@ -227,7 +227,7 @@ async function drawSlide(a: DrawArgs) {
     hasBrandLogo: !!logo,
     hasClientLogo: !!clientLogo,
     overrides: slide.content.layout,
-    blocked: slideFit.layout.priceBox ? [slideFit.layout.priceBox] : [],
+    blocked: [slideFit.layout.textBox, slideFit.layout.priceBox].filter(Boolean) as Rect[],
   });
   const drawClientLogo = () => {
     if (clientLogo && plan.client) drawPlannedLogo(page, clientLogo, plan.client);

@@ -89,6 +89,56 @@ function relocate(
   return free ? { ...place, slot: free } : place;
 }
 
+/** Минимально допустимая доля от исходного размера логотипа (ниже — не рисуем). */
+export const LOGO_MIN_FIT = 0.55;
+
+const SLOT_RECTS: Record<Exclude<LogoSlot, "hero" | "footer">, Rect> = {
+  tl: cornerRect("tl"), tr: cornerRect("tr"), bl: cornerRect("bl"), br: cornerRect("br"),
+};
+
+/** Ширина/высота свободного просвета в углу с учётом занятых областей. */
+function freeSpace(slot: Exclude<LogoSlot, "hero" | "footer">, obstacles: Rect[]): { w: number; h: number } {
+  const zone = SLOT_RECTS[slot];
+  let w = zone.w;
+  let h = zone.h;
+  const right = slot === "tr" || slot === "br";
+  const bottom = slot === "bl" || slot === "br";
+  for (const o of obstacles) {
+    if (!overlaps(zone, o)) continue;
+    // Просвет по горизонтали: сколько остаётся от края слайда до препятствия.
+    const wGap = right ? Math.max(0, zone.x + zone.w - (o.x + o.w)) : Math.max(0, o.x - zone.x);
+    const hGap = bottom ? Math.max(0, zone.y + zone.h - (o.y + o.h)) : Math.max(0, o.y - zone.y);
+    // Ужимаем по той оси, где просвета больше — так логотип остаётся крупнее.
+    if (wGap >= hGap) w = Math.min(w, wGap);
+    else h = Math.min(h, hGap);
+  }
+  return { w: Math.max(0, w - 16), h: Math.max(0, h - 12) };
+}
+
+/**
+ * Canva-подобный шаг 3: если свободного угла нет, логотип пропорционально
+ * уменьшается под свободный просвет. Меньше LOGO_MIN_FIT — логотип убирается.
+ */
+function fitIntoFree(
+  place: LogoPlacementPlan | null,
+  frames: Rect[],
+  full: boolean,
+  blocked: Rect[],
+): LogoPlacementPlan | null {
+  if (!place) return null;
+  if (place.slot === "hero" || place.slot === "footer") {
+    // Hero/footer живут в потоке контента, их ужимает только блок цены/текста,
+    // если он физически накрывает область логотипа.
+    return place;
+  }
+  const obstacles = [...blocked, ...(full ? [] : frames)];
+  if (cornerFree(place.slot, frames, full, blocked)) return place;
+  const { w, h } = freeSpace(place.slot, obstacles);
+  const k = Math.min(w / place.maxW, h / place.maxH, 1);
+  if (!Number.isFinite(k) || k < LOGO_MIN_FIT) return null;
+  return { ...place, maxW: place.maxW * k, maxH: place.maxH * k };
+}
+
 const isTitleLike = (type: SlideType): boolean => type === "title" || type === "contacts";
 
 /**
@@ -165,6 +215,9 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
     client = relocate(client, new Set([brand?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
     brand = relocate(brand, new Set([client?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
   }
+  // Шаг 3: свободного угла не нашлось — уменьшаем логотип под просвет.
+  client = fitIntoFree(client, frames, full, blocked);
+  brand = fitIntoFree(brand, frames, full, blocked);
 
   return { brand, client };
 }
