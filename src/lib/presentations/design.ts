@@ -2,7 +2,11 @@
 // Холст 1280×720 (16:9) = пропорции стандартных 1920×1080, делённые на 1.5.
 // Здесь живут сетка, шкала кеглей, ступени плотности, темы и автораскладка
 // фотографий (1–5). Модуль клиент-безопасный: используется в превью, PDF и PPTX.
-import type { PresentationSlide, PresentationTemplate, SlideImageLayout } from "@/lib/presentations/model";
+import {
+  clampNum, DEFAULT_LAYOUT_OVERRIDES, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
+  type PhotoZone, type PresentationSlide, type PresentationTemplate,
+  type PriceZone, type SlideImageLayout,
+} from "@/lib/presentations/model";
 
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
