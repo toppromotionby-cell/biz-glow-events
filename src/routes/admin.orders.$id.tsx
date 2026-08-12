@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys, invalidateOrder } from "@/lib/query-keys";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -99,7 +100,7 @@ function OrderDetail() {
   });
 
   const { data: order } = useQuery({
-    queryKey: ["order", id],
+    queryKey: adminKeys.order(id),
     queryFn: async () => {
       const { data, error } = await supabase.from("orders").select("*").eq("id", id).single();
       if (error) throw error;
@@ -108,17 +109,17 @@ function OrderDetail() {
   });
 
   const { data: items = [] } = useQuery({
-    queryKey: ["order-items", id],
+    queryKey: adminKeys.orderItems(id),
     queryFn: async () => (await supabase.from("order_items").select("*").eq("order_id", id)).data ?? [],
   });
 
   const { data: timeline = [] } = useQuery({
-    queryKey: ["order-timeline", id],
+    queryKey: adminKeys.orderTimeline(id),
     queryFn: async () => (await supabase.from("order_timeline").select("*").eq("order_id", id).order("created_at", { ascending: false })).data ?? [],
   });
 
   const { data: attachments = [] } = useQuery({
-    queryKey: ["order-attachments", id],
+    queryKey: adminKeys.orderAttachments(id),
     queryFn: async () => (await supabase.from("order_attachments").select("kind").eq("order_id", id)).data ?? [],
   });
 
@@ -152,9 +153,7 @@ function OrderDetail() {
     },
     onSuccess: (assigned) => {
       toast.success(assigned ? "Статус обновлён, заказ закреплён за вами" : "Статус обновлён");
-      qc.invalidateQueries({ queryKey: ["order", id] });
-      qc.invalidateQueries({ queryKey: ["order-timeline", id] });
-      qc.invalidateQueries({ queryKey: ["admin-attention"] });
+      invalidateOrder(qc, id);
     },
 
     onError: (e: Error) => toast.error(e.message),
@@ -164,7 +163,7 @@ function OrderDetail() {
     const { error } = await supabase.from("orders").update({ internal_notes: internalNotes }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Сохранено");
-    qc.invalidateQueries({ queryKey: ["order", id] });
+    invalidateOrder(qc, id);
   };
 
   const removeOrder = useMutation({
@@ -177,7 +176,7 @@ function OrderDetail() {
     },
     onSuccess: () => {
       toast.success("Заказ удалён");
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: adminKeys.ordersAll });
       navigate({ to: "/admin/orders" });
     },
     onError: (e: Error) => toast.error(e.message),

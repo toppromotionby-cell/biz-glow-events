@@ -2,6 +2,7 @@
 // Хранится в orders.manager_id. Список собирается из user_roles (admin + manager).
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys, invalidateOrder } from "@/lib/query-keys";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
@@ -21,7 +22,7 @@ export function OrderAssignee({ orderId, managerId }: Props) {
   const fetchManagers = useServerFn(listAssignableManagers);
 
   const { data: managers = [] } = useQuery({
-    queryKey: ["assignable-managers"],
+    queryKey: adminKeys.managers,
     queryFn: () => fetchManagers(),
     staleTime: 60_000,
   });
@@ -41,8 +42,7 @@ export function OrderAssignee({ orderId, managerId }: Props) {
     },
     onSuccess: () => {
       toast.success("Ответственный обновлён");
-      qc.invalidateQueries({ queryKey: ["order", orderId] });
-      qc.invalidateQueries({ queryKey: ["order-timeline", orderId] });
+      invalidateOrder(qc, orderId);
     },
     onError: (e: Error) => toast.error(e.message),
   });

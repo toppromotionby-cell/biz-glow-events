@@ -2,6 +2,7 @@
 // Загрузка/удаление через supabase client (RLS для staff). Открытие — signed URL.
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys, invalidateOrder } from "@/lib/query-keys";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Trash2, Download, Paperclip } from "lucide-react";
@@ -31,7 +32,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
 
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ["order-attachments", orderId],
+    queryKey: adminKeys.orderAttachments(orderId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("order_attachments")
@@ -63,8 +64,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
         order_id: orderId, event: "attachment_added", payload: { kind, file_name: file.name },
       });
       toast.success("Файл загружен");
-      qc.invalidateQueries({ queryKey: ["order-attachments", orderId] });
-      qc.invalidateQueries({ queryKey: ["order-timeline", orderId] });
+            invalidateOrder(qc, orderId);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -102,7 +102,7 @@ export function OrderAttachments({ orderId }: { orderId: string }) {
     },
     onSuccess: () => {
       toast.success("Удалено");
-      qc.invalidateQueries({ queryKey: ["order-attachments", orderId] });
+      qc.invalidateQueries({ queryKey: adminKeys.orderAttachments(orderId) });
     },
     onError: (e: Error) => toast.error(e.message),
   });
