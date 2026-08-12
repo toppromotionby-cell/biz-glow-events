@@ -476,44 +476,7 @@ function Page() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
 
-                toolbar={
-                  <>
-                    <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm"><Search className="h-4 w-4 mr-1.5" />Из каталога</Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader><DialogTitle>Добавить из каталога</DialogTitle></DialogHeader>
-                        <div className="flex gap-2">
-                          <Input placeholder="Поиск по названию" value={catalogTerm} onChange={(e) => setCatalogTerm(e.target.value)} />
-                          <Select value={catalogType} onValueChange={setCatalogType}>
-                            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {CATALOG_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="max-h-96 overflow-auto divide-y divide-border/60 rounded-md border border-border/60">
-                          {hits.map((h) => (
-                            <button key={`${h.entity_type}-${h.entity_id}`} type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
-                              onClick={() => { addItem({ title: h.title, price: h.price, unit: h.unit, description: h.description, entity_type: h.entity_type, entity_id: h.entity_id }); toast.success("Позиция добавлена"); }}>
-                              <div className="text-sm font-medium">{h.title}</div>
-                              <div className="text-xs text-muted-foreground">{fmtMoney(h.price)} / {h.unit}</div>
-                            </button>
-                          ))}
-                          {!hits.length && <div className="p-4 text-sm text-muted-foreground">Ничего не найдено</div>}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button variant="outline" size="sm" onClick={() => addItem()}><Plus className="h-4 w-4 mr-1.5" />Своя позиция</Button>
-                  </>
-                }
-              />
-            </TabsContent>
 
-            <TabsContent value="client" className="space-y-4 pt-3">
-              <div className="grid grid-cols-2 gap-3">
                 <Field label="Компания">
                   <SuggestInput
                     value={quote.client_company ?? ""}
