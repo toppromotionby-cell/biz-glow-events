@@ -15,6 +15,7 @@ import { Check, Loader2, X } from "lucide-react";
 import { Field } from "@/components/admin/Field";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { blogPostSchema, type BlogPostInput } from "@/lib/admin/schemas";
+import { mapServerError } from "@/lib/admin/form-errors";
 import { useSlugUnique } from "@/lib/admin/use-slug-unique";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
@@ -45,7 +46,7 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
     mode: "onBlur",
   });
 
-  const { register, control, handleSubmit, watch, setValue, formState } = form;
+  const { register, control, handleSubmit, watch, setValue, setError, formState } = form;
   const values = watch();
   const slugValue = values.slug;
   const titleValue = values.title;
@@ -88,7 +89,15 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
       toast.success("Сохранено");
       onSaved();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => {
+      // Ошибку БД (например, занятый slug) отдаём в конкретное поле формы.
+      const mapped = mapServerError(e);
+      if (mapped.field && mapped.field in (initialValues as Record<string, unknown>)) {
+        setError(mapped.field as keyof BlogPostInput, { type: "server", message: mapped.message });
+      }
+      toast.error(mapped.message);
+    },
+
   });
 
   const tryClose = async () => {

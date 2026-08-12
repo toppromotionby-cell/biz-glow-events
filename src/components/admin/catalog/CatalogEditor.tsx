@@ -27,6 +27,8 @@ import { ChevronDown, Copy, ExternalLink, MoreHorizontal, Trash2 } from "lucide-
 import { AdminEditorShell } from "@/components/admin/AdminEditorShell";
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { Field } from "@/components/admin/Field";
+import { catalogItemSchema } from "@/lib/admin/schemas";
+import { mapServerError, zodFieldErrors, type FieldErrors } from "@/lib/admin/form-errors";
 import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
@@ -90,6 +92,23 @@ export function CatalogEditor({
   const dirtyRef = useRef(false);
   const skipNextAutosaveRef = useRef(true);
   const { guardDialog } = useUnsavedGuard(dirty);
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
+
+  // Валидация ключевых полей: пустой заголовок или кривой slug не улетают в автосейв.
+  const validation = useMemo(() => {
+    const r = catalogItemSchema.safeParse({
+      title: form.title ?? "",
+      slug: form.slug ?? "",
+      seo_title: form.seo_title ?? "",
+      seo_description: form.seo_description ?? "",
+    });
+    return r.success ? { ok: true as const, errors: {} as FieldErrors } : { ok: false as const, errors: zodFieldErrors(r.error) };
+  }, [form.title, form.slug, form.seo_title, form.seo_description]);
+  const validationRef = useRef(validation);
+  validationRef.current = validation;
+  const errors: FieldErrors = { ...validation.errors, ...serverErrors };
+
+
 
   const buildPatch = (state: FormState): CatalogUpdate => ({
     title: state.title, slug: state.slug, category: state.category,
@@ -119,13 +138,22 @@ export function CatalogEditor({
     } catch { /* quota */ }
 
     const t = setTimeout(async () => {
+      // Невалидные поля не отправляем: показываем ошибки и ждём правок.
+      if (!validationRef.current.ok) {
+        setSaveState("error");
+        setErrorMessage("Исправьте ошибки в форме — изменения не сохраняются");
+        return;
+      }
       setSaveState("saving");
       const { error } = await supabase.from(table).update(buildPatch(form)).eq("id", item.id);
       if (error) {
+        const mapped = mapServerError(error);
+        if (mapped.field) setServerErrors((prev) => ({ ...prev, [mapped.field as string]: mapped.message }));
         setSaveState("error");
-        setErrorMessage(error.message);
+        setErrorMessage(mapped.message);
         return;
       }
+      setServerErrors({});
       try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
       dirtyRef.current = false;
       setDirty(false);
@@ -134,6 +162,7 @@ export function CatalogEditor({
       setSaveState("saved");
       onSaved();
     }, 1200);
+
 
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,7 +296,7 @@ export function CatalogEditor({
     >
       {/* === Основное === */}
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Заголовок">
+        <Field label="Заголовок" required error={errors["title"]}>
           <Input value={form.title ?? ""} onChange={(e) => onTitleChange(e.target.value)} />
         </Field>
         <Field label="Категория">
@@ -320,14 +349,14 @@ export function CatalogEditor({
 
       {/* === SEO и URL === */}
       <CollapsibleSection title="SEO и URL">
-        <Field label="Slug (URL)">
+        <Field label="Slug (URL)" required error={errors["slug"]} hint="Строчная латиница, цифры и дефис">
           <Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
         </Field>
         <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="SEO title">
+          <Field label="SEO title" error={errors["seo_title"]}>
             <Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} />
           </Field>
-          <Field label="SEO description">
+          <Field label="SEO description" error={errors["seo_description"]}>
             <Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} />
           </Field>
         </div>

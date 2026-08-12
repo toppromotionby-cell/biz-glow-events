@@ -1,7 +1,10 @@
 // Админка промокодов.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { promoCodeSchema } from "@/lib/admin/schemas";
+import { zodFieldErrors, mapServerError, type FieldErrors } from "@/lib/admin/form-errors";
+
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import type { SaveState } from "@/components/admin/SaveStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,19 +118,59 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState<Row>(row);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [touched, setTouched] = useState<Set<string>>(() => new Set());
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
   // Возврат к другой записи в списке — сбрасываем форму и статус.
   useEffect(() => {
     setF(row);
     setSaveState("idle");
+    setTouched(new Set());
+    setServerErrors({});
   }, [row]);
 
+  // Живая валидация: сохранить невалидный промокод нельзя.
+  const validation = useMemo(() => {
+    const r = promoCodeSchema.safeParse({
+      code: String(f.code ?? "").trim().toUpperCase(),
+      description: f.description ?? "",
+      discount_type: f.discount_type,
+      discount_value: Number(f.discount_value) || 0,
+      min_order_total: Number(f.min_order_total) || 0,
+      valid_from: f.valid_from || null,
+      valid_to: f.valid_to || null,
+      max_uses: f.max_uses == null ? null : Number(f.max_uses),
+      active: !!f.active,
+    });
+    return r.success
+      ? { ok: true as const, errors: {} as FieldErrors }
+      : { ok: false as const, errors: zodFieldErrors(r.error) };
+  }, [f]);
+
+  // Ошибку показываем только для полей, которых пользователь коснулся, плюс ошибки сервера.
+  const errors: FieldErrors = {
+    ...Object.fromEntries(Object.entries(validation.errors).filter(([k]) => touched.has(k))),
+    ...serverErrors,
+  };
+
   const patch = (p: Partial<Row>) => {
+    const keys = Object.keys(p);
+    setTouched((prev) => new Set([...prev, ...keys]));
+    setServerErrors((prev) => {
+      if (!keys.some((k) => k in prev)) return prev;
+      const next = { ...prev };
+      for (const k of keys) delete next[k];
+      return next;
+    });
     setF((prev) => ({ ...prev, ...p }));
+
     setSaveState("dirty");
   };
 
+  const [saveErrorText, setSaveErrorText] = useState<string | null>(null);
+
   const save = useMutation({
     mutationFn: async () => {
+      if (!validation.ok) throw new Error("Исправьте ошибки в форме");
       const patch = {
         code: String(f.code).trim().toUpperCase(),
         description: f.description || null,
@@ -142,17 +185,22 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       const { error } = await supabase.from("promo_codes").update(patch).eq("id", row.id);
       if (error) throw error;
     },
-    onMutate: () => setSaveState("saving"),
+    onMutate: () => { setSaveState("saving"); setSaveErrorText(null); },
     onSuccess: () => {
       setSaveState("saved");
       qc.invalidateQueries({ queryKey: adminKeys.promo });
       toast.success("Сохранено");
     },
-    onError: (e: Error) => {
+    onError: (e: unknown) => {
+      // Ошибку БД (например, дубль кода) вешаем на конкретное поле.
+      const mapped = mapServerError(e);
+      if (mapped.field) setServerErrors((prev) => ({ ...prev, [mapped.field as string]: mapped.message }));
       setSaveState("error");
-      toast.error(e.message);
+      setSaveErrorText(mapped.message);
+      toast.error(mapped.message);
     },
   });
+
 
   // Защита от потери правок: и при переходах внутри админки, и при закрытии вкладки.
   const { guardDialog } = useUnsavedGuard(saveState === "dirty" || saveState === "error");
@@ -182,11 +230,14 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       onSave={() => save.mutate()}
       saving={save.isPending}
       saveState={saveState}
-      errorMessage={save.error instanceof Error ? save.error.message : null}
+      saveDisabled={!validation.ok}
+      errorMessage={saveErrorText}
     >
       <div className="grid md:grid-cols-2 gap-4">
-        <Field label="Код" required><Input value={f.code ?? ""} onChange={(e) => patch({ code: e.target.value.toUpperCase() })} className="font-mono" /></Field>
-        <Field label="Тип скидки" required>
+        <Field label="Код" required error={errors["code"]} hint="Латиница в верхнем регистре, цифры и дефис">
+          <Input value={f.code ?? ""} onChange={(e) => patch({ code: e.target.value.toUpperCase() })} className="font-mono" aria-invalid={!!errors["code"]} />
+        </Field>
+        <Field label="Тип скидки" required error={errors["discount_type"]}>
           <Select value={f.discount_type} onValueChange={(v) => patch({ discount_type: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -195,17 +246,28 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => patch({ discount_value: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => patch({ min_order_total: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Действует с"><Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_from: e.target.value })} /></Field>
-        <Field label="Действует до"><Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_to: e.target.value })} /></Field>
-        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => patch({ max_uses: e.target.value ? Number(e.target.value) : null })} /></Field>
+        <Field label="Размер скидки" required error={errors["discount_value"]}>
+          <Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => patch({ discount_value: Number(e.target.value) || 0 })} aria-invalid={!!errors["discount_value"]} />
+        </Field>
+        <Field label="Мин. сумма заказа" error={errors["min_order_total"]}>
+          <Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => patch({ min_order_total: Number(e.target.value) || 0 })} />
+        </Field>
+        <Field label="Действует с" error={errors["valid_from"]}>
+          <Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_from: e.target.value })} />
+        </Field>
+        <Field label="Действует до" error={errors["valid_to"]}>
+          <Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_to: e.target.value })} aria-invalid={!!errors["valid_to"]} />
+        </Field>
+        <Field label="Лимит применений" error={errors["max_uses"]}>
+          <Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => patch({ max_uses: e.target.value ? Number(e.target.value) : null })} />
+        </Field>
         <Field label="Использовано"><Input value={f.used_count ?? 0} readOnly className="opacity-70" /></Field>
       </div>
 
-      <Field label="Описание" hint="Для внутреннего использования">
+      <Field label="Описание" hint="Для внутреннего использования" error={errors["description"]}>
         <Textarea rows={3} value={f.description ?? ""} onChange={(e) => patch({ description: e.target.value })} />
       </Field>
+
     </AdminEditorShell>
     </>
   );

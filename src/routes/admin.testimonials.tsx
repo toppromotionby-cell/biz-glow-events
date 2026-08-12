@@ -22,6 +22,8 @@ import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { useEditorHotkeys } from "@/lib/admin/use-editor-hotkeys";
 import { useListUrlState, matchesQuery } from "@/hooks/use-list-url-state";
 import { adminKeys } from "@/lib/query-keys";
+import { mapServerError, type FieldErrors } from "@/lib/admin/form-errors";
+
 import type { SaveState } from "@/components/admin/SaveStatus";
 
 // Поиск и выбранный отзыв живут в URL — F5 и «назад» не сбрасывают работу.
@@ -162,6 +164,8 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   });
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
+
 
   const validation = useMemo(() => {
     const r = testimonialSchema.safeParse({
@@ -210,11 +214,19 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       setSaveState("saved");
       toast.success("Сохранено");
     },
-    onError: (e: Error) => { setSaveState("error"); setErrorMessage(e.message); toast.error(e.message); },
+    onError: (e: unknown) => {
+      // Ошибку БД привязываем к полю, если удалось определить колонку.
+      const mapped = mapServerError(e);
+      if (mapped.field) setServerErrors((prev) => ({ ...prev, [mapped.field as string]: mapped.message }));
+      setSaveState("error");
+      setErrorMessage(mapped.message);
+      toast.error(mapped.message);
+    },
   });
 
   useEditorHotkeys({ onSave: () => save.mutate() });
-  const errors = validation.errors;
+  const errors: FieldErrors = { ...validation.errors, ...serverErrors };
+
 
   return (
     <AdminEditorShell
