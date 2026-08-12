@@ -16,8 +16,9 @@ import {
 } from "@/lib/documents/image-embed.server";
 
 import {
-  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock,
+  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock, type SpecPaint,
 } from "@/lib/presentations/slide-spec";
+import { contentSlideSpec } from "@/lib/presentations/content-spec";
 
 
 const W = 960;
@@ -253,12 +254,43 @@ function drawSpecBlocks(
   t: Theme,
   fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont },
   logo: PDFImage | null,
+  photos: (PDFImage | null)[] = [],
 ): void {
   const K = W / SLIDE_W;
-  const paint = (c: "ink" | "muted" | "accent" | "onAccent" | "panel") =>
-    c === "ink" ? t.ink : c === "muted" ? t.muted : c === "accent" ? t.accent : c === "onAccent" ? t.onAccent : t.panel;
+  const paint = (c: SpecPaint) =>
+    c === "ink" ? t.ink
+      : c === "muted" ? t.muted
+        : c === "accent" ? t.accent
+          : c === "onAccent" ? t.onAccent
+            : c === "onPhoto" ? rgb(1, 1, 1)
+              : c === "onPhotoMuted" ? rgb(0.92, 0.92, 0.92)
+                : t.panel;
 
   for (const b of blocks) {
+    if (b.kind === "shade") {
+      drawBottomShade(page);
+      continue;
+    }
+    if (b.kind === "image") {
+      const img = photos[b.index] ?? null;
+      const fw = b.w * K;
+      const fh = b.h * K;
+      const fx = b.x * K;
+      const fy = H - (b.y + b.h) * K;
+      if (!img) {
+        // Фото не загрузилось — аккуратная плашка, чтобы композиция не разъехалась.
+        page.drawRectangle({
+          x: fx, y: fy, width: fw, height: fh,
+          color: t.panel, borderColor: t.muted, borderWidth: 0.5, opacity: 0.9,
+        });
+        continue;
+      }
+      const k = Math.max(fw / img.width, fh / img.height);
+      const w = img.width * k;
+      const h = img.height * k;
+      page.drawImage(img, { x: fx + fw / 2 - w / 2, y: fy + fh / 2 - h / 2, width: w, height: h });
+      continue;
+    }
     if (b.kind === "circle") {
       page.drawCircle({
         x: b.cx * K,
@@ -294,9 +326,11 @@ function drawSpecBlocks(
     const font = b.font === "display" ? fonts.display : b.weight >= 600 ? fonts.bold : fonts.regular;
     const size = b.size * K;
     const width = b.w * K;
-    const text = b.uppercase ? b.text.toUpperCase() : b.text;
+    const cast = (s: string) => (b.uppercase ? s.toUpperCase() : s);
+    // Строки уже посчитаны общими метриками — берём их, чтобы PDF совпал с превью.
+    const lines = (b.lines ?? wrap(font, b.text, size, width)).map(cast);
     let y = H - b.y * K - size;
-    for (const line of wrap(font, text, size, width)) {
+    for (const line of lines) {
       const lw = font.widthOfTextAtSize(line, size);
       const dx = b.align === "center" ? (width - lw) / 2 : b.align === "right" ? width - lw : 0;
       page.drawText(line, { x: b.x * K + dx, y, size, font, color: paint(b.color) });
@@ -341,33 +375,6 @@ async function drawSlide(a: DrawArgs) {
     if (clientLogo && plan.client) drawPlannedLogo(page, clientLogo, plan.client);
   };
 
-  // Горизонтальное выравнивание текста слайда (для слайдов с текстовой колонкой).
-  const alignMode =
-    slide.type === "product" || slide.type === "text" ? slideFit.layout.textAlignX : "left";
-  const alignBoxW = (slideFit.layout.textBox.w * W) / SLIDE_W;
-  const alignX = (left: number, lineW: number) =>
-    alignMode === "center"
-      ? left + (alignBoxW - lineW) / 2
-      : alignMode === "right"
-        ? left + alignBoxW - lineW
-        : left;
-
-  const drawLines = (
-    lines: string[],
-    x: number,
-    yStart: number,
-    size: number,
-    font: PDFFont,
-    col: ReturnType<typeof rgb>,
-    lh = 1.35,
-  ) => {
-    let y = yStart;
-    for (const line of lines) {
-      page.drawText(line, { x: alignX(x, font.widthOfTextAtSize(line, size)), y, size, font, color: col });
-      y -= size * lh;
-    }
-    return y;
-  };
 
   const footerSize = slideFit.type.caption * (W / SLIDE_W);
   const footer = (size = footerSize) => {
@@ -403,139 +410,19 @@ async function drawSlide(a: DrawArgs) {
   }
 
 
-  // Общая раскладка (1280×720) переводится в points 960×540 коэффициентом K.
-  const fit = slideFit;
-  const K = W / SLIDE_W;
-  const ts = fit.type;
-  const px = (v: number) => v * K;
-
-  fit.layout.frames.forEach((f, i) => {
-    const image = images[i];
-    if (!image) {
-      // Фото не загрузилось — вместо пустоты аккуратная плашка,
-      // чтобы композиция слайда не разъезжалась.
-      page.drawRectangle({
-        x: px(f.x), y: H - px(f.y) - px(f.h), width: px(f.w), height: px(f.h),
-        color: t.panel, borderColor: t.muted, borderWidth: 0.5, opacity: 0.9,
-      });
-      return;
-    }
-
-    const fw = px(f.w);
-    const fh = px(f.h);
-    const k = Math.max(fw / image.width, fh / image.height);
-    const w = image.width * k;
-    const h = image.height * k;
-    const cx = px(f.x) + fw / 2;
-    const cy = H - px(f.y) - fh / 2;
-    page.drawImage(image, { x: cx - w / 2, y: cy - h / 2, width: w, height: h });
+  // Контентный слайд: рисуем ровно тот же спек, что и превью на экране.
+  const blocks = contentSlideSpec({
+    slide,
+    fit: slideFit,
+    brandName: brand,
+    footerLogo: plan.brand?.slot === "footer" && !!logo,
+    index,
+    total,
   });
-
-  // Фото на весь слайд: снизу тёмный градиент и белый текст — как в превью.
-  const isFullBleed = fit.layout.placement === "full";
-  if (isFullBleed) drawBottomShade(page);
-  const inkCol = isFullBleed ? rgb(1, 1, 1) : t.ink;
-  const mutedCol = isFullBleed ? rgb(0.92, 0.92, 0.92) : t.muted;
-
-  const box = fit.layout.textBox;
-  const x = px(box.x);
-  const maxW = px(box.w);
-  const titleSize = px(ts.titleSlide);
-  const subSize = px(ts.subtitle);
-  const bodySize = px(ts.body);
-  const bulletSize = px(ts.bullet);
-  let y = H - px(box.y) - titleSize;
-
-  y = drawLines(wrap(fonts.display, slide.title, titleSize, maxW), x, y, titleSize, fonts.display, inkCol, 1.14);
-  if (slide.subtitle) {
-    y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, mutedCol);
-  }
-  if (!isFullBleed) {
-    page.drawRectangle({ x: alignX(x, 52), y: y - 14, width: 52, height: 2.5, color: t.accent });
-  }
-  y -= px(ts.blockGap) + 14;
-
-
-
-  if (c.showDescription && c.description.trim()) {
-    y = drawLines(wrap(fonts.regular, c.description, bodySize, maxW), x, y, bodySize, fonts.regular, inkCol, ts.lineGap);
-    y -= px(ts.blockGap) * 0.6;
-  }
-
-  if (c.showIncludes && c.includes.length) {
-    if (slide.type === "product") {
-      page.drawText("ЧТО ВХОДИТ", { x, y, size: px(ts.label), font: fonts.bold, color: mutedCol });
-      y -= px(ts.label) * 1.8;
-    }
-    for (const item of c.includes.slice(0, 9)) {
-      if (alignMode === "left") {
-        const lines = wrap(fonts.regular, item, bulletSize, maxW - 14);
-        page.drawText("•", { x, y, size: bulletSize, font: fonts.regular, color: t.accent });
-        y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, inkCol, ts.lineGap);
-      } else {
-        const lines = wrap(fonts.regular, `• ${item}`, bulletSize, maxW);
-        y = drawLines(lines, x, y, bulletSize, fonts.regular, inkCol, ts.lineGap);
-      }
-      y -= 2;
-    }
-    y -= px(ts.blockGap) * 0.5;
-  }
-
-  if (c.showSpecs && c.specs.length) {
-    const chip = px(ts.chip);
-    let cx = x;
-    for (const s of c.specs) {
-      const text = `${s.label}: ${s.value}`;
-      const w = fonts.regular.widthOfTextAtSize(text, chip) + 20;
-      if (cx + w > x + maxW) { cx = x; y -= chip * 2.4; }
-      page.drawRectangle({ x: cx, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
-      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: inkCol });
-      cx += w + 8;
-    }
-    y -= chip * 3;
-  }
-
-
-
-
-
-  if (c.showPrice && c.price != null && c.price > 0) {
-    // Плашка цены повторяет превью: кегль ts.stat, единица — ts.caption.
-    const statSize = px(ts.stat);
-    const unitSize = px(ts.caption);
-    const sum = money(c.price);
-    const unit = `/ ${c.priceUnit}`;
-    const padX = px(20);
-    const padY = px(10);
-    const gap = px(10);
-    const w = fonts.display.widthOfTextAtSize(sum, statSize)
-      + gap + fonts.regular.widthOfTextAtSize(unit, unitSize) + padX * 2;
-    const h = statSize * 1.25 + padY * 2;
-    const pb = slideFit.layout.priceBox;
-    const bx = pb ? px(pb.x) : alignX(x, w);
-    const by = pb ? H - px(pb.y) - h : y - h;
-    page.drawRectangle({ x: bx, y: by, width: w, height: h, color: t.accent });
-    page.drawText(sum, { x: bx + padX, y: by + padY + statSize * 0.16, size: statSize, font: fonts.display, color: t.onAccent });
-    page.drawText(unit, {
-      x: bx + padX + fonts.display.widthOfTextAtSize(sum, statSize) + gap,
-      y: by + padY + statSize * 0.16,
-      size: unitSize,
-      font: fonts.regular,
-      color: t.onAccent,
-      opacity: 0.85,
-    });
-    if (!pb) y = by - px(ts.blockGap);
-  }
-
-  if (c.sku.trim()) {
-    const size = px(ts.caption);
-    page.drawText(`Артикул: ${c.sku}`, { x, y: y - size, size, font: fonts.regular, color: mutedCol });
-  }
-
+  drawSpecBlocks(page, blocks, t, fonts, logo, images);
 
   // Логотипы: ровно один логотип компании и один клиента, слоты уже посчитаны.
   drawClientLogo();
-  if (logo && plan.brand && plan.brand.slot !== "footer") drawPlannedLogo(page, logo, plan.brand);
-
-  footer();
+  if (logo && plan.brand) drawPlannedLogo(page, logo, plan.brand);
 }
+

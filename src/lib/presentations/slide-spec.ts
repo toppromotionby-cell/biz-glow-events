@@ -8,10 +8,16 @@ import type { PresentationSlide } from "@/lib/presentations/model";
 
 export type SpecColor = "ink" | "muted" | "accent" | "onAccent";
 
+/** Все цвета, которыми может быть окрашен блок спека. */
+export type SpecPaint = SpecColor | "panel" | "onPhoto" | "onPhotoMuted";
+
+/** Идентификаторы редактируемых частей слайда. */
+export type SpecTextId = "title" | "subtitle" | "body";
+
 export type SpecText = {
   kind: "text";
   /** Идентификатор блока для инлайн-редактирования в превью. */
-  id?: "title" | "subtitle";
+  id?: SpecTextId;
   x: number;
   y: number;
   w: number;
@@ -19,12 +25,14 @@ export type SpecText = {
   lineHeight: number;
   font: "display" | "body";
   weight: number;
-  color: SpecColor;
+  color: SpecPaint;
   text: string;
   placeholder?: string;
   align: "left" | "center" | "right";
   uppercase?: boolean;
   letterSpacing?: number;
+  /** Заранее посчитанные строки (если заданы — рендерим их как есть). */
+  lines?: string[];
 };
 
 export type SpecRect = {
@@ -34,7 +42,7 @@ export type SpecRect = {
   w: number;
   h: number;
   radius: number;
-  color: SpecColor | "panel";
+  color: SpecPaint;
   opacity?: number;
 };
 
@@ -47,10 +55,25 @@ export type SpecCircle = {
   opacity: number;
 };
 
+/** Фотография слайда: путь в хранилище + индекс кадра (для PDF). */
+export type SpecImage = {
+  kind: "image";
+  index: number;
+  path: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  radius: number;
+};
+
+/** Затемнение снизу под текстом (фото на весь слайд). */
+export type SpecShade = { kind: "shade"; from: number; alpha: number };
+
 /** Место под логотип компании в потоке контента (титульный слайд). */
 export type SpecLogo = { kind: "logo"; x: number; y: number; w: number; h: number };
 
-export type SpecBlock = SpecText | SpecRect | SpecCircle | SpecLogo;
+export type SpecBlock = SpecText | SpecRect | SpecCircle | SpecLogo | SpecImage | SpecShade;
 
 /** Средняя ширина символа относительно кегля (как в fit.ts). */
 const CHAR_W = 0.52;
@@ -118,7 +141,7 @@ function center(stack: Stack): SpecBlock[] {
   const areaH = SLIDE_H - SPEC.padTop - SPEC.padBottom;
   const dy = Math.max(0, (areaH - stack.height) / 2);
   return stack.blocks.map((b) =>
-    b.kind === "circle" ? b : { ...b, y: b.y + top + dy },
+    b.kind === "circle" || b.kind === "shade" ? b : { ...b, y: b.y + top + dy },
   );
 }
 

@@ -11,7 +11,8 @@ import type { SlideFit } from "@/lib/presentations/fit";
 import type { SlideLogoPlan } from "@/lib/presentations/logo-plan";
 import { snapRect, type Guide } from "@/lib/presentations/snap";
 import {
-  LOGO_SCALE_MAX, LOGO_SCALE_MIN, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN, TEXT_WIDTH_MAX, TEXT_WIDTH_MIN, clampNum,
+  LOGO_SCALE_MAX, LOGO_SCALE_MIN, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
+  PRICE_SCALE_MAX, PRICE_SCALE_MIN, TEXT_WIDTH_MAX, TEXT_WIDTH_MIN, clampNum,
   type SlideLayoutOverrides,
 } from "@/lib/presentations/model";
 import { logoZones, nearestZone, photoZones, priceZones, textZones, type ZoneDef } from "@/lib/presentations/zones";
@@ -212,48 +213,75 @@ export function SlideLayoutOverlay({
   };
 
 
-  const startResize = (kind: "photo" | "text" | "brand" | "client") => (e: ReactPointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const target = e.target as HTMLElement;
-    target.setPointerCapture?.(e.pointerId);
-    const move = (ev: PointerEvent) => {
-      const p = toCanvas(ev);
-      if (kind === "brand" || kind === "client") {
-        // Масштаб логотипа тянется за уголком рамки.
-        const key = kind === "brand" ? "brandLogo" : "clientLogo";
-        const cur = overrides[key];
-        const base = kind === "brand" ? plan.brand : plan.client;
-        if (!base) return;
-        const originX = base.slot === "free" ? (base.x ?? 0) : (logoRect(base)?.x ?? 0);
-        const raw = ((p.x - originX) / Math.max(40, base.maxW)) * (cur.scale ?? 1);
-        onLayout({ [key]: { ...cur, scale: clampNum(raw, LOGO_SCALE_MIN, LOGO_SCALE_MAX) } } as Partial<SlideLayoutOverrides>);
-        return;
-      }
-      if (kind === "photo") {
-        const box = fit.layout.photoBox;
-        if (!box) return;
-        const raw = fit.layout.placement === "right" ? (SLIDE_W - p.x) / SLIDE_W : p.x / SLIDE_W;
-        onLayout({ photoScale: clampNum(raw, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) });
-      } else {
-        const box = fit.layout.textBox;
-        const base = SLIDE_W - GRID.marginX * 2;
-        const raw = (p.x - box.x) / Math.max(120, base - (box.x - GRID.marginX));
-        onLayout({ textWidth: clampNum(raw, TEXT_WIDTH_MIN, TEXT_WIDTH_MAX), stretchX: false });
-      }
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
+  /** Какие блоки можно масштабировать и какой параметр за это отвечает. */
+  type ResizeKind = "photo" | "text" | "price" | "brand" | "client";
+  const isResizable = (k: Kind): k is ResizeKind =>
+    k === "photo" || k === "text" || k === "price" || k === "brand" || k === "client";
+
+  const scaleOf = (kind: ResizeKind): number => {
+    if (kind === "photo") return overrides.photoScale ?? 1;
+    if (kind === "text") return overrides.textWidth ?? 1;
+    if (kind === "price") return overrides.priceScale ?? 1;
+    return (kind === "brand" ? overrides.brandLogo : overrides.clientLogo).scale ?? 1;
   };
+
+  const applyScale = (kind: ResizeKind, value: number) => {
+    if (kind === "photo") {
+      onLayout({ photoScale: clampNum(value, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) });
+    } else if (kind === "text") {
+      onLayout({ textWidth: clampNum(value, TEXT_WIDTH_MIN, TEXT_WIDTH_MAX), stretchX: false });
+    } else if (kind === "price") {
+      onLayout({ priceScale: clampNum(value, PRICE_SCALE_MIN, PRICE_SCALE_MAX) });
+    } else {
+      const key = kind === "brand" ? "brandLogo" : "clientLogo";
+      const cur = overrides[key];
+      onLayout({
+        [key]: { ...cur, scale: clampNum(value, LOGO_SCALE_MIN, LOGO_SCALE_MAX) },
+      } as Partial<SlideLayoutOverrides>);
+    }
+  };
+
+  /**
+   * Масштабирование от маркера рамки (как в Canva): считаем смещение курсора
+   * относительно точки захвата, а не абсолютную позицию — блок не «прыгает».
+   * Горизонтальные маркеры тянут по ширине, вертикальные — по высоте,
+   * угловые берут больший из двух коэффициентов.
+   */
+  const startHandleResize = (kind: ResizeKind, handle: string, rect: Rect) =>
+    (e: ReactPointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const start = toCanvas(e);
+      const startScale = scaleOf(kind);
+      const w0 = Math.max(24, rect.w);
+      const h0 = Math.max(24, rect.h);
+      const sx = handle.includes("w") ? -1 : handle.includes("e") ? 1 : 0;
+      const sy = handle.includes("n") ? -1 : handle.includes("s") ? 1 : 0;
+
+      const move = (ev: PointerEvent) => {
+        const p = toCanvas(ev);
+        const dw = sx * (p.x - start.x) * (ev.altKey ? 2 : 1);
+        const dh = sy * (p.y - start.y) * (ev.altKey ? 2 : 1);
+        const kx = sx ? (w0 + dw) / w0 : 0;
+        const ky = sy ? (h0 + dh) / h0 : 0;
+        const k = sx && sy
+          ? Math.max(kx, ky)
+          : sx ? kx : ky;
+        if (!Number.isFinite(k) || k <= 0) return;
+        applyScale(kind, startScale * k);
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    };
 
   const items: { kind: Kind; rect: Rect | null; label: string; resizable?: boolean }[] = [
     { kind: "photo", rect: fit.layout.photoBox, label: "Фото", resizable: true },
     { kind: "text", rect: fit.layout.textBox, label: "Текст", resizable: true },
-    { kind: "price", rect: fit.layout.priceBox, label: "Цена" },
+    { kind: "price", rect: fit.layout.priceBox, label: "Цена", resizable: true },
     { kind: "brand", rect: logoRect(plan.brand), label: "Логотип", resizable: true },
     { kind: "client", rect: logoRect(plan.client), label: "Лого клиента", resizable: true },
   ];
@@ -359,14 +387,16 @@ export function SlideLayoutOverlay({
             <span className="absolute -top-5 left-0 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
               {BLOCK_LABELS[selected as Kind]}
             </span>
-            {HANDLES.map((h) => (
-              <span
-                key={h.key}
-                className={`absolute h-3 w-3 rounded-full border border-background bg-primary ${h.style}`}
-                style={{ cursor: h.cursor }}
-                aria-hidden
-              />
-            ))}
+            {selected && isResizable(selected) && selectedItem?.rect &&
+              HANDLES.map((h) => (
+                <span
+                  key={h.key}
+                  onPointerDown={startHandleResize(selected, h.key, selectedItem.rect as Rect)}
+                  className={`pointer-events-auto absolute h-3 w-3 rounded-full border border-background bg-primary ${h.style}`}
+                  style={{ cursor: h.cursor, touchAction: "none" }}
+                  aria-hidden
+                />
+              ))}
           </div>
           {floatingToolbar && (
             <div
@@ -420,9 +450,9 @@ export function SlideLayoutOverlay({
             <span className="pointer-events-none absolute left-1 top-1 rounded bg-background/85 px-1 text-[10px] font-medium text-foreground opacity-0 transition group-hover:opacity-100">
               {it.label}
             </span>
-            {it.resizable && (
+            {it.resizable && isResizable(it.kind) && it.rect && (
               <span
-                onPointerDown={startResize(it.kind as "photo" | "text" | "brand" | "client")}
+                onPointerDown={startHandleResize(it.kind, "se", it.rect)}
                 className="absolute -bottom-1.5 -right-1.5 h-3.5 w-3.5 cursor-nwse-resize rounded-full border border-background bg-primary opacity-0 transition group-hover:opacity-100"
                 style={{ touchAction: "none" }}
                 aria-hidden

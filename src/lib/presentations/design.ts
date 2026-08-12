@@ -4,6 +4,7 @@
 // фотографий (1–5). Модуль клиент-безопасный: используется в превью, PDF и превью.
 import {
   clampNum, DEFAULT_LAYOUT_OVERRIDES, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
+  PRICE_SCALE_MAX, PRICE_SCALE_MIN,
   type PhotoZone, type PresentationSlide, type PresentationTemplate,
   type PriceZone, type SlideImageLayout,
 } from "@/lib/presentations/model";
@@ -365,15 +366,23 @@ export function rectsOverlap(a: Rect, b: Rect, gap = 0): boolean {
 const PRICE_W = 340;
 const PRICE_H = 84;
 
+/**
+ * Отступы угловых слотов логотипа в координатах холста 1280×720.
+ * Одни и те же значения использует превью и PDF — логотипы стоят одинаково.
+ */
+export const LOGO_SLOT_INSET = { top: 36, side: 56, bottom: 84 } as const;
+
 /** Область под блок цены для конкретной зоны. */
-function priceRect(zone: Exclude<PriceZone, "auto">, textBox: Rect): Rect {
+function priceRect(zone: Exclude<PriceZone, "auto">, textBox: Rect, k = 1): Rect {
+  const w = PRICE_W * k;
+  const h = PRICE_H * k;
   if (zone === "corner") {
-    return { x: SLIDE_W - GRID.marginX - PRICE_W, y: SLIDE_H - GRID.footerH - 110, w: PRICE_W, h: PRICE_H };
+    return { x: SLIDE_W - GRID.marginX - w, y: SLIDE_H - GRID.footerH - 26 - h, w, h };
   }
   if (zone === "beside-photo") {
-    return { x: SLIDE_W - GRID.marginX - PRICE_W, y: GRID.marginTop, w: PRICE_W, h: PRICE_H };
+    return { x: SLIDE_W - GRID.marginX - w, y: GRID.marginTop, w, h };
   }
-  return { x: textBox.x, y: textBox.y + textBox.h - PRICE_H, w: Math.min(PRICE_W, textBox.w), h: PRICE_H };
+  return { x: textBox.x, y: textBox.y + textBox.h - h, w: Math.min(w, textBox.w), h };
 }
 
 const PRICE_FALLBACK: Exclude<PriceZone, "auto">[] = ["corner", "beside-photo", "under-text"];
@@ -389,15 +398,16 @@ export function resolveCollisions(
   photoBox: Rect | null,
   zone: PriceZone,
   placement: PhotoPlacement,
+  priceK = 1,
 ): { textBox: Rect; priceBox: Rect | null } {
   if (zone === "auto") return { textBox, priceBox: null };
   const overPhoto = (r: Rect) =>
     placement !== "full" && placement !== "none" && !!photoBox && rectsOverlap(r, photoBox, 12);
 
   const order = [zone, ...PRICE_FALLBACK.filter((z) => z !== zone)];
-  let price = priceRect(zone, textBox);
+  let price = priceRect(zone, textBox, priceK);
   for (const candidate of order) {
-    const r = priceRect(candidate, textBox);
+    const r = priceRect(candidate, textBox, priceK);
     if (!overPhoto(r)) {
       price = r;
       break;
@@ -405,7 +415,7 @@ export function resolveCollisions(
   }
   // Крайний случай — все зоны заняты фото: прижимаем цену к текстовой колонке.
   if (overPhoto(price)) {
-    price = { x: textBox.x, y: textBox.y + textBox.h - PRICE_H, w: Math.min(PRICE_W, textBox.w), h: PRICE_H };
+    price = priceRect("under-text", textBox, priceK);
   }
 
   // Цена под текстом всегда «съедает» низ текстовой колонки, чтобы текст не залезал.
@@ -457,7 +467,10 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
   });
 
   const done = (l: Omit<SlideLayout, "textAlign" | "textAlignX" | "textFill" | "priceBox">): SlideLayout => {
-    const fixed = resolveCollisions(l.textBox, l.photoBox, ov.priceZone, l.placement);
+    const fixed = resolveCollisions(
+      l.textBox, l.photoBox, ov.priceZone, l.placement,
+      clampNum(ov.priceScale ?? 1, PRICE_SCALE_MIN, PRICE_SCALE_MAX),
+    );
     return {
       ...l,
       textBox: fixed.textBox,
