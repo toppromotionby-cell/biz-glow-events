@@ -251,7 +251,7 @@ export function buildPromoQuoteBody(
   </div>
 
   <div class="docnum">КП № ${esc(promoNumberDisplay(quote))}</div>
-  <table class="grid">
+  <table class="doc-grid">
     <colgroup>${colWidths.map((c) => `<col style="width:${c.pct}%" />`).join("")}</colgroup>
     <thead><tr>${cols.map((c) => `<th class="${c.cls}">${esc(c.label)}</th>`).join("")}</tr></thead>
     <tbody>${rowsHtml || `<tr><td colspan="${colCount}" class="empty">Позиции не добавлены</td></tr>`}${extraRows.join("")}</tbody>
@@ -279,14 +279,24 @@ export const PROMO_DOC_CSS = `
 
 .promo-doc .docnum { font-family: var(--font-display, inherit); margin: 16px 0 8px; font-weight: 700; font-size: 13px; }
 .promo-doc table { width: 100%; border-collapse: collapse; }
-.promo-doc .grid th { background: var(--accent); color: #16161a; font-weight: 700; text-align: center; border: 1px solid #b9b9bf; padding: 6px 6px; }
-.promo-doc .grid td { border: 1px solid #d8d8dd; padding: 5px 6px; vertical-align: middle; }
-.promo-doc .grid tr.sec td { background: #e7e7ea; font-weight: 600; }
-.promo-doc .grid tr.sec-sub td { background: #f4f4f6; font-weight: 600; text-align: right; }
+/* Изоляция от глобальных утилит приложения (Tailwind .grid и т.п.): таблица
+   документа должна оставаться настоящей таблицей, иначе colgroup/thead
+   перестают задавать ширины и шапка «съезжает» относительно строк. */
+.promo-doc table { display: table !important; }
+.promo-doc colgroup { display: table-column-group !important; }
+.promo-doc col { display: table-column !important; }
+.promo-doc thead { display: table-header-group !important; }
+.promo-doc tbody { display: table-row-group !important; }
+.promo-doc tr { display: table-row !important; }
+.promo-doc th, .promo-doc td { display: table-cell !important; }
+.promo-doc .doc-grid th { background: var(--accent); color: #16161a; font-weight: 700; text-align: center; border: 1px solid #b9b9bf; padding: 6px 6px; }
+.promo-doc .doc-grid td { border: 1px solid #d8d8dd; padding: 5px 6px; vertical-align: middle; }
+.promo-doc .doc-grid tr.sec td { background: #e7e7ea; font-weight: 600; }
+.promo-doc .doc-grid tr.sec-sub td { background: #f4f4f6; font-weight: 600; text-align: right; }
 .promo-doc .c-inc { margin: 3px 0 0; padding-left: 14px; font-size: 11px; color: #5a5a63; }
-.promo-doc .grid tr.extra td { background: #fbfbfc; font-style: italic; }
-.promo-doc table.grid { table-layout: fixed; }
-.promo-doc .grid th, .promo-doc .grid td { overflow-wrap: anywhere; }
+.promo-doc .doc-grid tr.extra td { background: #fbfbfc; font-style: italic; }
+.promo-doc table.doc-grid { table-layout: fixed; }
+.promo-doc .doc-grid th, .promo-doc .doc-grid td { overflow-wrap: anywhere; }
 .promo-doc .c-title { text-align: left; }
 .promo-doc .c-unit { text-align: center; }
 .promo-doc .c-num { text-align: center; font-variant-numeric: tabular-nums; }
