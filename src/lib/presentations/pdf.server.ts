@@ -294,37 +294,24 @@ async function drawSlide(a: DrawArgs) {
     page.drawText(label, { x: W - PAD - w, y: 26, size: 10, font: fonts.regular, color: t.muted });
   };
 
-  if (slide.type === "title") {
-    let y = H - 130;
-    if (logo && plan.brand?.slot === "hero") {
-      drawPlannedLogo(page, logo, plan.brand);
-    } else if (brand) {
-      page.drawText(brand, { x: PAD, y: H - 96, size: 18, font: fonts.bold, color: t.ink });
-    }
-    const title = slide.title || presentation.title;
-    y = drawLines(wrap(fonts.display, title, 40, W - PAD * 2 - 120), PAD, y - 40, 40, fonts.display, t.ink, 1.2);
-    if (slide.subtitle) {
-      y = drawLines(wrap(fonts.regular, slide.subtitle, 17, W - PAD * 2 - 140), PAD, y - 12, 17, fonts.regular, t.muted);
-    }
-    page.drawRectangle({ x: PAD, y: y - 22, width: 84, height: 3, color: t.accent });
-    const contacts = [company?.company_phone, company?.company_email, company?.company_website, company?.company_address]
-      .filter((v): v is string => !!v && !!v.trim())
-      .join("   ·   ");
-    if (contacts) {
-      page.drawText(contacts, { x: PAD, y: y - 58, size: 11, font: fonts.regular, color: t.muted });
-    }
+  if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
+    const heroPlan = plan.brand?.slot === "hero" ? plan.brand : null;
+    const blocks = staticSlideSpec({
+      slide,
+      ts: slideFit.type,
+      company,
+      presentationTitle: presentation.title,
+      brandName: brand,
+      heroLogo: logo && heroPlan ? { w: heroPlan.maxW, h: heroPlan.maxH } : null,
+      dateLabel: slide.type === "title" ? formatSlideDate() : "",
+    });
+    drawSpecBlocks(page, blocks, t, fonts, logo);
     drawClientLogo();
+    if (logo && plan.brand && plan.brand.slot !== "hero") drawPlannedLogo(page, logo, plan.brand);
+    if (slide.type !== "title") footer(slideFit.type.caption * (W / SLIDE_W));
     return;
   }
 
-  if (slide.type === "section") {
-    page.drawRectangle({ x: PAD, y: H / 2 + 46, width: 66, height: 3, color: t.accent });
-    let y = drawLines(wrap(fonts.display, slide.title, 34, W - PAD * 2), PAD, H / 2, 34, fonts.display, t.ink, 1.2);
-    if (slide.subtitle) drawLines(wrap(fonts.regular, slide.subtitle, 16, W - PAD * 2 - 100), PAD, y - 14, 16, fonts.regular, t.muted);
-    drawClientLogo();
-    footer();
-    return;
-  }
 
   // Общая раскладка (1280×720) переводится в points 960×540 коэффициентом K.
   const fit = slideFit;
