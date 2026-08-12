@@ -424,6 +424,12 @@ async function drawSlide(a: DrawArgs) {
     page.drawImage(image, { x: cx - w / 2, y: cy - h / 2, width: w, height: h });
   });
 
+  // Фото на весь слайд: снизу тёмный градиент и белый текст — как в превью.
+  const isFullBleed = fit.layout.placement === "full";
+  if (isFullBleed) drawBottomShade(page);
+  const inkCol = isFullBleed ? rgb(1, 1, 1) : t.ink;
+  const mutedCol = isFullBleed ? rgb(0.92, 0.92, 0.92) : t.muted;
+
   const box = fit.layout.textBox;
   const x = px(box.x);
   const maxW = px(box.w);
@@ -433,12 +439,15 @@ async function drawSlide(a: DrawArgs) {
   const bulletSize = px(ts.bullet);
   let y = H - px(box.y) - titleSize;
 
-  y = drawLines(wrap(fonts.display, slide.title, titleSize, maxW), x, y, titleSize, fonts.display, t.ink, 1.14);
+  y = drawLines(wrap(fonts.display, slide.title, titleSize, maxW), x, y, titleSize, fonts.display, inkCol, 1.14);
   if (slide.subtitle) {
-    y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, t.muted);
+    y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, mutedCol);
   }
-  page.drawRectangle({ x: alignX(x, 52), y: y - 14, width: 52, height: 2.5, color: t.accent });
+  if (!isFullBleed) {
+    page.drawRectangle({ x: alignX(x, 52), y: y - 14, width: 52, height: 2.5, color: t.accent });
+  }
   y -= px(ts.blockGap) + 14;
+
 
 
   if (c.showDescription && c.description.trim()) {
