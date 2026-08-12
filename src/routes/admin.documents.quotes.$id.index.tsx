@@ -814,8 +814,9 @@ function Page() {
           <span>{quote.client_company || quote.client_name || "Без клиента"}</span>
           <span>·</span>
           <span className="tabular-nums">{fmtMoney(totals.total)}</span>
-          <SaveStatus state={state} errorMessage={saveError} />
-          {pending.length > 0 && state !== "error" && (
+          <SaveStatus state={saver.state} errorMessage={saver.error} />
+          {pending.length > 0 && saver.state !== "error" && (
+
             <span className="text-amber-500">Не сохранено (допишите значение): {pending.join(", ")}</span>
           )}
           <QuoteShareStatus share={shareState} />
