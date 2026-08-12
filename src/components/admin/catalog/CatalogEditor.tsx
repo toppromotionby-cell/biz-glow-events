@@ -27,6 +27,8 @@ import { ChevronDown, Copy, ExternalLink, MoreHorizontal, Trash2 } from "lucide-
 import { AdminEditorShell } from "@/components/admin/AdminEditorShell";
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { Field } from "@/components/admin/Field";
+import { catalogItemSchema } from "@/lib/admin/schemas";
+import { mapServerError, zodFieldErrors, type FieldErrors } from "@/lib/admin/form-errors";
 import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
 import { ExtrasEditor } from "@/components/admin/ExtrasEditor";
