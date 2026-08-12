@@ -11,7 +11,8 @@ import type { SlideFit } from "@/lib/presentations/fit";
 import type { SlideLogoPlan } from "@/lib/presentations/logo-plan";
 import { snapRect, type Guide } from "@/lib/presentations/snap";
 import {
-  LOGO_SCALE_MAX, LOGO_SCALE_MIN, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN, TEXT_WIDTH_MAX, TEXT_WIDTH_MIN, clampNum,
+  LOGO_SCALE_MAX, LOGO_SCALE_MIN, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
+  PRICE_SCALE_MAX, PRICE_SCALE_MIN, TEXT_WIDTH_MAX, TEXT_WIDTH_MIN, clampNum,
   type SlideLayoutOverrides,
 } from "@/lib/presentations/model";
 import { logoZones, nearestZone, photoZones, priceZones, textZones, type ZoneDef } from "@/lib/presentations/zones";
