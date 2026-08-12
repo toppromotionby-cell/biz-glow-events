@@ -62,7 +62,7 @@ export function auditSlide(slide: PresentationSlide, index: number): AuditIssue[
     issues.push({ ...base, block: "layout", level: "warn", message: "Текст перекрывает блок цены" });
   }
 
-  if (slide.content.showImage && !slide.content.images.length && !slide.content.image_url) {
+  if (slide.content.showImage && !slide.content.images.length) {
     issues.push({ ...base, block: "photo", level: "warn", message: "Показ фото включён, но фото не выбрано" });
   }
 
