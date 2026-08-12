@@ -83,7 +83,12 @@ function textOps(el: CanvasElement<TextProps>): DrawOp[] {
     color: p.color ?? "#111111",
     align: p.align ?? "left",
     valign: p.valign ?? "top",
+    font: p.font ?? "body",
+    lines: p.lines,
+    uppercase: p.uppercase ?? false,
+    letterSpacing: p.letterSpacing ?? 0,
   }];
+
 }
 
 /** Один элемент → примитивы. Неизвестные типы просто пропускаются. */
