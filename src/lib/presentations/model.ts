@@ -125,7 +125,10 @@ export type TextAlignX = "auto" | "left" | "center" | "right";
 export type PriceZone = "auto" | "under-text" | "corner" | "beside-photo";
 export type LogoZone = "auto" | "tl" | "tr" | "bl" | "br" | "footer" | "hero";
 
-export type LogoOverride = { zone: LogoZone; scale: number | null };
+/** Свободная позиция логотипа в долях холста (0..1 от 1280×720). */
+export type LogoPos = { x: number; y: number };
+
+export type LogoOverride = { zone: LogoZone; scale: number | null; pos: LogoPos | null };
 
 export type SlideLayoutOverrides = {
   photoZone: PhotoZone;
@@ -136,6 +139,10 @@ export type SlideLayoutOverrides = {
   textWidth: number | null;
   /** Горизонтальное выравнивание текстового блока и выключка текста. */
   alignX: TextAlignX;
+  /** Выравнивание отдельных частей текста (auto = как у блока). */
+  titleAlignX: TextAlignX;
+  subtitleAlignX: TextAlignX;
+  bodyAlignX: TextAlignX;
   /** Растянуть текстовый блок на всю доступную ширину. */
   stretchX: boolean;
   /** Растянуть текстовый блок на всю доступную высоту. */
@@ -151,12 +158,16 @@ export const DEFAULT_LAYOUT_OVERRIDES: SlideLayoutOverrides = {
   textZone: "auto",
   textWidth: null,
   alignX: "auto",
+  titleAlignX: "auto",
+  subtitleAlignX: "auto",
+  bodyAlignX: "auto",
   stretchX: false,
   stretchY: false,
   priceZone: "auto",
-  brandLogo: { zone: "auto", scale: null },
-  clientLogo: { zone: "auto", scale: null },
+  brandLogo: { zone: "auto", scale: null, pos: null },
+  clientLogo: { zone: "auto", scale: null, pos: null },
 };
+
 
 
 export const PHOTO_SCALE_MIN = 0.25;
