@@ -20,6 +20,7 @@ import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { caseSchema } from "@/lib/admin/schemas";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { useEditorHotkeys } from "@/lib/admin/use-editor-hotkeys";
 import { generateSeoDescription } from "@/lib/admin/seo";
 import type { SaveState } from "@/components/admin/SaveStatus";
@@ -160,6 +161,7 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
 
   // Автосохранение черновика
   const { savedAt: draftSavedAt } = useAutoSaveDraft(draftKey, { form, servicesInput, metricsInput });
+  const { guardDialog } = useUnsavedGuard(!!draftSavedAt && saveState !== "saved" && !saving);
 
   const save = async () => {
     if (!validation.ok) { toast.error("Исправьте ошибки в форме"); setSaveState("error"); setErrorMessage("Невалидные поля"); return; }
@@ -196,6 +198,8 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
   };
 
   return (
+    <>
+    {guardDialog}
     <AdminEditorShell
       switches={
         <>
@@ -279,5 +283,6 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
         />
       </div>
     </AdminEditorShell>
+    </>
   );
 }

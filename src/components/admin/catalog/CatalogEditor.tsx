@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { ChevronDown, Copy, ExternalLink, MoreHorizontal, Trash2 } from "lucide-react";
 import { AdminEditorShell } from "@/components/admin/AdminEditorShell";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { Field } from "@/components/admin/Field";
 import { CategoryCombobox } from "@/components/admin/CategoryCombobox";
 import { FeaturesEditor } from "@/components/admin/FeaturesEditor";
@@ -81,12 +82,14 @@ export function CatalogEditor({
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [moving, setMoving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
   const dirtyRef = useRef(false);
   const skipNextAutosaveRef = useRef(true);
+  const { guardDialog } = useUnsavedGuard(dirty);
 
   const buildPatch = (state: FormState): CatalogUpdate => ({
     title: state.title, slug: state.slug, category: state.category,
@@ -96,6 +99,10 @@ export function CatalogEditor({
     pricing: state.pricing ?? {}, features: state.features ?? [], extras: state.extras ?? [], faq: state.faq ?? [],
   });
 
+  // Актуальные данные для дозаписи при размонтировании (смена карточки/уход из раздела).
+  const flushRef = useRef<{ form: FormState; patch: (s: FormState) => CatalogUpdate }>({ form, patch: buildPatch });
+  flushRef.current = { form, patch: buildPatch };
+
   // Автосохранение: debounce 1.2с после изменения формы.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -104,6 +111,7 @@ export function CatalogEditor({
       return;
     }
     dirtyRef.current = true;
+    setDirty(true);
     setSaveState("dirty");
     // Локальный черновик — мгновенно (страховка).
     try {
@@ -120,6 +128,7 @@ export function CatalogEditor({
       }
       try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
       dirtyRef.current = false;
+      setDirty(false);
       setErrorMessage(null);
       setDraftSavedAt(new Date());
       setSaveState("saved");
@@ -137,14 +146,18 @@ export function CatalogEditor({
     return () => clearTimeout(t);
   }, [saveState]);
 
-  // Подсказать перед закрытием при несохранённых изменениях.
+  // Правки, не успевшие уйти по дебаунсу, дописываем при размонтировании.
   useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (dirtyRef.current) { e.preventDefault(); e.returnValue = ""; }
+    return () => {
+      if (!dirtyRef.current) return;
+      const { form: last, patch } = flushRef.current;
+      void supabase.from(table).update(patch(last)).eq("id", item.id).then(({ error }) => {
+        if (!error) { try { localStorage.removeItem(draftKey); } catch { /* ignore */ } }
+      });
     };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id, table]);
+
 
   const onTitleChange = (value: string) => {
     setForm((prev) => {
@@ -339,6 +352,7 @@ export function CatalogEditor({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {guardDialog}
     </AdminEditorShell>
   );
 }

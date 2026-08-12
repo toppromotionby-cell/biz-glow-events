@@ -70,7 +70,14 @@ export function useEditorSave(save: () => Promise<unknown>, enabled = true): Edi
     setError(null);
   }, []);
 
-  useEffect(() => clear, []);
+  // При размонтировании дописываем правки, не успевшие уйти по дебаунсу.
+  useEffect(() => {
+    return () => {
+      const pending = timer.current != null;
+      clear();
+      if (pending && !running.current) void saveRef.current();
+    };
+  }, []);
 
   // Ctrl/Cmd+S — сохранить сразу.
   useEffect(() => {
