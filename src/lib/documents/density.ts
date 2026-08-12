@@ -54,13 +54,10 @@ export function autoFitScript(preset: DocPrintPreset = BASE_PRINT_PRESET, opts: 
   // Лист ищем заново на каждом проходе: содержимое превью может обновляться
   // «на лету» (живое превью подменяет разметку без перезагрузки документа).
   function sheetEl(){ return document.querySelector('.sheet'); }
-  function pageHeightPx(sheet){
-    var cs = getComputedStyle(sheet);
-    var contentW = sheet.clientWidth - parseFloat(cs.paddingLeft || '0') - parseFloat(cs.paddingRight || '0');
-    var paperW = (210 - 2 * P.x) * MM;
-    var scale = paperW > 0 ? contentW / paperW : 1;
-    return Math.max(1, (297 - P.top - P.bottom) * MM * scale);
-  }
+  // Лист всегда физический A4 (210×297 мм) с полями пресета, поэтому высота
+  // страницы — константа, а не производная от ширины окна.
+  function pageHeightPx(){ return 297 * MM; }
+
   function apply(sheet, k){
     root.style.setProperty('--dk', String(k));
     root.style.setProperty('--fk', String(0.5 + k / 2));
