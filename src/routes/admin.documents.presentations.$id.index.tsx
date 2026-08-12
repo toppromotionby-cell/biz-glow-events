@@ -120,10 +120,13 @@ function Page() {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [autosave, setAutosave] = useState(true);
   const [presenting, setPresenting] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"slide" | "settings">("slide");
-  const canvasWrap = useRef<HTMLDivElement>(null);
-  const [canvasWidth, setCanvasWidth] = useState(720);
-  const [layoutMode, setLayoutMode] = useState(false);
+  // Рабочее пространство: активный раздел рельса, зум, выделенный блок, обзор.
+  const [sidebar, setSidebar] = useState<string | null>("slides");
+  const [zoom, setZoom] = useState(1);
+  const [selectedBlock, setSelectedBlock] = useState<BlockKind | null>(null);
+  const [textEditing, setTextEditing] = useState(false);
+  const [gridOpen, setGridOpen] = useState(false);
+
   // История раскладки текущего слайда: одно перетаскивание — один шаг отмены.
   const layoutHistory = useRef<{ slideId: string; layout: SlideLayoutOverrides }[]>([]);
   const [canUndoLayout, setCanUndoLayout] = useState(false);
