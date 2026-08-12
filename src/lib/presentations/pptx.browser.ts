@@ -109,6 +109,9 @@ export async function exportPresentationPptx(
     const h = (p.maxH / SLIDE_H) * H;
     const right = W - PAD_IN - w;
     switch (p.slot) {
+      case "free":
+        // Свободная позиция: пиксели холста 1280×720 → дюймы слайда.
+        return { x: ((p.x ?? 0) / 1280) * W, y: ((p.y ?? 0) / 720) * H, w, h };
       case "hero":
       case "tl":
         return { x: PAD_IN, y: 0.5, w, h };
@@ -120,6 +123,7 @@ export async function exportPresentationPptx(
       case "br":
         return { x: right, y: H - 0.75, w, h };
     }
+
   };
   const addLogo = (slide: { addImage: (o: Record<string, unknown>) => void }, data: string | null, p: LogoPlacementPlan | null) => {
     if (!data || !p) return;
