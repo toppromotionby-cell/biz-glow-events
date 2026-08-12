@@ -33,6 +33,8 @@ export type PlanLogosInput = {
   hasClientLogo: boolean;
   /** Ручные настройки раскладки слайда (зона и масштаб каждого логотипа). */
   overrides?: SlideLayoutOverrides;
+  /** Занятые области слайда (текст, блок цены) — логотип туда не встанет. */
+  blocked?: Rect[];
 };
 
 const ovScale = (o: LogoOverride): number =>
@@ -59,10 +61,32 @@ function overlaps(a: Rect, b: Rect): boolean {
 }
 
 /** Свободен ли угол от фотографий (для full-bleed считаем свободным — есть затемнение). */
-function cornerFree(slot: Exclude<LogoSlot, "hero" | "footer">, frames: Rect[], full: boolean): boolean {
-  if (full) return slot === "tl" || slot === "tr";
+function cornerFree(
+  slot: Exclude<LogoSlot, "hero" | "footer">,
+  frames: Rect[],
+  full: boolean,
+  blocked: Rect[] = [],
+): boolean {
   const zone = cornerRect(slot);
+  if (blocked.some((b) => overlaps(zone, b))) return false;
+  if (full) return slot === "tl" || slot === "tr";
   return !frames.some((f) => overlaps(zone, f));
+}
+
+const CORNERS: Exclude<LogoSlot, "hero" | "footer">[] = ["tr", "tl", "br", "bl"];
+
+/** Переносит логотип из занятой области в ближайший свободный угол. */
+function relocate(
+  place: LogoPlacementPlan | null,
+  taken: Set<LogoSlot>,
+  frames: Rect[],
+  full: boolean,
+  blocked: Rect[],
+): LogoPlacementPlan | null {
+  if (!place || place.slot === "hero" || place.slot === "footer") return place;
+  if (cornerFree(place.slot, frames, full, blocked)) return place;
+  const free = CORNERS.find((slot) => !taken.has(slot) && cornerFree(slot, frames, full, blocked));
+  return free ? { ...place, slot: free } : place;
 }
 
 const isTitleLike = (type: SlideType): boolean => type === "title" || type === "contacts";
@@ -126,13 +150,20 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
       if (brand?.slot === "footer" && slot === "bl") return false;
       return true;
     });
-    const free = candidates.find((slot) => cornerFree(slot, frames, full));
+    const free = candidates.find((slot) => cornerFree(slot, frames, full, input.blocked ?? []));
     const slot = free ?? (layout.client === "always" ? candidates[0] : null);
     if (slot) {
       client = titleLike
         ? { slot, maxW: 220 * scale, maxH: 54 * scale }
         : { slot, maxW: 170 * scale, maxH: 42 * scale };
     }
+  }
+
+  // Финальная проверка: логотип не должен накрывать текст или блок цены.
+  const blocked = input.blocked ?? [];
+  if (blocked.length) {
+    client = relocate(client, new Set([brand?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
+    brand = relocate(brand, new Set([client?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
   }
 
   return { brand, client };

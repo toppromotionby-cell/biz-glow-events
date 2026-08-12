@@ -106,6 +106,7 @@ export async function exportPresentationPptx(
       overrides: s.content.layout,
       hasBrandLogo: !!logoData,
       hasClientLogo: !!clientLogoData,
+      blocked: fit.layout.priceBox ? [fit.layout.priceBox] : [],
     });
     const IN = W / SLIDE_W;
     const pt = (v: number) => v * 0.75; // px -> pt для кеглей
