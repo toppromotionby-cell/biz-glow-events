@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Star } from "lucide-react";
+import { Plus, Search, Star, X } from "lucide-react";
 import { persistSortOrder } from "@/lib/sort-order";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminListPanel } from "@/components/admin/AdminListPanel";
@@ -20,21 +20,41 @@ import { testimonialSchema } from "@/lib/admin/schemas";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { useEditorHotkeys } from "@/lib/admin/use-editor-hotkeys";
+import { useListUrlState, matchesQuery } from "@/hooks/use-list-url-state";
+import { adminKeys } from "@/lib/query-keys";
 import type { SaveState } from "@/components/admin/SaveStatus";
 
-export const Route = createFileRoute("/admin/testimonials")({ component: Page });
+// Поиск и выбранный отзыв живут в URL — F5 и «назад» не сбрасывают работу.
+export const Route = createFileRoute("/admin/testimonials")({
+  validateSearch: (search: Record<string, unknown>): { q?: string | undefined; id?: string | undefined } => ({
+    q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
+    id: typeof search["id"] === "string" && search["id"] ? (search["id"] as string) : undefined,
+  }),
+  component: Page,
+});
 
 import type { Database } from "@/integrations/supabase/types";
 type Row = Database["public"]["Tables"]["testimonials"]["Row"];
 
 function Page() {
   const qc = useQueryClient();
-  const [selected, setSelected] = useState<Row | null>(null);
+  const sp = Route.useSearch();
+  const routeNavigate = Route.useNavigate();
+  const patchSearch = (p: { q?: string | undefined; id?: string | undefined }) =>
+    void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...p }), replace: true });
+  const { query, setQuery, debouncedQuery, selectedId, selectId } = useListUrlState(sp, patchSearch);
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ["admin-testimonials"],
+    queryKey: adminKeys.testimonials,
     queryFn: async () => (await supabase.from("testimonials").select("*").order("sort_order").order("created_at", { ascending: false }).limit(ADMIN_LIST_LIMIT)).data ?? [],
   });
+
+  const visible = useMemo(
+    () => (items as Row[]).filter((it) => matchesQuery(debouncedQuery, it.client_name, it.client_company, it.text)),
+    [items, debouncedQuery],
+  );
+  const selected = (items as Row[]).find((it) => it.id === selectedId) ?? null;
+
 
   const create = useMutation({
     mutationFn: async () => {
