@@ -298,12 +298,14 @@ function Page() {
         },
       });
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setDirty(false);
       setSavedAt(new Date());
-      await qc.invalidateQueries({ queryKey: ["presentation", id] });
+      // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
+      // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
       qc.invalidateQueries({ queryKey: ["presentations"] });
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
