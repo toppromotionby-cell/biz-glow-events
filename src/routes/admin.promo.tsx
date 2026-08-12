@@ -1,7 +1,9 @@
 // Админка промокодов.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
+import type { SaveState } from "@/components/admin/SaveStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
