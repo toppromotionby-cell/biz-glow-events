@@ -29,7 +29,12 @@ import { AttractionsMediaBackfill } from "@/components/admin/catalog/Attractions
 
 import type { Row } from "@/components/admin/catalog/shared";
 
+// Поиск и открытая карточка живут в URL: ссылку можно переслать, F5 не сбрасывает работу.
 export const Route = createFileRoute("/admin/catalog/$type")({
+  validateSearch: (search: Record<string, unknown>): { q?: string | undefined; id?: string | undefined } => ({
+    q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
+    id: typeof search["id"] === "string" && search["id"] ? (search["id"] as string) : undefined,
+  }),
   component: CatalogAdmin,
 });
 
@@ -41,13 +46,29 @@ function CatalogAdmin() {
 
 function CatalogInner({ table }: { table: CatalogTable }) {
   const qc = useQueryClient();
-  const [selected, setSelected] = useState<Row | null>(null);
-  const [search, setSearch] = useState("");
+  const sp = Route.useSearch();
+  const routeNavigate = Route.useNavigate();
+  const patchSearch = (patch: { q?: string | undefined; id?: string | undefined }) =>
+    void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...patch }), replace: true });
+
+  const [selectedRow, setSelectedRow] = useState<Row | null>(null);
+  const setSelected = (row: Row | null) => {
+    setSelectedRow(row);
+    patchSearch({ id: row?.id });
+  };
+  const [search, setSearch] = useState(sp.q ?? "");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  useEffect(() => {
+    if ((sp.q ?? "") === debouncedSearch) return;
+    patchSearch({ q: debouncedSearch || undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState(false);
 
   // Сбрасываем выделение и редактируемую запись при смене таблицы.
-  useEffect(() => { setSelectedIds(new Set()); setSelected(null); }, [table]);
+  useEffect(() => { setSelectedIds(new Set()); setSelectedRow(null); }, [table]);
+
 
   const { data: items = [], isLoading } = useQuery<Row[]>({
     queryKey: ["catalog", table],
