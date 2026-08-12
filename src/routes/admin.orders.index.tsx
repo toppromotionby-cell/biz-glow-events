@@ -26,29 +26,55 @@ import {
 
 type SortBy = "created_at" | "total" | "event_date";
 
+type OrdersKind = "all" | "orders" | "inquiries";
+
+interface OrdersSearch {
+  kind?: OrdersKind | undefined;
+  q?: string | undefined;
+  status?: string | undefined;
+  sort?: SortBy | undefined;
+}
+
+// Фильтры списка заказов живут в URL: состояние переживает перезагрузку и «назад».
 export const Route = createFileRoute("/admin/orders/")({
+  validateSearch: (search: Record<string, unknown>): OrdersSearch => {
+    const k = search["kind"];
+    const kind: OrdersKind | undefined =
+      k === "inquiry" || k === "inquiries" ? "inquiries" : k === "orders" ? "orders" : undefined;
+    const sort = search["sort"];
+    return {
+      kind,
+      q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
+      status: typeof search["status"] === "string" && search["status"] ? (search["status"] as string) : undefined,
+      sort: sort === "created_at" || sort === "event_date" || sort === "total" ? (sort as SortBy) : undefined,
+    };
+  },
   component: AdminOrders,
 });
 
 function AdminOrders() {
   const qc = useQueryClient();
-  const loc = useLocation();
-  const kindFromUrl = new URLSearchParams(loc.searchStr ?? "").get("kind");
-  const [kind, setKind] = useState<"all" | "orders" | "inquiries">(
-    kindFromUrl === "inquiry" || kindFromUrl === "inquiries" ? "inquiries" : kindFromUrl === "orders" ? "orders" : "all",
-  );
-  useEffect(() => {
-    // Sync ?kind=inquiry from sidebar link
-    const k = new URLSearchParams(loc.searchStr ?? "").get("kind");
-    if (k === "inquiry" || k === "inquiries") setKind("inquiries");
-    else if (k === "orders") setKind("orders");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loc.searchStr]);
-  const [q, setQ] = useState("");
+  const sp = Route.useSearch();
+  const routeNavigate = Route.useNavigate();
+  const patchSearch = (patch: OrdersSearch) =>
+    void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...patch }), replace: true });
+
+  const kind: OrdersKind = sp.kind ?? "all";
+  const status = sp.status ?? "";
+  const sortBy: SortBy = sp.sort ?? "created_at";
+  const setKind = (v: OrdersKind) => patchSearch({ kind: v === "all" ? undefined : v });
+  const setStatus = (v: string) => patchSearch({ status: v || undefined });
+  const setSortBy = (v: SortBy) => patchSearch({ sort: v === "created_at" ? undefined : v });
+
+  const [q, setQ] = useState(sp.q ?? "");
   const dq = useDebouncedValue(q, 300);
-  const [status, setStatus] = useState<string>("");
-  const [sortBy, setSortBy] = useState<SortBy>("created_at");
+  useEffect(() => {
+    if ((sp.q ?? "") === dq) return;
+    patchSearch({ q: dq || undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dq]);
   const [openId, setOpenId] = useState<string | null>(null);
+
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders", dq, status, kind],
