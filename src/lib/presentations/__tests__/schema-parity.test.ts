@@ -20,6 +20,8 @@ describe("presentations: списки значений", () => {
     const src = await import("node:fs").then((fs) =>
       fs.readFileSync("src/lib/presentations.functions.ts", "utf8"));
     expect(src).not.toMatch(/z\.enum\(\["light"/);
-    expect(src).toContain("z.enum(PRESENTATION_TEMPLATES)");
+    // Шаблон принимается через нормализацию: любое значение из UI сохранится.
+    expect(src).toContain("templateInput");
+    expect(src).toContain("z.unknown().transform(normalizeTemplate)");
   });
 });

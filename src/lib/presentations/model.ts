@@ -56,6 +56,17 @@ export const PRESENTATION_TEMPLATES = [
 
 export type PresentationTemplate = (typeof PRESENTATION_TEMPLATES)[number];
 
+/**
+ * Приводит любое значение к известному шаблону. Неизвестные значения
+ * (например, из более новой версии клиента) не роняют запрос, а падают
+ * в безопасный дефолт.
+ */
+export function normalizeTemplate(v: unknown): PresentationTemplate {
+  return PRESENTATION_TEMPLATES.includes(v as PresentationTemplate)
+    ? (v as PresentationTemplate)
+    : "light";
+}
+
 export const PRESENTATION_STATUSES = ["draft", "ready", "archived"] as const;
 
 
@@ -488,9 +499,7 @@ export function normalizePresentation(row: Record<string, unknown>): Presentatio
   const status = PRESENTATION_STATUSES.includes(row.status as PresentationStatus)
     ? (row.status as PresentationStatus)
     : "draft";
-  const template = PRESENTATION_TEMPLATES.includes(row.template as PresentationTemplate)
-    ? (row.template as PresentationTemplate)
-    : "light";
+  const template = normalizeTemplate(row.template);
   return {
     id: str(row.id),
     title: str(row.title, "Без названия"),
