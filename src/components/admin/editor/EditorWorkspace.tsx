@@ -41,21 +41,26 @@ export function EditorWorkspace({
   // Ключ зависит от набора видимых панелей: раскладка «с левой панелью» и
   // «без неё» сохраняются отдельно и не конфликтуют.
   const variant = `${storageKey}:${leftPanel ? "l" : ""}${rightPanel ? "r" : ""}`;
-  const defaultLayout = useMemo(() => readLayout(variant), [variant]);
+  // Настройки из профиля приезжают асинхронно — при их появлении раскладка
+  // пересобирается (version меняется → Group монтируется заново).
+  const version = useSyncExternalStore(subscribePrefs, prefsVersion, () => 0);
+  useEffect(() => { void pullRemotePrefs(); }, []);
+  const defaultLayout = useMemo(() => readPref(variant) as Layout | undefined, [variant, version]);
   const keyRef = useRef(variant);
   keyRef.current = variant;
-  const onLayoutChanged = useCallback((layout: Layout) => writeLayout(keyRef.current, layout), []);
+  const onLayoutChanged = useCallback((layout: Layout) => writePref(keyRef.current, layout), []);
 
   return (
     <div className={`flex min-h-0 flex-1 ${className ?? ""}`}>
       {rail}
       <Group
-        key={variant}
+        key={`${variant}:${version}`}
         orientation="horizontal"
         className="flex min-h-0 min-w-0 flex-1"
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
+
         {leftPanel && (
           <>
             <Panel id="left" defaultSize="22%" minSize="14%" maxSize="50%" className="flex min-h-0 min-w-0 flex-col">
