@@ -2012,6 +2012,28 @@ export async function buildPromoQuotePdf(
   items: PromoItemT[],
   settings: DocumentSettings,
 ): Promise<Uint8Array> {
+  // PDF промо-КП рисуется тем же макетом, что и превью (buildDocLayout),
+  // поэтому файл по кнопке «PDF» повторяет то, что видно на экране.
+  const { buildPromoQuotePreviewPdf } = await import("@/lib/documents/promo-pdf.server");
+  const eff = applyCompanyOverrides(settings, quote.company_overrides);
+  const companyLine = [
+    `${eff.company_legal_name}${eff.company_unp ? ` · УНП ${eff.company_unp}` : ""}`.trim(),
+    eff.company_address,
+  ]
+    .filter((s) => s && String(s).trim() !== "")
+    .join(" · ");
+  return await buildPromoQuotePreviewPdf(quote, items, {
+    companyLine,
+    fontDefault: (settings as { font_family?: unknown }).font_family,
+  });
+}
+
+/** Прежний «карточный» рендер промо-КП (оставлен для сравнения/отката). */
+export async function buildPromoQuotePdfLegacy(
+  quote: PromoQuoteT,
+  items: PromoItemT[],
+  settings: DocumentSettings,
+): Promise<Uint8Array> {
   applyDensity(
     "comfortable",
     resolvePrintPreset(
@@ -2027,6 +2049,7 @@ export async function buildPromoQuotePdf(
     quote.logo_layout,
     resolveDocFont(quote.font_family, (settings as { font_family?: unknown }).font_family),
   );
+
 
   const t = computePromoTotals(quote, items);
   drawHeader(
