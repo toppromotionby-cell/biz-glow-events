@@ -158,7 +158,7 @@ function palette(template: PresentationTemplate, accent: string): Palette {
       };
     case "sunset":
       return {
-        stops: ["#ff7a45", "#e4426d", "#7b2c8f"],
+        stops: ["#c2381b", "#a11e4d", "#5d1a75"],
         angle: 125,
         panel: "rgba(255,255,255,0.16)",
         ink: "#fffaf6",
@@ -169,7 +169,7 @@ function palette(template: PresentationTemplate, accent: string): Palette {
       };
     case "emerald":
       return {
-        stops: ["#046e5a", "#0aa07f", "#03453f"],
+        stops: ["#046e5a", "#067a63", "#03453f"],
         angle: 130,
         panel: "rgba(255,255,255,0.12)",
         ink: "#f2fffb",
