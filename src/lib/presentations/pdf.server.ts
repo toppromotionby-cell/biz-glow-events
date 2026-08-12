@@ -283,16 +283,20 @@ async function drawSlide(a: DrawArgs) {
     return y;
   };
 
-  const footer = () => {
+  const footerSize = slideFit.type.caption * (W / SLIDE_W);
+  const footer = (size = footerSize) => {
+    // Базовая линия футера соответствует превью: 28 px от низа холста 1280×720.
+    const fy = (28 * W) / SLIDE_W;
     if (logo && plan.brand?.slot === "footer") {
       drawPlannedLogo(page, logo, plan.brand);
     } else if (brand) {
-      page.drawText(brand, { x: PAD, y: 26, size: 10, font: fonts.regular, color: t.muted });
+      page.drawText(brand, { x: PAD, y: fy, size, font: fonts.regular, color: t.muted });
     }
     const label = `${index + 1} / ${total}`;
-    const w = fonts.regular.widthOfTextAtSize(label, 10);
-    page.drawText(label, { x: W - PAD - w, y: 26, size: 10, font: fonts.regular, color: t.muted });
+    const w = fonts.regular.widthOfTextAtSize(label, size);
+    page.drawText(label, { x: W - PAD - w, y: fy, size, font: fonts.regular, color: t.muted });
   };
+
 
   if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
     const heroPlan = plan.brand?.slot === "hero" ? plan.brand : null;
