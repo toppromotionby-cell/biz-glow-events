@@ -155,14 +155,8 @@ function Page() {
 
 
 
-  useEffect(() => {
-    const el = canvasWrap.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setCanvasWidth(el.clientWidth));
-    ro.observe(el);
-    setCanvasWidth(el.clientWidth);
-    return () => ro.disconnect();
-  }, [isLoading, mobileTab]);
+
+
 
   const { data: companies } = useCompanyProfiles();
   const company = useMemo(
