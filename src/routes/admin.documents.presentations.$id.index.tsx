@@ -319,21 +319,28 @@ function Page() {
   };
 
   const saveFn = useServerFn(savePresentation);
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!meta) throw new Error("Нет данных");
-      return saveFn({
+  const metaRef = useRef(meta);
+  metaRef.current = meta;
+  const slidesRef = useRef(slides);
+  slidesRef.current = slides;
+
+  // Общий хук автосохранения: дебаунс, Ctrl+S, защита от ухода со страницы.
+  const saver = useEditorSave(async () => {
+    const m = metaRef.current;
+    if (!m) return;
+    try {
+      await saveFn({
         data: {
-          id: meta.id,
-          title: meta.title.trim() || "Без названия",
-          status: meta.status,
-          template: meta.template,
-          companyId: meta.company_id,
-          logoUrl: meta.logo_url,
-          clientLogoUrl: meta.client_logo_url,
-          logoLayout: meta.logo_layout,
-          fontFamily: meta.font_family,
-          slides: slides.map((s, i) => ({
+          id: m.id,
+          title: m.title.trim() || "Без названия",
+          status: m.status,
+          template: m.template,
+          companyId: m.company_id,
+          logoUrl: m.logo_url,
+          clientLogoUrl: m.client_logo_url,
+          logoLayout: m.logo_layout,
+          fontFamily: m.font_family,
+          slides: slidesRef.current.map((s, i) => ({
             id: s.id.startsWith("new-") ? undefined : s.id,
             position: i,
             type: s.type,
@@ -348,37 +355,22 @@ function Page() {
           })),
         },
       });
-    },
-    onSuccess: () => {
-      setDirty(false);
-      setSavedAt(new Date());
-      // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
-      // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
-      qc.invalidateQueries({ queryKey: ["presentations"] });
-    },
-
-    onError: (e: Error) => toast.error(e.message),
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+      throw e;
+    }
+    setDirty(false);
+    // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
+    // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
+    qc.invalidateQueries({ queryKey: ["presentations"] });
   });
+  const saverRef = useRef(saver);
+  saverRef.current = saver;
 
-  const saveRef = useRef(save);
-  saveRef.current = save;
-
-  /* Автосохранение через 3 c после последней правки. */
+  /* Любая правка запускает отложенное сохранение. */
   useEffect(() => {
-    if (!dirty || !meta || saveRef.current.isPending) return;
-    const t = setTimeout(() => {
-      if (!saveRef.current.isPending) saveRef.current.mutate();
-    }, AUTOSAVE_DELAY);
-    return () => clearTimeout(t);
+    if (dirty) saverRef.current.markDirty();
   }, [dirty, meta, slides]);
-
-  /* Защита от потери правок */
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
 
   useBlocker({
     shouldBlockFn: () => {
@@ -388,22 +380,18 @@ function Page() {
     enableBeforeUnload: false,
   });
 
-  /* Ctrl/Cmd+S — сохранить, Ctrl/Cmd+Z в режиме правки раскладки — отменить шаг. */
+  /* Ctrl/Cmd+Z в режиме правки раскладки — отменить шаг (Ctrl+S берёт на себя хук). */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        if (dirty && !save.isPending) save.mutate();
-      }
-      if (mod && e.key.toLowerCase() === "z") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         undoLayout();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dirty, save, undoLayout]);
+  }, [undoLayout]);
+
 
 
   const buildFn = useServerFn(buildSlidesFromQuote);
