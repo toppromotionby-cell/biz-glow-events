@@ -225,7 +225,10 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
     layout.client !== "off" &&
     (layout.client !== "title-only" || titleLike);
 
-  if (clientAllowed && ov.clientLogo.zone !== "auto" && ov.clientLogo.zone !== "hero") {
+  if (clientAllowed && ov.clientLogo.pos) {
+    const k = ovScale(ov.clientLogo);
+    client = freePlacement(ov.clientLogo.pos, baseW * k, baseH * k, blockedRects);
+  } else if (clientAllowed && ov.clientLogo.zone !== "auto" && ov.clientLogo.zone !== "hero") {
     const k = scale * ovScale(ov.clientLogo);
     const slot = ov.clientLogo.zone;
     client = slot === "footer"
@@ -247,7 +250,7 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
       if (brand?.slot === "footer" && slot === "bl") return false;
       return true;
     });
-    const free = candidates.find((slot) => cornerFree(slot, frames, full, input.blocked ?? []));
+    const free = candidates.find((slot) => cornerFree(slot, frames, full, blockedRects));
     // Свободного угла нет — берём первый допустимый: fitIntoFree ниже
     // либо ужмёт логотип под просвет, либо уберёт его совсем.
     const slot = free ?? candidates[0] ?? null;
@@ -259,7 +262,7 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   }
 
   // Финальная проверка: логотип не должен накрывать текст или блок цены.
-  const blocked = input.blocked ?? [];
+  const blocked = blockedRects;
   if (blocked.length) {
     client = relocate(client, new Set([brand?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
     brand = relocate(brand, new Set([client?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
@@ -268,7 +271,16 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   client = fitIntoFree(client, frames, full, blocked);
   brand = fitIntoFree(brand, frames, full, blocked);
 
+  // Оба логотипа на слайде — одинакового размера (правило Canva-подобной пары).
+  if (brand && client) {
+    const w = Math.min(brand.maxW, client.maxW);
+    const h = Math.min(brand.maxH, client.maxH);
+    brand = { ...brand, maxW: w, maxH: h };
+    client = { ...client, maxW: w, maxH: h };
+  }
+
   return { brand, client };
+
 }
 
 /** Показывать ли текстовое название компании в футере (когда логотипа там нет). */
