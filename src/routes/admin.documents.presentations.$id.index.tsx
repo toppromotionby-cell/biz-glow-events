@@ -11,7 +11,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, Check, Download, FileText, Layers, ListChecks, Loader2,
-  Palette, Play, Plus, RefreshCw, Save, ShieldCheck, Undo2,
+  Palette, Play, Plus, RefreshCw, ShieldCheck, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,7 +122,6 @@ function Page() {
   const [selected, setSelected] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const [autosave, setAutosave] = useState(true);
   const [presenting, setPresenting] = useState(false);
   // Рабочее пространство: активный раздел рельса, зум, выделенный блок, обзор.
   const [sidebar, setSidebar] = useState<string | null>("slides");
@@ -178,10 +177,21 @@ function Page() {
     setSlides((prev) => prev.map((s) => (s.id === sid ? { ...s, ...patch } : s)));
     setDirty(true);
   };
-  /** Перетаскивание блока: сохраняем предыдущую раскладку для «Отменить». */
-  const patchLayout = (sid: string, layout: SlideLayoutOverrides, patch: Partial<SlideLayoutOverrides>) => {
-    layoutHistory.current = [...layoutHistory.current.slice(-19), { slideId: sid, layout }];
-    setCanUndoLayout(true);
+  /**
+   * Правка раскладки. Внутри одного жеста (перетаскивание, изменение размера)
+   * приходит много кадров с `transient: true` — шаг отмены создаёт только
+   * первый из них, иначе «Отменить» откатывало бы по пикселю.
+   */
+  const patchLayout = (
+    sid: string,
+    layout: SlideLayoutOverrides,
+    patch: Partial<SlideLayoutOverrides>,
+    opts?: { transient?: boolean },
+  ) => {
+    if (!opts?.transient) {
+      layoutHistory.current = [...layoutHistory.current.slice(-19), { slideId: sid, layout }];
+      setCanUndoLayout(true);
+    }
     setSlides((prev) =>
       prev.map((s) =>
         s.id === sid ? { ...s, content: { ...s.content, layout: { ...layout, ...patch } } } : s,
@@ -189,6 +199,7 @@ function Page() {
     );
     setDirty(true);
   };
+
 
   const undoLayout = () => {
     const last = layoutHistory.current.pop();
@@ -353,12 +364,12 @@ function Page() {
 
   /* Автосохранение через 3 c после последней правки. */
   useEffect(() => {
-    if (!autosave || !dirty || !meta || saveRef.current.isPending) return;
+    if (!dirty || !meta || saveRef.current.isPending) return;
     const t = setTimeout(() => {
       if (!saveRef.current.isPending) saveRef.current.mutate();
     }, 3000);
     return () => clearTimeout(t);
-  }, [autosave, dirty, meta, slides]);
+  }, [dirty, meta, slides]);
 
   /* Защита от потери правок */
   useEffect(() => {
@@ -556,15 +567,9 @@ function Page() {
           </SelectContent>
         </Select>
       </div>
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          className="h-4 w-4 accent-primary"
-          checked={autosave}
-          onChange={(e) => setAutosave(e.target.checked)}
-        />
-        Автосохранение (через 3 секунды после правки)
-      </label>
+      <p className="text-xs text-muted-foreground">
+        Правки сохраняются автоматически — отдельная кнопка «Сохранить» не нужна.
+      </p>
       <DocStatusBar checks={statusChecks} okLabel="Презентация готова к показу" />
     </div>
   );
@@ -655,10 +660,6 @@ function Page() {
           <Button variant="outline" size="sm" disabled={!slides.length || save.isPending} onClick={() => void exportPdf()}>
             <Download className="mr-1.5 h-4 w-4" />PDF
           </Button>
-          <Button size="sm" disabled={save.isPending || !dirty} onClick={() => save.mutate()}>
-            {save.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
-            {save.isPending ? "Сохраняем…" : "Сохранить"}
-          </Button>
         </div>
       </header>
 
@@ -690,9 +691,9 @@ function Page() {
                   textEditing={textEditing}
                   selectedBlock={selectedBlock}
                   onSelectBlock={(k) => { setSelectedBlock(k); if (!k) setTextEditing(false); }}
-                  onTextEdit={() => setTextEditing(true)}
+                  onTextEdit={(kind) => { setSelectedBlock(kind); setTextEditing(true); }}
                   floatingToolbar={isMobile}
-                  onLayout={(patch) => patchLayout(current.id, current.content.layout, patch)}
+                  onLayout={(patch, opts) => patchLayout(current.id, current.content.layout, patch, opts)}
                   {...branding}
                 />
               )}

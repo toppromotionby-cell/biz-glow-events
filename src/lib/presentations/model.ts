@@ -143,6 +143,11 @@ export type SlideLayoutOverrides = {
   titleAlignX: TextAlignX;
   subtitleAlignX: TextAlignX;
   bodyAlignX: TextAlignX;
+  /** Множители кегля отдельных частей текста, 0.6–2 (null — авто). */
+  titleScale: number | null;
+  subtitleScale: number | null;
+  bodyScale: number | null;
+
   /** Растянуть текстовый блок на всю доступную ширину. */
   stretchX: boolean;
   /** Растянуть текстовый блок на всю доступную высоту. */
@@ -163,6 +168,9 @@ export const DEFAULT_LAYOUT_OVERRIDES: SlideLayoutOverrides = {
   titleAlignX: "auto",
   subtitleAlignX: "auto",
   bodyAlignX: "auto",
+  titleScale: null,
+  subtitleScale: null,
+  bodyScale: null,
   stretchX: false,
   stretchY: false,
   priceZone: "auto",
@@ -181,6 +189,13 @@ export const LOGO_SCALE_MIN = 0.6;
 export const LOGO_SCALE_MAX = 1.8;
 export const PRICE_SCALE_MIN = 0.6;
 export const PRICE_SCALE_MAX = 1.8;
+/** Пределы ручного кегля частей текста (заголовок / подзаголовок / описание). */
+export const TEXT_SCALE_MIN = 0.6;
+export const TEXT_SCALE_MAX = 2;
+
+/** Ручной множитель кегля части текста (null — авто). */
+export const partTextScale = (v: number | null | undefined): number =>
+  v == null ? 1 : Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, v));
 
 export const clampNum = (v: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, v));
@@ -210,6 +225,12 @@ function normLogoOverride(raw: unknown): LogoOverride {
   };
 }
 
+/** Множитель кегля части текста: положительное число в допустимых пределах. */
+const textScaleOf = (v: unknown): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? clampNum(n, TEXT_SCALE_MIN, TEXT_SCALE_MAX) : null;
+};
+
 const alignOf = (v: unknown): TextAlignX =>
   ALIGN_X.includes(v as TextAlignX) ? (v as TextAlignX) : "auto";
 
@@ -227,6 +248,9 @@ export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
     titleAlignX: alignOf(r.titleAlignX),
     subtitleAlignX: alignOf(r.subtitleAlignX),
     bodyAlignX: alignOf(r.bodyAlignX),
+    titleScale: textScaleOf(r.titleScale),
+    subtitleScale: textScaleOf(r.subtitleScale),
+    bodyScale: textScaleOf(r.bodyScale),
     stretchX: r.stretchX === true,
     stretchY: r.stretchY === true,
     priceZone: PRICE_ZONES.includes(r.priceZone as PriceZone) ? (r.priceZone as PriceZone) : "auto",
@@ -248,6 +272,9 @@ export function isAutoLayout(o: SlideLayoutOverrides): boolean {
     o.titleAlignX === "auto" &&
     o.subtitleAlignX === "auto" &&
     o.bodyAlignX === "auto" &&
+    o.titleScale === null &&
+    o.subtitleScale === null &&
+    o.bodyScale === null &&
     !o.stretchX &&
     !o.stretchY &&
     o.priceScale === null &&

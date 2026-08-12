@@ -156,16 +156,16 @@ function SpecBlockView({
     ...(block.font === "display" ? heading : null),
     ...(block.id ? partAlign(block.id) : null),
   };
-  if (block.id && onEdit) {
+  // Прямо в холсте правятся только заголовок и подзаголовок; описание —
+  // многострочный текст, он редактируется в панели содержимого слайда.
+  if (onEdit && (block.id === "title" || block.id === "subtitle")) {
     const id = block.id;
     return (
       <Editable
         value={block.text}
         placeholder={block.placeholder ?? ""}
         block={id}
-        onChange={(v) =>
-          onEdit(id === "title" ? { title: v } : id === "subtitle" ? { subtitle: v } : { subtitle: v })
-        }
+        onChange={(v) => onEdit(id === "title" ? { title: v } : { subtitle: v })}
         style={style}
       />
     );
@@ -224,7 +224,7 @@ export type SlideCanvasProps = {
   fontFamily?: DocFontChoice;
   /** Режим редактора: перетаскивание и масштабирование элементов слайда. */
   interactive?: boolean;
-  onLayout?: (patch: Partial<SlideLayoutOverrides>) => void;
+  onLayout?: import("@/components/admin/presentations/SlideLayoutOverlay").LayoutPatch;
   /** Выделенный блок — свойства показываются в правой панели редактора. */
   selectedBlock?: BlockKind | null;
   onSelectBlock?: (kind: BlockKind | null) => void;
@@ -276,10 +276,12 @@ export function SlideCanvas(props: SlideCanvasProps) {
 
   return (
     <div
+      data-slide-root=""
       style={{ width, height: SLIDE_H * scale, position: "relative", overflow: "hidden" }}
       className="rounded-xl"
     >
       <div
+        data-slide-inner=""
         style={{
           width: SLIDE_W,
           height: SLIDE_H,

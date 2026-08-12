@@ -9,7 +9,8 @@ import { GRID, SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import type { SlideFit } from "@/lib/presentations/fit";
 import {
   DEFAULT_LAYOUT_OVERRIDES, clampNum, PRICE_SCALE_MAX, PRICE_SCALE_MIN,
-  type PresentationSlide, type TextAlignX,
+  partTextScale,
+  type PresentationSlide, type SlideLayoutOverrides, type TextAlignX,
 } from "@/lib/presentations/model";
 import { measureText, wrapText } from "@/lib/presentations/text-metrics";
 import { FULL_BLEED_SHADE, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
@@ -49,6 +50,18 @@ export function money(n: number): string {
 }
 
 type Align = "left" | "center" | "right";
+
+/** Кегли частей текста с учётом ручного масштаба — общие для превью и PDF. */
+export function partSizes(
+  ov: SlideLayoutOverrides,
+  base: { title: number; subtitle: number; body: number },
+): { title: number; subtitle: number; body: number } {
+  return {
+    title: base.title * partTextScale(ov.titleScale),
+    subtitle: base.subtitle * partTextScale(ov.subtitleScale),
+    body: base.body * partTextScale(ov.bodyScale),
+  };
+}
 
 const resolveAlign = (part: TextAlignX, base: Align): Align =>
   part === "auto" ? base : part;
@@ -154,7 +167,12 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     y += Math.max(1, lines.length) * opts.size * opts.lineHeight;
   };
 
-  const titleSize = ts.titleSlide;
+  const sizes = partSizes(ov, {
+    title: ts.titleSlide,
+    subtitle: ts.subtitle,
+    body: ts.body,
+  });
+  const titleSize = sizes.title;
   push(slide.title, {
     id: "title",
     size: titleSize,
@@ -171,7 +189,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     y += CONTENT.subtitleGap;
     push(slide.subtitle, {
       id: "subtitle",
-      size: ts.subtitle,
+      size: sizes.subtitle,
       lineHeight: 1.3,
       font: "body",
       weight: 400,
@@ -199,7 +217,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     y += ts.blockGap;
     push(c.description, {
       id: "body",
-      size: ts.body,
+      size: sizes.body,
       lineHeight: ts.lineGap,
       font: "body",
       weight: 400,
