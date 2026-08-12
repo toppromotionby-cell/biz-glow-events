@@ -154,12 +154,15 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
 
   const px = (v: number) => v * scale;
   const target = dragging ? zonesFor(dragging).find((z) => z.id === zone) : null;
+  const selectedItem = selected ? items.find((it) => it.kind === selected && it.rect) : null;
+  const selRect = selectedItem?.rect ?? null;
 
   return (
     <div
       ref={hostRef}
       className="absolute inset-0 print:hidden"
       style={{ width: px(SLIDE_W), height: px(SLIDE_H) }}
+      onPointerDown={() => setSelected(null)}
     >
       {/* Подсвечивается только та зона, куда попадёт блок. */}
       {target && (
@@ -186,6 +189,34 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
         />
       )}
 
+      {/* Рамка выделения и панель управления — только у выбранного блока. */}
+      {selRect && !dragging && (
+        <>
+          <div
+            className="pointer-events-none absolute rounded-md border-2 border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]"
+            style={{ left: px(selRect.x), top: px(selRect.y), width: px(selRect.w), height: px(selRect.h) }}
+          >
+            <span className="absolute -top-5 left-0 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+              {BLOCK_LABELS[selected as Kind]}
+            </span>
+          </div>
+          <div
+            className="absolute z-20"
+            style={{
+              left: Math.min(Math.max(4, px(selRect.x)), Math.max(4, px(SLIDE_W) - 380)),
+              top: px(selRect.y) > 52 ? px(selRect.y) - 44 : px(selRect.y + selRect.h) + 8,
+            }}
+          >
+            <BlockToolbar
+              kind={selected as Kind}
+              layout={overrides}
+              onChange={onLayout}
+              onClose={() => setSelected(null)}
+            />
+          </div>
+        </>
+      )}
+
       {items.map((it) =>
         it.rect ? (
           <div
@@ -202,6 +233,8 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
               setGhost(null);
             }}
             className={`group absolute cursor-grab rounded-md border border-transparent hover:border-primary/70 hover:bg-primary/5 ${
+              selected === it.kind ? "bg-primary/5" : ""
+            } ${
               dragging === it.kind ? "opacity-40" : ""
             }`}
             style={{
