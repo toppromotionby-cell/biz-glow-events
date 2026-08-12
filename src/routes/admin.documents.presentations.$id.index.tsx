@@ -20,7 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EditorSidebar, type EditorSection } from "@/components/admin/presentations/EditorSidebar";
+import { EditorSidebar, type EditorSection } from "@/components/admin/editor/EditorSidebar";
 import { SlideAuditPanel } from "@/components/admin/presentations/SlideAuditPanel";
 import { auditPresentation } from "@/lib/presentations/audit";
 import { CanvasStage } from "@/components/admin/presentations/CanvasStage";
