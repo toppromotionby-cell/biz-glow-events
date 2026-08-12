@@ -772,7 +772,7 @@ type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
  */
 function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
   const flexKeys = new Set(["title", "note"]);
-  const pad = 20;
+  const pad = 15;
   const measured = new Map<string, number>();
   let narrow = 0;
   for (const c of cols) {
@@ -793,7 +793,7 @@ function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number
   const flexCols = cols.filter((c) => flexKeys.has(c.key));
   if (!flexCols.length) return;
   const hasNote = flexCols.some((c) => c.key === "note");
-  const rest = Math.max(tableW * (hasNote ? 0.34 : 0.24), tableW - narrow);
+  const rest = Math.max(tableW * (hasNote ? 0.42 : 0.24), tableW - narrow);
   const scale = (tableW - rest) / (narrow || 1);
   for (const c of cols) {
     if (flexKeys.has(c.key)) c.width = hasNote ? rest * (c.key === "note" ? 0.56 : 0.44) : rest;
