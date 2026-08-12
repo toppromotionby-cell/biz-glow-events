@@ -398,7 +398,6 @@ export function normalizeContent(raw: unknown): SlideContent {
 }
 
 
-const SLIDE_TYPES: SlideType[] = ["title", "product", "text", "section", "contacts"];
 
 export function normalizeSlide(row: Record<string, unknown>, index = 0): PresentationSlide {
   const type = SLIDE_TYPES.includes(row.type as SlideType) ? (row.type as SlideType) : "text";
