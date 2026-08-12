@@ -7,6 +7,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertDocumentsStaff } from "@/lib/authz";
 import {
   normalizePresentation,
+  PRESENTATION_TEMPLATES,
+  PRESENTATION_STATUSES,
   normalizePresentationLogoLayout,
   normalizeSlide,
   normalizeContent,
@@ -309,7 +311,7 @@ export const createPresentation = createServerFn({ method: "POST" })
       .object({
         title: z.string().trim().min(1, "Укажите название").max(200),
         companyId: z.string().uuid().nullable().default(null),
-        template: z.enum(["light", "dark", "accent"]).default("light"),
+        template: z.enum(PRESENTATION_TEMPLATES).default("light"),
         quoteId: z.string().uuid().nullable().default(null),
       })
       .parse(d),
@@ -387,8 +389,8 @@ export const savePresentation = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         title: z.string().trim().min(1).max(200),
-        status: z.enum(["draft", "ready", "archived"]),
-        template: z.enum(["light", "dark", "accent"]),
+        status: z.enum(PRESENTATION_STATUSES),
+        template: z.enum(PRESENTATION_TEMPLATES),
         companyId: z.string().uuid().nullable().default(null),
         logoUrl: z.string().max(1000).nullable().default(null),
         clientLogoUrl: z.string().max(1000).nullable().default(null),
