@@ -155,30 +155,32 @@ export async function exportPresentationPptx(
 
     const ts = fit.type;
     const topY = gallery.length ? box.y * IN : 0.55;
+    // Горизонтальная выключка текста — из той же раскладки, что и превью с PDF.
+    const alignX = fit.layout.textAlignX;
     slide.addText(s.title, {
-      x: textLeft, y: topY, w: textW, h: 0.9,
+      x: textLeft, y: topY, w: textW, h: 0.9, align: alignX,
       fontSize: pt(s.type === "section" ? ts.titleSection : ts.titleSlide),
       bold: true, color: t.ink,
     });
     if (s.subtitle) {
-      slide.addText(s.subtitle, { x: textLeft, y: topY + 0.8, w: textW, h: 0.5, fontSize: pt(ts.subtitle), color: t.muted });
+      slide.addText(s.subtitle, { x: textLeft, y: topY + 0.8, w: textW, h: 0.5, fontSize: pt(ts.subtitle), color: t.muted, align: alignX });
     }
 
     let y = topY + (s.subtitle ? 1.4 : 1.05);
     if (c.showDescription && c.description) {
-      slide.addText(c.description, { x: textLeft, y, w: textW, h: 1.2, fontSize: pt(ts.body), color: t.ink });
+      slide.addText(c.description, { x: textLeft, y, w: textW, h: 1.2, fontSize: pt(ts.body), color: t.ink, align: alignX });
       y += 1.3;
     }
     if (c.showIncludes && c.includes.length) {
       slide.addText(
         c.includes.slice(0, 8).map((v) => ({ text: v, options: { bullet: true } })),
-        { x: textLeft, y, w: textW, h: 1.6, fontSize: pt(ts.bullet), color: t.ink },
+        { x: textLeft, y, w: textW, h: 1.6, fontSize: pt(ts.bullet), color: t.ink, align: alignX },
       );
       y += Math.min(c.includes.length, 8) * 0.24 + 0.2;
     }
     if (c.showSpecs && c.specs.length) {
       slide.addText(c.specs.map((sp) => `${sp.label}: ${sp.value}`).join("    "), {
-        x: textLeft, y, w: textW, h: 0.5, fontSize: 11, color: t.muted,
+        x: textLeft, y, w: textW, h: 0.5, fontSize: 11, color: t.muted, align: alignX,
       });
       y += 0.6;
     }
@@ -190,7 +192,7 @@ export async function exportPresentationPptx(
         company?.company_address && `Адрес: ${company.company_address}`,
       ].filter(Boolean) as string[];
       if (rows.length) {
-        slide.addText(rows.join("\n"), { x: textLeft, y, w: textW, h: 2, fontSize: 15, color: t.ink, lineSpacingMultiple: 1.4 });
+        slide.addText(rows.join("\n"), { x: textLeft, y, w: textW, h: 2, fontSize: 15, color: t.ink, lineSpacingMultiple: 1.4, align: alignX });
       }
     }
     if (c.showPrice && c.price != null && c.price > 0) {
