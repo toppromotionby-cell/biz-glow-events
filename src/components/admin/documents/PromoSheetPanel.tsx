@@ -1,10 +1,10 @@
-// Панель синхронизации промо-КП с Google Таблицей и Google Документом.
-// Оба источника выглядят как превью документа и читаются обратно.
+// Панель синхронизации промо-КП с Google Таблицей.
+// Таблица выглядит как превью документа и читается обратно.
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ExternalLink, FileText, RefreshCw, Table2, Upload, AlertTriangle, Download } from "lucide-react";
+import { ExternalLink, RefreshCw, Table2, Upload, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,6 @@ import {
   pushPromoToSheet,
   type PromoSheetDiffRow,
 } from "@/lib/promo-sheets.functions";
-import { applyPromoDocDiff, exportPromoToGoogleDoc, getPromoDocDiff } from "@/lib/promo-gdocs.functions";
 
 const KIND_LABEL: Record<PromoSheetDiffRow["kind"], string> = {
   added: "Новая позиция",
@@ -56,12 +55,9 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
   const push = useServerFn(pushPromoToSheet);
   const loadDiff = useServerFn(getPromoSheetDiff);
   const apply = useServerFn(applyPromoSheetDiff);
-  const toDoc = useServerFn(exportPromoToGoogleDoc);
-  const loadDocDiff = useServerFn(getPromoDocDiff);
-  const applyDoc = useServerFn(applyPromoDocDiff);
 
   const [busy, setBusy] = useState(false);
-  const [source, setSource] = useState<"sheet" | "doc" | null>(null);
+  const [compare, setCompare] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
 
   const { data, refetch, isFetching } = useQuery({
@@ -70,16 +66,7 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
-  const doc = useQuery({
-    queryKey: ["promo-gdoc", quoteId],
-    queryFn: () => loadDocDiff({ data: { id: quoteId } }),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  });
-
   const sheetDiff = useMemo(() => data?.diff ?? [], [data]);
-  const docDiff = useMemo(() => doc.data?.diff ?? [], [doc.data]);
-  const activeDiff = source === "doc" ? docDiff : sheetDiff;
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -101,36 +88,24 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
       toast.success("Таблица обновлена");
     });
 
-  const onExportDoc = () =>
-    run(async () => {
-      const res = await toDoc({ data: { id: quoteId } });
-      window.open(res.url, "_blank", "noopener");
-      await doc.refetch();
-      toast.success("Документ обновлён");
-    });
-
   const onApply = () =>
     run(async () => {
-      const res =
-        source === "doc"
-          ? await applyDoc({ data: { id: quoteId, rowIds: picked } })
-          : await apply({ data: { id: quoteId, rowIds: picked } });
+      const res = await apply({ data: { id: quoteId, rowIds: picked } });
       toast.success(`Применено изменений: ${res.applied}`);
-      setSource(null);
+      setCompare(false);
       setPicked([]);
       await qc.invalidateQueries({ queryKey: ["promo-quote", quoteId] });
       await qc.invalidateQueries({ queryKey: ["admin-promo-quote", quoteId] });
-      await Promise.all([refetch(), doc.refetch()]);
+      await refetch();
     });
 
-  const changesBanner = (kind: "sheet" | "doc", count: number, label: string) =>
+  const changesBanner = (count: number, label: string) =>
     count > 0 ? (
       <button
         type="button"
         onClick={() => {
-          const list = kind === "doc" ? docDiff : sheetDiff;
-          setPicked(list.map((d) => d.id));
-          setSource(kind);
+          setPicked(sheetDiff.map((d) => d.id));
+          setCompare(true);
         }}
         className="w-full text-left rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-700"
       >
@@ -177,52 +152,19 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
           <AlertTriangle className="h-3.5 w-3.5" />{data.error}
         </p>
       )}
-      {changesBanner("sheet", sheetDiff.length, "В таблице есть изменения")}
+      {changesBanner(sheetDiff.length, "В таблице есть изменения")}
       {data?.connected && sheetDiff.length === 0 && !data.error && (
         <p className="text-xs text-muted-foreground">Расхождений с таблицей нет.</p>
       )}
 
-      <div className="border-t pt-3 space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Google Документ</span>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={onExportDoc} disabled={busy}>
-              <ExternalLink className="h-4 w-4 mr-1.5" />
-              {doc.data?.connected ? "Открыть и обновить" : "Создать документ"}
-            </Button>
-            {doc.data?.connected && (
-              <Button size="sm" variant="ghost" onClick={() => doc.refetch()} disabled={doc.isFetching}>
-                <Download className={`h-4 w-4 ${doc.isFetching ? "animate-pulse" : ""}`} />
-              </Button>
-            )}
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Документ собирается по вёрстке превью: логотипы, реквизиты, мета-блок, таблица с акцентной шапкой,
-          разделы и итоги. Правки в документе можно забрать обратно — после применения документ перерисовывается.
-        </p>
-        {doc.data?.error && (
-          <p className="text-xs text-destructive flex items-center gap-1.5">
-            <AlertTriangle className="h-3.5 w-3.5" />{doc.data.error}
-          </p>
-        )}
-        {changesBanner("doc", docDiff.length, "В документе есть изменения")}
-        {doc.data?.connected && docDiff.length === 0 && !doc.data.error && (
-          <p className="text-xs text-muted-foreground">Расхождений с документом нет.</p>
-        )}
-      </div>
-
-      <Dialog open={source !== null} onOpenChange={(v) => !v && setSource(null)}>
+      <Dialog open={compare} onOpenChange={(v) => !v && setCompare(false)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              Изменения из {source === "doc" ? "Google Документа" : "Google Таблицы"}
-            </DialogTitle>
+            <DialogTitle>Изменения из Google Таблицы</DialogTitle>
             <DialogDescription>Отметьте строки, которые нужно применить к составу промо-КП.</DialogDescription>
           </DialogHeader>
           <div className="max-h-[55vh] overflow-y-auto space-y-2">
-            {activeDiff.map((row) => (
+            {sheetDiff.map((row) => (
               <label key={row.id} className="flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer">
                 <Checkbox
                   checked={picked.includes(row.id)}
@@ -238,10 +180,10 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
                 </div>
               </label>
             ))}
-            {activeDiff.length === 0 && <p className="text-sm text-muted-foreground">Изменений нет.</p>}
+            {sheetDiff.length === 0 && <p className="text-sm text-muted-foreground">Изменений нет.</p>}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setSource(null)}>Отмена</Button>
+            <Button variant="ghost" onClick={() => setCompare(false)}>Отмена</Button>
             <Button onClick={onApply} disabled={busy || picked.length === 0}>
               Применить ({picked.length})
             </Button>
