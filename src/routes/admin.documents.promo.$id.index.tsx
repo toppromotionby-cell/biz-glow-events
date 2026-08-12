@@ -8,9 +8,11 @@ import { DocAppearanceSection } from "@/components/admin/documents/DocAppearance
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AUTOSAVE_DELAY, saveStatus } from "@/lib/editor/save-state";
+import { saveStatus } from "@/lib/editor/save-state";
+import { useEditorSave } from "@/hooks/use-editor-save";
+
 import { HISTORY_LIMIT } from "@/lib/editor/history";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -113,8 +115,9 @@ function EditorPage() {
 
   const [quote, setQuote] = useState<PromoQuote | null>(null);
   const [items, setItems] = useState<PromoItem[]>([]);
-  const [dirty, setDirty] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  /** Последний снимок, ожидающий записи на сервер. */
+  const pending = useRef<Snapshot | null>(null);
+
   const { can } = useRoles();
   const canCost = can("documents.cost_margin");
   const [showCostRaw, setShowCost] = useState(false);
@@ -127,7 +130,38 @@ function EditorPage() {
   const redoStack = useRef<Snapshot[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persist = useCallback(async (payload: Snapshot) => {
+    const { id: _id, doc_number, created_at, updated_at, total, sent_at, ...patch } = payload.quote;
+    void _id; void doc_number; void created_at; void updated_at; void total; void sent_at;
+    return save({
+      data: {
+        id,
+        patch: patch as unknown as Record<string, unknown>,
+        items: payload.items.map((it) => ({
+          section: it.section, title: it.title, unit: it.unit, qty: it.qty,
+          multiplier: it.multiplier, price: it.price, cost: it.cost, note: it.note,
+          exclude_from_commission: it.exclude_from_commission,
+        })) as unknown[],
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Общий хук: дебаунс 1200 мс, Ctrl+S, предупреждение при уходе со страницы.
+  const saver = useEditorSave(async () => {
+    const snap = pending.current ?? (quote ? { quote, items } : null);
+    if (!snap) return;
+    try {
+      await persist(snap);
+      pending.current = null;
+    } catch (e) {
+      toast.error(`Не сохранено: ${friendlyZodMessage(e as Error)}`);
+      throw e;
+    }
+  });
+  const saverRef = useRef(saver);
+  saverRef.current = saver;
 
   useEffect(() => {
     if (data) {
@@ -137,39 +171,16 @@ function EditorPage() {
       redoStack.current = [];
       setCanUndo(false);
       setCanRedo(false);
-      setDirty(false);
+      pending.current = null;
+      saverRef.current.reset();
     }
   }, [data]);
 
-  const saveMut = useMutation({
-    mutationFn: async (payload: Snapshot) => {
-      const { id: _id, doc_number, created_at, updated_at, total, sent_at, ...patch } = payload.quote;
-      void _id; void doc_number; void created_at; void updated_at; void total; void sent_at;
-      return save({
-        data: {
-          id,
-          patch: patch as unknown as Record<string, unknown>,
-          items: payload.items.map((it) => ({
-            section: it.section, title: it.title, unit: it.unit, qty: it.qty,
-            multiplier: it.multiplier, price: it.price, cost: it.cost, note: it.note,
-            exclude_from_commission: it.exclude_from_commission,
-          })) as unknown[],
-        },
-      });
-    },
-    onSuccess: () => {
-      setSavedAt(new Date());
-      setDirty(false);
-    },
-    onError: (e: Error) => toast.error(`Не сохранено: ${friendlyZodMessage(e)}`),
-  });
-
   const scheduleSave = useCallback((q: PromoQuote, list: PromoItem[]) => {
-    setDirty(true);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => saveMut.mutate({ quote: q, items: list }), AUTOSAVE_DELAY);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    pending.current = { quote: q, items: list };
+    saverRef.current.markDirty();
   }, []);
+
 
   const { fetchContacts } = useDocSuggest();
 
@@ -227,6 +238,7 @@ function EditorPage() {
     scheduleSave(next.quote, next.items);
   }, [scheduleSave]);
 
+  // Ctrl+S обрабатывает общий хук; здесь только undo/redo.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
@@ -235,14 +247,11 @@ function EditorPage() {
         e.preventDefault();
         if (e.shiftKey) redo(); else undo();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        if (quote) saveMut.mutate({ quote, items });
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, quote, items, saveMut]);
+  }, [undo, redo]);
+
 
   const totals = useMemo(() => (quote ? computePromoTotals(quote, items) : null), [quote, items]);
   const checks = useMemo(() => (quote ? checkPromoQuote(quote, items) : []), [quote, items]);
@@ -582,7 +591,7 @@ function EditorPage() {
           <>
             <span>№ {promoNumberDisplay(quote)}</span>
             <span>
-              · {saveStatus(saveMut.isPending ? "saving" : dirty ? "dirty" : "saved", savedAt).text}
+              · {saveStatus(saver.state, saver.savedAt, saver.error).text}
             </span>
             {validity === "expired" && <StatusPill tone="danger">Срок истёк</StatusPill>}
             <QuoteShareStatus share={shareState} />
