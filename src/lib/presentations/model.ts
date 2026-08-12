@@ -2,6 +2,7 @@
 // Файл клиент-безопасный — используется и в редакторе, и в server fns, и в PDF.
 import { clamp } from "@/lib/canvas/model";
 import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
+import { htmlToPlainText, isHtml } from "@/lib/rich-text";
 
 /** Как накладывать логотипы на слайды. */
 export type LogoPlacement = "auto" | "always" | "title-only" | "off";
