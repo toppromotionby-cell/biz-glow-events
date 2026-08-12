@@ -52,6 +52,8 @@ function ProfilePage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
+
   const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
