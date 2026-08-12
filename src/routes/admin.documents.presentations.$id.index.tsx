@@ -207,7 +207,6 @@ function Page() {
     const next = blankSlide(type, slides.length);
     setSlides((prev) => [...prev, next]);
     setSelected(next.id);
-    setMobileTab("slide");
     setDirty(true);
   };
 
@@ -381,14 +380,14 @@ function Page() {
         e.preventDefault();
         if (dirty && !save.isPending) save.mutate();
       }
-      if (mod && e.key.toLowerCase() === "z" && layoutMode) {
+      if (mod && e.key.toLowerCase() === "z") {
         e.preventDefault();
         undoLayout();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dirty, save, layoutMode, undoLayout]);
+  }, [dirty, save, undoLayout]);
 
 
   const buildFn = useServerFn(buildSlidesFromQuote);
