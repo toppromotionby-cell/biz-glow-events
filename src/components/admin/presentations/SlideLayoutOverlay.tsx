@@ -450,9 +450,9 @@ export function SlideLayoutOverlay({
             <span className="pointer-events-none absolute left-1 top-1 rounded bg-background/85 px-1 text-[10px] font-medium text-foreground opacity-0 transition group-hover:opacity-100">
               {it.label}
             </span>
-            {it.resizable && (
+            {it.resizable && isResizable(it.kind) && it.rect && (
               <span
-                onPointerDown={startResize(it.kind as "photo" | "text" | "brand" | "client")}
+                onPointerDown={startHandleResize(it.kind, "se", it.rect)}
                 className="absolute -bottom-1.5 -right-1.5 h-3.5 w-3.5 cursor-nwse-resize rounded-full border border-background bg-primary opacity-0 transition group-hover:opacity-100"
                 style={{ touchAction: "none" }}
                 aria-hidden
