@@ -1,11 +1,8 @@
-import { assertPermission } from "@/lib/authz";
+import { assertDocumentsStaff } from "@/lib/authz";
 // Этап 4 плана «Документы»: мини-аналитика и напоминания по документам.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertStaff(context: { supabase: unknown; userId: string }) {
-  await assertPermission(context as never, "documents.manage");
-}
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -59,7 +56,7 @@ export type DocSectionStat = {
 export const getDocumentsAnalytics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<DocumentsAnalytics> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const [quotesRes, promoRes, itemsRes, promoItemsRes, financeRes] = await Promise.all([
       context.supabase

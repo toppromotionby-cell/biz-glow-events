@@ -27,3 +27,8 @@ export async function hasPermission(context: Ctx, perm: Permission): Promise<boo
   const roles = await getRoles(context);
   return permissionsForRoles(roles).has(perm);
 }
+
+/** Единая проверка доступа к разделу «Документы» (КП, промо, презентации). */
+export async function assertDocumentsStaff(context: { supabase: unknown; userId: string }): Promise<void> {
+  await assertPermission(context as never, "documents.manage");
+}

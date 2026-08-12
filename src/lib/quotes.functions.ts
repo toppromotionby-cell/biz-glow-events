@@ -1,4 +1,4 @@
-import { assertPermission } from "@/lib/authz";
+import { assertDocumentsStaff } from "@/lib/authz";
 // Серверные функции раздела «Документы → КП».
 // Доступ только для staff (admin/manager) — проверяется через has_role,
 // данные пишутся под пользователем (RLS), каталог читается admin-клиентом.
@@ -18,9 +18,6 @@ import {
   type QuoteItem,
 } from "@/lib/quotes-model";
 
-async function assertStaff(context: { supabase: unknown; userId: string }) {
-  await assertPermission(context as never, "documents.manage");
-}
 
 export type QuoteListRow = {
   id: string;
@@ -53,7 +50,7 @@ export const listQuotes = createServerFn({ method: "GET" })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<QuoteListRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     let q = context.supabase
       .from("quotes")
       .select(LIST_COLS)
@@ -73,7 +70,7 @@ export const getQuote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ quote: Quote; items: QuoteItem[] }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: quote, error }, { data: items }] = await Promise.all([
       context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),
       context.supabase.from("quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
@@ -92,7 +89,7 @@ export const createQuote = createServerFn({ method: "POST" })
     z.object({ orderId: z.string().uuid().nullable().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const base: Record<string, unknown> = {
       created_by: context.userId,
@@ -161,7 +158,7 @@ export const saveQuote = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true; total: number }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const items = data.items;
     let total = 0;
@@ -238,7 +235,7 @@ export const duplicateQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: src }, { data: items }] = await Promise.all([
       context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),
       context.supabase.from("quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
@@ -275,7 +272,7 @@ export const deleteQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { error } = await context.supabase.from("quotes").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -298,7 +295,7 @@ export const searchCatalogForQuote = createServerFn({ method: "GET" })
     z.object({ q: z.string().max(120).optional(), type: z.string().max(30).optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<CatalogHit[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tables = data.type && (CATALOG_TABLES as readonly string[]).includes(data.type) ? [data.type] : [...CATALOG_TABLES];
     const term = (data.q ?? "").trim();
@@ -330,7 +327,7 @@ export const listOrdersForQuote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { q?: string } | undefined) => z.object({ q: z.string().max(120).optional() }).parse(d ?? {}))
   .handler(async ({ data, context }): Promise<OrderHit[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     let q = context.supabase
       .from("orders")
       .select("id,order_number,client_name,client_company,event_date")
@@ -350,7 +347,7 @@ export const getQuoteDocSettings = createServerFn({ method: "GET" })
     z.object({ companyId: z.string().uuid().nullish() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { loadDocumentSettings } = await import("@/lib/documents/render.server");
     return await loadDocumentSettings(supabaseAdmin as never, data.companyId ?? null);
@@ -381,7 +378,7 @@ export type QuoteSnippetRow = {
 export const listQuoteSnippets = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<QuoteSnippetRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data, error } = await context.supabase
       .from("doc_snippets")
       .select("id,name,description,block_type,title,content,condition,created_at")
@@ -397,7 +394,7 @@ export const saveQuoteSnippet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => snippetSchema.parse(d))
   .handler(async ({ data, context }): Promise<QuoteSnippetRow> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const payload = {
       name: data.name,
       description: data.description,
@@ -420,7 +417,7 @@ export const deleteQuoteSnippet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { error } = await context.supabase.from("doc_snippets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -438,7 +435,7 @@ export const listQuoteVersions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { quoteId: string }) => z.object({ quoteId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<QuoteVersionRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data: rows, error } = await context.supabase
       .from("quote_versions")
       .select("id,label,total,created_at")
@@ -455,7 +452,7 @@ export const createQuoteVersion = createServerFn({ method: "POST" })
     z.object({ quoteId: z.string().uuid(), label: z.string().max(160).optional() }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: quote }, { data: items }] = await Promise.all([
       context.supabase.from("quotes").select("*").eq("id", data.quoteId).maybeSingle(),
       context.supabase.from("quote_items").select("*").eq("quote_id", data.quoteId).order("sort_order"),
@@ -476,7 +473,7 @@ export const restoreQuoteVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { versionId: string }) => z.object({ versionId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; quoteId: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data: version } = await context.supabase
       .from("quote_versions")
       .select("quote_id,snapshot")
@@ -508,7 +505,7 @@ export const saveQuoteAsTemplate = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), name: z.string().trim().min(1, "Укажите название").max(160) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: src }, { data: items }] = await Promise.all([
       context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),
       context.supabase.from("quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
@@ -541,7 +538,7 @@ export const createQuoteFromTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { templateId: string }) => z.object({ templateId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: src }, { data: items }] = await Promise.all([
       context.supabase.from("quotes").select("*").eq("id", data.templateId).maybeSingle(),
       context.supabase.from("quote_items").select("*").eq("quote_id", data.templateId).order("sort_order"),
@@ -574,7 +571,7 @@ export const markQuoteSent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true; sent_at: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const sentAt = new Date().toISOString();
     const { error } = await context.supabase.from("quotes").update({ sent_at: sentAt, status: "sent" }).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -601,7 +598,7 @@ export const sendQuoteToClient = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true; to: string; url: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const [{ data: row }, { data: itemRows }] = await Promise.all([
       context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),
@@ -658,7 +655,7 @@ export const createOrderFromQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ orderId: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const [{ data: row }, { data: itemRows }] = await Promise.all([
       context.supabase.from("quotes").select("*").eq("id", data.id).maybeSingle(),

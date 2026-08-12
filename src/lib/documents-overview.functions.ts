@@ -1,13 +1,10 @@
-import { assertPermission } from "@/lib/authz";
+import { assertDocumentsStaff } from "@/lib/authz";
 // Сводный список всех документов раздела «Документы»: обычные КП + КП промо.
 // Используется экраном /admin/documents (единая точка входа со счётчиками).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertStaff(context: { supabase: unknown; userId: string }) {
-  await assertPermission(context as never, "documents.manage");
-}
 
 export type DocKind = "quote" | "promo";
 
@@ -68,7 +65,7 @@ export const listAllDocuments = createServerFn({ method: "GET" })
         .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<DocumentsOverview> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const kind = data.kind ?? "all";
     const search = (data.search ?? "").trim().toLowerCase();
@@ -195,7 +192,7 @@ export const duplicateDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { kind: DocKind; id: string }) => idSchema.parse(d))
   .handler(async ({ data, context }): Promise<{ id: string; kind: DocKind }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const t = TABLES[data.kind];
     const [{ data: src }, { data: items }] = await Promise.all([
       context.supabase.from(t.doc).select("*").eq("id", data.id).maybeSingle(),
@@ -238,7 +235,7 @@ export const deleteDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { kind: DocKind; id: string }) => idSchema.parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { error } = await context.supabase.from(TABLES[data.kind].doc).delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -250,7 +247,7 @@ export const setDocumentStatus = createServerFn({ method: "POST" })
     idSchema.extend({ status: z.enum(["draft", "sent", "accepted", "rejected"]) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const patch: Record<string, unknown> = { status: data.status };
     if (data.status === "sent") patch.sent_at = new Date().toISOString();
     const { error } = await context.supabase
@@ -280,7 +277,7 @@ export const listOrderDocuments = createServerFn({ method: "GET" })
     z.object({ search: z.string().max(200).optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<OrderDocumentRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data: rows } = await context.supabase
       .from("order_attachments")
       .select("id,kind,file_name,file_path,created_at,order_id,orders(order_number,client_name,client_company)")
@@ -328,7 +325,7 @@ export const setDocumentTemplate = createServerFn({ method: "POST" })
     idSchema.extend({ isTemplate: z.boolean(), name: z.string().max(160).optional() }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const patch: Record<string, unknown> = { is_template: data.isTemplate };
     if (data.isTemplate) patch.template_name = (data.name ?? "").trim() || "Шаблон";
     else patch.template_name = "";
