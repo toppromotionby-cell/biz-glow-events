@@ -18,6 +18,12 @@ export type TextProps = {
   valign?: "top" | "middle" | "bottom";
   /** Кегль подгоняется под высоту блока (как в Canva). */
   autoFit?: boolean;
+  /** Гарнитура: акцидентная (заголовки) или основная. */
+  font?: "display" | "body";
+  /** Заранее разложенные строки — если заданы, переносы не пересчитываются. */
+  lines?: string[];
+  uppercase?: boolean;
+  letterSpacing?: number;
 };
 
 export type ImageProps = { src?: string; fit?: "cover" | "contain"; radius?: number };
@@ -35,8 +41,10 @@ export type DrawOp =
       kind: "text"; x: number; y: number; w: number; h: number;
       text: string; fontSize: number; lineHeight: number; weight: number;
       color: string; align: NonNullable<TextProps["align"]>; valign: NonNullable<TextProps["valign"]>;
+      font: "display" | "body"; lines?: string[]; uppercase: boolean; letterSpacing: number;
     }
   | { kind: "image"; x: number; y: number; w: number; h: number; src: string; fit: "cover" | "contain"; radius: number };
+
 
 export const MIN_FONT = 7;
 export const MAX_FONT = 160;
@@ -66,7 +74,9 @@ function textOps(el: CanvasElement<TextProps>): DrawOp[] {
   if (!text.trim()) return [];
   const lineHeight = p.lineHeight ?? 1.3;
   const base = p.fontSize ?? 16;
-  const fontSize = p.autoFit === false ? base : fitFontSize(text, el, base, lineHeight);
+  // Готовые строки означают, что раскладка уже посчитана — кегль не трогаем.
+  const fontSize = p.autoFit === false || p.lines ? base : fitFontSize(text, el, base, lineHeight);
+
   return [{
     kind: "text",
     x: el.x, y: el.y, w: el.w, h: el.h,
@@ -75,7 +85,12 @@ function textOps(el: CanvasElement<TextProps>): DrawOp[] {
     color: p.color ?? "#111111",
     align: p.align ?? "left",
     valign: p.valign ?? "top",
+    font: p.font ?? "body",
+    lines: p.lines,
+    uppercase: p.uppercase ?? false,
+    letterSpacing: p.letterSpacing ?? 0,
   }];
+
 }
 
 /** Один элемент → примитивы. Неизвестные типы просто пропускаются. */
