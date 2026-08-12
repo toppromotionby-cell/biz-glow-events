@@ -6,7 +6,7 @@ import {
   type Presentation,
   type PresentationSlide,
 } from "@/lib/presentations/model";
-import { SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
+import { SLIDE_H, SLIDE_W, templatePalette, type Rect } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 
@@ -18,10 +18,46 @@ function hex(color: string, fallback = "FF7500"): string {
   return m ? m[1].toUpperCase() : fallback;
 }
 
+/** rgba()/полупрозрачные значения заменяем плотным цветом. */
+function solidHex(css: string, fallback: string): string {
+  return /^#?[0-9a-fA-F]{6}$/.test(css.trim()) ? hex(css, fallback) : hex(fallback, fallback);
+}
+
 function themeOf(template: Presentation["template"], accent: string) {
-  if (template === "dark") return { bg: "0F1115", ink: "F8FAFC", muted: "9CA3AF", accent, onAccent: "0F1115" };
-  if (template === "accent") return { bg: accent, ink: "FFFFFF", muted: "F3F4F6", accent: "FFFFFF", onAccent: accent };
-  return { bg: "FFFFFF", ink: "111827", muted: "6B7280", accent, onAccent: "FFFFFF" };
+  const p = templatePalette(template, `#${hex(accent)}`);
+  const dark = template !== "light" && template !== "glow";
+  return {
+    bg: hex(p.stops[0]),
+    ink: solidHex(p.ink, dark ? "F8FAFC" : "111827"),
+    muted: solidHex(p.muted, dark ? "C8CEDE" : "6B7280"),
+    accent: hex(p.accent ?? `#${hex(accent)}`),
+    onAccent: hex(p.onAccent ?? `#${hex(accent)}`),
+    stops: p.stops.map((c) => hex(c)),
+  };
+}
+
+/** Градиентная подложка: PPTX не умеет градиенты, эмулируем полосами. */
+function addBackground(
+  slide: { addShape: (t: unknown, o: Record<string, unknown>) => void },
+  shapeType: unknown,
+  stops: string[],
+  w: number,
+  h: number,
+): void {
+  const parse = (c: string) => [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const rgbs = stops.map(parse);
+  const bands = 24;
+  const seg = rgbs.length - 1;
+  for (let i = 0; i < bands; i += 1) {
+    const t = (i / (bands - 1)) * seg;
+    const idx = Math.min(seg - 1, Math.floor(t));
+    const k = t - idx;
+    const c = rgbs[idx].map((v, j) => Math.round(v + (rgbs[idx + 1][j] - v) * k));
+    const col = c.map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase();
+    slide.addShape(shapeType, {
+      x: 0, y: (i * h) / bands, w, h: h / bands + 0.02, fill: { color: col }, line: { width: 0 },
+    });
+  }
 }
 
 async function resolveImage(path: string | null): Promise<string | null> {
@@ -94,6 +130,9 @@ export async function exportPresentationPptx(
   for (const [i, s] of visible.entries()) {
     const slide = pptx.addSlide();
     slide.background = { color: t.bg };
+    if (t.stops.length > 1 && !t.stops.every((c) => c === t.stops[0])) {
+      addBackground(slide, pptx.ShapeType.rect, t.stops, W, H);
+    }
     const c = s.content;
 
     // Та же раскладка, что в превью и PDF: переводим пиксели 1280×720 в дюймы.
