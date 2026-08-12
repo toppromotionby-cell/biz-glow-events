@@ -1,0 +1,2 @@
+ALTER TABLE public.promo_quotes DROP COLUMN IF EXISTS gdoc_id, DROP COLUMN IF EXISTS gdoc_url;
+ALTER TABLE public.quotes DROP COLUMN IF EXISTS gdoc_id, DROP COLUMN IF EXISTS gdoc_url;

@@ -2295,8 +2295,6 @@ export type Database = {
           doc_number: string | null
           font_family: string
           footer_note: string
-          gdoc_id: string | null
-          gdoc_url: string | null
           id: string
           is_template: boolean
           logo_layout: Json
@@ -2353,8 +2351,6 @@ export type Database = {
           doc_number?: string | null
           font_family?: string
           footer_note?: string
-          gdoc_id?: string | null
-          gdoc_url?: string | null
           id?: string
           is_template?: boolean
           logo_layout?: Json
@@ -2411,8 +2407,6 @@ export type Database = {
           doc_number?: string | null
           font_family?: string
           footer_note?: string
-          gdoc_id?: string | null
-          gdoc_url?: string | null
           id?: string
           is_template?: boolean
           logo_layout?: Json
@@ -2600,8 +2594,6 @@ export type Database = {
           event_time_end: string
           event_time_start: string
           font_family: string
-          gdoc_id: string | null
-          gdoc_url: string | null
           guests_count: number | null
           id: string
           is_template: boolean
@@ -2662,8 +2654,6 @@ export type Database = {
           event_time_end?: string
           event_time_start?: string
           font_family?: string
-          gdoc_id?: string | null
-          gdoc_url?: string | null
           guests_count?: number | null
           id?: string
           is_template?: boolean
@@ -2724,8 +2714,6 @@ export type Database = {
           event_time_end?: string
           event_time_start?: string
           font_family?: string
-          gdoc_id?: string | null
-          gdoc_url?: string | null
           guests_count?: number | null
           id?: string
           is_template?: boolean
