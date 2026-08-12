@@ -110,7 +110,7 @@ describe("автоуменьшение логотипа (логика Canva)", (
     expect(tight.client!.maxW / base.client!.maxW).toBeGreaterThanOrEqual(LOGO_MIN_FIT);
   });
 
-  it("убирает логотип, если места меньше минимума", () => {
+  it("не убирает логотип при нехватке места, а ужимает до минимума", () => {
     const plan = planSlideLogos({
       slideType: "product",
       layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
@@ -118,6 +118,8 @@ describe("автоуменьшение логотипа (логика Canva)", (
       hasClientLogo: true,
       blocked: FULL_BLOCK.concat([{ x: 0, y: 0, w: 1280, h: 720 }]),
     });
-    expect(plan.client).toBeNull();
+    expect(plan.client).not.toBeNull();
+    expect(plan.client!.maxW).toBeGreaterThan(0);
   });
+
 });
