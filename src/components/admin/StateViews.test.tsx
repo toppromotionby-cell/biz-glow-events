@@ -20,8 +20,8 @@ describe("AdminErrorState", () => {
   it("показывает текст ошибки и вызывает повтор", () => {
     const onRetry = vi.fn();
     render(<AdminErrorState error={new Error("500 от сервера")} onRetry={onRetry} />);
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(screen.getByText("500 от сервера")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.getByText("500 от сервера")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Повторить/ }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -41,14 +41,14 @@ describe("AdminTable states", () => {
     render(
       <AdminTable columns={columns} isError isEmpty error={new Error("сбой")} onRetry={() => {}} />,
     );
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(screen.queryByText("Пусто")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.queryByText("Пусто")).toBeNull();
   });
 
   it("пустое состояние показывает CTA", () => {
     render(<AdminTable columns={columns} isEmpty emptyText="Нет записей" emptyAction={<button>Создать</button>} />);
-    expect(screen.getByText("Нет записей")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Создать" })).toBeInTheDocument();
+    expect(screen.getByText("Нет записей")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Создать" })).toBeTruthy();
   });
 });
 
