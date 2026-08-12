@@ -372,17 +372,23 @@ function Page() {
     enableBeforeUnload: false,
   });
 
-  /* Ctrl/Cmd+S */
+  /* Ctrl/Cmd+S — сохранить, Ctrl/Cmd+Z в режиме правки раскладки — отменить шаг. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();
         if (dirty && !save.isPending) save.mutate();
+      }
+      if (mod && e.key.toLowerCase() === "z" && layoutMode) {
+        e.preventDefault();
+        undoLayout();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dirty, save]);
+  }, [dirty, save, layoutMode, undoLayout]);
+
 
   const buildFn = useServerFn(buildSlidesFromQuote);
   const addMissing = useMutation({
