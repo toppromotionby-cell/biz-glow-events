@@ -236,6 +236,7 @@ function EditorPage() {
     scheduleSave(next.quote, next.items);
   }, [scheduleSave]);
 
+  // Ctrl+S обрабатывает общий хук; здесь только undo/redo.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
@@ -244,14 +245,11 @@ function EditorPage() {
         e.preventDefault();
         if (e.shiftKey) redo(); else undo();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        if (quote) saveMut.mutate({ quote, items });
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, quote, items, saveMut]);
+  }, [undo, redo]);
+
 
   const totals = useMemo(() => (quote ? computePromoTotals(quote, items) : null), [quote, items]);
   const checks = useMemo(() => (quote ? checkPromoQuote(quote, items) : []), [quote, items]);
