@@ -9,6 +9,7 @@ import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/p
 import { GRID, SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import type { SlideFit } from "@/lib/presentations/fit";
 import type { SlideLogoPlan } from "@/lib/presentations/logo-plan";
+import { snapRect, type Guide } from "@/lib/presentations/snap";
 import {
   LOGO_SCALE_MAX, LOGO_SCALE_MIN, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN, TEXT_WIDTH_MAX, TEXT_WIDTH_MIN, clampNum,
   type SlideLayoutOverrides,
@@ -23,7 +24,15 @@ export type SlideLayoutOverlayProps = {
   overrides: SlideLayoutOverrides;
   scale: number;
   onLayout: (patch: Partial<SlideLayoutOverrides>) => void;
+  /** Выделенный блок (управляется извне — панель свойств справа). */
+  selected?: Kind | null;
+  onSelect?: (kind: Kind | null) => void;
+  /** Двойной клик по тексту — редактор просит переключиться в набор текста. */
+  onTextEdit?: (kind: Kind) => void;
+  /** Показывать плавающую панель блока (на десктопе свойства живут справа). */
+  floatingToolbar?: boolean;
 };
+
 
 const LOGO_RECTS: Record<string, Rect> = Object.fromEntries(
   logoZones().map((z) => [z.id, z.rect]),
@@ -48,28 +57,65 @@ const BLOCK_BY_ATTR: Record<string, Kind> = {
   clientLogo: "client",
 };
 
-export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: SlideLayoutOverlayProps) {
+export function SlideLayoutOverlay({
+  fit, plan, overrides, scale, onLayout,
+  selected: selectedProp, onSelect, onTextEdit, floatingToolbar,
+}: SlideLayoutOverlayProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState<Kind | null>(null);
   const [zone, setZone] = useState<string | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [selected, setSelected] = useState<Kind | null>(null);
+  const [ownSelected, setOwnSelected] = useState<Kind | null>(null);
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const selected = selectedProp !== undefined ? selectedProp : ownSelected;
+  const setSelected = (kind: Kind | null) => {
+    setOwnSelected(kind);
+    onSelect?.(kind);
+  };
   // Рамка для «текстовых» блоков, выбранных двойным кликом (координаты холста).
   const [partRect, setPartRect] = useState<Rect | null>(null);
   const grab = useRef({ dx: 0, dy: 0 });
   const moved = useRef(false);
 
-  // Esc снимает выделение — как в Canva.
+  // Esc снимает выделение, стрелки двигают логотип на 1 px (Shift — на 10) — как в Canva.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setSelected(null);
         setPartRect(null);
+        return;
       }
+      const nudge: Record<string, [number, number]> = {
+        ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1],
+      };
+      const step = nudge[e.key];
+      if (!step || (selected !== "brand" && selected !== "client")) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.isContentEditable || /^(INPUT|TEXTAREA)$/.test(target?.tagName ?? "")) return;
+      e.preventDefault();
+      const k = e.shiftKey ? 10 : 1;
+      const key = selected === "brand" ? "brandLogo" : "clientLogo";
+      const cur = overrides[key];
+      const base = selected === "brand" ? plan.brand : plan.client;
+      const from = cur.pos ?? {
+        x: (base?.x ?? 0) / SLIDE_W,
+        y: (base?.y ?? 0) / SLIDE_H,
+      };
+      onLayout({
+        [key]: {
+          ...cur,
+          zone: "auto",
+          pos: {
+            x: clampNum(from.x + (step[0] * k) / SLIDE_W, 0, 1),
+            y: clampNum(from.y + (step[1] * k) / SLIDE_H, 0, 1),
+          },
+        },
+      } as Partial<SlideLayoutOverrides>);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [selected, overrides, plan, onLayout]);
+
 
   const zonesFor = (kind: Kind): ZoneDef<string>[] => {
     if (kind === "photo") return photoZones() as ZoneDef<string>[];
@@ -125,18 +171,27 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     setGhost({ x: rect.x, y: rect.y, w: rect.w, h: rect.h });
   };
 
+  /** Соседние блоки для магнитных направляющих. */
+  const neighbors = (kind: Kind): Rect[] =>
+    [fit.layout.textBox, fit.layout.photoBox, fit.layout.priceBox].filter(
+      (r): r is Rect => !!r && !(kind === "text" && r === fit.layout.textBox),
+    );
+
   const onMove = (kind: Kind, rect: Rect) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
     const p = toCanvas(e);
     moved.current = true;
     const nx = p.x - grab.current.dx;
     const ny = p.y - grab.current.dy;
-    setGhost({ x: nx, y: ny, w: rect.w, h: rect.h });
-    // Логотип двигается свободно, без привязки к углам — как в Canva.
+    // Логотип двигается свободно с магнитом к направляющим — как в Canva.
     if (isLogo(kind)) {
-      moveLogoFree(kind, nx, ny);
+      const snapped = snapRect({ x: nx, y: ny, w: rect.w, h: rect.h }, neighbors(kind));
+      setGhost({ x: snapped.x, y: snapped.y, w: rect.w, h: rect.h });
+      setGuides(snapped.guides);
+      moveLogoFree(kind, snapped.x, snapped.y);
       return;
     }
+    setGhost({ x: nx, y: ny, w: rect.w, h: rect.h });
     const z = nearestZone(zonesFor(kind), p);
     if (z.id !== zone) {
       setZone(z.id);
@@ -149,14 +204,13 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     if (dragging !== kind) return;
     // Простой клик без перетаскивания = выделение блока, зона не меняется.
     if (moved.current && !isLogo(kind)) apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
-    if (moved.current && isLogo(kind)) {
-      const p = toCanvas(e);
-      moveLogoFree(kind, p.x - grab.current.dx, p.y - grab.current.dy);
-    }
+    if (moved.current && isLogo(kind) && ghost) moveLogoFree(kind, ghost.x, ghost.y);
     setDragging(null);
     setZone(null);
     setGhost(null);
+    setGuides([]);
   };
+
 
   const startResize = (kind: "photo" | "text" | "brand" | "client") => (e: ReactPointerEvent) => {
     e.preventDefault();
@@ -212,6 +266,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   /**
    * Двойной клик: определяем реальный элемент под курсором (заголовок,
    * подзаголовок, описание, логотип) и выделяем именно его — как в Canva.
+   * Для текстовых блоков сразу отдаём управление набору текста.
    */
   const onDoubleClick = (e: { clientX: number; clientY: number; stopPropagation: () => void }) => {
     const host = hostRef.current;
@@ -230,7 +285,20 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
         ? null
         : { x: (r.left - hr.left) / scale, y: (r.top - hr.top) / scale, w: r.width / scale, h: r.height / scale },
     );
+    if (kind === "title" || kind === "subtitle" || kind === "body") onTextEdit?.(kind);
   };
+
+  /** Восемь маркеров рамки выделения — как в Canva. */
+  const HANDLES: { key: string; style: string; cursor: string }[] = [
+    { key: "nw", style: "-left-1.5 -top-1.5", cursor: "nwse-resize" },
+    { key: "n", style: "left-1/2 -top-1.5 -translate-x-1/2", cursor: "ns-resize" },
+    { key: "ne", style: "-right-1.5 -top-1.5", cursor: "nesw-resize" },
+    { key: "e", style: "-right-1.5 top-1/2 -translate-y-1/2", cursor: "ew-resize" },
+    { key: "se", style: "-right-1.5 -bottom-1.5", cursor: "nwse-resize" },
+    { key: "s", style: "left-1/2 -bottom-1.5 -translate-x-1/2", cursor: "ns-resize" },
+    { key: "sw", style: "-left-1.5 -bottom-1.5", cursor: "nesw-resize" },
+    { key: "w", style: "-left-1.5 top-1/2 -translate-y-1/2", cursor: "ew-resize" },
+  ];
 
   return (
     <div
@@ -260,6 +328,19 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
         </div>
       )}
 
+      {/* Умные направляющие: центр холста, поля, края соседних блоков. */}
+      {guides.map((g, i) => (
+        <div
+          key={`${g.axis}-${g.at}-${i}`}
+          className="pointer-events-none absolute bg-primary/80"
+          style={
+            g.axis === "x"
+              ? { left: px(g.at), top: 0, width: 1, height: px(SLIDE_H) }
+              : { top: px(g.at), left: 0, height: 1, width: px(SLIDE_W) }
+          }
+        />
+      ))}
+
       {/* «Призрак» — блок под курсором. */}
       {ghost && (
         <div
@@ -278,23 +359,34 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
             <span className="absolute -top-5 left-0 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
               {BLOCK_LABELS[selected as Kind]}
             </span>
+            {HANDLES.map((h) => (
+              <span
+                key={h.key}
+                className={`absolute h-3 w-3 rounded-full border border-background bg-primary ${h.style}`}
+                style={{ cursor: h.cursor }}
+                aria-hidden
+              />
+            ))}
           </div>
-          <div
-            className="absolute z-20"
-            style={{
-              left: Math.min(Math.max(4, px(selRect.x)), Math.max(4, px(SLIDE_W) - 380)),
-              top: px(selRect.y) > 52 ? px(selRect.y) - 44 : px(selRect.y + selRect.h) + 8,
-            }}
-          >
-            <BlockToolbar
-              kind={selected as Kind}
-              layout={overrides}
-              onChange={onLayout}
-              onClose={() => setSelected(null)}
-            />
-          </div>
+          {floatingToolbar && (
+            <div
+              className="absolute z-20"
+              style={{
+                left: Math.min(Math.max(4, px(selRect.x)), Math.max(4, px(SLIDE_W) - 380)),
+                top: px(selRect.y) > 52 ? px(selRect.y) - 44 : px(selRect.y + selRect.h) + 8,
+              }}
+            >
+              <BlockToolbar
+                kind={selected as Kind}
+                layout={overrides}
+                onChange={onLayout}
+                onClose={() => setSelected(null)}
+              />
+            </div>
+          )}
         </>
       )}
+
 
       {items.map((it) =>
         it.rect ? (
