@@ -287,6 +287,8 @@ export function normalizeContent(raw: unknown): SlideContent {
     imageLayout: IMAGE_LAYOUTS.includes(r.imageLayout as SlideImageLayout)
       ? (r.imageLayout as SlideImageLayout)
       : "auto",
+    layout: normalizeLayoutOverrides(r.layout),
+
     showDescription: bool(r.showDescription),
     showIncludes: bool(r.showIncludes),
     showSpecs: bool(r.showSpecs),
