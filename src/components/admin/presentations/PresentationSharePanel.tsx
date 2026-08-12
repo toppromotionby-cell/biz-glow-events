@@ -1,7 +1,6 @@
 // Панель «Доступ»: публичная ссылка на презентацию и история версий.
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Copy, ExternalLink, History, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,14 +24,14 @@ export function PresentationSharePanel({
   onRestored?: () => void;
 }) {
   const qc = useQueryClient();
-  const confirm = useConfirm();
+  const { confirm, dialog } = useConfirm();
   const [share, setShare] = useState(enabled);
   const [label, setLabel] = useState("");
 
   const url = typeof window !== "undefined" && token ? `${window.location.origin}/p/${token}` : "";
 
   const toggle = useMutation({
-    mutationFn: useServerFn(setPresentationShare),
+    mutationFn: (vars: { data: { id: string; enabled: boolean } }) => setPresentationShare(vars),
     onSuccess: (r) => {
       setShare(r.enabled);
       toast.success(r.enabled ? "Ссылка включена" : "Доступ по ссылке выключен");
@@ -148,6 +147,7 @@ export function PresentationSharePanel({
           )}
         </ul>
       </section>
+      {dialog}
     </div>
   );
 }
