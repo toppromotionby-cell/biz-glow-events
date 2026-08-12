@@ -14,8 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import {
   DEFAULT_LAYOUT_OVERRIDES, IMAGE_LAYOUT_LABELS, MAX_IMAGES, SLIDE_TYPE_LABELS, isAutoLayout,
-  type PresentationSlide, type SlideContent, type SlideImageLayout, type SlideType,
+  type PresentationSlide, type SlideContent, type SlideImageLayout,
+  type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
+import { SlideAlignControls } from "@/components/admin/presentations/SlideAlignControls";
 
 export function SlideSettingsPanel({
   slide,
@@ -124,6 +126,15 @@ export function SlideSettingsPanel({
           onToggle={(v) => setContent({ showImage: v })}
           onChange={(images) => setContent({ images })}
           onLayout={(imageLayout) => setContent({ imageLayout })}
+        />
+      )}
+
+      {slide.type !== "title" && (
+        <SlideAlignControls
+          layout={c.layout}
+          onChange={(patch: Partial<SlideLayoutOverrides>) =>
+            setContent({ layout: { ...c.layout, ...patch } })
+          }
         />
       )}
 
