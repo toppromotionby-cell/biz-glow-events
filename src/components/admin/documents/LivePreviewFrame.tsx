@@ -2,6 +2,8 @@
 // каркас (стили + скрипты подсказок/автоподгонки) пишется один раз,
 // дальше точечно обновляется только содержимое — без мигания и сброса прокрутки.
 import { useEffect, useImperativeHandle, useRef, type CSSProperties, type Ref } from "react";
+import { syncTableWidths } from "@/hooks/use-table-width-sync";
+
 
 const MOUNT_ID = "doc-preview-root";
 const UPDATE_MS = 120;
