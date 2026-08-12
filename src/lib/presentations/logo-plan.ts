@@ -201,7 +201,9 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
       return true;
     });
     const free = candidates.find((slot) => cornerFree(slot, frames, full, input.blocked ?? []));
-    const slot = free ?? (layout.client === "always" ? candidates[0] : null);
+    // Свободного угла нет — берём первый допустимый: fitIntoFree ниже
+    // либо ужмёт логотип под просвет, либо уберёт его совсем.
+    const slot = free ?? candidates[0] ?? null;
     if (slot) {
       client = titleLike
         ? { slot, maxW: 220 * scale, maxH: 54 * scale }
