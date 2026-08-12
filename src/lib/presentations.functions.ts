@@ -7,7 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertDocumentsStaff } from "@/lib/authz";
 import {
   normalizePresentation,
-  PRESENTATION_TEMPLATES,
+  normalizeTemplate,
   PRESENTATION_STATUSES,
   SLIDE_TYPES,
   normalizePresentationLogoLayout,
@@ -26,6 +26,9 @@ import { toCardExcerpt } from "@/lib/rich-text";
 const CATALOG_TABLES = ["zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 
 type Row = Record<string, unknown>;
+
+/** Шаблон: неизвестные значения нормализуются, а не роняют запрос. */
+const templateInput = z.unknown().transform(normalizeTemplate);
 
 const slideInput = z.object({
   id: z.string().optional(),
@@ -312,7 +315,7 @@ export const createPresentation = createServerFn({ method: "POST" })
       .object({
         title: z.string().trim().min(1, "Укажите название").max(200),
         companyId: z.string().uuid().nullable().default(null),
-        template: z.enum(PRESENTATION_TEMPLATES).default("light"),
+        template: templateInput,
         quoteId: z.string().uuid().nullable().default(null),
       })
       .parse(d),
@@ -391,7 +394,7 @@ export const savePresentation = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         title: z.string().trim().min(1).max(200),
         status: z.enum(PRESENTATION_STATUSES),
-        template: z.enum(PRESENTATION_TEMPLATES),
+        template: templateInput,
         companyId: z.string().uuid().nullable().default(null),
         logoUrl: z.string().max(1000).nullable().default(null),
         clientLogoUrl: z.string().max(1000).nullable().default(null),

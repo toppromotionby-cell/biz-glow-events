@@ -261,7 +261,10 @@ function SlideCanvasInner(props: SlideCanvasProps) {
   const { slide, company, template, presentationTitle, width, index, total, showWarnings, onEdit } = props;
   const scale = width / SLIDE_W;
   const accent = company?.accent_color || "#FF7500";
-  const theme = useMemo(() => slideTheme(template, accent), [template, accent]);
+  const theme = useMemo(
+    () => slideTheme(template, accent, slide.content.background),
+    [template, accent, slide.content.background],
+  );
   const fit = useMemo(() => fitSlide(slide), [slide]);
   const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
   const docFont = resolveDocFont(props.fontFamily);

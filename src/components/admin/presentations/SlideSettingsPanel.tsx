@@ -13,10 +13,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import {
-  DEFAULT_LAYOUT_OVERRIDES, IMAGE_LAYOUT_LABELS, MAX_IMAGES, SLIDE_TYPE_LABELS, isAutoLayout,
-  type PresentationSlide, type SlideContent, type SlideImageLayout,
+  DEFAULT_LAYOUT_OVERRIDES, DEFAULT_SLIDE_BACKGROUND, IMAGE_LAYOUT_LABELS, MAX_IMAGES,
+  SLIDE_TYPE_LABELS, isAutoLayout, normalizeHexColor,
+  type PresentationSlide, type SlideBackground, type SlideContent, type SlideImageLayout,
   type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
+import { BACKGROUND_PRESETS, isDarkBackground } from "@/lib/presentations/design";
 
 export function SlideSettingsPanel({
   slide,
@@ -148,12 +150,127 @@ export function SlideSettingsPanel({
 
       )}
 
+      <BackgroundField
+        value={c.background}
+        onChange={(background) => setContent({ background })}
+      />
+
       <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
         <div>
           <div className="text-sm font-medium">Показывать слайд</div>
           <div className="text-xs text-muted-foreground">Скрытые слайды не попадают в экспорт</div>
         </div>
         <Switch checked={slide.is_visible} onCheckedChange={(v) => onChange({ is_visible: v })} />
+      </div>
+    </div>
+  );
+}
+
+/** Фон слайда: наследуется от шаблона либо задаётся вручную. */
+function BackgroundField({
+  value,
+  onChange,
+}: {
+  value: SlideBackground;
+  onChange: (v: SlideBackground) => void;
+}) {
+  const stops = value.stops.length ? value.stops : ["#000000", "#1c2028"];
+  const css = (list: string[], angle: number) =>
+    list.length < 2 ? list[0] : `linear-gradient(${angle}deg, ${list.join(", ")})`;
+
+  const setStop = (i: number, hex: string) => {
+    const next = [...stops];
+    next[i] = normalizeHexColor(hex, next[i] ?? "#000000");
+    onChange({ ...value, stops: value.mode === "solid" ? [next[0]] : next.slice(0, 2) });
+  };
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border/60 p-3">
+      <div className="flex items-center justify-between">
+        <Label>Фон слайда</Label>
+        {value.mode !== "template" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => onChange({ ...DEFAULT_SLIDE_BACKGROUND })}
+          >
+            Сбросить
+          </Button>
+        )}
+      </div>
+
+      <Select
+        value={value.mode}
+        onValueChange={(mode) => {
+          if (mode === "template") return onChange({ ...DEFAULT_SLIDE_BACKGROUND });
+          if (mode === "solid") return onChange({ mode: "solid", stops: [stops[0]], angle: value.angle });
+          onChange({ mode: "gradient", stops: [stops[0], stops[1] ?? stops[0]], angle: value.angle || 135 });
+        }}
+      >
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="template">Как в шаблоне</SelectItem>
+          <SelectItem value="solid">Свой цвет</SelectItem>
+          <SelectItem value="gradient">Градиент</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {value.mode !== "template" && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              aria-label="Цвет фона"
+              className="h-9 w-12 cursor-pointer rounded border border-border bg-transparent"
+              value={stops[0]}
+              onChange={(e) => setStop(0, e.target.value)}
+            />
+            {value.mode === "gradient" && (
+              <>
+                <input
+                  type="color"
+                  aria-label="Второй цвет градиента"
+                  className="h-9 w-12 cursor-pointer rounded border border-border bg-transparent"
+                  value={stops[1] ?? stops[0]}
+                  onChange={(e) => setStop(1, e.target.value)}
+                />
+                <Input
+                  type="number"
+                  className="w-20"
+                  value={value.angle}
+                  onChange={(e) => onChange({ ...value, angle: Number(e.target.value) || 0 })}
+                  aria-label="Угол градиента"
+                />
+                <span className="text-xs text-muted-foreground">угол</span>
+              </>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Цвет текста, линий и плашек подбирается автоматически —
+            {isDarkBackground(stops) ? " светлый набор" : " тёмный набор"}.
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-5 gap-1.5">
+        {BACKGROUND_PRESETS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            title={p.label}
+            aria-label={p.label}
+            className="h-8 rounded border border-border/70 transition hover:ring-2 hover:ring-primary/50"
+            style={{ background: css(p.stops, p.angle) }}
+            onClick={() =>
+              onChange({
+                mode: p.stops.length > 1 ? "gradient" : "solid",
+                stops: p.stops.slice(0, 2),
+                angle: p.angle,
+              })
+            }
+          />
+        ))}
       </div>
     </div>
   );

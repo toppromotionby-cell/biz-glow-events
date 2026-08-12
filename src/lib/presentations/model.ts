@@ -56,6 +56,17 @@ export const PRESENTATION_TEMPLATES = [
 
 export type PresentationTemplate = (typeof PRESENTATION_TEMPLATES)[number];
 
+/**
+ * Приводит любое значение к известному шаблону. Неизвестные значения
+ * (например, из более новой версии клиента) не роняют запрос, а падают
+ * в безопасный дефолт.
+ */
+export function normalizeTemplate(v: unknown): PresentationTemplate {
+  return PRESENTATION_TEMPLATES.includes(v as PresentationTemplate)
+    ? (v as PresentationTemplate)
+    : "light";
+}
+
 export const PRESENTATION_STATUSES = ["draft", "ready", "archived"] as const;
 
 
@@ -82,6 +93,60 @@ export const TEMPLATE_LABELS: Record<PresentationTemplate, string> = {
   emerald: "Изумруд",
   glow: "Сияние",
 };
+
+
+/* ------------------------------------------------------------------ */
+/* Фон слайда                                                          */
+/* ------------------------------------------------------------------ */
+
+export type SlideBackgroundMode = "template" | "solid" | "gradient";
+
+/** Переопределение фона конкретного слайда. */
+export type SlideBackground = {
+  mode: SlideBackgroundMode;
+  /** Цвета фона: 1 для сплошного, 2–3 для градиента. */
+  stops: string[];
+  /** Угол градиента в градусах. */
+  angle: number;
+};
+
+export const DEFAULT_SLIDE_BACKGROUND: SlideBackground = {
+  mode: "template",
+  stops: [],
+  angle: 135,
+};
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+export function normalizeHexColor(v: unknown, fallback: string): string {
+  const s = typeof v === "string" ? v.trim() : "";
+  if (HEX_RE.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    return `#${s[1]}${s[1]}${s[2]}${s[2]}${s[3]}${s[3]}`.toLowerCase();
+  }
+  return fallback;
+}
+
+export function normalizeSlideBackground(raw: unknown): SlideBackground {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const mode: SlideBackgroundMode =
+    r.mode === "solid" || r.mode === "gradient" ? r.mode : "template";
+  if (mode === "template") return { ...DEFAULT_SLIDE_BACKGROUND };
+  const list = Array.isArray(r.stops) ? r.stops : [];
+  const stops = list
+    .map((c) => normalizeHexColor(c, ""))
+    .filter(Boolean)
+    .slice(0, 3);
+  if (!stops.length) return { ...DEFAULT_SLIDE_BACKGROUND };
+  const angleRaw = Number(r.angle);
+  const angle = Number.isFinite(angleRaw) ? ((Math.round(angleRaw) % 360) + 360) % 360 : 135;
+  if (mode === "solid") return { mode: "solid", stops: [stops[0]], angle };
+  return {
+    mode: "gradient",
+    stops: stops.length >= 2 ? stops : [stops[0], stops[0]],
+    angle,
+  };
+}
 
 export type SlideSpec = { label: string; value: string };
 
@@ -114,6 +179,8 @@ export type SlideContent = {
   imageLayout: SlideImageLayout;
   /** Ручные настройки раскладки («умные зоны»). Пустые значения = авто. */
   layout: SlideLayoutOverrides;
+  /** Фон слайда: «как в шаблоне» либо свой цвет/градиент. */
+  background: SlideBackground;
   /** Тумблеры видимости блоков. */
   showDescription: boolean;
   showIncludes: boolean;
@@ -360,6 +427,7 @@ export const EMPTY_CONTENT: SlideContent = {
   images: [],
   imageLayout: "auto",
   layout: DEFAULT_LAYOUT_OVERRIDES,
+  background: { ...DEFAULT_SLIDE_BACKGROUND },
 
   showDescription: true,
   showIncludes: true,
@@ -398,6 +466,7 @@ export function normalizeContent(raw: unknown): SlideContent {
       ? (r.imageLayout as SlideImageLayout)
       : "auto",
     layout: normalizeLayoutOverrides(r.layout),
+    background: normalizeSlideBackground(r.background),
 
     showDescription: bool(r.showDescription),
     showIncludes: bool(r.showIncludes),
@@ -430,9 +499,7 @@ export function normalizePresentation(row: Record<string, unknown>): Presentatio
   const status = PRESENTATION_STATUSES.includes(row.status as PresentationStatus)
     ? (row.status as PresentationStatus)
     : "draft";
-  const template = PRESENTATION_TEMPLATES.includes(row.template as PresentationTemplate)
-    ? (row.template as PresentationTemplate)
-    : "light";
+  const template = normalizeTemplate(row.template);
   return {
     id: str(row.id),
     title: str(row.title, "Без названия"),
