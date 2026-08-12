@@ -633,9 +633,11 @@ ${fontLinkTags(docFont)}
       ? `<div class="edit-hint" id="edit-hint">Двойной клик — редактировать</div>
 <script>
 (function(){
-  var hint = document.getElementById('edit-hint');
+  function hintEl(){ return document.getElementById('edit-hint'); }
   var current = null;
   document.addEventListener('mouseover', function(e){
+    var hint = hintEl();
+    if (!hint) return;
     var el = e.target && e.target.closest ? e.target.closest('[data-edit]') : null;
     if (el === current) return;
     current = el;
@@ -646,7 +648,7 @@ ${fontLinkTags(docFont)}
     hint.style.top = Math.max(6, r.top - 20) + 'px';
     hint.classList.add('on');
   });
-  document.addEventListener('mouseleave', function(){ hint.classList.remove('on'); });
+  document.addEventListener('mouseleave', function(){ var h = hintEl(); if (h) h.classList.remove('on'); });
   document.addEventListener('dblclick', function(e){
     var el = e.target && e.target.closest ? e.target.closest('[data-edit]') : null;
     if (!el) return;
