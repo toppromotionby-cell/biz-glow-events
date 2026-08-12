@@ -193,7 +193,12 @@ function drawPlannedLogo(page: PDFPage, img: PDFImage, plan: LogoPlacementPlan):
   const h = img.height * k;
   const right = W - PAD - w;
   switch (plan.slot) {
+    case "free":
+      // Свободная позиция: холст 1280×720 → координаты страницы (ось Y инвертирована).
+      page.drawImage(img, { x: (plan.x ?? 0) * K, y: H - (plan.y ?? 0) * K - h, width: w, height: h });
+      return;
     case "hero":
+
       page.drawImage(img, { x: PAD, y: H - PAD - h, width: w, height: h });
       return;
     case "footer":
