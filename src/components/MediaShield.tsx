@@ -1,7 +1,7 @@
 // MediaShield — комплексный deterrent против скачивания медиа.
 // ⚠️ ВАЖНО: 100% защита медиа в браузере НЕВОЗМОЖНА (любой может сделать скриншот
 // или открыть DevTools). Это слой отпугивающих мер, который усложняет ручное скачивание.
-// Реальная защита — это signed URLs с TTL 15 мин (см. createSignedMediaUrl ниже)
+// Каталог публичный, поэтому ссылки постоянные; это только слой отпугивания.
 // + watermark на медиа на этапе загрузки в админке (TODO в следующей итерации).
 import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -101,16 +101,4 @@ export function ShieldedVideo({
   );
 }
 
-/**
- * Получить временный signed URL для медиа из защищённого bucket.
- * TTL 15 минут — после этого ссылка истекает.
- */
-import { supabase } from "@/integrations/supabase/client";
-export async function createSignedMediaUrl(path: string, ttlSeconds = 900): Promise<string | null> {
-  const { data, error } = await supabase.storage.from("media").createSignedUrl(path, ttlSeconds);
-  if (error) {
-    if (import.meta.env.DEV) console.error("createSignedUrl failed:", error);
-    return null;
-  }
-  return data.signedUrl;
-}
+
