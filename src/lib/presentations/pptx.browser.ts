@@ -38,8 +38,8 @@ function themeOf(template: Presentation["template"], accent: string) {
 
 /** Градиентная подложка: PPTX не умеет градиенты, эмулируем полосами. */
 function addBackground(
-  slide: { addShape: (t: unknown, o: Record<string, unknown>) => void },
-  shapeType: unknown,
+  slide: { addShape: (t: never, o: Record<string, unknown>) => unknown },
+  shapeType: never,
   stops: string[],
   w: number,
   h: number,
@@ -131,7 +131,7 @@ export async function exportPresentationPptx(
     const slide = pptx.addSlide();
     slide.background = { color: t.bg };
     if (t.stops.length > 1 && !t.stops.every((c) => c === t.stops[0])) {
-      addBackground(slide, pptx.ShapeType.rect, t.stops, W, H);
+      addBackground(slide, pptx.ShapeType.rect as never, t.stops, W, H);
     }
     const c = s.content;
 
