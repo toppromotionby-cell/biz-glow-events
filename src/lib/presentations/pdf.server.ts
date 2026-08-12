@@ -416,7 +416,7 @@ async function drawSlide(a: DrawArgs) {
       // чтобы композиция слайда не разъезжалась.
       page.drawRectangle({
         x: px(f.x), y: H - px(f.y) - px(f.h), width: px(f.w), height: px(f.h),
-        color: t.card, borderColor: t.line, borderWidth: 1,
+        color: t.panel, borderColor: t.muted, borderWidth: 0.5, opacity: 0.9,
       });
       return;
     }
