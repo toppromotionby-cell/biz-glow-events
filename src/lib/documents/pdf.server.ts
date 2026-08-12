@@ -3,6 +3,7 @@
 // (Inter Regular/Bold + Space Grotesk Bold — те же шрифты, что и в HTML-превью);
 // кириллица в Standard 14 шрифтах PDF не работает, поэтому встраиваем TTF
 // подмножеством (subset:true).
+import { embedImageUrl } from "@/lib/documents/image-embed.server";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
@@ -182,22 +183,10 @@ async function embedLogo(
   maxW = HEADER_LOGO_MAX_W,
   maxH = HEADER_LOGO_MAX_H,
 ): Promise<FittedLogo | null> {
-  const src = (url ?? "").trim();
-  if (!src || !/^https?:\/\//i.test(src)) return null;
-  try {
-    const res = await fetch(src, { signal: AbortSignal.timeout(6000) });
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (!bytes.byteLength || bytes.byteLength > MAX_LOGO_BYTES) return null;
-    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
-    const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
-    if (!isPng && !isJpg) return null; // SVG/WebP нормализуются в PNG на клиенте
-    const img = isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
-    const k = Math.min(maxW / img.width, maxH / img.height);
-    return { img, w: img.width * k, h: img.height * k, aspect: img.width / img.height };
-  } catch {
-    return null;
-  }
+  const img = await embedImageUrl(pdf, url, { width: 800 });
+  if (!img) return null;
+  const k = Math.min(maxW / img.width, maxH / img.height);
+  return { img, w: img.width * k, h: img.height * k, aspect: img.width / img.height };
 }
 
 
