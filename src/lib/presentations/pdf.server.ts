@@ -388,18 +388,8 @@ async function drawSlide(a: DrawArgs) {
   }
 
 
-  if (slide.type === "contacts") {
-    const rows = [
-      company?.company_phone && `Телефон: ${company.company_phone}`,
-      company?.company_email && `E-mail: ${company.company_email}`,
-      company?.company_website && `Сайт: ${company.company_website}`,
-      company?.company_address && `Адрес: ${company.company_address}`,
-    ].filter((v): v is string => !!v);
-    for (const row of rows) {
-      page.drawText(row, { x, y, size: 14, font: fonts.regular, color: t.ink });
-      y -= 26;
-    }
-  }
+
+
 
   if (c.showPrice && c.price != null && c.price > 0) {
     const label = `${money(c.price)} / ${c.priceUnit}`;
