@@ -18,6 +18,8 @@ export function DocEditorShell({
   actions,
   sections,
   defaultSection = null,
+  active: activeProp,
+  onActiveChange,
   sheet,
   rightPanel,
   footerLeft,
@@ -32,6 +34,9 @@ export function DocEditorShell({
   actions?: ReactNode;
   sections: EditorSection[];
   defaultSection?: string | null;
+  /** Управляемый активный раздел (иначе состояние внутри шелла). */
+  active?: string | null;
+  onActiveChange?: (id: string | null) => void;
   /** Содержимое листа: получает натуральную ширину A4 и доступную высоту. */
   sheet: (ctx: { width: number; height: number; scale: number }) => ReactNode;
   rightPanel?: ReactNode;
@@ -40,8 +45,14 @@ export function DocEditorShell({
   /** Диалоги и прочее вне разметки. */
   children?: ReactNode;
 }) {
-  const [active, setActive] = useState<string | null>(defaultSection);
+  const [inner, setInner] = useState<string | null>(defaultSection);
+  const active = activeProp !== undefined ? activeProp : inner;
+  const setActive = (id: string | null) => {
+    if (activeProp === undefined) setInner(id);
+    onActiveChange?.(id);
+  };
   const [zoom, setZoom] = useState(1);
+
 
   const current = sections.find((s) => s.id === active) ?? null;
 
