@@ -230,11 +230,14 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       onSave={() => save.mutate()}
       saving={save.isPending}
       saveState={saveState}
-      errorMessage={save.error instanceof Error ? save.error.message : null}
+      saveDisabled={!validation.ok}
+      errorMessage={saveErrorText}
     >
       <div className="grid md:grid-cols-2 gap-4">
-        <Field label="Код" required><Input value={f.code ?? ""} onChange={(e) => patch({ code: e.target.value.toUpperCase() })} className="font-mono" /></Field>
-        <Field label="Тип скидки" required>
+        <Field label="Код" required error={errors["code"]} hint="Латиница в верхнем регистре, цифры и дефис">
+          <Input value={f.code ?? ""} onChange={(e) => patch({ code: e.target.value.toUpperCase() })} className="font-mono" aria-invalid={!!errors["code"]} />
+        </Field>
+        <Field label="Тип скидки" required error={errors["discount_type"]}>
           <Select value={f.discount_type} onValueChange={(v) => patch({ discount_type: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -243,17 +246,28 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => patch({ discount_value: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => patch({ min_order_total: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Действует с"><Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_from: e.target.value })} /></Field>
-        <Field label="Действует до"><Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_to: e.target.value })} /></Field>
-        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => patch({ max_uses: e.target.value ? Number(e.target.value) : null })} /></Field>
+        <Field label="Размер скидки" required error={errors["discount_value"]}>
+          <Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => patch({ discount_value: Number(e.target.value) || 0 })} aria-invalid={!!errors["discount_value"]} />
+        </Field>
+        <Field label="Мин. сумма заказа" error={errors["min_order_total"]}>
+          <Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => patch({ min_order_total: Number(e.target.value) || 0 })} />
+        </Field>
+        <Field label="Действует с" error={errors["valid_from"]}>
+          <Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_from: e.target.value })} />
+        </Field>
+        <Field label="Действует до" error={errors["valid_to"]}>
+          <Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_to: e.target.value })} aria-invalid={!!errors["valid_to"]} />
+        </Field>
+        <Field label="Лимит применений" error={errors["max_uses"]}>
+          <Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => patch({ max_uses: e.target.value ? Number(e.target.value) : null })} />
+        </Field>
         <Field label="Использовано"><Input value={f.used_count ?? 0} readOnly className="opacity-70" /></Field>
       </div>
 
-      <Field label="Описание" hint="Для внутреннего использования">
+      <Field label="Описание" hint="Для внутреннего использования" error={errors["description"]}>
         <Textarea rows={3} value={f.description ?? ""} onChange={(e) => patch({ description: e.target.value })} />
       </Field>
+
     </AdminEditorShell>
     </>
   );
