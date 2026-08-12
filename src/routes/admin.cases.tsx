@@ -53,7 +53,7 @@ function CasesAdmin() {
   });
 
   const visible = useMemo(
-    () => (items as CaseRow[]).filter((it) => matchesQuery(debouncedQuery, it.title, it.slug, it.client_name)),
+    () => (items as CaseRow[]).filter((it) => matchesQuery(debouncedQuery, it.title, it.slug, it.client)),
     [items, debouncedQuery],
   );
   const selected = (items as CaseRow[]).find((it) => it.id === selectedId) ?? null;
