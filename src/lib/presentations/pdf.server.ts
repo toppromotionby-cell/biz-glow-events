@@ -370,9 +370,8 @@ async function drawSlide(a: DrawArgs) {
       const text = `${s.label}: ${s.value}`;
       const w = fonts.regular.widthOfTextAtSize(text, chip) + 20;
       if (cx + w > x + maxW) { cx = x; y -= chip * 2.4; }
-      const chipX = alignMode === "left" ? cx : alignX(cx, w);
-      page.drawRectangle({ x: chipX, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
-      page.drawText(text, { x: chipX + 10, y, size: chip, font: fonts.regular, color: t.ink });
+      page.drawRectangle({ x: cx, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
+      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: t.ink });
       cx += w + 8;
     }
     y -= chip * 3;
