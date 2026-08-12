@@ -128,10 +128,11 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
           {initial.id ? "Редактировать" : "Новая запись"}
         </h2>
         <SaveStatus
-          isDirty={formState.isDirty}
-          isSaving={save.isPending}
-          isError={save.isError}
-          savedAt={savedAt}
+          state={
+            save.isError ? "error" : save.isPending ? "saving" : formState.isDirty ? "dirty" : savedAt ? "saved" : "idle"
+          }
+          draftSavedAt={savedAt}
+          errorMessage={save.error instanceof Error ? save.error.message : null}
         />
       </div>
 
