@@ -120,6 +120,9 @@ function Page() {
   const canvasWrap = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(720);
   const [layoutMode, setLayoutMode] = useState(false);
+  // История раскладки текущего слайда: одно перетаскивание — один шаг отмены.
+  const layoutHistory = useRef<{ slideId: string; layout: SlideLayoutOverrides }[]>([]);
+  const [canUndoLayout, setCanUndoLayout] = useState(false);
 
   // Данные с сервера принимаем только когда нет несохранённых правок и не идёт
   // сохранение: иначе ответ затирал бы то, что пользователь печатает прямо сейчас,
@@ -170,6 +173,30 @@ function Page() {
     setSlides((prev) => prev.map((s) => (s.id === sid ? { ...s, ...patch } : s)));
     setDirty(true);
   };
+  /** Перетаскивание блока: сохраняем предыдущую раскладку для «Отменить». */
+  const patchLayout = (sid: string, layout: SlideLayoutOverrides, patch: Partial<SlideLayoutOverrides>) => {
+    layoutHistory.current = [...layoutHistory.current.slice(-19), { slideId: sid, layout }];
+    setCanUndoLayout(true);
+    setSlides((prev) =>
+      prev.map((s) =>
+        s.id === sid ? { ...s, content: { ...s.content, layout: { ...layout, ...patch } } } : s,
+      ),
+    );
+    setDirty(true);
+  };
+
+  const undoLayout = () => {
+    const last = layoutHistory.current.pop();
+    setCanUndoLayout(layoutHistory.current.length > 0);
+    if (!last) return;
+    setSlides((prev) =>
+      prev.map((s) =>
+        s.id === last.slideId ? { ...s, content: { ...s.content, layout: last.layout } } : s,
+      ),
+    );
+    setDirty(true);
+  };
+
   const patchMeta = (patch: Partial<Presentation>) => {
     setMeta((prev) => (prev ? { ...prev, ...patch } : prev));
     setDirty(true);
@@ -478,6 +505,17 @@ function Page() {
         <span className="tabular-nums">Слайд {currentIndex + 1} из {slides.length}</span>
         <div className="flex items-center gap-2">
           <span>{SLIDE_TYPE_LABELS[current.type]}{current.is_visible ? "" : " · скрыт"}</span>
+          {layoutMode && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={!canUndoLayout}
+              onClick={undoLayout}
+            >
+              <Undo2 className="mr-1 h-3.5 w-3.5" />Отменить
+            </Button>
+          )}
           <Button
             variant={layoutMode ? "default" : "outline"}
             size="sm"
@@ -499,16 +537,12 @@ function Page() {
         showWarnings
         onEdit={layoutMode ? undefined : (patch) => patchSlide(current.id, patch)}
         interactive={layoutMode}
-        onLayout={(patch) =>
-          patchSlide(current.id, {
-            content: { ...current.content, layout: { ...current.content.layout, ...patch } },
-          })
-        }
+        onLayout={(patch) => patchLayout(current.id, current.content.layout, patch)}
         {...branding}
       />
       <p className="mt-2 text-xs text-muted-foreground">
         {layoutMode
-          ? "Перетаскивайте фото, текст, цену и логотипы в подсвеченные зоны, угловой маркер меняет размер — остальное перестроится автоматически."
+          ? "Перетащите блок — слайд соберётся сам. Угловой маркер меняет размер, Ctrl/Cmd + Z отменяет."
           : "Заголовок и подзаголовок правятся прямо на слайде. Сохранение — Ctrl/Cmd + S."}
       </p>
     </div>
