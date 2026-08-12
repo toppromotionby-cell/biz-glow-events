@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 // Единый рендер слайда презентации 16:9 (1280×720) — используется в
 // миниатюрах, крупном предпросмотре и показе. Масштабируется через transform.
 // Сетка, кегли и раскладка фото берутся из design.ts / fit.ts, поэтому
@@ -254,13 +255,14 @@ function logoStyle(p: { slot: LogoSlot; x?: number; y?: number }): CSSProperties
   return { ...base, bottom: 84, right: 56 };
 }
 
-export function SlideCanvas(props: SlideCanvasProps) {
+function SlideCanvasInner(props: SlideCanvasProps) {
   const { slide, company, template, presentationTitle, width, index, total, showWarnings, onEdit } = props;
   const scale = width / SLIDE_W;
-  const theme = slideTheme(template, company?.accent_color || "#FF7500");
-  const fit = fitSlide(slide);
+  const accent = company?.accent_color || "#FF7500";
+  const theme = useMemo(() => slideTheme(template, accent), [template, accent]);
+  const fit = useMemo(() => fitSlide(slide), [slide]);
   const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
-  const stacks = fontStacks(resolveDocFont(props.fontFamily));
+  const stacks = useMemo(() => fontStacks(resolveDocFont(props.fontFamily)), [props.fontFamily]);
   const brandLogo = props.brandLogoUrl ?? company?.logo_url ?? null;
   const clientLogo = props.clientLogoUrl ?? null;
   const plan = planSlideLogos({
@@ -510,3 +512,6 @@ function SlideBody({
 export function SlideFrame({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={className}>{children}</div>;
 }
+
+/** Мемоизация: миниатюры и соседние слайды не пересобираются при правке одного. */
+export const SlideCanvas = memo(SlideCanvasInner);
