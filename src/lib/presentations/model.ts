@@ -197,8 +197,8 @@ export const TEXT_SCALE_MAX = 2;
 export const partTextScale = (v: number | null | undefined): number =>
   v == null ? 1 : Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, v));
 
-export const clampNum = (v: number, min: number, max: number): number =>
-  Math.min(max, Math.max(min, v));
+/** Единое ядро геометрии холста — реэкспорт, чтобы не плодить копии. */
+export const clampNum = clamp;
 
 const PHOTO_ZONES: PhotoZone[] = ["auto", "left", "right", "top", "full", "none"];
 const TEXT_ZONES: TextZone[] = ["auto", "top", "center", "bottom"];
