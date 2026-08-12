@@ -120,13 +120,29 @@ function Page() {
   const canvasWrap = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(720);
 
+  // Данные с сервера принимаем только когда нет несохранённых правок и не идёт
+  // сохранение: иначе ответ затирал бы то, что пользователь печатает прямо сейчас,
+  // а смена id слайдов сбрасывала бы выбранный слайд.
+  const dirtyRef = useRef(false);
+  dirtyRef.current = dirty;
   useEffect(() => {
     if (!data) return;
+    if (dirtyRef.current) return;
     setMeta(data.presentation);
     setSlides(data.slides);
-    setSelected((prev) => prev ?? data.slides[0]?.id ?? null);
+    setSelected((prev) =>
+      prev && data.slides.some((s) => s.id === prev) ? prev : (data.slides[0]?.id ?? null),
+    );
     setDirty(false);
   }, [data]);
+
+  // Редактор никогда не остаётся без выбранного слайда, если слайды есть.
+  useEffect(() => {
+    if (!slides.length) return;
+    setSelected((prev) => (prev && slides.some((s) => s.id === prev) ? prev : slides[0].id));
+  }, [slides]);
+
+
 
   useEffect(() => {
     const el = canvasWrap.current;
@@ -289,12 +305,14 @@ function Page() {
         },
       });
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setDirty(false);
       setSavedAt(new Date());
-      await qc.invalidateQueries({ queryKey: ["presentation", id] });
+      // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
+      // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
       qc.invalidateQueries({ queryKey: ["presentations"] });
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
