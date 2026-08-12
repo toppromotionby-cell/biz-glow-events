@@ -114,6 +114,8 @@ export type SlideContent = {
   imageLayout: SlideImageLayout;
   /** Ручные настройки раскладки («умные зоны»). Пустые значения = авто. */
   layout: SlideLayoutOverrides;
+  /** Фон слайда: «как в шаблоне» либо свой цвет/градиент. */
+  background: SlideBackground;
   /** Тумблеры видимости блоков. */
   showDescription: boolean;
   showIncludes: boolean;
