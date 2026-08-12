@@ -13,7 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Download, ExternalLink, History, Plus, Search, Send, ListTree, User, Wallet, ShieldCheck,
-  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation,
+  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation, Trash2,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,

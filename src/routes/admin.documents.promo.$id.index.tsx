@@ -6,7 +6,7 @@ import { DocAppearanceSection } from "@/components/admin/documents/DocAppearance
 
 
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveStatus } from "@/lib/editor/save-state";
 import { useEditorSave } from "@/hooks/use-editor-save";
