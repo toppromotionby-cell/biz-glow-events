@@ -1,30 +1,12 @@
-// Универсальные компоненты для отображения медиа из приватного bucket `media`.
-// Если путь — уже полный URL (http/blob/data), показываем как есть.
-// Иначе берём подписанный URL из общего кэша (`signedMediaUrl`).
-import { useEffect, useRef, useState } from "react";
-import { signedMediaUrl } from "@/lib/media-url-cache";
+// Универсальные компоненты для отображения медиа каталога.
+// Каталог публичный: ссылка строится из пути детерминированно, без запросов
+// к API и подписей, поэтому картинки видны сразу и одинаково в SSR и в браузере.
+import { useMemo } from "react";
+import { mediaPublicUrl } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 
-function isAbsolute(src: string): boolean {
-  return /^(https?:|blob:|data:)/i.test(src);
-}
-
 export function useResolvedUrl(path: string | null | undefined): string | null {
-  const [url, setUrl] = useState<string | null>(() =>
-    path && isAbsolute(path) ? path : null,
-  );
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    if (!path) { setUrl(null); return; }
-    if (isAbsolute(path)) { setUrl(path); return; }
-    (async () => {
-      const signed = await signedMediaUrl(path);
-      if (mounted.current) setUrl(signed);
-    })();
-    return () => { mounted.current = false; };
-  }, [path]);
-  return url;
+  return useMemo(() => (path ? mediaPublicUrl(path) || null : null), [path]);
 }
 
 export function StorageImg({

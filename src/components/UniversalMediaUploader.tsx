@@ -6,7 +6,7 @@ import imageCompression from "browser-image-compression";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { signedMediaUrl } from "@/lib/media-url-cache";
+import { MEDIA_BUCKET, mediaPublicUrl } from "@/lib/media-url";
 
 const MAX_PHOTOS = 5;
 const MAX_VIDEOS = 5;
@@ -77,7 +77,7 @@ export function UniversalMediaUploader({
         }
         const safeName = uploadName.replace(/[^\w.\-]+/g, "_");
         const path = `${entity}/${slug || "untitled"}/${kind}-${Date.now()}-${safeName}`;
-        const { error } = await supabase.storage.from("media").upload(path, payload, {
+        const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, payload, {
           upsert: false,
           contentType,
         });
@@ -98,7 +98,7 @@ export function UniversalMediaUploader({
   }, [entity, slug, photoUrls, videoUrls, onChange]);
 
   const remove = async (path: string, kind: "photo" | "video") => {
-    const { error } = await supabase.storage.from("media").remove([path]);
+    const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([path]);
     if (error) toast.error(error.message);
     if (kind === "photo") onChange({ photoUrls: photoUrls.filter(p => p !== path), videoUrls });
     else onChange({ photoUrls, videoUrls: videoUrls.filter(p => p !== path) });
@@ -141,16 +141,7 @@ function MediaThumb({ path, kind, onRemove }: { path: string; kind: "photo" | "v
   useEffect(() => {
     mounted.current = true;
     let revoke: string | null = null;
-    (async () => {
-      // Если path — уже полноценный URL/blob, используем как есть
-      if (/^(https?:|blob:|data:)/.test(path)) {
-        setUrl(path);
-        return;
-      }
-      const signed = await signedMediaUrl(path);
-      if (!mounted.current) return;
-      setUrl(signed);
-    })();
+    setUrl(mediaPublicUrl(path) || null);
     return () => {
       mounted.current = false;
       if (revoke) URL.revokeObjectURL(revoke);

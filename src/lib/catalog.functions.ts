@@ -4,36 +4,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { mediaPublicUrl } from "@/lib/media-url";
 
 
-function isAbsolute(u: string): boolean {
-  return /^(https?:|blob:|data:)/i.test(u);
-}
-
-// Sign relative storage paths in photo_urls/video_urls so anonymous visitors
-// can render private-bucket media on public catalog pages.
+// Каталог публичный: пути хранилища превращаются в постоянные публичные ссылки.
 async function signMediaUrls<T extends { photo_urls?: string[] | null; video_urls?: string[] | null }>(
   rows: T[],
 ): Promise<T[]> {
-  const paths = new Set<string>();
-  for (const r of rows) {
-    for (const u of r.photo_urls ?? []) if (u && !isAbsolute(u)) paths.add(u);
-    for (const u of r.video_urls ?? []) if (u && !isAbsolute(u)) paths.add(u);
-  }
-  if (paths.size === 0) return rows;
-  const list = Array.from(paths);
-  const TTL = 60 * 60 * 24 * 7; // 7 days
-  const { data, error } = await supabaseAdmin.storage.from("media").createSignedUrls(list, TTL);
-  if (error || !data) {
-    console.error("[signMediaUrls] failed:", error);
-    return rows;
-  }
-  const map = new Map<string, string>();
-  data.forEach((d, i) => { if (d.signedUrl) map.set(list[i], d.signedUrl); });
   return rows.map((r) => ({
     ...r,
-    photo_urls: (r.photo_urls ?? []).map((u) => (u && !isAbsolute(u) ? map.get(u) ?? u : u)),
-    video_urls: (r.video_urls ?? []).map((u) => (u && !isAbsolute(u) ? map.get(u) ?? u : u)),
+    photo_urls: (r.photo_urls ?? []).map((u) => (u ? mediaPublicUrl(u) : u)),
+    video_urls: (r.video_urls ?? []).map((u) => (u ? mediaPublicUrl(u) : u)),
   }));
 }
 
