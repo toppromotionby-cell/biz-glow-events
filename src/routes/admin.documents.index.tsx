@@ -23,6 +23,7 @@ import {
   listAllDocuments, duplicateDocument, deleteDocument, setDocumentStatus, setDocumentTemplate,
   listOrderDocuments, type DocumentRow,
 } from "@/lib/documents-overview.functions";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CreateDocumentDialog } from "@/components/admin/documents/CreateDocumentDialog";
 import { FinanceDocumentsPanel } from "@/components/admin/documents/FinanceDocumentsPanel";
 import { DocumentsAnalyticsPanel } from "@/components/admin/documents/DocumentsAnalyticsPanel";
@@ -71,19 +72,21 @@ function Page() {
   const [view, setView] = useState<"docs" | "templates" | "finance" | "orders" | "analytics">("docs");
   const templates = view === "templates";
   const [createOpen, setCreateOpen] = useState(false);
+  const [limit, setLimit] = useState(50);
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   const list = useServerFn(listAllDocuments);
   const listOrderDocs = useServerFn(listOrderDocuments);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-documents-overview", search, status, kind, templates],
-    queryFn: () => list({ data: { search, status, kind, templates } }),
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-documents-overview", debouncedSearch, status, kind, templates, limit],
+    queryFn: () => list({ data: { search: debouncedSearch, status, kind, templates, limit } }),
     enabled: view === "docs" || view === "templates",
   });
 
   const orderDocs = useQuery({
-    queryKey: ["admin-order-documents", search],
-    queryFn: () => listOrderDocs({ data: { search } }),
+    queryKey: ["admin-order-documents", debouncedSearch],
+    queryFn: () => listOrderDocs({ data: { search: debouncedSearch } }),
     enabled: view === "orders",
   });
 
@@ -202,7 +205,7 @@ function Page() {
               key={v.key}
               size="sm"
               variant={view === v.key ? "secondary" : "ghost"}
-              onClick={() => { setView(v.key); setStatus("all"); }}
+              onClick={() => { setView(v.key); setStatus("all"); setLimit(50); }}
             >
               {v.label}
             </Button>
@@ -211,7 +214,7 @@ function Page() {
         {(view === "docs" || view === "templates") && (
           <div className="inline-flex rounded-lg border border-border/60 p-0.5">
             {(["all", "quote", "promo"] as const).map((k) => (
-              <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
+              <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => { setKind(k); setLimit(50); }}>
                 {k === "all" ? "Все типы" : k === "quote" ? "КП" : "КП промо"}
               </Button>
             ))}
@@ -224,14 +227,14 @@ function Page() {
             className="pl-8"
             placeholder="Поиск по номеру, клиенту, теме"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setLimit(50); }}
           />
         </div>
         )}
         {view === "docs" && (
           <div className="inline-flex flex-wrap gap-1">
             {FILTERS.map((f) => (
-              <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => setStatus(f.key)}>
+              <Button key={f.key} size="sm" variant={status === f.key ? "secondary" : "ghost"} onClick={() => { setStatus(f.key); setLimit(50); }}>
                 {f.label}
               </Button>
             ))}
@@ -240,8 +243,8 @@ function Page() {
       </div>
 
       {view === "orders" && (
-        <div className="overflow-hidden rounded-xl border border-border/60">
-          <table className="w-full text-sm">
+        <div className="scroll-visible overflow-x-auto rounded-xl border border-border/60">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left">Тип</th>
@@ -256,7 +259,15 @@ function Page() {
               {orderDocs.isLoading && (
                 <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Загрузка…</td></tr>
               )}
-              {!orderDocs.isLoading && !(orderDocs.data ?? []).length && (
+              {orderDocs.isError && (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-sm text-destructive">
+                    Не удалось загрузить документы.{" "}
+                    <Button size="sm" variant="outline" onClick={() => void orderDocs.refetch()}>Повторить</Button>
+                  </td>
+                </tr>
+              )}
+              {!orderDocs.isLoading && !orderDocs.isError && !(orderDocs.data ?? []).length && (
                 <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Документов по заказам пока нет</td></tr>
               )}
               {(orderDocs.data ?? []).map((d) => (
@@ -294,9 +305,9 @@ function Page() {
       {view === "analytics" && <DocumentsAnalyticsPanel />}
 
       {(view === "docs" || view === "templates") && (
-      <div className="overflow-hidden rounded-xl border border-border/60">
+      <div className="scroll-visible overflow-x-auto rounded-xl border border-border/60">
 
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[860px] text-sm">
           <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="px-3 py-2 text-left">Тип</th>
@@ -312,7 +323,15 @@ function Page() {
             {isLoading && (
               <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Загрузка…</td></tr>
             )}
-            {!isLoading && !rows.length && (
+            {isError && (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-sm text-destructive">
+                  Не удалось загрузить документы.{" "}
+                  <Button size="sm" variant="outline" onClick={() => void refetch()}>Повторить</Button>
+                </td>
+              </tr>
+            )}
+            {!isLoading && !isError && !rows.length && (
               <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Документов не найдено</td></tr>
             )}
             {rows.map((r) => (
@@ -433,6 +452,14 @@ function Page() {
       </div>
       )}
 
+      {(view === "docs" || view === "templates") && !!rows.length && (
+        <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+          <span>Показано {rows.length} из {data?.total ?? rows.length}</span>
+          {(data?.total ?? 0) > rows.length && (
+            <Button size="sm" variant="outline" onClick={() => setLimit((v) => v + 50)}>Показать ещё</Button>
+          )}
+        </div>
+      )}
 
       <CreateDocumentDialog
         open={createOpen}
