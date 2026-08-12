@@ -14,7 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, Check, Download, FileText, Layers, ListChecks, Loader2,
-  Palette, Play, Plus, RefreshCw, ShieldCheck, Undo2,
+  LibraryBig, Palette, Play, Plus, RefreshCw, ShieldCheck, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,8 @@ import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/p
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CatalogPickerDialog, type CatalogPickResult } from "@/components/admin/CatalogPickerDialog";
+import { pickToSlideDraft } from "@/lib/catalog-pick";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
@@ -123,6 +125,7 @@ function Page() {
 
   const [meta, setMeta] = useState<Presentation | null>(null);
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   
@@ -229,6 +232,51 @@ function Page() {
     setSlides((prev) => [...prev, next]);
     setSelected(next.id);
     setDirty(true);
+  };
+
+  /* ---------- Каталог сайта ---------- */
+  const applyCatalogToSlide = (slide: PresentationSlide, res: CatalogPickResult): PresentationSlide => {
+    const d = pickToSlideDraft(res.pick, res.price);
+    return {
+      ...slide,
+      type: "product",
+      title: d.title,
+      subtitle: d.subtitle,
+      image_url: d.images[0] ?? slide.image_url,
+      entity_type: d.entity_type,
+      entity_id: d.entity_id,
+      content: {
+        ...slide.content,
+        description: d.description,
+        includes: d.includes,
+        specs: d.specs,
+        price: d.price,
+        priceUnit: d.priceUnit || slide.content.priceUnit,
+        images: d.images,
+      },
+    };
+  };
+
+  const addSlidesFromCatalog = (picks: CatalogPickResult[]) => {
+    if (!picks.length) return;
+    const created = picks.map((res, i) =>
+      applyCatalogToSlide(blankSlide("product", slides.length + i), res),
+    );
+    setSlides((prev) => [...prev, ...created.map((s, i) => ({ ...s, position: prev.length + i }))]);
+    setSelected(created[created.length - 1]!.id);
+    setDirty(true);
+    toast.success(`Добавлено слайдов: ${created.length}`);
+  };
+
+  const fillCurrentFromCatalog = (res: CatalogPickResult) => {
+    if (!current) {
+      addSlidesFromCatalog([res]);
+      return;
+    }
+    const sid = current.id;
+    setSlides((prev) => prev.map((s) => (s.id === sid ? applyCatalogToSlide(s, res) : s)));
+    setDirty(true);
+    toast.success("Слайд заполнен данными каталога");
   };
 
   const duplicateSlide = (sid: string) => {
@@ -516,6 +564,20 @@ function Page() {
             </button>
           ))}
         </div>
+      </div>
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-muted-foreground">Каталог сайта</p>
+        <Button variant="outline" size="sm" className="w-full" onClick={() => setCatalogOpen(true)}>
+          <LibraryBig className="mr-1.5 h-4 w-4" />Добавить из каталога
+        </Button>
+        <CatalogPickerDialog
+          open={catalogOpen}
+          onOpenChange={setCatalogOpen}
+          mode="presentation"
+          onConfirm={(picks) => addSlidesFromCatalog(picks)}
+          onFillCurrent={fillCurrentFromCatalog}
+          title="Каталог сайта → слайды"
+        />
       </div>
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">Слайды презентации</p>

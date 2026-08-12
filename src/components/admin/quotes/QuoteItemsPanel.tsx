@@ -3,7 +3,7 @@
 // себестоимость/маржа и состав позиции.
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  ChevronDown, ChevronUp, Copy, FolderPlus, ListChecks, MoreHorizontal, Plus, Trash2,
+  ChevronDown, ChevronUp, Copy, FolderPlus, LibraryBig, ListChecks, MoreHorizontal, Plus, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
@@ -22,6 +22,8 @@ import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncl
 import { NumField, TextAreaField, TextCommitField } from "@/components/admin/field-kit";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest, type ItemHit } from "@/hooks/use-doc-suggest";
+import { CatalogPickerDialog, type CatalogPickResult } from "@/components/admin/CatalogPickerDialog";
+import { pickToDocLine, type IncludesMode } from "@/lib/catalog-pick";
 
 function Mini({ label, width, children }: { label: string; width: string; children: ReactNode }) {
   return (
@@ -52,6 +54,7 @@ export function QuoteItemsPanel({
   const { fetchItems } = useDocSuggest();
   const [newSectionOpen, setNewSectionOpen] = useState(false);
   const [newSection, setNewSection] = useState("");
+  const [catalogFor, setCatalogFor] = useState<string | null>(null);
 
   const sections = useMemo(() => listSections(items), [items]);
   const grouped = useMemo(() => {
@@ -108,6 +111,30 @@ export function QuoteItemsPanel({
     insertInSection(section, [emptyQuoteItem(quoteId, items.length, { section })]);
   };
 
+  /** Позиции из каталога сайта: текст, «что входит» и выбранная цена. */
+  const addFromCatalog = (
+    section: string,
+    picks: CatalogPickResult[],
+    opts: { includesMode: IncludesMode },
+  ) => {
+    const quoteId = items[0]?.quote_id ?? "";
+    const created = picks.map(({ pick, price }, i) => {
+      const line = pickToDocLine(pick, { price, includesMode: opts.includesMode });
+      return emptyQuoteItem(quoteId, items.length + i, {
+        section,
+        title: line.title,
+        description: line.description,
+        includes: line.includes,
+        unit: line.unit,
+        qty: line.qty,
+        price: line.price,
+        entity_type: pick.type,
+        entity_id: pick.id,
+      });
+    });
+    insertInSection(section, created);
+  };
+
   const createSection = () => {
     const name = newSection.trim();
     if (!name) return;
@@ -127,8 +154,18 @@ export function QuoteItemsPanel({
         <Button variant="outline" size="sm" onClick={() => setNewSectionOpen(true)}>
           <FolderPlus className="mr-1.5 h-4 w-4" />Добавить раздел
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setCatalogFor(sections[0] ?? NO_SECTION)}>
+          <LibraryBig className="mr-1.5 h-4 w-4" />Из каталога
+        </Button>
         <ClearCompositionButton count={items.length} onClear={() => onChange([])} />
       </div>
+
+      <CatalogPickerDialog
+        open={catalogFor !== null}
+        onOpenChange={(v) => setCatalogFor(v ? catalogFor : null)}
+        mode="doc"
+        onConfirm={(picks, opts) => addFromCatalog(catalogFor ?? NO_SECTION, picks, opts)}
+      />
 
       {grouped.map(([section, list], secIdx) => {
         const sum = list.reduce((s, it) => s + lineTotal(it), 0);
