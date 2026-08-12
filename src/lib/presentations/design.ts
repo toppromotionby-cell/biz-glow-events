@@ -4,6 +4,7 @@
 // фотографий (1–5). Модуль клиент-безопасный: используется в превью, PDF и превью.
 import {
   clampNum, DEFAULT_LAYOUT_OVERRIDES, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
+  PRICE_SCALE_MAX, PRICE_SCALE_MIN,
   type PhotoZone, type PresentationSlide, type PresentationTemplate,
   type PriceZone, type SlideImageLayout,
 } from "@/lib/presentations/model";
