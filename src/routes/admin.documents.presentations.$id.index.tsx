@@ -8,7 +8,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  AlertTriangle, ArrowLeft, Check, Download, Loader2, Play, Plus, RefreshCw, Save, Undo2,
+  AlertTriangle, ArrowLeft, Check, Download, FileText, Layers, ListChecks, Loader2,
+  Palette, Play, Plus, RefreshCw, Save, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,12 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { EditorSidebar, type EditorSection } from "@/components/admin/presentations/EditorSidebar";
+import { CanvasStage } from "@/components/admin/presentations/CanvasStage";
+import { EditorStatusBar } from "@/components/admin/presentations/EditorStatusBar";
+import { BlockToolbar, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
+
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
