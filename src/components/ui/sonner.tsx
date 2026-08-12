@@ -11,6 +11,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       richColors
       closeButton
       visibleToasts={4}
+      style={{ zIndex: 110 }}
       className="toaster group"
       toastOptions={{
         classNames: {
