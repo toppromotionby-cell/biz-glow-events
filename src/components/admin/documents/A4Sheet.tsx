@@ -12,7 +12,7 @@ export function A4Sheet({
 }: {
   children: ReactNode;
   preset?: DocPrintPreset;
-  onDoubleClick?: (e: React.MouseEvent) => void;
+  onDoubleClick?: React.MouseEventHandler<HTMLDivElement>;
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
