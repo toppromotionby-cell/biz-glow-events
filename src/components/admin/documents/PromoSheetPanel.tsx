@@ -1,14 +1,5 @@
-// Панель синхронизации промо-КП с Google Таблицей.
-// Таблица выглядит как превью документа и читается обратно.
-import { useMemo, useState } from "react";
+// Панель синхронизации промо-КП с Google Таблицей — тонкая обёртка над общим SheetSyncPanel.
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { ExternalLink, RefreshCw, Table2, Upload, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   applyPromoSheetDiff,
   ensurePromoSheet,
@@ -16,16 +7,13 @@ import {
   pushPromoToSheet,
   type PromoSheetDiffRow,
 } from "@/lib/promo-sheets.functions";
+import { SheetSyncPanel, sheetMoney as money } from "./SheetSyncPanel";
 
 const KIND_LABEL: Record<PromoSheetDiffRow["kind"], string> = {
   added: "Новая позиция",
   changed: "Изменено",
   removed: "Удалена в источнике",
 };
-
-function money(v: number) {
-  return `${v.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} BYN`;
-}
 
 function RowSummary({ row }: { row: PromoSheetDiffRow }) {
   const it = row.after ?? row.before;
@@ -50,146 +38,31 @@ function RowSummary({ row }: { row: PromoSheetDiffRow }) {
 }
 
 export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
-  const qc = useQueryClient();
   const ensure = useServerFn(ensurePromoSheet);
   const push = useServerFn(pushPromoToSheet);
   const loadDiff = useServerFn(getPromoSheetDiff);
   const apply = useServerFn(applyPromoSheetDiff);
 
-  const [busy, setBusy] = useState(false);
-  const [compare, setCompare] = useState(false);
-  const [picked, setPicked] = useState<string[]>([]);
-
-  const { data, refetch, isFetching } = useQuery({
-    queryKey: ["promo-sheet", quoteId],
-    queryFn: () => loadDiff({ data: { id: quoteId } }),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  });
-  const sheetDiff = useMemo(() => data?.diff ?? [], [data]);
-
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true);
-    try { await fn(); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
-  };
-
-  const onOpenSheet = () =>
-    run(async () => {
-      const res = await ensure({ data: { id: quoteId } });
-      window.open(res.url, "_blank", "noopener");
-      await refetch();
-      toast.success("Таблица оформлена как КП");
-    });
-
-  const onPush = () =>
-    run(async () => {
-      await push({ data: { id: quoteId } });
-      await refetch();
-      toast.success("Таблица обновлена");
-    });
-
-  const onApply = () =>
-    run(async () => {
-      const res = await apply({ data: { id: quoteId, rowIds: picked } });
-      toast.success(`Применено изменений: ${res.applied}`);
-      setCompare(false);
-      setPicked([]);
-      await qc.invalidateQueries({ queryKey: ["promo-quote", quoteId] });
-      await qc.invalidateQueries({ queryKey: ["admin-promo-quote", quoteId] });
-      await refetch();
-    });
-
-  const changesBanner = (count: number, label: string) =>
-    count > 0 ? (
-      <button
-        type="button"
-        onClick={() => {
-          setPicked(sheetDiff.map((d) => d.id));
-          setCompare(true);
-        }}
-        className="w-full text-left rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-700"
-      >
-        {label}: {count} строк(и) — нажмите, чтобы сравнить и применить
-      </button>
-    ) : null;
-
   return (
-    <div className="rounded-xl border p-3 space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Table2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Google Таблица</span>
-        {data?.syncedAt && (
-          <span className="text-xs text-muted-foreground">
-            синхронизировано {new Date(data.syncedAt).toLocaleString("ru-RU")}
-          </span>
-        )}
-        <div className="ml-auto flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={onOpenSheet} disabled={busy}>
-            <ExternalLink className="h-4 w-4 mr-1.5" />
-            {data?.connected ? "Открыть таблицу" : "Создать таблицу"}
-          </Button>
-          {data?.connected && (
-            <>
-              <Button size="sm" variant="outline" onClick={onPush} disabled={busy}>
-                <Upload className="h-4 w-4 mr-1.5" />Обновить таблицу
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        Таблица повторяет превью: шапка, разделы, итоги и живые формулы («Всего» = кол-во × кол-во 2 × цена).
-        Служебные поля (ID, себестоимость, флаги) спрятаны в скрытых колонках — правьте видимые ячейки, а затем
-        заберите изменения обратно.
-      </p>
-
-      {data?.error && (
-        <p className="text-xs text-destructive flex items-center gap-1.5">
-          <AlertTriangle className="h-3.5 w-3.5" />{data.error}
-        </p>
-      )}
-      {changesBanner(sheetDiff.length, "В таблице есть изменения")}
-      {data?.connected && sheetDiff.length === 0 && !data.error && (
-        <p className="text-xs text-muted-foreground">Расхождений с таблицей нет.</p>
-      )}
-
-      <Dialog open={compare} onOpenChange={(v) => !v && setCompare(false)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Изменения из Google Таблицы</DialogTitle>
-            <DialogDescription>Отметьте строки, которые нужно применить к составу промо-КП.</DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[55vh] overflow-y-auto space-y-2">
-            {sheetDiff.map((row) => (
-              <label key={row.id} className="flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer">
-                <Checkbox
-                  checked={picked.includes(row.id)}
-                  onCheckedChange={(v) =>
-                    setPicked((prev) => (v ? [...new Set([...prev, row.id])] : prev.filter((x) => x !== row.id)))
-                  }
-                />
-                <div className="min-w-0 flex-1">
-                  <Badge variant={row.kind === "removed" ? "destructive" : "secondary"} className="mb-1 text-[10px]">
-                    {KIND_LABEL[row.kind]}
-                  </Badge>
-                  <RowSummary row={row} />
-                </div>
-              </label>
-            ))}
-            {sheetDiff.length === 0 && <p className="text-sm text-muted-foreground">Изменений нет.</p>}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setCompare(false)}>Отмена</Button>
-            <Button onClick={onApply} disabled={busy || picked.length === 0}>
-              Применить ({picked.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    <SheetSyncPanel<PromoSheetDiffRow>
+      queryKey={["promo-sheet", quoteId]}
+      loadDiff={() => loadDiff({ data: { id: quoteId } })}
+      ensureSheet={() => ensure({ data: { id: quoteId } })}
+      pushSheet={() => push({ data: { id: quoteId } })}
+      applyRows={(rowIds) => apply({ data: { id: quoteId, rowIds } })}
+      invalidateKeys={[["promo-quote", quoteId], ["admin-promo-quote", quoteId]]}
+      kindLabel={KIND_LABEL}
+      renderRow={(row) => <RowSummary row={row} />}
+      createLabel="Создать таблицу"
+      createdToast="Таблица оформлена как КП"
+      compareDescription="Отметьте строки, которые нужно применить к составу промо-КП."
+      hint={
+        <>
+          Таблица повторяет превью: шапка, разделы, итоги и живые формулы («Всего» = кол-во × кол-во 2 × цена).
+          Служебные поля (ID, себестоимость, флаги) спрятаны в скрытых колонках — правьте видимые ячейки, а затем
+          заберите изменения обратно.
+        </>
+      }
+    />
   );
 }

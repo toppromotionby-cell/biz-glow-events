@@ -61,6 +61,7 @@ import { printOverridesToDesign, resolvePrintPreset } from "@/lib/documents/prin
 import { BlockEditDialog, type DocEditTarget } from "@/components/admin/documents/BlockEditDialog";
 import { blockIssueMap, checkQuoteDocument, itemIssueMap } from "@/lib/documents/quote-checks";
 import { DocStatusBar } from "@/components/admin/documents/DocStatusBar";
+import { DocVersionsPanel } from "@/components/admin/documents/DocVersionsPanel";
 import { SaveToLibraryDialog } from "@/components/admin/documents/SaveToLibraryDialog";
 import { DocAppearanceSection } from "@/components/admin/documents/DocAppearanceSection";
 
@@ -786,19 +787,15 @@ function Page() {
       label: "История",
       Icon: History,
       content: (
-        <div className="space-y-2">
-          <Button size="sm" variant="outline" onClick={onCreateVersion}>Сохранить версию</Button>
-          {!versions.length && <p className="text-sm text-muted-foreground">Версий пока нет</p>}
-          {versions.map((v) => (
-            <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm">
-              <div className="min-w-0">
-                <div className="truncate">{v.label || new Date(v.created_at).toLocaleString("ru-RU")}</div>
-                <div className="text-xs text-muted-foreground tabular-nums">{fmtMoney(v.total)}</div>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => onRestore(v.id)}>Восстановить</Button>
-            </div>
-          ))}
-        </div>
+        <DocVersionsPanel
+          versions={versions.map((v) => ({
+            id: v.id,
+            label: v.label || new Date(v.created_at).toLocaleString("ru-RU"),
+            subtitle: fmtMoney(v.total),
+          }))}
+          onCreate={onCreateVersion}
+          onRestore={onRestore}
+        />
       ),
     },
   ];
