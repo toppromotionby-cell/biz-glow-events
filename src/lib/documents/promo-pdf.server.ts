@@ -164,12 +164,22 @@ async function embedLogo(pdf: PDFDocument, url: string | null | undefined): Prom
 /** Ширины колонок в pt: доли из макета + гарантированный минимум под текст. */
 function columnWidths(ctx: Ctx, layout: DocLayout, tableW: number): number[] {
   const widths = layout.columns.map((c) => c.width * tableW);
-  const flexIdx = layout.columns
-    .map((c, i) => (c.key === "title" || c.key === "note" ? i : -1))
-    .filter((i) => i >= 0);
+  const isFlex = (key: string) => key === "title" || key === "note";
+  const flexIdx = layout.columns.map((c, i) => (isFlex(c.key) ? i : -1)).filter((i) => i >= 0);
+  /** Минимум для «резиновых» колонок: подпись и самое длинное слово должны влезать. */
+  const flexMin = new Map<number, number>();
 
   layout.columns.forEach((c, i) => {
-    if (flexIdx.includes(i)) return;
+    if (isFlex(c.key)) {
+      let word = ctx.bold.widthOfTextAtSize(c.label, FS_BODY);
+      for (const r of layout.rows) {
+        const v = r.cells[c.key];
+        if (!v) continue;
+        for (const w of v.split(/\s+/)) word = Math.max(word, ctx.bold.widthOfTextAtSize(w, FS_BODY));
+      }
+      flexMin.set(i, Math.min(tableW * 0.3, word + PAD_X * 2 + 2));
+      return;
+    }
     let need = ctx.bold.widthOfTextAtSize(c.label, FS_BODY);
     for (const r of layout.rows) {
       if (r.serviceRow && ["unit", "qty", "rate_unit", "multiplier"].includes(c.key)) continue;
@@ -177,16 +187,23 @@ function columnWidths(ctx: Ctx, layout: DocLayout, tableW: number): number[] {
       if (v) need = Math.max(need, ctx.regular.widthOfTextAtSize(v, FS_BODY));
     }
     need += PAD_X * 2 + 1;
-    if (need > widths[i]) widths[i] = need;
+    widths[i] = Math.max(widths[i], need);
   });
 
-  const overflow = widths.reduce((s, w) => s + w, 0) - tableW;
-  if (overflow > 0 && flexIdx.length) {
-    const flexTotal = flexIdx.reduce((s, i) => s + widths[i], 0);
-    for (const i of flexIdx) {
-      widths[i] = Math.max(60, widths[i] - (overflow * widths[i]) / (flexTotal || 1));
+  // Переполнение снимаем с «резиновых» колонок, не опускаясь ниже минимума.
+  for (let pass = 0; pass < 4; pass += 1) {
+    const overflow = widths.reduce((s, w) => s + w, 0) - tableW;
+    if (overflow <= 0.01 || !flexIdx.length) break;
+    const shrinkable = flexIdx.filter((i) => widths[i] > (flexMin.get(i) ?? 60) + 0.5);
+    if (!shrinkable.length) break;
+    const room = shrinkable.reduce((s, i) => s + widths[i] - (flexMin.get(i) ?? 60), 0);
+    const take = Math.min(overflow, room);
+    for (const i of shrinkable) {
+      const free = widths[i] - (flexMin.get(i) ?? 60);
+      widths[i] -= (take * free) / (room || 1);
     }
   }
+
   const diff = tableW - widths.reduce((s, w) => s + w, 0);
   if (Math.abs(diff) > 0.01) {
     const i = flexIdx.at(-1) ?? widths.length - 1;
@@ -194,6 +211,7 @@ function columnWidths(ctx: Ctx, layout: DocLayout, tableW: number): number[] {
   }
   return widths;
 }
+
 
 type Cell = {
   lines: string[];
