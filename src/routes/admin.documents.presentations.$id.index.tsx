@@ -2,6 +2,8 @@
 // Автосохранение, горячие клавиши, защита от потери правок, показ на весь экран.
 import { createFileRoute, Link, useNavigate, useBlocker } from "@tanstack/react-router";
 import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
+import { FullscreenLayer, Z_LAYER } from "@/components/FullscreenLayer";
+
 import { PresentationBrandingPanel } from "@/components/admin/presentations/PresentationBrandingPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
