@@ -1,7 +1,7 @@
 // Единая точка входа раздела «Документы»: все КП и КП промо в одном списке
 // со счётчиками по статусам и одним диалогом создания документа.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -29,7 +29,29 @@ import { FinanceDocumentsPanel } from "@/components/admin/documents/FinanceDocum
 import { DocumentsAnalyticsPanel } from "@/components/admin/documents/DocumentsAnalyticsPanel";
 import { createFinanceDocument } from "@/lib/finance-documents.functions";
 
-export const Route = createFileRoute("/admin/documents/")({ component: Page });
+type DocView = "docs" | "templates" | "finance" | "orders" | "analytics";
+type DocKind = "all" | "quote" | "promo";
+
+const VIEWS: DocView[] = ["docs", "templates", "finance", "orders", "analytics"];
+const KINDS: DocKind[] = ["all", "quote", "promo"];
+
+interface DocSearch {
+  q?: string | undefined;
+  status?: string | undefined;
+  kind?: DocKind | undefined;
+  view?: DocView | undefined;
+}
+
+// Фильтры живут в URL — ссылку на отфильтрованный список можно сохранить и переслать.
+export const Route = createFileRoute("/admin/documents/")({
+  validateSearch: (search: Record<string, unknown>): DocSearch => ({
+    q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
+    status: typeof search["status"] === "string" ? (search["status"] as string) : undefined,
+    kind: KINDS.includes(search["kind"] as DocKind) ? (search["kind"] as DocKind) : undefined,
+    view: VIEWS.includes(search["view"] as DocView) ? (search["view"] as DocView) : undefined,
+  }),
+  component: Page,
+});
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Черновик",
@@ -66,14 +88,31 @@ function Page() {
   const viewer = useDocumentViewer();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [kind, setKind] = useState<"all" | "quote" | "promo">("all");
-  const [view, setView] = useState<"docs" | "templates" | "finance" | "orders" | "analytics">("docs");
+  const sp = Route.useSearch();
+  const routeNavigate = Route.useNavigate();
+
+  const status = sp.status ?? "all";
+  const kind = sp.kind ?? "all";
+  const view = sp.view ?? "docs";
+  const patchSearch = (patch: DocSearch) =>
+    void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...patch }), replace: true });
+  const setStatus = (v: string) => patchSearch({ status: v === "all" ? undefined : v });
+  const setKind = (v: DocKind) => patchSearch({ kind: v === "all" ? undefined : v });
+  const setView = (v: DocView) => patchSearch({ view: v === "docs" ? undefined : v });
+
+  const [search, setSearch] = useState(sp.q ?? "");
   const templates = view === "templates";
   const [createOpen, setCreateOpen] = useState(false);
   const [limit, setLimit] = useState(50);
   const debouncedSearch = useDebouncedValue(search, 300);
+
+  // Поиск попадает в URL после дебаунса — чтобы ссылка была шарабельной.
+  useEffect(() => {
+    if ((sp.q ?? "") === debouncedSearch) return;
+    patchSearch({ q: debouncedSearch || undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
 
   const list = useServerFn(listAllDocuments);
   const listOrderDocs = useServerFn(listOrderDocuments);
@@ -335,7 +374,15 @@ function Page() {
               <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Документов не найдено</td></tr>
             )}
             {rows.map((r) => (
-              <tr key={`${r.kind}-${r.id}`} className="border-t border-border/50 transition-colors hover:bg-muted/30">
+              <tr
+                key={`${r.kind}-${r.id}`}
+                tabIndex={0}
+                role="link"
+                aria-label={`Открыть документ ${r.number}`}
+                className="cursor-pointer border-t border-border/50 transition-colors hover:bg-muted/30 focus-visible:bg-muted/40 focus-visible:outline-none"
+                onClick={() => openDoc(r)}
+                onKeyDown={(e) => { if (e.key === "Enter") openDoc(r); }}
+              >
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                     {r.kind === "quote"
@@ -344,16 +391,13 @@ function Page() {
                   </span>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap tabular-nums">
-                  <button type="button" className="hover:text-primary" onClick={() => openDoc(r)}>
-                    {r.number.replaceAll("/", ".")}
-                  </button>
+                  {r.number.replaceAll("/", ".")}
                 </td>
                 <td className="px-3 py-2">
-                  <button type="button" className="block text-left hover:text-primary" onClick={() => openDoc(r)}>
-                    <div className="font-medium">{r.client}</div>
-                    <div className="line-clamp-1 text-xs text-muted-foreground">{r.title}</div>
-                  </button>
+                  <div className="font-medium">{r.client}</div>
+                  <div className="line-clamp-1 text-xs text-muted-foreground">{r.title}</div>
                 </td>
+
                 <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                   {r.event_date ? fmtDate(r.event_date) : r.valid_until ? `до ${fmtDate(r.valid_until)}` : "—"}
                 </td>
@@ -368,8 +412,9 @@ function Page() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end gap-1">
+
                     <Button
                       variant="ghost"
                       size="icon"
