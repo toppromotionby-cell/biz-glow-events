@@ -50,6 +50,7 @@ export function QuoteItemsPanel({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [includesFor, setIncludesFor] = useState<string | null>(null);
+  const { fetchItems } = useDocSuggest();
   const [newSectionOpen, setNewSectionOpen] = useState(false);
   const [newSection, setNewSection] = useState("");
 
