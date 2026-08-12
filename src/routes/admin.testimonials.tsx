@@ -22,6 +22,8 @@ import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { useEditorHotkeys } from "@/lib/admin/use-editor-hotkeys";
 import { useListUrlState, matchesQuery } from "@/hooks/use-list-url-state";
 import { adminKeys } from "@/lib/query-keys";
+import { mapServerError, type FieldErrors } from "@/lib/admin/form-errors";
+
 import type { SaveState } from "@/components/admin/SaveStatus";
 
 // Поиск и выбранный отзыв живут в URL — F5 и «назад» не сбрасывают работу.
