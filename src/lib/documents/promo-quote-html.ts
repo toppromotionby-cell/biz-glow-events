@@ -6,7 +6,7 @@ import { vatRateLabel } from "@/lib/documents/vat";
 
 import { BRAND_ACCENT } from "@/lib/documents/brand";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
-import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
+import { BASE_PRINT_PRESET, printPageMarginCss } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
 
 import {
