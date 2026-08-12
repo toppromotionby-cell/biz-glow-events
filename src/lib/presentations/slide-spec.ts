@@ -141,7 +141,7 @@ function center(stack: Stack): SpecBlock[] {
   const areaH = SLIDE_H - SPEC.padTop - SPEC.padBottom;
   const dy = Math.max(0, (areaH - stack.height) / 2);
   return stack.blocks.map((b) =>
-    b.kind === "circle" ? b : { ...b, y: b.y + top + dy },
+    b.kind === "circle" || b.kind === "shade" ? b : { ...b, y: b.y + top + dy },
   );
 }
 
