@@ -57,10 +57,6 @@ type Ctx = {
   accent: ReturnType<typeof rgb>;
 };
 
-function safe(s: unknown): string {
-  return String(s ?? "").replace(/\s+/g, " ").trim();
-}
-
 function wrap(font: PDFFont, text: string, size: number, maxW: number): string[] {
   const out: string[] = [];
   for (const para of String(text ?? "").split("\n")) {
@@ -581,6 +577,5 @@ export async function buildPromoQuotePreviewPdf(
     }
   }
 
-  void safe;
   return await pdf.save();
 }
