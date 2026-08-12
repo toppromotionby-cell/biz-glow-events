@@ -614,10 +614,6 @@ function Page() {
           >
             <Play className="mr-1.5 h-4 w-4" />Показ
           </Button>
-          <Button variant="outline" size="sm" disabled={exporting || !slides.length} onClick={() => void exportPptx()}>
-            {exporting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FileDown className="mr-1.5 h-4 w-4" />}
-            PPTX
-          </Button>
           <Button variant="outline" size="sm" disabled={!slides.length || save.isPending} onClick={() => void exportPdf()}>
             <Download className="mr-1.5 h-4 w-4" />PDF
           </Button>
