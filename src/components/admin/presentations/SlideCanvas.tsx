@@ -24,7 +24,7 @@ import {
 import { SlideLayoutOverlay } from "@/components/admin/presentations/SlideLayoutOverlay";
 import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 
-import { fontStacks, resolveDocFont, type DocFontChoice } from "@/lib/documents/doc-font";
+import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import { staticSlideSpec, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
 import { contentSlideSpec } from "@/lib/presentations/content-spec";
 
@@ -264,7 +264,8 @@ function SlideCanvasInner(props: SlideCanvasProps) {
   const theme = useMemo(() => slideTheme(template, accent), [template, accent]);
   const fit = useMemo(() => fitSlide(slide), [slide]);
   const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
-  const stacks = useMemo(() => fontStacks(resolveDocFont(props.fontFamily)), [props.fontFamily]);
+  const docFont = resolveDocFont(props.fontFamily);
+  const stacks = useMemo(() => fontStacks(docFont), [docFont]);
   const brandLogo = props.brandLogoUrl ?? company?.logo_url ?? null;
   const clientLogo = props.clientLogoUrl ?? null;
   const plan = planSlideLogos({
@@ -300,6 +301,7 @@ function SlideCanvasInner(props: SlideCanvasProps) {
         }}
       >
         <SlideBody
+          docFont={docFont}
           slide={slide}
           company={company}
           theme={theme}
@@ -385,6 +387,7 @@ function Editable({
 }
 
 function SlideBody({
+  docFont,
   slide,
   company,
   theme,
@@ -396,6 +399,7 @@ function SlideBody({
   brandLogo,
   plan,
 }: {
+  docFont: DocFont;
   slide: PresentationSlide;
   company: CompanyProfile | null;
   theme: Theme;
