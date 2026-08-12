@@ -36,14 +36,16 @@ export function DeferredGlobals() {
 
   return (
     <Suspense fallback={null}>
-      <EffectsLayer />
-      <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
-      <FloatingContacts />
-      <MobileActionBar />
+      {/* data-site-widgets: скрываются, пока открыт полноэкранный слой админки */}
+      <div data-site-widgets="">
+        <EffectsLayer />
+        <Toggleable sectionKey="global.cookies"><CookieConsent /></Toggleable>
+        <FloatingContacts />
+        <MobileActionBar />
+      </div>
       <CartSync />
       <ScriptInjector />
-      
-      
     </Suspense>
+
   );
 }

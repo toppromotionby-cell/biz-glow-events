@@ -758,6 +758,12 @@
 /* Главный контент — поверх эффектов */
 main, header, footer { position: relative; z-index: 2; }
 
+/* Полноэкранные слои админки (портал в body) перекрывают всё, кроме диалогов.
+   Пока такой слой открыт — прячем виджеты сайта (cookie, чат, моб. панель),
+   иначе они перехватывают клики по строке зума и панели слайдов. */
+body[data-fullscreen-layer] [data-site-widgets] { display: none !important; }
+
+
 /* Локальная подсветка под курсором у glass/кнопок/ссылок */
 .glass,
 button:not(.btn-dialog-close),
