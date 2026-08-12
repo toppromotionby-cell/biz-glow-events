@@ -81,3 +81,37 @@ describe("умные зоны раскладки слайда", () => {
     expect(plan.brand?.slot).not.toBe("tl");
   });
 });
+
+describe("выравнивание блоков на слайде", () => {
+  it("по горизонтали сдвигает текстовый блок внутри колонки", () => {
+    const left = slideLayout(slideWith({ photoZone: "none", textWidth: 0.5, alignX: "left" }));
+    const center = slideLayout(slideWith({ photoZone: "none", textWidth: 0.5, alignX: "center" }));
+    const right = slideLayout(slideWith({ photoZone: "none", textWidth: 0.5, alignX: "right" }));
+    expect(center.textBox.x).toBeGreaterThan(left.textBox.x);
+    expect(right.textBox.x).toBeGreaterThan(center.textBox.x);
+    expect(right.textAlignX).toBe("right");
+    expect(left.textBox.w).toBeCloseTo(right.textBox.w, 5);
+  });
+
+  it("растягивание по ширине отменяет ручное сужение", () => {
+    const narrow = slideLayout(slideWith({ photoZone: "none", textWidth: 0.5 }));
+    const full = slideLayout(slideWith({ photoZone: "none", textWidth: 0.5, stretchX: true }));
+    expect(full.textBox.w).toBeGreaterThan(narrow.textBox.w);
+  });
+
+  it("растягивание по высоте отключает вертикальное выравнивание", () => {
+    const l = slideLayout(slideWith({ photoZone: "none", textZone: "center", stretchY: true }));
+    expect(l.textAlign).toBe("top");
+    expect(l.textFill).toBe(true);
+  });
+
+  it("выровненный текст не выходит за фото", () => {
+    for (const zone of ["left", "right"] as const) {
+      const l = slideLayout(slideWith({ photoZone: zone, textWidth: 0.5, alignX: "right" }));
+      const p = l.photoBox!;
+      const t = l.textBox;
+      expect(t.x + t.w).toBeLessThanOrEqual(SLIDE_W);
+      expect(p.x < t.x + t.w && p.x + p.w > t.x).toBe(false);
+    }
+  });
+});
