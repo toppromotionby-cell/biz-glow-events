@@ -1,5 +1,7 @@
-// Левая колонка редактора презентаций: вертикальный рельс разделов и
-// выдвижная панель с содержимым выбранного раздела — как в Canva.
+// Левая колонка редакторов (документы и презентации): вертикальный рельс
+// разделов и панель с содержимым выбранного раздела — как в Canva.
+// Рельс и панель экспортируются по отдельности, потому что панель живёт
+// внутри раздвижной сетки `EditorWorkspace` и её ширину тянет пользователь.
 import type { ComponentType, ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,71 @@ export type EditorSection = {
   content: ReactNode;
 };
 
+/** Вертикальный рельс с кнопками разделов. */
+export function EditorRail({
+  sections,
+  active,
+  onChange,
+}: {
+  sections: EditorSection[];
+  active: string | null;
+  onChange: (id: string | null) => void;
+}) {
+  return (
+    <nav
+      className="flex w-[72px] shrink-0 flex-col gap-1 overflow-y-auto border-r border-border/60 bg-muted/30 p-2"
+      aria-label="Разделы редактора"
+    >
+      {sections.map((s) => {
+        const on = s.id === active;
+        return (
+          <button
+            key={s.id}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(on ? null : s.id)}
+            className={`relative flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition ${
+              on ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <s.Icon className="h-5 w-5" />
+            <span className="leading-tight">{s.label}</span>
+            {s.dot && <span className="absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" />}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
+/** Панель активного раздела: занимает всю ширину своей колонки. */
+export function EditorSectionPanel({
+  section,
+  onClose,
+}: {
+  section: EditorSection;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex h-full min-h-0 min-w-0 flex-col border-r border-border/60 bg-background">
+      <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
+        <span className="truncate text-sm font-medium">{section.label}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          aria-label="Свернуть панель"
+          onClick={onClose}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="scroll-visible min-h-0 flex-1 overflow-y-auto p-3">{section.content}</div>
+    </div>
+  );
+}
+
+/** Рельс + панель одним блоком (нерастягиваемый вариант). */
 export function EditorSidebar({
   sections,
   active,
@@ -30,49 +96,10 @@ export function EditorSidebar({
 
   return (
     <div className="flex h-full min-h-0">
-      <nav
-        className="flex w-[72px] shrink-0 flex-col gap-1 border-r border-border/60 bg-muted/30 p-2"
-        aria-label="Разделы редактора"
-      >
-        {sections.map((s) => {
-          const on = s.id === active;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              aria-pressed={on}
-              onClick={() => onChange(on ? null : s.id)}
-              className={`relative flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition ${
-                on ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              <s.Icon className="h-5 w-5" />
-              <span className="leading-tight">{s.label}</span>
-              {s.dot && <span className="absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" />}
-            </button>
-          );
-        })}
-      </nav>
-
+      <EditorRail sections={sections} active={active} onChange={onChange} />
       {current && (
-        <div
-          className="flex shrink-0 flex-col border-r border-border/60 bg-background"
-          style={{ width: `min(${current.wide ? 420 : 290}px, 46vw)` }}
-        >
-
-          <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-            <span className="text-sm font-medium">{current.label}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              aria-label="Свернуть панель"
-              onClick={() => onChange(null)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="scroll-visible min-h-0 flex-1 overflow-y-auto p-3">{current.content}</div>
+        <div className="flex shrink-0 flex-col" style={{ width: `min(${current.wide ? 420 : 290}px, 46vw)` }}>
+          <EditorSectionPanel section={current} onClose={() => onChange(null)} />
         </div>
       )}
     </div>
