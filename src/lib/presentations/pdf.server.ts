@@ -493,14 +493,38 @@ async function drawSlide(a: DrawArgs) {
 
 
   if (c.showPrice && c.price != null && c.price > 0) {
-    const label = `${money(c.price)} / ${c.priceUnit}`;
-    const w = fonts.bold.widthOfTextAtSize(label, 15) + 32;
+    // Плашка цены повторяет превью: кегль ts.stat, единица — ts.caption.
+    const statSize = px(ts.stat);
+    const unitSize = px(ts.caption);
+    const sum = money(c.price);
+    const unit = `/ ${c.priceUnit}`;
+    const padX = px(20);
+    const padY = px(10);
+    const gap = px(10);
+    const w = fonts.display.widthOfTextAtSize(sum, statSize)
+      + gap + fonts.regular.widthOfTextAtSize(unit, unitSize) + padX * 2;
+    const h = statSize * 1.25 + padY * 2;
     const pb = slideFit.layout.priceBox;
     const bx = pb ? px(pb.x) : alignX(x, w);
-    const by = pb ? H - px(pb.y) - 34 : 64;
-    page.drawRectangle({ x: bx, y: by, width: w, height: 34, color: t.accent });
-    page.drawText(label, { x: bx + 16, y: by + 11, size: 15, font: fonts.bold, color: t.onAccent });
+    const by = pb ? H - px(pb.y) - h : y - h;
+    page.drawRectangle({ x: bx, y: by, width: w, height: h, color: t.accent });
+    page.drawText(sum, { x: bx + padX, y: by + padY + statSize * 0.16, size: statSize, font: fonts.display, color: t.onAccent });
+    page.drawText(unit, {
+      x: bx + padX + fonts.display.widthOfTextAtSize(sum, statSize) + gap,
+      y: by + padY + statSize * 0.16,
+      size: unitSize,
+      font: fonts.regular,
+      color: t.onAccent,
+      opacity: 0.85,
+    });
+    if (!pb) y = by - px(ts.blockGap);
   }
+
+  if (c.sku.trim()) {
+    const size = px(ts.caption);
+    page.drawText(`Артикул: ${c.sku}`, { x, y: y - size, size, font: fonts.regular, color: mutedCol });
+  }
+
 
   // Логотипы: ровно один логотип компании и один клиента, слоты уже посчитаны.
   drawClientLogo();
