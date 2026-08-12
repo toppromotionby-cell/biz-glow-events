@@ -374,33 +374,6 @@ async function drawSlide(a: DrawArgs) {
     if (clientLogo && plan.client) drawPlannedLogo(page, clientLogo, plan.client);
   };
 
-  // Горизонтальное выравнивание текста слайда (для слайдов с текстовой колонкой).
-  const alignMode =
-    slide.type === "product" || slide.type === "text" ? slideFit.layout.textAlignX : "left";
-  const alignBoxW = (slideFit.layout.textBox.w * W) / SLIDE_W;
-  const alignX = (left: number, lineW: number) =>
-    alignMode === "center"
-      ? left + (alignBoxW - lineW) / 2
-      : alignMode === "right"
-        ? left + alignBoxW - lineW
-        : left;
-
-  const drawLines = (
-    lines: string[],
-    x: number,
-    yStart: number,
-    size: number,
-    font: PDFFont,
-    col: ReturnType<typeof rgb>,
-    lh = 1.35,
-  ) => {
-    let y = yStart;
-    for (const line of lines) {
-      page.drawText(line, { x: alignX(x, font.widthOfTextAtSize(line, size)), y, size, font, color: col });
-      y -= size * lh;
-    }
-    return y;
-  };
 
   const footerSize = slideFit.type.caption * (W / SLIDE_W);
   const footer = (size = footerSize) => {
