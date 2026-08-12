@@ -12,7 +12,7 @@ import { saveStatus } from "@/lib/editor/save-state";
 import { useEditorSave } from "@/hooks/use-editor-save";
 
 import { HISTORY_LIMIT } from "@/lib/editor/history";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
