@@ -218,25 +218,14 @@ export function QuoteItemsPanel({
                           onChange={(v) => replace(it.id, { title: v })}
                           fetcher={(term) => fetchItems(term, section)}
                           labelOf={(h) => h.title}
-                          onPick={(h) =>
-                            replace(it.id, {
-                              title: h.title,
-                              unit: h.unit || it.unit,
-                              price: h.price || it.price,
-                              cost: h.cost || it.cost,
-                              description: h.description || it.description,
-                              includes: h.includes.length ? h.includes : it.includes,
-                            })
-                          }
-                          render={(h) => (
-                            <span className="flex items-center justify-between gap-2">
-                              <span className="truncate">{h.title}</span>
-                              <span className="shrink-0 text-xs text-muted-foreground">{fmtMoney(h.price)}</span>
-                            </span>
-                          )}
+                          // Из базы знаний подставляем только текст наименования:
+                          // количество, единицы и суммы менеджер задаёт сам.
+                          onPick={(h) => replace(it.id, { title: h.title })}
+                          render={(h) => <span className="block truncate">{h.title}</span>}
                           placeholder="Наименование позиции"
                           className="h-9 font-medium text-foreground"
                         />
+
                       </div>
                       <div className="flex w-[120px] flex-col items-end">
                         <span className="text-sm font-semibold tabular-nums text-accent">{fmtMoney(lineTotal(it))}</span>
