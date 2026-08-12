@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  AlertTriangle, ArrowLeft, Check, Download, FileDown, Loader2, Play, Plus, RefreshCw, Save,
+  AlertTriangle, ArrowLeft, Check, Download, FileDown, Loader2, Play, Plus, RefreshCw, Save, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +35,7 @@ import { checkAgainstQuote, type QuoteItemLite } from "@/lib/presentations/check
 import {
   SLIDE_TYPE_LABELS, STATUS_LABELS, TEMPLATE_LABELS, blankSlide,
   type Presentation, type PresentationSlide, type PresentationStatus,
-  type PresentationTemplate, type SlideType,
+  type PresentationTemplate, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
 import {
   getPresentation, savePresentation, buildSlidesFromQuote,
