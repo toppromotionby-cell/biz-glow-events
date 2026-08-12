@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { auditPresentation } from "@/lib/presentations/audit";
-import { emptySlide } from "@/lib/presentations/model";
+import { blankSlide } from "@/lib/presentations/model";
 
 function slide(patch: Record<string, unknown> = {}) {
-  const s = emptySlide();
-  return { ...s, ...patch } as ReturnType<typeof emptySlide>;
+  return { ...blankSlide("product", 0), ...patch } as ReturnType<typeof blankSlide>;
 }
 
 describe("auditPresentation", () => {
