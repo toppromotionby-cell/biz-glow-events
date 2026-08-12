@@ -451,23 +451,23 @@ async function drawSlide(a: DrawArgs) {
 
 
   if (c.showDescription && c.description.trim()) {
-    y = drawLines(wrap(fonts.regular, c.description, bodySize, maxW), x, y, bodySize, fonts.regular, t.ink, ts.lineGap);
+    y = drawLines(wrap(fonts.regular, c.description, bodySize, maxW), x, y, bodySize, fonts.regular, inkCol, ts.lineGap);
     y -= px(ts.blockGap) * 0.6;
   }
 
   if (c.showIncludes && c.includes.length) {
     if (slide.type === "product") {
-      page.drawText("ЧТО ВХОДИТ", { x, y, size: px(ts.label), font: fonts.bold, color: t.muted });
+      page.drawText("ЧТО ВХОДИТ", { x, y, size: px(ts.label), font: fonts.bold, color: mutedCol });
       y -= px(ts.label) * 1.8;
     }
     for (const item of c.includes.slice(0, 9)) {
       if (alignMode === "left") {
         const lines = wrap(fonts.regular, item, bulletSize, maxW - 14);
         page.drawText("•", { x, y, size: bulletSize, font: fonts.regular, color: t.accent });
-        y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
+        y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, inkCol, ts.lineGap);
       } else {
         const lines = wrap(fonts.regular, `• ${item}`, bulletSize, maxW);
-        y = drawLines(lines, x, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
+        y = drawLines(lines, x, y, bulletSize, fonts.regular, inkCol, ts.lineGap);
       }
       y -= 2;
     }
@@ -482,7 +482,7 @@ async function drawSlide(a: DrawArgs) {
       const w = fonts.regular.widthOfTextAtSize(text, chip) + 20;
       if (cx + w > x + maxW) { cx = x; y -= chip * 2.4; }
       page.drawRectangle({ x: cx, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
-      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: t.ink });
+      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: inkCol });
       cx += w + 8;
     }
     y -= chip * 3;
