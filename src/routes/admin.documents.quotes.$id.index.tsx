@@ -236,8 +236,9 @@ function Page() {
     }, 120);
   };
 
-  const patch = (p: Partial<Quote>) => { dirtyRef.current = true; setState("dirty"); setQuote((q) => (q ? { ...q, ...p } : q)); };
-  const patchItems = (next: QuoteItem[]) => { dirtyRef.current = true; setState("dirty"); setItems(next); };
+  const patch = (p: Partial<Quote>) => { dirtyRef.current = true; saverRef.current.markDirty(); setQuote((q) => (q ? { ...q, ...p } : q)); };
+  const patchItems = (next: QuoteItem[]) => { dirtyRef.current = true; saverRef.current.markDirty(); setItems(next); };
+
   const { fetchContacts } = useDocSuggest();
 
   // Автосохранение: общий хук (дебаунс, Ctrl+S, защита от ухода со страницы).
