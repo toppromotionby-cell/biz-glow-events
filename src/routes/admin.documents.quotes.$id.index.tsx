@@ -23,8 +23,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
-import { AUTOSAVE_DELAY } from "@/lib/editor/save-state";
+import { SaveStatus } from "@/components/admin/SaveStatus";
+import { useEditorSave } from "@/hooks/use-editor-save";
+
 import { Field } from "@/components/admin/Field";
 import { DocEditorShell } from "@/components/admin/editor/DocEditorShell";
 import type { EditorSection } from "@/components/admin/editor/EditorSidebar";
