@@ -6,16 +6,28 @@ import {
   type Density, type Rect, type SlideLayout, type TypeScale,
 } from "@/lib/presentations/design";
 import type { PresentationSlide } from "@/lib/presentations/model";
+import { countLines, hasOrphanWord } from "@/lib/presentations/text-metrics";
 
-/** Среднее отношение ширины символа к кеглю для Inter/Space Grotesk. */
-const CHAR_W = 0.52;
-
+/** Перенос считаем по реальным метрикам шрифта — как в превью и в PDF. */
 function lineCount(text: string, size: number, width: number): number {
-  if (!text.trim()) return 0;
-  const perLine = Math.max(8, Math.floor(width / (size * CHAR_W)));
-  return text
-    .split("\n")
-    .reduce((sum, para) => sum + Math.max(1, Math.ceil(para.length / perLine)), 0);
+  return countLines(text, size, width);
+}
+
+/** Ступени микро-подгонки кегля: общая шкала, чтобы слайды не «плясали». */
+const SHRINK_STEPS = [1, 0.96, 0.92, 0.88, 0.84, 0.8] as const;
+/** Ниже этой доли текст не ужимаем — становится нечитаемо. */
+const MIN_SHRINK = SHRINK_STEPS[SHRINK_STEPS.length - 1];
+
+/** Умножает все кегли шкалы на коэффициент, сохраняя пропорции. */
+function scaleType(ts: TypeScale, k: number): TypeScale {
+  if (k >= 1) return ts;
+  const out = { ...ts };
+  for (const key of Object.keys(ts) as (keyof TypeScale)[]) {
+    if (key === "density" || key === "lineGap") continue;
+    const v = ts[key];
+    if (typeof v === "number") (out[key] as number) = Math.max(10, Math.round(v * k));
+  }
+  return out;
 }
 
 /** Оценка высоты текстового блока слайда при заданной шкале. */
@@ -64,6 +76,8 @@ export type SlideFit = {
   overflow: boolean;
   /** Насколько заполнена область (1 = впритык). */
   fill: number;
+  /** Коэффициент автоподгонки кегля (1 = без ужатия). */
+  shrink: number;
   warnings: string[];
 };
 
@@ -90,10 +104,32 @@ export function fitSlide(slide: PresentationSlide): SlideFit {
     height = h;
   }
 
+  // Автоподгонка: самая плотная ступень всё ещё не влезает — ужимаем кегль
+  // по общей шкале, но не ниже границы читаемости.
+  let shrink = 1;
+  if (height > box.h) {
+    for (const step of SHRINK_STEPS) {
+      const candidate = scaleType(ts, step);
+      const h = estimateTextHeight(slide, candidate, box);
+      shrink = step;
+      ts = candidate;
+      height = h;
+      if (h <= box.h) break;
+    }
+  }
+
   const overflow = height > box.h;
   const warnings: string[] = [];
   if (overflow) {
     warnings.push("Слишком много текста — сократите описание или разбейте на два слайда");
+  } else if (shrink <= MIN_SHRINK) {
+    warnings.push("Текст сильно ужат — проверьте читаемость или сократите его");
+  } else if (shrink < 1) {
+    warnings.push("Текст автоматически ужат, чтобы поместиться в блок");
+  }
+  const titleSize = slide.type === "section" ? ts.titleSection : ts.titleSlide;
+  if (hasOrphanWord(slide.title, titleSize, box.w)) {
+    warnings.push("В заголовке «висячее» слово в последней строке — переформулируйте");
   }
   if (slide.title.trim().split(/\s+/).filter(Boolean).length > 8) {
     warnings.push("Заголовок длиннее 8 слов — плохо читается с экрана");
@@ -114,6 +150,9 @@ export function fitSlide(slide: PresentationSlide): SlideFit {
     finalLayout = { ...layout, textBox: { ...box, y: box.y + dy, h: height } };
   }
 
-  return { layout: finalLayout, density: chosen, type: ts, overflow, fill: height / box.h, warnings };
+  return {
+    layout: finalLayout, density: chosen, type: ts, overflow,
+    fill: height / box.h, shrink, warnings,
+  };
 }
 

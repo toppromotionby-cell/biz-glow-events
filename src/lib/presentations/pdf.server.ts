@@ -12,6 +12,10 @@ import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont } from "@/lib/documents/doc-font";
 import {
+  createImageCache, embedImageUrl, type ImageCache,
+} from "@/lib/documents/image-embed.server";
+
+import {
   FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock,
 } from "@/lib/presentations/slide-spec";
 
@@ -109,22 +113,14 @@ function money(n: number): string {
   return `${fmt} BYN`;
 }
 
-async function embedImage(pdf: PDFDocument, url: string | null): Promise<PDFImage | null> {
-  const src = (url ?? "").trim();
-  if (!src || !/^https?:\/\//i.test(src)) return null;
-  try {
-    const res = await fetch(src, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (!bytes.byteLength || bytes.byteLength > 8 * 1024 * 1024) return null;
-    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
-    const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
-    if (!isPng && !isJpg) return null;
-    return isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
-  } catch {
-    return null;
-  }
+async function embedImage(
+  pdf: PDFDocument,
+  url: string | null,
+  cache?: ImageCache,
+): Promise<PDFImage | null> {
+  return await embedImageUrl(pdf, url, { cache });
 }
+
 
 /** Слайд с уже разрешёнными абсолютными URL фотографий (до 5). */
 export type ResolvedSlide = PresentationSlide & {
@@ -148,8 +144,9 @@ export async function buildPresentationPdf(
 
   pdf.setTitle(presentation.title);
   const t = themeOf(presentation.template, company?.accent_color ?? "#FF7500");
-  const logo = await embedImage(pdf, logoUrl);
-  const clientLogo = await embedImage(pdf, clientLogoUrl);
+  const cache = createImageCache();
+  const logo = await embedImage(pdf, logoUrl, cache);
+  const clientLogo = await embedImage(pdf, clientLogoUrl, cache);
   const layout = presentation.logo_layout;
   const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
 
@@ -169,10 +166,11 @@ export async function buildPresentationPdf(
           ? slide.resolved_images
           : [slide.resolved_image_url].filter((v): v is string => !!v))
       : [];
-    const images: (PDFImage | null)[] = [];
-    for (const src of sources.slice(0, MAX_SLIDE_PHOTOS)) {
-      images.push(await embedImage(pdf, src));
-    }
+    // Фото грузятся параллельно — сборка PDF не упирается в сеть.
+    const images: (PDFImage | null)[] = await Promise.all(
+      sources.slice(0, MAX_SLIDE_PHOTOS).map((src) => embedImage(pdf, src, cache)),
+    );
+
     await drawSlide({
       page, slide, images, logo, clientLogo, layout, brand, theme: t,
       fonts: { regular, bold, display },
@@ -413,7 +411,16 @@ async function drawSlide(a: DrawArgs) {
 
   fit.layout.frames.forEach((f, i) => {
     const image = images[i];
-    if (!image) return;
+    if (!image) {
+      // Фото не загрузилось — вместо пустоты аккуратная плашка,
+      // чтобы композиция слайда не разъезжалась.
+      page.drawRectangle({
+        x: px(f.x), y: H - px(f.y) - px(f.h), width: px(f.w), height: px(f.h),
+        color: t.panel, borderColor: t.muted, borderWidth: 0.5, opacity: 0.9,
+      });
+      return;
+    }
+
     const fw = px(f.w);
     const fh = px(f.h);
     const k = Math.max(fw / image.width, fh / image.height);

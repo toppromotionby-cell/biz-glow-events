@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, Check, Download, FileText, Layers, ListChecks, Loader2,
-  Palette, Play, Plus, RefreshCw, Save, Undo2,
+  Palette, Play, Plus, RefreshCw, Save, ShieldCheck, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EditorSidebar, type EditorSection } from "@/components/admin/presentations/EditorSidebar";
+import { SlideAuditPanel } from "@/components/admin/presentations/SlideAuditPanel";
+import { auditPresentation } from "@/lib/presentations/audit";
 import { CanvasStage } from "@/components/admin/presentations/CanvasStage";
 import { EditorStatusBar } from "@/components/admin/presentations/EditorStatusBar";
 import { BlockToolbar, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
@@ -575,6 +577,9 @@ function Page() {
     />
   );
 
+  const auditReport = auditPresentation(slides);
+  const auditPanel = <SlideAuditPanel slides={slides} onSelectSlide={setSelected} />;
+
   const sections: EditorSection[] = [
     { id: "slides", label: "Слайды", Icon: Layers, content: slidesPanel },
     { id: "design", label: "Дизайн", Icon: Palette, content: designPanel },
@@ -585,6 +590,13 @@ function Page() {
       Icon: ListChecks,
       dot: !!data?.quote && check.status !== "synced",
       content: checkPanel,
+    },
+    {
+      id: "audit",
+      label: "Проверка",
+      Icon: ShieldCheck,
+      dot: auditReport.errors > 0,
+      content: auditPanel,
     },
   ];
 
