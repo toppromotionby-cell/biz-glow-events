@@ -246,32 +246,41 @@ function Page() {
     setDirty(true);
   };
 
-  const removeSlideNow = useCallback((sid: string) => {
-    setSlides((prev) => {
-      const i = prev.findIndex((s) => s.id === sid);
-      const removed = prev[i];
-      const next = prev.filter((s) => s.id !== sid);
-      if (removed) {
-        toast.success("Слайд удалён", {
-          action: {
-            label: "Вернуть",
-            onClick: () =>
-              setSlides((cur) => {
-                if (cur.some((s) => s.id === removed.id)) return cur;
-                const back = [...cur];
-                back.splice(Math.min(i, back.length), 0, removed);
-                setSelected(removed.id);
-                setDirty(true);
-                return back;
-              }),
+  // Удаление — чистое вычисление: никаких побочных действий внутри
+  // обновления состояния (иначе React повторял бы их и редактор подвисал).
+  const removeSlideNow = useCallback(
+    (sid: string) => {
+      const i = slides.findIndex((s) => s.id === sid);
+      if (i < 0) return;
+      const removed = slides[i];
+      const next = slides.filter((s) => s.id !== sid);
+      const nextSelected = next[Math.min(i, next.length - 1)]?.id ?? null;
+
+      setSlides(next);
+      setSelected((cur) => (cur === sid ? nextSelected : cur));
+      setSelectedBlock(null);
+      setTextEditing(false);
+      setDirty(true);
+
+      toast.success("Слайд удалён", {
+        action: {
+          label: "Вернуть",
+          onClick: () => {
+            setSlides((cur) => {
+              if (cur.some((s) => s.id === removed.id)) return cur;
+              const back = [...cur];
+              back.splice(Math.min(i, back.length), 0, removed);
+              return back;
+            });
+            setSelected(removed.id);
+            setDirty(true);
           },
-        });
-      }
-      setSelected((cur) => (cur === sid ? (next[Math.min(i, next.length - 1)]?.id ?? null) : cur));
-      return next;
-    });
-    setDirty(true);
-  }, []);
+        },
+      });
+    },
+    [slides],
+  );
+
 
   const askRemoveSlide = useCallback(
     async (sid: string) => {

@@ -123,7 +123,8 @@ function freeSpace(slot: Corner, obstacles: Rect[]): { w: number; h: number } {
 
 /**
  * Canva-подобный шаг 3: если свободного угла нет, логотип пропорционально
- * уменьшается под свободный просвет. Меньше LOGO_MIN_FIT — логотип убирается.
+ * уменьшается под свободный просвет. Логотип никогда не исчезает совсем —
+ * минимальный масштаб ограничен LOGO_MIN_FIT.
  */
 function fitIntoFree(
   place: LogoPlacementPlan | null,
@@ -140,10 +141,11 @@ function fitIntoFree(
   const obstacles = [...blocked, ...(full ? [] : frames)];
   if (cornerFree(place.slot, frames, full, blocked)) return place;
   const { w, h } = freeSpace(place.slot, obstacles);
-  const k = Math.min(w / place.maxW, h / place.maxH, 1);
-  if (!Number.isFinite(k) || k < LOGO_MIN_FIT) return null;
+  const raw = Math.min(w / place.maxW, h / place.maxH, 1);
+  const k = Number.isFinite(raw) ? Math.max(raw, LOGO_MIN_FIT) : LOGO_MIN_FIT;
   return { ...place, maxW: place.maxW * k, maxH: place.maxH * k };
 }
+
 
 const isTitleLike = (type: SlideType): boolean => type === "title" || type === "contacts";
 
@@ -251,9 +253,16 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
       return true;
     });
     const free = candidates.find((slot) => cornerFree(slot, frames, full, blockedRects));
-    // Свободного угла нет — берём первый допустимый: fitIntoFree ниже
-    // либо ужмёт логотип под просвет, либо уберёт его совсем.
-    const slot = free ?? candidates[0] ?? null;
+    // Свободного угла нет — берём угол с наибольшим просветом:
+    // fitIntoFree ниже ужмёт логотип под это место.
+    const obstacles = [...blockedRects, ...(full ? [] : frames)];
+    const best = [...candidates].sort((a, b) => {
+      const fa = freeSpace(a, obstacles);
+      const fb = freeSpace(b, obstacles);
+      return fb.w * fb.h - fa.w * fa.h;
+    })[0];
+    const slot = free ?? best ?? null;
+
     if (slot) {
       client = titleLike
         ? { slot, maxW: 220 * scale, maxH: 54 * scale }

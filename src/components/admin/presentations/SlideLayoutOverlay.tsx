@@ -165,7 +165,11 @@ export function SlideLayoutOverlay({
     setHost(el);
   };
 
-  const dom = useRenderedRects(host, [fit, overrides, plan, scale]);
+  // Ключ пересчёта рамок — строка, а не новый массив: иначе слой перезапускал
+  // измерение (8 кадров + интервал) на каждую перерисовку и редактор подвисал.
+  const domKey = `${scale}|${fit.layout.placement}|${fit.type.density}|${JSON.stringify(overrides)}|${plan.brand?.slot ?? "-"}|${plan.client?.slot ?? "-"}`;
+  const dom = useRenderedRects(host, domKey);
+
 
   /** Патч раскладки внутри жеста: первый — с шагом отмены, дальше — без. */
   const push = useCallback(
