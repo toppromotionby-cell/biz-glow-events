@@ -76,21 +76,23 @@ describe("mobile layout: centering regressions", () => {
     );
   });
 
-  it("Catalog landing cards: centered stack on mobile, row-left at md+", () => {
-    const file = "src/routes/catalog.tsx";
+  it("Catalog landing cards: shrink-safe row layout on mobile", () => {
+    // Маршрут /catalog — src/routes/catalog.index.tsx, карточки — CatalogNav.tsx.
+    read("src/routes/catalog.index.tsx");
+    const file = "src/components/catalog/CatalogNav.tsx";
     const src = read(file);
     expectAllPresent(
       src,
       [
-        "flex h-full flex-col items-center text-center gap-3",
-        "md:flex-row",
-        "md:items-start",
-        "md:text-left",
-        "justify-center md:justify-start",
+        "h-full flex flex-col",
+        "shrink-0 items-center justify-center rounded-xl",
+        "min-w-0 flex-1",
+        "leading-snug text-balance",
       ],
       file,
     );
   });
+
 
   it("DirectionCard: centered stack on mobile, left-aligned at md+", () => {
     const file = "src/components/ui/DirectionCard.tsx";
