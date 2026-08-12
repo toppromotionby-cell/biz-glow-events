@@ -10,6 +10,7 @@ import {
   resendOrderConfirmationEmailAdmin,
 } from "@/lib/orders.functions";
 import type { OrderStatus } from "@/components/admin/orders/types";
+import { adminKeys } from "@/lib/query-keys";
 
 export function useOrderMutations() {
   const qc = useQueryClient();
@@ -60,7 +61,7 @@ export function useOrderMutations() {
     mutationFn: async (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
       notify.success("Заказ удалён");
-      qc.invalidateQueries({ queryKey: ORDERS_KEY });
+      qc.invalidateQueries({ queryKey: adminKeys.ordersAll });
     },
     onError: (e: Error) => notify.error(e?.message ?? "Не удалось удалить заказ"),
   });
@@ -78,8 +79,8 @@ export function useOrderMutations() {
           action: { label: "Повторить", onClick: () => resendEmail.mutate(id) },
         });
       }
-      qc.invalidateQueries({ queryKey: ORDERS_KEY });
-      qc.invalidateQueries({ queryKey: ORDER_TIMELINE_KEY });
+      qc.invalidateQueries({ queryKey: adminKeys.ordersAll });
+      qc.invalidateQueries({ queryKey: ["order-timeline"] });
     },
     onError: (e: Error, id) =>
       notify.error(e?.message ?? "Не удалось отправить письмо", {

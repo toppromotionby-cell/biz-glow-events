@@ -409,7 +409,7 @@ function Page() {
     try {
       const res = await makeOrder({ data: { id } });
       setQuote((q) => (q ? { ...q, order_id: res.orderId } : q));
-      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: adminKeys.ordersAll });
       navigate({ to: "/admin/orders/$id", params: { id: res.orderId } });
     } catch (e) { toast.error((e as Error).message); }
   };
