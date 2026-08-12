@@ -253,12 +253,43 @@ function drawSpecBlocks(
   t: Theme,
   fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont },
   logo: PDFImage | null,
+  photos: (PDFImage | null)[] = [],
 ): void {
   const K = W / SLIDE_W;
-  const paint = (c: "ink" | "muted" | "accent" | "onAccent" | "panel") =>
-    c === "ink" ? t.ink : c === "muted" ? t.muted : c === "accent" ? t.accent : c === "onAccent" ? t.onAccent : t.panel;
+  const paint = (c: SpecPaint) =>
+    c === "ink" ? t.ink
+      : c === "muted" ? t.muted
+        : c === "accent" ? t.accent
+          : c === "onAccent" ? t.onAccent
+            : c === "onPhoto" ? rgb(1, 1, 1)
+              : c === "onPhotoMuted" ? rgb(0.92, 0.92, 0.92)
+                : t.panel;
 
   for (const b of blocks) {
+    if (b.kind === "shade") {
+      drawBottomShade(page);
+      continue;
+    }
+    if (b.kind === "image") {
+      const img = photos[b.index] ?? null;
+      const fw = b.w * K;
+      const fh = b.h * K;
+      const fx = b.x * K;
+      const fy = H - (b.y + b.h) * K;
+      if (!img) {
+        // Фото не загрузилось — аккуратная плашка, чтобы композиция не разъехалась.
+        page.drawRectangle({
+          x: fx, y: fy, width: fw, height: fh,
+          color: t.panel, borderColor: t.muted, borderWidth: 0.5, opacity: 0.9,
+        });
+        continue;
+      }
+      const k = Math.max(fw / img.width, fh / img.height);
+      const w = img.width * k;
+      const h = img.height * k;
+      page.drawImage(img, { x: fx + fw / 2 - w / 2, y: fy + fh / 2 - h / 2, width: w, height: h });
+      continue;
+    }
     if (b.kind === "circle") {
       page.drawCircle({
         x: b.cx * K,
@@ -294,9 +325,11 @@ function drawSpecBlocks(
     const font = b.font === "display" ? fonts.display : b.weight >= 600 ? fonts.bold : fonts.regular;
     const size = b.size * K;
     const width = b.w * K;
-    const text = b.uppercase ? b.text.toUpperCase() : b.text;
+    const cast = (s: string) => (b.uppercase ? s.toUpperCase() : s);
+    // Строки уже посчитаны общими метриками — берём их, чтобы PDF совпал с превью.
+    const lines = (b.lines ?? wrap(font, b.text, size, width)).map(cast);
     let y = H - b.y * K - size;
-    for (const line of wrap(font, text, size, width)) {
+    for (const line of lines) {
       const lw = font.widthOfTextAtSize(line, size);
       const dx = b.align === "center" ? (width - lw) / 2 : b.align === "right" ? width - lw : 0;
       page.drawText(line, { x: b.x * K + dx, y, size, font, color: paint(b.color) });
