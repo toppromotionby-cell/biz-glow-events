@@ -410,97 +410,72 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
-  return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button asChild variant="ghost" size="icon"><Link to="/admin/documents"><ArrowLeft className="h-4 w-4" /></Link></Button>
-          <div className="min-w-0">
-            <h1 className="admin-h1 truncate">КП №{quoteNumberDisplay(quote)}</h1>
-            <p className="text-xs text-muted-foreground truncate">
-              {quote.client_company || quote.client_name || "Без клиента"} · {fmtMoney(totals.total)}
-              {quote.sent_at ? ` · отправлено ${new Date(quote.sent_at).toLocaleDateString("ru-RU")}` : ""}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <SaveStatus state={state} errorMessage={saveError} />
-          {pending.length > 0 && state !== "error" && (
-            <span className="text-xs text-amber-500">Не сохранено (допишите значение): {pending.join(", ")}</span>
-          )}
-          <QuoteShareStatus share={shareState} />
-          <Select value={quote.status} onValueChange={(v) => patch({ status: v as QuoteStatus })}>
-            <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {QUOTE_STATUSES.map((s) => <SelectItem key={s} value={s}>{QUOTE_STATUS_LABELS[s]}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <QuoteShareActions
-            share={shareState}
-            onSend={onSendToClient}
-            issues={checks.filter((c) => c.level === "error").map((c) => c.message)}
-          />
-          <Button size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render?format=pdf`, { name: "КП.pdf" })}>
-            <Download className="h-4 w-4 mr-1.5" />PDF
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm"><MoreHorizontal className="h-4 w-4 mr-1.5" />Ещё</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-60">
-              <DropdownMenuItem onClick={onMarkSent}>
-                <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onCreateOrder}>
-                <FileCheck2 className="mr-2 h-4 w-4" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onBuildPresentation}>
-                <Presentation className="mr-2 h-4 w-4" />Собрать презентацию
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />HTML-версия
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
-                <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в библиотеку
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin/documents/knowledge"><Brain className="mr-2 h-4 w-4" />База знаний подсказок</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        {/* ЛЕВО: вкладки */}
+  const sections: EditorSection[] = [
+    {
+      id: "items",
+      label: "Состав",
+      Icon: ListTree,
+      wide: true,
+      dot: !!itemIssues.size,
+      content: (
         <div className="space-y-3">
-          <DocStatusBar checks={checks} onGoto={gotoCheck} />
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="w-full justify-start overflow-x-auto">
-              <TabsTrigger value="items">Состав ({items.length})</TabsTrigger>
-              <TabsTrigger value="client">Клиент</TabsTrigger>
-              <TabsTrigger value="money">Финансы</TabsTrigger>
-              <TabsTrigger value="doc">Оформление</TabsTrigger>
-            </TabsList>
+          <QuoteSheetPanel quoteId={id} />
+          {canCost && (
+            <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
+              Себестоимость и маржа
+              <Switch checked={showCost} onCheckedChange={setShowCost} />
+            </label>
+          )}
+          <QuoteItemsPanel
+            items={items}
+            onChange={patchItems}
+            issues={itemIssues}
+            showCost={showCost}
+            toolbar={
+              <>
+                <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm"><Search className="h-4 w-4 mr-1.5" />Из каталога</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader><DialogTitle>Добавить из каталога</DialogTitle></DialogHeader>
+                    <div className="flex gap-2">
+                      <Input placeholder="Поиск по названию" value={catalogTerm} onChange={(e) => setCatalogTerm(e.target.value)} />
+                      <Select value={catalogType} onValueChange={setCatalogType}>
+                        <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {CATALOG_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="max-h-96 overflow-auto divide-y divide-border/60 rounded-md border border-border/60">
+                      {hits.map((h) => (
+                        <button key={`${h.entity_type}-${h.entity_id}`} type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
+                          onClick={() => { addItem({ title: h.title, price: h.price, unit: h.unit, description: h.description, entity_type: h.entity_type, entity_id: h.entity_id }); toast.success("Позиция добавлена"); }}>
+                          <div className="text-sm font-medium">{h.title}</div>
+                          <div className="text-xs text-muted-foreground">{fmtMoney(h.price)} / {h.unit}</div>
+                        </button>
+                      ))}
+                      {!hits.length && <div className="p-4 text-sm text-muted-foreground">Ничего не найдено</div>}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Button variant="outline" size="sm" onClick={() => addItem()}><Plus className="h-4 w-4 mr-1.5" />Своя позиция</Button>
+              </>
+            }
+          />
+        </div>
+      ),
+    },
+    {
+      id: "client",
+      label: "Клиент",
+      Icon: User,
+      content: (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
 
-
-
-            <TabsContent value="items" className="space-y-3 pt-3">
-              <QuoteSheetPanel quoteId={id} />
-              {canCost && (
-                <label className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
-                  Показывать себестоимость и маржу
-                  <Switch checked={showCost} onCheckedChange={setShowCost} />
-                </label>
-              )}
-              <QuoteItemsPanel
-                items={items}
-                onChange={patchItems}
-                issues={itemIssues}
-                showCost={showCost}
                 toolbar={
                   <>
                     <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
