@@ -34,7 +34,7 @@ export function LivePreviewFrame({
   const htmlRef = useRef(html);
   htmlRef.current = html;
 
-  useImperativeHandle(frameRef, () => ref.current, []);
+  useImperativeHandle(frameRef, () => ref.current as HTMLIFrameElement, []);
 
   // Первичная запись каркаса.
   useEffect(() => {
