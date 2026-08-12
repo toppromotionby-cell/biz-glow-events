@@ -420,7 +420,7 @@ function Page() {
         description: "PDF собирается на сервере — несохранённые правки в него не попадут.",
         confirmText: "Сохранить и скачать",
       });
-      if (ok) await save.mutateAsync();
+      if (ok) await persist();
     }
     viewer.openDocument(`/admin/documents/presentations/${id}/render?format=pdf`, {
       name: `${meta?.title ?? "Презентация"}.pdf`,
@@ -455,7 +455,7 @@ function Page() {
 
   const visibleCount = slides.filter((s) => s.is_visible).length;
 
-  const saveState = saveStatus(save.isPending ? "saving" : dirty ? "dirty" : "saved", savedAt);
+  const saveState = saveStatus(saver.state, saver.savedAt, saver.error);
 
   const branding = {
     brandLogoUrl: meta.logo_url,
@@ -630,7 +630,7 @@ function Page() {
                 </Link>
               )}
               <span className={saveState.tone === "error" ? "text-destructive" : saveState.tone === "pending" ? "text-amber-500" : "text-muted-foreground"}>
-                {!dirty && !save.isPending && <Check className="mr-1 inline h-3 w-3" aria-hidden />}
+                {saver.state !== "dirty" && saver.state !== "saving" && <Check className="mr-1 inline h-3 w-3" aria-hidden />}
                 {saveState.text}
               </span>
             </div>
@@ -647,7 +647,7 @@ function Page() {
           >
             <Play className="mr-1.5 h-4 w-4" />Показ
           </Button>
-          <Button variant="outline" size="sm" disabled={!slides.length || save.isPending} onClick={() => void exportPdf()}>
+          <Button variant="outline" size="sm" disabled={!slides.length || saver.state === "saving"} onClick={() => void exportPdf()}>
             <Download className="mr-1.5 h-4 w-4" />PDF
           </Button>
         </div>
