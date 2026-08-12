@@ -10,6 +10,7 @@ import { MAX_SLIDE_PHOTOS, SLIDE_W, templatePalette, type Rect } from "@/lib/pre
 import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
+import { pickDisplayFont } from "@/lib/documents/pdf/ctx.server";
 import { resolveDocFont } from "@/lib/documents/doc-font";
 import {
   createImageCache, embedImageUrl, type ImageCache,
@@ -174,7 +175,7 @@ export async function buildPresentationPdf(
 
     await drawSlide({
       page, slide, images, logo, clientLogo, layout, brand, theme: t,
-      fonts: { regular, bold, display },
+      fonts: { regular, bold, display, displayCyrillic: set.displayCyrillic },
       company, presentation,
       index, total: visible.length,
     });
@@ -247,12 +248,20 @@ function drawBottomShade(page: PDFPage): void {
   }
 }
 
+type SlideFonts = {
+  regular: PDFFont;
+  bold: PDFFont;
+  display: PDFFont;
+  /** Есть ли кириллица в display-шрифте набора. */
+  displayCyrillic: boolean;
+};
+
 /** Рисует блоки общего спека слайда (координаты холста 1280×720 → points). */
 function drawSpecBlocks(
   page: PDFPage,
   blocks: SpecBlock[],
   t: Theme,
-  fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont },
+  fonts: SlideFonts,
   logo: PDFImage | null,
   photos: (PDFImage | null)[] = [],
 ): void {
@@ -323,7 +332,9 @@ function drawSpecBlocks(
       continue;
     }
 
-    const font = b.font === "display" ? fonts.display : b.weight >= 600 ? fonts.bold : fonts.regular;
+    const font = b.font === "display"
+      ? pickDisplayFont(b.text, fonts)
+      : b.weight >= 600 ? fonts.bold : fonts.regular;
     const size = b.size * K;
     const width = b.w * K;
     const cast = (s: string) => (b.uppercase ? s.toUpperCase() : s);
@@ -350,7 +361,7 @@ type DrawArgs = {
   layout: Presentation["logo_layout"];
   brand: string;
   theme: Theme;
-  fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont };
+  fonts: SlideFonts;
   company: CompanyProfile | null;
   presentation: Presentation;
   index: number;

@@ -4,9 +4,21 @@ import type { PDFDocument, PDFFont, PDFImage, PDFPage } from "pdf-lib";
 import { DEFAULT_LOGO_LAYOUT, type LogoLayout } from "@/lib/documents/logo-layout";
 
 export const CYRILLIC = /[\u0400-\u04FF]/;
+/**
+ * Заголовочный шрифт для конкретной строки. Space Grotesk (фирменный display)
+ * не содержит кириллицы — для русского текста подставляем жирный основной,
+ * иначе в PDF вместо букв рисуются «квадратики».
+ */
+export function pickDisplayFont(
+  text: string,
+  fonts: { display: PDFFont; bold: PDFFont; displayCyrillic: boolean },
+): PDFFont {
+  if (fonts.displayCyrillic) return fonts.display;
+  return CYRILLIC.test(text) ? fonts.bold : fonts.display;
+}
+
 export function displayFont(ctx: DocCtx, text: string): PDFFont {
-  if (ctx.displayCyrillic) return ctx.display;
-  return CYRILLIC.test(text) ? ctx.bold : ctx.display;
+  return pickDisplayFont(text, ctx);
 }
 
 export type FittedLogo = { img: PDFImage; w: number; h: number; aspect: number };
