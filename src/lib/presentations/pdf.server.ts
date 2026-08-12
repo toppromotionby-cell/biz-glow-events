@@ -11,6 +11,10 @@ import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont } from "@/lib/documents/doc-font";
+import {
+  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock,
+} from "@/lib/presentations/slide-spec";
+
 
 const W = 960;
 const H = 540;
@@ -221,6 +225,90 @@ function drawPlannedLogo(page: PDFPage, img: PDFImage, plan: LogoPlacementPlan):
   }
 }
 
+/** Дата на титульном слайде — тот же формат, что и в превью. */
+function formatSlideDate(): string {
+  return new Date().toLocaleDateString("ru-RU");
+}
+
+/** Плавное затемнение снизу для фото на весь слайд (как градиент в превью). */
+function drawBottomShade(page: PDFPage): void {
+  const bands = 48;
+  const top = H * (1 - FULL_BLEED_SHADE.from);
+  const h = top / bands;
+  for (let i = 0; i < bands; i += 1) {
+    const p = (i + 1) / bands;
+    page.drawRectangle({
+      x: 0,
+      y: top - (i + 1) * h,
+      width: W,
+      height: h + 0.6,
+      color: rgb(0, 0, 0),
+      opacity: FULL_BLEED_SHADE.alpha * p,
+    });
+  }
+}
+
+/** Рисует блоки общего спека слайда (координаты холста 1280×720 → points). */
+function drawSpecBlocks(
+  page: PDFPage,
+  blocks: SpecBlock[],
+  t: Theme,
+  fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont },
+  logo: PDFImage | null,
+): void {
+  const K = W / SLIDE_W;
+  const paint = (c: "ink" | "muted" | "accent" | "onAccent" | "panel") =>
+    c === "ink" ? t.ink : c === "muted" ? t.muted : c === "accent" ? t.accent : c === "onAccent" ? t.onAccent : t.panel;
+
+  for (const b of blocks) {
+    if (b.kind === "circle") {
+      page.drawCircle({
+        x: b.cx * K,
+        y: H - b.cy * K,
+        size: b.r * K,
+        color: paint(b.color),
+        opacity: b.opacity,
+      });
+      continue;
+    }
+    if (b.kind === "rect") {
+      page.drawRectangle({
+        x: b.x * K,
+        y: H - (b.y + b.h) * K,
+        width: b.w * K,
+        height: b.h * K,
+        color: paint(b.color),
+        opacity: b.opacity ?? 1,
+      });
+      continue;
+    }
+    if (b.kind === "logo") {
+      if (!logo) continue;
+      const maxW = b.w * K;
+      const maxH = b.h * K;
+      const k = Math.min(maxW / logo.width, maxH / logo.height);
+      const w = logo.width * k;
+      const h = logo.height * k;
+      page.drawImage(logo, { x: b.x * K, y: H - b.y * K - h, width: w, height: h });
+      continue;
+    }
+
+    const font = b.font === "display" ? fonts.display : b.weight >= 600 ? fonts.bold : fonts.regular;
+    const size = b.size * K;
+    const width = b.w * K;
+    const text = b.uppercase ? b.text.toUpperCase() : b.text;
+    let y = H - b.y * K - size;
+    for (const line of wrap(font, text, size, width)) {
+      const lw = font.widthOfTextAtSize(line, size);
+      const dx = b.align === "center" ? (width - lw) / 2 : b.align === "right" ? width - lw : 0;
+      page.drawText(line, { x: b.x * K + dx, y, size, font, color: paint(b.color) });
+      y -= size * b.lineHeight;
+    }
+  }
+}
+
+
+
 type DrawArgs = {
   page: PDFPage;
   slide: ResolvedSlide;
@@ -283,48 +371,39 @@ async function drawSlide(a: DrawArgs) {
     return y;
   };
 
-  const footer = () => {
+  const footerSize = slideFit.type.caption * (W / SLIDE_W);
+  const footer = (size = footerSize) => {
+    // Базовая линия футера соответствует превью: 28 px от низа холста 1280×720.
+    const fy = (28 * W) / SLIDE_W;
     if (logo && plan.brand?.slot === "footer") {
       drawPlannedLogo(page, logo, plan.brand);
     } else if (brand) {
-      page.drawText(brand, { x: PAD, y: 26, size: 10, font: fonts.regular, color: t.muted });
+      page.drawText(brand, { x: PAD, y: fy, size, font: fonts.regular, color: t.muted });
     }
     const label = `${index + 1} / ${total}`;
-    const w = fonts.regular.widthOfTextAtSize(label, 10);
-    page.drawText(label, { x: W - PAD - w, y: 26, size: 10, font: fonts.regular, color: t.muted });
+    const w = fonts.regular.widthOfTextAtSize(label, size);
+    page.drawText(label, { x: W - PAD - w, y: fy, size, font: fonts.regular, color: t.muted });
   };
 
-  if (slide.type === "title") {
-    let y = H - 130;
-    if (logo && plan.brand?.slot === "hero") {
-      drawPlannedLogo(page, logo, plan.brand);
-    } else if (brand) {
-      page.drawText(brand, { x: PAD, y: H - 96, size: 18, font: fonts.bold, color: t.ink });
-    }
-    const title = slide.title || presentation.title;
-    y = drawLines(wrap(fonts.display, title, 40, W - PAD * 2 - 120), PAD, y - 40, 40, fonts.display, t.ink, 1.2);
-    if (slide.subtitle) {
-      y = drawLines(wrap(fonts.regular, slide.subtitle, 17, W - PAD * 2 - 140), PAD, y - 12, 17, fonts.regular, t.muted);
-    }
-    page.drawRectangle({ x: PAD, y: y - 22, width: 84, height: 3, color: t.accent });
-    const contacts = [company?.company_phone, company?.company_email, company?.company_website, company?.company_address]
-      .filter((v): v is string => !!v && !!v.trim())
-      .join("   ·   ");
-    if (contacts) {
-      page.drawText(contacts, { x: PAD, y: y - 58, size: 11, font: fonts.regular, color: t.muted });
-    }
+
+  if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
+    const heroPlan = plan.brand?.slot === "hero" ? plan.brand : null;
+    const blocks = staticSlideSpec({
+      slide,
+      ts: slideFit.type,
+      company,
+      presentationTitle: presentation.title,
+      brandName: brand,
+      heroLogo: logo && heroPlan ? { w: heroPlan.maxW, h: heroPlan.maxH } : null,
+      dateLabel: slide.type === "title" ? formatSlideDate() : "",
+    });
+    drawSpecBlocks(page, blocks, t, fonts, logo);
     drawClientLogo();
+    if (logo && plan.brand && plan.brand.slot !== "hero") drawPlannedLogo(page, logo, plan.brand);
+    if (slide.type !== "title") footer(slideFit.type.caption * (W / SLIDE_W));
     return;
   }
 
-  if (slide.type === "section") {
-    page.drawRectangle({ x: PAD, y: H / 2 + 46, width: 66, height: 3, color: t.accent });
-    let y = drawLines(wrap(fonts.display, slide.title, 34, W - PAD * 2), PAD, H / 2, 34, fonts.display, t.ink, 1.2);
-    if (slide.subtitle) drawLines(wrap(fonts.regular, slide.subtitle, 16, W - PAD * 2 - 100), PAD, y - 14, 16, fonts.regular, t.muted);
-    drawClientLogo();
-    footer();
-    return;
-  }
 
   // Общая раскладка (1280×720) переводится в points 960×540 коэффициентом K.
   const fit = slideFit;
@@ -345,6 +424,12 @@ async function drawSlide(a: DrawArgs) {
     page.drawImage(image, { x: cx - w / 2, y: cy - h / 2, width: w, height: h });
   });
 
+  // Фото на весь слайд: снизу тёмный градиент и белый текст — как в превью.
+  const isFullBleed = fit.layout.placement === "full";
+  if (isFullBleed) drawBottomShade(page);
+  const inkCol = isFullBleed ? rgb(1, 1, 1) : t.ink;
+  const mutedCol = isFullBleed ? rgb(0.92, 0.92, 0.92) : t.muted;
+
   const box = fit.layout.textBox;
   const x = px(box.x);
   const maxW = px(box.w);
@@ -354,32 +439,35 @@ async function drawSlide(a: DrawArgs) {
   const bulletSize = px(ts.bullet);
   let y = H - px(box.y) - titleSize;
 
-  y = drawLines(wrap(fonts.display, slide.title, titleSize, maxW), x, y, titleSize, fonts.display, t.ink, 1.14);
+  y = drawLines(wrap(fonts.display, slide.title, titleSize, maxW), x, y, titleSize, fonts.display, inkCol, 1.14);
   if (slide.subtitle) {
-    y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, t.muted);
+    y = drawLines(wrap(fonts.regular, slide.subtitle, subSize, maxW), x, y - 6, subSize, fonts.regular, mutedCol);
   }
-  page.drawRectangle({ x: alignX(x, 52), y: y - 14, width: 52, height: 2.5, color: t.accent });
+  if (!isFullBleed) {
+    page.drawRectangle({ x: alignX(x, 52), y: y - 14, width: 52, height: 2.5, color: t.accent });
+  }
   y -= px(ts.blockGap) + 14;
 
 
+
   if (c.showDescription && c.description.trim()) {
-    y = drawLines(wrap(fonts.regular, c.description, bodySize, maxW), x, y, bodySize, fonts.regular, t.ink, ts.lineGap);
+    y = drawLines(wrap(fonts.regular, c.description, bodySize, maxW), x, y, bodySize, fonts.regular, inkCol, ts.lineGap);
     y -= px(ts.blockGap) * 0.6;
   }
 
   if (c.showIncludes && c.includes.length) {
     if (slide.type === "product") {
-      page.drawText("ЧТО ВХОДИТ", { x, y, size: px(ts.label), font: fonts.bold, color: t.muted });
+      page.drawText("ЧТО ВХОДИТ", { x, y, size: px(ts.label), font: fonts.bold, color: mutedCol });
       y -= px(ts.label) * 1.8;
     }
     for (const item of c.includes.slice(0, 9)) {
       if (alignMode === "left") {
         const lines = wrap(fonts.regular, item, bulletSize, maxW - 14);
         page.drawText("•", { x, y, size: bulletSize, font: fonts.regular, color: t.accent });
-        y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
+        y = drawLines(lines, x + 14, y, bulletSize, fonts.regular, inkCol, ts.lineGap);
       } else {
         const lines = wrap(fonts.regular, `• ${item}`, bulletSize, maxW);
-        y = drawLines(lines, x, y, bulletSize, fonts.regular, t.ink, ts.lineGap);
+        y = drawLines(lines, x, y, bulletSize, fonts.regular, inkCol, ts.lineGap);
       }
       y -= 2;
     }
@@ -394,35 +482,49 @@ async function drawSlide(a: DrawArgs) {
       const w = fonts.regular.widthOfTextAtSize(text, chip) + 20;
       if (cx + w > x + maxW) { cx = x; y -= chip * 2.4; }
       page.drawRectangle({ x: cx, y: y - 6, width: w, height: chip * 2.1, color: t.panel, opacity: 0.9 });
-      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: t.ink });
+      page.drawText(text, { x: cx + 10, y, size: chip, font: fonts.regular, color: inkCol });
       cx += w + 8;
     }
     y -= chip * 3;
   }
 
 
-  if (slide.type === "contacts") {
-    const rows = [
-      company?.company_phone && `Телефон: ${company.company_phone}`,
-      company?.company_email && `E-mail: ${company.company_email}`,
-      company?.company_website && `Сайт: ${company.company_website}`,
-      company?.company_address && `Адрес: ${company.company_address}`,
-    ].filter((v): v is string => !!v);
-    for (const row of rows) {
-      page.drawText(row, { x, y, size: 14, font: fonts.regular, color: t.ink });
-      y -= 26;
-    }
-  }
+
+
 
   if (c.showPrice && c.price != null && c.price > 0) {
-    const label = `${money(c.price)} / ${c.priceUnit}`;
-    const w = fonts.bold.widthOfTextAtSize(label, 15) + 32;
+    // Плашка цены повторяет превью: кегль ts.stat, единица — ts.caption.
+    const statSize = px(ts.stat);
+    const unitSize = px(ts.caption);
+    const sum = money(c.price);
+    const unit = `/ ${c.priceUnit}`;
+    const padX = px(20);
+    const padY = px(10);
+    const gap = px(10);
+    const w = fonts.display.widthOfTextAtSize(sum, statSize)
+      + gap + fonts.regular.widthOfTextAtSize(unit, unitSize) + padX * 2;
+    const h = statSize * 1.25 + padY * 2;
     const pb = slideFit.layout.priceBox;
     const bx = pb ? px(pb.x) : alignX(x, w);
-    const by = pb ? H - px(pb.y) - 34 : 64;
-    page.drawRectangle({ x: bx, y: by, width: w, height: 34, color: t.accent });
-    page.drawText(label, { x: bx + 16, y: by + 11, size: 15, font: fonts.bold, color: t.onAccent });
+    const by = pb ? H - px(pb.y) - h : y - h;
+    page.drawRectangle({ x: bx, y: by, width: w, height: h, color: t.accent });
+    page.drawText(sum, { x: bx + padX, y: by + padY + statSize * 0.16, size: statSize, font: fonts.display, color: t.onAccent });
+    page.drawText(unit, {
+      x: bx + padX + fonts.display.widthOfTextAtSize(sum, statSize) + gap,
+      y: by + padY + statSize * 0.16,
+      size: unitSize,
+      font: fonts.regular,
+      color: t.onAccent,
+      opacity: 0.85,
+    });
+    if (!pb) y = by - px(ts.blockGap);
   }
+
+  if (c.sku.trim()) {
+    const size = px(ts.caption);
+    page.drawText(`Артикул: ${c.sku}`, { x, y: y - size, size, font: fonts.regular, color: mutedCol });
+  }
+
 
   // Логотипы: ровно один логотип компании и один клиента, слоты уже посчитаны.
   drawClientLogo();
