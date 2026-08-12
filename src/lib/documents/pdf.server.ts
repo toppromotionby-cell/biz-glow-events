@@ -26,6 +26,7 @@ import {
 import {
   DEFAULT_LOGO_LAYOUT,
   computeLogoPlacement,
+  requisitesFontPt,
   normalizeLogoLayout,
   type LogoLayout,
 } from "@/lib/documents/logo-layout";
