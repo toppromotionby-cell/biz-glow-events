@@ -191,9 +191,17 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   const scale = layout.scale;
   const ov = input.overrides ?? DEFAULT_LAYOUT_OVERRIDES;
 
+  const blockedRects = input.blocked ?? [];
+  // Базовый размер логотипа: на титульных слайдах крупнее, на остальных — компактный.
+  const baseW = (titleLike ? 260 : 170) * scale;
+  const baseH = (titleLike ? 62 : 42) * scale;
+
   // --- Логотип компании: ровно одно место ---
   let brand: LogoPlacementPlan | null = null;
-  if (hasBrandLogo && layout.brand !== "off" && ov.brandLogo.zone !== "auto") {
+  if (hasBrandLogo && layout.brand !== "off" && ov.brandLogo.pos) {
+    const k = ovScale(ov.brandLogo);
+    brand = freePlacement(ov.brandLogo.pos, baseW * k, baseH * k, blockedRects);
+  } else if (hasBrandLogo && layout.brand !== "off" && ov.brandLogo.zone !== "auto") {
     const k = scale * ovScale(ov.brandLogo);
     brand = ov.brandLogo.zone === "hero"
       ? { slot: "hero", maxW: 320 * k, maxH: 76 * k }
@@ -208,6 +216,7 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
       brand = { slot: "footer", maxW: 180 * scale, maxH: 28 * scale };
     }
   }
+
 
   // --- Логотип клиента: свободный угол, не совпадающий со слотом компании ---
   let client: LogoPlacementPlan | null = null;
