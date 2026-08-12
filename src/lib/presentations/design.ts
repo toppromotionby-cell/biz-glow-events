@@ -268,12 +268,24 @@ export function readableAccent(accent: string, bg: string, min = 3.2): string {
   return best;
 }
 
+/**
+ * Выбирает цвет текста, дающий лучший минимальный контраст по всем стопам
+ * фона: на пёстром градиенте важно худшее место, а не среднее.
+ */
+export function pickInk(stops: string[]): "#ffffff" | "#111827" {
+  const list = stops.filter(Boolean);
+  if (!list.length) return "#111827";
+  const worst = (ink: string) => Math.min(...list.map((c) => contrastRatio(ink, c)));
+  return worst("#ffffff") >= worst("#111827") ? "#ffffff" : "#111827";
+}
+
 /** Палитра, вычисленная из произвольного фона (свой цвет/градиент слайда). */
 export function paletteFromStops(stops: string[], angle: number, accent: string): Palette {
   const list = stops.filter(Boolean);
-  const base = list[0] ?? "#ffffff";
-  const dark = isDarkBackground(list);
-  const acc = readableAccent(accent, base);
+  const ink = pickInk(list);
+  const dark = ink === "#ffffff";
+  // Акцент проверяем по худшему стопу — так он читаем на всей площади слайда.
+  const acc = list.reduce((a, c) => readableAccent(a, c), accent);
   return dark
     ? {
       stops: list,
@@ -306,7 +318,7 @@ export const BACKGROUND_PRESETS: { id: string; label: string; stops: string[]; a
   { id: "night", label: "Ночь", stops: ["#141a3a", "#2b1e63", "#0d1230"], angle: 135 },
   { id: "sunset", label: "Закат", stops: ["#c2381b", "#a11e4d", "#5d1a75"], angle: 125 },
   { id: "emerald", label: "Изумруд", stops: ["#046e5a", "#03453f"], angle: 130 },
-  { id: "brand", label: "Фирменный", stops: ["#ff7500", "#111827"], angle: 135 },
+  { id: "brand", label: "Фирменный", stops: ["#7a2f00", "#111827"], angle: 135 },
   { id: "steel", label: "Сталь", stops: ["#1f2937", "#0b1220"], angle: 140 },
   { id: "cloud", label: "Облако", stops: ["#eef2ff", "#ffffff"], angle: 120 },
 ];
