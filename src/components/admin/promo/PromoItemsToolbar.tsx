@@ -1,20 +1,12 @@
-// Панель быстрого наполнения позиций: новый раздел, вставка из Excel, библиотека блоков.
-import { useState } from "react";
+// Панель быстрого наполнения позиций: новый раздел и библиотека блоков.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { BookOpen, ClipboardPaste, FolderPlus, Library, Trash2 } from "lucide-react";
+import { FolderPlus, Library, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { deletePromoSnippet, listPromoSnippets } from "@/lib/promo-quotes.functions";
-import { insertPromoItems, newPromoItem, parsePastedPromoRows, reindexPromo, type PromoItem } from "@/lib/promo-quote-model";
-import { KnowledgeItemsDialog } from "@/components/admin/documents/KnowledgeItemsDialog";
+import { newPromoItem, reindexPromo, type PromoItem } from "@/lib/promo-quote-model";
 import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
 
 export function PromoItemsToolbar({
@@ -27,11 +19,6 @@ export function PromoItemsToolbar({
   const listSnippets = useServerFn(listPromoSnippets);
   const delSnippet = useServerFn(deletePromoSnippet);
 
-  const [pasteOpen, setPasteOpen] = useState(false);
-  const [pasteText, setPasteText] = useState("");
-  const [pasteSection, setPasteSection] = useState("");
-  const [kbOpen, setKbOpen] = useState(false);
-
   const snippets = useQuery({ queryKey: ["promo-snippets"], queryFn: () => listSnippets() });
   const removeSnippet = useMutation({
     mutationFn: (id: string) => delSnippet({ data: { id } }),
@@ -40,33 +27,6 @@ export function PromoItemsToolbar({
       toast.success("Блок удалён");
     },
   });
-
-  const addFromKnowledge = (
-    picked: Array<{ title: string; section: string; unit: string; price: number; cost: number; description: string; includes: Array<{ text: string; note: string }> }>,
-    section: string,
-  ) => {
-    const created = picked.map((h) =>
-      newPromoItem(section || h.section || "", {
-        title: h.title,
-        unit: h.unit || "услуга",
-        price: h.price,
-        cost: h.cost,
-        note: h.description,
-        includes: h.includes.map((x) => ({ ...x })),
-      }),
-    );
-    onChange(insertPromoItems(items, section || created[0]?.section || "", created));
-    toast.success(`Добавлено позиций: ${created.length}`);
-  };
-
-  const applyPaste = () => {
-    const parsed = parsePastedPromoRows(pasteText, pasteSection.trim());
-    if (!parsed.length) return toast.error("Не удалось распознать строки");
-    onChange(insertPromoItems(items, pasteSection.trim(), parsed));
-    setPasteOpen(false);
-    setPasteText("");
-    toast.success(`Добавлено строк: ${parsed.length}`);
-  };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -81,43 +41,7 @@ export function PromoItemsToolbar({
         <FolderPlus className="mr-1 h-4 w-4" />Новый раздел
       </Button>
 
-      <Dialog open={pasteOpen} onOpenChange={setPasteOpen}>
-        <DialogTrigger asChild>
-          <Button size="sm" variant="outline"><ClipboardPaste className="mr-1 h-4 w-4" />Вставить из Excel</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Вставка таблицы</DialogTitle>
-            <DialogDescription>
-              Скопируйте строки из Excel и вставьте сюда. Колонки: наименование, кол-во, цена, примечание.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Раздел для новых строк</Label>
-              <Input value={pasteSection} onChange={(e) => setPasteSection(e.target.value)} placeholder="Персонал" />
-            </div>
-            <Textarea
-              value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
-              className="min-h-[180px] font-mono text-xs"
-              placeholder={"Промоутер\t4\t120\t8 часов\nСупервайзер\t1\t200"}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPasteOpen(false)}>Отмена</Button>
-            <Button onClick={applyPaste}>Добавить</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <ClearCompositionButton count={items.length} onClear={() => { onChange([]); toast.success("Разделы и позиции убраны"); }} />
-
-      <Button size="sm" variant="outline" onClick={() => setKbOpen(true)}>
-        <BookOpen className="mr-1 h-4 w-4" />Из базы знаний
-      </Button>
-
-      <KnowledgeItemsDialog open={kbOpen} onOpenChange={setKbOpen} onAdd={addFromKnowledge} />
 
       <Popover>
         <PopoverTrigger asChild>

@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { SortableList } from "@/components/admin/SortableList";
 import { NumField, TextCommitField } from "@/components/admin/field-kit";
+import { SuggestInput } from "@/components/admin/SuggestInput";
+import { useDocSuggest, type ItemHit } from "@/hooks/use-doc-suggest";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import {
   duplicatePromoSection, formatMoney, insertPromoItems, isCounted, lineCost, lineQty, lineTotal, listPromoSections,
@@ -37,6 +39,7 @@ type Props = {
 };
 
 export function PromoItemsTable({ items, currency, showCost, showNotes, onChange, onSaveSectionAsSnippet }: Props) {
+  const { fetchItems } = useDocSuggest();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [includesFor, setIncludesFor] = useState<PromoItem | null>(null);
   const [deleteSection, setDeleteSection] = useState<string | null>(null);
@@ -101,7 +104,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
     <div className="space-y-3">
       {sections.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          Пока нет позиций. Добавьте первую строку или вставьте таблицу из Excel.
+          Пока нет позиций. Добавьте первую строку — подсказки подставятся из базы знаний.
         </div>
       )}
 
@@ -180,11 +183,27 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                       <div className="flex items-center gap-1">
                         <div>{handle}</div>
                         <div className="flex-1">
-                          <Input
+                          <SuggestInput<ItemHit>
                             value={it.title}
-                            onChange={(e) => replace(it.id, { title: e.target.value })}
+                            onChange={(v) => replace(it.id, { title: v })}
+                            fetcher={(term) => fetchItems(term, name)}
+                            labelOf={(h) => h.title}
+                            onPick={(h) =>
+                              replace(it.id, {
+                                title: h.title,
+                                unit: h.unit || it.unit,
+                                price: h.price || it.price,
+                                cost: h.cost || it.cost,
+                                includes: h.includes.length ? h.includes : it.includes,
+                              })
+                            }
+                            render={(h) => (
+                              <span className="flex items-center justify-between gap-2">
+                                <span className="truncate">{h.title}</span>
+                                <span className="shrink-0 text-xs text-muted-foreground">{formatMoney(h.price, currency)}</span>
+                              </span>
+                            )}
                             placeholder="Наименование позиции"
-                            aria-label="Наименование позиции"
                             className="h-9"
                           />
 
