@@ -10,8 +10,11 @@ export type EditorSection = {
   Icon: ComponentType<{ className?: string }>;
   /** Точка-индикатор на кнопке раздела (например, расхождения с КП). */
   dot?: boolean;
+  /** Широкая панель (таблицы, состав КП). */
+  wide?: boolean;
   content: ReactNode;
 };
+
 
 export function EditorSidebar({
   sections,
