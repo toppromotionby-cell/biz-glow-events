@@ -1,5 +1,8 @@
 // Универсальный CRUD каталогов: zones | tech_equipment | services | production_items.
 import { ADMIN_LIST_LIMIT } from "@/lib/admin/list-limit";
+
+/** Сколько карточек рендерим за раз — остальное по кнопке «Показать ещё». */
+const RENDER_CHUNK = 100;
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
