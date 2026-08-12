@@ -166,8 +166,11 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
     setSaveState("dirty");
   };
 
+  const [saveErrorText, setSaveErrorText] = useState<string | null>(null);
+
   const save = useMutation({
     mutationFn: async () => {
+      if (!validation.ok) throw new Error("Исправьте ошибки в форме");
       const patch = {
         code: String(f.code).trim().toUpperCase(),
         description: f.description || null,
@@ -182,17 +185,22 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       const { error } = await supabase.from("promo_codes").update(patch).eq("id", row.id);
       if (error) throw error;
     },
-    onMutate: () => setSaveState("saving"),
+    onMutate: () => { setSaveState("saving"); setSaveErrorText(null); },
     onSuccess: () => {
       setSaveState("saved");
       qc.invalidateQueries({ queryKey: adminKeys.promo });
       toast.success("Сохранено");
     },
-    onError: (e: Error) => {
+    onError: (e: unknown) => {
+      // Ошибку БД (например, дубль кода) вешаем на конкретное поле.
+      const mapped = mapServerError(e);
+      if (mapped.field) setServerErrors((prev) => ({ ...prev, [mapped.field as string]: mapped.message }));
       setSaveState("error");
-      toast.error(e.message);
+      setSaveErrorText(mapped.message);
+      toast.error(mapped.message);
     },
   });
+
 
   // Защита от потери правок: и при переходах внутри админки, и при закрытии вкладки.
   const { guardDialog } = useUnsavedGuard(saveState === "dirty" || saveState === "error");
