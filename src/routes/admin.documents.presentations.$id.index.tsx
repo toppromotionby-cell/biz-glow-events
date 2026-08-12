@@ -6,7 +6,9 @@ import { FullscreenLayer, Z_LAYER } from "@/components/FullscreenLayer";
 
 import { PresentationBrandingPanel } from "@/components/admin/presentations/PresentationBrandingPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AUTOSAVE_DELAY, saveStatus } from "@/lib/editor/save-state";
+import { saveStatus } from "@/lib/editor/save-state";
+import { useEditorSave } from "@/hooks/use-editor-save";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -122,7 +124,7 @@ function Page() {
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  
   const [presenting, setPresenting] = useState(false);
   // Рабочее пространство: активный раздел рельса, зум, выделенный блок, обзор.
   const [sidebar, setSidebar] = useState<string | null>("slides");
@@ -319,21 +321,28 @@ function Page() {
   };
 
   const saveFn = useServerFn(savePresentation);
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!meta) throw new Error("Нет данных");
-      return saveFn({
+  const metaRef = useRef(meta);
+  metaRef.current = meta;
+  const slidesRef = useRef(slides);
+  slidesRef.current = slides;
+
+  /** Записать текущее состояние на сервер (используется хуком и перед экспортом PDF). */
+  const persist = useCallback(async () => {
+    const m = metaRef.current;
+    if (!m) return;
+    try {
+      await saveFn({
         data: {
-          id: meta.id,
-          title: meta.title.trim() || "Без названия",
-          status: meta.status,
-          template: meta.template,
-          companyId: meta.company_id,
-          logoUrl: meta.logo_url,
-          clientLogoUrl: meta.client_logo_url,
-          logoLayout: meta.logo_layout,
-          fontFamily: meta.font_family,
-          slides: slides.map((s, i) => ({
+          id: m.id,
+          title: m.title.trim() || "Без названия",
+          status: m.status,
+          template: m.template,
+          companyId: m.company_id,
+          logoUrl: m.logo_url,
+          clientLogoUrl: m.client_logo_url,
+          logoLayout: m.logo_layout,
+          fontFamily: m.font_family,
+          slides: slidesRef.current.map((s, i) => ({
             id: s.id.startsWith("new-") ? undefined : s.id,
             position: i,
             type: s.type,
@@ -348,37 +357,27 @@ function Page() {
           })),
         },
       });
-    },
-    onSuccess: () => {
-      setDirty(false);
-      setSavedAt(new Date());
-      // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
-      // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
-      qc.invalidateQueries({ queryKey: ["presentations"] });
-    },
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+      throw e;
+    }
+    setDirty(false);
+    // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
+    // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
+    qc.invalidateQueries({ queryKey: ["presentations"] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveFn, qc]);
 
-    onError: (e: Error) => toast.error(e.message),
-  });
+  // Общий хук автосохранения: дебаунс, Ctrl+S, защита от ухода со страницы.
+  const saver = useEditorSave(persist);
 
-  const saveRef = useRef(save);
-  saveRef.current = save;
+  const saverRef = useRef(saver);
+  saverRef.current = saver;
 
-  /* Автосохранение через 3 c после последней правки. */
+  /* Любая правка запускает отложенное сохранение. */
   useEffect(() => {
-    if (!dirty || !meta || saveRef.current.isPending) return;
-    const t = setTimeout(() => {
-      if (!saveRef.current.isPending) saveRef.current.mutate();
-    }, AUTOSAVE_DELAY);
-    return () => clearTimeout(t);
+    if (dirty) saverRef.current.markDirty();
   }, [dirty, meta, slides]);
-
-  /* Защита от потери правок */
-  useEffect(() => {
-    if (!dirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty]);
 
   useBlocker({
     shouldBlockFn: () => {
@@ -388,22 +387,18 @@ function Page() {
     enableBeforeUnload: false,
   });
 
-  /* Ctrl/Cmd+S — сохранить, Ctrl/Cmd+Z в режиме правки раскладки — отменить шаг. */
+  /* Ctrl/Cmd+Z в режиме правки раскладки — отменить шаг (Ctrl+S берёт на себя хук). */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        if (dirty && !save.isPending) save.mutate();
-      }
-      if (mod && e.key.toLowerCase() === "z") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         undoLayout();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dirty, save, undoLayout]);
+  }, [undoLayout]);
+
 
 
   const buildFn = useServerFn(buildSlidesFromQuote);
@@ -425,7 +420,7 @@ function Page() {
         description: "PDF собирается на сервере — несохранённые правки в него не попадут.",
         confirmText: "Сохранить и скачать",
       });
-      if (ok) await save.mutateAsync();
+      if (ok) await persist();
     }
     viewer.openDocument(`/admin/documents/presentations/${id}/render?format=pdf`, {
       name: `${meta?.title ?? "Презентация"}.pdf`,
@@ -460,7 +455,7 @@ function Page() {
 
   const visibleCount = slides.filter((s) => s.is_visible).length;
 
-  const saveState = saveStatus(save.isPending ? "saving" : dirty ? "dirty" : "saved", savedAt);
+  const saveState = saveStatus(saver.state, saver.savedAt, saver.error);
 
   const branding = {
     brandLogoUrl: meta.logo_url,
@@ -635,7 +630,7 @@ function Page() {
                 </Link>
               )}
               <span className={saveState.tone === "error" ? "text-destructive" : saveState.tone === "pending" ? "text-amber-500" : "text-muted-foreground"}>
-                {!dirty && !save.isPending && <Check className="mr-1 inline h-3 w-3" aria-hidden />}
+                {saver.state !== "dirty" && saver.state !== "saving" && <Check className="mr-1 inline h-3 w-3" aria-hidden />}
                 {saveState.text}
               </span>
             </div>
@@ -652,7 +647,7 @@ function Page() {
           >
             <Play className="mr-1.5 h-4 w-4" />Показ
           </Button>
-          <Button variant="outline" size="sm" disabled={!slides.length || save.isPending} onClick={() => void exportPdf()}>
+          <Button variant="outline" size="sm" disabled={!slides.length || saver.state === "saving"} onClick={() => void exportPdf()}>
             <Download className="mr-1.5 h-4 w-4" />PDF
           </Button>
         </div>
