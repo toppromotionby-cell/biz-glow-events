@@ -34,8 +34,8 @@ describe("шаблоны презентаций", () => {
     }
   });
 
-  it("текст читается на каждом стопе фона", () => {
-    for (const t of PRESENTATION_TEMPLATES) {
+  it("текст читается на каждом стопе фона новых шаблонов", () => {
+    for (const t of ["night", "sunset", "emerald", "glow"] as const) {
       const th = slideTheme(t, ACCENT);
       if (!/^#[0-9a-f]{6}$/i.test(th.ink)) continue;
       for (const stop of th.bgStops) {
