@@ -626,10 +626,17 @@ function Page() {
                   </div>
                 )}
               </div>
-            </TabsContent>
-
-            <TabsContent value="doc" className="pt-3">
+        </div>
+      ),
+    },
+    {
+      id: "doc",
+      label: "Оформление",
+      Icon: Settings2,
+      dot: !!blockIssues.size,
+      content: (
               <Accordion type="multiple" defaultValue={["main", "layout"]} className="space-y-2">
+
                 <AccordionItem value="main" className="border border-border/60 rounded-xl px-3">
                   <AccordionTrigger className="text-sm font-medium">Шапка документа</AccordionTrigger>
                   <AccordionContent className="space-y-3 pb-4">
