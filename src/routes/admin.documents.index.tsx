@@ -412,8 +412,9 @@ function Page() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end gap-1">
+
                     <Button
                       variant="ghost"
                       size="icon"
