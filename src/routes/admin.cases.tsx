@@ -1,4 +1,5 @@
 // Админка кейсов: список, создание, редактирование, публикация, featured.
+import { ADMIN_LIST_LIMIT } from "@/lib/admin/list-limit";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -36,7 +37,7 @@ function CasesAdmin() {
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["admin-cases"],
-    queryFn: async () => (await supabase.from("cases").select("*").order("sort_order", { ascending: true }).order("event_date", { ascending: false, nullsFirst: false })).data ?? [],
+    queryFn: async () => (await supabase.from("cases").select("*").order("sort_order", { ascending: true }).order("event_date", { ascending: false, nullsFirst: false }).limit(ADMIN_LIST_LIMIT)).data ?? [],
   });
 
   const create = useMutation({

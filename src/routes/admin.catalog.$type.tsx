@@ -1,4 +1,5 @@
 // Универсальный CRUD каталогов: zones | tech_equipment | services | production_items.
+import { ADMIN_LIST_LIMIT } from "@/lib/admin/list-limit";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -53,7 +54,8 @@ function CatalogInner({ table }: { table: CatalogTable }) {
     queryFn: async () => {
       const { data } = await supabase.from(table).select("*")
         .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(ADMIN_LIST_LIMIT);
       return (data ?? []) as Row[];
     },
   });

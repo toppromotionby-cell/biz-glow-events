@@ -1,4 +1,5 @@
 // Админка блога: список + кнопка редактирования. Логика редактора — в @/components/admin/blog/BlogEditor.
+import { ADMIN_LIST_LIMIT } from "@/lib/admin/list-limit";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,7 +34,8 @@ function AdminBlogPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("blog_posts").select("*")
         .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(ADMIN_LIST_LIMIT);
       if (error) throw error;
       return (data ?? []) as unknown as Post[];
     },

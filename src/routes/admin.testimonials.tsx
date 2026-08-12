@@ -1,4 +1,5 @@
 // Админка отзывов: список + редактор.
+import { ADMIN_LIST_LIMIT } from "@/lib/admin/list-limit";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -31,7 +32,7 @@ function Page() {
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["admin-testimonials"],
-    queryFn: async () => (await supabase.from("testimonials").select("*").order("sort_order").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("testimonials").select("*").order("sort_order").order("created_at", { ascending: false }).limit(ADMIN_LIST_LIMIT)).data ?? [],
   });
 
   const create = useMutation({
