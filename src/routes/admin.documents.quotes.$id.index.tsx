@@ -222,7 +222,7 @@ function Page() {
   const warnsCount = checks.filter((c) => c.level === "warn").length;
   const itemIssues = useMemo(() => itemIssueMap(checks), [checks]);
   const blockIssues = useMemo(() => blockIssueMap(checks), [checks]);
-  const [tab, setTab] = useState("items");
+  const [tab, setTab] = useState<string | null>("items");
 
   // Переход от замечания к полю, которое его вызвало.
   const gotoCheck = (c: { scope?: string; refId?: string }) => {
