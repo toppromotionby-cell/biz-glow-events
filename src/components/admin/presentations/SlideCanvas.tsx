@@ -47,7 +47,7 @@ function Logo({ path, height }: { path: string | null; height: number }) {
   return <img src={url} alt="" style={{ height, width: "auto", objectFit: "contain" }} />;
 }
 
-/** Рендер одного блока общего спека слайда (титул / раздел / контакты). */
+/** Рендер одного блока общего спека слайда. */
 function SpecBlockView({
   block,
   theme,
@@ -63,13 +63,42 @@ function SpecBlockView({
   onEdit?: SlideCanvasProps["onEdit"];
   partAlign: (part: "title" | "subtitle" | "body") => CSSProperties;
 }) {
-  const paint = (c: "ink" | "muted" | "accent" | "onAccent" | "panel"): string =>
+  const paint = (c: SpecPaint): string =>
     c === "ink" ? theme.ink
       : c === "muted" ? theme.muted
         : c === "accent" ? theme.accent
           : c === "onAccent" ? theme.onAccent
-            : theme.panel;
+            : c === "onPhoto" ? "#fff"
+              : c === "onPhotoMuted" ? "rgba(255,255,255,0.82)"
+                : theme.panel;
 
+  if (block.kind === "shade") {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: `linear-gradient(180deg, rgba(0,0,0,0) ${block.from * 100}%, rgba(0,0,0,${block.alpha}) 100%)`,
+        }}
+      />
+    );
+  }
+  if (block.kind === "image") {
+    return (
+      <SlideImage
+        path={block.path}
+        style={{
+          position: "absolute",
+          left: block.x,
+          top: block.y,
+          width: block.w,
+          height: block.h,
+          borderRadius: block.radius,
+          display: "block",
+        }}
+      />
+    );
+  }
   if (block.kind === "circle") {
     return (
       <div
@@ -127,17 +156,21 @@ function SpecBlockView({
     ...(block.id ? partAlign(block.id) : null),
   };
   if (block.id && onEdit) {
+    const id = block.id;
     return (
       <Editable
         value={block.text}
         placeholder={block.placeholder ?? ""}
-        block={block.id}
-        onChange={(v) => onEdit(block.id === "title" ? { title: v } : { subtitle: v })}
+        block={id}
+        onChange={(v) =>
+          onEdit(id === "title" ? { title: v } : id === "subtitle" ? { subtitle: v } : { subtitle: v })
+        }
         style={style}
       />
     );
   }
-  return <div data-block={block.id} style={style}>{block.text}</div>;
+  const content = block.lines ? block.lines.join("\n") : block.text;
+  return <div data-block={block.id} style={style}>{content}</div>;
 }
 
 
