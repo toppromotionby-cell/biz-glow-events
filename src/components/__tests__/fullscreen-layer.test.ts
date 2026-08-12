@@ -31,4 +31,23 @@ describe("fullscreen layers", () => {
     );
     expect(read("src/components/DeferredGlobals.tsx")).toContain("data-site-widgets");
   });
+
+  it("оверлеи UI лежат выше полноэкранного слоя", () => {
+    const layer = read("src/components/FullscreenLayer.tsx");
+    const max = Math.max(
+      ...[...layer.matchAll(/:\s*(\d+),/g)].map((m) => Number(m[1])).filter((n) => n <= 70),
+    );
+    const files = [
+      "dialog", "alert-dialog", "sheet", "drawer",
+      "dropdown-menu", "context-menu", "menubar", "popover", "select",
+      "hover-card", "tooltip",
+    ];
+    for (const f of files) {
+      const src = read(`src/components/ui/${f}.tsx`);
+      expect(src, f).not.toMatch(/\bz-50\b/);
+      const levels = [...src.matchAll(/\bz-\[(\d+)\]/g)].map((m) => Number(m[1]));
+      expect(levels.length, f).toBeGreaterThan(0);
+      for (const l of levels) expect(l, f).toBeGreaterThan(max);
+    }
+  });
 });
