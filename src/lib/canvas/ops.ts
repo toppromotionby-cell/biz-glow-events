@@ -74,7 +74,9 @@ function textOps(el: CanvasElement<TextProps>): DrawOp[] {
   if (!text.trim()) return [];
   const lineHeight = p.lineHeight ?? 1.3;
   const base = p.fontSize ?? 16;
-  const fontSize = p.autoFit === false ? base : fitFontSize(text, el, base, lineHeight);
+  // Готовые строки означают, что раскладка уже посчитана — кегль не трогаем.
+  const fontSize = p.autoFit === false || p.lines ? base : fitFontSize(text, el, base, lineHeight);
+
   return [{
     kind: "text",
     x: el.x, y: el.y, w: el.w, h: el.h,
