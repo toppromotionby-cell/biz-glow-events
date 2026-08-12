@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FullscreenLayer, Z_LAYER } from "@/components/FullscreenLayer";
 import { SlideCanvas, SLIDE_W, SLIDE_H, type SlideBranding } from "@/components/admin/presentations/SlideCanvas";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PresentationSlide, PresentationTemplate } from "@/lib/presentations/model";
@@ -70,11 +71,11 @@ export function PresentationFullscreen({
   const slide = visible[index] ?? null;
 
   return (
+    <FullscreenLayer zIndex={Z_LAYER.overlayTop} label="Просмотр презентации">
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Просмотр презентации"
-      className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-4 bg-black/95 p-4"
+      className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black/95 p-4"
     >
       <Button
         variant="ghost"
@@ -129,5 +130,6 @@ export function PresentationFullscreen({
         </Button>
       </div>
     </div>
+    </FullscreenLayer>
   );
 }
