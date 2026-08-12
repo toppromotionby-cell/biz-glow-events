@@ -7,7 +7,10 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { FullscreenLayer } from "@/components/FullscreenLayer";
-import { EditorSidebar, type EditorSection } from "@/components/admin/editor/EditorSidebar";
+import { EditorRail, EditorSectionPanel, type EditorSection } from "@/components/admin/editor/EditorSidebar";
+import { EditorWorkspace } from "@/components/admin/editor/EditorWorkspace";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { DocCanvasStage, type DocFitMode } from "@/components/admin/editor/DocCanvasStage";
 import { DocEditorFooter } from "@/components/admin/editor/DocEditorFooter";
 
@@ -54,6 +57,8 @@ export function DocEditorShell({
   };
   const [zoom, setZoom] = useState(1);
   const [fitMode, setFitMode] = useState<DocFitMode>("width");
+  const isMobile = useIsMobile();
+  const wideScreen = useMediaQuery("(min-width: 1280px)");
 
 
   const current = sections.find((s) => s.id === active) ?? null;
@@ -91,26 +96,34 @@ export function DocEditorShell({
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1">
-          <div className="hidden min-h-0 md:flex">
-            <EditorSidebar sections={sections} active={active} onChange={setActive} />
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col">
-            <DocCanvasStage zoom={zoom} fitMode={fitMode} onZoom={setZoom}>{sheet}</DocCanvasStage>
-            <DocEditorFooter
-              zoom={zoom} onZoom={setZoom}
-              fitMode={fitMode} onFitMode={setFitMode}
-              hint={hint} left={footerLeft}
-            />
-          </div>
-
-          {rightPanel && (
-            <aside className="scroll-visible hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-border/60 p-4 xl:flex">
-              {rightPanel}
-            </aside>
-          )}
-        </div>
+        <EditorWorkspace
+          storageKey="doc"
+          rail={
+            <div className="hidden min-h-0 md:flex">
+              <EditorRail sections={sections} active={active} onChange={setActive} />
+            </div>
+          }
+          leftPanel={
+            current && !isMobile ? <EditorSectionPanel section={current} onClose={() => setActive(null)} /> : null
+          }
+          center={
+            <>
+              <DocCanvasStage zoom={zoom} fitMode={fitMode} onZoom={setZoom}>{sheet}</DocCanvasStage>
+              <DocEditorFooter
+                zoom={zoom} onZoom={setZoom}
+                fitMode={fitMode} onFitMode={setFitMode}
+                hint={hint} left={footerLeft}
+              />
+            </>
+          }
+          rightPanel={
+            rightPanel && wideScreen ? (
+              <aside className="scroll-visible min-h-0 flex-1 overflow-y-auto border-l border-border/60 p-4">
+                {rightPanel}
+              </aside>
+            ) : null
+          }
+        />
 
         {/* На узких экранах разделы показываем снизу отдельной полосой */}
         <div className="border-t border-border/60 md:hidden">

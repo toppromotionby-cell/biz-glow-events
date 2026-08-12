@@ -44,6 +44,8 @@ export type SlideLayoutOverlayProps = {
   onSelect?: (kind: Kind | null) => void;
   /** Повторный клик по тексту — редактор просит переключиться в набор текста. */
   onTextEdit?: (kind: Kind) => void;
+  /** Двойной клик по нетекстовому блоку — открыть окно с его данными. */
+  onBlockEdit?: (kind: Kind) => void;
   /** Показывать плавающую панель блока (на десктопе свойства живут справа). */
   floatingToolbar?: boolean;
 };
@@ -140,7 +142,7 @@ function useRenderedRects(
 
 export function SlideLayoutOverlay({
   fit, plan, overrides, scale, onLayout,
-  selected: selectedProp, onSelect, onTextEdit, floatingToolbar,
+  selected: selectedProp, onSelect, onTextEdit, onBlockEdit, floatingToolbar,
 }: SlideLayoutOverlayProps) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -305,19 +307,8 @@ export function SlideLayoutOverlay({
     return Math.abs(v - value) > 1e-6;
   };
 
-  /** Двойной клик по рамке — сброс размера блока в авто. */
-  const resetSize = (kind: Kind) => {
-    if (kind === "photo") onLayout({ photoScale: null });
-    else if (kind === "text") onLayout({ textWidth: null });
-    else if (kind === "price") onLayout({ priceScale: null });
-    else if (kind === "title") onLayout({ titleScale: null });
-    else if (kind === "subtitle") onLayout({ subtitleScale: null });
-    else if (kind === "body") onLayout({ bodyScale: null });
-    else {
-      const key = kind === "brand" ? "brandLogo" : "clientLogo";
-      onLayout({ [key]: { ...overrides[key], scale: null } } as Partial<SlideLayoutOverrides>);
-    }
-  };
+
+
 
   /* ---------------- объекты слайда ---------------- */
 
@@ -336,6 +327,16 @@ export function SlideLayoutOverlay({
   const target = dragging ? zonesFor(dragKind(dragging)).find((z) => z.id === zone) : null;
   const selectedItem = selected ? items.find((it) => it.kind === selected && it.rect) : null;
   const selRect = selectedItem?.rect ?? null;
+
+  /**
+   * Двойной клик по блоку: текстовые части переходят в набор текста,
+   * остальные (фото, цена, логотипы) открывают окно с данными блока.
+   */
+  const openEditor = (kind: Kind) => {
+    setSelected(kind);
+    if (isPart(kind) || kind === "text") onTextEdit?.(isPart(kind) ? kind : "title");
+    else onBlockEdit?.(kind);
+  };
 
   /** Клик по блоку: выделение, повторный клик по тексту — набор текста. */
   const onBlockDown = (kind: Kind) => (e: ReactPointerEvent) => {
@@ -438,7 +439,7 @@ export function SlideLayoutOverlay({
             onDrag={onFrameDrag(selected, selRect)}
             onResize={onFrameResize(selected)}
             onGestureEnd={endGesture}
-            onDoubleClick={() => resetSize(selected)}
+            onDoubleClick={() => openEditor(selected)}
           />
           {floatingToolbar && (
             <div
@@ -467,6 +468,7 @@ export function SlideLayoutOverlay({
             tabIndex={-1}
             aria-label={it.label}
             onPointerDown={onBlockDown(it.kind)}
+            onDoubleClick={(e) => { e.stopPropagation(); openEditor(it.kind); }}
             className={`group absolute cursor-grab rounded-md border border-transparent hover:border-primary/70 hover:bg-primary/5 ${
               selected === it.kind ? "bg-primary/5" : ""
             }`}

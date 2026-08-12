@@ -23,12 +23,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EditorSidebar, type EditorSection } from "@/components/admin/editor/EditorSidebar";
+import { EditorRail, EditorSectionPanel, type EditorSection } from "@/components/admin/editor/EditorSidebar";
+import { EditorWorkspace } from "@/components/admin/editor/EditorWorkspace";
 import { SlideAuditPanel } from "@/components/admin/presentations/SlideAuditPanel";
 import { auditPresentation } from "@/lib/presentations/audit";
 import { CanvasStage } from "@/components/admin/presentations/CanvasStage";
 import { EditorStatusBar } from "@/components/admin/presentations/EditorStatusBar";
-import { BlockToolbar, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
+import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
 
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -132,6 +133,8 @@ function Page() {
   const [selectedBlock, setSelectedBlock] = useState<BlockKind | null>(null);
   const [textEditing, setTextEditing] = useState(false);
   const [gridOpen, setGridOpen] = useState(false);
+  // Двойной клик по фото/цене/логотипу открывает окно с данными этого блока.
+  const [blockDialog, setBlockDialog] = useState<BlockKind | null>(null);
 
   // История раскладки текущего слайда: одно перетаскивание — один шаг отмены.
   const layoutHistory = useRef<{ slideId: string; layout: SlideLayoutOverrides }[]>([]);
@@ -610,6 +613,9 @@ function Page() {
       content: auditPanel,
     },
   ];
+  const currentSection = sections.find((s) => s.id === sidebar) ?? null;
+
+
 
   return (
     <FullscreenLayer className="flex flex-col bg-background" label="Редактор презентации">
@@ -667,14 +673,20 @@ function Page() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        {/* Левый рельс с панелями */}
-        <div className="hidden min-h-0 md:flex">
-          <EditorSidebar sections={sections} active={sidebar} onChange={setSidebar} />
-        </div>
-
-        {/* Центр: холст и статус-строка */}
-        <div className="flex min-w-0 flex-1 flex-col">
+      <EditorWorkspace
+        storageKey="presentation"
+        rail={
+          <div className="hidden min-h-0 md:flex">
+            <EditorRail sections={sections} active={sidebar} onChange={setSidebar} />
+          </div>
+        }
+        leftPanel={
+          currentSection && !isMobile
+            ? <EditorSectionPanel section={currentSection} onClose={() => setSidebar(null)} />
+            : null
+        }
+        center={
+          <>
           {current ? (
             <CanvasStage
               zoom={zoom}
@@ -697,6 +709,7 @@ function Page() {
                   selectedBlock={selectedBlock}
                   onSelectBlock={(k) => { setSelectedBlock(k); if (!k) setTextEditing(false); }}
                   onTextEdit={(kind) => { setSelectedBlock(kind); setTextEditing(true); }}
+                  onBlockEdit={(kind) => { setSelectedBlock(kind); setTextEditing(false); setBlockDialog(kind); }}
                   floatingToolbar={isMobile}
                   onLayout={(patch, opts) => patchLayout(current.id, current.content.layout, patch, opts)}
                   {...branding}
@@ -717,13 +730,13 @@ function Page() {
             onPrev={() => { const p = slides[currentIndex - 1]; if (p) setSelected(p.id); }}
             onNext={() => { const n = slides[currentIndex + 1]; if (n) setSelected(n.id); }}
             onGrid={() => setGridOpen(true)}
-            hint="Клик — выделить блок, двойной клик — править текст, стрелки двигают логотип, Ctrl/Cmd + Z — отмена."
+            hint="Клик — выделить блок, двойной клик — править его (текст или окно с данными), стрелки двигают логотип, Ctrl/Cmd + Z — отмена. Панели тянутся за разделители."
           />
-        </div>
-
-        {/* Правая панель свойств */}
-        {!isMobile && (
-          <aside className="scroll-visible hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-border/60 p-4 lg:flex">
+          </>
+        }
+        rightPanel={
+          !isMobile ? (
+          <aside className="scroll-visible min-h-0 flex-1 overflow-y-auto border-l border-border/60 p-4">
             {current ? (
               <div className="space-y-4">
                 {selectedBlock && (
@@ -743,8 +756,29 @@ function Page() {
               <p className="text-sm text-muted-foreground">Слайд не выбран</p>
             )}
           </aside>
-        )}
-      </div>
+          ) : null
+        }
+      />
+
+      {/* Правка блока по двойному клику: свойства блока + данные слайда */}
+      <Dialog open={!!blockDialog} onOpenChange={(o) => !o && setBlockDialog(null)}>
+        <DialogContent className="scroll-visible max-h-[85vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{blockDialog ? BLOCK_LABELS[blockDialog] : "Блок"}</DialogTitle>
+          </DialogHeader>
+          {current && blockDialog && (
+            <div className="space-y-4">
+              <BlockToolbar
+                kind={blockDialog}
+                layout={current.content.layout}
+                onChange={(patch) => patchLayout(current.id, current.content.layout, patch)}
+                onClose={() => setBlockDialog(null)}
+              />
+              <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Обзор всех слайдов сеткой */}
       <Dialog open={gridOpen} onOpenChange={setGridOpen}>

@@ -231,6 +231,8 @@ export type SlideCanvasProps = {
   onSelectBlock?: (kind: BlockKind | null) => void;
   /** Двойной клик по тексту — редактор переходит в набор текста. */
   onTextEdit?: (kind: BlockKind) => void;
+  /** Двойной клик по фото, цене или логотипу — окно с данными блока. */
+  onBlockEdit?: (kind: BlockKind) => void;
   /** Пока идёт набор текста, слой перетаскивания не перехватывает клики. */
   textEditing?: boolean;
   /** Плавающая панель блока (мобильный режим — свойств справа нет). */
@@ -332,6 +334,7 @@ function SlideCanvasInner(props: SlideCanvasProps) {
             selected={props.selectedBlock}
             onSelect={props.onSelectBlock}
             onTextEdit={props.onTextEdit}
+            onBlockEdit={props.onBlockEdit}
             floatingToolbar={props.floatingToolbar}
           />
         </div>
