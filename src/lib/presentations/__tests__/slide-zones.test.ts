@@ -73,8 +73,9 @@ describe("умные зоны раскладки слайда", () => {
       hasClientLogo: true,
       overrides: {
         ...slideWith({}).content.layout,
-        brandLogo: { zone: "tl", scale: 1.5 },
-        clientLogo: { zone: "tl", scale: null },
+        brandLogo: { zone: "tl", scale: 1.5, pos: null },
+        clientLogo: { zone: "tl", scale: null, pos: null },
+
       },
     });
     expect(plan.client?.slot).toBe("tl");
