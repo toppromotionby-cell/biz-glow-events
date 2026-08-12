@@ -148,6 +148,8 @@ export type SlideLayoutOverrides = {
   /** Растянуть текстовый блок на всю доступную высоту. */
   stretchY: boolean;
   priceZone: PriceZone;
+  /** Масштаб блока цены, 0.6–1.8 (null — авто). */
+  priceScale: number | null;
   brandLogo: LogoOverride;
   clientLogo: LogoOverride;
 };
@@ -164,6 +166,7 @@ export const DEFAULT_LAYOUT_OVERRIDES: SlideLayoutOverrides = {
   stretchX: false,
   stretchY: false,
   priceZone: "auto",
+  priceScale: null,
   brandLogo: { zone: "auto", scale: null, pos: null },
   clientLogo: { zone: "auto", scale: null, pos: null },
 };
@@ -176,6 +179,8 @@ export const TEXT_WIDTH_MIN = 0.3;
 export const TEXT_WIDTH_MAX = 1;
 export const LOGO_SCALE_MIN = 0.6;
 export const LOGO_SCALE_MAX = 1.8;
+export const PRICE_SCALE_MIN = 0.6;
+export const PRICE_SCALE_MAX = 1.8;
 
 export const clampNum = (v: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, v));
