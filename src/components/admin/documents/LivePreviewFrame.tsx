@@ -1,7 +1,7 @@
 // Живое превью документа в iframe без перезагрузки:
 // каркас (стили + скрипты подсказок/автоподгонки) пишется один раз,
 // дальше точечно обновляется только содержимое — без мигания и сброса прокрутки.
-import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
+import { useEffect, useImperativeHandle, useRef, type CSSProperties, type Ref } from "react";
 
 const MOUNT_ID = "doc-preview-root";
 const UPDATE_MS = 120;
@@ -21,11 +21,13 @@ export function LivePreviewFrame({
   html,
   title,
   className,
+  style,
   frameRef,
 }: {
   html: string;
   title: string;
   className?: string;
+  style?: CSSProperties;
   /** Ссылка на iframe — нужна для проверки источника postMessage. */
   frameRef?: Ref<HTMLIFrameElement | null>;
 }) {
@@ -74,5 +76,5 @@ export function LivePreviewFrame({
     return () => window.clearTimeout(t);
   }, [html]);
 
-  return <iframe ref={ref} title={title} className={className} />;
+  return <iframe ref={ref} title={title} className={className} style={style} />;
 }

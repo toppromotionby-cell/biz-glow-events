@@ -10,8 +10,11 @@ export type EditorSection = {
   Icon: ComponentType<{ className?: string }>;
   /** Точка-индикатор на кнопке раздела (например, расхождения с КП). */
   dot?: boolean;
+  /** Широкая панель (таблицы, состав КП). */
+  wide?: boolean;
   content: ReactNode;
 };
+
 
 export function EditorSidebar({
   sections,
@@ -52,7 +55,11 @@ export function EditorSidebar({
       </nav>
 
       {current && (
-        <div className="flex w-[290px] shrink-0 flex-col border-r border-border/60 bg-background">
+        <div
+          className="flex shrink-0 flex-col border-r border-border/60 bg-background"
+          style={{ width: current.wide ? 420 : 290 }}
+        >
+
           <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
             <span className="text-sm font-medium">{current.label}</span>
             <Button
