@@ -301,16 +301,14 @@ async function drawSlide(a: DrawArgs) {
   }
 
   // Общая раскладка (1280×720) переводится в points 960×540 коэффициентом K.
-  const fit = fitSlide(slide);
+  const fit = slideFit;
   const K = W / SLIDE_W;
   const ts = fit.type;
   const px = (v: number) => v * K;
 
-  const occupied: Rect[] = [];
   fit.layout.frames.forEach((f, i) => {
     const image = images[i];
     if (!image) return;
-    occupied.push({ x: f.x * (W / SLIDE_W), y: H - (f.y + f.h) * (W / SLIDE_W), w: f.w * (W / SLIDE_W), h: f.h * (W / SLIDE_W) });
     const fw = px(f.w);
     const fh = px(f.h);
     const k = Math.max(fw / image.width, fh / image.height);
