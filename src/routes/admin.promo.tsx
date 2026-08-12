@@ -1,7 +1,10 @@
 // Админка промокодов.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { promoCodeSchema } from "@/lib/admin/schemas";
+import { zodFieldErrors, mapServerError, type FieldErrors } from "@/lib/admin/form-errors";
+
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import type { SaveState } from "@/components/admin/SaveStatus";
 import { supabase } from "@/integrations/supabase/client";
