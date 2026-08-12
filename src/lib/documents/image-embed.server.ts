@@ -23,7 +23,7 @@ const FETCH_TIMEOUT = 8000;
 /** Accept без image/webp — Storage-трансформер тогда отдаёт JPEG. */
 const ACCEPT = "image/jpeg,image/png;q=0.9,*/*;q=0.1";
 
-export type ImageFormat = "png" | "jpg" | "webp" | "avif" | "gif" | "unknown";
+export type ImageFormat = "png" | "jpg" | "webp" | "avif" | "gif" | "svg" | "unknown";
 
 /** Определяет формат по сигнатуре файла. */
 export function sniffImageFormat(b: Uint8Array): ImageFormat {
@@ -35,6 +35,12 @@ export function sniffImageFormat(b: Uint8Array): ImageFormat {
     s.split("").every((c, k) => b[i + k] === c.charCodeAt(0));
   if (ascii(0, "RIFF") && ascii(8, "WEBP")) return "webp";
   if (ascii(4, "ftyp") && (ascii(8, "avif") || ascii(8, "avis"))) return "avif";
+  // SVG — текст: пропускаем BOM/пробелы, допускаем XML-пролог и комментарии.
+  const head = new TextDecoder("utf-8", { fatal: false })
+    .decode(b.slice(0, 512))
+    .replace(/^\uFEFF/, "")
+    .trimStart();
+  if (/^<(\?xml|!--|!DOCTYPE svg|svg[\s>])/i.test(head) && /<svg[\s>]/i.test(head)) return "svg";
   return "unknown";
 }
 
@@ -53,10 +59,25 @@ function storageTransformUrl(url: string, width: number): string {
   return `${converted}${sep}width=${width}&quality=82&resize=contain`;
 }
 
-/** Публичный image-прокси: перекодирует webp/avif в JPEG. */
-function proxyUrl(url: string, width: number): string {
+/** Публичный image-прокси: перекодирует webp/avif/svg в JPEG или PNG. */
+export function proxyUrl(url: string, width: number, output: "jpg" | "png" = "jpg"): string {
   const bare = url.replace(/^https?:\/\//i, "");
-  return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&output=jpg&q=82&w=${width}`;
+  const q = output === "jpg" ? "&q=82" : "";
+  return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&output=${output}${q}&w=${width}`;
+}
+
+/**
+ * Порядок попыток конвертации для исходника.
+ * SVG трансформер хранилища не конвертирует (отдаёт тот же файл), поэтому для
+ * векторных и прозрачных картинок сразу идём в прокси и просим PNG.
+ */
+export function conversionCandidates(url: string, width: number, format: ImageFormat): string[] {
+  const transparent = format === "svg" || format === "avif" || format === "webp" || format === "unknown";
+  const list: string[] = [];
+  if (format !== "svg" && isStorageUrl(url)) list.push(storageTransformUrl(url, width));
+  if (transparent) list.push(proxyUrl(url, width, "png"));
+  list.push(proxyUrl(url, width, "jpg"));
+  return list;
 }
 
 async function fetchBytes(url: string): Promise<Uint8Array | null> {
@@ -86,15 +107,13 @@ export async function loadEmbeddableImageBytes(
   if (!src || !/^https?:\/\//i.test(src)) return null;
 
   const direct = await fetchBytes(src);
-  if (direct) {
-    const fmt = sniffImageFormat(direct);
-    if (fmt === "png" || fmt === "jpg") return { bytes: direct, format: fmt };
+  const sourceFormat: ImageFormat = direct ? sniffImageFormat(direct) : "unknown";
+  if (direct && (sourceFormat === "png" || sourceFormat === "jpg")) {
+    return { bytes: direct, format: sourceFormat };
   }
 
-  // Нужна конвертация: сначала родной трансформер Storage, затем прокси.
-  const candidates = isStorageUrl(src)
-    ? [storageTransformUrl(src, width)]
-    : [proxyUrl(src, width)];
+  // Нужна конвертация: трансформер хранилища (для растра), затем прокси.
+  const candidates = conversionCandidates(src, width, sourceFormat);
 
   for (const candidate of candidates) {
     const bytes = await fetchBytes(candidate);

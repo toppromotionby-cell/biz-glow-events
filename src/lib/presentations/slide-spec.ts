@@ -291,8 +291,13 @@ function contactsSpec(a: StaticSpecInput): SpecBlock[] {
     const gridW = Math.min(SPEC.contactsMaxW, w);
     const cardW = (gridW - SPEC.contactCardGap) / 2;
     const innerW = cardW - SPEC.contactCardPadX * 2;
-    const cardH =
-      SPEC.contactCardPadY * 2 + ts.label * 1.3 + 6 + ts.subtitle * 1.3;
+    // Значение может занять несколько строк (например длинный адрес) —
+    // высота карточек единая и рассчитывается по самому длинному значению.
+    const valueH = Math.max(
+      ...rows.map((r) => textH(r.value, ts.subtitle, innerW, 1.3)),
+      ts.subtitle * 1.3,
+    );
+    const cardH = SPEC.contactCardPadY * 2 + ts.label * 1.3 + 6 + valueH;
     rows.forEach((r, i) => {
       const cx = x + (i % 2) * (cardW + SPEC.contactCardGap);
       const cy = y + Math.floor(i / 2) * (cardH + SPEC.contactCardGap);
