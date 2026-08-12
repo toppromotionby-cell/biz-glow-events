@@ -151,7 +151,8 @@ export async function buildPresentationPdf(
   const display = await pdf.embedFont(set.display, { subset: true });
 
   pdf.setTitle(presentation.title);
-  const t = themeOf(presentation.template, company?.accent_color ?? "#FF7500");
+  const accentHex = company?.accent_color ?? "#FF7500";
+  const t = themeOf(presentation.template, accentHex);
   const cache = createImageCache();
   const logo = await embedImage(pdf, logoUrl, cache);
   const clientLogo = await embedImage(pdf, clientLogoUrl, cache);
@@ -168,7 +169,9 @@ export async function buildPresentationPdf(
 
   for (const [index, slide] of visible.entries()) {
     const page = pdf.addPage([W, H]);
-    drawBackground(page, t);
+    // Фон слайда может быть переопределён — тогда и токены текста считаются от него.
+    const st = themeOf(presentation.template, accentHex, slide.content.background);
+    drawBackground(page, st);
     const sources = slide.content.showImage
       ? (slide.resolved_images.length
           ? slide.resolved_images
@@ -180,7 +183,7 @@ export async function buildPresentationPdf(
     );
 
     await drawSlide({
-      page, slide, images, logo, clientLogo, layout, brand, theme: t,
+      page, slide, images, logo, clientLogo, layout, brand, theme: st,
       fonts: { regular, bold, display, displayCyrillic: set.displayCyrillic },
       company, presentation,
       index, total: visible.length,
