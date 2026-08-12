@@ -12,18 +12,19 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, Info, Undo2, History, Send,
+  Download, Info, Undo2, History, Send, ListTree, User, Wallet, ShieldCheck, Settings2,
   Eye, Percent, Brain, MoreHorizontal,
 } from "lucide-react";
 
 import { useConfirm } from "@/components/admin/ConfirmDialog";
+import { DocEditorShell } from "@/components/admin/editor/DocEditorShell";
+import type { EditorSection } from "@/components/admin/editor/EditorSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
