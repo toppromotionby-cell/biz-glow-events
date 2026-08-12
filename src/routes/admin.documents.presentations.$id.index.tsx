@@ -6,6 +6,7 @@ import { FullscreenLayer, Z_LAYER } from "@/components/FullscreenLayer";
 
 import { PresentationBrandingPanel } from "@/components/admin/presentations/PresentationBrandingPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AUTOSAVE_DELAY, saveStatus } from "@/lib/editor/save-state";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -367,7 +368,7 @@ function Page() {
     if (!dirty || !meta || saveRef.current.isPending) return;
     const t = setTimeout(() => {
       if (!saveRef.current.isPending) saveRef.current.mutate();
-    }, 3000);
+    }, AUTOSAVE_DELAY);
     return () => clearTimeout(t);
   }, [dirty, meta, slides]);
 
@@ -459,13 +460,7 @@ function Page() {
 
   const visibleCount = slides.filter((s) => s.is_visible).length;
 
-  const saveState = save.isPending
-    ? { text: "Сохраняем…", cls: "text-muted-foreground" }
-    : dirty
-      ? { text: "Есть несохранённые правки", cls: "text-amber-500" }
-      : savedAt
-        ? { text: `Сохранено в ${savedAt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`, cls: "text-muted-foreground" }
-        : { text: "Все изменения сохранены", cls: "text-muted-foreground" };
+  const saveState = saveStatus(save.isPending ? "saving" : dirty ? "dirty" : "saved", savedAt);
 
   const branding = {
     brandLogoUrl: meta.logo_url,
@@ -639,7 +634,7 @@ function Page() {
                   КП {data.quote.number}
                 </Link>
               )}
-              <span className={saveState.cls}>
+              <span className={saveState.tone === "error" ? "text-destructive" : saveState.tone === "pending" ? "text-amber-500" : "text-muted-foreground"}>
                 {!dirty && !save.isPending && <Check className="mr-1 inline h-3 w-3" aria-hidden />}
                 {saveState.text}
               </span>
