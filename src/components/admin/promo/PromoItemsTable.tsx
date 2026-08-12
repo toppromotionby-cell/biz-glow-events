@@ -101,7 +101,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
     <div className="space-y-3">
       {sections.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          Пока нет позиций. Добавьте первую строку или вставьте таблицу из Excel.
+          Пока нет позиций. Добавьте первую строку — подсказки подставятся из базы знаний.
         </div>
       )}
 

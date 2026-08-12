@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ArrowLeft, Download, ExternalLink, History, Plus, Search, Send,
-  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation, FileSpreadsheet,
+  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,

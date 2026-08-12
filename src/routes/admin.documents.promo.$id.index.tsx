@@ -12,7 +12,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, FileSpreadsheet, Info, Undo2, History, Send,
+  ArrowLeft, Download, Info, Undo2, History, Send,
   Eye, Percent, Brain, MoreHorizontal,
 } from "lucide-react";
 

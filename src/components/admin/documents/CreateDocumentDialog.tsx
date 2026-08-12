@@ -106,7 +106,7 @@ export function CreateDocumentDialog({ open, onOpenChange, onCreated }: Props) {
             <KindCard
               icon={<Megaphone className="h-5 w-5 text-primary" />}
               title="КП промо"
-              description="Промо-направление: множители, комиссия, экспорт в Excel"
+              description="Промо-направление: множители, комиссия, разделы"
               onClick={() => setStep("promo")}
             />
           </div>
