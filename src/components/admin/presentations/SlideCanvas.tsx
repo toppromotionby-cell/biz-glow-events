@@ -294,126 +294,34 @@ function SlideBody({
     </div>
   );
 
-  if (slide.type === "title") {
-    const rows = [
-      company?.company_website,
-      company?.company_phone,
-      company?.company_email,
-      company?.company_address,
-    ].filter((v): v is string => !!v && !!v.trim());
+  if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
+    const blocks = staticSlideSpec({
+      slide,
+      ts,
+      company,
+      presentationTitle,
+      brandName: brand,
+      heroLogo: heroLogo && plan.brand ? { w: plan.brand.maxW, h: plan.brand.maxH } : null,
+      dateLabel: slide.type === "title" ? new Date().toLocaleDateString("ru-RU") : "",
+    });
     return (
       <>
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            padding: `${GRID.marginTop + 24}px ${GRID.marginX + 24}px`,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          {heroLogo ? (
-            <Logo path={heroLogo} height={plan.brand?.maxH ?? 72} />
-          ) : brand ? (
-            <div style={{ ...heading, fontSize: 30, fontWeight: 700 }}>{brand}</div>
-          ) : null}
-
-          <Editable
-            value={slide.title || presentationTitle}
-            placeholder="Название презентации"
-            block="title"
-            onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-            style={{ ...heading, marginTop: 40, fontSize: ts.titleHero, fontWeight: 800, lineHeight: 1.05, maxWidth: 900, ...partAlign("title") }}
+        {blocks.map((b, i) => (
+          <SpecBlockView
+            key={i}
+            block={b}
+            theme={theme}
+            heading={heading}
+            logoPath={heroLogo}
+            onEdit={onEdit}
+            partAlign={partAlign}
           />
-          <Editable
-            value={slide.subtitle}
-            placeholder="Подзаголовок или слоган"
-            block="subtitle"
-            onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-            style={{ marginTop: 20, fontSize: ts.subtitle, color: theme.muted, maxWidth: 820, ...partAlign("subtitle") }}
-          />
-          <div style={{ marginTop: 40, height: 4, width: 120, background: theme.accent, borderRadius: 4 }} />
-          {rows.length > 0 && (
-            <div style={{ marginTop: 30, display: "flex", flexWrap: "wrap", gap: "10px 28px", fontSize: ts.chip, color: theme.muted }}>
-              {rows.map((r) => (
-                <span key={r}>{r}</span>
-              ))}
-            </div>
-          )}
-          <div style={{ marginTop: 20, fontSize: ts.caption, color: theme.muted }}>
-            {new Date().toLocaleDateString("ru-RU")}
-          </div>
-        </div>
-        <div style={{ position: "absolute", right: -160, top: -160, width: 520, height: 520, borderRadius: "50%", background: theme.accent, opacity: 0.12 }} />
+        ))}
+        {slide.type !== "title" && footer}
       </>
     );
   }
 
-  if (slide.type === "section") {
-    return (
-      <>
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "center", padding: `0 ${GRID.marginX + 24}px` }}>
-          <div style={{ height: 4, width: 88, background: theme.accent, borderRadius: 4, marginBottom: 26 }} />
-          <Editable
-            value={slide.title}
-            placeholder="Название раздела"
-            block="title"
-            onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-            style={{ ...heading, fontSize: ts.titleSection, fontWeight: 800, ...partAlign("title") }}
-          />
-          <Editable
-            value={slide.subtitle}
-            placeholder="Короткое пояснение"
-            block="subtitle"
-            onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-            style={{ marginTop: 16, fontSize: ts.subtitle, color: theme.muted, maxWidth: 860, ...partAlign("subtitle") }}
-          />
-        </div>
-        {footer}
-      </>
-    );
-  }
-
-  if (slide.type === "contacts") {
-    const rows: { label: string; value: string }[] = [
-      { label: "Телефон", value: company?.company_phone ?? "" },
-      { label: "E-mail", value: company?.company_email ?? "" },
-      { label: "Сайт", value: company?.company_website ?? "" },
-      { label: "Адрес", value: company?.company_address ?? "" },
-    ].filter((r) => r.value.trim());
-    return (
-      <>
-        <div style={{ position: "absolute", inset: 0, padding: `${GRID.marginTop + 32}px ${GRID.marginX + 24}px`, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <Editable
-            value={slide.title}
-            placeholder="Свяжитесь с нами"
-            block="title"
-            onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-            style={{ ...heading, fontSize: ts.titleSection, fontWeight: 800, ...partAlign("title") }}
-          />
-          <Editable
-            value={slide.subtitle}
-            placeholder="Подзаголовок"
-            block="subtitle"
-            onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-            style={{ marginTop: 14, fontSize: ts.subtitle, color: theme.muted, ...partAlign("subtitle") }}
-          />
-          {rows.length > 0 && (
-            <div style={{ marginTop: 40, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, maxWidth: 900 }}>
-              {rows.map((r) => (
-                <div key={r.label} style={{ background: theme.panel, borderRadius: GRID.radius, padding: "20px 24px" }}>
-                  <div style={{ fontSize: ts.label, color: theme.muted, textTransform: "uppercase", letterSpacing: 1 }}>{r.label}</div>
-                  <div style={{ fontSize: ts.subtitle, fontWeight: 600, marginTop: 6 }}>{r.value}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        {footer}
-      </>
-    );
-  }
 
   // Текстовый слайд и слайд позиции: единая раскладка «фото + текст».
   const box = layout.textBox;
