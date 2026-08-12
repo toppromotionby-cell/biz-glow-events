@@ -472,158 +472,34 @@ function SlideBody({
   }
 
 
-  // Текстовый слайд и слайд позиции: единая раскладка «фото + текст».
-  const box = layout.textBox;
-  const isFullBleed = layout.placement === "full";
+  // Текстовый слайд и слайд позиции: рисуем ровно тот же спек, что и PDF.
+  const blocks = contentSlideSpec({
+    slide,
+    fit,
+    brandName: brand,
+    footerLogo: !!footerLogo,
+    index,
+    total,
+  });
 
   return (
     <>
-      {layout.photos.length > 0 && (
-        <PhotoGallery frames={layout.frames} photos={layout.photos} radius={GRID.radius} />
-      )}
-      {isFullBleed && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.72) 100%)",
-          }}
+      {blocks.map((b, i) => (
+        <SpecBlockView
+          key={i}
+          block={b}
+          theme={theme}
+          heading={heading}
+          logoPath={null}
+          onEdit={onEdit}
+          partAlign={partAlign}
         />
-      )}
-      <div
-        style={{
-          position: "absolute",
-          left: box.x,
-          top: box.y,
-          width: box.w,
-          maxHeight: box.h,
-          height: layout.textFill ? box.h : undefined,
-          textAlign: layout.textAlignX,
-          color: isFullBleed ? "#fff" : theme.ink,
-          overflow: "hidden",
-        }}
-      >
-        <Editable
-          value={slide.title}
-          placeholder={slide.type === "product" ? "Название позиции" : "Заголовок слайда"}
-          block="title"
-          onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-          style={{ ...heading, fontSize: ts.titleSlide, fontWeight: 800, lineHeight: 1.1, ...partAlign("title") }}
-        />
-        <Editable
-          value={slide.subtitle}
-          placeholder="Подзаголовок"
-          block="subtitle"
-          onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-          style={{ marginTop: 8, fontSize: ts.subtitle, color: isFullBleed ? "rgba(255,255,255,0.82)" : theme.muted, ...partAlign("subtitle") }}
-        />
-        {!isFullBleed && (
-          <div
-            style={{
-              marginTop: 18,
-              height: 3,
-              width: 64,
-              background: theme.accent,
-              borderRadius: 3,
-              marginLeft: layout.textAlignX === "center" ? "auto" : layout.textAlignX === "right" ? "auto" : 0,
-              marginRight: layout.textAlignX === "center" ? "auto" : 0,
-            }}
-          />
-        )}
-        {c.showDescription && c.description.trim() && (
-          <div data-block="body" style={{ marginTop: ts.blockGap, fontSize: ts.body, lineHeight: ts.lineGap, whiteSpace: "pre-wrap", ...partAlign("body") }}>
-            {c.description}
-          </div>
-        )}
-        {c.showIncludes && c.includes.length > 0 && (
-          <div style={{ marginTop: ts.blockGap }}>
-            {slide.type === "product" && (
-              <div style={{ fontSize: ts.label, letterSpacing: 1, textTransform: "uppercase", color: theme.muted }}>
-                Что входит
-              </div>
-            )}
-            <ul style={{ marginTop: 10, fontSize: ts.bullet, lineHeight: ts.lineGap, paddingLeft: 0, listStyle: "none" }}>
-              {c.includes.map((i, k) => (
-                <li
-                  key={k}
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    marginBottom: 6,
-                    justifyContent:
-                      layout.textAlignX === "center" ? "center" : layout.textAlignX === "right" ? "flex-end" : "flex-start",
-                    textAlign: layout.textAlignX,
-                  }}
-                >
-                  <span style={{ color: theme.accent }}>•</span>
-                  <span>{i}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {c.showSpecs && c.specs.length > 0 && (
-          <div
-            style={{
-              marginTop: ts.blockGap,
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent:
-                layout.textAlignX === "center" ? "center" : layout.textAlignX === "right" ? "flex-end" : "flex-start",
-            }}
-          >
-            {c.specs.map((s, k) => (
-              <div key={k} style={{ background: theme.panel, borderRadius: 12, padding: "9px 14px", fontSize: ts.chip }}>
-                <span style={{ color: theme.muted }}>{s.label}: </span>
-                <span style={{ fontWeight: 600 }}>{s.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {c.showPrice && c.price != null && c.price > 0 && !layout.priceBox && (
-          <div
-            style={{
-              marginTop: ts.blockGap,
-              display: "inline-flex",
-              alignItems: "baseline",
-              gap: 10,
-              background: theme.accent,
-              color: theme.onAccent,
-              borderRadius: 14,
-              padding: "10px 20px",
-            }}
-          >
-            <span style={{ ...heading, fontSize: ts.stat, fontWeight: 800 }}>{money(c.price)}</span>
-            <span style={{ fontSize: ts.caption, opacity: 0.85 }}>/ {c.priceUnit}</span>
-          </div>
-        )}
-        {c.sku && (
-          <div style={{ marginTop: 12, fontSize: ts.caption, color: isFullBleed ? "rgba(255,255,255,0.8)" : theme.muted }}>
-            Артикул: {c.sku}
-          </div>
-        )}
-      </div>
-      {c.showPrice && c.price != null && c.price > 0 && layout.priceBox && (
-        <div
-          style={{
-            position: "absolute",
-            left: layout.priceBox.x,
-            top: layout.priceBox.y,
-            display: "inline-flex",
-            alignItems: "baseline",
-            gap: 10,
-            background: theme.accent,
-            color: theme.onAccent,
-            borderRadius: 14,
-            padding: "10px 20px",
-          }}
-        >
-          <span style={{ ...heading, fontSize: ts.stat, fontWeight: 800 }}>{money(c.price)}</span>
-          <span style={{ fontSize: ts.caption, opacity: 0.85 }}>/ {c.priceUnit}</span>
+      ))}
+      {footerLogo && (
+        <div style={{ position: "absolute", left: GRID.marginX, bottom: 28 }}>
+          <Logo path={footerLogo} height={plan.brand?.maxH ?? 26} />
         </div>
       )}
-      {footer}
     </>
   );
 }
