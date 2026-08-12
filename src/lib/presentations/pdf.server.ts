@@ -109,22 +109,14 @@ function money(n: number): string {
   return `${fmt} BYN`;
 }
 
-async function embedImage(pdf: PDFDocument, url: string | null): Promise<PDFImage | null> {
-  const src = (url ?? "").trim();
-  if (!src || !/^https?:\/\//i.test(src)) return null;
-  try {
-    const res = await fetch(src, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (!bytes.byteLength || bytes.byteLength > 8 * 1024 * 1024) return null;
-    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
-    const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
-    if (!isPng && !isJpg) return null;
-    return isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
-  } catch {
-    return null;
-  }
+async function embedImage(
+  pdf: PDFDocument,
+  url: string | null,
+  cache?: ImageCache,
+): Promise<PDFImage | null> {
+  return await embedImageUrl(pdf, url, { cache });
 }
+
 
 /** Слайд с уже разрешёнными абсолютными URL фотографий (до 5). */
 export type ResolvedSlide = PresentationSlide & {
