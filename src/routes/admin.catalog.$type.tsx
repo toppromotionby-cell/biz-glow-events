@@ -223,6 +223,11 @@ function CatalogInner({ table }: { table: CatalogTable }) {
               {q && <span>Найдено: {filtered.length} из {items.length}</span>}
             </div>
           )}
+          {items.length >= ADMIN_LIST_LIMIT && (
+            <p className="px-1 text-xs text-muted-foreground">
+              Показаны первые {ADMIN_LIST_LIMIT} карточек — уточните поиск, чтобы найти остальные.
+            </p>
+          )}
           <AdminListPanel<Row>
             items={filtered}
             isLoading={isLoading}
