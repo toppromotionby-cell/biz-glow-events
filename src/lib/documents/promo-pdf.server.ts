@@ -184,7 +184,7 @@ function columnWidths(ctx: Ctx, layout: DocLayout, tableW: number): number[] {
     for (const r of layout.rows) {
       if (r.serviceRow && ["unit", "qty", "rate_unit", "multiplier"].includes(c.key)) continue;
       const v = r.cells[c.key];
-      if (v) need = Math.max(need, ctx.regular.widthOfTextAtSize(v, FS_BODY));
+      if (v) need = Math.max(need, ctx.bold.widthOfTextAtSize(v, FS_BODY));
     }
     need += PAD_X * 2 + 1;
     widths[i] = Math.max(widths[i], need);
