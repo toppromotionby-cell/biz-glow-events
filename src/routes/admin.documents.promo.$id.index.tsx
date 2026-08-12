@@ -128,7 +128,38 @@ function EditorPage() {
   const redoStack = useRef<Snapshot[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persist = useCallback(async (payload: Snapshot) => {
+    const { id: _id, doc_number, created_at, updated_at, total, sent_at, ...patch } = payload.quote;
+    void _id; void doc_number; void created_at; void updated_at; void total; void sent_at;
+    return save({
+      data: {
+        id,
+        patch: patch as unknown as Record<string, unknown>,
+        items: payload.items.map((it) => ({
+          section: it.section, title: it.title, unit: it.unit, qty: it.qty,
+          multiplier: it.multiplier, price: it.price, cost: it.cost, note: it.note,
+          exclude_from_commission: it.exclude_from_commission,
+        })) as unknown[],
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Общий хук: дебаунс 1200 мс, Ctrl+S, предупреждение при уходе со страницы.
+  const saver = useEditorSave(async () => {
+    const snap = pending.current ?? (quote ? { quote, items } : null);
+    if (!snap) return;
+    try {
+      await persist(snap);
+      pending.current = null;
+    } catch (e) {
+      toast.error(`Не сохранено: ${friendlyZodMessage(e as Error)}`);
+      throw e;
+    }
+  });
+  const saverRef = useRef(saver);
+  saverRef.current = saver;
 
   useEffect(() => {
     if (data) {
@@ -138,39 +169,16 @@ function EditorPage() {
       redoStack.current = [];
       setCanUndo(false);
       setCanRedo(false);
-      setDirty(false);
+      pending.current = null;
+      saverRef.current.reset();
     }
   }, [data]);
 
-  const saveMut = useMutation({
-    mutationFn: async (payload: Snapshot) => {
-      const { id: _id, doc_number, created_at, updated_at, total, sent_at, ...patch } = payload.quote;
-      void _id; void doc_number; void created_at; void updated_at; void total; void sent_at;
-      return save({
-        data: {
-          id,
-          patch: patch as unknown as Record<string, unknown>,
-          items: payload.items.map((it) => ({
-            section: it.section, title: it.title, unit: it.unit, qty: it.qty,
-            multiplier: it.multiplier, price: it.price, cost: it.cost, note: it.note,
-            exclude_from_commission: it.exclude_from_commission,
-          })) as unknown[],
-        },
-      });
-    },
-    onSuccess: () => {
-      setSavedAt(new Date());
-      setDirty(false);
-    },
-    onError: (e: Error) => toast.error(`Не сохранено: ${friendlyZodMessage(e)}`),
-  });
-
   const scheduleSave = useCallback((q: PromoQuote, list: PromoItem[]) => {
-    setDirty(true);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => saveMut.mutate({ quote: q, items: list }), AUTOSAVE_DELAY);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    pending.current = { quote: q, items: list };
+    saverRef.current.markDirty();
   }, []);
+
 
   const { fetchContacts } = useDocSuggest();
 
