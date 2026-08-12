@@ -271,13 +271,68 @@ function splitFrames(box: Rect, count: number): Rect[] {
   ];
 }
 
-/** Область под блок цены для ручной зоны. */
-function priceRect(zone: PriceZone, textBox: Rect): Rect | null {
-  if (zone === "corner") return { x: SLIDE_W - GRID.marginX - 340, y: SLIDE_H - GRID.footerH - 110, w: 340, h: 84 };
-  if (zone === "beside-photo") return { x: SLIDE_W - GRID.marginX - 340, y: GRID.marginTop, w: 340, h: 84 };
-  if (zone === "under-text") return { x: textBox.x, y: textBox.y + textBox.h - 84, w: Math.min(340, textBox.w), h: 84 };
-  return null;
+/** Пересекаются ли прямоугольники (с допуском). */
+export function rectsOverlap(a: Rect, b: Rect, gap = 0): boolean {
+  return (
+    a.x < b.x + b.w + gap && a.x + a.w + gap > b.x && a.y < b.y + b.h + gap && a.y + a.h + gap > b.y
+  );
 }
+
+const PRICE_W = 340;
+const PRICE_H = 84;
+
+/** Область под блок цены для конкретной зоны. */
+function priceRect(zone: Exclude<PriceZone, "auto">, textBox: Rect): Rect {
+  if (zone === "corner") {
+    return { x: SLIDE_W - GRID.marginX - PRICE_W, y: SLIDE_H - GRID.footerH - 110, w: PRICE_W, h: PRICE_H };
+  }
+  if (zone === "beside-photo") {
+    return { x: SLIDE_W - GRID.marginX - PRICE_W, y: GRID.marginTop, w: PRICE_W, h: PRICE_H };
+  }
+  return { x: textBox.x, y: textBox.y + textBox.h - PRICE_H, w: Math.min(PRICE_W, textBox.w), h: PRICE_H };
+}
+
+const PRICE_FALLBACK: Exclude<PriceZone, "auto">[] = ["corner", "beside-photo", "under-text"];
+
+/**
+ * Финальная проверка раскладки: блоки не должны перекрывать друг друга.
+ * Если выбранная зона цены попадает на фото — цена уходит в ближайшую
+ * свободную зону; если она накрывает текст — текстовая колонка ужимается.
+ * Осознанное наложение остаётся только для фото на весь слайд (там подложка).
+ */
+export function resolveCollisions(
+  textBox: Rect,
+  photoBox: Rect | null,
+  zone: PriceZone,
+  placement: PhotoPlacement,
+): { textBox: Rect; priceBox: Rect | null } {
+  if (zone === "auto") return { textBox, priceBox: null };
+  const overPhoto = (r: Rect) =>
+    placement !== "full" && placement !== "none" && !!photoBox && rectsOverlap(r, photoBox, 12);
+
+  const order = [zone, ...PRICE_FALLBACK.filter((z) => z !== zone)];
+  let price = priceRect(zone, textBox);
+  for (const candidate of order) {
+    const r = priceRect(candidate, textBox);
+    if (!overPhoto(r)) {
+      price = r;
+      break;
+    }
+  }
+  // Крайний случай — все зоны заняты фото: прижимаем цену к текстовой колонке.
+  if (overPhoto(price)) {
+    price = { x: textBox.x, y: textBox.y + textBox.h - PRICE_H, w: Math.min(PRICE_W, textBox.w), h: PRICE_H };
+  }
+
+  // Цена под текстом всегда «съедает» низ текстовой колонки, чтобы текст не залезал.
+  let text = textBox;
+  if (rectsOverlap(price, text, 8) && price.y > text.y) {
+    const h = Math.max(120, price.y - text.y - 12);
+    text = { ...text, h };
+  }
+  return { textBox: text, priceBox: price };
+}
+
 
 /**
  * Раскладка слайда: автоматически по количеству фото и объёму текста, а
