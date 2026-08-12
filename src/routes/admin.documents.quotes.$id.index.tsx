@@ -755,47 +755,131 @@ function Page() {
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="versions" className="border border-border/60 rounded-xl px-3">
-                  <AccordionTrigger className="text-sm font-medium">
-                    <span className="flex items-center gap-2"><History className="h-4 w-4" />История версий</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-2 pb-4">
-                    <Button size="sm" variant="outline" onClick={onCreateVersion}>Сохранить версию</Button>
-                    {!versions.length && <p className="text-sm text-muted-foreground">Версий пока нет</p>}
-                    {versions.map((v) => (
-                      <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm">
-                        <div className="min-w-0">
-                          <div className="truncate">{v.label || new Date(v.created_at).toLocaleString("ru-RU")}</div>
-                          <div className="text-xs text-muted-foreground tabular-nums">{fmtMoney(v.total)}</div>
-                        </div>
-                        <Button size="sm" variant="ghost" onClick={() => onRestore(v.id)}>Восстановить</Button>
-                      </div>
-                    ))}
-                  </AccordionContent>
-                </AccordionItem>
               </Accordion>
-
-            </TabsContent>
-
-          </Tabs>
-        </div>
-
-        {/* ПРАВО: живое превью */}
-        <div className="xl:sticky xl:top-4 h-[calc(100vh-8rem)] rounded-xl border border-border/60 overflow-hidden bg-background">
-          <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Живое превью документа</span>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
-                <span>Редактирование двойным кликом</span>
-              </label>
-              <DetachedPreviewButton html={previewHtml} title={`Превью · ${quote.title || "КП"}`} />
+      ),
+    },
+    {
+      id: "checks",
+      label: "Проверка",
+      Icon: ShieldCheck,
+      dot: errorsCount + warnsCount > 0,
+      content: <DocStatusBar checks={checks} onGoto={gotoCheck} />,
+    },
+    {
+      id: "versions",
+      label: "История",
+      Icon: History,
+      content: (
+        <div className="space-y-2">
+          <Button size="sm" variant="outline" onClick={onCreateVersion}>Сохранить версию</Button>
+          {!versions.length && <p className="text-sm text-muted-foreground">Версий пока нет</p>}
+          {versions.map((v) => (
+            <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm">
+              <div className="min-w-0">
+                <div className="truncate">{v.label || new Date(v.created_at).toLocaleString("ru-RU")}</div>
+                <div className="text-xs text-muted-foreground tabular-nums">{fmtMoney(v.total)}</div>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => onRestore(v.id)}>Восстановить</Button>
             </div>
-          </div>
-          <LivePreviewFrame frameRef={previewRef} title="Превью КП" html={previewHtml} className="w-full h-[calc(100%-2.25rem)] bg-white" />
+          ))}
         </div>
-      </div>
+      ),
+    },
+  ];
 
+  return (
+    <DocEditorShell
+      sections={sections}
+      active={tab}
+      onActiveChange={setTab}
+      hint="Двойной клик по блоку в листе открывает его редактирование"
+      title={
+        <Input
+          value={quote.title ?? ""}
+          onChange={(e) => patch({ title: e.target.value })}
+          placeholder={`КП №${quoteNumberDisplay(quote)}`}
+          className="h-8 max-w-[380px] border-transparent bg-transparent px-1 text-base font-semibold shadow-none focus-visible:border-input"
+        />
+      }
+      subtitle={
+        <>
+          <span>КП №{quoteNumberDisplay(quote)}</span>
+          <span>·</span>
+          <span>{quote.client_company || quote.client_name || "Без клиента"}</span>
+          <span>·</span>
+          <span className="tabular-nums">{fmtMoney(totals.total)}</span>
+          <SaveStatus state={state} errorMessage={saveError} />
+          {pending.length > 0 && state !== "error" && (
+            <span className="text-amber-500">Не сохранено (допишите значение): {pending.join(", ")}</span>
+          )}
+          <QuoteShareStatus share={shareState} />
+        </>
+      }
+      actions={
+        <>
+          <Select value={quote.status} onValueChange={(v) => patch({ status: v as QuoteStatus })}>
+            <SelectTrigger className="w-[150px] h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {QUOTE_STATUSES.map((s) => <SelectItem key={s} value={s}>{QUOTE_STATUS_LABELS[s]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <QuoteShareActions
+            share={shareState}
+            onSend={onSendToClient}
+            issues={checks.filter((c) => c.level === "error").map((c) => c.message)}
+          />
+          <Button size="sm" onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render?format=pdf`, { name: "КП.pdf" })}>
+            <Download className="h-4 w-4 mr-1.5" />PDF
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm"><MoreHorizontal className="h-4 w-4 mr-1.5" />Ещё</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuItem onClick={onMarkSent}>
+                <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onCreateOrder}>
+                <FileCheck2 className="mr-2 h-4 w-4" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onBuildPresentation}>
+                <Presentation className="mr-2 h-4 w-4" />Собрать презентацию
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />HTML-версия
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
+                <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в библиотеку
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/documents/knowledge"><Brain className="mr-2 h-4 w-4" />База знаний подсказок</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      }
+      footerLeft={
+        <>
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+            <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
+            <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" />Правка двойным кликом</span>
+          </label>
+          <DetachedPreviewButton html={previewHtml} title={`Превью · ${quote.title || "КП"}`} />
+        </>
+      }
+      sheet={({ height }) => (
+        <LivePreviewFrame
+          frameRef={previewRef}
+          title="Превью КП"
+          html={previewHtml}
+          className="w-full rounded-lg bg-white"
+          style={{ height: Math.max(1123, height) }}
+        />
+      )}
+    >
       <BlockEditDialog
         edit={edit}
         quote={quote}
@@ -813,7 +897,7 @@ function Page() {
         typeLabel="КП"
         onSave={onSaveToLibrary}
       />
-
-    </div>
+    </DocEditorShell>
   );
 }
+
