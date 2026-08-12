@@ -4,7 +4,8 @@
 // а слайд пересобирается прямо во время перетаскивания — что видишь, то и получишь.
 // Все изменения — это входные параметры автораскладки (design.ts), поэтому
 // остальные элементы перестраиваются автоматически и не перекрывают друг друга.
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { GRID, SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import type { SlideFit } from "@/lib/presentations/fit";
 import type { SlideLogoPlan } from "@/lib/presentations/logo-plan";
@@ -14,7 +15,7 @@ import {
 } from "@/lib/presentations/model";
 import { logoZones, nearestZone, photoZones, priceZones, textZones, type ZoneDef } from "@/lib/presentations/zones";
 
-type Kind = "photo" | "text" | "price" | "brand" | "client";
+type Kind = BlockKind;
 
 export type SlideLayoutOverlayProps = {
   fit: SlideFit;
@@ -38,7 +39,18 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   const [dragging, setDragging] = useState<Kind | null>(null);
   const [zone, setZone] = useState<string | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [selected, setSelected] = useState<Kind | null>(null);
   const grab = useRef({ dx: 0, dy: 0 });
+  const moved = useRef(false);
+
+  // Esc снимает выделение — как в Canva.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const zonesFor = (kind: Kind): ZoneDef<string>[] => {
     if (kind === "photo") return photoZones() as ZoneDef<string>[];
@@ -76,6 +88,8 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     const p = toCanvas(e);
     grab.current = { dx: p.x - rect.x, dy: p.y - rect.y };
+    moved.current = false;
+    setSelected(kind);
     setDragging(kind);
     setZone(currentZone(kind));
     setGhost({ x: rect.x, y: rect.y, w: rect.w, h: rect.h });
@@ -84,6 +98,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   const onMove = (kind: Kind, rect: Rect) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
     const p = toCanvas(e);
+    moved.current = true;
     setGhost({ x: p.x - grab.current.dx, y: p.y - grab.current.dy, w: rect.w, h: rect.h });
     const z = nearestZone(zonesFor(kind), p);
     if (z.id !== zone) {
@@ -95,7 +110,8 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
 
   const endDrag = (kind: Kind) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
-    apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
+    // Простой клик без перетаскивания = выделение блока, зона не меняется.
+    if (moved.current) apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
     setDragging(null);
     setZone(null);
     setGhost(null);
