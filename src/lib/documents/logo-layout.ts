@@ -57,8 +57,12 @@ export function normalizeLogoLayout(value: unknown): LogoLayout {
   const raw = (value && typeof value === "object" ? value : {}) as Partial<Record<keyof LogoLayout, unknown>>;
   const L = LOGO_LAYOUT_LIMITS;
   const align = raw.align === "center" || raw.align === "right" ? raw.align : "left";
+  // Старые записи (без mode) сохраняют ручные размеры, новые — авто.
+  const mode = raw.mode === "manual" ? "manual" : raw.mode === "auto" ? "auto" : hasManualValues(raw) ? "manual" : "auto";
   return {
+    mode,
     align,
+
     maxW: clamp(raw.maxW, L.maxW.min, L.maxW.max, DEFAULT_LOGO_LAYOUT.maxW),
     maxH: clamp(raw.maxH, L.maxH.min, L.maxH.max, DEFAULT_LOGO_LAYOUT.maxH),
     offsetX: clamp(raw.offsetX, L.offsetX.min, L.offsetX.max, 0),
