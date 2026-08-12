@@ -4,7 +4,7 @@
 import { resolveCompany } from "@/lib/documents/company";
 import { fontCssVars, fontLinkTags, resolveDocFont } from "@/lib/documents/doc-font";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
-import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
+import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
@@ -611,7 +611,7 @@ ${fontLinkTags(docFont)}
     <div style="text-align:${quote.logo_layout?.align === "center" ? "center" : quote.logo_layout?.align === "right" ? "right" : "left"}"${ed("company", undefined, "Реквизиты и логотип")}>
       ${quote.design.show_logo && (quote.logo_url || settings.logo_url) ? `<div style="${logoWrapStyle(quote.logo_layout)}"><img class="logo" style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url || settings.logo_url)}" alt="" /></div>` : ""}
       ${quote.design.show_logo && (quote.logo_url || settings.logo_url) ? "" : `<div class="brand">${esc(c.brand)}</div>`}
-      <div class="brand-sub">${esc(c.legal)}${c.unp ? ` · УНП ${esc(c.unp)}` : ""}<br/>${esc(c.address)}</div>
+      <div class="brand-sub" style="${requisitesStyle(`${c.legal}${c.unp ? ` · УНП ${c.unp}` : ""} ${c.address}`)}">${esc(c.legal)}${c.unp ? ` · УНП ${esc(c.unp)}` : ""}<br/>${esc(c.address)}</div>
     </div>
 
     <div class="right"${ed("header", undefined, "Номер и даты")}>

@@ -26,6 +26,7 @@ import {
 import {
   DEFAULT_LOGO_LAYOUT,
   computeLogoPlacement,
+  requisitesFontPt,
   normalizeLogoLayout,
   type LogoLayout,
 } from "@/lib/documents/logo-layout";
@@ -504,25 +505,31 @@ function drawHeader(
     textY -= DOC_FONT_PT.small;
   }
 
-  // Юрлицо + УНП и адрес — двумя строками, с переносом по ширине колонки
+  // Юрлицо + УНП и адрес — с переносом по ширине колонки; кегль подбирается под объём текста
   const legalLine = `${safe(settings.company_legal_name)}${
     safe(settings.company_unp) ? ` · УНП ${safe(settings.company_unp)}` : ""
   }`;
+  const reqSize = requisitesFontPt(
+    DOC_FONT_PT.small,
+    `${legalLine} ${safe(settings.company_address)}`,
+    textMaxW,
+  );
   const subLines = [
-    ...wrapText(ctx.regular, legalLine, DOC_FONT_PT.small, textMaxW),
-    ...wrapText(ctx.regular, safe(settings.company_address), DOC_FONT_PT.small, textMaxW),
+    ...wrapText(ctx.regular, legalLine, reqSize, textMaxW),
+    ...wrapText(ctx.regular, safe(settings.company_address), reqSize, textMaxW),
   ].filter((l) => l.trim() !== "");
   let subY = textY;
   for (const line of subLines) {
     ctx.page.drawText(line, {
-      x: alignedX(ctx.regular.widthOfTextAtSize(line, DOC_FONT_PT.small)),
+      x: alignedX(ctx.regular.widthOfTextAtSize(line, reqSize)),
       y: subY,
-      size: DOC_FONT_PT.small,
+      size: reqSize,
       font: ctx.regular,
       color: MUTED,
     });
-    subY -= DOC_FONT_PT.small * LH_TEXT;
+    subY -= reqSize * LH_TEXT;
   }
+
 
 
   drawTracked(ctx.page, kindUpper, {

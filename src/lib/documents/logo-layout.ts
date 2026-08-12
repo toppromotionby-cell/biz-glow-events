@@ -11,6 +11,8 @@ import { DOC_LAYOUT } from "./brand";
 export type LogoAlign = "left" | "center" | "right";
 
 export type LogoLayout = {
+  /** «auto» — размеры подбираются автоматически, «manual» — ползунками. */
+  mode: "auto" | "manual";
   /** Горизонтальное выравнивание логотипа в шапке. */
   align: LogoAlign;
   /** Максимальная ширина бокса логотипа, pt. */
@@ -26,6 +28,7 @@ export type LogoLayout = {
 };
 
 export const DEFAULT_LOGO_LAYOUT: LogoLayout = {
+  mode: "auto",
   align: "left",
   maxW: 150,
   maxH: 34,
@@ -33,6 +36,7 @@ export const DEFAULT_LOGO_LAYOUT: LogoLayout = {
   offsetY: 0,
   gap: 12,
 };
+
 
 export const LOGO_LAYOUT_LIMITS = {
   maxW: { min: 40, max: 320, step: 2 },
@@ -48,13 +52,23 @@ function clamp(v: unknown, min: number, max: number, fallback: number): number {
   return Math.min(max, Math.max(min, Math.round(n * 10) / 10));
 }
 
+/** Были ли в записи размеры/сдвиги — признак старой ручной настройки. */
+function hasManualValues(raw: Partial<Record<keyof LogoLayout, unknown>>): boolean {
+  return (["maxW", "maxH", "offsetX", "offsetY", "gap"] as const).some((k) => raw[k] !== undefined);
+}
+
 /** Приводит произвольное значение из БД к валидному LogoLayout. */
+
 export function normalizeLogoLayout(value: unknown): LogoLayout {
   const raw = (value && typeof value === "object" ? value : {}) as Partial<Record<keyof LogoLayout, unknown>>;
   const L = LOGO_LAYOUT_LIMITS;
   const align = raw.align === "center" || raw.align === "right" ? raw.align : "left";
+  // Старые записи (без mode) сохраняют ручные размеры, новые — авто.
+  const mode = raw.mode === "manual" ? "manual" : raw.mode === "auto" ? "auto" : hasManualValues(raw) ? "manual" : "auto";
   return {
+    mode,
     align,
+
     maxW: clamp(raw.maxW, L.maxW.min, L.maxW.max, DEFAULT_LOGO_LAYOUT.maxW),
     maxH: clamp(raw.maxH, L.maxH.min, L.maxH.max, DEFAULT_LOGO_LAYOUT.maxH),
     offsetX: clamp(raw.offsetX, L.offsetX.min, L.offsetX.max, 0),
@@ -90,13 +104,46 @@ export type LogoPlacement = {
   reserve: number;
 };
 
+/** Ширина, зарезервированная под правую колонку (тип/номер/дата), pt. */
+const RIGHT_BLOCK_PT = 190;
+
+/** Доступная ширина левой колонки шапки (логотип + реквизиты), pt. */
+export function headerColumnWidthPt(): number {
+  const { pageWidthPt, marginXPt } = DOC_LAYOUT;
+  return pageWidthPt - marginXPt * 2 - RIGHT_BLOCK_PT;
+}
+
+/**
+ * Авто-режим: подбирает размеры бокса логотипа под свободное место шапки
+ * с учётом пропорций изображения — широкие логотипы ограничены по ширине,
+ * высокие/квадратные — по высоте.
+ */
+export function autoLogoBox(aspect: number, align: LogoAlign): { maxW: number; maxH: number; gap: number } {
+  const a = Number.isFinite(aspect) && aspect > 0 ? aspect : 3;
+  const contentW = DOC_LAYOUT.pageWidthPt - DOC_LAYOUT.marginXPt * 2;
+  // По центру логотип может занять почти всю ширину, слева/справа — только свою колонку.
+  const availW = align === "center" ? contentW * 0.6 : Math.min(headerColumnWidthPt(), 240);
+  // Чем «квадратнее» логотип, тем ниже допустимая высота, чтобы шапка не разрасталась.
+  const maxH = a >= 3.5 ? 40 : a >= 2 ? 46 : a >= 1 ? 52 : 58;
+  const maxW = Math.min(availW, maxH * a);
+  return { maxW: Math.round(maxW), maxH, gap: 12 };
+}
+
+/** Возвращает раскладку с фактическими размерами (в авто-режиме — рассчитанными). */
+export function resolveLogoLayout(layout: LogoLayout, aspect: number): LogoLayout {
+  if (layout.mode !== "auto") return layout;
+  const box = autoLogoBox(aspect, layout.align);
+  return { ...layout, ...box, offsetX: 0, offsetY: 0 };
+}
+
 /**
  * Считает геометрию логотипа в шапке.
  * Реквизиты (бренд/юрлицо/адрес) всегда располагаются ПОД логотипом
  * и выравниваются по горизонтали так же, как логотип.
  * @param aspect отношение ширины к высоте исходного изображения (w/h)
  */
-export function computeLogoPlacement(layout: LogoLayout, aspect: number): LogoPlacement {
+export function computeLogoPlacement(rawLayout: LogoLayout, aspect: number): LogoPlacement {
+  const layout = resolveLogoLayout(rawLayout, aspect);
   const { pageWidthPt, marginXPt } = DOC_LAYOUT;
   const a = Number.isFinite(aspect) && aspect > 0 ? aspect : 3;
   const contentW = pageWidthPt - marginXPt * 2;
@@ -120,25 +167,54 @@ export function computeLogoPlacement(layout: LogoLayout, aspect: number): LogoPl
   return { w, h, x, top, textX, textRight, textAlign: layout.align, textTop, reserve: textTop };
 }
 
+/**
+ * Кегль реквизитов, подобранный под объём текста и ширину колонки.
+ * @param basePt базовый кегль (DOC_FONT_PT.small)
+ * @param text строка реквизитов целиком
+ * @param widthPt ширина колонки, pt
+ */
+export function requisitesFontPt(basePt: number, text: string, widthPt = headerColumnWidthPt()): number {
+  const chars = (text || "").trim().length;
+  if (!chars) return basePt;
+  // Приблизительно 0.5·кегля на символ — оцениваем число строк.
+  const perLine = Math.max(10, widthPt / (basePt * 0.5));
+  const lines = Math.ceil(chars / perLine);
+  const scale = lines <= 2 ? 1 : lines === 3 ? 0.92 : 0.85;
+  return Math.max(7.5, Math.round(basePt * scale * 10) / 10);
+}
 
 /** Коэффициент перевода pt страницы в «пиксели макета» HTML-превью. */
 export const LOGO_PT_TO_PX = 1.48;
 
 /** inline-стиль для <img> логотипа в HTML-превью документа. */
-export function logoImgStyle(layout: LogoLayout): string {
+export function logoImgStyle(rawLayout: LogoLayout, aspect = 3): string {
+  const layout = resolveLogoLayout(rawLayout, aspect);
   const px = (v: number) => `${Math.round(v * LOGO_PT_TO_PX * 10) / 10}px`;
   return [
     "display:inline-block",
     "position:relative",
     "width:auto",
     "height:auto",
-    `max-width:${px(layout.maxW)}`,
+    `max-width:min(100%, ${px(layout.maxW)})`,
     `max-height:${px(layout.maxH)}`,
+    "object-fit:contain",
     `left:${px(layout.offsetX)}`,
     `top:${px(layout.offsetY)}`,
     `margin-bottom:${px(layout.gap * 0.5)}`,
   ].join(";");
 }
+
+/** inline-стиль блока реквизитов под логотипом в HTML-превью. */
+export function requisitesStyle(text: string, basePt = 10): string {
+  const size = requisitesFontPt(basePt, text);
+  return [
+    `font-size:${Math.round(size * 10) / 10}px`,
+    "line-height:1.35",
+    `max-width:${Math.round(headerColumnWidthPt() * LOGO_PT_TO_PX)}px`,
+    "overflow-wrap:anywhere",
+  ].join(";");
+}
+
 
 /** inline-стиль обёртки логотипа (выравнивание по горизонтали). */
 export function logoWrapStyle(layout: LogoLayout): string {

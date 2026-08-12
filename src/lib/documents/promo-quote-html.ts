@@ -1,6 +1,6 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
 import { PRICE_LABEL } from "@/lib/documents/doc-layout";
-import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
+import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
 import { fontCssVars, fontLinkTags, resolveDocFont } from "@/lib/documents/doc-font";
 import { vatRateLabel } from "@/lib/documents/vat";
 
@@ -230,12 +230,15 @@ export function buildPromoQuoteBody(
       ${
         quote.logo_url
           ? `<div class="logo-col" style="${logoWrapStyle(quote.logo_layout)}"><img style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url)}" alt="Логотип" />${
-              opts.companyLine ? `<div class="req">${esc(opts.companyLine)}</div>` : ""
+              opts.companyLine
+                ? `<div class="req" style="${requisitesStyle(opts.companyLine)}">${esc(opts.companyLine)}</div>`
+                : ""
             }</div>`
           : opts.companyLine
-            ? `<div class="logo-col"><div class="req">${esc(opts.companyLine)}</div></div>`
+            ? `<div class="logo-col"><div class="req" style="${requisitesStyle(opts.companyLine)}">${esc(opts.companyLine)}</div></div>`
             : ""
       }
+
       ${quote.client_logo_url ? `<img src="${esc(quote.client_logo_url)}" alt="Логотип клиента" />` : ""}
     </div>
   </div>
@@ -262,9 +265,9 @@ export const PROMO_DOC_CSS = `
 .promo-doc .head { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .promo-doc .meta div { border: 1px solid #d8d8dd; padding: 5px 8px; margin-bottom: -1px; background: #f6f6f7; max-width: 460px; }
 .promo-doc .logos { display: flex; gap: 16px; align-items: flex-start; }
-.promo-doc .logos img { max-height: 64px; max-width: 240px; object-fit: contain; }
+.promo-doc .logos img { max-height: 72px; max-width: 100%; object-fit: contain; }
 .promo-doc .logo-col { display: block; }
-.promo-doc .logo-col .req { margin-top: 4px; max-width: 260px; font-size: 10px; line-height: 1.35; color: #5a5a63; }
+.promo-doc .logo-col .req { margin-top: 4px; font-size: 10px; line-height: 1.35; color: #5a5a63; }
 
 .promo-doc .docnum { font-family: var(--font-display, inherit); margin: 16px 0 8px; font-weight: 700; font-size: 13px; }
 .promo-doc table { width: 100%; border-collapse: collapse; }
