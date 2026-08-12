@@ -226,6 +226,7 @@ async function drawSlide(a: DrawArgs) {
     layout,
     hasBrandLogo: !!logo,
     hasClientLogo: !!clientLogo,
+    overrides: slide.content.layout,
   });
   const drawClientLogo = () => {
     if (clientLogo && plan.client) drawPlannedLogo(page, clientLogo, plan.client);
@@ -377,8 +378,11 @@ async function drawSlide(a: DrawArgs) {
   if (c.showPrice && c.price != null && c.price > 0) {
     const label = `${money(c.price)} / ${c.priceUnit}`;
     const w = fonts.bold.widthOfTextAtSize(label, 15) + 32;
-    page.drawRectangle({ x, y: 64, width: w, height: 34, color: t.accent });
-    page.drawText(label, { x: x + 16, y: 75, size: 15, font: fonts.bold, color: t.onAccent });
+    const pb = slideFit.layout.priceBox;
+    const bx = pb ? px(pb.x) : x;
+    const by = pb ? H - px(pb.y) - 34 : 64;
+    page.drawRectangle({ x: bx, y: by, width: w, height: 34, color: t.accent });
+    page.drawText(label, { x: bx + 16, y: by + 11, size: 15, font: fonts.bold, color: t.onAccent });
   }
 
   // Логотипы: ровно один логотип компании и один клиента, слоты уже посчитаны.

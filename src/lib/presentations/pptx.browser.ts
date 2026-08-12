@@ -103,6 +103,7 @@ export async function exportPresentationPptx(
       frames: fit.layout.frames,
       placement: fit.layout.placement,
       layout: presentation.logo_layout,
+      overrides: s.content.layout,
       hasBrandLogo: !!logoData,
       hasClientLogo: !!clientLogoData,
     });
@@ -193,8 +194,9 @@ export async function exportPresentationPptx(
       }
     }
     if (c.showPrice && c.price != null && c.price > 0) {
+      const pb = fit.layout.priceBox;
       slide.addText(`${c.price.toFixed(2)} BYN / ${c.priceUnit}`, {
-        x: textLeft, y: H - 1.25, w: 3.2, h: 0.5, fontSize: 16, bold: true,
+        x: pb ? pb.x * IN : textLeft, y: pb ? pb.y * IN : H - 1.25, w: 3.2, h: 0.5, fontSize: 16, bold: true,
         color: t.onAccent, fill: { color: t.accent }, align: "center",
       });
     }
