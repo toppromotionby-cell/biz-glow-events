@@ -8,14 +8,18 @@ import {
   type LogoOverride, type PresentationLogoLayout, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
 
-export type LogoSlot = "hero" | "footer" | "tl" | "tr" | "bl" | "br";
+export type LogoSlot = "hero" | "footer" | "tl" | "tr" | "bl" | "br" | "free";
 
 export type LogoPlacementPlan = {
   slot: LogoSlot;
   /** Максимальные габариты логотипа в координатах холста 1280×720. */
   maxW: number;
   maxH: number;
+  /** Левый верхний угол для слота "free" (координаты холста 1280×720). */
+  x?: number;
+  y?: number;
 };
+
 
 export type SlideLogoPlan = {
   brand: LogoPlacementPlan | null;
@@ -40,10 +44,12 @@ export type PlanLogosInput = {
 const ovScale = (o: LogoOverride): number =>
   o.scale == null ? 1 : clampNum(o.scale, LOGO_SCALE_MIN, LOGO_SCALE_MAX);
 
+type Corner = "tl" | "tr" | "bl" | "br";
+
 const CORNER_ZONE = 300;
 const CORNER_ZONE_H = 140;
 
-function cornerRect(slot: Exclude<LogoSlot, "hero" | "footer">): Rect {
+function cornerRect(slot: Corner): Rect {
   switch (slot) {
     case "tl":
       return { x: 0, y: 0, w: CORNER_ZONE, h: CORNER_ZONE_H };
@@ -62,7 +68,7 @@ function overlaps(a: Rect, b: Rect): boolean {
 
 /** Свободен ли угол от фотографий (для full-bleed считаем свободным — есть затемнение). */
 function cornerFree(
-  slot: Exclude<LogoSlot, "hero" | "footer">,
+  slot: Corner,
   frames: Rect[],
   full: boolean,
   blocked: Rect[] = [],
@@ -73,7 +79,7 @@ function cornerFree(
   return !frames.some((f) => overlaps(zone, f));
 }
 
-const CORNERS: Exclude<LogoSlot, "hero" | "footer">[] = ["tr", "tl", "br", "bl"];
+const CORNERS: Corner[] = ["tr", "tl", "br", "bl"];
 
 /** Переносит логотип из занятой области в ближайший свободный угол. */
 function relocate(
@@ -83,7 +89,7 @@ function relocate(
   full: boolean,
   blocked: Rect[],
 ): LogoPlacementPlan | null {
-  if (!place || place.slot === "hero" || place.slot === "footer") return place;
+  if (!place || place.slot === "hero" || place.slot === "footer" || place.slot === "free") return place;
   if (cornerFree(place.slot, frames, full, blocked)) return place;
   const free = CORNERS.find((slot) => !taken.has(slot) && cornerFree(slot, frames, full, blocked));
   return free ? { ...place, slot: free } : place;
@@ -92,12 +98,12 @@ function relocate(
 /** Минимально допустимая доля от исходного размера логотипа (ниже — не рисуем). */
 export const LOGO_MIN_FIT = 0.55;
 
-const SLOT_RECTS: Record<Exclude<LogoSlot, "hero" | "footer">, Rect> = {
+const SLOT_RECTS: Record<Corner, Rect> = {
   tl: cornerRect("tl"), tr: cornerRect("tr"), bl: cornerRect("bl"), br: cornerRect("br"),
 };
 
 /** Ширина/высота свободного просвета в углу с учётом занятых областей. */
-function freeSpace(slot: Exclude<LogoSlot, "hero" | "footer">, obstacles: Rect[]): { w: number; h: number } {
+function freeSpace(slot: Corner, obstacles: Rect[]): { w: number; h: number } {
   const zone = SLOT_RECTS[slot];
   let w = zone.w;
   let h = zone.h;
@@ -126,7 +132,7 @@ function fitIntoFree(
   blocked: Rect[],
 ): LogoPlacementPlan | null {
   if (!place) return null;
-  if (place.slot === "hero" || place.slot === "footer") {
+  if (place.slot === "hero" || place.slot === "footer" || place.slot === "free") {
     // Hero/footer живут в потоке контента, их ужимает только блок цены/текста,
     // если он физически накрывает область логотипа.
     return place;
@@ -142,6 +148,38 @@ function fitIntoFree(
 const isTitleLike = (type: SlideType): boolean => type === "title" || type === "contacts";
 
 /**
+ * Свободная позиция логотипа (пользователь перетащил его мышью).
+ * Размер подбирается под свободное место: если логотип накрывает текст или
+ * блок цены, он пропорционально уменьшается (но не мельче LOGO_MIN_FIT).
+ * Фотографии препятствием не считаются — поверх картинки логотип допустим.
+ */
+function freePlacement(
+  pos: { x: number; y: number },
+  baseW: number,
+  baseH: number,
+  blocked: Rect[],
+): LogoPlacementPlan {
+  let w = baseW;
+  let h = baseH;
+  const rectAt = (ww: number, hh: number): Rect => ({
+    x: clampNum(pos.x * SLIDE_W, 0, SLIDE_W - ww),
+    y: clampNum(pos.y * SLIDE_H, 0, SLIDE_H - hh),
+    w: ww,
+    h: hh,
+  });
+  for (let i = 0; i < 8; i += 1) {
+    if (!blocked.some((b) => overlaps(rectAt(w, h), b))) break;
+    const next = Math.max(LOGO_MIN_FIT, (w / baseW) * 0.9);
+    if (next === w / baseW) break;
+    w = baseW * next;
+    h = baseH * next;
+  }
+  const r = rectAt(w, h);
+  return { slot: "free", maxW: w, maxH: h, x: r.x, y: r.y };
+}
+
+
+/**
  * Рассчитывает единственную позицию для логотипа компании и логотипа клиента.
  * Размеры отдаются в координатах холста 1280×720 — рендеры сами пересчитывают.
  */
@@ -153,9 +191,17 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   const scale = layout.scale;
   const ov = input.overrides ?? DEFAULT_LAYOUT_OVERRIDES;
 
+  const blockedRects = input.blocked ?? [];
+  // Базовый размер логотипа: на титульных слайдах крупнее, на остальных — компактный.
+  const baseW = (titleLike ? 260 : 170) * scale;
+  const baseH = (titleLike ? 62 : 42) * scale;
+
   // --- Логотип компании: ровно одно место ---
   let brand: LogoPlacementPlan | null = null;
-  if (hasBrandLogo && layout.brand !== "off" && ov.brandLogo.zone !== "auto") {
+  if (hasBrandLogo && layout.brand !== "off" && ov.brandLogo.pos) {
+    const k = ovScale(ov.brandLogo);
+    brand = freePlacement(ov.brandLogo.pos, baseW * k, baseH * k, blockedRects);
+  } else if (hasBrandLogo && layout.brand !== "off" && ov.brandLogo.zone !== "auto") {
     const k = scale * ovScale(ov.brandLogo);
     brand = ov.brandLogo.zone === "hero"
       ? { slot: "hero", maxW: 320 * k, maxH: 76 * k }
@@ -171,6 +217,7 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
     }
   }
 
+
   // --- Логотип клиента: свободный угол, не совпадающий со слотом компании ---
   let client: LogoPlacementPlan | null = null;
   const clientAllowed =
@@ -178,7 +225,10 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
     layout.client !== "off" &&
     (layout.client !== "title-only" || titleLike);
 
-  if (clientAllowed && ov.clientLogo.zone !== "auto" && ov.clientLogo.zone !== "hero") {
+  if (clientAllowed && ov.clientLogo.pos) {
+    const k = ovScale(ov.clientLogo);
+    client = freePlacement(ov.clientLogo.pos, baseW * k, baseH * k, blockedRects);
+  } else if (clientAllowed && ov.clientLogo.zone !== "auto" && ov.clientLogo.zone !== "hero") {
     const k = scale * ovScale(ov.clientLogo);
     const slot = ov.clientLogo.zone;
     client = slot === "footer"
@@ -191,16 +241,16 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   } else if (clientAllowed) {
     const taken = new Set<LogoSlot>();
     if (brand) taken.add(brand.slot);
-    const order: Exclude<LogoSlot, "hero" | "footer">[] = titleLike
+    const order: Corner[] = titleLike
       ? ["tr", "tl", "br"]
       : ["tr", "tl", "br", "bl"];
-    const candidates = order.filter((slot) => {
+    const candidates: Corner[] = order.filter((slot) => {
       if (taken.has(slot)) return false;
       // Футер компании занимает низ слева — не ставим клиента в bl.
       if (brand?.slot === "footer" && slot === "bl") return false;
       return true;
     });
-    const free = candidates.find((slot) => cornerFree(slot, frames, full, input.blocked ?? []));
+    const free = candidates.find((slot) => cornerFree(slot, frames, full, blockedRects));
     // Свободного угла нет — берём первый допустимый: fitIntoFree ниже
     // либо ужмёт логотип под просвет, либо уберёт его совсем.
     const slot = free ?? candidates[0] ?? null;
@@ -212,7 +262,7 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   }
 
   // Финальная проверка: логотип не должен накрывать текст или блок цены.
-  const blocked = input.blocked ?? [];
+  const blocked = blockedRects;
   if (blocked.length) {
     client = relocate(client, new Set([brand?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
     brand = relocate(brand, new Set([client?.slot].filter(Boolean) as LogoSlot[]), frames, full, blocked);
@@ -221,7 +271,16 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   client = fitIntoFree(client, frames, full, blocked);
   brand = fitIntoFree(brand, frames, full, blocked);
 
+  // Оба логотипа на слайде — одинакового размера (правило Canva-подобной пары).
+  if (brand && client) {
+    const w = Math.min(brand.maxW, client.maxW);
+    const h = Math.min(brand.maxH, client.maxH);
+    brand = { ...brand, maxW: w, maxH: h };
+    client = { ...client, maxW: w, maxH: h };
+  }
+
   return { brand, client };
+
 }
 
 /** Показывать ли текстовое название компании в футере (когда логотипа там нет). */

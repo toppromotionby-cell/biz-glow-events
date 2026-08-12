@@ -100,8 +100,11 @@ export type SlideBranding = Pick<
 >;
 
 /** Позиционирование логотипа в угловом слоте. */
-function cornerStyle(slot: LogoSlot): CSSProperties {
+function logoStyle(p: { slot: LogoSlot; x?: number; y?: number }): CSSProperties {
   const base: CSSProperties = { position: "absolute" };
+  // Свободная позиция (логотип перетащили мышью) — абсолютные координаты холста.
+  if (p.slot === "free") return { ...base, left: p.x ?? 0, top: p.y ?? 0 };
+  const slot = p.slot;
   if (slot === "tl") return { ...base, top: 36, left: 56 };
   if (slot === "tr") return { ...base, top: 36, right: 56 };
   if (slot === "bl") return { ...base, bottom: 84, left: 56 };
@@ -160,12 +163,12 @@ export function SlideCanvas(props: SlideCanvasProps) {
           plan={plan}
         />
         {plan.client && plan.client.slot !== "hero" && plan.client.slot !== "footer" && (
-          <div style={cornerStyle(plan.client.slot)}>
+          <div data-block="clientLogo" style={logoStyle(plan.client)}>
             <Logo path={clientLogo} height={plan.client.maxH} />
           </div>
         )}
         {plan.brand && plan.brand.slot !== "hero" && plan.brand.slot !== "footer" && (
-          <div style={cornerStyle(plan.brand.slot)}>
+          <div data-block="brandLogo" style={logoStyle(plan.brand)}>
             <Logo path={brandLogo} height={plan.brand.maxH} />
           </div>
         )}
@@ -199,15 +202,19 @@ function Editable({
   placeholder,
   style,
   onChange,
+  block,
 }: {
   value: string;
   placeholder: string;
   style: CSSProperties;
   onChange?: (v: string) => void;
+  /** Идентификатор блока для выделения двойным кликом в режиме раскладки. */
+  block?: string;
 }) {
-  if (!onChange) return <div style={style}>{value || ""}</div>;
+  if (!onChange) return <div data-block={block} style={style}>{value || ""}</div>;
   return (
     <div
+      data-block={block}
       contentEditable
       suppressContentEditableWarning
       data-placeholder={placeholder}
@@ -251,6 +258,12 @@ function SlideBody({
   const ts = fit.type;
   const { layout } = fit;
   const heading = { fontFamily: "var(--slide-font-display, " + FONTS.display + ")", letterSpacing: "-0.03em" } as const;
+  // Выравнивание отдельных частей текста (Canva-подобно): auto = как у блока.
+  const ov = slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES;
+  const partAlign = (part: "title" | "subtitle" | "body"): CSSProperties => {
+    const v = part === "title" ? ov.titleAlignX : part === "subtitle" ? ov.subtitleAlignX : ov.bodyAlignX;
+    return v === "auto" ? {} : { textAlign: v };
+  };
 
   const footer = (
     <div
@@ -309,14 +322,16 @@ function SlideBody({
           <Editable
             value={slide.title || presentationTitle}
             placeholder="Название презентации"
+            block="title"
             onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-            style={{ ...heading, marginTop: 40, fontSize: ts.titleHero, fontWeight: 800, lineHeight: 1.05, maxWidth: 900 }}
+            style={{ ...heading, marginTop: 40, fontSize: ts.titleHero, fontWeight: 800, lineHeight: 1.05, maxWidth: 900, ...partAlign("title") }}
           />
           <Editable
             value={slide.subtitle}
             placeholder="Подзаголовок или слоган"
+            block="subtitle"
             onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-            style={{ marginTop: 20, fontSize: ts.subtitle, color: theme.muted, maxWidth: 820 }}
+            style={{ marginTop: 20, fontSize: ts.subtitle, color: theme.muted, maxWidth: 820, ...partAlign("subtitle") }}
           />
           <div style={{ marginTop: 40, height: 4, width: 120, background: theme.accent, borderRadius: 4 }} />
           {rows.length > 0 && (
@@ -343,14 +358,16 @@ function SlideBody({
           <Editable
             value={slide.title}
             placeholder="Название раздела"
+            block="title"
             onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-            style={{ ...heading, fontSize: ts.titleSection, fontWeight: 800 }}
+            style={{ ...heading, fontSize: ts.titleSection, fontWeight: 800, ...partAlign("title") }}
           />
           <Editable
             value={slide.subtitle}
             placeholder="Короткое пояснение"
+            block="subtitle"
             onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-            style={{ marginTop: 16, fontSize: ts.subtitle, color: theme.muted, maxWidth: 860 }}
+            style={{ marginTop: 16, fontSize: ts.subtitle, color: theme.muted, maxWidth: 860, ...partAlign("subtitle") }}
           />
         </div>
         {footer}
@@ -371,14 +388,16 @@ function SlideBody({
           <Editable
             value={slide.title}
             placeholder="Свяжитесь с нами"
+            block="title"
             onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-            style={{ ...heading, fontSize: ts.titleSection, fontWeight: 800 }}
+            style={{ ...heading, fontSize: ts.titleSection, fontWeight: 800, ...partAlign("title") }}
           />
           <Editable
             value={slide.subtitle}
             placeholder="Подзаголовок"
+            block="subtitle"
             onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-            style={{ marginTop: 14, fontSize: ts.subtitle, color: theme.muted }}
+            style={{ marginTop: 14, fontSize: ts.subtitle, color: theme.muted, ...partAlign("subtitle") }}
           />
           {rows.length > 0 && (
             <div style={{ marginTop: 40, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, maxWidth: 900 }}>
@@ -430,14 +449,16 @@ function SlideBody({
         <Editable
           value={slide.title}
           placeholder={slide.type === "product" ? "Название позиции" : "Заголовок слайда"}
+          block="title"
           onChange={onEdit ? (v) => onEdit({ title: v }) : undefined}
-          style={{ ...heading, fontSize: ts.titleSlide, fontWeight: 800, lineHeight: 1.1 }}
+          style={{ ...heading, fontSize: ts.titleSlide, fontWeight: 800, lineHeight: 1.1, ...partAlign("title") }}
         />
         <Editable
           value={slide.subtitle}
           placeholder="Подзаголовок"
+          block="subtitle"
           onChange={onEdit ? (v) => onEdit({ subtitle: v }) : undefined}
-          style={{ marginTop: 8, fontSize: ts.subtitle, color: isFullBleed ? "rgba(255,255,255,0.82)" : theme.muted }}
+          style={{ marginTop: 8, fontSize: ts.subtitle, color: isFullBleed ? "rgba(255,255,255,0.82)" : theme.muted, ...partAlign("subtitle") }}
         />
         {!isFullBleed && (
           <div
@@ -453,7 +474,7 @@ function SlideBody({
           />
         )}
         {c.showDescription && c.description.trim() && (
-          <div style={{ marginTop: ts.blockGap, fontSize: ts.body, lineHeight: ts.lineGap, whiteSpace: "pre-wrap" }}>
+          <div data-block="body" style={{ marginTop: ts.blockGap, fontSize: ts.body, lineHeight: ts.lineGap, whiteSpace: "pre-wrap", ...partAlign("body") }}>
             {c.description}
           </div>
         )}
