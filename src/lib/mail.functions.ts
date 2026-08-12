@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertStaffRole } from "@/lib/authz";
 import {
   callMailWorker,
   mailWorkerHealth,
@@ -22,18 +23,10 @@ function toJson(value: unknown): Json {
   return JSON.parse(JSON.stringify(value ?? null)) as Json;
 }
 
-const STAFF_ROLES = ["admin", "manager", "accountant", "content_editor"] as const;
-
 async function assertStaff(supabase: SbClient, userId: string) {
-  for (const role of STAFF_ROLES) {
-    const { data, error } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: role,
-    } as never);
-    if (!error && data === true) return;
-  }
-  throw new Error("Forbidden: staff role required");
+  await assertStaffRole({ supabase, userId });
 }
+
 
 async function loadAccountCfg(supabase: SbClient, accountId: string): Promise<MailAccountCfg> {
   const { data, error } = await supabase
