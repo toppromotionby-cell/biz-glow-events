@@ -100,8 +100,11 @@ export type SlideBranding = Pick<
 >;
 
 /** Позиционирование логотипа в угловом слоте. */
-function cornerStyle(slot: LogoSlot): CSSProperties {
+function logoStyle(p: { slot: LogoSlot; x?: number; y?: number }): CSSProperties {
   const base: CSSProperties = { position: "absolute" };
+  // Свободная позиция (логотип перетащили мышью) — абсолютные координаты холста.
+  if (p.slot === "free") return { ...base, left: p.x ?? 0, top: p.y ?? 0 };
+  const slot = p.slot;
   if (slot === "tl") return { ...base, top: 36, left: 56 };
   if (slot === "tr") return { ...base, top: 36, right: 56 };
   if (slot === "bl") return { ...base, bottom: 84, left: 56 };
@@ -160,12 +163,12 @@ export function SlideCanvas(props: SlideCanvasProps) {
           plan={plan}
         />
         {plan.client && plan.client.slot !== "hero" && plan.client.slot !== "footer" && (
-          <div style={cornerStyle(plan.client.slot)}>
+          <div data-block="clientLogo" style={logoStyle(plan.client)}>
             <Logo path={clientLogo} height={plan.client.maxH} />
           </div>
         )}
         {plan.brand && plan.brand.slot !== "hero" && plan.brand.slot !== "footer" && (
-          <div style={cornerStyle(plan.brand.slot)}>
+          <div data-block="brandLogo" style={logoStyle(plan.brand)}>
             <Logo path={brandLogo} height={plan.brand.maxH} />
           </div>
         )}
