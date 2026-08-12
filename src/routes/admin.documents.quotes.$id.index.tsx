@@ -240,59 +240,62 @@ function Page() {
   const patchItems = (next: QuoteItem[]) => { dirtyRef.current = true; setState("dirty"); setItems(next); };
   const { fetchContacts } = useDocSuggest();
 
-  // Автосохранение с дебаунсом.
-  useEffect(() => {
-    if (!quote || !dirtyRef.current) return;
-    const t = setTimeout(async () => {
-      setState("saving");
-      try {
-        const rawPatch: Record<string, unknown> = {
-              status: quote.status, title: quote.title, doc_date: quote.doc_date, validity_days: quote.validity_days,
-              quote_number: quote.quote_number ?? "", valid_until_override: quote.valid_until_override ?? null,
-              client_name: quote.client_name ?? "", client_company: quote.client_company ?? "", client_unp: quote.client_unp ?? "",
-              client_phone: quote.client_phone ?? "", client_email: quote.client_email ?? "", client_address: quote.client_address ?? "",
-              event_date: quote.event_date, event_time_start: quote.event_time_start ?? "", event_time_end: quote.event_time_end ?? "",
-              venue: quote.venue ?? "", guests_count: quote.guests_count, event_format: quote.event_format ?? "",
-              setup_note: quote.setup_note ?? "", event_notes: quote.event_notes ?? "",
-              company_overrides: quote.company_overrides as Record<string, string>,
-              logo_url: quote.logo_url, signature_url: quote.signature_url, stamp_url: quote.stamp_url,
-              texts: quote.texts as unknown as Record<string, string>,
-              design: quote.design as unknown as Record<string, string | boolean>,
-              template: quote.template, blocks: quote.blocks,
-              discount_type: quote.discount_type, discount_value: num(quote.discount_value),
-              prepayment_type: quote.prepayment_type, prepayment_value: num(quote.prepayment_value),
-              delivery_amount: num(quote.delivery_amount), vat_note: quote.vat_note ?? "",
-              vat_mode: quote.vat_mode, vat_rate: num(quote.vat_rate), vat_as_line: quote.vat_as_line,
-        };
-        // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
-        // остальные поля сохраняются, а поле подсветится в списке проверок.
-        const { patch, skipped } = sanitizeQuotePatch(rawPatch);
-        await save({
-          data: {
-            id,
-            patch,
-            items: items.map((it, i) => ({
-              section: it.section ?? "", title: it.title || "Позиция", description: it.description ?? "",
-              includes: (it.includes ?? []).filter((x) => x.text.trim()),
-              qty: num(it.qty), unit: it.unit || "шт.", price: num(it.price), cost: num(it.cost), sort_order: i,
-              entity_type: it.entity_type, entity_id: it.entity_id,
-            })),
-          },
-        });
-        dirtyRef.current = false;
-        setState("saved");
-        setSaveError(null);
-        setPending(skipped);
-        qc.invalidateQueries({ queryKey: ["admin-quotes"] });
-        // Пустой номер = автономер: перечитываем КП, чтобы подтянуть присвоенный БД номер.
-        if (!String(patch.quote_number ?? "").trim()) qc.invalidateQueries({ queryKey: ["admin-quote", id] });
-      } catch (e) {
-        setState("error");
-        setSaveError(friendlyZodMessage(e));
-      }
-    }, AUTOSAVE_DELAY);
-    return () => clearTimeout(t);
-  }, [quote, items, id, save, qc]);
+  // Автосохранение: общий хук (дебаунс, Ctrl+S, защита от ухода со страницы).
+  const quoteRef = useRef<Quote | null>(quote);
+  quoteRef.current = quote;
+  const itemsRef = useRef<QuoteItem[]>(items);
+  itemsRef.current = items;
+
+  const saver = useEditorSave(async () => {
+    const q = quoteRef.current;
+    if (!q) return;
+    const list = itemsRef.current;
+    const rawPatch: Record<string, unknown> = {
+      status: q.status, title: q.title, doc_date: q.doc_date, validity_days: q.validity_days,
+      quote_number: q.quote_number ?? "", valid_until_override: q.valid_until_override ?? null,
+      client_name: q.client_name ?? "", client_company: q.client_company ?? "", client_unp: q.client_unp ?? "",
+      client_phone: q.client_phone ?? "", client_email: q.client_email ?? "", client_address: q.client_address ?? "",
+      event_date: q.event_date, event_time_start: q.event_time_start ?? "", event_time_end: q.event_time_end ?? "",
+      venue: q.venue ?? "", guests_count: q.guests_count, event_format: q.event_format ?? "",
+      setup_note: q.setup_note ?? "", event_notes: q.event_notes ?? "",
+      company_overrides: q.company_overrides as Record<string, string>,
+      logo_url: q.logo_url, signature_url: q.signature_url, stamp_url: q.stamp_url,
+      texts: q.texts as unknown as Record<string, string>,
+      design: q.design as unknown as Record<string, string | boolean>,
+      template: q.template, blocks: q.blocks,
+      discount_type: q.discount_type, discount_value: num(q.discount_value),
+      prepayment_type: q.prepayment_type, prepayment_value: num(q.prepayment_value),
+      delivery_amount: num(q.delivery_amount), vat_note: q.vat_note ?? "",
+      vat_mode: q.vat_mode, vat_rate: num(q.vat_rate), vat_as_line: q.vat_as_line,
+    };
+    // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
+    // остальные поля сохраняются, а поле подсветится в списке проверок.
+    const { patch: safePatch, skipped } = sanitizeQuotePatch(rawPatch);
+    try {
+      await save({
+        data: {
+          id,
+          patch: safePatch,
+          items: list.map((it, i) => ({
+            section: it.section ?? "", title: it.title || "Позиция", description: it.description ?? "",
+            includes: (it.includes ?? []).filter((x) => x.text.trim()),
+            qty: num(it.qty), unit: it.unit || "шт.", price: num(it.price), cost: num(it.cost), sort_order: i,
+            entity_type: it.entity_type, entity_id: it.entity_id,
+          })),
+        },
+      });
+    } catch (e) {
+      throw new Error(friendlyZodMessage(e));
+    }
+    dirtyRef.current = false;
+    setPending(skipped);
+    qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+    // Пустой номер = автономер: перечитываем КП, чтобы подтянуть присвоенный БД номер.
+    if (!String(safePatch.quote_number ?? "").trim()) qc.invalidateQueries({ queryKey: ["admin-quote", id] });
+  });
+  const saverRef = useRef(saver);
+  saverRef.current = saver;
+
 
   // Только что добавленные пустые строки не подсвечиваем в превью —
   // замечания по ним остаются во вкладке «Проверки».
