@@ -228,7 +228,15 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
     };
     const { error } = await supabase.from("cases").update(patch).eq("id", item.id);
     setSaving(false);
-    if (error) { setSaveState("error"); setErrorMessage(error.message); return toast.error(error.message); }
+    if (error) {
+      // Дубль slug и прочие ошибки БД показываем прямо у поля.
+      const mapped = mapServerError(error);
+      if (mapped.field) setServerErrors((prev) => ({ ...prev, [mapped.field as string]: mapped.message }));
+      setSaveState("error");
+      setErrorMessage(mapped.message);
+      return toast.error(mapped.message);
+    }
+    setServerErrors({});
     clearDraft(draftKey);
     setSaveState("saved");
     toast.success("Сохранено");
@@ -237,7 +245,8 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
 
   useEditorHotkeys({ onSave: save });
 
-  const errors = validation.errors;
+  const errors: FieldErrors = { ...validation.errors, ...serverErrors };
+
   const fillSeoDesc = () => {
     const value = generateSeoDescription(form.summary, form.description);
     if (value) setForm({ ...form, seo_description: value });
