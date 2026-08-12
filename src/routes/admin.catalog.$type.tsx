@@ -169,6 +169,12 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       })
     : items;
 
+  // Прогрессивный рендер: при сотнях карточек весь список в DOM тормозит панель.
+  const [visibleCount, setVisibleCount] = useState(RENDER_CHUNK);
+  useEffect(() => { setVisibleCount(RENDER_CHUNK); }, [q, table]);
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visible.length;
+
   const allVisibleSelected = filtered.length > 0 && filtered.every((it) => selectedIds.has(it.id));
   const toggleId = (id: string) => {
     setSelectedIds((prev) => {
@@ -181,6 +187,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
     if (allVisibleSelected) setSelectedIds(new Set());
     else setSelectedIds(new Set(filtered.map((it) => it.id)));
   };
+
 
   return (
     <div className="space-y-5">
