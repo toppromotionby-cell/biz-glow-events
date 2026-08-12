@@ -11,11 +11,14 @@ import {
   clampNum, type SlideLayoutOverrides,
 } from "@/lib/presentations/model";
 
-export type BlockKind = "photo" | "text" | "price" | "brand" | "client";
+export type BlockKind = "photo" | "text" | "title" | "subtitle" | "body" | "price" | "brand" | "client";
 
 export const BLOCK_LABELS: Record<BlockKind, string> = {
   photo: "Фото",
   text: "Текст",
+  title: "Заголовок",
+  subtitle: "Подзаголовок",
+  body: "Описание",
   price: "Цена",
   brand: "Логотип компании",
   client: "Логотип клиента",
@@ -62,6 +65,22 @@ function textButtons(l: SlideLayoutOverrides, on: Props["onChange"]): Btn[] {
       key: "stretch-y", label: "На всю высоту", Icon: MoveVertical, active: l.stretchY,
       onClick: () => on({ stretchY: !l.stretchY }),
     },
+  ];
+}
+
+/** Выравнивание отдельной части текста: заголовок / подзаголовок / описание. */
+function partButtons(kind: "title" | "subtitle" | "body", l: SlideLayoutOverrides, on: Props["onChange"]): Btn[] {
+  const key = kind === "title" ? "titleAlignX" : kind === "subtitle" ? "subtitleAlignX" : "bodyAlignX";
+  const cur = l[key];
+  const x = (id: "left" | "center" | "right", Icon: Btn["Icon"], label: string): Btn => ({
+    key: `${kind}-${id}`, label, Icon,
+    active: cur === id,
+    onClick: () => on({ [key]: cur === id ? "auto" : id } as Partial<SlideLayoutOverrides>),
+  });
+  return [
+    x("left", AlignLeft, "Слева"),
+    x("center", AlignCenter, "По центру"),
+    x("right", AlignRight, "Справа"),
   ];
 }
 
@@ -118,6 +137,11 @@ function logoButtons(kind: "brand" | "client", l: SlideLayoutOverrides, on: Prop
     onClick: () => set({ scale: clampNum((cur.scale ?? 1) + d, LOGO_SCALE_MIN, LOGO_SCALE_MAX) }),
   });
   return [
+    {
+      key: "l-free", label: "Свободное положение (перетащите мышью)", Icon: MoveHorizontal,
+      active: cur.pos !== null,
+      onClick: () => set({ pos: null }),
+    },
     z("tl", AlignVerticalJustifyStart, "Слева сверху"),
     z("tr", AlignVerticalJustifyStart, "Справа сверху"),
     z("bl", AlignVerticalJustifyEnd, "Слева снизу"),
@@ -133,16 +157,20 @@ function resetPatch(kind: BlockKind, l: SlideLayoutOverrides): Partial<SlideLayo
   }
   if (kind === "photo") return { photoZone: "auto", photoScale: null };
   if (kind === "price") return { priceZone: "auto" };
+  if (kind === "title") return { titleAlignX: "auto" };
+  if (kind === "subtitle") return { subtitleAlignX: "auto" };
+  if (kind === "body") return { bodyAlignX: "auto" };
   const key = kind === "brand" ? "brandLogo" : "clientLogo";
-  return { [key]: { ...l[key], zone: "auto", scale: null } } as Partial<SlideLayoutOverrides>;
+  return { [key]: { ...l[key], zone: "auto", scale: null, pos: null } } as Partial<SlideLayoutOverrides>;
 }
 
 export function BlockToolbar({ kind, layout, onChange, onClose }: Props) {
   const buttons =
     kind === "text" ? textButtons(layout, onChange)
-      : kind === "photo" ? photoButtons(layout, onChange)
-        : kind === "price" ? priceButtons(layout, onChange)
-          : logoButtons(kind, layout, onChange);
+      : kind === "title" || kind === "subtitle" || kind === "body" ? partButtons(kind, layout, onChange)
+        : kind === "photo" ? photoButtons(layout, onChange)
+          : kind === "price" ? priceButtons(layout, onChange)
+            : logoButtons(kind, layout, onChange);
 
   const dirty = JSON.stringify(resetPatch(kind, layout)) !== JSON.stringify(resetPatch(kind, DEFAULT_LAYOUT_OVERRIDES));
 
