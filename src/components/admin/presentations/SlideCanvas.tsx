@@ -13,11 +13,14 @@ import {
 import { fitSlide, type SlideFit } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoSlot, type SlideLogoPlan } from "@/lib/presentations/logo-plan";
 import {
+  DEFAULT_LAYOUT_OVERRIDES,
   DEFAULT_PRESENTATION_LOGO_LAYOUT,
   type PresentationLogoLayout,
+  type SlideLayoutOverrides,
   type PresentationSlide,
   type PresentationTemplate,
 } from "@/lib/presentations/model";
+import { SlideLayoutOverlay } from "@/components/admin/presentations/SlideLayoutOverlay";
 import { fontStacks, resolveDocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 
 export { SLIDE_W, SLIDE_H, slideTheme };
@@ -86,6 +89,9 @@ export type SlideCanvasProps = {
   logoLayout?: PresentationLogoLayout;
   /** Шрифт презентации. */
   fontFamily?: DocFontChoice;
+  /** Режим редактора: перетаскивание и масштабирование элементов слайда. */
+  interactive?: boolean;
+  onLayout?: (patch: Partial<SlideLayoutOverrides>) => void;
 };
 
 export type SlideBranding = Pick<
@@ -118,6 +124,7 @@ export function SlideCanvas(props: SlideCanvasProps) {
     layout,
     hasBrandLogo: !!brandLogo,
     hasClientLogo: !!clientLogo,
+    overrides: slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES,
   });
 
   return (
@@ -162,6 +169,16 @@ export function SlideCanvas(props: SlideCanvasProps) {
           </div>
         )}
       </div>
+
+      {props.interactive && props.onLayout && (
+        <SlideLayoutOverlay
+          fit={fit}
+          plan={plan}
+          overrides={slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES}
+          scale={scale}
+          onLayout={props.onLayout}
+        />
+      )}
 
       {showWarnings && fit.warnings.length > 0 && (
         <div
@@ -454,7 +471,7 @@ function SlideBody({
             ))}
           </div>
         )}
-        {c.showPrice && c.price != null && c.price > 0 && (
+        {c.showPrice && c.price != null && c.price > 0 && !layout.priceBox && (
           <div
             style={{
               marginTop: ts.blockGap,
@@ -477,6 +494,25 @@ function SlideBody({
           </div>
         )}
       </div>
+      {c.showPrice && c.price != null && c.price > 0 && layout.priceBox && (
+        <div
+          style={{
+            position: "absolute",
+            left: layout.priceBox.x,
+            top: layout.priceBox.y,
+            display: "inline-flex",
+            alignItems: "baseline",
+            gap: 10,
+            background: theme.accent,
+            color: theme.onAccent,
+            borderRadius: 14,
+            padding: "10px 20px",
+          }}
+        >
+          <span style={{ ...heading, fontSize: ts.stat, fontWeight: 800 }}>{money(c.price)}</span>
+          <span style={{ fontSize: ts.caption, opacity: 0.85 }}>/ {c.priceUnit}</span>
+        </div>
+      )}
       {footer}
     </>
   );

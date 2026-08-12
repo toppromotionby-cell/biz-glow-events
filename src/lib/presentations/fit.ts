@@ -105,5 +105,15 @@ export function fitSlide(slide: PresentationSlide): SlideFit {
     warnings.push("На слайд помещается не более 5 фотографий");
   }
 
-  return { layout, density: chosen, type: ts, overflow, fill: height / box.h, warnings };
+  // Вертикальное выравнивание текста в своей зоне: сдвигаем реальную область
+  // под фактическую высоту содержимого — одинаково в превью, PDF и PPTX.
+  let finalLayout = layout;
+  if (!overflow && layout.textAlign !== "top") {
+    const free = Math.max(0, box.h - height);
+    const dy = layout.textAlign === "center" ? free / 2 : free;
+    finalLayout = { ...layout, textBox: { ...box, y: box.y + dy, h: height } };
+  }
+
+  return { layout: finalLayout, density: chosen, type: ts, overflow, fill: height / box.h, warnings };
 }
+

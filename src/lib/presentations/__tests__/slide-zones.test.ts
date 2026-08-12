@@ -1,0 +1,83 @@
+import { describe, expect, it } from "vitest";
+import { slideLayout, SLIDE_W } from "@/lib/presentations/design";
+import { planSlideLogos } from "@/lib/presentations/logo-plan";
+import {
+  DEFAULT_PRESENTATION_LOGO_LAYOUT, blankSlide, normalizeContent,
+  type PresentationSlide, type SlideLayoutOverrides,
+} from "@/lib/presentations/model";
+import { nearestZone, photoZones, textZones } from "@/lib/presentations/zones";
+
+function slideWith(over: Partial<SlideLayoutOverrides>, photos = ["a.jpg", "b.jpg"]): PresentationSlide {
+  const s = blankSlide("product", 0);
+  s.content = {
+    ...s.content,
+    description: "Описание позиции ".repeat(10),
+    images: photos,
+    layout: { ...s.content.layout, ...over },
+  };
+  return s;
+}
+
+describe("умные зоны раскладки слайда", () => {
+  it("старые слайды без настроек остаются на автомате", () => {
+    const c = normalizeContent({ description: "x" });
+    expect(c.layout.photoZone).toBe("auto");
+    expect(c.layout.photoScale).toBeNull();
+  });
+
+  it("зона фото задаёт сторону, масштаб ограничивается 25–65%", () => {
+    const left = slideLayout(slideWith({ photoZone: "left", photoScale: 0.9 }));
+    expect(left.placement).toBe("left");
+    expect(left.photoBox!.w).toBeLessThanOrEqual(SLIDE_W * 0.65 + 1);
+
+    const right = slideLayout(slideWith({ photoZone: "right", photoScale: 0.05 }));
+    expect(right.placement).toBe("right");
+    expect(right.photoBox!.w).toBeGreaterThanOrEqual(SLIDE_W * 0.25 - 1);
+  });
+
+  it("фото и текст не пересекаются при ручном масштабе", () => {
+    for (const scale of [0.25, 0.4, 0.65]) {
+      for (const zone of ["left", "right"] as const) {
+        const l = slideLayout(slideWith({ photoZone: zone, photoScale: scale }));
+        const p = l.photoBox!;
+        const t = l.textBox;
+        const overlap = p.x < t.x + t.w && p.x + p.w > t.x;
+        expect(overlap).toBe(false);
+      }
+    }
+  });
+
+  it("ширина текста ужимается коэффициентом", () => {
+    const full = slideLayout(slideWith({ photoZone: "none" }));
+    const half = slideLayout(slideWith({ photoZone: "none", textWidth: 0.5 }));
+    expect(half.textBox.w).toBeLessThan(full.textBox.w);
+  });
+
+  it("зона цены даёт отдельную область", () => {
+    expect(slideLayout(slideWith({})).priceBox).toBeNull();
+    expect(slideLayout(slideWith({ priceZone: "corner" })).priceBox).not.toBeNull();
+  });
+
+  it("ближайшая зона выбирается по координате", () => {
+    expect(nearestZone(photoZones(), { x: 40, y: 360 }).id).toBe("left");
+    expect(nearestZone(photoZones(), { x: 1240, y: 360 }).id).toBe("right");
+    expect(nearestZone(textZones(), { x: 640, y: 90 }).id).toBe("top");
+    expect(nearestZone(textZones(), { x: 640, y: 640 }).id).toBe("bottom");
+  });
+
+  it("ручная зона логотипа уважается и не конфликтует", () => {
+    const plan = planSlideLogos({
+      slideType: "product",
+      layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
+      hasBrandLogo: true,
+      hasClientLogo: true,
+      overrides: {
+        ...slideWith({}).content.layout,
+        brandLogo: { zone: "tl", scale: 1.5 },
+        clientLogo: { zone: "tl", scale: null },
+      },
+    });
+    expect(plan.client?.slot).toBe("tl");
+    expect(plan.brand?.slot).not.toBe("tl");
+  });
+});

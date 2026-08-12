@@ -2,7 +2,11 @@
 // Холст 1280×720 (16:9) = пропорции стандартных 1920×1080, делённые на 1.5.
 // Здесь живут сетка, шкала кеглей, ступени плотности, темы и автораскладка
 // фотографий (1–5). Модуль клиент-безопасный: используется в превью, PDF и PPTX.
-import type { PresentationSlide, PresentationTemplate, SlideImageLayout } from "@/lib/presentations/model";
+import {
+  clampNum, DEFAULT_LAYOUT_OVERRIDES, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
+  type PhotoZone, type PresentationSlide, type PresentationTemplate,
+  type PriceZone, type SlideImageLayout,
+} from "@/lib/presentations/model";
 
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
@@ -154,7 +158,12 @@ export type SlideLayout = {
   frames: Rect[];
   /** Область под текст. */
   textBox: Rect;
+  /** Вертикальное выравнивание текста в своей области. */
+  textAlign: "top" | "center" | "bottom";
+  /** Отдельная область под блок цены (null — цена внутри текстового блока). */
+  priceBox: Rect | null;
 };
+
 
 /** Грубая оценка «веса» текста слайда в условных символах. */
 export function textWeight(slide: PresentationSlide): number {
@@ -257,77 +266,105 @@ function splitFrames(box: Rect, count: number): Rect[] {
   ];
 }
 
+/** Область под блок цены для ручной зоны. */
+function priceRect(zone: PriceZone, textBox: Rect): Rect | null {
+  if (zone === "corner") return { x: SLIDE_W - GRID.marginX - 340, y: SLIDE_H - GRID.footerH - 110, w: 340, h: 84 };
+  if (zone === "beside-photo") return { x: SLIDE_W - GRID.marginX - 340, y: GRID.marginTop, w: 340, h: 84 };
+  if (zone === "under-text") return { x: textBox.x, y: textBox.y + textBox.h - 84, w: Math.min(340, textBox.w), h: 84 };
+  return null;
+}
+
 /**
- * Автоматически выбирает раскладку слайда по количеству фото и объёму текста.
- * Ручной режим (`content.imageLayout`) переопределяет сторону, но размеры
- * по-прежнему считаются автоматически.
+ * Раскладка слайда: автоматически по количеству фото и объёму текста, а
+ * ручные значения из `content.layout` — это входные параметры автомата
+ * (зона + масштаб), поэтому остальные блоки всегда подстраиваются сами.
  */
 export function slideLayout(slide: PresentationSlide): SlideLayout {
   const photos = slidePhotos(slide);
-  const mode: SlideImageLayout = slide.content.imageLayout ?? "auto";
+  const ov = slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES;
+  const legacy: SlideImageLayout = slide.content.imageLayout ?? "auto";
+  const mode: PhotoZone = ov.photoZone !== "auto" ? ov.photoZone : (legacy as PhotoZone);
   const weight = textWeight(slide);
 
   const contentTop = GRID.marginTop;
   const contentH = SLIDE_H - GRID.marginTop - GRID.footerH;
-  const fullText: Rect = {
+  const align: SlideLayout["textAlign"] = ov.textZone === "auto" ? "top" : ov.textZone;
+  const widthK = ov.textWidth ?? 1;
+
+  /** Ужимает текстовую колонку по ручной ширине, сохраняя левый край. */
+  const withWidth = (r: Rect): Rect => ({ ...r, w: Math.max(240, r.w * widthK) });
+
+  const fullText: Rect = withWidth({
     x: GRID.marginX,
     y: contentTop,
     w: SLIDE_W - GRID.marginX * 2,
     h: contentH,
-  };
+  });
+
+  const done = (l: Omit<SlideLayout, "textAlign" | "priceBox">): SlideLayout => ({
+    ...l,
+    textAlign: align,
+    priceBox: priceRect(ov.priceZone, l.textBox),
+  });
 
   if (!photos.length || mode === "none") {
-    return { photos: [], placement: "none", photoBox: null, frames: [], textBox: fullText };
+    return done({ photos: [], placement: "none", photoBox: null, frames: [], textBox: fullText });
   }
 
   // Совсем мало текста + одно фото → фон на весь слайд.
   const hasText = weight > 60;
-  if (!hasText && photos.length === 1 && mode === "auto") {
-    return {
+  if (mode === "full" || (!hasText && photos.length === 1 && mode === "auto")) {
+    return done({
       photos,
       placement: "full",
       photoBox: { x: 0, y: 0, w: SLIDE_W, h: SLIDE_H },
       frames: [{ x: 0, y: 0, w: SLIDE_W, h: SLIDE_H }],
-      textBox: {
+      textBox: withWidth({
         x: GRID.marginX,
         y: SLIDE_H - GRID.footerH - 200,
         w: SLIDE_W - GRID.marginX * 2,
         h: 180,
-      },
-    };
+      }),
+    });
   }
 
   const placement: PhotoPlacement =
     mode === "left" || mode === "right" || mode === "top" ? mode : weight > 900 ? "right" : "left";
 
   if (placement === "top") {
-    const h = weight > 700 ? 240 : 300;
+    const h = ov.photoScale != null
+      ? clampNum(ov.photoScale, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) * SLIDE_H
+      : weight > 700 ? 240 : 300;
     const box: Rect = { x: GRID.marginX, y: contentTop, w: SLIDE_W - GRID.marginX * 2, h };
-    return {
+    return done({
       photos,
       placement,
       photoBox: box,
       frames: splitFrames(box, photos.length),
-      textBox: {
+      textBox: withWidth({
         x: GRID.marginX,
         y: contentTop + h + 28,
         w: SLIDE_W - GRID.marginX * 2,
         h: contentH - h - 28,
-      },
-    };
+      }),
+    });
   }
 
   // Боковая колонка: чем больше текста, тем уже фотоблок.
-  const photoW = weight > 1100 ? 400 : weight > 700 ? 460 : 540;
+  const photoW = ov.photoScale != null
+    ? Math.round(clampNum(ov.photoScale, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) * SLIDE_W)
+    : weight > 1100 ? 400 : weight > 700 ? 460 : 540;
   const gap = 44;
   const box: Rect =
     placement === "left"
       ? { x: 0, y: 0, w: photoW, h: SLIDE_H }
       : { x: SLIDE_W - photoW, y: 0, w: photoW, h: SLIDE_H };
-  const textBox: Rect =
+  const textBox: Rect = withWidth(
     placement === "left"
       ? { x: photoW + gap, y: contentTop, w: SLIDE_W - photoW - gap - GRID.marginX, h: contentH }
-      : { x: GRID.marginX, y: contentTop, w: SLIDE_W - photoW - gap - GRID.marginX, h: contentH };
+      : { x: GRID.marginX, y: contentTop, w: SLIDE_W - photoW - gap - GRID.marginX, h: contentH },
+  );
 
-  return { photos, placement, photoBox: box, frames: splitFrames(box, photos.length), textBox };
+  return done({ photos, placement, photoBox: box, frames: splitFrames(box, photos.length), textBox });
+
 }

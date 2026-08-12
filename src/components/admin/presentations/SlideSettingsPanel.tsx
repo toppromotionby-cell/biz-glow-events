@@ -13,7 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import {
-  IMAGE_LAYOUT_LABELS, MAX_IMAGES, SLIDE_TYPE_LABELS,
+  DEFAULT_LAYOUT_OVERRIDES, IMAGE_LAYOUT_LABELS, MAX_IMAGES, SLIDE_TYPE_LABELS, isAutoLayout,
   type PresentationSlide, type SlideContent, type SlideImageLayout, type SlideType,
 } from "@/lib/presentations/model";
 
@@ -125,6 +125,24 @@ export function SlideSettingsPanel({
           onChange={(images) => setContent({ images })}
           onLayout={(imageLayout) => setContent({ imageLayout })}
         />
+      )}
+
+      {!isAutoLayout(c.layout) && (
+        <div className="flex items-center justify-between rounded-lg border border-primary/40 bg-primary/5 p-3">
+          <div>
+            <div className="text-sm font-medium">Раскладка настроена вручную</div>
+            <div className="text-xs text-muted-foreground">
+              Зоны и размеры заданы перетаскиванием на слайде
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setContent({ layout: DEFAULT_LAYOUT_OVERRIDES })}
+          >
+            Сбросить раскладку
+          </Button>
+        </div>
       )}
 
       <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">

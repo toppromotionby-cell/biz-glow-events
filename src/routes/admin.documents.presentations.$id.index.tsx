@@ -119,6 +119,7 @@ function Page() {
   const [mobileTab, setMobileTab] = useState<"slide" | "settings">("slide");
   const canvasWrap = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(720);
+  const [layoutMode, setLayoutMode] = useState(false);
 
   // Данные с сервера принимаем только когда нет несохранённых правок и не идёт
   // сохранение: иначе ответ затирал бы то, что пользователь печатает прямо сейчас,
@@ -475,7 +476,17 @@ function Page() {
     <div className="rounded-xl border border-border/60 p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="tabular-nums">Слайд {currentIndex + 1} из {slides.length}</span>
-        <span>{SLIDE_TYPE_LABELS[current.type]}{current.is_visible ? "" : " · скрыт"}</span>
+        <div className="flex items-center gap-2">
+          <span>{SLIDE_TYPE_LABELS[current.type]}{current.is_visible ? "" : " · скрыт"}</span>
+          <Button
+            variant={layoutMode ? "default" : "outline"}
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setLayoutMode((v) => !v)}
+          >
+            {layoutMode ? "Готово" : "Правка раскладки"}
+          </Button>
+        </div>
       </div>
       <SlideCanvas
         slide={current}
@@ -486,11 +497,19 @@ function Page() {
         index={currentIndex}
         total={slides.length}
         showWarnings
-        onEdit={(patch) => patchSlide(current.id, patch)}
+        onEdit={layoutMode ? undefined : (patch) => patchSlide(current.id, patch)}
+        interactive={layoutMode}
+        onLayout={(patch) =>
+          patchSlide(current.id, {
+            content: { ...current.content, layout: { ...current.content.layout, ...patch } },
+          })
+        }
         {...branding}
       />
       <p className="mt-2 text-xs text-muted-foreground">
-        Заголовок и подзаголовок можно править прямо на слайде. Сохранение — Ctrl/Cmd + S.
+        {layoutMode
+          ? "Перетаскивайте фото, текст, цену и логотипы в подсвеченные зоны, угловой маркер меняет размер — остальное перестроится автоматически."
+          : "Заголовок и подзаголовок правятся прямо на слайде. Сохранение — Ctrl/Cmd + S."}
       </p>
     </div>
   ) : (

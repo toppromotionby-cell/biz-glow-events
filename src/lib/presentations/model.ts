@@ -95,6 +95,8 @@ export type SlideContent = {
   images: string[];
   /** Раскладка фотоблока. */
   imageLayout: SlideImageLayout;
+  /** Ручные настройки раскладки («умные зоны»). Пустые значения = авто. */
+  layout: SlideLayoutOverrides;
   /** Тумблеры видимости блоков. */
   showDescription: boolean;
   showIncludes: boolean;
@@ -102,6 +104,94 @@ export type SlideContent = {
   showPrice: boolean;
   showImage: boolean;
 };
+
+/* ------------------------------------------------------------------ */
+/* Ручная раскладка слайда («умные зоны»)                              */
+/* ------------------------------------------------------------------ */
+
+export type PhotoZone = "auto" | "left" | "right" | "top" | "full" | "none";
+export type TextZone = "auto" | "top" | "center" | "bottom";
+export type PriceZone = "auto" | "under-text" | "corner" | "beside-photo";
+export type LogoZone = "auto" | "tl" | "tr" | "bl" | "br" | "footer" | "hero";
+
+export type LogoOverride = { zone: LogoZone; scale: number | null };
+
+export type SlideLayoutOverrides = {
+  photoZone: PhotoZone;
+  /** Доля ширины слайда под фотоблок, 0.25–0.65. */
+  photoScale: number | null;
+  textZone: TextZone;
+  /** Доля доступной ширины под текст, 0.3–1. */
+  textWidth: number | null;
+  priceZone: PriceZone;
+  brandLogo: LogoOverride;
+  clientLogo: LogoOverride;
+};
+
+export const DEFAULT_LAYOUT_OVERRIDES: SlideLayoutOverrides = {
+  photoZone: "auto",
+  photoScale: null,
+  textZone: "auto",
+  textWidth: null,
+  priceZone: "auto",
+  brandLogo: { zone: "auto", scale: null },
+  clientLogo: { zone: "auto", scale: null },
+};
+
+export const PHOTO_SCALE_MIN = 0.25;
+export const PHOTO_SCALE_MAX = 0.65;
+export const TEXT_WIDTH_MIN = 0.3;
+export const TEXT_WIDTH_MAX = 1;
+export const LOGO_SCALE_MIN = 0.6;
+export const LOGO_SCALE_MAX = 1.8;
+
+export const clampNum = (v: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, v));
+
+const PHOTO_ZONES: PhotoZone[] = ["auto", "left", "right", "top", "full", "none"];
+const TEXT_ZONES: TextZone[] = ["auto", "top", "center", "bottom"];
+const PRICE_ZONES: PriceZone[] = ["auto", "under-text", "corner", "beside-photo"];
+const LOGO_ZONES: LogoZone[] = ["auto", "tl", "tr", "bl", "br", "footer", "hero"];
+
+function normLogoOverride(raw: unknown): LogoOverride {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const s = Number(r.scale);
+  return {
+    zone: LOGO_ZONES.includes(r.zone as LogoZone) ? (r.zone as LogoZone) : "auto",
+    scale: Number.isFinite(s) && s > 0 ? clampNum(s, LOGO_SCALE_MIN, LOGO_SCALE_MAX) : null,
+  };
+}
+
+export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const ps = Number(r.photoScale);
+  const tw = Number(r.textWidth);
+  return {
+    photoZone: PHOTO_ZONES.includes(r.photoZone as PhotoZone) ? (r.photoZone as PhotoZone) : "auto",
+    photoScale: Number.isFinite(ps) && ps > 0 ? clampNum(ps, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) : null,
+    textZone: TEXT_ZONES.includes(r.textZone as TextZone) ? (r.textZone as TextZone) : "auto",
+    textWidth: Number.isFinite(tw) && tw > 0 ? clampNum(tw, TEXT_WIDTH_MIN, TEXT_WIDTH_MAX) : null,
+    priceZone: PRICE_ZONES.includes(r.priceZone as PriceZone) ? (r.priceZone as PriceZone) : "auto",
+    brandLogo: normLogoOverride(r.brandLogo),
+    clientLogo: normLogoOverride(r.clientLogo),
+  };
+}
+
+/** Раскладка слайда полностью автоматическая? */
+export function isAutoLayout(o: SlideLayoutOverrides): boolean {
+  return (
+    o.photoZone === "auto" &&
+    o.photoScale === null &&
+    o.textZone === "auto" &&
+    o.textWidth === null &&
+    o.priceZone === "auto" &&
+    o.brandLogo.zone === "auto" &&
+    o.brandLogo.scale === null &&
+    o.clientLogo.zone === "auto" &&
+    o.clientLogo.scale === null
+  );
+}
+
 
 
 export type PresentationSlide = {
@@ -164,6 +254,8 @@ export const EMPTY_CONTENT: SlideContent = {
   sku: "",
   images: [],
   imageLayout: "auto",
+  layout: DEFAULT_LAYOUT_OVERRIDES,
+
   showDescription: true,
   showIncludes: true,
   showSpecs: true,
@@ -195,6 +287,8 @@ export function normalizeContent(raw: unknown): SlideContent {
     imageLayout: IMAGE_LAYOUTS.includes(r.imageLayout as SlideImageLayout)
       ? (r.imageLayout as SlideImageLayout)
       : "auto",
+    layout: normalizeLayoutOverrides(r.layout),
+
     showDescription: bool(r.showDescription),
     showIncludes: bool(r.showIncludes),
     showSpecs: bool(r.showSpecs),
