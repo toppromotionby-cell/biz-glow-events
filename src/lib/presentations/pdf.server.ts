@@ -243,7 +243,7 @@ async function drawSlide(a: DrawArgs) {
   ) => {
     let y = yStart;
     for (const line of lines) {
-      page.drawText(line, { x, y, size, font, color: col });
+      page.drawText(line, { x: alignX(x, font.widthOfTextAtSize(line, size)), y, size, font, color: col });
       y -= size * lh;
     }
     return y;
