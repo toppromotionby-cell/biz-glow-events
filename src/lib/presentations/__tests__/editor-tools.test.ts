@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canRedo, canUndo, createHistory, pushHistory, redoHistory, undoHistory, HISTORY_LIMIT,
-} from "@/lib/presentations/editor-history";
+} from "@/lib/editor/history";
 import { snapRect, SNAP_TOLERANCE } from "@/lib/presentations/snap";
 import { SLIDE_W } from "@/lib/presentations/design";
 
