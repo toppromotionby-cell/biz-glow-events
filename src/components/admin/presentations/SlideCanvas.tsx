@@ -21,6 +21,8 @@ import {
   type PresentationTemplate,
 } from "@/lib/presentations/model";
 import { SlideLayoutOverlay } from "@/components/admin/presentations/SlideLayoutOverlay";
+import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
+
 import { fontStacks, resolveDocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import { staticSlideSpec, type SpecBlock } from "@/lib/presentations/slide-spec";
 
@@ -189,7 +191,17 @@ export type SlideCanvasProps = {
   /** Режим редактора: перетаскивание и масштабирование элементов слайда. */
   interactive?: boolean;
   onLayout?: (patch: Partial<SlideLayoutOverrides>) => void;
+  /** Выделенный блок — свойства показываются в правой панели редактора. */
+  selectedBlock?: BlockKind | null;
+  onSelectBlock?: (kind: BlockKind | null) => void;
+  /** Двойной клик по тексту — редактор переходит в набор текста. */
+  onTextEdit?: (kind: BlockKind) => void;
+  /** Пока идёт набор текста, слой перетаскивания не перехватывает клики. */
+  textEditing?: boolean;
+  /** Плавающая панель блока (мобильный режим — свойств справа нет). */
+  floatingToolbar?: boolean;
 };
+
 
 export type SlideBranding = Pick<
   SlideCanvasProps,
@@ -272,14 +284,21 @@ export function SlideCanvas(props: SlideCanvasProps) {
       </div>
 
       {props.interactive && props.onLayout && (
-        <SlideLayoutOverlay
-          fit={fit}
-          plan={plan}
-          overrides={slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES}
-          scale={scale}
-          onLayout={props.onLayout}
-        />
+        <div style={{ pointerEvents: props.textEditing ? "none" : undefined }}>
+          <SlideLayoutOverlay
+            fit={fit}
+            plan={plan}
+            overrides={slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES}
+            scale={scale}
+            onLayout={props.onLayout}
+            selected={props.selectedBlock}
+            onSelect={props.onSelectBlock}
+            onTextEdit={props.onTextEdit}
+            floatingToolbar={props.floatingToolbar}
+          />
+        </div>
       )}
+
 
       {showWarnings && fit.warnings.length > 0 && (
         <div
