@@ -45,6 +45,101 @@ function Logo({ path, height }: { path: string | null; height: number }) {
   return <img src={url} alt="" style={{ height, width: "auto", objectFit: "contain" }} />;
 }
 
+/** Рендер одного блока общего спека слайда (титул / раздел / контакты). */
+function SpecBlockView({
+  block,
+  theme,
+  heading,
+  logoPath,
+  onEdit,
+  partAlign,
+}: {
+  block: SpecBlock;
+  theme: SlideThemeTokens;
+  heading: CSSProperties;
+  logoPath: string | null;
+  onEdit?: SlideCanvasProps["onEdit"];
+  partAlign: (part: "title" | "subtitle" | "body") => CSSProperties;
+}) {
+  const paint = (c: "ink" | "muted" | "accent" | "onAccent" | "panel"): string =>
+    c === "ink" ? theme.ink
+      : c === "muted" ? theme.muted
+        : c === "accent" ? theme.accent
+          : c === "onAccent" ? theme.onAccent
+            : theme.panel;
+
+  if (block.kind === "circle") {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: block.cx - block.r,
+          top: block.cy - block.r,
+          width: block.r * 2,
+          height: block.r * 2,
+          borderRadius: "50%",
+          background: paint(block.color),
+          opacity: block.opacity,
+        }}
+      />
+    );
+  }
+  if (block.kind === "rect") {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: block.x,
+          top: block.y,
+          width: block.w,
+          height: block.h,
+          borderRadius: block.radius,
+          background: paint(block.color),
+          opacity: block.opacity ?? 1,
+        }}
+      />
+    );
+  }
+  if (block.kind === "logo") {
+    return (
+      <div data-block="brandLogo" style={{ position: "absolute", left: block.x, top: block.y }}>
+        <Logo path={logoPath} height={block.h} />
+      </div>
+    );
+  }
+
+  const style: CSSProperties = {
+    position: "absolute",
+    left: block.x,
+    top: block.y,
+    width: block.w,
+    fontSize: block.size,
+    lineHeight: block.lineHeight,
+    fontWeight: block.weight,
+    color: paint(block.color),
+    textAlign: block.align,
+    textTransform: block.uppercase ? "uppercase" : undefined,
+    letterSpacing: block.letterSpacing,
+    whiteSpace: "pre-wrap",
+    ...(block.font === "display" ? heading : null),
+    ...(block.id ? partAlign(block.id) : null),
+  };
+  if (block.id && onEdit) {
+    return (
+      <Editable
+        value={block.text}
+        placeholder={block.placeholder ?? ""}
+        block={block.id}
+        onChange={(v) => onEdit(block.id === "title" ? { title: v } : { subtitle: v })}
+        style={style}
+      />
+    );
+  }
+  return <div data-block={block.id} style={style}>{block.text}</div>;
+}
+
+
+
 function PhotoGallery({ frames, photos, radius }: { frames: Rect[]; photos: string[]; radius: number }) {
   return (
     <>
