@@ -50,1149 +50,22 @@ import { PRICE_LABEL } from "@/lib/documents/doc-layout";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont, type DocFont } from "@/lib/documents/doc-font";
 
+import { applyDensity, ACCENT, ACCENT_BORDER, ACCENT_SOFT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT, c01 } from "@/lib/documents/pdf/style.server";
+import { displayFont, embedLogo, type DocCtx, type FittedLogo } from "@/lib/documents/pdf/ctx.server";
+import {
+  divider, drawParagraph, drawText, drawTracked, drawTopBar, drawTrailingNote, ensureSpace, gap,
+  money, newPage, roundedRect, safe, trackedWidth, wrapText,
+} from "@/lib/documents/pdf/draw.server";
+import { drawCard, drawFooter, drawHeader, drawInfoCard, drawSignatures } from "@/lib/documents/pdf/chrome.server";
+import { drawSummary, drawTable, fitTableCols, type Col, type TableRow } from "@/lib/documents/pdf/table.server";
+
+
 // Шрифты встроены в бандл (subset латиница+кириллица). Раньше они качались
 // по сети с публичного адреса того же воркера — такой self-subrequest иногда
 // зависал, и Cloudflare убивал запрос с 502.
 
 /** В Space Grotesk нет кириллицы — для неё используем Bold основного шрифта. */
-const CYRILLIC = /[\u0400-\u04FF]/;
-function displayFont(ctx: DocCtx, text: string): PDFFont {
-  if (ctx.displayCyrillic) return ctx.display;
-  return CYRILLIC.test(text) ? ctx.bold : ctx.display;
-}
 
-
-
-
-// === Стили / токены — единая спецификация с HTML-превью (documents/brand.ts) ===
-const c01 = (c: { r: number; g: number; b: number }) => rgb(c.r, c.g, c.b);
-
-const ACCENT = c01(hexToRgb01(BRAND_ACCENT));
-const ACCENT_SOFT = c01(mixWithWhite(BRAND_ACCENT, 0.12));   // фон шапки таблицы / итога
-const ACCENT_BORDER = c01(mixWithWhite(BRAND_ACCENT, 0.4));  // рамка блока итогов
-const TEXT = c01(hexToRgb01(DOC_COLORS.ink));
-const MUTED = c01(hexToRgb01(DOC_COLORS.muted));
-const LINE = c01(hexToRgb01(DOC_COLORS.line));
-const SURFACE = c01(hexToRgb01(DOC_COLORS.surface));
-
-// A4 в pt (72 dpi)
-const PAGE_W = DOC_LAYOUT.pageWidthPt;
-const PAGE_H = DOC_LAYOUT.pageHeightPt;
-let MARGIN_X: number = DOC_LAYOUT.marginXPt;
-let MARGIN_TOP: number = DOC_LAYOUT.marginTopPt;
-let MARGIN_BOTTOM: number = DOC_LAYOUT.marginBottomPt;
-
-// Межстрочные интервалы и множители отступов — задаются пресетом печати.
-let LH: number = DOC_LAYOUT.lineHeight;       // базовый интервал (таблица, плотный текст)
-let LH_TEXT = LH + 0.05;              // обычный текст
-let LH_LOOSE = LH + 0.15;             // абзацы / карточки
-let LH_TOTAL = LH + 0.2;              // строки блока «итого»
-let LH_TIGHT = Math.max(1.05, LH - 0.1); // крупные заголовки
-let GAP_K = 1;                        // множитель отступов между блоками
-let ROW_K = 1;                        // множитель высоты строк таблицы
-let FONT_K = 1;                       // множитель кеглей
-
-// Кегли: те же, что в HTML-превью, переведённые в pt.
-// Плотность (density) позволяет уплотнить документ, чтобы он влез в меньшее
-// число листов: 1 = «комфортно» (как превью), 0.94 = «компактно», 0.88 = «плотно».
-import { DOC_DENSITY_SCALE, DOC_DENSITY_LADDER, type DocDensity } from "@/lib/documents/density";
-export { DOC_DENSITY_SCALE, type DocDensity };
-
-
-
-/** Текущий множитель плотности (отступы, высоты строк). */
-let D = 1;
-
-let F11 = DOC_FONT_PT.small;
-let F12 = DOC_FONT_PT.body;
-let F13 = DOC_FONT_PT.section;
-let F16 = DOC_FONT_PT.total;
-let F22 = DOC_FONT_PT.brand;
-let F_COVER = DOC_FONT_PT.coverTitle;
-let F_DOC_KIND = DOC_FONT_PT.docKind;
-let F_DOC_NUM = DOC_FONT_PT.docNum;
-let F_DOC_DATE = DOC_FONT_PT.docDate;
-let F_LABEL = DOC_FONT_PT.cardLabel;
-let F_FOOTER = DOC_FONT_PT.footer;
-
-/** Пересчитать шкалу кеглей и отступов под выбранную плотность. */
-function applyDensity(density: DocDensity, preset: DocPrintPreset = BASE_PRINT_PRESET) {
-  const k = DOC_DENSITY_SCALE[density];
-  D = k;
-  MARGIN_X = mmToPt(preset.marginXMm);
-  MARGIN_TOP = mmToPt(preset.marginTopMm);
-  MARGIN_BOTTOM = mmToPt(preset.marginBottomMm);
-  LH = preset.lineHeight;
-  LH_TEXT = LH + 0.05;
-  LH_LOOSE = LH + 0.15;
-  LH_TOTAL = LH + 0.2;
-  LH_TIGHT = Math.max(1.05, LH - 0.1);
-  GAP_K = preset.blockGap;
-  ROW_K = preset.rowGap;
-  FONT_K = preset.fontScale;
-  const s = (v: number) => Math.round(v * (0.5 + k / 2) * FONT_K * 10) / 10; // кегли ужимаем мягче отступов
-  F11 = s(DOC_FONT_PT.small);
-  F12 = s(DOC_FONT_PT.body);
-  F13 = s(DOC_FONT_PT.section);
-  F16 = s(DOC_FONT_PT.total);
-  F22 = s(DOC_FONT_PT.brand);
-  F_COVER = s(DOC_FONT_PT.coverTitle);
-  F_DOC_KIND = s(DOC_FONT_PT.docKind);
-  F_DOC_NUM = s(DOC_FONT_PT.docNum);
-  F_DOC_DATE = s(DOC_FONT_PT.docDate);
-  F_LABEL = s(DOC_FONT_PT.cardLabel);
-  F_FOOTER = s(DOC_FONT_PT.footer);
-}
-
-
-type FittedLogo = { img: PDFImage; w: number; h: number; aspect: number };
-
-type DocCtx = {
-  pdf: PDFDocument;
-  regular: PDFFont;
-  bold: PDFFont;
-  display: PDFFont;
-  /** Есть ли кириллица в display-шрифте. */
-  displayCyrillic: boolean;
-
-
-  page: PDFPage;
-  y: number;
-  pageNum: number;
-
-  /** Логотип компании в шапке (если загружен и доступен). */
-  logo?: FittedLogo | null;
-  /** Логотип клиента (промо-КП) — рисуется справа под шапкой. */
-  clientLogo?: FittedLogo | null;
-  /** Настройки размещения логотипа в шапке. */
-  logoLayout: LogoLayout;
-};
-
-// Габариты логотипа в шапке (pt). Пропорции сохраняются, картинка вписывается.
-const HEADER_LOGO_MAX_H = DEFAULT_LOGO_LAYOUT.maxH;
-const HEADER_LOGO_MAX_W = DEFAULT_LOGO_LAYOUT.maxW;
-
-/**
- * Загружает логотип по URL и встраивает в PDF, вписывая в бокс maxW×maxH.
- * Ошибки сети/формата не ломают документ — логотип просто не рисуется.
- */
-async function embedLogo(
-  pdf: PDFDocument,
-  url: string | null | undefined,
-  maxW = HEADER_LOGO_MAX_W,
-  maxH = HEADER_LOGO_MAX_H,
-): Promise<FittedLogo | null> {
-  const img = await embedImageUrl(pdf, url, { width: 800 });
-  if (!img) return null;
-  const k = Math.min(maxW / img.width, maxH / img.height);
-  return { img, w: img.width * k, h: img.height * k, aspect: img.width / img.height };
-}
-
-
-
-function money(n: number): string {
-  // Intl.NumberFormat в воркере доступен; не используем символ валюты в
-  // префиксе — выводим явно "BYN".
-  const fmt = new Intl.NumberFormat("ru-BY", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
-  return `${fmt} BYN`;
-}
-
-function safe(s: unknown): string {
-  return String(s ?? "").replace(/\s+\n/g, "\n").trim();
-}
-
-/** Прямоугольник со скруглением (pdf-lib умеет только через path). */
-function roundedRect(
-  page: PDFPage,
-  opts: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    radius?: number;
-    color?: ReturnType<typeof rgb>;
-    borderColor?: ReturnType<typeof rgb>;
-    borderWidth?: number;
-  },
-) {
-  const r = Math.max(0, Math.min(opts.radius ?? 6, opts.width / 2, opts.height / 2));
-  const { x, width: w, height: h } = opts;
-  // drawSvgPath использует SVG-координаты (ось Y вниз): передаём -y, чтобы
-  // путь совпал с обычной системой координат PDF.
-  const y = -opts.y;
-  const k = 0.5523 * r;
-  const d = [
-    `M ${x + r} ${y}`,
-    `L ${x + w - r} ${y}`,
-    `C ${x + w - r + k} ${y} ${x + w} ${y - r + k} ${x + w} ${y - r}`,
-    `L ${x + w} ${y - h + r}`,
-    `C ${x + w} ${y - h + r - k} ${x + w - r + k} ${y - h} ${x + w - r} ${y - h}`,
-    `L ${x + r} ${y - h}`,
-    `C ${x + r - k} ${y - h} ${x} ${y - h + r - k} ${x} ${y - h + r}`,
-    `L ${x} ${y - r}`,
-    `C ${x} ${y - r + k} ${x + r - k} ${y} ${x + r} ${y}`,
-    "Z",
-  ].join(" ");
-  page.drawSvgPath(d, {
-    x: 0,
-    y: 0,
-    ...(opts.color ? { color: opts.color } : {}),
-    ...(opts.borderColor ? { borderColor: opts.borderColor } : {}),
-    borderWidth: opts.borderWidth ?? 0,
-    scale: 1,
-  });
-
-}
-
-/** Верхняя акцентная полоса — как градиент в HTML-превью (набор сегментов). */
-function drawTopBar(page: PDFPage) {
-  const w = PAGE_W - MARGIN_X * 2;
-  const y = PAGE_H - MARGIN_TOP + 14;
-  const steps = 24;
-  for (let i = 0; i < steps; i += 1) {
-    const t = i / (steps - 1);
-    const c = c01(mixWithWhite(BRAND_ACCENT, t * 0.55));
-    page.drawRectangle({
-      x: MARGIN_X + (w / steps) * i,
-      y,
-      width: w / steps + 0.6,
-      height: 3.2,
-      color: c,
-    });
-  }
-}
-
-function newPage(ctx: DocCtx) {
-  ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
-  ctx.pageNum += 1;
-  ctx.y = PAGE_H - MARGIN_TOP;
-  drawTopBar(ctx.page);
-}
-
-function ensureSpace(ctx: DocCtx, needed: number) {
-  if (ctx.y - needed < MARGIN_BOTTOM) newPage(ctx);
-}
-
-
-function drawText(
-  ctx: DocCtx,
-  text: string,
-  opts: {
-    x?: number;
-    size?: number;
-    bold?: boolean;
-    color?: ReturnType<typeof rgb>;
-    align?: "left" | "right" | "center";
-    width?: number; // для align right/center
-  } = {},
-) {
-  const size = opts.size ?? F12;
-  const font = opts.bold ? ctx.bold : ctx.regular;
-  const color = opts.color ?? TEXT;
-  const txt = safe(text);
-  const lines = txt.split("\n");
-  for (const line of lines) {
-    ensureSpace(ctx, size * LH_LOOSE);
-    let x = opts.x ?? MARGIN_X;
-    if (opts.align && opts.width) {
-      const w = font.widthOfTextAtSize(line, size);
-      if (opts.align === "right") x = (opts.x ?? MARGIN_X) + opts.width - w;
-      else if (opts.align === "center") x = (opts.x ?? MARGIN_X) + (opts.width - w) / 2;
-    }
-    ctx.page.drawText(line, { x, y: ctx.y - size, size, font, color });
-    ctx.y -= size * LH_TEXT;
-  }
-}
-
-// Перенос длинной строки по ширине
-function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
-  const words = safe(text).split(/\s+/);
-  const out: string[] = [];
-  let line = "";
-  for (const w of words) {
-    const cand = line ? `${line} ${w}` : w;
-    if (font.widthOfTextAtSize(cand, size) <= maxWidth) line = cand;
-    else {
-      if (line) out.push(line);
-      // одиночное длинное слово — режем посимвольно
-      if (font.widthOfTextAtSize(w, size) > maxWidth) {
-        let cur = "";
-        for (const ch of w) {
-          const cn = cur + ch;
-          if (font.widthOfTextAtSize(cn, size) > maxWidth) {
-            out.push(cur);
-            cur = ch;
-          } else cur = cn;
-        }
-        line = cur;
-      } else line = w;
-    }
-  }
-  if (line) out.push(line);
-  return out.length ? out : [""];
-}
-
-function drawParagraph(
-  ctx: DocCtx,
-  text: string,
-  opts: { size?: number; bold?: boolean; color?: ReturnType<typeof rgb>; indent?: number } = {},
-) {
-  const size = opts.size ?? F12;
-  const font = opts.bold ? ctx.bold : ctx.regular;
-  const color = opts.color ?? TEXT;
-  const indent = opts.indent ?? 0;
-  const maxW = PAGE_W - MARGIN_X * 2 - indent;
-  const paragraphs = safe(text).split("\n");
-  for (const p of paragraphs) {
-    const lines = wrapText(font, p, size, maxW);
-    for (const line of lines) {
-      ensureSpace(ctx, size * LH_LOOSE);
-      ctx.page.drawText(line, { x: MARGIN_X + indent, y: ctx.y - size, size, font, color });
-      ctx.y -= size * LH_LOOSE;
-    }
-  }
-}
-
-/**
- * Финальное примечание (условия/срок действия). В отличие от drawParagraph
- * не переносится на новую страницу из-за пары строк: сначала пробуем ужать
- * кегль и занять нижнее поле до линии футера.
- */
-function drawTrailingNote(
-  ctx: DocCtx,
-  text: string,
-  opts: { size?: number; color?: ReturnType<typeof rgb> } = {},
-) {
-  const clean = safe(text).trim();
-  if (!clean) return;
-  const base = opts.size ?? 9.5;
-  const color = opts.color ?? MUTED;
-  const maxW = PAGE_W - MARGIN_X * 2;
-  const floor = MARGIN_BOTTOM - 6; // чуть выше линии футера
-  for (const size of [base, base - 0.5, base - 1, base - 1.5]) {
-    if (size < 7.5) break;
-    const lines = wrapText(ctx.regular, clean, size, maxW);
-    const h = lines.length * size * LH_TEXT;
-    if (ctx.y - h < floor) continue;
-    for (const line of lines) {
-      ctx.page.drawText(line, { x: MARGIN_X, y: ctx.y - size, size, font: ctx.regular, color });
-      ctx.y -= size * LH_TEXT;
-    }
-    return;
-  }
-  drawParagraph(ctx, clean, { size: base, color });
-}
-
-function divider(ctx: DocCtx, color = LINE) {
-  ensureSpace(ctx, 8);
-  ctx.y -= 4;
-  ctx.page.drawLine({
-    start: { x: MARGIN_X, y: ctx.y },
-    end: { x: PAGE_W - MARGIN_X, y: ctx.y },
-    thickness: 0.6,
-    color,
-  });
-  ctx.y -= 8;
-}
-
-function gap(ctx: DocCtx, n: number) {
-  ctx.y -= n * D * GAP_K;
-}
-
-
-/** Ширина строки с межбуквенным интервалом (как letter-spacing в CSS). */
-function trackedWidth(font: PDFFont, text: string, size: number, tracking: number): number {
-  return font.widthOfTextAtSize(text, size) + Math.max(text.length - 1, 0) * tracking;
-}
-
-/** Отрисовать строку капсом с межбуквенным интервалом. */
-function drawTracked(
-  page: PDFPage,
-  text: string,
-  opts: { x: number; y: number; size: number; font: PDFFont; color: ReturnType<typeof rgb>; tracking: number },
-) {
-  let x = opts.x;
-  for (const ch of text) {
-    page.drawText(ch, { x, y: opts.y, size: opts.size, font: opts.font, color: opts.color });
-    x += opts.font.widthOfTextAtSize(ch, opts.size) + opts.tracking;
-  }
-}
-
-function drawHeader(
-  ctx: DocCtx,
-  kind: string,
-  num: string,
-  date: string,
-  settings: DocumentSettings,
-  extra: { validUntil?: string } = {},
-) {
-  // Логотип — позиция, размер и отступы задаются в настройках документа
-  const logo = ctx.logo ?? null;
-  const layout = ctx.logoLayout ?? DEFAULT_LOGO_LAYOUT;
-  const place = logo ? computeLogoPlacement(layout, logo.aspect) : null;
-  const leftX: number = MARGIN_X;
-  if (logo && place) {
-    ctx.page.drawImage(logo.img, {
-      x: place.x,
-      y: PAGE_H - MARGIN_TOP - place.top - place.h + 2,
-      width: place.w,
-      height: place.h,
-    });
-  }
-
-  // Тип/номер/дата справа — считаем первыми, чтобы знать ширину левой колонки
-  const rightX = PAGE_W - MARGIN_X;
-  const kindUpper = kind.toUpperCase();
-  const kindTracking = F_DOC_KIND * 0.14;
-  const kindW = trackedWidth(ctx.bold, kindUpper, F_DOC_KIND, kindTracking);
-  const numText = `№ ${num}`;
-  const numFont = displayFont(ctx, numText);
-  const numW = numFont.widthOfTextAtSize(numText, F_DOC_NUM);
-  const dateText = `от ${date}`;
-  const dateW = ctx.regular.widthOfTextAtSize(dateText, F_DOC_DATE);
-  const validText = extra.validUntil ? `действительно до ${extra.validUntil}` : "";
-  const validW = validText ? ctx.regular.widthOfTextAtSize(validText, F_DOC_DATE) : 0;
-  const rightBlockW = Math.max(kindW, numW, dateW, validW);
-  const rightBlockH = validText ? 60 : 46;
-
-  // Текстовый блок (бренд + реквизиты) — всегда под логотипом, выравнивание как у логотипа.
-  const textAlign = place ? place.textAlign : "left";
-  const textTop = place ? place.textTop : 0;
-  // Пока текст идёт вровень с правой колонкой — ограничиваем ширину, ниже неё занимаем всю строку.
-  const textMaxW =
-    textTop < rightBlockH
-      ? Math.max(120, rightX - rightBlockW - 20 - leftX)
-      : rightX - leftX;
-  const alignedX = (lineW: number) =>
-    textAlign === "center"
-      ? leftX + (textMaxW - lineW) / 2
-      : textAlign === "right"
-        ? leftX + textMaxW - lineW
-        : leftX;
-
-  // Бренд — дисплейным шрифтом, как в HTML-превью.
-  // Логотип заменяет текстовое название бренда: пишем бренд только когда логотипа нет.
-  const brand = safe(settings.company_brand);
-  const showBrand = !logo;
-  let textY = PAGE_H - MARGIN_TOP - textTop;
-  if (showBrand) {
-    const bFont = displayFont(ctx, brand);
-    textY -= F22 * 0.8;
-    ctx.page.drawText(brand, {
-      x: alignedX(bFont.widthOfTextAtSize(brand, F22)),
-      y: textY,
-      size: F22,
-      font: bFont,
-      color: TEXT,
-    });
-    textY -= 14;
-  } else {
-    textY -= DOC_FONT_PT.small;
-  }
-
-  // Юрлицо + УНП и адрес — с переносом по ширине колонки; кегль подбирается под объём текста
-  const legalLine = `${safe(settings.company_legal_name)}${
-    safe(settings.company_unp) ? ` · УНП ${safe(settings.company_unp)}` : ""
-  }`;
-  const reqSize = requisitesFontPt(
-    DOC_FONT_PT.small,
-    `${legalLine} ${safe(settings.company_address)}`,
-    textMaxW,
-  );
-  const subLines = [
-    ...wrapText(ctx.regular, legalLine, reqSize, textMaxW),
-    ...wrapText(ctx.regular, safe(settings.company_address), reqSize, textMaxW),
-  ].filter((l) => l.trim() !== "");
-  let subY = textY;
-  for (const line of subLines) {
-    ctx.page.drawText(line, {
-      x: alignedX(ctx.regular.widthOfTextAtSize(line, reqSize)),
-      y: subY,
-      size: reqSize,
-      font: ctx.regular,
-      color: MUTED,
-    });
-    subY -= reqSize * LH_TEXT;
-  }
-
-
-
-  drawTracked(ctx.page, kindUpper, {
-    x: rightX - kindW,
-    y: PAGE_H - MARGIN_TOP - 4,
-    size: F_DOC_KIND,
-    font: ctx.bold,
-    color: ACCENT,
-    tracking: kindTracking,
-  });
-  ctx.page.drawText(numText, {
-    x: rightX - numW,
-    y: PAGE_H - MARGIN_TOP - 24,
-    size: F_DOC_NUM,
-    font: numFont,
-    color: TEXT,
-  });
-  ctx.page.drawText(dateText, {
-    x: rightX - dateW,
-    y: PAGE_H - MARGIN_TOP - 40,
-    size: F_DOC_DATE,
-    font: ctx.regular,
-    color: MUTED,
-  });
-  if (validText) {
-    ctx.page.drawText(validText, {
-      x: rightX - validW,
-      y: PAGE_H - MARGIN_TOP - 54,
-      size: F_DOC_DATE,
-      font: ctx.regular,
-      color: MUTED,
-    });
-  }
-
-  // Высокий логотип может «вылезти» ниже текста — учитываем это
-  const leftBottom = PAGE_H - subY;
-  ctx.y = PAGE_H - Math.max(MARGIN_TOP + (validText ? 66 : 58), leftBottom + 6, MARGIN_TOP + (place?.reserve ?? 0) + 14);
-  divider(ctx);
-
-
-  // Логотип клиента (промо-КП) — справа под разделителем
-  const cl = ctx.clientLogo ?? null;
-  if (cl) {
-    ctx.y -= 6;
-    ctx.page.drawImage(cl.img, {
-      x: PAGE_W - MARGIN_X - cl.w,
-      y: ctx.y - cl.h,
-      width: cl.w,
-      height: cl.h,
-    });
-    ctx.y -= cl.h + 6;
-  }
-}
-
-
-function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
-  const footer = `${settings.company_legal_name} · ${settings.company_phone} · ${settings.company_email} · ${settings.company_website}`;
-  const total = ctx.pdf.getPageCount();
-  for (let i = 0; i < total; i++) {
-    const p = ctx.pdf.getPage(i);
-    p.drawLine({
-      start: { x: MARGIN_X, y: MARGIN_BOTTOM - 12 },
-      end: { x: PAGE_W - MARGIN_X, y: MARGIN_BOTTOM - 12 },
-      thickness: 0.4,
-      color: LINE,
-    });
-    p.drawText(safe(footer), {
-      x: MARGIN_X,
-      y: MARGIN_BOTTOM - 24,
-      size: F_FOOTER,
-      font: ctx.regular,
-      color: MUTED,
-    });
-    const pageLabel = `${i + 1} / ${total}`;
-    const w = ctx.regular.widthOfTextAtSize(pageLabel, F_FOOTER);
-    p.drawText(pageLabel, {
-      x: PAGE_W - MARGIN_X - w,
-      y: MARGIN_BOTTOM - 24,
-      size: F_FOOTER,
-      font: ctx.regular,
-      color: MUTED,
-    });
-  }
-}
-
-// Карточка-карман с тонкой границей и заголовком
-function drawCard(
-  ctx: DocCtx,
-  label: string,
-  title: string,
-  lines: (string | null | undefined)[],
-  opts: { x?: number; width?: number } = {},
-) {
-  const x = opts.x ?? MARGIN_X;
-  const width = opts.width ?? PAGE_W - MARGIN_X * 2;
-  const innerW = width - 24;
-  const cleanLines = lines.filter((l): l is string => !!l && l.trim() !== "");
-
-  // считаем нужную высоту
-  const titleLines = wrapText(displayFont(ctx, title), title, F13, innerW);
-  const bodyLineHeights = cleanLines.flatMap((l) => wrapText(ctx.regular, l, F11, innerW));
-  const height = 14 + 14 + titleLines.length * (F13 * LH) + bodyLineHeights.length * (F11 * LH_TEXT) + 12;
-
-  ensureSpace(ctx, height + 6);
-  // фон карточки (скруглённые углы — как в превью)
-  roundedRect(ctx.page, {
-    x,
-    y: ctx.y - height,
-    width,
-    height,
-    radius: 10,
-    color: SURFACE,
-    borderColor: LINE,
-    borderWidth: 0.6,
-  });
-  let cy = ctx.y - 14;
-  drawTracked(ctx.page, label.toUpperCase(), {
-    x: x + 12,
-    y: cy - 9,
-    size: F_LABEL,
-    font: ctx.bold,
-    color: ACCENT,
-    tracking: F_LABEL * 0.12,
-  });
-  cy -= 18;
-  for (const t of titleLines) {
-    ctx.page.drawText(t, { x: x + 12, y: cy - F13, size: F13, font: displayFont(ctx, t), color: TEXT });
-    cy -= F13 * LH;
-  }
-
-  cy -= 2;
-  for (const l of bodyLineHeights) {
-    ctx.page.drawText(l, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
-    cy -= F11 * LH_TEXT;
-  }
-  ctx.y -= height + 6;
-}
-
-/**
- * Карточка с таблицей «ключ — значение» (как `.info-table` в HTML-превью):
- * подписи слева серым, значения справа. Используется для блока «Мероприятие»,
- * чтобы PDF совпадал с превью по подписям и сетке.
- */
-function drawInfoCard(
-  ctx: DocCtx,
-  label: string,
-  rows: Array<[string, string]>,
-  note?: string | null,
-  opts: { x?: number; width?: number } = {},
-) {
-  const x = opts.x ?? MARGIN_X;
-  const width = opts.width ?? PAGE_W - MARGIN_X * 2;
-  const innerW = width - 24;
-  const keyW = Math.min(150, innerW * 0.38);
-  const valW = innerW - keyW - 8;
-  const clean = rows.filter(([, v]) => !!v && String(v).trim() !== "");
-  const list: Array<[string, string]> = clean.length ? clean : [["Детали", "уточняются"]];
-
-  const wrapped = list.map(([k, v]) => ({
-    k,
-    lines: wrapText(ctx.regular, v, F11, valW),
-  }));
-  const noteLines = note ? wrapText(ctx.regular, note, F11, innerW) : [];
-  const rowsH = wrapped.reduce((s, r) => s + Math.max(1, r.lines.length) * F11 * LH_LOOSE, 0);
-  const height =
-    14 * D + 16 * D + rowsH + (noteLines.length ? 6 * D + noteLines.length * F11 * LH_TEXT : 0) + 12 * D;
-
-  ensureSpace(ctx, height + 6 * D);
-  roundedRect(ctx.page, {
-    x,
-    y: ctx.y - height,
-    width,
-    height,
-    radius: 10,
-    color: SURFACE,
-    borderColor: LINE,
-    borderWidth: 0.6,
-  });
-
-  let cy = ctx.y - 14 * D;
-  drawTracked(ctx.page, label.toUpperCase(), {
-    x: x + 12,
-    y: cy - 9,
-    size: F_LABEL,
-    font: ctx.bold,
-    color: ACCENT,
-    tracking: F_LABEL * 0.12,
-  });
-  cy -= 16 * D;
-
-  for (const r of wrapped) {
-    ctx.page.drawText(r.k, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
-    let vy = cy;
-    for (const line of r.lines) {
-      ctx.page.drawText(line, {
-        x: x + 12 + keyW + 8,
-        y: vy - F11,
-        size: F11,
-        font: ctx.bold,
-        color: TEXT,
-      });
-      vy -= F11 * LH_LOOSE;
-    }
-    cy -= Math.max(1, r.lines.length) * F11 * LH_LOOSE;
-  }
-
-  if (noteLines.length) {
-    cy -= 6 * D;
-    for (const line of noteLines) {
-      ctx.page.drawText(line, { x: x + 12, y: cy - F11, size: F11, font: ctx.regular, color: MUTED });
-      cy -= F11 * LH_TEXT;
-    }
-  }
-
-  ctx.y -= height + 6 * D;
-}
-
-
-
-// === Таблица позиций ===
-type Col = {
-  title: string;
-  width: number;
-  align?: "left" | "right" | "center";
-  valign?: "top" | "middle";
-  key: string;
-};
-
-/**
- * Строка таблицы. Служебные поля (с префиксом `_`) повторяют оформление
- * HTML-превью: заголовок раздела, подытог раздела, описание и список
- * «что входит» под названием позиции.
- */
-type TableSpan = { from: string; to: string; text: string };
-
-type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
-  _kind?: "section" | "subtotal";
-  _desc?: string;
-  _bullets?: string[];
-  /** Объединение соседних колонок в одну ячейку (например «услуга»). */
-  _span?: { from: string; to: string; text: string };
-};
-
-/**
- * Подгоняет ширины узких колонок под самый длинный текст, а остаток отдаёт
- * «Наименованию» и «Примечаниям» (примечаниям — большая доля).
- */
-function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
-  const flexKeys = new Set(["title", "note"]);
-  const pad = 15;
-  const measured = new Map<string, number>();
-  let narrow = 0;
-  for (const c of cols) {
-    if (flexKeys.has(c.key)) continue;
-    let w = Math.max(
-      ...c.title.toUpperCase().split(" ").map((word) => trackedWidth(ctx.bold, word, F_DOC_KIND, F_DOC_KIND * 0.08)),
-    );
-    const MERGED = new Set(["unit", "qty", "rate_unit", "multiplier"]);
-    for (const r of rows) {
-      if (r._span && MERGED.has(c.key)) continue;
-      const v = typeof r[c.key] === "string" ? (r[c.key] as string) : "";
-      if (v) w = Math.max(w, ctx.regular.widthOfTextAtSize(v, F11));
-    }
-    const width = Math.min(tableW * 0.18, w + pad);
-    measured.set(c.key, width);
-    narrow += width;
-  }
-  const flexCols = cols.filter((c) => flexKeys.has(c.key));
-  if (!flexCols.length) return;
-  const hasNote = flexCols.some((c) => c.key === "note");
-  const rest = Math.max(tableW * (hasNote ? 0.42 : 0.24), tableW - narrow);
-  const scale = (tableW - rest) / (narrow || 1);
-  for (const c of cols) {
-    if (flexKeys.has(c.key)) c.width = hasNote ? rest * (c.key === "note" ? 0.56 : 0.44) : rest;
-    else c.width = (measured.get(c.key) ?? 0) * scale;
-  }
-}
-
-function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
-  const totalW = cols.reduce((s, c) => s + c.width, 0);
-  const startX = MARGIN_X;
-  const cellPadX = 6;
-  const RD = D * ROW_K;
-  const headerH = 22 * RD;
-  const rowMinH = 18 * RD;
-  const SMALL = F11 - 1;
-
-  const headTracking = F_DOC_KIND * 0.08;
-  const headLines = cols.map((c) => {
-    const title = c.title.toUpperCase();
-    const avail = c.width - cellPadX * 2;
-    if (trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking) <= avail) return [title];
-    const words = title.split(" ");
-    const lines: string[] = [];
-    let cur = "";
-    for (const w of words) {
-      const next = cur ? `${cur} ${w}` : w;
-      if (cur && trackedWidth(ctx.bold, next, F_DOC_KIND, headTracking) > avail) {
-        lines.push(cur);
-        cur = w;
-      } else cur = next;
-    }
-    if (cur) lines.push(cur);
-    return lines;
-  });
-  const headRows = Math.max(1, ...headLines.map((l) => l.length));
-  const headH = Math.max(headerH, headRows * (F_DOC_KIND + 4) + 10);
-
-  const drawHead = () => {
-    ctx.page.drawRectangle({
-      x: startX,
-      y: ctx.y - headH,
-      width: totalW,
-      height: headH,
-      color: ACCENT_SOFT,
-    });
-    let hx = startX;
-    cols.forEach((c, ci) => {
-      const lines = headLines[ci] ?? [c.title.toUpperCase()];
-      const lineH = F_DOC_KIND + 4;
-      const blockH = lines.length * lineH;
-      let ly = ctx.y - headH + (headH - blockH) / 2 + blockH - lineH + 1;
-      for (const line of lines) {
-        const w = trackedWidth(ctx.bold, line, F_DOC_KIND, headTracking);
-        let tx = hx + cellPadX;
-        if (c.align === "right") tx = hx + c.width - cellPadX - w;
-        else if (c.align === "center") tx = hx + (c.width - w) / 2;
-        drawTracked(ctx.page, line, {
-          x: tx,
-          y: ly,
-          size: F_DOC_KIND,
-          font: ctx.bold,
-          color: TEXT,
-          tracking: headTracking,
-        });
-        ly -= lineH;
-      }
-      hx += c.width;
-    });
-    ctx.y -= headH;
-  };
-
-  // header (шапка повторяется на каждой новой странице таблицы)
-  ensureSpace(ctx, headH + rowMinH);
-  drawHead();
-
-  /** Перенос строки таблицы на новую страницу с повтором шапки. */
-  const ensureRow = (needed: number) => {
-    if (ctx.y - needed < MARGIN_BOTTOM) {
-      newPage(ctx);
-      drawHead();
-    }
-  };
-
-  // «Богатая» колонка (название позиции) — может быть не первой, если есть №
-  const richIdx = Math.max(0, cols.findIndex((c) => c.key === "title"));
-  const firstCol = cols[richIdx];
-  const richX = startX + cols.slice(0, richIdx).reduce((s, c) => s + c.width, 0);
-
-  const cellOf = (r: TableRow, key: string) =>
-    typeof r[key] === "string" ? (r[key] as string) : "";
-
-  /** Высота строки без отрисовки — нужна, чтобы не отрывать заголовок раздела. */
-  const measure = (r: TableRow): number => {
-    const kind = r._kind;
-    if (kind === "section" || kind === "subtotal") {
-      const isSub = kind === "subtotal";
-      const label = cellOf(r, firstCol.key);
-      const font = isSub ? ctx.regular : displayFont(ctx, label);
-      const size = isSub ? SMALL : F12;
-      const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
-      const lines = wrapText(font, label, size, labelW);
-      return Math.max((isSub ? 18 : 24) * RD, lines.length * size * LH + (isSub ? 8 : 12) * RD);
-    }
-    const titleW = firstCol.width - cellPadX * 2;
-    const titleLines = wrapText(ctx.bold, cellOf(r, firstCol.key), F11, titleW);
-    const descLines = r._desc ? wrapText(ctx.regular, r._desc, SMALL, titleW) : [];
-    const bulletLines = (r._bullets ?? []).flatMap((b) =>
-      wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
-    );
-    const firstBlockH =
-      titleLines.length * F11 * LH + (descLines.length + bulletLines.length) * SMALL * LH;
-    const restH =
-      Math.max(
-        ...cols.map((c, i) =>
-          i === richIdx ? 0 : wrapText(ctx.regular, cellOf(r, c.key), F11, c.width - cellPadX * 2).length,
-        ),
-        1,
-      ) *
-      F11 *
-      1.3;
-    return Math.max(rowMinH, Math.max(firstBlockH, restH) + 9 * RD);
-  };
-
-  // rows
-  for (let ri = 0; ri < rows.length; ri += 1) {
-    const r = rows[ri];
-    const kind = r._kind;
-    const cell = (key: string) => cellOf(r, key);
-    const rowH = measure(r);
-
-    // keep-with-next: заголовок раздела всегда переносим вместе с первой
-    // строкой раздела, а обычную строку — вместе со следующим подытогом.
-    const next = rows[ri + 1];
-    const glued =
-      kind === "section" && next
-        ? measure(next)
-        : kind !== "subtotal" && next?._kind === "subtotal"
-          ? measure(next)
-          : 0;
-    ensureRow(rowH + glued);
-
-    if (kind === "section" || kind === "subtotal") {
-      const label = cell(firstCol.key);
-      const isSub = kind === "subtotal";
-      const font = isSub ? ctx.regular : displayFont(ctx, label);
-      const size = isSub ? SMALL : F12;
-      const labelW = totalW - (cols.at(-1)?.width ?? 0) - cellPadX * 2;
-      const lines = wrapText(font, label, size, labelW);
-      if (isSub) {
-        ctx.page.drawRectangle({ x: startX, y: ctx.y - rowH, width: totalW, height: rowH, color: SURFACE });
-      }
-      ctx.page.drawLine({
-        start: { x: startX, y: ctx.y - rowH },
-        end: { x: startX + totalW, y: ctx.y - rowH },
-        thickness: 0.4,
-        color: LINE,
-      });
-      let ly = ctx.y - (isSub ? 5 : 8) * RD;
-      for (const line of lines) {
-        ctx.page.drawText(line, {
-          x: startX + cellPadX,
-          y: ly - size,
-          size,
-          font,
-          color: isSub ? MUTED : TEXT,
-        });
-        ly -= size * LH;
-      }
-      // сумма подытога — справа
-      const last = cols.at(-1);
-      const lastVal = last ? cell(last.key) : "";
-      if (last && lastVal) {
-        const vFont = isSub ? ctx.bold : ctx.regular;
-        const vSize = isSub ? SMALL : F11;
-        const w = vFont.widthOfTextAtSize(lastVal, vSize);
-        ctx.page.drawText(lastVal, {
-          x: startX + totalW - cellPadX - w,
-          y: ctx.y - (isSub ? 5 : 8) * RD - vSize,
-          size: vSize,
-          font: vFont,
-          color: TEXT,
-        });
-      }
-      ctx.y -= rowH;
-      continue;
-    }
-
-    // обычная позиция: название — полужирным, описание и «что входит» — мельче и серым
-    const titleText = cell(firstCol.key);
-    const titleW = firstCol.width - cellPadX * 2;
-    const titleLines = wrapText(ctx.bold, titleText, F11, titleW);
-    const descLines = r._desc ? wrapText(ctx.regular, r._desc, SMALL, titleW) : [];
-    const bulletLines = (r._bullets ?? []).flatMap((b) =>
-      wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
-    );
-    const restWrapped = cols.map((c, i) =>
-      i === richIdx ? [] : wrapText(ctx.regular, cell(c.key), F11, c.width - cellPadX * 2),
-    );
-
-    ctx.page.drawLine({
-      start: { x: startX, y: ctx.y - rowH },
-      end: { x: startX + totalW, y: ctx.y - rowH },
-      thickness: 0.4,
-      color: LINE,
-    });
-
-    // колонка с названием
-    let cy = ctx.y - 5 * RD;
-    for (const line of titleLines) {
-      ctx.page.drawText(line, { x: richX + cellPadX, y: cy - F11, size: F11, font: ctx.bold, color: TEXT });
-      cy -= F11 * LH;
-    }
-    for (const line of descLines) {
-      ctx.page.drawText(line, { x: richX + cellPadX, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
-      cy -= SMALL * LH;
-    }
-    for (const line of bulletLines) {
-      ctx.page.drawText(line, { x: richX + cellPadX + 8, y: cy - SMALL, size: SMALL, font: ctx.regular, color: MUTED });
-      cy -= SMALL * LH;
-    }
-
-    // объединённые колонки (например «услуга» вместо пустых единиц и количеств)
-    const spanFrom = r._span ? cols.findIndex((c) => c.key === r._span!.from) : -1;
-    const spanTo = r._span ? cols.findIndex((c) => c.key === r._span!.to) : -1;
-    if (r._span && spanFrom >= 0 && spanTo >= spanFrom) {
-      const sx = startX + cols.slice(0, spanFrom).reduce((s2, c) => s2 + c.width, 0);
-      const sw = cols.slice(spanFrom, spanTo + 1).reduce((s2, c) => s2 + c.width, 0);
-      const text = r._span.text;
-      const w = ctx.regular.widthOfTextAtSize(text, F11);
-      ctx.page.drawText(text, {
-        x: sx + (sw - w) / 2,
-        y: ctx.y - 5 * RD - F11,
-        size: F11,
-        font: ctx.regular,
-        color: TEXT,
-      });
-    }
-
-    // остальные колонки
-    let cx = startX;
-    for (let i = 0; i < cols.length; i++) {
-      const c = cols[i];
-      if (i === richIdx || (spanFrom >= 0 && i >= spanFrom && i <= spanTo)) {
-        cx += c.width;
-        continue;
-      }
-      const lines = restWrapped[i];
-      const blockH = Math.max(lines.length, 1) * F11 * LH;
-      let ly = c.valign === "middle" ? ctx.y - Math.max(5 * RD, (rowH - blockH) / 2) : ctx.y - 5 * RD;
-      const color = c.key === "idx" ? MUTED : TEXT;
-      for (const line of lines) {
-        let tx = cx + cellPadX;
-        if (c.align === "right") {
-          const w = ctx.regular.widthOfTextAtSize(line, F11);
-          tx = cx + c.width - cellPadX - w;
-        } else if (c.align === "center") {
-          const w = ctx.regular.widthOfTextAtSize(line, F11);
-          tx = cx + (c.width - w) / 2;
-        }
-        ctx.page.drawText(line, { x: tx, y: ly - F11, size: F11, font: ctx.regular, color });
-        ly -= F11 * LH;
-      }
-      cx += c.width;
-    }
-
-    ctx.y -= rowH;
-  }
-}
-
-
-
-// === Сводный блок «итого» (как в HTML-превью: справа, белый фон, акцентная строка «Итого») ===
-function drawSummary(
-  ctx: DocCtx,
-  rows: Array<{ label: string; value: string; emphasis?: boolean }>,
-) {
-  const width = Math.min(360 * 0.92, PAGE_W - MARGIN_X * 2);
-  const x = PAGE_W - MARGIN_X - width;
-  const padX = 13;
-  const rowH = (r: { emphasis?: boolean }) => (r.emphasis ? F16 : F12) * LH_TOTAL + 8 * D;
-  const height = rows.reduce((s, r) => s + rowH(r), 0);
-
-  ensureSpace(ctx, height + 10 * D);
-  roundedRect(ctx.page, {
-    x,
-    y: ctx.y - height,
-    width,
-    height,
-    radius: 10,
-    color: rgb(1, 1, 1),
-    borderColor: ACCENT_BORDER,
-    borderWidth: 0.7,
-  });
-
-  let cy = ctx.y;
-  const lastIdx = rows.length - 1;
-  for (const [i, r] of rows.entries()) {
-    const h = rowH(r);
-    const size = r.emphasis ? F16 : F12;
-    if (r.emphasis) {
-      const isLast = i === lastIdx;
-      roundedRect(ctx.page, {
-        x: x + 0.7,
-        y: cy - h,
-        width: width - 1.4,
-        height: h,
-        radius: isLast ? 9 : 0,
-        color: ACCENT_SOFT,
-      });
-    }
-
-    const labelFont = r.emphasis ? displayFont(ctx, r.label) : ctx.regular;
-    const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
-    const baseline = cy - (h + size * 0.72) / 2;
-    const labelW = labelFont.widthOfTextAtSize(r.label, size);
-    ctx.page.drawText(r.label, {
-      x: x + padX,
-      y: baseline,
-      size,
-      font: labelFont,
-      color: r.emphasis ? TEXT : MUTED,
-    });
-    // значение не должно вылезать за рамку и наезжать на подпись:
-    // если места мало — уменьшаем кегль значения.
-    const avail = width - padX * 2 - labelW - 8;
-    let vSize = size;
-    let w = valueFont.widthOfTextAtSize(r.value, vSize);
-    while (w > avail && vSize > size * 0.7) {
-      vSize -= 0.4;
-      w = valueFont.widthOfTextAtSize(r.value, vSize);
-    }
-    ctx.page.drawText(r.value, {
-      x: x + width - padX - w,
-      y: baseline,
-      size: vSize,
-
-      font: valueFont,
-      color: TEXT,
-    });
-    cy -= h;
-  }
-  ctx.y -= height + 10 * D;
-}
-
-// === Подпись (две колонки) ===
-function drawSignatures(
-  ctx: DocCtx,
-  left: { title: string; lines: string[]; signName: string },
-  right: { title: string; lines: string[]; signName: string },
-) {
-  const colW = (PAGE_W - MARGIN_X * 2 - 24) / 2;
-  // Подпись нельзя рвать между страницами: считаем реальную высоту заранее.
-  const measureCol = (b: { lines: string[] }) =>
-    16 +
-    b.lines.filter(Boolean).reduce((s, l) => s + wrapText(ctx.regular, l, F11, colW).length * F11 * LH_TEXT, 0) +
-    28 +
-    F11 * 2 +
-    10;
-  ensureSpace(ctx, 14 + Math.max(measureCol(left), measureCol(right)));
-  ctx.y -= 14;
-  const yStart = ctx.y;
-  // Линия подписи в обеих колонках на одном уровне — независимо от числа строк.
-  const linesH = (b: typeof left) =>
-    b.lines.filter(Boolean).reduce((s, l) => s + wrapText(ctx.regular, l, F11, colW).length * F11 * LH_TEXT, 0);
-  const blockH = Math.max(linesH(left), linesH(right));
-  const drawCol = (x: number, b: typeof left) => {
-    let cy = yStart;
-    drawTracked(ctx.page, b.title.toUpperCase(), {
-      x,
-      y: cy - 9,
-      size: F_LABEL,
-      font: ctx.bold,
-      color: ACCENT,
-      tracking: F_LABEL * 0.12,
-    });
-    cy -= 16;
-    for (const l of b.lines.filter(Boolean)) {
-      const wrapped = wrapText(ctx.regular, l, F11, colW);
-      for (const line of wrapped) {
-        ctx.page.drawText(line, { x, y: cy - F11, size: F11, font: ctx.regular, color: TEXT });
-        cy -= F11 * LH_TEXT;
-      }
-    }
-    cy = yStart - 16 - blockH - 28;
-
-    ctx.page.drawLine({
-      start: { x, y: cy },
-      end: { x: x + colW, y: cy },
-      thickness: 0.6,
-      color: LINE,
-    });
-    ctx.page.drawText(b.signName, {
-      x,
-      y: cy - F11 - 2,
-      size: F11,
-      font: ctx.regular,
-      color: MUTED,
-    });
-    return yStart - (cy - F11 - 6); // фактически занятая высота
-  };
-  const usedL = drawCol(MARGIN_X, left);
-  const usedR = drawCol(MARGIN_X + colW + 24, right);
-  ctx.y -= Math.max(usedL, usedR);
-}
 
 // === Утилиты ===
 function header(order: DocOrder) {
@@ -1236,7 +109,7 @@ async function createCtx(
 
 
 
-  ctx.y = PAGE_H - MARGIN_TOP;
+  ctx.y = PAGE_H - M.MARGIN_TOP;
   ctx.page.drawRectangle({ x: 0, y: PAGE_H - 4, width: PAGE_W, height: 4, color: ACCENT });
   return ctx;
 }
@@ -1257,7 +130,7 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
   ]);
 
   gap(ctx, 6);
-  const tableW = PAGE_W - MARGIN_X * 2;
+  const tableW = PAGE_W - M.MARGIN_X * 2;
   drawTable(
     ctx,
     [
@@ -1282,8 +155,8 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
 
   if (order.notes) {
     gap(ctx, 4);
-    drawText(ctx, "Комментарий", { bold: true, size: F12, color: ACCENT });
-    drawParagraph(ctx, order.notes, { size: F11 });
+    drawText(ctx, "Комментарий", { bold: true, size: M.F12, color: ACCENT });
+    drawParagraph(ctx, order.notes, { size: M.F11 });
   }
 
   gap(ctx, 8);
@@ -1302,7 +175,7 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
   const { num, date } = header(order);
   drawHeader(ctx, "Счёт-фактура", num, date, settings);
 
-  const colW = (PAGE_W - MARGIN_X * 2 - 12) / 2;
+  const colW = (PAGE_W - M.MARGIN_X * 2 - 12) / 2;
   const cardY = ctx.y;
   drawCard(
     ctx,
@@ -1316,7 +189,7 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
       settings.bank_bic ? `БИК: ${settings.bank_bic}` : null,
       `${settings.company_phone} · ${settings.company_email}`,
     ],
-    { x: MARGIN_X, width: colW },
+    { x: M.MARGIN_X, width: colW },
   );
   const leftEndY = ctx.y;
   ctx.y = cardY;
@@ -1330,12 +203,12 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
       order.client_email,
       order.event_date ? `Дата мероприятия: ${fmtDate(order.event_date)}` : null,
     ],
-    { x: MARGIN_X + colW + 12, width: colW },
+    { x: M.MARGIN_X + colW + 12, width: colW },
   );
   ctx.y = Math.min(leftEndY, ctx.y);
 
   gap(ctx, 8);
-  const tableW = PAGE_W - MARGIN_X * 2;
+  const tableW = PAGE_W - M.MARGIN_X * 2;
   drawTable(
     ctx,
     [
@@ -1408,24 +281,24 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
 
   drawText(ctx, `ДОГОВОР ОКАЗАНИЯ УСЛУГ № ${num}`, {
     bold: true,
-    size: F16,
+    size: M.F16,
     align: "center",
-    x: MARGIN_X,
-    width: PAGE_W - MARGIN_X * 2,
+    x: M.MARGIN_X,
+    width: PAGE_W - M.MARGIN_X * 2,
   });
   drawText(ctx, `г. ${settings.contract_jurisdiction_city} · ${date}`, {
     size: DOC_FONT_PT.small,
     color: MUTED,
     align: "center",
-    x: MARGIN_X,
-    width: PAGE_W - MARGIN_X * 2,
+    x: M.MARGIN_X,
+    width: PAGE_W - M.MARGIN_X * 2,
   });
   gap(ctx, 8);
 
   drawParagraph(
     ctx,
     `${settings.company_legal_name} (далее — «Исполнитель») в лице ${settings.signer_title} ${settings.signer_name}, действующего на основании ${settings.signer_basis}, с одной стороны, и ${order.client_company || order.client_name}${order.client_company ? ` в лице ${order.client_name}` : ""} (далее — «Заказчик»), с другой стороны, заключили настоящий Договор о нижеследующем.`,
-    { size: F11 },
+    { size: M.F11 },
   );
   gap(ctx, 6);
 
@@ -1434,17 +307,17 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
 
   const section = (n: string, title: string) => {
     gap(ctx, 6);
-    drawText(ctx, `${n}. ${title}`, { bold: true, size: F13, color: ACCENT });
+    drawText(ctx, `${n}. ${title}`, { bold: true, size: M.F13, color: ACCENT });
     gap(ctx, 2);
   };
 
   section("1", "Предмет договора");
-  drawParagraph(ctx, `1.1. Исполнитель обязуется оказать Заказчику услуги по организации и техническому обеспечению мероприятия, проводимого ${eventDate}, а Заказчик — принять и оплатить услуги.`, { size: F11 });
-  drawParagraph(ctx, "1.2. Перечень услуг и их стоимость:", { size: F11 });
+  drawParagraph(ctx, `1.1. Исполнитель обязуется оказать Заказчику услуги по организации и техническому обеспечению мероприятия, проводимого ${eventDate}, а Заказчик — принять и оплатить услуги.`, { size: M.F11 });
+  drawParagraph(ctx, "1.2. Перечень услуг и их стоимость:", { size: M.F11 });
   for (const it of items.length ? items : [{ title: "Услуги уточняются дополнительным соглашением.", qty: 0, price: 0 } as DocItem]) {
     const sum = Number(it.price) * Number(it.qty);
     const line = `  • ${safe(it.title)}${it.qty ? ` — ${it.qty} шт. × ${money(Number(it.price))} = ${money(sum)}` : ""}`;
-    drawParagraph(ctx, line, { size: F11 });
+    drawParagraph(ctx, line, { size: M.F11 });
   }
 
   section("2", "Стоимость услуг и порядок расчётов");
@@ -1456,20 +329,20 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
         cv.enabled ? `в том числе НДС ${vatRateLabel(cv.rate)}% — ${money(cv.vat)}` : settings.vat_note
       }.`;
     })(),
-    { size: F11 },
+    { size: M.F11 },
   );
-  drawParagraph(ctx, `2.2. Заказчик вносит предоплату в размере ${settings.contract_prepayment_pct}% от стоимости в течение ${settings.contract_prepayment_days} банковских дней с момента подписания Договора.`, { size: F11 });
-  drawParagraph(ctx, "2.3. Окончательный расчёт производится не позднее даты проведения мероприятия.", { size: F11 });
-  drawParagraph(ctx, "2.4. Оплата осуществляется безналичным перечислением на расчётный счёт Исполнителя.", { size: F11 });
+  drawParagraph(ctx, `2.2. Заказчик вносит предоплату в размере ${settings.contract_prepayment_pct}% от стоимости в течение ${settings.contract_prepayment_days} банковских дней с момента подписания Договора.`, { size: M.F11 });
+  drawParagraph(ctx, "2.3. Окончательный расчёт производится не позднее даты проведения мероприятия.", { size: M.F11 });
+  drawParagraph(ctx, "2.4. Оплата осуществляется безналичным перечислением на расчётный счёт Исполнителя.", { size: M.F11 });
 
   section("3", "Ответственность");
-  drawParagraph(ctx, `3.1. За нарушение сроков оплаты Заказчик уплачивает пеню в размере ${settings.contract_late_fee_pct}% от просроченной суммы за каждый день просрочки.`, { size: F11 });
-  drawParagraph(ctx, `3.2. В случае отказа Заказчика от услуг менее чем за ${settings.contract_cancel_days} дней до даты мероприятия предоплата не возвращается.`, { size: F11 });
-  drawParagraph(ctx, `3.3. Споры разрешаются в суде по месту нахождения Исполнителя (г. ${settings.contract_jurisdiction_city}).`, { size: F11 });
+  drawParagraph(ctx, `3.1. За нарушение сроков оплаты Заказчик уплачивает пеню в размере ${settings.contract_late_fee_pct}% от просроченной суммы за каждый день просрочки.`, { size: M.F11 });
+  drawParagraph(ctx, `3.2. В случае отказа Заказчика от услуг менее чем за ${settings.contract_cancel_days} дней до даты мероприятия предоплата не возвращается.`, { size: M.F11 });
+  drawParagraph(ctx, `3.3. Споры разрешаются в суде по месту нахождения Исполнителя (г. ${settings.contract_jurisdiction_city}).`, { size: M.F11 });
 
   (settings.contract_sections ?? []).forEach((s, i) => {
     section(String(i + 4), s.title);
-    for (const p of s.paragraphs ?? []) drawParagraph(ctx, p, { size: F11 });
+    for (const p of s.paragraphs ?? []) drawParagraph(ctx, p, { size: M.F11 });
   });
 
   gap(ctx, 8);
@@ -1505,7 +378,7 @@ async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSet
   const { num, date } = header(order);
   drawHeader(ctx, "Акт оказанных услуг", num, date, settings);
 
-  const colW = (PAGE_W - MARGIN_X * 2 - 12) / 2;
+  const colW = (PAGE_W - M.MARGIN_X * 2 - 12) / 2;
   const startY = ctx.y;
   drawCard(
     ctx,
@@ -1516,7 +389,7 @@ async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSet
       settings.company_address,
       `${settings.company_phone} · ${settings.company_email}`,
     ],
-    { x: MARGIN_X, width: colW },
+    { x: M.MARGIN_X, width: colW },
   );
   const leftEnd = ctx.y;
   ctx.y = startY;
@@ -1529,19 +402,19 @@ async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSet
       order.client_phone,
       order.client_email,
     ],
-    { x: MARGIN_X + colW + 12, width: colW },
+    { x: M.MARGIN_X + colW + 12, width: colW },
   );
   ctx.y = Math.min(leftEnd, ctx.y);
 
   gap(ctx, 8);
-  drawParagraph(ctx, settings.act_intro, { size: F11 });
+  drawParagraph(ctx, settings.act_intro, { size: M.F11 });
 
   gap(ctx, 6);
   const eventDate = order.event_date ? fmtDate(order.event_date) : "—";
-  drawText(ctx, `Дата оказания услуг: ${eventDate}`, { size: F11, bold: true });
+  drawText(ctx, `Дата оказания услуг: ${eventDate}`, { size: M.F11, bold: true });
   gap(ctx, 4);
 
-  const tableW = PAGE_W - MARGIN_X * 2;
+  const tableW = PAGE_W - M.MARGIN_X * 2;
   drawTable(
     ctx,
     [
@@ -1580,7 +453,7 @@ async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSet
   ]);
 
   gap(ctx, 6);
-  drawParagraph(ctx, "Услуги оказаны полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.", { size: F11 });
+  drawParagraph(ctx, "Услуги оказаны полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.", { size: M.F11 });
 
   drawSignatures(
     ctx,
@@ -1661,7 +534,7 @@ function bulletList(ctx: DocCtx, text: string) {
   for (const raw of String(text ?? "").split("\n")) {
     const line = raw.trim();
     if (!line) continue;
-    drawParagraph(ctx, `•  ${line}`, { size: F11, indent: 6 });
+    drawParagraph(ctx, `•  ${line}`, { size: M.F11, indent: 6 });
   }
 }
 
@@ -1735,7 +608,7 @@ async function renderQuotePdf(
   const numbers = buildNumericValues(quote, items);
   const t = computeTotals(quote, items);
   const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order);
-  const colW = (PAGE_W - MARGIN_X * 2 - 12) / 2;
+  const colW = (PAGE_W - M.MARGIN_X * 2 - 12) / 2;
 
   const hidden = new Set<string>();
   if (!quote.design.show_cover) hidden.add("cover");
@@ -1744,16 +617,16 @@ async function renderQuotePdf(
 
   const heading = (title: string) => {
     gap(ctx, 8);
-    ensureSpace(ctx, F13 * 2);
+    ensureSpace(ctx, M.F13 * 2);
     drawTracked(ctx.page, title.toUpperCase(), {
-      x: MARGIN_X,
-      y: ctx.y - F13,
-      size: F13,
+      x: M.MARGIN_X,
+      y: ctx.y - M.F13,
+      size: M.F13,
       font: ctx.bold,
       color: ACCENT,
-      tracking: F13 * 0.05,
+      tracking: M.F13 * 0.05,
     });
-    ctx.y -= F13 * LH_LOOSE;
+    ctx.y -= M.F13 * M.LH_LOOSE;
     gap(ctx, 2);
   };
 
@@ -1769,17 +642,17 @@ async function renderQuotePdf(
           map,
           numbers,
         );
-        const innerW = PAGE_W - MARGIN_X * 2 - 40;
+        const innerW = PAGE_W - M.MARGIN_X * 2 - 40;
         const tFont = displayFont(ctx, coverTitle);
-        const tLines = wrapText(tFont, coverTitle, F_COVER, innerW);
-        const pLines = text ? wrapText(ctx.regular, text, F11, innerW) : [];
-        const boxH = 18 + tLines.length * F_COVER * LH_TIGHT + (pLines.length ? 8 + pLines.length * F11 * LH_LOOSE : 0) + 18;
+        const tLines = wrapText(tFont, coverTitle, M.F_COVER, innerW);
+        const pLines = text ? wrapText(ctx.regular, text, M.F11, innerW) : [];
+        const boxH = 18 + tLines.length * M.F_COVER * M.LH_TIGHT + (pLines.length ? 8 + pLines.length * M.F11 * M.LH_LOOSE : 0) + 18;
         gap(ctx, 6);
         ensureSpace(ctx, boxH + 8);
         roundedRect(ctx.page, {
-          x: MARGIN_X,
+          x: M.MARGIN_X,
           y: ctx.y - boxH,
-          width: PAGE_W - MARGIN_X * 2,
+          width: PAGE_W - M.MARGIN_X * 2,
           height: boxH,
           radius: 12,
           color: c01(mixWithWhite(BRAND_ACCENT, 0.9)),
@@ -1788,13 +661,13 @@ async function renderQuotePdf(
         });
         let cyc = ctx.y - 18;
         for (const line of tLines) {
-          ctx.page.drawText(line, { x: MARGIN_X + 20, y: cyc - F_COVER, size: F_COVER, font: tFont, color: TEXT });
-          cyc -= F_COVER * LH_TIGHT;
+          ctx.page.drawText(line, { x: M.MARGIN_X + 20, y: cyc - M.F_COVER, size: M.F_COVER, font: tFont, color: TEXT });
+          cyc -= M.F_COVER * M.LH_TIGHT;
         }
         if (pLines.length) cyc -= 8;
         for (const line of pLines) {
-          ctx.page.drawText(line, { x: MARGIN_X + 20, y: cyc - F11, size: F11, font: ctx.regular, color: MUTED });
-          cyc -= F11 * LH_LOOSE;
+          ctx.page.drawText(line, { x: M.MARGIN_X + 20, y: cyc - M.F11, size: M.F11, font: ctx.regular, color: MUTED });
+          cyc -= M.F11 * M.LH_LOOSE;
         }
         ctx.y -= boxH + 8;
         break;
@@ -1813,7 +686,7 @@ async function renderQuotePdf(
             quote.client_email,
             quote.client_address,
           ],
-          { x: MARGIN_X, width: colW * 2 + 12 },
+          { x: M.MARGIN_X, width: colW * 2 + 12 },
         );
         break;
       }
@@ -1842,7 +715,7 @@ async function renderQuotePdf(
           ctx,
           [
             { title: "", width: 24, key: "idx" },
-            { title: "Позиция", width: PAGE_W - MARGIN_X * 2 - 24 - 70 - 80 - 90, key: "title" },
+            { title: "Позиция", width: PAGE_W - M.MARGIN_X * 2 - 24 - 70 - 80 - 90, key: "title" },
             { title: "Кол-во", width: 70, align: "center", valign: "middle", key: "qty" },
             { title: "Цена", width: 80, align: "right", key: "price" },
             { title: "Сумма", width: 90, align: "right", key: "sum" },
@@ -1942,7 +815,7 @@ async function renderQuotePdf(
       case "text": {
         if (!text) break;
         heading(b.title);
-        drawParagraph(ctx, text, { size: F11 });
+        drawParagraph(ctx, text, { size: M.F11 });
         break;
       }
       case "requisites": {
@@ -2060,7 +933,7 @@ export async function buildPromoQuotePdfLegacy(
   ]);
 
   gap(ctx, 6);
-  const tableW = PAGE_W - MARGIN_X * 2;
+  const tableW = PAGE_W - M.MARGIN_X * 2;
   const showNotes = quote.show_notes;
   // Вторая единица («час», «смена») — отдельные колонки, только если она задана.
   const dual = hasSecondUnit(items);
