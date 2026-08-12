@@ -780,8 +780,9 @@ function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number
     let w = Math.max(
       ...c.title.toUpperCase().split(" ").map((word) => trackedWidth(ctx.bold, word, F_DOC_KIND, F_DOC_KIND * 0.08)),
     );
+    const MERGED = new Set(["unit", "qty", "rate_unit", "multiplier"]);
     for (const r of rows) {
-      if (r._span) continue;
+      if (r._span && MERGED.has(c.key)) continue;
       const v = typeof r[c.key] === "string" ? (r[c.key] as string) : "";
       if (v) w = Math.max(w, ctx.regular.widthOfTextAtSize(v, F11));
     }
