@@ -8,23 +8,37 @@ export type ZoneDef<T extends string> = { id: T; label: string; rect: Rect };
 
 const center = (r: Rect) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
 
-/** Ближайшая зона к точке (по расстоянию до центра зоны). */
+/** Квадрат расстояния от точки до прямоугольника (0 — точка внутри). */
+function distToRect(r: Rect, p: { x: number; y: number }): number {
+  const dx = Math.max(r.x - p.x, 0, p.x - (r.x + r.w));
+  const dy = Math.max(r.y - p.y, 0, p.y - (r.y + r.h));
+  return dx * dx + dy * dy;
+}
+
+/**
+ * Ближайшая зона к точке. Сначала попадание внутрь зоны (крупная «мишень»),
+ * при равенстве — та, чей центр ближе. Так промахнуться почти невозможно.
+ */
 export function nearestZone<T extends string>(
   zones: ZoneDef<T>[],
   point: { x: number; y: number },
 ): ZoneDef<T> {
   let best = zones[0];
   let bestD = Number.POSITIVE_INFINITY;
+  let bestC = Number.POSITIVE_INFINITY;
   for (const z of zones) {
+    const d = distToRect(z.rect, point);
     const c = center(z.rect);
-    const d = (c.x - point.x) ** 2 + (c.y - point.y) ** 2;
-    if (d < bestD) {
+    const cd = (c.x - point.x) ** 2 + (c.y - point.y) ** 2;
+    if (d < bestD || (d === bestD && cd < bestC)) {
       bestD = d;
+      bestC = cd;
       best = z;
     }
   }
   return best;
 }
+
 
 export function photoZones(): ZoneDef<Exclude<PhotoZone, "auto">>[] {
   const half = SLIDE_W * 0.42;
