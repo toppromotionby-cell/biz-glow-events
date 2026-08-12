@@ -26,30 +26,19 @@ function expectAllPresent(source: string, snippets: string[], file: string) {
 }
 
 describe("mobile layout: centering regressions", () => {
-  it("CatalogChoiceModal: cards stay centered until md, switch to row at md+", () => {
+  // Карточки разделов каталога централизованы в src/components/catalog/CatalogNav.tsx
+  // (CatalogSectionTile — модалка/главная, CatalogSectionCard — /catalog),
+  // поэтому проверяем инварианты именно там, а не в местах использования.
+  it("CatalogChoiceModal: tiles grid + centered dialog header", () => {
     const file = "src/components/CatalogChoiceModal.tsx";
     const src = read(file);
 
-    // Card row container: vertical + centered through tablet, horizontal + left at md+.
-    // Intentionally md: (not sm:) so the 640–767 range keeps the centered stacked layout
-    // and avoids cramped horizontal cards inside the 2-col grid.
-    expectAllPresent(
-      src,
-      [
-        "flex h-full flex-col items-center text-center gap-3",
-        "md:flex-row",
-        "md:items-start",
-        "md:text-left",
-      ],
-      file,
-    );
-
-    // "Перейти" CTA: centered through tablet, pushed to start at md+
-    expectAllPresent(src, ["justify-center md:justify-start"], file);
+    expectAllPresent(src, ["grid-tiles", "CatalogSectionTile"], file);
 
     // Dialog header text-center on mobile
     expect(src).toMatch(/DialogHeader[^>]*className="[^"]*text-center/);
   });
+
 
   it("Industries grid tiles: centered stack on mobile, row-left at md+", () => {
     const file = "src/routes/industries.tsx";
@@ -87,21 +76,23 @@ describe("mobile layout: centering regressions", () => {
     );
   });
 
-  it("Catalog landing cards: centered stack on mobile, row-left at md+", () => {
-    const file = "src/routes/catalog.tsx";
+  it("Catalog landing cards: shrink-safe row layout on mobile", () => {
+    // Маршрут /catalog — src/routes/catalog.index.tsx, карточки — CatalogNav.tsx.
+    read("src/routes/catalog.index.tsx");
+    const file = "src/components/catalog/CatalogNav.tsx";
     const src = read(file);
     expectAllPresent(
       src,
       [
-        "flex h-full flex-col items-center text-center gap-3",
-        "md:flex-row",
-        "md:items-start",
-        "md:text-left",
-        "justify-center md:justify-start",
+        "h-full flex flex-col",
+        "shrink-0 items-center justify-center rounded-xl",
+        "min-w-0 flex-1",
+        "leading-snug text-balance",
       ],
       file,
     );
   });
+
 
   it("DirectionCard: centered stack on mobile, left-aligned at md+", () => {
     const file = "src/components/ui/DirectionCard.tsx";
