@@ -111,6 +111,7 @@ export type SlideContent = {
 
 export type PhotoZone = "auto" | "left" | "right" | "top" | "full" | "none";
 export type TextZone = "auto" | "top" | "center" | "bottom";
+export type TextAlignX = "auto" | "left" | "center" | "right";
 export type PriceZone = "auto" | "under-text" | "corner" | "beside-photo";
 export type LogoZone = "auto" | "tl" | "tr" | "bl" | "br" | "footer" | "hero";
 
@@ -123,6 +124,12 @@ export type SlideLayoutOverrides = {
   textZone: TextZone;
   /** Доля доступной ширины под текст, 0.3–1. */
   textWidth: number | null;
+  /** Горизонтальное выравнивание текстового блока и выключка текста. */
+  alignX: TextAlignX;
+  /** Растянуть текстовый блок на всю доступную ширину. */
+  stretchX: boolean;
+  /** Растянуть текстовый блок на всю доступную высоту. */
+  stretchY: boolean;
   priceZone: PriceZone;
   brandLogo: LogoOverride;
   clientLogo: LogoOverride;
@@ -133,10 +140,14 @@ export const DEFAULT_LAYOUT_OVERRIDES: SlideLayoutOverrides = {
   photoScale: null,
   textZone: "auto",
   textWidth: null,
+  alignX: "auto",
+  stretchX: false,
+  stretchY: false,
   priceZone: "auto",
   brandLogo: { zone: "auto", scale: null },
   clientLogo: { zone: "auto", scale: null },
 };
+
 
 export const PHOTO_SCALE_MIN = 0.25;
 export const PHOTO_SCALE_MAX = 0.65;
