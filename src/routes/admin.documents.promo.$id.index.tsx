@@ -8,11 +8,13 @@ import { DocAppearanceSection } from "@/components/admin/documents/DocAppearance
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AUTOSAVE_DELAY, saveStatus } from "@/lib/editor/save-state";
+import { HISTORY_LIMIT } from "@/lib/editor/history";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  Download, Info, Undo2, History, Send, ListTree, User, Wallet, ShieldCheck, Settings2,
+  Download, Info, Undo2, Redo2, History, Send, ListTree, User, Wallet, ShieldCheck, Settings2,
   Eye, Percent, Brain, MoreHorizontal,
 } from "lucide-react";
 
@@ -120,7 +122,11 @@ function EditorPage() {
   const [snippetDraft, setSnippetDraft] = useState<{ name: string; section: string; items: PromoItem[] } | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
   const { confirm, dialog: confirmDialog } = useConfirm();
+  // Общая история правок (undo/redo) — один модуль с презентациями.
   const history = useRef<Snapshot[]>([]);
+  const redoStack = useRef<Snapshot[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -128,6 +134,9 @@ function EditorPage() {
       setQuote(data.quote);
       setItems(data.items);
       history.current = [];
+      redoStack.current = [];
+      setCanUndo(false);
+      setCanRedo(false);
       setDirty(false);
     }
   }, [data]);
@@ -158,14 +167,17 @@ function EditorPage() {
   const scheduleSave = useCallback((q: PromoQuote, list: PromoItem[]) => {
     setDirty(true);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => saveMut.mutate({ quote: q, items: list }), 1200);
+    timer.current = setTimeout(() => saveMut.mutate({ quote: q, items: list }), AUTOSAVE_DELAY);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { fetchContacts } = useDocSuggest();
 
   const pushHistory = useCallback((snap: Snapshot) => {
-    history.current = [...history.current.slice(-29), snap];
+    history.current = [...history.current, snap].slice(-HISTORY_LIMIT);
+    redoStack.current = [];
+    setCanUndo(true);
+    setCanRedo(false);
   }, []);
 
   const patchQuote = (p: Partial<PromoQuote>) => {
@@ -187,19 +199,41 @@ function EditorPage() {
   const undo = useCallback(() => {
     const prev = history.current.pop();
     if (!prev) return toast.info("Отменять нечего");
-    setQuote(prev.quote);
-    setItems(prev.items);
+    setQuote((cur) => {
+      setItems((curItems) => {
+        if (cur) redoStack.current = [...redoStack.current, { quote: cur, items: curItems }].slice(-HISTORY_LIMIT);
+        return prev.items;
+      });
+      return prev.quote;
+    });
+    setCanUndo(history.current.length > 0);
+    setCanRedo(true);
     scheduleSave(prev.quote, prev.items);
     toast.success("Действие отменено");
   }, [scheduleSave]);
 
+  const redo = useCallback(() => {
+    const next = redoStack.current.pop();
+    if (!next) return toast.info("Повторять нечего");
+    setQuote((cur) => {
+      setItems((curItems) => {
+        if (cur) history.current = [...history.current, { quote: cur, items: curItems }].slice(-HISTORY_LIMIT);
+        return next.items;
+      });
+      return next.quote;
+    });
+    setCanUndo(true);
+    setCanRedo(redoStack.current.length > 0);
+    scheduleSave(next.quote, next.items);
+  }, [scheduleSave]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         const t = e.target as HTMLElement | null;
         if (t && /input|textarea/i.test(t.tagName)) return;
         e.preventDefault();
-        undo();
+        if (e.shiftKey) redo(); else undo();
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
@@ -208,7 +242,7 @@ function EditorPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, quote, items, saveMut]);
+  }, [undo, redo, quote, items, saveMut]);
 
   const totals = useMemo(() => (quote ? computePromoTotals(quote, items) : null), [quote, items]);
   const checks = useMemo(() => (quote ? checkPromoQuote(quote, items) : []), [quote, items]);
@@ -548,13 +582,7 @@ function EditorPage() {
           <>
             <span>№ {promoNumberDisplay(quote)}</span>
             <span>
-              {saveMut.isPending
-                ? "· сохранение…"
-                : dirty
-                  ? "· есть несохранённые изменения"
-                  : savedAt
-                    ? `· сохранено ${savedAt.toLocaleTimeString("ru-RU")}`
-                    : "· все изменения сохранены"}
+              · {saveStatus(saveMut.isPending ? "saving" : dirty ? "dirty" : "saved", savedAt).text}
             </span>
             {validity === "expired" && <StatusPill tone="danger">Срок истёк</StatusPill>}
             <QuoteShareStatus share={shareState} />
@@ -576,7 +604,10 @@ function EditorPage() {
                 await refetch();
               }}
             />
-            <Button size="sm" variant="ghost" onClick={undo} title="Отменить (Ctrl+Z)">
+            <Button size="sm" variant="ghost" onClick={redo} disabled={!canRedo} title="Повторить (Ctrl+Shift+Z)">
+              <Redo2 className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={undo} disabled={!canUndo} title="Отменить (Ctrl+Z)">
               <Undo2 className="h-4 w-4" />
             </Button>
             <Button

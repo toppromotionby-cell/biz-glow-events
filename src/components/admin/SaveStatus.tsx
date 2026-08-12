@@ -2,7 +2,9 @@
 import { Check, Loader2, AlertCircle, CircleDot, HardDrive } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+import type { SaveState } from "@/lib/editor/save-state";
+
+export type { SaveState };
 
 export function SaveStatus({
   state,

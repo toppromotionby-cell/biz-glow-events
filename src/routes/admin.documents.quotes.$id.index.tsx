@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
+import { AUTOSAVE_DELAY } from "@/lib/editor/save-state";
 import { Field } from "@/components/admin/Field";
 import { DocEditorShell } from "@/components/admin/editor/DocEditorShell";
 import type { EditorSection } from "@/components/admin/editor/EditorSidebar";
@@ -289,7 +290,7 @@ function Page() {
         setState("error");
         setSaveError(friendlyZodMessage(e));
       }
-    }, 1200);
+    }, AUTOSAVE_DELAY);
     return () => clearTimeout(t);
   }, [quote, items, id, save, qc]);
 
