@@ -16,8 +16,9 @@ import {
 } from "@/lib/documents/image-embed.server";
 
 import {
-  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock,
+  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock, type SpecPaint,
 } from "@/lib/presentations/slide-spec";
+import { contentSlideSpec } from "@/lib/presentations/content-spec";
 
 
 const W = 960;
