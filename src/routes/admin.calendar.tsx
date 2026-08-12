@@ -39,7 +39,7 @@ const LEGEND: Array<{ key: string; label: string; statuses: string[] }> = [
 
 interface CalOrder {
   id: string;
-  order_number: number | null;
+  order_number: string | null;
   client_name: string | null;
   event_date: string;
   status: string;
