@@ -115,14 +115,51 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState<Row>(row);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [touched, setTouched] = useState<Set<string>>(() => new Set());
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
   // Возврат к другой записи в списке — сбрасываем форму и статус.
   useEffect(() => {
     setF(row);
     setSaveState("idle");
+    setTouched(new Set());
+    setServerErrors({});
   }, [row]);
 
+  // Живая валидация: сохранить невалидный промокод нельзя.
+  const validation = useMemo(() => {
+    const r = promoCodeSchema.safeParse({
+      code: String(f.code ?? "").trim().toUpperCase(),
+      description: f.description ?? "",
+      discount_type: f.discount_type,
+      discount_value: Number(f.discount_value) || 0,
+      min_order_total: Number(f.min_order_total) || 0,
+      valid_from: f.valid_from || null,
+      valid_to: f.valid_to || null,
+      max_uses: f.max_uses == null ? null : Number(f.max_uses),
+      active: !!f.active,
+    });
+    return r.success
+      ? { ok: true as const, errors: {} as FieldErrors }
+      : { ok: false as const, errors: zodFieldErrors(r.error) };
+  }, [f]);
+
+  // Ошибку показываем только для полей, которых пользователь коснулся, плюс ошибки сервера.
+  const errors: FieldErrors = {
+    ...Object.fromEntries(Object.entries(validation.errors).filter(([k]) => touched.has(k))),
+    ...serverErrors,
+  };
+
   const patch = (p: Partial<Row>) => {
+    const keys = Object.keys(p);
+    setTouched((prev) => new Set([...prev, ...keys]));
+    setServerErrors((prev) => {
+      if (!keys.some((k) => k in prev)) return prev;
+      const next = { ...prev };
+      for (const k of keys) delete next[k];
+      return next;
+    });
     setF((prev) => ({ ...prev, ...p }));
+
     setSaveState("dirty");
   };
 
