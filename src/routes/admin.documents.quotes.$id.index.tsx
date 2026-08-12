@@ -202,7 +202,7 @@ function Page() {
   }, []);
 
   useEffect(() => {
-    if (data) { setQuote(data.quote); setItems(data.items); dirtyRef.current = false; setState("idle"); }
+    if (data) { setQuote(data.quote); setItems(data.items); dirtyRef.current = false; saverRef.current.reset(); }
   }, [data]);
 
   const { data: hits = [] } = useQuery({
