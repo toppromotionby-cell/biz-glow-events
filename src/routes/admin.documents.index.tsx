@@ -29,7 +29,22 @@ import { FinanceDocumentsPanel } from "@/components/admin/documents/FinanceDocum
 import { DocumentsAnalyticsPanel } from "@/components/admin/documents/DocumentsAnalyticsPanel";
 import { createFinanceDocument } from "@/lib/finance-documents.functions";
 
-export const Route = createFileRoute("/admin/documents/")({ component: Page });
+type DocView = "docs" | "templates" | "finance" | "orders" | "analytics";
+type DocKind = "all" | "quote" | "promo";
+
+const VIEWS: DocView[] = ["docs", "templates", "finance", "orders", "analytics"];
+const KINDS: DocKind[] = ["all", "quote", "promo"];
+
+// Фильтры живут в URL — ссылку на отфильтрованный список можно сохранить и переслать.
+export const Route = createFileRoute("/admin/documents/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
+    status: typeof search["status"] === "string" ? (search["status"] as string) : "all",
+    kind: KINDS.includes(search["kind"] as DocKind) ? (search["kind"] as DocKind) : "all",
+    view: VIEWS.includes(search["view"] as DocView) ? (search["view"] as DocView) : "docs",
+  }),
+  component: Page,
+});
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Черновик",
