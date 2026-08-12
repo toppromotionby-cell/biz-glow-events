@@ -52,7 +52,13 @@ function clamp(v: unknown, min: number, max: number, fallback: number): number {
   return Math.min(max, Math.max(min, Math.round(n * 10) / 10));
 }
 
+/** Были ли в записи размеры/сдвиги — признак старой ручной настройки. */
+function hasManualValues(raw: Partial<Record<keyof LogoLayout, unknown>>): boolean {
+  return (["maxW", "maxH", "offsetX", "offsetY", "gap"] as const).some((k) => raw[k] !== undefined);
+}
+
 /** Приводит произвольное значение из БД к валидному LogoLayout. */
+
 export function normalizeLogoLayout(value: unknown): LogoLayout {
   const raw = (value && typeof value === "object" ? value : {}) as Partial<Record<keyof LogoLayout, unknown>>;
   const L = LOGO_LAYOUT_LIMITS;
