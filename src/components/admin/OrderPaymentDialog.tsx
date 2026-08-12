@@ -2,6 +2,7 @@
 // История платежей читается из order_timeline по событию payment_added.
 import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys, invalidateOrder } from "@/lib/query-keys";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -163,9 +164,7 @@ export function OrderPaymentDialog({ open, onOpenChange, orderId, currentPaid, t
           : autoStatus === "confirmed" ? "Платёж зафиксирован — заказ подтверждён"
           : "Платёж зафиксирован",
       );
-      qc.invalidateQueries({ queryKey: ["order", orderId] });
-      qc.invalidateQueries({ queryKey: ["order-timeline", orderId] });
-      qc.invalidateQueries({ queryKey: ["admin-attention"] });
+      invalidateOrder(qc, orderId);
       onOpenChange(false);
       resetForm();
     },

@@ -2,6 +2,7 @@
 // редактирование реквизитов, логотипа, подписи, печати и НДС.
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { Building2, Plus, Trash2, Star, StarOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ export function CompanyProfilesManager() {
   const qc = useQueryClient();
 
   const { data: companies, isLoading } = useQuery({
-    queryKey: ["company-profiles"],
+    queryKey: adminKeys.companyProfiles,
     queryFn: () => listFn(),
   });
 
@@ -93,7 +94,7 @@ export function CompanyProfilesManager() {
       setMode("view");
       setActiveId(row.id);
       setDraft({ ...row });
-      qc.invalidateQueries({ queryKey: ["company-profiles"] });
+      qc.invalidateQueries({ queryKey: adminKeys.companyProfiles });
     },
     onError: (e: Error) => notify.error(e.message || "Не удалось сохранить компанию"),
   });
@@ -105,7 +106,7 @@ export function CompanyProfilesManager() {
       setMode("view");
       setActiveId(null);
       setDraft(null);
-      qc.invalidateQueries({ queryKey: ["company-profiles"] });
+      qc.invalidateQueries({ queryKey: adminKeys.companyProfiles });
     },
     onError: (e: Error) => notify.error(e.message || "Не удалось удалить компанию"),
   });

@@ -14,6 +14,7 @@ import { useEditorSave } from "@/hooks/use-editor-save";
 
 import { HISTORY_LIMIT } from "@/lib/editor/history";
 import { useQuery } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -107,7 +108,7 @@ function EditorPage() {
   const sendPromo = useServerFn(sendPromoQuoteToClient);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["promo-quote", id],
+    queryKey: adminKeys.promoQuote(id),
     queryFn: () => get({ data: { id } }),
   });
 
@@ -319,7 +320,7 @@ function EditorPage() {
 
 
   const versions = useQuery({
-    queryKey: ["promo-versions", id],
+    queryKey: adminKeys.promoQuoteVersions(id),
     queryFn: () => listVersions({ data: { quoteId: id } }),
   });
 

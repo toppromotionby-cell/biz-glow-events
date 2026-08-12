@@ -2,6 +2,7 @@
 // Полноценный пикер каталога — отдельной итерацией, чтобы не раздувать карточку.
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys, invalidateOrder } from "@/lib/query-keys";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,8 +65,7 @@ export function OrderItemsEditor({ orderId, items }: Props) {
     onSuccess: () => {
       toast.success("Позиция обновлена");
       setEditingId(null);
-      qc.invalidateQueries({ queryKey: ["order-items", orderId] });
-      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      invalidateOrder(qc, orderId);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -78,8 +78,7 @@ export function OrderItemsEditor({ orderId, items }: Props) {
     },
     onSuccess: () => {
       toast.success("Позиция удалена");
-      qc.invalidateQueries({ queryKey: ["order-items", orderId] });
-      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      invalidateOrder(qc, orderId);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -104,8 +103,7 @@ export function OrderItemsEditor({ orderId, items }: Props) {
       toast.success("Позиция добавлена");
       setAdding(false);
       setNewTitle(""); setNewQty("1"); setNewPrice("");
-      qc.invalidateQueries({ queryKey: ["order-items", orderId] });
-      qc.invalidateQueries({ queryKey: ["order", orderId] });
+      invalidateOrder(qc, orderId);
     },
     onError: (e: Error) => toast.error(e.message),
   });

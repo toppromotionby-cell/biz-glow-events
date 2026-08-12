@@ -1,3 +1,4 @@
+import { adminKeys } from "@/lib/query-keys";
 // Панель синхронизации КП с Google Таблицами — тонкая обёртка над общим SheetSyncPanel.
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -46,7 +47,7 @@ export function QuoteSheetPanel({ quoteId }: { quoteId: string }) {
       ensureSheet={() => ensure({ data: { id: quoteId } })}
       pushSheet={() => push({ data: { id: quoteId } })}
       applyRows={(rowIds) => apply({ data: { id: quoteId, rowIds } })}
-      invalidateKeys={[["admin-quote", quoteId]]}
+      invalidateKeys={[adminKeys.quote(quoteId), adminKeys.documents]}
       kindLabel={KIND_LABEL}
       renderRow={(row) => <RowSummary row={row} />}
       createLabel="Открыть в Google Таблицах"

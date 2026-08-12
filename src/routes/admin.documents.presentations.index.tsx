@@ -2,6 +2,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -66,13 +67,13 @@ function Page() {
 
   const listFn = useServerFn(listPresentations);
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["presentations", debouncedSearch, status, sort],
+    queryKey: [...adminKeys.presentations, debouncedSearch, status, sort],
     queryFn: () => listFn({ data: { search: debouncedSearch, status, sort } }),
   });
   const rows = data ?? [];
   const searching = debouncedSearch.trim().length > 0;
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["presentations"] });
+  const refresh = () => qc.invalidateQueries({ queryKey: adminKeys.presentations });
   const dupFn = useServerFn(duplicatePresentation);
   const delFn = useServerFn(deletePresentation);
   const renFn = useServerFn(renamePresentation);

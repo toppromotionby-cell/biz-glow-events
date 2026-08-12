@@ -1,6 +1,7 @@
 // Выбор компании (юрлица) для конкретного документа. Все реквизиты, логотип,
 // подпись, печать и НДС подставляются автоматически из выбранного профиля.
 import { useQuery } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Building2 } from "lucide-react";
@@ -20,7 +21,7 @@ const NONE = "__default__";
 export function useCompanyProfiles() {
   const listFn = useServerFn(listCompanyProfiles);
   return useQuery({
-    queryKey: ["company-profiles"],
+    queryKey: adminKeys.companyProfiles,
     queryFn: () => listFn(),
     staleTime: 60_000,
   });

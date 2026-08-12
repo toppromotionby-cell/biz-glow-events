@@ -3,6 +3,7 @@
 // позиции/UTM/заметки/вложения/таймлайн. Realtime подписка на изменения order_*.
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys, invalidateOrder } from "@/lib/query-keys";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -49,19 +50,19 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data: order, isLoading } = useQuery({
-    queryKey: ["order-modal", id],
+    queryKey: adminKeys.order(id!),
     enabled,
     queryFn: async () =>
       ((await supabase.from("orders").select("*").eq("id", id!).maybeSingle()).data) as OrderRow | null,
   });
   const { data: items = [] } = useQuery({
-    queryKey: ["order-modal-items", id],
+    queryKey: adminKeys.orderItems(id!),
     enabled,
     queryFn: async () =>
       ((await supabase.from("order_items").select("*").eq("order_id", id!)).data ?? []) as OrderItemRow[],
   });
   const { data: timeline = [] } = useQuery({
-    queryKey: ["order-modal-timeline", id],
+    queryKey: adminKeys.orderTimeline(id!),
     enabled,
     queryFn: async () =>
       ((await supabase.from("order_timeline").select("*").eq("order_id", id!)
@@ -73,10 +74,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
   // Realtime: дёргаем перечитывание модальных запросов при изменениях по этому заказу.
   const refresh = useDebouncedCallback(() => {
     if (!id) return;
-    qc.invalidateQueries({ queryKey: ["order-modal", id] });
-    qc.invalidateQueries({ queryKey: ["order-modal-items", id] });
-    qc.invalidateQueries({ queryKey: ["order-modal-timeline", id] });
-    qc.invalidateQueries({ queryKey: ["order-attachments", id] });
+    invalidateOrder(qc, id);
   }, 350);
 
   useEffect(() => {
@@ -139,8 +137,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
                         const { promoteInquiryToOrder } = await import("@/lib/leads.functions");
                         await promoteInquiryToOrder({ data: { id: order.id } });
                         toast.success("Запрос превращён в заказ");
-                        qc.invalidateQueries({ queryKey: ["admin-orders"] });
-                        qc.invalidateQueries({ queryKey: ["admin-order", order.id] });
+                        invalidateOrder(qc, order.id);
                       } catch (e) {
                         toast.error((e as Error).message);
                       }

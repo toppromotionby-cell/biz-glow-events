@@ -31,7 +31,7 @@ export type SheetSyncPanelProps<Row extends SheetSyncRow> = {
   /** Применить выбранные строки к документу. */
   applyRows: (rowIds: string[]) => Promise<{ applied: number }>;
   /** Кэши, которые нужно сбросить после применения изменений. */
-  invalidateKeys?: unknown[][];
+  invalidateKeys?: readonly (readonly unknown[])[];
   /** Подписи строк изменений. */
   kindLabel: Record<SheetSyncRow["kind"], string>;
   /** Рендер краткого описания строки. */

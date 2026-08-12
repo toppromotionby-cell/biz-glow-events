@@ -1,3 +1,4 @@
+import { adminKeys } from "@/lib/query-keys";
 // Панель синхронизации промо-КП с Google Таблицей — тонкая обёртка над общим SheetSyncPanel.
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -50,7 +51,7 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
       ensureSheet={() => ensure({ data: { id: quoteId } })}
       pushSheet={() => push({ data: { id: quoteId } })}
       applyRows={(rowIds) => apply({ data: { id: quoteId, rowIds } })}
-      invalidateKeys={[["promo-quote", quoteId], ["admin-promo-quote", quoteId]]}
+      invalidateKeys={[adminKeys.promoQuote(quoteId), adminKeys.documents]}
       kindLabel={KIND_LABEL}
       renderRow={(row) => <RowSummary row={row} />}
       createLabel="Создать таблицу"

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys, invalidateOrder } from "@/lib/query-keys";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,7 +78,7 @@ function AdminOrders() {
 
 
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["admin-orders", dq, status, kind],
+    queryKey: adminKeys.orders({ q: dq, status, kind }),
     queryFn: async (): Promise<OrderListRow[]> => {
       // Узкий select — для списка не нужны notes/utm_*, чтобы не тянуть лишний JSON.
       let query = supabase
@@ -98,7 +99,7 @@ function AdminOrders() {
   // Realtime: обновляем список при любых изменениях в orders.
   // Debounce — массовое обновление статусов/оплаты не должно вызывать рефетч на каждое событие.
   const invalidateOrders = useDebouncedCallback(() => {
-    qc.invalidateQueries({ queryKey: ["admin-orders"] });
+    qc.invalidateQueries({ queryKey: adminKeys.ordersAll });
   }, 500);
   useEffect(() => {
     const ch = supabase

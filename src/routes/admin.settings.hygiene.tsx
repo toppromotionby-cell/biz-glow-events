@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ShieldCheck, RefreshCw, EyeOff, Trash2, AlertTriangle } from "lucide-react";
@@ -34,12 +35,12 @@ function Page() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   const { data, isFetching, refetch } = useQuery<HygieneReport>({
-    queryKey: ["admin-hygiene"],
+    queryKey: adminKeys.hygiene,
     queryFn: () => scan() as Promise<HygieneReport>,
     staleTime: 5 * 60_000,
   });
 
-  const invalidate = () => { setSelected({}); qc.invalidateQueries({ queryKey: ["admin-hygiene"] }); };
+  const invalidate = () => { setSelected({}); qc.invalidateQueries({ queryKey: adminKeys.hygiene }); };
 
   const hideMut = useMutation({
     mutationFn: (v: { table: HygieneTable; ids: string[] }) => hide({ data: v }),
