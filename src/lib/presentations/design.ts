@@ -372,13 +372,18 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
     h: contentH,
   });
 
-  const done = (l: Omit<SlideLayout, "textAlign" | "textAlignX" | "textFill" | "priceBox">): SlideLayout => ({
-    ...l,
-    textAlign: align,
-    textAlignX: alignX,
-    textFill: ov.stretchY,
-    priceBox: priceRect(ov.priceZone, l.textBox),
-  });
+  const done = (l: Omit<SlideLayout, "textAlign" | "textAlignX" | "textFill" | "priceBox">): SlideLayout => {
+    const fixed = resolveCollisions(l.textBox, l.photoBox, ov.priceZone, l.placement);
+    return {
+      ...l,
+      textBox: fixed.textBox,
+      textAlign: align,
+      textAlignX: alignX,
+      textFill: ov.stretchY,
+      priceBox: fixed.priceBox,
+    };
+  };
+
 
 
   if (!photos.length || mode === "none") {
