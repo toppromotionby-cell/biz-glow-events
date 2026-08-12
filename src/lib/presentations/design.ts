@@ -466,7 +466,10 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
   });
 
   const done = (l: Omit<SlideLayout, "textAlign" | "textAlignX" | "textFill" | "priceBox">): SlideLayout => {
-    const fixed = resolveCollisions(l.textBox, l.photoBox, ov.priceZone, l.placement);
+    const fixed = resolveCollisions(
+      l.textBox, l.photoBox, ov.priceZone, l.placement,
+      clampNum(ov.priceScale ?? 1, PRICE_SCALE_MIN, PRICE_SCALE_MAX),
+    );
     return {
       ...l,
       textBox: fixed.textBox,
