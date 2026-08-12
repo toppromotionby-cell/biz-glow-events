@@ -186,14 +186,27 @@ const ALIGN_X: TextAlignX[] = ["auto", "left", "center", "right"];
 const PRICE_ZONES: PriceZone[] = ["auto", "under-text", "corner", "beside-photo"];
 const LOGO_ZONES: LogoZone[] = ["auto", "tl", "tr", "bl", "br", "footer", "hero"];
 
+function normLogoPos(raw: unknown): LogoPos | null {
+  const r = (raw ?? null) as Record<string, unknown> | null;
+  if (!r) return null;
+  const x = Number(r.x);
+  const y = Number(r.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x: clampNum(x, 0, 1), y: clampNum(y, 0, 1) };
+}
+
 function normLogoOverride(raw: unknown): LogoOverride {
   const r = (raw ?? {}) as Record<string, unknown>;
   const s = Number(r.scale);
   return {
     zone: LOGO_ZONES.includes(r.zone as LogoZone) ? (r.zone as LogoZone) : "auto",
     scale: Number.isFinite(s) && s > 0 ? clampNum(s, LOGO_SCALE_MIN, LOGO_SCALE_MAX) : null,
+    pos: normLogoPos(r.pos),
   };
 }
+
+const alignOf = (v: unknown): TextAlignX =>
+  ALIGN_X.includes(v as TextAlignX) ? (v as TextAlignX) : "auto";
 
 export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
   const r = (raw ?? {}) as Record<string, unknown>;
@@ -204,7 +217,10 @@ export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
     photoScale: Number.isFinite(ps) && ps > 0 ? clampNum(ps, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) : null,
     textZone: TEXT_ZONES.includes(r.textZone as TextZone) ? (r.textZone as TextZone) : "auto",
     textWidth: Number.isFinite(tw) && tw > 0 ? clampNum(tw, TEXT_WIDTH_MIN, TEXT_WIDTH_MAX) : null,
-    alignX: ALIGN_X.includes(r.alignX as TextAlignX) ? (r.alignX as TextAlignX) : "auto",
+    alignX: alignOf(r.alignX),
+    titleAlignX: alignOf(r.titleAlignX),
+    subtitleAlignX: alignOf(r.subtitleAlignX),
+    bodyAlignX: alignOf(r.bodyAlignX),
     stretchX: r.stretchX === true,
     stretchY: r.stretchY === true,
     priceZone: PRICE_ZONES.includes(r.priceZone as PriceZone) ? (r.priceZone as PriceZone) : "auto",
@@ -215,20 +231,23 @@ export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
 
 /** Раскладка слайда полностью автоматическая? */
 export function isAutoLayout(o: SlideLayoutOverrides): boolean {
+  const autoLogo = (l: LogoOverride) => l.zone === "auto" && l.scale === null && l.pos === null;
   return (
     o.photoZone === "auto" &&
     o.photoScale === null &&
     o.textZone === "auto" &&
     o.textWidth === null &&
     o.alignX === "auto" &&
+    o.titleAlignX === "auto" &&
+    o.subtitleAlignX === "auto" &&
+    o.bodyAlignX === "auto" &&
     !o.stretchX &&
     !o.stretchY &&
     o.priceZone === "auto" &&
-    o.brandLogo.zone === "auto" &&
-    o.brandLogo.scale === null &&
-    o.clientLogo.zone === "auto" &&
-    o.clientLogo.scale === null
+    autoLogo(o.brandLogo) &&
+    autoLogo(o.clientLogo)
   );
+
 
 }
 
