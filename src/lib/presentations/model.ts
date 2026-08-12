@@ -1,5 +1,6 @@
 // Модель презентаций: типы слайдов, нормализация содержимого, дефолты.
 // Файл клиент-безопасный — используется и в редакторе, и в server fns, и в PDF.
+import { clamp } from "@/lib/canvas/model";
 import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
 
 /** Как накладывать логотипы на слайды. */
