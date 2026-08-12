@@ -1,15 +1,39 @@
+// Журнал аудита: фильтры (таблица, действие, пользователь, период) в URL,
+// курсорная пагинация и разрешение UUID пользователя в имя.
 import { createFileRoute } from "@tanstack/react-router";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
-import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtDateTime } from "@/lib/formatters";
+import { listAuditLog, getAuditFacets } from "@/lib/audit.functions";
+import { adminKeys } from "@/lib/query-keys";
+import { X } from "lucide-react";
 
+type AuditSearch = {
+  table?: string | undefined;
+  action?: string | undefined;
+  user?: string | undefined;
+  from?: string | undefined;
+  to?: string | undefined;
+};
+
+const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
 export const Route = createFileRoute("/admin/audit")({
+  validateSearch: (s: Record<string, unknown>): AuditSearch => ({
+    table: str(s["table"]),
+    action: str(s["action"]),
+    user: str(s["user"]),
+    from: str(s["from"]),
+    to: str(s["to"]),
+  }),
+  head: () => ({ meta: [{ title: "Журнал аудита — Админ" }, { name: "robots", content: "noindex,nofollow" }] }),
   component: AuditPage,
 });
 
@@ -18,45 +42,56 @@ const COLS = [
   { key: "action", label: "Действие" },
   { key: "table", label: "Таблица" },
   { key: "record", label: "Запись" },
-  { key: "user", label: "User" },
+  { key: "user", label: "Пользователь" },
 ];
 
 const PAGE_SIZE = 50;
+const ALL = "__all__";
 
-type AuditRow = {
-  id: string;
-  created_at: string;
-  action: string;
-  table_name: string;
-  record_id: string | null;
-  user_id: string | null;
+const ACTION_LABEL: Record<string, string> = {
+  INSERT: "Создание",
+  UPDATE: "Изменение",
+  DELETE: "Удаление",
 };
 
 function AuditPage() {
-  // Курсорная пагинация по created_at: дешевле, чем .range() на больших таблицах
-  // (избегаем COUNT(*) и сканов нарастающих смещений).
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ["audit"],
-    initialPageParam: null as string | null,
-    queryFn: async ({ pageParam }) => {
-      let q = supabase
-        .from("audit_log")
-        .select("id, created_at, action, table_name, record_id, user_id")
-        .order("created_at", { ascending: false })
-        .limit(PAGE_SIZE);
-      if (pageParam) q = q.lt("created_at", pageParam);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as AuditRow[];
-    },
-    getNextPageParam: (lastPage) =>
-      lastPage.length < PAGE_SIZE ? undefined : lastPage[lastPage.length - 1].created_at,
+  const sp = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const patch = (p: AuditSearch) =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, ...p }), replace: true });
+
+  const fetchLog = useServerFn(listAuditLog);
+  const fetchFacets = useServerFn(getAuditFacets);
+
+  const { data: facets } = useQuery({
+    queryKey: adminKeys.auditFacets,
+    queryFn: () => fetchFacets(),
+    staleTime: 5 * 60_000,
   });
+
+  const filters = { table: sp.table, action: sp.action, userId: sp.user, from: sp.from, to: sp.to };
+  const hasFilters = Object.values(filters).some(Boolean);
+
+  const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: adminKeys.audit(filters),
+      initialPageParam: null as string | null,
+      queryFn: ({ pageParam }) =>
+        fetchLog({
+          data: {
+            ...filters,
+            cursor: pageParam ?? undefined,
+            limit: PAGE_SIZE,
+          },
+        }),
+      getNextPageParam: (lastPage) =>
+        lastPage.length < PAGE_SIZE ? undefined : lastPage[lastPage.length - 1]!.created_at,
+    });
 
   const rows = data?.pages.flat() ?? [];
 
-  // Виртуализация: рендерим только видимые строки в окне просмотра,
-  // чтобы тысячи записей аудита не топили DOM при использовании «Показать ещё».
+  // Виртуализация: рендерим только видимые строки, чтобы тысячи записей
+  // не топили DOM при использовании «Показать ещё».
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useWindowVirtualizer({
     count: rows.length,
@@ -68,25 +103,83 @@ function AuditPage() {
   const items = virtualizer.getVirtualItems();
   const totalSize = virtualizer.getTotalSize();
   const scrollMargin = virtualizer.options.scrollMargin;
-  const paddingTop = items.length > 0 ? Math.max(0, items[0].start - scrollMargin) : 0;
-  const paddingBottom = items.length > 0 ? Math.max(0, totalSize - (items[items.length - 1].end - scrollMargin)) : 0;
-  const showVirtual = !isLoading && rows.length > 0;
+  const paddingTop = items.length > 0 ? Math.max(0, items[0]!.start - scrollMargin) : 0;
+  const paddingBottom =
+    items.length > 0 ? Math.max(0, totalSize - (items[items.length - 1]!.end - scrollMargin)) : 0;
+  const showVirtual = !isLoading && !isError && rows.length > 0;
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Журнал аудита" />
+      <AdminPageHeader
+        title="Журнал аудита"
+        subtitle={isLoading ? "Загружаем записи…" : `Показано записей: ${rows.length}${hasNextPage ? "+" : ""}`}
+      />
+
+      <div className="glass rounded-xl p-3 flex flex-wrap items-end gap-2">
+        <FilterSelect
+          label="Таблица"
+          value={sp.table}
+          options={(facets?.tables ?? []).map((t) => ({ value: t, label: t }))}
+          onChange={(v) => patch({ table: v })}
+        />
+        <FilterSelect
+          label="Действие"
+          value={sp.action}
+          options={(facets?.actions ?? []).map((a) => ({ value: a, label: ACTION_LABEL[a] ?? a }))}
+          onChange={(v) => patch({ action: v })}
+        />
+        <FilterSelect
+          label="Пользователь"
+          value={sp.user}
+          options={(facets?.users ?? []).map((u) => ({ value: u.id, label: u.name }))}
+          onChange={(v) => patch({ user: v })}
+        />
+        <label className="text-xs text-muted-foreground space-y-1">
+          <span className="block">С даты</span>
+          <Input
+            type="date"
+            className="h-9 w-[150px]"
+            value={sp.from ?? ""}
+            onChange={(e) => patch({ from: e.target.value || undefined })}
+          />
+        </label>
+        <label className="text-xs text-muted-foreground space-y-1">
+          <span className="block">По дату</span>
+          <Input
+            type="date"
+            className="h-9 w-[150px]"
+            value={sp.to ?? ""}
+            onChange={(e) => patch({ to: e.target.value || undefined })}
+          />
+        </label>
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => patch({ table: undefined, action: undefined, user: undefined, from: undefined, to: undefined })}
+          >
+            <X className="h-4 w-4 mr-1" />Сбросить
+          </Button>
+        )}
+      </div>
+
       <div ref={parentRef}>
         <AdminTable
           columns={COLS}
           textSize="xs"
           isLoading={isLoading}
-          isEmpty={!isLoading && rows.length === 0}
+          isError={isError}
+          error={error}
+          onRetry={() => void refetch()}
+          isEmpty={!isLoading && !isError && rows.length === 0}
+          emptyText={hasFilters ? "По выбранным фильтрам записей нет" : "Журнал пуст"}
         >
           {showVirtual && paddingTop > 0 && (
             <tr aria-hidden="true"><td colSpan={COLS.length} style={{ height: paddingTop, padding: 0, border: 0 }} /></tr>
           )}
           {showVirtual && items.map((vi) => {
-            const r = rows[vi.index];
+            const r = rows[vi.index]!;
             return (
               <tr
                 key={r.id}
@@ -95,10 +188,10 @@ function AuditPage() {
                 className="border-t border-border/40"
               >
                 <td className="p-3 whitespace-nowrap">{fmtDateTime(r.created_at)}</td>
-                <td className="p-3 font-medium">{r.action}</td>
+                <td className="p-3 font-medium">{ACTION_LABEL[r.action] ?? r.action}</td>
                 <td className="p-3">{r.table_name}</td>
                 <td className="p-3 font-mono text-[10px]">{r.record_id?.slice(0, 8)}</td>
-                <td className="p-3 font-mono text-[10px]">{r.user_id?.slice(0, 8)}</td>
+                <td className="p-3">{r.user_name ?? (r.user_id ? r.user_id.slice(0, 8) : "система")}</td>
               </tr>
             );
           })}
@@ -107,14 +200,10 @@ function AuditPage() {
           )}
         </AdminTable>
       </div>
+
       {hasNextPage && (
         <div className="flex justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-          >
+          <Button variant="outline" size="sm" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
             {isFetchingNextPage ? "Загрузка…" : "Показать ещё"}
           </Button>
         </div>
@@ -123,3 +212,28 @@ function AuditPage() {
   );
 }
 
+function FilterSelect({
+  label, value, options, onChange,
+}: {
+  label: string;
+  value: string | undefined;
+  options: Array<{ value: string; label: string }>;
+  onChange: (v: string | undefined) => void;
+}) {
+  return (
+    <label className="text-xs text-muted-foreground space-y-1">
+      <span className="block">{label}</span>
+      <Select value={value ?? ALL} onValueChange={(v) => onChange(v === ALL ? undefined : v)}>
+        <SelectTrigger className="h-9 w-[190px] text-sm text-foreground">
+          <SelectValue placeholder="Все" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>Все</SelectItem>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </label>
+  );
+}

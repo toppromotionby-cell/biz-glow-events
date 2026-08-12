@@ -1,5 +1,8 @@
 // Универсальный CRUD каталогов: zones | tech_equipment | services | production_items.
 import { ADMIN_LIST_LIMIT } from "@/lib/admin/list-limit";
+
+/** Сколько карточек рендерим за раз — остальное по кнопке «Показать ещё». */
+const RENDER_CHUNK = 100;
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -169,6 +172,12 @@ function CatalogInner({ table }: { table: CatalogTable }) {
       })
     : items;
 
+  // Прогрессивный рендер: при сотнях карточек весь список в DOM тормозит панель.
+  const [visibleCount, setVisibleCount] = useState(RENDER_CHUNK);
+  useEffect(() => { setVisibleCount(RENDER_CHUNK); }, [q, table]);
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visible.length;
+
   const allVisibleSelected = filtered.length > 0 && filtered.every((it) => selectedIds.has(it.id));
   const toggleId = (id: string) => {
     setSelectedIds((prev) => {
@@ -181,6 +190,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
     if (allVisibleSelected) setSelectedIds(new Set());
     else setSelectedIds(new Set(filtered.map((it) => it.id)));
   };
+
 
   return (
     <div className="space-y-5">
@@ -257,7 +267,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
             </p>
           )}
           <AdminListPanel<Row>
-            items={filtered}
+            items={visible}
             isLoading={isLoading}
             isError={isError}
             error={error}
@@ -268,7 +278,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
                 <Plus className="h-4 w-4 mr-1" />Добавить первую
               </Button>
             )}
-            onReorder={q ? undefined : async (ids) => {
+            onReorder={q || hasMore ? undefined : async (ids) => {
               try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: adminKeys.catalog(table) }); }
               catch (e) { toast.error((e as Error).message); throw e; }
             }}
@@ -284,6 +294,22 @@ function CatalogInner({ table }: { table: CatalogTable }) {
               />
             )}
           />
+          {hasMore && (
+            <div className="space-y-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setVisibleCount((n) => n + RENDER_CHUNK)}
+              >
+                Показать ещё ({filtered.length - visible.length})
+              </Button>
+              <p className="px-1 text-[11px] text-muted-foreground">
+                Перетаскивание для сортировки доступно, когда показан весь список.
+              </p>
+            </div>
+          )}
+
         </div>
 
         <div>
