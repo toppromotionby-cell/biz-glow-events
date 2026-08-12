@@ -13,11 +13,17 @@ export function syncTableWidths(scope: Scope) {
   const tables = scope.querySelectorAll<HTMLTableElement>("table");
   tables.forEach((table) => {
     const head = table.tHead?.rows[0];
-    const row = table.tBodies[0]?.rows[0];
-    if (!head || !row) return;
-    if (head.cells.length !== row.cells.length) return;
+    if (!head) return;
+    // Строки-разделы и объединённые ячейки («услуга») сетку не задают —
+    // берём первую строку с полным набором колонок.
+    const rows = Array.from(table.tBodies[0]?.rows ?? []);
+    const row = rows.find(
+      (r) => r.cells.length === head.cells.length && Array.from(r.cells).every((c) => c.colSpan === 1),
+    );
+    if (!row) return;
     const total = table.getBoundingClientRect().width;
     if (!total) return;
+
     const cols = table.querySelector("colgroup")?.children;
     Array.from(row.cells).forEach((cell, i) => {
       const width = cell.getBoundingClientRect().width;
