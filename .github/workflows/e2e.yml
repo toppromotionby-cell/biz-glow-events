@@ -1,0 +1,48 @@
+name: E2E & unit acceptance
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/e2e/**"
+      - "playwright.e2e.config.ts"
+      - "package.json"
+      - ".github/workflows/e2e.yml"
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+
+      # 1) Юнит-тесты: права, валидация, ключи кэша, утилиты документов
+      - name: Unit tests
+        run: bun run test
+
+      - run: bunx playwright install --with-deps chromium
+
+      # 2) E2E: публичные страницы всегда; админка — только если в секретах
+      #    заданы креды тестового пользователя (E2E_ADMIN_*), иначе тесты
+      #    помечаются skipped, а не падают.
+      - name: E2E
+        env:
+          CI: "true"
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: bunx playwright test --config=playwright.e2e.config.ts
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
