@@ -46,7 +46,7 @@ export function QuoteSheetPanel({ quoteId }: { quoteId: string }) {
       ensureSheet={() => ensure({ data: { id: quoteId } })}
       pushSheet={() => push({ data: { id: quoteId } })}
       applyRows={(rowIds) => apply({ data: { id: quoteId, rowIds } })}
-      invalidateKeys={[["admin-quote", quoteId]]}
+      invalidateKeys={[adminKeys.quote(quoteId), adminKeys.documents]}
       kindLabel={KIND_LABEL}
       renderRow={(row) => <RowSummary row={row} />}
       createLabel="Открыть в Google Таблицах"

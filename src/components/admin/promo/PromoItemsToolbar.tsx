@@ -1,5 +1,6 @@
 // Панель быстрого наполнения позиций: новый раздел и библиотека блоков.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { FolderPlus, Library, Trash2 } from "lucide-react";
@@ -19,11 +20,11 @@ export function PromoItemsToolbar({
   const listSnippets = useServerFn(listPromoSnippets);
   const delSnippet = useServerFn(deletePromoSnippet);
 
-  const snippets = useQuery({ queryKey: ["promo-snippets"], queryFn: () => listSnippets() });
+  const snippets = useQuery({ queryKey: adminKeys.snippets, queryFn: () => listSnippets() });
   const removeSnippet = useMutation({
     mutationFn: (id: string) => delSnippet({ data: { id } }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["promo-snippets"] });
+      void qc.invalidateQueries({ queryKey: adminKeys.snippets });
       toast.success("Блок удалён");
     },
   });

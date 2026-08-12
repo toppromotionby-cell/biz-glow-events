@@ -50,7 +50,7 @@ export function PromoSheetPanel({ quoteId }: { quoteId: string }) {
       ensureSheet={() => ensure({ data: { id: quoteId } })}
       pushSheet={() => push({ data: { id: quoteId } })}
       applyRows={(rowIds) => apply({ data: { id: quoteId, rowIds } })}
-      invalidateKeys={[["promo-quote", quoteId], ["admin-promo-quote", quoteId]]}
+      invalidateKeys={[adminKeys.promoQuote(quoteId), adminKeys.documents]}
       kindLabel={KIND_LABEL}
       renderRow={(row) => <RowSummary row={row} />}
       createLabel="Создать таблицу"

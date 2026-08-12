@@ -9,6 +9,7 @@ import { deleteDocument } from "@/lib/documents-overview.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -184,13 +185,13 @@ function Page() {
   const makeOrder = useServerFn(createOrderFromQuote);
   const makePresentation = useServerFn(createPresentation);
 
-  const { data, isLoading, error } = useQuery({ queryKey: ["admin-quote", id], queryFn: () => load({ data: { id } }) });
+  const { data, isLoading, error } = useQuery({ queryKey: adminKeys.quote(id), queryFn: () => load({ data: { id } }) });
   const activeCompanyId = data?.quote?.company_id ?? null;
   const { data: settings = DEFAULT_DOCUMENT_SETTINGS } = useQuery({
     queryKey: ["admin-quote-settings", activeCompanyId],
     queryFn: () => loadSettings({ data: { companyId: activeCompanyId } }),
   });
-  const { data: versions = [] } = useQuery({ queryKey: ["admin-quote-versions", id], queryFn: () => loadVersions({ data: { quoteId: id } }) });
+  const { data: versions = [] } = useQuery({ queryKey: adminKeys.quoteVersions(id), queryFn: () => loadVersions({ data: { quoteId: id } }) });
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -301,9 +302,10 @@ function Page() {
     }
     dirtyRef.current = false;
     setPending(skipped);
-    qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+    qc.invalidateQueries({ queryKey: adminKeys.quotesAll });
+    qc.invalidateQueries({ queryKey: adminKeys.documents });
     // Пустой номер = автономер: перечитываем КП, чтобы подтянуть присвоенный БД номер.
-    if (!String(safePatch.quote_number ?? "").trim()) qc.invalidateQueries({ queryKey: ["admin-quote", id] });
+    if (!String(safePatch.quote_number ?? "").trim()) qc.invalidateQueries({ queryKey: adminKeys.quote(id) });
   });
   const saverRef = useRef(saver);
   saverRef.current = saver;
@@ -350,7 +352,7 @@ function Page() {
   const onCreateVersion = async () => {
     try {
       await makeVersion({ data: { quoteId: id, label: `Версия от ${new Date().toLocaleString("ru-RU")}` } });
-      qc.invalidateQueries({ queryKey: ["admin-quote-versions", id] });
+      qc.invalidateQueries({ queryKey: adminKeys.quoteVersions(id) });
       toast.success("Версия сохранена");
     } catch (e) { toast.error((e as Error).message); }
   };
@@ -358,7 +360,7 @@ function Page() {
   const onRestore = async (versionId: string) => {
     try {
       await rollback({ data: { versionId } });
-      await qc.invalidateQueries({ queryKey: ["admin-quote", id] });
+      await qc.invalidateQueries({ queryKey: adminKeys.quote(id) });
       toast.success("Версия восстановлена");
     } catch (e) { toast.error((e as Error).message); }
   };
@@ -370,7 +372,8 @@ function Page() {
         toast.success("Образец сметы сохранён");
       } else {
         await makeTemplate({ data: { id, name } });
-        qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+        qc.invalidateQueries({ queryKey: adminKeys.quotesAll });
+    qc.invalidateQueries({ queryKey: adminKeys.documents });
         toast.success("Шаблон сохранён");
       }
     } catch (e) { toast.error((e as Error).message); }
@@ -380,7 +383,8 @@ function Page() {
     try {
       const res = await markSent({ data: { id } });
       setQuote((q) => (q ? { ...q, status: "sent", sent_at: res.sent_at } : q));
-      qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+      qc.invalidateQueries({ queryKey: adminKeys.quotesAll });
+    qc.invalidateQueries({ queryKey: adminKeys.documents });
       toast.success("Отмечено как отправленное");
     } catch (e) { toast.error((e as Error).message); }
   };
@@ -397,7 +401,8 @@ function Page() {
   const onSendToClient = async (input: { email: string; note: string; attachPdf: boolean }) => {
     await sendToClient({ data: { id, ...input } });
     setQuote((q) => (q ? { ...q, sent_at: new Date().toISOString(), status: q.status === "draft" ? "sent" : q.status } : q));
-    qc.invalidateQueries({ queryKey: ["admin-quotes"] });
+    qc.invalidateQueries({ queryKey: adminKeys.quotesAll });
+    qc.invalidateQueries({ queryKey: adminKeys.documents });
   };
 
   const onCreateOrder = async () => {

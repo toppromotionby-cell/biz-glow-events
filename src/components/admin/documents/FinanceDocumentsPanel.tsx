@@ -2,6 +2,7 @@
 // список, статусы, оплата, скачивание PDF, удаление.
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -61,11 +62,11 @@ export function FinanceDocumentsPanel({ search }: { search: string }) {
   const deleteFn = useServerFn(deleteFinanceDocument);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance-documents", search, kind],
+    queryKey: [...adminKeys.financeDocuments, search, kind],
     queryFn: () => list({ data: { search, kind } }),
   });
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["finance-documents"] });
+  const refresh = () => qc.invalidateQueries({ queryKey: adminKeys.financeDocuments });
 
   const update = useMutation({
     mutationFn: (v: { id: string; patch: Record<string, unknown>; snapshot?: boolean }) =>

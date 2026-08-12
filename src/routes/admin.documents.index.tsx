@@ -3,6 +3,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -118,7 +119,7 @@ function Page() {
   const listOrderDocs = useServerFn(listOrderDocuments);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["admin-documents-overview", debouncedSearch, status, kind, templates, limit],
+    queryKey: [...adminKeys.documents, debouncedSearch, status, kind, templates, limit],
     queryFn: () => list({ data: { search: debouncedSearch, status, kind, templates, limit } }),
     enabled: view === "docs" || view === "templates",
   });
@@ -140,7 +141,7 @@ function Page() {
   const created = useMutation({
     mutationFn: async (target: { kind: "quote" | "promo"; id: string }) => target,
     onSuccess: (t) => {
-      qc.invalidateQueries({ queryKey: ["admin-documents-overview"] });
+      qc.invalidateQueries({ queryKey: adminKeys.documents });
       navigate(
         t.kind === "quote"
           ? { to: "/admin/documents/quotes/$id", params: { id: t.id } }
@@ -154,7 +155,7 @@ function Page() {
   const dupFn = useServerFn(duplicateDocument);
   const delFn = useServerFn(deleteDocument);
   const statusFn = useServerFn(setDocumentStatus);
-  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-documents-overview"] });
+  const refresh = () => qc.invalidateQueries({ queryKey: adminKeys.documents });
 
   const duplicate = useMutation({
     mutationFn: (r: DocumentRow) => dupFn({ data: { kind: r.kind, id: r.id } }),
@@ -188,7 +189,7 @@ function Page() {
     mutationFn: (r: DocumentRow) => invoiceFn({ data: { kind: "invoice", quoteId: r.id } }),
     onSuccess: () => {
       toast.success("Счёт создан — вкладка «Счета и акты»");
-      qc.invalidateQueries({ queryKey: ["finance-documents"] });
+      qc.invalidateQueries({ queryKey: adminKeys.financeDocuments });
       setView("finance");
     },
     onError: (e: Error) => toast.error(e.message),
