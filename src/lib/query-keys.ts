@@ -50,6 +50,8 @@ export const adminKeys = {
   emailTemplates: ["email-templates"] as const,
   emailTemplate: (id: string | null) => ["email-template", id] as const,
   hygiene: ["admin-hygiene"] as const,
+  audit: (params: Record<string, unknown>) => ["admin-audit", params] as const,
+  auditFacets: ["admin-audit-facets"] as const,
   documentSettings: ["document-settings"] as const,
 };
 
