@@ -165,17 +165,8 @@ export async function buildPresentationPdf(
 
 
 
-type Rect = { x: number; y: number; w: number; h: number };
 
-function intersects(a: Rect, b: Rect): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
 
-/** Габариты логотипа, вписанные в бокс с сохранением пропорций. */
-function logoSize(img: PDFImage, maxW: number, maxH: number): { w: number; h: number } {
-  const k = Math.min(maxW / img.width, maxH / img.height, 1.6);
-  return { w: img.width * k, h: img.height * k };
-}
 
 /** Рисует логотип в слоте, рассчитанном планировщиком (координаты pdf-lib). */
 function drawPlannedLogo(page: PDFPage, img: PDFImage, plan: LogoPlacementPlan): void {
