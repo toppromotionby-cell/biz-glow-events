@@ -100,6 +100,7 @@ function useRenderedRects(
         h: r.height / k,
       };
     });
+    (window as unknown as { __rects?: unknown }).__rects = { next, k, ir: { t: ir.top, l: ir.left } };
     setRects((prev) => {
       const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
       for (const key of keys) if (!rectEq(prev[key], next[key])) return next;
