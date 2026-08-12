@@ -136,6 +136,13 @@ function Page() {
     setDirty(false);
   }, [data]);
 
+  // Редактор никогда не остаётся без выбранного слайда, если слайды есть.
+  useEffect(() => {
+    if (!slides.length) return;
+    setSelected((prev) => (prev && slides.some((s) => s.id === prev) ? prev : slides[0].id));
+  }, [slides]);
+
+
 
   useEffect(() => {
     const el = canvasWrap.current;
