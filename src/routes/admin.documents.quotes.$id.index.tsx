@@ -918,6 +918,8 @@ function Page() {
         typeLabel="КП"
         onSave={onSaveToLibrary}
       />
+
+      {confirmDialog}
     </DocEditorShell>
   );
 }
