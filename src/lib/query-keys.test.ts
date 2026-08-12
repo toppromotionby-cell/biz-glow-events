@@ -14,10 +14,11 @@ function collect(qc: QueryClient) {
 
 describe("adminKeys", () => {
   it("все статические ключи уникальны", () => {
-    const statics = Object.values(adminKeys)
+    const statics = (Object.values(adminKeys) as unknown[])
       .filter((v): v is readonly string[] => Array.isArray(v))
       .map((v) => JSON.stringify(v));
     expect(new Set(statics).size).toBe(statics.length);
+
   });
 
   it("детальные ключи вложены в списочные префиксы", () => {
