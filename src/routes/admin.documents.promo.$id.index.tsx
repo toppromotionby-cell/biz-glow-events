@@ -50,6 +50,10 @@ import {
   promoValidityState, type PromoDiscountType, type PromoItem, type PromoQuote, type PromoStatus,
 } from "@/lib/promo-quote-model";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
+import { sheetCss } from "@/lib/documents/sheet";
+import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
+import { A4Sheet } from "@/components/admin/documents/A4Sheet";
+
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
