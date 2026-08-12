@@ -123,7 +123,8 @@ function freeSpace(slot: Corner, obstacles: Rect[]): { w: number; h: number } {
 
 /**
  * Canva-подобный шаг 3: если свободного угла нет, логотип пропорционально
- * уменьшается под свободный просвет. Меньше LOGO_MIN_FIT — логотип убирается.
+ * уменьшается под свободный просвет. Логотип никогда не исчезает совсем —
+ * минимальный масштаб ограничен LOGO_MIN_FIT.
  */
 function fitIntoFree(
   place: LogoPlacementPlan | null,
@@ -140,10 +141,11 @@ function fitIntoFree(
   const obstacles = [...blocked, ...(full ? [] : frames)];
   if (cornerFree(place.slot, frames, full, blocked)) return place;
   const { w, h } = freeSpace(place.slot, obstacles);
-  const k = Math.min(w / place.maxW, h / place.maxH, 1);
-  if (!Number.isFinite(k) || k < LOGO_MIN_FIT) return null;
+  const raw = Math.min(w / place.maxW, h / place.maxH, 1);
+  const k = Number.isFinite(raw) ? Math.max(raw, LOGO_MIN_FIT) : LOGO_MIN_FIT;
   return { ...place, maxW: place.maxW * k, maxH: place.maxH * k };
 }
+
 
 const isTitleLike = (type: SlideType): boolean => type === "title" || type === "contacts";
 
