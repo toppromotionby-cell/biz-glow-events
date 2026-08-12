@@ -11,6 +11,8 @@ import { DOC_LAYOUT } from "./brand";
 export type LogoAlign = "left" | "center" | "right";
 
 export type LogoLayout = {
+  /** «auto» — размеры подбираются автоматически, «manual» — ползунками. */
+  mode: "auto" | "manual";
   /** Горизонтальное выравнивание логотипа в шапке. */
   align: LogoAlign;
   /** Максимальная ширина бокса логотипа, pt. */
@@ -26,6 +28,7 @@ export type LogoLayout = {
 };
 
 export const DEFAULT_LOGO_LAYOUT: LogoLayout = {
+  mode: "auto",
   align: "left",
   maxW: 150,
   maxH: 34,
@@ -33,6 +36,7 @@ export const DEFAULT_LOGO_LAYOUT: LogoLayout = {
   offsetY: 0,
   gap: 12,
 };
+
 
 export const LOGO_LAYOUT_LIMITS = {
   maxW: { min: 40, max: 320, step: 2 },
