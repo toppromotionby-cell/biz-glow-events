@@ -6,7 +6,7 @@ import fontkit from "@pdf-lib/fontkit";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { hexToRgb01 } from "@/lib/documents/brand";
 import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
-import { MAX_SLIDE_PHOTOS, SLIDE_W, type Rect } from "@/lib/presentations/design";
+import { MAX_SLIDE_PHOTOS, SLIDE_W, templatePalette, type Rect } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
@@ -23,6 +23,8 @@ type Theme = {
   muted: ReturnType<typeof rgb>;
   accent: ReturnType<typeof rgb>;
   onAccent: ReturnType<typeof rgb>;
+  /** Стопы фонового градиента (hex) — рисуются полосами. */
+  stops: string[];
 };
 
 function color(hex: string): ReturnType<typeof rgb> {
@@ -30,37 +32,50 @@ function color(hex: string): ReturnType<typeof rgb> {
   return rgb(r, g, b);
 }
 
+/** Полупрозрачные rgba() палитры сводим к плотному цвету на фоне слайда. */
+function solid(css: string, fallback: string): string {
+  return /^#?[0-9a-fA-F]{6}$/.test(css.trim()) ? css : fallback;
+}
 
 function themeOf(template: Presentation["template"], accentHex: string): Theme {
-  const accent = color(accentHex);
-  if (template === "dark") {
-    return {
-      bg: rgb(0.059, 0.067, 0.082),
-      panel: rgb(0.13, 0.14, 0.16),
-      ink: rgb(0.97, 0.98, 0.99),
-      muted: rgb(0.65, 0.68, 0.72),
-      accent,
-      onAccent: rgb(0.059, 0.067, 0.082),
-    };
-  }
-  if (template === "accent") {
-    return {
-      bg: accent,
-      panel: rgb(1, 1, 1),
-      ink: rgb(1, 1, 1),
-      muted: rgb(0.93, 0.94, 0.96),
-      accent: rgb(1, 1, 1),
-      onAccent: accent,
-    };
-  }
+  const p = templatePalette(template, accentHex);
+  const dark = template !== "light" && template !== "glow";
   return {
-    bg: rgb(1, 1, 1),
-    panel: rgb(0.968, 0.973, 0.98),
-    ink: rgb(0.067, 0.094, 0.153),
-    muted: rgb(0.42, 0.45, 0.5),
-    accent,
-    onAccent: rgb(1, 1, 1),
+    bg: color(p.stops[0]),
+    panel: color(solid(p.panel, dark ? "#1b2030" : "#f7f8fa")),
+    ink: color(solid(p.ink, dark ? "#f8fafc" : "#111827")),
+    muted: color(solid(p.muted, dark ? "#c8cede" : "#6b7280")),
+    accent: color(p.accent ?? accentHex),
+    onAccent: color(p.onAccent ?? accentHex),
+    stops: p.stops,
   };
+}
+
+/** Плавный фон: интерполяция стопов горизонтальными полосами. */
+function drawBackground(page: PDFPage, t: Theme): void {
+  const stops = t.stops.map((c) => hexToRgb01(c));
+  if (stops.length < 2 || t.stops.every((c) => c === t.stops[0])) {
+    drawBackground(page, t);
+    return;
+  }
+  const bands = 96;
+  const seg = stops.length - 1;
+  for (let i = 0; i < bands; i += 1) {
+    const p = i / (bands - 1);
+    const f = p * seg;
+    const idx = Math.min(seg - 1, Math.floor(f));
+    const k = f - idx;
+    const a = stops[idx];
+    const b = stops[idx + 1];
+    const h = H / bands;
+    page.drawRectangle({
+      x: 0,
+      y: H - (i + 1) * h - 0.5,
+      width: W,
+      height: h + 1,
+      color: rgb(a.r + (b.r - a.r) * k, a.g + (b.g - a.g) * k, a.b + (b.b - a.b) * k),
+    });
+  }
 }
 
 function wrap(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
@@ -135,14 +150,14 @@ export async function buildPresentationPdf(
   const visible = slides.filter((s) => s.is_visible);
   if (!visible.length) {
     const page = pdf.addPage([W, H]);
-    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: t.bg });
+    drawBackground(page, t);
     page.drawText("Нет слайдов", { x: PAD, y: H / 2, size: 24, font: bold, color: t.ink });
     return await pdf.save();
   }
 
   for (const [index, slide] of visible.entries()) {
     const page = pdf.addPage([W, H]);
-    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: t.bg });
+    drawBackground(page, t);
     const sources = slide.content.showImage
       ? (slide.resolved_images.length
           ? slide.resolved_images

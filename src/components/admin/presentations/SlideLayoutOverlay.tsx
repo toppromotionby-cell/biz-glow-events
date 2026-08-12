@@ -4,7 +4,8 @@
 // а слайд пересобирается прямо во время перетаскивания — что видишь, то и получишь.
 // Все изменения — это входные параметры автораскладки (design.ts), поэтому
 // остальные элементы перестраиваются автоматически и не перекрывают друг друга.
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { GRID, SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import type { SlideFit } from "@/lib/presentations/fit";
 import type { SlideLogoPlan } from "@/lib/presentations/logo-plan";
@@ -14,7 +15,7 @@ import {
 } from "@/lib/presentations/model";
 import { logoZones, nearestZone, photoZones, priceZones, textZones, type ZoneDef } from "@/lib/presentations/zones";
 
-type Kind = "photo" | "text" | "price" | "brand" | "client";
+type Kind = BlockKind;
 
 export type SlideLayoutOverlayProps = {
   fit: SlideFit;
@@ -38,7 +39,18 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   const [dragging, setDragging] = useState<Kind | null>(null);
   const [zone, setZone] = useState<string | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [selected, setSelected] = useState<Kind | null>(null);
   const grab = useRef({ dx: 0, dy: 0 });
+  const moved = useRef(false);
+
+  // Esc снимает выделение — как в Canva.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const zonesFor = (kind: Kind): ZoneDef<string>[] => {
     if (kind === "photo") return photoZones() as ZoneDef<string>[];
@@ -76,6 +88,8 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     const p = toCanvas(e);
     grab.current = { dx: p.x - rect.x, dy: p.y - rect.y };
+    moved.current = false;
+    setSelected(kind);
     setDragging(kind);
     setZone(currentZone(kind));
     setGhost({ x: rect.x, y: rect.y, w: rect.w, h: rect.h });
@@ -84,6 +98,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   const onMove = (kind: Kind, rect: Rect) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
     const p = toCanvas(e);
+    moved.current = true;
     setGhost({ x: p.x - grab.current.dx, y: p.y - grab.current.dy, w: rect.w, h: rect.h });
     const z = nearestZone(zonesFor(kind), p);
     if (z.id !== zone) {
@@ -95,7 +110,8 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
 
   const endDrag = (kind: Kind) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
-    apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
+    // Простой клик без перетаскивания = выделение блока, зона не меняется.
+    if (moved.current) apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
     setDragging(null);
     setZone(null);
     setGhost(null);
@@ -138,12 +154,15 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
 
   const px = (v: number) => v * scale;
   const target = dragging ? zonesFor(dragging).find((z) => z.id === zone) : null;
+  const selectedItem = selected ? items.find((it) => it.kind === selected && it.rect) : null;
+  const selRect = selectedItem?.rect ?? null;
 
   return (
     <div
       ref={hostRef}
       className="absolute inset-0 print:hidden"
       style={{ width: px(SLIDE_W), height: px(SLIDE_H) }}
+      onPointerDown={() => setSelected(null)}
     >
       {/* Подсвечивается только та зона, куда попадёт блок. */}
       {target && (
@@ -170,6 +189,34 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
         />
       )}
 
+      {/* Рамка выделения и панель управления — только у выбранного блока. */}
+      {selRect && !dragging && (
+        <>
+          <div
+            className="pointer-events-none absolute rounded-md border-2 border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]"
+            style={{ left: px(selRect.x), top: px(selRect.y), width: px(selRect.w), height: px(selRect.h) }}
+          >
+            <span className="absolute -top-5 left-0 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+              {BLOCK_LABELS[selected as Kind]}
+            </span>
+          </div>
+          <div
+            className="absolute z-20"
+            style={{
+              left: Math.min(Math.max(4, px(selRect.x)), Math.max(4, px(SLIDE_W) - 380)),
+              top: px(selRect.y) > 52 ? px(selRect.y) - 44 : px(selRect.y + selRect.h) + 8,
+            }}
+          >
+            <BlockToolbar
+              kind={selected as Kind}
+              layout={overrides}
+              onChange={onLayout}
+              onClose={() => setSelected(null)}
+            />
+          </div>
+        </>
+      )}
+
       {items.map((it) =>
         it.rect ? (
           <div
@@ -186,6 +233,8 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
               setGhost(null);
             }}
             className={`group absolute cursor-grab rounded-md border border-transparent hover:border-primary/70 hover:bg-primary/5 ${
+              selected === it.kind ? "bg-primary/5" : ""
+            } ${
               dragging === it.kind ? "opacity-40" : ""
             }`}
             style={{
