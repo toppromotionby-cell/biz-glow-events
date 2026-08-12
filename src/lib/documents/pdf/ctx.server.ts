@@ -1,12 +1,17 @@
-const CYRILLIC = /[\u0400-\u04FF]/;
-function displayFont(ctx: DocCtx, text: string): PDFFont {
+// Контекст сборки PDF: шрифты, текущая страница и логотипы.
+import { embedImageUrl } from "@/lib/documents/image-embed.server";
+import type { PDFDocument, PDFFont, PDFImage, PDFPage } from "pdf-lib";
+import { DEFAULT_LOGO_LAYOUT, type LogoLayout } from "@/lib/documents/logo-layout";
+
+export const CYRILLIC = /[\u0400-\u04FF]/;
+export function displayFont(ctx: DocCtx, text: string): PDFFont {
   if (ctx.displayCyrillic) return ctx.display;
   return CYRILLIC.test(text) ? ctx.bold : ctx.display;
 }
 
-type FittedLogo = { img: PDFImage; w: number; h: number; aspect: number };
+export type FittedLogo = { img: PDFImage; w: number; h: number; aspect: number };
 
-type DocCtx = {
+export type DocCtx = {
   pdf: PDFDocument;
   regular: PDFFont;
   bold: PDFFont;
@@ -28,14 +33,14 @@ type DocCtx = {
 };
 
 // Габариты логотипа в шапке (pt). Пропорции сохраняются, картинка вписывается.
-const HEADER_LOGO_MAX_H = DEFAULT_LOGO_LAYOUT.maxH;
-const HEADER_LOGO_MAX_W = DEFAULT_LOGO_LAYOUT.maxW;
+export const HEADER_LOGO_MAX_H = DEFAULT_LOGO_LAYOUT.maxH;
+export const HEADER_LOGO_MAX_W = DEFAULT_LOGO_LAYOUT.maxW;
 
 /**
  * Загружает логотип по URL и встраивает в PDF, вписывая в бокс maxW×maxH.
  * Ошибки сети/формата не ломают документ — логотип просто не рисуется.
  */
-async function embedLogo(
+export async function embedLogo(
   pdf: PDFDocument,
   url: string | null | undefined,
   maxW = HEADER_LOGO_MAX_W,

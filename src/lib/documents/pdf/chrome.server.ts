@@ -1,4 +1,15 @@
-function drawHeader(
+// Обвязка документа: шапка, футер, карточки и блок подписей.
+import { rgb } from "pdf-lib";
+import type { DocumentSettings } from "@/lib/document-settings.functions";
+import { DOC_FONT_PT } from "@/lib/documents/brand";
+import { DEFAULT_LOGO_LAYOUT, computeLogoPlacement, requisitesFontPt } from "@/lib/documents/logo-layout";
+import { displayFont, type DocCtx } from "@/lib/documents/pdf/ctx.server";
+import {
+  divider, drawTracked, ensureSpace, roundedRect, safe, wrapText,
+} from "@/lib/documents/pdf/draw.server";
+import { ACCENT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT } from "@/lib/documents/pdf/style.server";
+
+export function drawHeader(
   ctx: DocCtx,
   kind: string,
   num: string,
@@ -150,7 +161,7 @@ function drawHeader(
 }
 
 
-function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
+export function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
   const footer = `${settings.company_legal_name} · ${settings.company_phone} · ${settings.company_email} · ${settings.company_website}`;
   const total = ctx.pdf.getPageCount();
   for (let i = 0; i < total; i++) {
@@ -181,7 +192,7 @@ function drawFooter(ctx: DocCtx, settings: DocumentSettings) {
 }
 
 // Карточка-карман с тонкой границей и заголовком
-function drawCard(
+export function drawCard(
   ctx: DocCtx,
   label: string,
   title: string,
@@ -238,7 +249,7 @@ function drawCard(
  * подписи слева серым, значения справа. Используется для блока «Мероприятие»,
  * чтобы PDF совпадал с превью по подписям и сетке.
  */
-function drawInfoCard(
+export function drawInfoCard(
   ctx: DocCtx,
   label: string,
   rows: Array<[string, string]>,
@@ -312,7 +323,7 @@ function drawInfoCard(
   ctx.y -= height + 6 * M.D;
 }
 
-function drawSignatures(
+export function drawSignatures(
   ctx: DocCtx,
   left: { title: string; lines: string[]; signName: string },
   right: { title: string; lines: string[]; signName: string },

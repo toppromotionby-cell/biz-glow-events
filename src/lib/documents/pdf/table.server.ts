@@ -1,4 +1,14 @@
-type Col = {
+// Таблица позиций и блок итогов.
+import { rgb, type PDFFont } from "pdf-lib";
+import { displayFont, type DocCtx } from "@/lib/documents/pdf/ctx.server";
+import {
+  ensureSpace, money, newPage, roundedRect, safe, wrapText,
+} from "@/lib/documents/pdf/draw.server";
+import {
+  ACCENT, ACCENT_BORDER, ACCENT_SOFT, LINE, M, MUTED, PAGE_W, SURFACE, TEXT,
+} from "@/lib/documents/pdf/style.server";
+
+export type Col = {
   title: string;
   width: number;
   align?: "left" | "right" | "center";
@@ -11,9 +21,9 @@ type Col = {
  * HTML-превью: заголовок раздела, подытог раздела, описание и список
  * «что входит» под названием позиции.
  */
-type TableSpan = { from: string; to: string; text: string };
+export type TableSpan = { from: string; to: string; text: string };
 
-type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
+export type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
   _kind?: "section" | "subtotal";
   _desc?: string;
   _bullets?: string[];
@@ -25,7 +35,7 @@ type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
  * Подгоняет ширины узких колонок под самый длинный текст, а остаток отдаёт
  * «Наименованию» и «Примечаниям» (примечаниям — большая доля).
  */
-function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
+export function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
   const flexKeys = new Set(["title", "note"]);
   const pad = 15;
   const measured = new Map<string, number>();
@@ -56,7 +66,7 @@ function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number
   }
 }
 
-function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
+export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
   const startX = M.MARGIN_X;
   const cellPadX = 6;
@@ -321,7 +331,7 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
 
 
 // === Сводный блок «итого» (как в HTML-превью: справа, белый фон, акцентная строка «Итого») ===
-function drawSummary(
+export function drawSummary(
   ctx: DocCtx,
   rows: Array<{ label: string; value: string; emphasis?: boolean }>,
 ) {

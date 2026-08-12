@@ -1,4 +1,10 @@
-function money(n: number): string {
+// Примитивы рисования: текст, переносы, плашки, разделители.
+import { rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { BRAND_ACCENT, mixWithWhite } from "@/lib/documents/brand";
+import type { DocCtx } from "@/lib/documents/pdf/ctx.server";
+import { ACCENT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT, c01 } from "@/lib/documents/pdf/style.server";
+
+export function money(n: number): string {
   // Intl.NumberFormat в воркере доступен; не используем символ валюты в
   // префиксе — выводим явно "BYN".
   const fmt = new Intl.NumberFormat("ru-BY", {
@@ -8,12 +14,12 @@ function money(n: number): string {
   return `${fmt} BYN`;
 }
 
-function safe(s: unknown): string {
+export function safe(s: unknown): string {
   return String(s ?? "").replace(/\s+\n/g, "\n").trim();
 }
 
 /** Прямоугольник со скруглением (pdf-lib умеет только через path). */
-function roundedRect(
+export function roundedRect(
   page: PDFPage,
   opts: {
     x: number;
@@ -56,7 +62,7 @@ function roundedRect(
 }
 
 /** Верхняя акцентная полоса — как градиент в HTML-превью (набор сегментов). */
-function drawTopBar(page: PDFPage) {
+export function drawTopBar(page: PDFPage) {
   const w = PAGE_W - M.MARGIN_X * 2;
   const y = PAGE_H - M.MARGIN_TOP + 14;
   const steps = 24;
@@ -73,19 +79,19 @@ function drawTopBar(page: PDFPage) {
   }
 }
 
-function newPage(ctx: DocCtx) {
+export function newPage(ctx: DocCtx) {
   ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
   ctx.pageNum += 1;
   ctx.y = PAGE_H - M.MARGIN_TOP;
   drawTopBar(ctx.page);
 }
 
-function ensureSpace(ctx: DocCtx, needed: number) {
+export function ensureSpace(ctx: DocCtx, needed: number) {
   if (ctx.y - needed < M.MARGIN_BOTTOM) newPage(ctx);
 }
 
 
-function drawText(
+export function drawText(
   ctx: DocCtx,
   text: string,
   opts: {
@@ -116,7 +122,7 @@ function drawText(
 }
 
 // Перенос длинной строки по ширине
-function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
+export function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
   const words = safe(text).split(/\s+/);
   const out: string[] = [];
   let line = "";
@@ -143,7 +149,7 @@ function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): 
   return out.length ? out : [""];
 }
 
-function drawParagraph(
+export function drawParagraph(
   ctx: DocCtx,
   text: string,
   opts: { size?: number; bold?: boolean; color?: ReturnType<typeof rgb>; indent?: number } = {},
@@ -169,7 +175,7 @@ function drawParagraph(
  * не переносится на новую страницу из-за пары строк: сначала пробуем ужать
  * кегль и занять нижнее поле до линии футера.
  */
-function drawTrailingNote(
+export function drawTrailingNote(
   ctx: DocCtx,
   text: string,
   opts: { size?: number; color?: ReturnType<typeof rgb> } = {},
@@ -194,7 +200,7 @@ function drawTrailingNote(
   drawParagraph(ctx, clean, { size: base, color });
 }
 
-function divider(ctx: DocCtx, color = LINE) {
+export function divider(ctx: DocCtx, color = LINE) {
   ensureSpace(ctx, 8);
   ctx.y -= 4;
   ctx.page.drawLine({
@@ -206,18 +212,18 @@ function divider(ctx: DocCtx, color = LINE) {
   ctx.y -= 8;
 }
 
-function gap(ctx: DocCtx, n: number) {
+export function gap(ctx: DocCtx, n: number) {
   ctx.y -= n * M.D * M.GAP_K;
 }
 
 
 /** Ширина строки с межбуквенным интервалом (как letter-spacing в CSS). */
-function trackedWidth(font: PDFFont, text: string, size: number, tracking: number): number {
+export function trackedWidth(font: PDFFont, text: string, size: number, tracking: number): number {
   return font.widthOfTextAtSize(text, size) + Math.max(text.length - 1, 0) * tracking;
 }
 
 /** Отрисовать строку капсом с межбуквенным интервалом. */
-function drawTracked(
+export function drawTracked(
   page: PDFPage,
   text: string,
   opts: { x: number; y: number; size: number; font: PDFFont; color: ReturnType<typeof rgb>; tracking: number },
