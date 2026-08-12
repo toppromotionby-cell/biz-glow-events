@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { ClearCompositionButton } from "@/components/admin/documents/ClearCompositionButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -20,7 +19,7 @@ import {
   QUOTE_SECTION_SUGGESTIONS, removeSection, renameSection, type QuoteItem,
 } from "@/lib/quotes-model";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
-import { NumField, TextCommitField } from "@/components/admin/field-kit";
+import { NumField, TextAreaField, TextCommitField } from "@/components/admin/field-kit";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest, type ItemHit } from "@/hooks/use-doc-suggest";
 
@@ -135,8 +134,8 @@ export function QuoteItemsPanel({
         const sum = list.reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[section];
         return (
-          <div key={`sec-${secIdx}`} className="rounded-xl border border-border/60">
-            <div className="flex items-center gap-2 border-b border-border/60 px-2 py-2">
+          <div key={`sec-${secIdx}`} className="overflow-hidden rounded-xl border border-primary/25">
+            <div className="flex items-center gap-2 border-b border-primary/20 border-l-2 border-l-primary bg-primary/5 px-2 py-2">
               <button
                 type="button"
                 className="text-muted-foreground hover:text-foreground"
@@ -149,11 +148,12 @@ export function QuoteItemsPanel({
                 value={section}
                 placeholder={NO_SECTION}
                 aria-label="Название раздела"
-                className="h-8 flex-1 border-transparent bg-transparent px-1 font-medium focus-visible:border-input"
+                className="h-8 flex-1 border-transparent bg-transparent px-1 text-base font-semibold text-primary focus-visible:border-input"
                 onCommit={(v) => onChange(renameSection(items, section, v))}
               />
               <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-                {list.length} поз. · {fmtMoney(sum)}
+                {list.length} поз. ·{" "}
+                <span className="text-sm font-semibold text-primary">{fmtMoney(sum)}</span>
               </span>
               <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Добавить позицию в раздел"
                 onClick={() => addInSection(section)}>
@@ -197,9 +197,10 @@ export function QuoteItemsPanel({
                   <div
                     key={it.id}
                     data-item-id={it.id}
-                    className={`px-2 py-2 ${
-                      rowLevel === "error" ? "bg-destructive/5 border-l-2 border-l-destructive"
-                        : rowLevel === "warn" ? "bg-amber-500/5 border-l-2 border-l-amber-500" : ""
+                    className={`m-1 rounded-lg border px-2 py-2 transition-colors ${
+                      rowLevel === "error" ? "border-destructive/40 bg-destructive/5 border-l-2 border-l-destructive"
+                        : rowLevel === "warn" ? "border-amber-500/40 bg-amber-500/5 border-l-2 border-l-amber-500"
+                        : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
                     }`}
                   >
                     <div className="flex items-center gap-1">
@@ -234,11 +235,11 @@ export function QuoteItemsPanel({
                             </span>
                           )}
                           placeholder="Наименование позиции"
-                          className="h-9"
+                          className="h-9 font-medium text-foreground"
                         />
                       </div>
                       <div className="flex w-[120px] flex-col items-end">
-                        <span className="text-sm tabular-nums">{fmtMoney(lineTotal(it))}</span>
+                        <span className="text-sm font-semibold tabular-nums text-accent">{fmtMoney(lineTotal(it))}</span>
                         {showCost && lineCost(it) > 0 && (
                           <span className="text-[11px] tabular-nums text-muted-foreground">
                             маржа {fmtMoney(lineTotal(it) - lineCost(it))}
@@ -318,11 +319,12 @@ export function QuoteItemsPanel({
 
                     {expanded[it.id] && (
                       <div className="ml-6 mt-2">
-                        <Textarea
-                          rows={2}
+                        <TextAreaField
                           placeholder="Описание позиции (попадёт в документ)"
+                          aria-label="Описание позиции"
                           value={it.description}
-                          onChange={(e) => replace(it.id, { description: e.target.value })}
+                          onChange={(v) => replace(it.id, { description: v })}
+                          className="border-primary/25 text-xs focus-visible:border-primary"
                         />
                       </div>
                     )}

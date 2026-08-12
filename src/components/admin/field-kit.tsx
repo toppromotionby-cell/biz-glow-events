@@ -3,6 +3,8 @@
 // а в модель уходит уже нормализованное значение.
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 type NumFieldProps = {
   value: number;
@@ -103,6 +105,53 @@ export function TextCommitField({ value, onCommit, placeholder, className, ...re
         if (e.key === "Enter") { e.preventDefault(); commit(); e.currentTarget.blur(); }
         if (e.key === "Escape") { setText(value); e.currentTarget.blur(); }
       }}
+    />
+  );
+}
+
+type TextAreaFieldProps = {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  minRows?: number;
+  "aria-label"?: string;
+};
+
+/**
+ * Многострочное поле для примечаний и описаний.
+ * Пока человек печатает, значение живёт локально — внешнее автосохранение
+ * не перерисовывает поле и не сбрасывает каретку в конец строки.
+ * Высота растёт по содержимому, длинный текст переносится.
+ */
+export function TextAreaField({ value, onChange, placeholder, className, minRows = 2, ...rest }: TextAreaFieldProps) {
+  const [text, setText] = useState(value);
+  const focused = useRef(false);
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!focused.current && value !== text) setText(value);
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Авто-рост: сначала сбрасываем высоту, потом подгоняем под содержимое.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [text]);
+
+  return (
+    <Textarea
+      {...rest}
+      ref={ref}
+      rows={minRows}
+      value={text}
+      placeholder={placeholder}
+      className={cn("resize-none overflow-hidden whitespace-pre-wrap break-words", className)}
+      onFocus={() => { focused.current = true; }}
+      onChange={(e) => { setText(e.target.value); onChange(e.target.value); }}
+      onBlur={() => { focused.current = false; }}
     />
   );
 }
