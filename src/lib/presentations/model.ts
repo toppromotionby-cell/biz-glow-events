@@ -430,7 +430,7 @@ export function blankSlide(type: SlideType, position: number): PresentationSlide
 }
 
 /** Отображаемое имя файла экспорта: Prezentatsiya_Nazvanie_2026-06-22.pdf */
-export function presentationFileName(title: string, ext: "pdf" | "pptx"): string {
+export function presentationFileName(title: string, ext: "pdf"): string {
   const map: Record<string, string> = {
     а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y",
     к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f",

@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  AlertTriangle, ArrowLeft, Check, Download, FileDown, Loader2, Play, Plus, RefreshCw, Save, Undo2,
+  AlertTriangle, ArrowLeft, Check, Download, Loader2, Play, Plus, RefreshCw, Save, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,6 @@ import {
 import {
   getPresentation, savePresentation, buildSlidesFromQuote,
 } from "@/lib/presentations.functions";
-import { exportPresentationPptx } from "@/lib/presentations/pptx.browser";
 
 export const Route = createFileRoute("/admin/documents/presentations/$id/")({
   component: Page,
@@ -114,7 +113,6 @@ function Page() {
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [autosave, setAutosave] = useState(true);
-  const [exporting, setExporting] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [mobileTab, setMobileTab] = useState<"slide" | "settings">("slide");
   const canvasWrap = useRef<HTMLDivElement>(null);
@@ -402,18 +400,6 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const exportPptx = async () => {
-    if (!meta) return;
-    setExporting(true);
-    try {
-      await exportPresentationPptx(meta, slides, company);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Не удалось собрать PPTX");
-    } finally {
-      setExporting(false);
-    }
-  };
-
   const exportPdf = async () => {
     if (dirty) {
       const ok = await confirm({
@@ -613,10 +599,6 @@ function Page() {
             onClick={() => setPresenting(true)}
           >
             <Play className="mr-1.5 h-4 w-4" />Показ
-          </Button>
-          <Button variant="outline" size="sm" disabled={exporting || !slides.length} onClick={() => void exportPptx()}>
-            {exporting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FileDown className="mr-1.5 h-4 w-4" />}
-            PPTX
           </Button>
           <Button variant="outline" size="sm" disabled={!slides.length || save.isPending} onClick={() => void exportPdf()}>
             <Download className="mr-1.5 h-4 w-4" />PDF
