@@ -79,3 +79,17 @@ export const promoCodeSchema = z.object({
   { path: ["valid_to"], message: "Дата окончания раньше даты начала" },
 );
 export type PromoCodeInput = z.infer<typeof promoCodeSchema>;
+
+// Карточка каталога (zones / tech_equipment / services / production_items).
+export const catalogItemSchema = z.object({
+  title: z.string().trim().min(2, "Минимум 2 символа").max(160, "Не более 160 символов"),
+  slug: z
+    .string()
+    .trim()
+    .min(2, "Минимум 2 символа")
+    .max(120, "Не более 120 символов")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Только строчная латиница, цифры и дефис"),
+  seo_title: seoTitle,
+  seo_description: seoDescription,
+});
+export type CatalogItemInput = z.infer<typeof catalogItemSchema>;
