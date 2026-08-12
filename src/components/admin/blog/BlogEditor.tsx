@@ -45,7 +45,7 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
     mode: "onBlur",
   });
 
-  const { register, control, handleSubmit, watch, setValue, formState } = form;
+  const { register, control, handleSubmit, watch, setValue, setError, formState } = form;
   const values = watch();
   const slugValue = values.slug;
   const titleValue = values.title;
