@@ -8,7 +8,9 @@ import { DocAppearanceSection } from "@/components/admin/documents/DocAppearance
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AUTOSAVE_DELAY, saveStatus } from "@/lib/editor/save-state";
+import { saveStatus } from "@/lib/editor/save-state";
+import { useEditorSave } from "@/hooks/use-editor-save";
+
 import { HISTORY_LIMIT } from "@/lib/editor/history";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
