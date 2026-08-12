@@ -3,9 +3,7 @@
 //
 // Объекты слайда: фото, текстовая колонка, заголовок, подзаголовок, описание,
 // цена и два логотипа. Клик выделяет, повторный клик по тексту — набор текста,
-// восемь маркеров рамки меняют размер (у текста — кегль, с автоподгоном
-// раскладки), перетаскивание ставит блок в ближайшую зону, а логотипы двигаются
-// свободно с магнитными направляющими.
+// рамка выделения (react-moveable) двигает и масштабирует блок.
 //
 // Все изменения — это входные параметры автораскладки (design.ts), поэтому
 // остальные элементы перестраиваются автоматически и не перекрывают друг друга.
@@ -13,6 +11,7 @@ import {
   useCallback, useEffect, useLayoutEffect, useRef, useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { TransformFrame } from "@/components/admin/canvas/TransformFrame";
 import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import type { SlideFit } from "@/lib/presentations/fit";
@@ -145,9 +144,8 @@ export function SlideLayoutOverlay({
 }: SlideLayoutOverlayProps) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [dragging, setDragging] = useState<Kind | null>(null);
   const [zone, setZone] = useState<string | null>(null);
-  const [ghost, setGhost] = useState<Rect | null>(null);
+  const [dragging, setDragging] = useState<Kind | null>(null);
   const [ownSelected, setOwnSelected] = useState<Kind | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [sizeHint, setSizeHint] = useState<{ text: string; limit: boolean } | null>(null);
@@ -156,10 +154,10 @@ export function SlideLayoutOverlay({
     setOwnSelected(kind);
     onSelect?.(kind);
   };
-  const grab = useRef({ dx: 0, dy: 0 });
-  const moved = useRef(false);
   /** Внутри жеста первый патч создаёт шаг отмены, остальные — нет. */
   const stepStarted = useRef(false);
+  /** Снимок начала жеста: масштаб блока и стартовая рамка. */
+  const gesture = useRef<{ scale: number; rect: Rect } | null>(null);
   const rafId = useRef<number | null>(null);
 
   const setRef = (el: HTMLDivElement | null) => {
@@ -244,14 +242,6 @@ export function SlideLayoutOverlay({
     return logoZones() as ZoneDef<string>[];
   };
 
-  const currentZone = (kind: Kind): string | null => {
-    if (kind === "photo") return overrides.photoZone === "auto" ? null : overrides.photoZone;
-    if (kind === "text") return overrides.textZone === "auto" ? null : overrides.textZone;
-    if (kind === "price") return overrides.priceZone === "auto" ? null : overrides.priceZone;
-    const o = kind === "brand" ? overrides.brandLogo : overrides.clientLogo;
-    return o.zone === "auto" ? null : o.zone;
-  };
-
   /** Свободное перемещение логотипа: доли холста 1280×720. */
   const moveLogoFree = (kind: "brand" | "client", x: number, y: number) => {
     const key = kind === "brand" ? "brandLogo" : "clientLogo";
@@ -276,62 +266,11 @@ export function SlideLayoutOverlay({
     return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
   };
 
-  const startDrag = (kind: Kind, rect: Rect) => (e: ReactPointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    const p = toCanvas(e);
-    grab.current = { dx: p.x - rect.x, dy: p.y - rect.y };
-    moved.current = false;
-    stepStarted.current = false;
-    // Повторный клик по уже выбранному тексту — сразу в набор текста.
-    if (isPart(kind) && selected === kind) onTextEdit?.(kind);
-    setSelected(kind);
-    setDragging(kind);
-    setZone(currentZone(dragKind(kind)));
-    setGhost(rect);
-  };
-
   /** Соседние блоки для магнитных направляющих. */
   const neighbors = (kind: Kind): Rect[] =>
     [fit.layout.textBox, fit.layout.photoBox, fit.layout.priceBox].filter(
       (r): r is Rect => !!r && !(kind === "text" && r === fit.layout.textBox),
     );
-
-  const onMove = (kind: Kind, rect: Rect) => (e: ReactPointerEvent) => {
-    if (dragging !== kind) return;
-    const p = toCanvas(e);
-    if (Math.abs(p.x - rect.x - grab.current.dx) + Math.abs(p.y - rect.y - grab.current.dy) < 2 && !moved.current) {
-      return;
-    }
-    moved.current = true;
-    const nx = p.x - grab.current.dx;
-    const ny = p.y - grab.current.dy;
-    if (isLogo(kind)) {
-      const snapped = snapRect({ x: nx, y: ny, w: rect.w, h: rect.h }, neighbors(kind));
-      setGhost({ x: snapped.x, y: snapped.y, w: rect.w, h: rect.h });
-      setGuides(snapped.guides);
-      moveLogoFree(kind, snapped.x, snapped.y);
-      return;
-    }
-    setGhost({ x: nx, y: ny, w: rect.w, h: rect.h });
-    const dk = dragKind(kind);
-    const z = nearestZone(zonesFor(dk), p);
-    if (z.id !== zone) {
-      setZone(z.id);
-      // Живое превью: слайд пересобирается сразу, ещё до отпускания.
-      apply(dk, z.id);
-    }
-  };
-
-  const endDrag = (kind: Kind) => () => {
-    if (dragging !== kind) return;
-    setDragging(null);
-    setZone(null);
-    setGhost(null);
-    setGuides([]);
-    stepStarted.current = false;
-  };
 
   /* ---------------- масштабирование ---------------- */
 
@@ -359,55 +298,10 @@ export function SlideLayoutOverlay({
       const cur = overrides[key];
       pushFrame({ [key]: { ...cur, scale: v } } as Partial<SlideLayoutOverrides>);
     }
-    return v !== value;
+    return Math.abs(v - value) > 1e-6;
   };
 
-  /**
-   * Масштабирование от маркера рамки (как в Canva): считаем смещение курсора
-   * относительно точки захвата, а не абсолютную позицию — блок не «прыгает».
-   * Углы — пропорционально, боковые маркеры — по одной оси, Shift —
-   * принудительно пропорционально, Alt — от центра.
-   */
-  const startHandleResize = (kind: Kind, handle: string, rect: Rect) =>
-    (e: ReactPointerEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const start = toCanvas(e);
-      const startScale = scaleOf(kind);
-      const w0 = Math.max(24, rect.w);
-      const h0 = Math.max(24, rect.h);
-      const sx = handle.includes("w") ? -1 : handle.includes("e") ? 1 : 0;
-      const sy = handle.includes("n") ? -1 : handle.includes("s") ? 1 : 0;
-      stepStarted.current = false;
-      setSelected(kind);
-
-      const move = (ev: PointerEvent) => {
-        const p = toCanvas(ev);
-        const mult = ev.altKey ? 2 : 1;
-        const dw = sx * (p.x - start.x) * mult;
-        const dh = sy * (p.y - start.y) * mult;
-        const kx = sx ? (w0 + dw) / w0 : 0;
-        const ky = sy ? (h0 + dh) / h0 : 0;
-        const both = (sx && sy) || ev.shiftKey;
-        const k = both ? (sx && sy ? Math.max(kx, ky) : sx ? kx : ky) : sx ? kx : ky;
-        if (!Number.isFinite(k) || k <= 0) return;
-        const limit = applyScale(kind, startScale * k);
-        setSizeHint({
-          text: `${Math.round(w0 * (sx ? k : 1))} × ${Math.round(h0 * (sy || both ? k : 1))}`,
-          limit,
-        });
-      };
-      const up = () => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-        setSizeHint(null);
-        stepStarted.current = false;
-      };
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
-    };
-
-  /** Двойной клик по маркеру — сброс размера блока в авто. */
+  /** Двойной клик по рамке — сброс размера блока в авто. */
   const resetSize = (kind: Kind) => {
     if (kind === "photo") onLayout({ photoScale: null });
     else if (kind === "text") onLayout({ textWidth: null });
@@ -439,17 +333,55 @@ export function SlideLayoutOverlay({
   const selectedItem = selected ? items.find((it) => it.kind === selected && it.rect) : null;
   const selRect = selectedItem?.rect ?? null;
 
-  /** Восемь маркеров рамки выделения — как в Canva. */
-  const HANDLES: { key: string; style: string; cursor: string }[] = [
-    { key: "nw", style: "-left-1.5 -top-1.5", cursor: "nwse-resize" },
-    { key: "n", style: "left-1/2 -top-1.5 -translate-x-1/2", cursor: "ns-resize" },
-    { key: "ne", style: "-right-1.5 -top-1.5", cursor: "nesw-resize" },
-    { key: "e", style: "-right-1.5 top-1/2 -translate-y-1/2", cursor: "ew-resize" },
-    { key: "se", style: "-right-1.5 -bottom-1.5", cursor: "nwse-resize" },
-    { key: "s", style: "left-1/2 -bottom-1.5 -translate-x-1/2", cursor: "ns-resize" },
-    { key: "sw", style: "-left-1.5 -bottom-1.5", cursor: "nesw-resize" },
-    { key: "w", style: "-left-1.5 top-1/2 -translate-y-1/2", cursor: "ew-resize" },
-  ];
+  /** Клик по блоку: выделение, повторный клик по тексту — набор текста. */
+  const onBlockDown = (kind: Kind) => (e: ReactPointerEvent) => {
+    e.stopPropagation();
+    if (isPart(kind) && selected === kind) onTextEdit?.(kind);
+    setSelected(kind);
+  };
+
+  const beginGesture = (kind: Kind, rect: Rect) => () => {
+    stepStarted.current = false;
+    gesture.current = { scale: scaleOf(kind), rect };
+    setDragging(kind);
+  };
+
+  const endGesture = () => {
+    gesture.current = null;
+    setDragging(null);
+    setZone(null);
+    setGuides([]);
+    setSizeHint(null);
+    stepStarted.current = false;
+  };
+
+  const onFrameDrag = (kind: Kind, rect: Rect) =>
+    (p: { dx: number; dy: number; clientX: number; clientY: number }) => {
+      if (isLogo(kind)) {
+        const snapped = snapRect(
+          { x: rect.x + p.dx, y: rect.y + p.dy, w: rect.w, h: rect.h },
+          neighbors(kind),
+        );
+        setGuides(snapped.guides);
+        moveLogoFree(kind, snapped.x, snapped.y);
+        return;
+      }
+      const dk = dragKind(kind);
+      const z = nearestZone(zonesFor(dk), toCanvas(p));
+      if (z.id !== zone) {
+        setZone(z.id);
+        // Живое превью: слайд пересобирается сразу, ещё до отпускания.
+        apply(dk, z.id);
+      }
+    };
+
+  const onFrameResize = (kind: Kind) =>
+    (p: { k: number; w: number; h: number; dir: [number, number]; shift: boolean }) => {
+      const g = gesture.current;
+      if (!g) return;
+      const limit = applyScale(kind, g.scale * p.k);
+      setSizeHint({ text: `${Math.round(p.w)} × ${Math.round(p.h)}`, limit });
+    };
 
   return (
     <div
@@ -488,46 +420,22 @@ export function SlideLayoutOverlay({
         />
       ))}
 
-      {/* «Призрак» — блок под курсором. */}
-      {ghost && (
-        <div
-          className="pointer-events-none absolute rounded-md border-2 border-primary/70 bg-background/40"
-          style={{ left: px(ghost.x), top: px(ghost.y), width: px(ghost.w), height: px(ghost.h) }}
-        />
-      )}
-
-      {/* Рамка выделения, маркеры и панель управления — у выбранного блока. */}
-      {selRect && !dragging && (
+      {/* Рамка выделения: drag + 8 маркеров размера (react-moveable). */}
+      {selRect && selected && (
         <>
-          <div
-            className="pointer-events-none absolute rounded-md border-2 border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]"
-            style={{ left: px(selRect.x), top: px(selRect.y), width: px(selRect.w), height: px(selRect.h) }}
-          >
-            <span className="absolute -top-5 left-0 rounded bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
-              {BLOCK_LABELS[selected as Kind]}
-            </span>
-            {HANDLES.map((h) => (
-              <span
-                key={h.key}
-                onPointerDown={startHandleResize(selected as Kind, h.key, selRect)}
-                onDoubleClick={(e) => { e.stopPropagation(); resetSize(selected as Kind); }}
-                className={`pointer-events-auto absolute h-3 w-3 rounded-full border border-background transition-colors ${
-                  sizeHint?.limit ? "bg-amber-500" : "bg-primary"
-                } ${h.style}`}
-                style={{ cursor: h.cursor, touchAction: "none" }}
-                aria-hidden
-              />
-            ))}
-            {sizeHint && (
-              <span
-                className={`absolute -bottom-7 right-0 rounded px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground ${
-                  sizeHint.limit ? "bg-amber-500 text-black" : "bg-primary"
-                }`}
-              >
-                {sizeHint.text}
-              </span>
-            )}
-          </div>
+          <TransformFrame
+            rect={selRect}
+            scale={scale}
+            label={BLOCK_LABELS[selected]}
+            keepRatio={isLogo(selected)}
+            hint={sizeHint?.text ?? null}
+            limit={sizeHint?.limit}
+            onGestureStart={beginGesture(selected, selRect)}
+            onDrag={onFrameDrag(selected, selRect)}
+            onResize={onFrameResize(selected)}
+            onGestureEnd={endGesture}
+            onDoubleClick={() => resetSize(selected)}
+          />
           {floatingToolbar && (
             <div
               className="absolute z-20"
@@ -537,7 +445,7 @@ export function SlideLayoutOverlay({
               }}
             >
               <BlockToolbar
-                kind={selected as Kind}
+                kind={selected}
                 layout={overrides}
                 onChange={onLayout}
                 onClose={() => setSelected(null)}
@@ -554,13 +462,10 @@ export function SlideLayoutOverlay({
             role="button"
             tabIndex={-1}
             aria-label={it.label}
-            onPointerDown={startDrag(it.kind, it.rect)}
-            onPointerMove={onMove(it.kind, it.rect)}
-            onPointerUp={endDrag(it.kind)}
-            onPointerCancel={endDrag(it.kind)}
+            onPointerDown={onBlockDown(it.kind)}
             className={`group absolute cursor-grab rounded-md border border-transparent hover:border-primary/70 hover:bg-primary/5 ${
               selected === it.kind ? "bg-primary/5" : ""
-            } ${dragging === it.kind ? "opacity-40" : ""}`}
+            }`}
             style={{
               left: px(it.rect.x),
               top: px(it.rect.y),
