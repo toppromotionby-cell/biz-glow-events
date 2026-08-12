@@ -376,12 +376,17 @@ export function normalizeContent(raw: unknown): SlideContent {
   const images = Array.isArray(r.images)
     ? Array.from(new Set(r.images.map((i) => str(i).trim()).filter(Boolean))).slice(0, MAX_IMAGES)
     : [];
+  // Описания в каталоге хранятся как HTML; слайды рисуются простым текстом.
+  const plain = (v: unknown, d = "") => {
+    const s = str(v, d);
+    return isHtml(s) ? htmlToPlainText(s) : s;
+  };
   return {
-    description: str(r.description),
-    includes: Array.isArray(r.includes) ? r.includes.map((i) => str(i)).filter(Boolean) : [],
+    description: plain(r.description),
+    includes: Array.isArray(r.includes) ? r.includes.map((i) => plain(i)).filter(Boolean) : [],
     specs: Array.isArray(r.specs)
       ? (r.specs as Record<string, unknown>[])
-          .map((s) => ({ label: str(s?.label), value: str(s?.value) }))
+          .map((s) => ({ label: plain(s?.label), value: plain(s?.value) }))
           .filter((s) => s.label || s.value)
       : [],
     price: num(r.price),
