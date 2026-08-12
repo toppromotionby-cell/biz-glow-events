@@ -230,12 +230,15 @@ export function buildPromoQuoteBody(
       ${
         quote.logo_url
           ? `<div class="logo-col" style="${logoWrapStyle(quote.logo_layout)}"><img style="${logoImgStyle(quote.logo_layout)}" src="${esc(quote.logo_url)}" alt="Логотип" />${
-              opts.companyLine ? `<div class="req">${esc(opts.companyLine)}</div>` : ""
+              opts.companyLine
+                ? `<div class="req" style="${requisitesStyle(opts.companyLine)}">${esc(opts.companyLine)}</div>`
+                : ""
             }</div>`
           : opts.companyLine
-            ? `<div class="logo-col"><div class="req">${esc(opts.companyLine)}</div></div>`
+            ? `<div class="logo-col"><div class="req" style="${requisitesStyle(opts.companyLine)}">${esc(opts.companyLine)}</div></div>`
             : ""
       }
+
       ${quote.client_logo_url ? `<img src="${esc(quote.client_logo_url)}" alt="Логотип клиента" />` : ""}
     </div>
   </div>
