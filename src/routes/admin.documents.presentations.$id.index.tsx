@@ -601,7 +601,9 @@ function Page() {
   ];
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col bg-background">
+    <FullscreenLayer className="flex flex-col bg-background" label="Редактор презентации">
+    <div className="flex h-full min-h-0 flex-col bg-background">
+
       {/* Верхняя панель */}
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
