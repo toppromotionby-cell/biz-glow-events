@@ -148,6 +148,38 @@ function fitIntoFree(
 const isTitleLike = (type: SlideType): boolean => type === "title" || type === "contacts";
 
 /**
+ * Свободная позиция логотипа (пользователь перетащил его мышью).
+ * Размер подбирается под свободное место: если логотип накрывает текст или
+ * блок цены, он пропорционально уменьшается (но не мельче LOGO_MIN_FIT).
+ * Фотографии препятствием не считаются — поверх картинки логотип допустим.
+ */
+function freePlacement(
+  pos: { x: number; y: number },
+  baseW: number,
+  baseH: number,
+  blocked: Rect[],
+): LogoPlacementPlan {
+  let w = baseW;
+  let h = baseH;
+  const rectAt = (ww: number, hh: number): Rect => ({
+    x: clampNum(pos.x * SLIDE_W, 0, SLIDE_W - ww),
+    y: clampNum(pos.y * SLIDE_H, 0, SLIDE_H - hh),
+    w: ww,
+    h: hh,
+  });
+  for (let i = 0; i < 8; i += 1) {
+    if (!blocked.some((b) => overlaps(rectAt(w, h), b))) break;
+    const next = Math.max(LOGO_MIN_FIT, (w / baseW) * 0.9);
+    if (next === w / baseW) break;
+    w = baseW * next;
+    h = baseH * next;
+  }
+  const r = rectAt(w, h);
+  return { slot: "free", maxW: w, maxH: h, x: r.x, y: r.y };
+}
+
+
+/**
  * Рассчитывает единственную позицию для логотипа компании и логотипа клиента.
  * Размеры отдаются в координатах холста 1280×720 — рендеры сами пересчитывают.
  */
