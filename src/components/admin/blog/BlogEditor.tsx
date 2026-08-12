@@ -17,6 +17,7 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { blogPostSchema, type BlogPostInput } from "@/lib/admin/schemas";
 import { useSlugUnique } from "@/lib/admin/use-slug-unique";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { slugify, cn } from "@/lib/utils";
 
 type EditorProps = {
@@ -59,6 +60,7 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
   const slugStatus = useSlugUnique("blog_posts", slugValue, initial.id);
 
   const { savedAt } = useAutoSaveDraft(draftKey, values, { enabled: formState.isDirty });
+  const { guardDialog } = useUnsavedGuard(formState.isDirty && !formState.isSubmitting);
 
   const save = useMutation({
     mutationFn: async (data: BlogPostInput) => {
@@ -256,6 +258,7 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
       <button type="submit" className="hidden" aria-hidden tabIndex={-1}>submit</button>
 
       {dialog}
+      {guardDialog}
     </form>
   );
 }

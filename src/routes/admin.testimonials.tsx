@@ -18,6 +18,7 @@ import { Field } from "@/components/admin/Field";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { testimonialSchema } from "@/lib/admin/schemas";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { useEditorHotkeys } from "@/lib/admin/use-editor-hotkeys";
 import type { SaveState } from "@/components/admin/SaveStatus";
 
@@ -133,6 +134,7 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   }, [f]);
 
   const { savedAt: draftSavedAt } = useAutoSaveDraft(draftKey, f);
+  const { guardDialog } = useUnsavedGuard(!!draftSavedAt && saveState !== "saved" && saveState !== "saving");
 
   const save = useMutation({
     mutationFn: async () => {
@@ -197,6 +199,7 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       <Field label="Текст отзыва" required error={errors["text"]} counter={{ value: (f.text ?? "").length, max: 2000 }}>
         <Textarea rows={6} value={f.text ?? ""} onChange={(e) => setF({ ...f, text: e.target.value })} />
       </Field>
+      {guardDialog}
     </AdminEditorShell>
   );
 }
