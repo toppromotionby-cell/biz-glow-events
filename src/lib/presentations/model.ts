@@ -111,6 +111,7 @@ export type SlideContent = {
 
 export type PhotoZone = "auto" | "left" | "right" | "top" | "full" | "none";
 export type TextZone = "auto" | "top" | "center" | "bottom";
+export type TextAlignX = "auto" | "left" | "center" | "right";
 export type PriceZone = "auto" | "under-text" | "corner" | "beside-photo";
 export type LogoZone = "auto" | "tl" | "tr" | "bl" | "br" | "footer" | "hero";
 
@@ -123,6 +124,12 @@ export type SlideLayoutOverrides = {
   textZone: TextZone;
   /** Доля доступной ширины под текст, 0.3–1. */
   textWidth: number | null;
+  /** Горизонтальное выравнивание текстового блока и выключка текста. */
+  alignX: TextAlignX;
+  /** Растянуть текстовый блок на всю доступную ширину. */
+  stretchX: boolean;
+  /** Растянуть текстовый блок на всю доступную высоту. */
+  stretchY: boolean;
   priceZone: PriceZone;
   brandLogo: LogoOverride;
   clientLogo: LogoOverride;
@@ -133,10 +140,14 @@ export const DEFAULT_LAYOUT_OVERRIDES: SlideLayoutOverrides = {
   photoScale: null,
   textZone: "auto",
   textWidth: null,
+  alignX: "auto",
+  stretchX: false,
+  stretchY: false,
   priceZone: "auto",
   brandLogo: { zone: "auto", scale: null },
   clientLogo: { zone: "auto", scale: null },
 };
+
 
 export const PHOTO_SCALE_MIN = 0.25;
 export const PHOTO_SCALE_MAX = 0.65;
@@ -150,6 +161,7 @@ export const clampNum = (v: number, min: number, max: number): number =>
 
 const PHOTO_ZONES: PhotoZone[] = ["auto", "left", "right", "top", "full", "none"];
 const TEXT_ZONES: TextZone[] = ["auto", "top", "center", "bottom"];
+const ALIGN_X: TextAlignX[] = ["auto", "left", "center", "right"];
 const PRICE_ZONES: PriceZone[] = ["auto", "under-text", "corner", "beside-photo"];
 const LOGO_ZONES: LogoZone[] = ["auto", "tl", "tr", "bl", "br", "footer", "hero"];
 
@@ -171,6 +183,9 @@ export function normalizeLayoutOverrides(raw: unknown): SlideLayoutOverrides {
     photoScale: Number.isFinite(ps) && ps > 0 ? clampNum(ps, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) : null,
     textZone: TEXT_ZONES.includes(r.textZone as TextZone) ? (r.textZone as TextZone) : "auto",
     textWidth: Number.isFinite(tw) && tw > 0 ? clampNum(tw, TEXT_WIDTH_MIN, TEXT_WIDTH_MAX) : null,
+    alignX: ALIGN_X.includes(r.alignX as TextAlignX) ? (r.alignX as TextAlignX) : "auto",
+    stretchX: r.stretchX === true,
+    stretchY: r.stretchY === true,
     priceZone: PRICE_ZONES.includes(r.priceZone as PriceZone) ? (r.priceZone as PriceZone) : "auto",
     brandLogo: normLogoOverride(r.brandLogo),
     clientLogo: normLogoOverride(r.clientLogo),
@@ -184,12 +199,16 @@ export function isAutoLayout(o: SlideLayoutOverrides): boolean {
     o.photoScale === null &&
     o.textZone === "auto" &&
     o.textWidth === null &&
+    o.alignX === "auto" &&
+    !o.stretchX &&
+    !o.stretchY &&
     o.priceZone === "auto" &&
     o.brandLogo.zone === "auto" &&
     o.brandLogo.scale === null &&
     o.clientLogo.zone === "auto" &&
     o.clientLogo.scale === null
   );
+
 }
 
 
