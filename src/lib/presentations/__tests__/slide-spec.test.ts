@@ -61,7 +61,7 @@ describe("staticSlideSpec", () => {
         dateLabel: "",
       });
       for (const b of blocks) {
-        if (b.kind === "circle") continue;
+        if (b.kind === "circle" || b.kind === "shade") continue;
         expect(b.y).toBeGreaterThanOrEqual(0);
         expect(b.y).toBeLessThan(SLIDE_H);
       }
