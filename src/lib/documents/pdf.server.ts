@@ -49,6 +49,8 @@ import {
 import { PRICE_LABEL } from "@/lib/documents/doc-layout";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont, type DocFont } from "@/lib/documents/doc-font";
+import { DOC_DENSITY_SCALE, DOC_DENSITY_LADDER, type DocDensity } from "@/lib/documents/density";
+export { DOC_DENSITY_SCALE, type DocDensity };
 
 import { applyDensity, ACCENT, ACCENT_BORDER, ACCENT_SOFT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT, c01 } from "@/lib/documents/pdf/style.server";
 import { displayFont, embedLogo, type DocCtx, type FittedLogo } from "@/lib/documents/pdf/ctx.server";
