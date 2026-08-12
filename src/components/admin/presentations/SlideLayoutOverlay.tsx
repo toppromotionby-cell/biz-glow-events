@@ -10,7 +10,7 @@ import { GRID, SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import type { SlideFit } from "@/lib/presentations/fit";
 import type { SlideLogoPlan } from "@/lib/presentations/logo-plan";
 import {
-  PHOTO_SCALE_MAX, PHOTO_SCALE_MIN, TEXT_WIDTH_MAX, TEXT_WIDTH_MIN, clampNum,
+  LOGO_SCALE_MAX, LOGO_SCALE_MIN, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN, TEXT_WIDTH_MAX, TEXT_WIDTH_MIN, clampNum,
   type SlideLayoutOverrides,
 } from "@/lib/presentations/model";
 import { logoZones, nearestZone, photoZones, priceZones, textZones, type ZoneDef } from "@/lib/presentations/zones";
@@ -29,10 +29,24 @@ const LOGO_RECTS: Record<string, Rect> = Object.fromEntries(
   logoZones().map((z) => [z.id, z.rect]),
 );
 
-function logoRect(slot: string): Rect | null {
-  if (slot === "hero") return { x: GRID.marginX, y: GRID.marginTop, w: 320, h: 80 };
-  return LOGO_RECTS[slot] ?? null;
+function logoRect(place: { slot: string; x?: number; y?: number; maxW: number; maxH: number } | null): Rect | null {
+  if (!place) return null;
+  // Свободное положение — рамка ровно по логотипу.
+  if (place.slot === "free") {
+    return { x: place.x ?? 0, y: place.y ?? 0, w: place.maxW, h: place.maxH };
+  }
+  if (place.slot === "hero") return { x: GRID.marginX, y: GRID.marginTop, w: 320, h: 80 };
+  return LOGO_RECTS[place.slot] ?? null;
 }
+
+/** data-block из превью → тип блока для панели настроек. */
+const BLOCK_BY_ATTR: Record<string, Kind> = {
+  title: "title",
+  subtitle: "subtitle",
+  body: "body",
+  brandLogo: "brand",
+  clientLogo: "client",
+};
 
 export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: SlideLayoutOverlayProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -40,13 +54,18 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   const [zone, setZone] = useState<string | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [selected, setSelected] = useState<Kind | null>(null);
+  // Рамка для «текстовых» блоков, выбранных двойным кликом (координаты холста).
+  const [partRect, setPartRect] = useState<Rect | null>(null);
   const grab = useRef({ dx: 0, dy: 0 });
   const moved = useRef(false);
 
   // Esc снимает выделение — как в Canva.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSelected(null);
+      if (e.key === "Escape") {
+        setSelected(null);
+        setPartRect(null);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -65,6 +84,17 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     if (kind === "price") return overrides.priceZone === "auto" ? null : overrides.priceZone;
     const o = kind === "brand" ? overrides.brandLogo : overrides.clientLogo;
     return o.zone === "auto" ? null : o.zone;
+  };
+
+  const isLogo = (kind: Kind): kind is "brand" | "client" => kind === "brand" || kind === "client";
+
+  /** Свободное перемещение логотипа: доли холста 1280×720. */
+  const moveLogoFree = (kind: "brand" | "client", x: number, y: number) => {
+    const key = kind === "brand" ? "brandLogo" : "clientLogo";
+    const cur = overrides[key];
+    onLayout({
+      [key]: { ...cur, zone: "auto", pos: { x: clampNum(x / SLIDE_W, 0, 1), y: clampNum(y / SLIDE_H, 0, 1) } },
+    } as Partial<SlideLayoutOverrides>);
   };
 
   const apply = (kind: Kind, zoneId: string) => {
@@ -99,7 +129,14 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     if (dragging !== kind) return;
     const p = toCanvas(e);
     moved.current = true;
-    setGhost({ x: p.x - grab.current.dx, y: p.y - grab.current.dy, w: rect.w, h: rect.h });
+    const nx = p.x - grab.current.dx;
+    const ny = p.y - grab.current.dy;
+    setGhost({ x: nx, y: ny, w: rect.w, h: rect.h });
+    // Логотип двигается свободно, без привязки к углам — как в Canva.
+    if (isLogo(kind)) {
+      moveLogoFree(kind, nx, ny);
+      return;
+    }
     const z = nearestZone(zonesFor(kind), p);
     if (z.id !== zone) {
       setZone(z.id);
@@ -111,19 +148,34 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   const endDrag = (kind: Kind) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
     // Простой клик без перетаскивания = выделение блока, зона не меняется.
-    if (moved.current) apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
+    if (moved.current && !isLogo(kind)) apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
+    if (moved.current && isLogo(kind)) {
+      const p = toCanvas(e);
+      moveLogoFree(kind, p.x - grab.current.dx, p.y - grab.current.dy);
+    }
     setDragging(null);
     setZone(null);
     setGhost(null);
   };
 
-  const startResize = (kind: "photo" | "text") => (e: ReactPointerEvent) => {
+  const startResize = (kind: "photo" | "text" | "brand" | "client") => (e: ReactPointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const target = e.target as HTMLElement;
     target.setPointerCapture?.(e.pointerId);
     const move = (ev: PointerEvent) => {
       const p = toCanvas(ev);
+      if (kind === "brand" || kind === "client") {
+        // Масштаб логотипа тянется за уголком рамки.
+        const key = kind === "brand" ? "brandLogo" : "clientLogo";
+        const cur = overrides[key];
+        const base = kind === "brand" ? plan.brand : plan.client;
+        if (!base) return;
+        const originX = base.slot === "free" ? (base.x ?? 0) : (logoRect(base)?.x ?? 0);
+        const raw = ((p.x - originX) / Math.max(40, base.maxW)) * (cur.scale ?? 1);
+        onLayout({ [key]: { ...cur, scale: clampNum(raw, LOGO_SCALE_MIN, LOGO_SCALE_MAX) } } as Partial<SlideLayoutOverrides>);
+        return;
+      }
       if (kind === "photo") {
         const box = fit.layout.photoBox;
         if (!box) return;
@@ -148,21 +200,48 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     { kind: "photo", rect: fit.layout.photoBox, label: "Фото", resizable: true },
     { kind: "text", rect: fit.layout.textBox, label: "Текст", resizable: true },
     { kind: "price", rect: fit.layout.priceBox, label: "Цена" },
-    { kind: "brand", rect: plan.brand ? logoRect(plan.brand.slot) : null, label: "Логотип" },
-    { kind: "client", rect: plan.client ? logoRect(plan.client.slot) : null, label: "Лого клиента" },
+    { kind: "brand", rect: logoRect(plan.brand), label: "Логотип", resizable: true },
+    { kind: "client", rect: logoRect(plan.client), label: "Лого клиента", resizable: true },
   ];
 
   const px = (v: number) => v * scale;
   const target = dragging ? zonesFor(dragging).find((z) => z.id === zone) : null;
   const selectedItem = selected ? items.find((it) => it.kind === selected && it.rect) : null;
-  const selRect = selectedItem?.rect ?? null;
+  const selRect = selectedItem?.rect ?? partRect;
+
+  /**
+   * Двойной клик: определяем реальный элемент под курсором (заголовок,
+   * подзаголовок, описание, логотип) и выделяем именно его — как в Canva.
+   */
+  const onDoubleClick = (e: ReactPointerEvent | React.MouseEvent) => {
+    const host = hostRef.current;
+    if (!host) return;
+    const el = document
+      .elementsFromPoint(e.clientX, e.clientY)
+      .find((n) => (n as HTMLElement).dataset?.block) as HTMLElement | undefined;
+    const kind = el ? BLOCK_BY_ATTR[el.dataset.block ?? ""] : undefined;
+    if (!kind) return;
+    e.stopPropagation();
+    const hr = host.getBoundingClientRect();
+    const r = el!.getBoundingClientRect();
+    setSelected(kind);
+    setPartRect(
+      kind === "brand" || kind === "client"
+        ? null
+        : { x: (r.left - hr.left) / scale, y: (r.top - hr.top) / scale, w: r.width / scale, h: r.height / scale },
+    );
+  };
 
   return (
     <div
       ref={hostRef}
       className="absolute inset-0 print:hidden"
       style={{ width: px(SLIDE_W), height: px(SLIDE_H) }}
-      onPointerDown={() => setSelected(null)}
+      onPointerDown={() => {
+        setSelected(null);
+        setPartRect(null);
+      }}
+      onDoubleClick={onDoubleClick}
     >
       {/* Подсвечивается только та зона, куда попадёт блок. */}
       {target && (
@@ -224,6 +303,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
             role="button"
             tabIndex={0}
             aria-label={`${it.label}: перетащите в нужную зону`}
+            onDoubleClick={onDoubleClick}
             onPointerDown={startDrag(it.kind, it.rect)}
             onPointerMove={onMove(it.kind, it.rect)}
             onPointerUp={endDrag(it.kind)}
@@ -250,7 +330,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
             </span>
             {it.resizable && (
               <span
-                onPointerDown={startResize(it.kind as "photo" | "text")}
+                onPointerDown={startResize(it.kind as "photo" | "text" | "brand" | "client")}
                 className="absolute -bottom-1.5 -right-1.5 h-3.5 w-3.5 cursor-nwse-resize rounded-full border border-background bg-primary opacity-0 transition group-hover:opacity-100"
                 style={{ touchAction: "none" }}
                 aria-hidden
