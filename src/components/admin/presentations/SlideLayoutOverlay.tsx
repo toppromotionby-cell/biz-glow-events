@@ -121,8 +121,17 @@ function useRenderedRects(
     const root = host?.closest("[data-slide-root]");
     const ro = root ? new ResizeObserver(() => measure()) : null;
     if (root && ro) ro.observe(root);
+    // Холст может смещаться без изменения размера (прокрутка, панели редактора) —
+    // подстраховываемся слушателями и лёгкой периодической сверкой.
+    const onView = () => measure();
+    window.addEventListener("scroll", onView, true);
+    window.addEventListener("resize", onView);
+    const timer = window.setInterval(measure, 400);
     return () => {
       window.cancelAnimationFrame(raf);
+      window.clearInterval(timer);
+      window.removeEventListener("scroll", onView, true);
+      window.removeEventListener("resize", onView);
       ro?.disconnect();
     };
   }, [measure, host, deps]);
