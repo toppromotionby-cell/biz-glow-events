@@ -6,7 +6,7 @@ import {
   type Presentation,
   type PresentationSlide,
 } from "@/lib/presentations/model";
-import { SLIDE_H, SLIDE_W } from "@/lib/presentations/design";
+import { SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 
