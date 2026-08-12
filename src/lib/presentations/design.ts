@@ -104,39 +104,123 @@ export type SlideThemeTokens = {
   accent: string;
   line: string;
   onAccent: string;
+  /** Цветовые стопы фона (для PDF/PPTX, которые не понимают CSS-градиент). */
+  bgStops: string[];
+  /** Угол градиента в градусах (135 = слева сверху вправо вниз). */
+  bgAngle: number;
 };
 
+type Palette = {
+  stops: string[];
+  angle?: number;
+  panel: string;
+  ink: string;
+  muted: string;
+  line: string;
+  /** null — берётся акцент документа. */
+  accent: string | null;
+  onAccent: string | null;
+};
+
+/** Палитры шаблонов. accent/onAccent = null → подставляется акцент документа. */
+function palette(template: PresentationTemplate, accent: string): Palette {
+  switch (template) {
+    case "dark":
+      return {
+        stops: ["#0f1115", "#0f1115"],
+        panel: "rgba(255,255,255,0.06)",
+        ink: "#f8fafc",
+        muted: "rgba(248,250,252,0.66)",
+        line: "rgba(255,255,255,0.14)",
+        accent: null,
+        onAccent: "#0f1115",
+      };
+    case "accent":
+      return {
+        stops: [accent, "#111827"],
+        panel: "rgba(255,255,255,0.12)",
+        ink: "#ffffff",
+        muted: "rgba(255,255,255,0.78)",
+        line: "rgba(255,255,255,0.24)",
+        accent: "#ffffff",
+        onAccent: accent,
+      };
+    case "night":
+      return {
+        stops: ["#141a3a", "#2b1e63", "#0d1230"],
+        angle: 135,
+        panel: "rgba(255,255,255,0.10)",
+        ink: "#f6f7ff",
+        muted: "rgba(233,236,255,0.74)",
+        line: "rgba(255,255,255,0.20)",
+        accent: null,
+        onAccent: "#12163a",
+      };
+    case "sunset":
+      return {
+        stops: ["#ff7a45", "#e4426d", "#7b2c8f"],
+        angle: 125,
+        panel: "rgba(255,255,255,0.16)",
+        ink: "#fffaf6",
+        muted: "rgba(255,244,238,0.82)",
+        line: "rgba(255,255,255,0.28)",
+        accent: "#ffe27a",
+        onAccent: "#5a1c47",
+      };
+    case "emerald":
+      return {
+        stops: ["#046e5a", "#0aa07f", "#03453f"],
+        angle: 130,
+        panel: "rgba(255,255,255,0.12)",
+        ink: "#f2fffb",
+        muted: "rgba(226,255,246,0.78)",
+        line: "rgba(255,255,255,0.22)",
+        accent: "#8ff0d0",
+        onAccent: "#04352c",
+      };
+    case "glow":
+      return {
+        stops: ["#ffffff", "#fdf3ec", "#eef2ff"],
+        angle: 120,
+        panel: "rgba(17,24,39,0.05)",
+        ink: "#141826",
+        muted: "#5b6478",
+        line: "rgba(20,24,38,0.12)",
+        accent: null,
+        onAccent: "#ffffff",
+      };
+    default:
+      return {
+        stops: ["#ffffff", "#ffffff"],
+        panel: "#f7f8fa",
+        ink: "#111827",
+        muted: "#6b7280",
+        line: "#e5e7eb",
+        accent: null,
+        onAccent: "#ffffff",
+      };
+  }
+}
+
+/** Палитра шаблона в «сыром» виде — для PDF и PPTX. */
+export function templatePalette(template: PresentationTemplate, accent: string): Palette {
+  return palette(template, accent);
+}
+
 export function slideTheme(template: PresentationTemplate, accent: string): SlideThemeTokens {
-  if (template === "dark") {
-    return {
-      bg: "#0f1115",
-      panel: "rgba(255,255,255,0.06)",
-      ink: "#f8fafc",
-      muted: "rgba(248,250,252,0.66)",
-      accent,
-      line: "rgba(255,255,255,0.14)",
-      onAccent: "#0f1115",
-    };
-  }
-  if (template === "accent") {
-    return {
-      bg: `linear-gradient(135deg, ${accent} 0%, #111827 100%)`,
-      panel: "rgba(255,255,255,0.12)",
-      ink: "#ffffff",
-      muted: "rgba(255,255,255,0.78)",
-      accent: "#ffffff",
-      line: "rgba(255,255,255,0.24)",
-      onAccent: accent,
-    };
-  }
+  const p = palette(template, accent);
+  const angle = p.angle ?? 135;
+  const flat = p.stops.every((c) => c === p.stops[0]);
   return {
-    bg: "#ffffff",
-    panel: "#f7f8fa",
-    ink: "#111827",
-    muted: "#6b7280",
-    accent,
-    line: "#e5e7eb",
-    onAccent: "#ffffff",
+    bg: flat ? p.stops[0] : `linear-gradient(${angle}deg, ${p.stops.join(", ")})`,
+    panel: p.panel,
+    ink: p.ink,
+    muted: p.muted,
+    accent: p.accent ?? accent,
+    line: p.line,
+    onAccent: p.onAccent ?? accent,
+    bgStops: p.stops,
+    bgAngle: angle,
   };
 }
 
