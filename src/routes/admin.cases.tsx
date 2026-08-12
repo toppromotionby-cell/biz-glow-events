@@ -25,6 +25,7 @@ import { useEditorHotkeys } from "@/lib/admin/use-editor-hotkeys";
 import { generateSeoDescription } from "@/lib/admin/seo";
 import { useListUrlState, matchesQuery } from "@/hooks/use-list-url-state";
 import { adminKeys } from "@/lib/query-keys";
+import { mapServerError, type FieldErrors } from "@/lib/admin/form-errors";
 import type { SaveState } from "@/components/admin/SaveStatus";
 
 // Поиск и выбранный кейс живут в URL — F5 и «назад» не сбрасывают работу.
@@ -171,6 +172,7 @@ function Editor({ item, onSaved, onDelete }: { item: CaseRow; onSaved: () => voi
   const [saving, setSaving] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
   const [servicesInput, setServicesInput] = useState((item.services_used ?? []).join(", "));
   const [metricsInput, setMetricsInput] = useState(JSON.stringify(item.metrics ?? {}, null, 2));
   const [metricsError, setMetricsError] = useState<string | null>(null);
