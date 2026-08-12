@@ -13,6 +13,8 @@ import { ProdHealthBanner } from "@/components/admin/ProdHealthBanner";
 import { AttentionPanel } from "@/components/admin/AttentionPanel";
 
 import { DEV_OVERLAYS_ENABLED } from "@/lib/debug-flags";
+import { useRoles } from "@/hooks/use-roles";
+import { adminKeys } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -30,8 +32,15 @@ const STATUS_LABEL: Record<string, string> = {
 const PIE_COLORS = ["#7c3aed", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#3b82f6", "#84cc16"];
 
 function AdminDashboard() {
+  // Этап 6: дашборд показывает операционные метрики только тем ролям, которым
+  // разрешены заказы. Контент-редактор видит витрину своих разделов вместо
+  // выручки и списка заявок (и запрос к orders вообще не выполняется).
+  const { can, loading: rolesLoading } = useRoles();
+  const canOrders = can("orders.manage");
+
   const { data } = useQuery({
-    queryKey: ["admin-stats-v2"],
+    queryKey: adminKeys.dashboardStats,
+    enabled: canOrders,
     queryFn: async () => {
       const since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
       const [allOrders, recent, posts] = await Promise.all([
@@ -105,6 +114,13 @@ function AdminDashboard() {
 
       {DEV_OVERLAYS_ENABLED && <ProdHealthBanner />}
 
+      {!canOrders && !rolesLoading && (
+        <div className="glass rounded-2xl p-5 text-sm text-muted-foreground">
+          Операционные метрики доступны ролям с доступом к заказам. Ниже — ваши разделы.
+        </div>
+      )}
+
+      {canOrders && <>
       <AttentionPanel />
 
 
@@ -202,8 +218,10 @@ function AdminDashboard() {
         </div>
       </div>
 
+      </>}
+
       <div className="grid sm:grid-cols-3 gap-3">
-        <Link to="/admin/orders" className="glass rounded-xl p-4 hover:border-primary/40 transition flex items-center gap-3">
+        {canOrders && <><Link to="/admin/orders" className="glass rounded-xl p-4 hover:border-primary/40 transition flex items-center gap-3">
           <ShoppingCart className="h-5 w-5 text-primary" />
           <div>
             <div className="font-medium">CRM</div>
@@ -216,7 +234,7 @@ function AdminDashboard() {
             <div className="font-medium">Календарь</div>
             <div className="text-xs text-muted-foreground">Даты мероприятий</div>
           </div>
-        </Link>
+        </Link></>}
         <Link to="/admin/blog" className="glass rounded-xl p-4 hover:border-primary/40 transition flex items-center gap-3">
           <Newspaper className="h-5 w-5 text-primary" />
           <div>
