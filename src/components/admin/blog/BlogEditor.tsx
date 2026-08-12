@@ -88,7 +88,15 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
       toast.success("Сохранено");
       onSaved();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => {
+      // Ошибку БД (например, занятый slug) отдаём в конкретное поле формы.
+      const mapped = mapServerError(e);
+      if (mapped.field && mapped.field in (initialValues as Record<string, unknown>)) {
+        setError(mapped.field as keyof BlogPostInput, { type: "server", message: mapped.message });
+      }
+      toast.error(mapped.message);
+    },
+
   });
 
   const tryClose = async () => {
