@@ -44,7 +44,13 @@ export type SlideType = "title" | "product" | "text" | "section" | "contacts";
 
 export type PresentationStatus = "draft" | "ready" | "archived";
 
-export type PresentationTemplate = "light" | "dark" | "accent";
+export type PresentationTemplate =
+  | "light" | "dark" | "accent"
+  | "night" | "sunset" | "emerald" | "glow";
+
+export const PRESENTATION_TEMPLATES: PresentationTemplate[] = [
+  "light", "dark", "accent", "night", "sunset", "emerald", "glow",
+];
 
 export const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
   title: "Титульный",
@@ -64,6 +70,10 @@ export const TEMPLATE_LABELS: Record<PresentationTemplate, string> = {
   light: "Светлый",
   dark: "Тёмный",
   accent: "Акцентный",
+  night: "Ночная волна",
+  sunset: "Закат",
+  emerald: "Изумруд",
+  glow: "Сияние",
 };
 
 export type SlideSpec = { label: string; value: string };
@@ -340,7 +350,7 @@ export function normalizePresentation(row: Record<string, unknown>): Presentatio
   const status = (["draft", "ready", "archived"] as const).includes(row.status as PresentationStatus)
     ? (row.status as PresentationStatus)
     : "draft";
-  const template = (["light", "dark", "accent"] as const).includes(row.template as PresentationTemplate)
+  const template = PRESENTATION_TEMPLATES.includes(row.template as PresentationTemplate)
     ? (row.template as PresentationTemplate)
     : "light";
   return {
