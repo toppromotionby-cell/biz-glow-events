@@ -205,7 +205,7 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
     },
     onMutate: () => { setSaveState("saving"); setErrorMessage(null); },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-testimonials"] });
+      qc.invalidateQueries({ queryKey: adminKeys.testimonials });
       clearDraft(draftKey);
       setSaveState("saved");
       toast.success("Сохранено");
