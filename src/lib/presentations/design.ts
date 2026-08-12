@@ -293,11 +293,22 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
 
   const contentTop = GRID.marginTop;
   const contentH = SLIDE_H - GRID.marginTop - GRID.footerH;
-  const align: SlideLayout["textAlign"] = ov.textZone === "auto" ? "top" : ov.textZone;
-  const widthK = ov.textWidth ?? 1;
+  const align: SlideLayout["textAlign"] = ov.stretchY
+    ? "top"
+    : ov.textZone === "auto" ? "top" : ov.textZone;
+  const alignX: SlideLayout["textAlignX"] = ov.alignX === "auto" ? "left" : ov.alignX;
+  const widthK = ov.stretchX ? 1 : (ov.textWidth ?? 1);
 
-  /** Ужимает текстовую колонку по ручной ширине, сохраняя левый край. */
-  const withWidth = (r: Rect): Rect => ({ ...r, w: Math.max(240, r.w * widthK) });
+  /**
+   * Ужимает текстовую колонку по ручной ширине и выравнивает её внутри
+   * доступной области по горизонтали (слева / по центру / справа).
+   */
+  const withWidth = (r: Rect): Rect => {
+    const w = Math.max(240, Math.min(r.w, r.w * widthK));
+    const free = r.w - w;
+    const dx = alignX === "center" ? free / 2 : alignX === "right" ? free : 0;
+    return { ...r, x: r.x + dx, w };
+  };
 
   const fullText: Rect = withWidth({
     x: GRID.marginX,
@@ -306,11 +317,14 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
     h: contentH,
   });
 
-  const done = (l: Omit<SlideLayout, "textAlign" | "priceBox">): SlideLayout => ({
+  const done = (l: Omit<SlideLayout, "textAlign" | "textAlignX" | "textFill" | "priceBox">): SlideLayout => ({
     ...l,
     textAlign: align,
+    textAlignX: alignX,
+    textFill: ov.stretchY,
     priceBox: priceRect(ov.priceZone, l.textBox),
   });
+
 
   if (!photos.length || mode === "none") {
     return done({ photos: [], placement: "none", photoBox: null, frames: [], textBox: fullText });
