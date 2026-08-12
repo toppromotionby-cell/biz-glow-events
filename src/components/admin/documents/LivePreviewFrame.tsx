@@ -67,21 +67,61 @@ export function LivePreviewFrame({
     const fix = doc.createElement("style");
     fix.textContent =
       "html,body{background:#fff!important;}body{zoom:1!important;padding:0!important;}" +
-      ".sheet{box-shadow:none!important;margin:0 auto!important;}";
+      ".sheet{box-shadow:none!important;margin:0 auto!important;}" +
+      "[data-edit]{cursor:pointer}[data-edit]:hover{outline:2px solid #2563eb;outline-offset:-2px}" +
+      "#edit-hint{position:fixed;z-index:9999;padding:2px 6px;border-radius:6px;background:#111;color:#fff;" +
+      "font:500 11px/1.4 system-ui,sans-serif;pointer-events:none;opacity:0;transition:opacity .12s}" +
+      "#edit-hint.on{opacity:1}";
     doc.head?.appendChild(fix);
+
+    // Подсказка «двойной клик» живёт в каркасе, поэтому не пропадает при
+    // обновлении содержимого и при включении правки уже после открытия.
+    if (!doc.getElementById("edit-hint")) {
+      const hint = doc.createElement("div");
+      hint.id = "edit-hint";
+      hint.textContent = "Двойной клик — редактировать";
+      doc.body?.appendChild(hint);
+    }
+    let currentHover: Element | null = null;
+    doc.addEventListener("mouseover", (e) => {
+      const hint = doc.getElementById("edit-hint");
+      if (!hint) return;
+      const target = e.target as Element | null;
+      const el = target?.closest?.("[data-edit]") ?? null;
+      if (el === currentHover) return;
+      currentHover = el;
+      if (!el) { hint.classList.remove("on"); return; }
+      const r = el.getBoundingClientRect();
+      hint.textContent = `${el.getAttribute("data-edit-label") || "Блок"} · двойной клик`;
+      hint.style.left = `${Math.max(6, r.left)}px`;
+      hint.style.top = `${Math.max(6, r.top - 20)}px`;
+      hint.classList.add("on");
+    });
+
     readyRef.current = true;
   }, []);
 
-  // Точечные обновления содержимого.
+  // Точечные обновления содержимого + выравнивание сетки таблиц.
   useEffect(() => {
     const t = window.setTimeout(() => {
       const doc = ref.current?.contentDocument;
       const mount = doc?.getElementById(MOUNT_ID);
       if (!doc || !mount) return;
       mount.innerHTML = bodyContent(html);
+      requestAnimationFrame(() => syncTableWidths(doc));
     }, UPDATE_MS);
     return () => window.clearTimeout(t);
   }, [html]);
 
+  // Ширина листа меняется вместе с панелями — пересчитываем колонки.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => syncTableWidths(el.contentDocument));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return <iframe ref={ref} title={title} className={className} style={style} />;
 }
+
