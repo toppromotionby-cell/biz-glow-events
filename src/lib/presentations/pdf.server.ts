@@ -221,6 +221,90 @@ function drawPlannedLogo(page: PDFPage, img: PDFImage, plan: LogoPlacementPlan):
   }
 }
 
+/** Дата на титульном слайде — тот же формат, что и в превью. */
+function formatSlideDate(): string {
+  return new Date().toLocaleDateString("ru-RU");
+}
+
+/** Плавное затемнение снизу для фото на весь слайд (как градиент в превью). */
+function drawBottomShade(page: PDFPage): void {
+  const bands = 48;
+  const top = H * (1 - FULL_BLEED_SHADE.from);
+  const h = top / bands;
+  for (let i = 0; i < bands; i += 1) {
+    const p = (i + 1) / bands;
+    page.drawRectangle({
+      x: 0,
+      y: top - (i + 1) * h,
+      width: W,
+      height: h + 0.6,
+      color: rgb(0, 0, 0),
+      opacity: FULL_BLEED_SHADE.alpha * p,
+    });
+  }
+}
+
+/** Рисует блоки общего спека слайда (координаты холста 1280×720 → points). */
+function drawSpecBlocks(
+  page: PDFPage,
+  blocks: SpecBlock[],
+  t: Theme,
+  fonts: { regular: PDFFont; bold: PDFFont; display: PDFFont },
+  logo: PDFImage | null,
+): void {
+  const K = W / SLIDE_W;
+  const paint = (c: "ink" | "muted" | "accent" | "onAccent" | "panel") =>
+    c === "ink" ? t.ink : c === "muted" ? t.muted : c === "accent" ? t.accent : c === "onAccent" ? t.onAccent : t.panel;
+
+  for (const b of blocks) {
+    if (b.kind === "circle") {
+      page.drawCircle({
+        x: b.cx * K,
+        y: H - b.cy * K,
+        size: b.r * K,
+        color: paint(b.color),
+        opacity: b.opacity,
+      });
+      continue;
+    }
+    if (b.kind === "rect") {
+      page.drawRectangle({
+        x: b.x * K,
+        y: H - (b.y + b.h) * K,
+        width: b.w * K,
+        height: b.h * K,
+        color: paint(b.color),
+        opacity: b.opacity ?? 1,
+      });
+      continue;
+    }
+    if (b.kind === "logo") {
+      if (!logo) continue;
+      const maxW = b.w * K;
+      const maxH = b.h * K;
+      const k = Math.min(maxW / logo.width, maxH / logo.height);
+      const w = logo.width * k;
+      const h = logo.height * k;
+      page.drawImage(logo, { x: b.x * K, y: H - b.y * K - h, width: w, height: h });
+      continue;
+    }
+
+    const font = b.font === "display" ? fonts.display : b.weight >= 600 ? fonts.bold : fonts.regular;
+    const size = b.size * K;
+    const width = b.w * K;
+    const text = b.uppercase ? b.text.toUpperCase() : b.text;
+    let y = H - b.y * K - size;
+    for (const line of wrap(font, text, size, width)) {
+      const lw = font.widthOfTextAtSize(line, size);
+      const dx = b.align === "center" ? (width - lw) / 2 : b.align === "right" ? width - lw : 0;
+      page.drawText(line, { x: b.x * K + dx, y, size, font, color: paint(b.color) });
+      y -= size * b.lineHeight;
+    }
+  }
+}
+
+
+
 type DrawArgs = {
   page: PDFPage;
   slide: ResolvedSlide;
