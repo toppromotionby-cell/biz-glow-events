@@ -1,7 +1,7 @@
 // Таблица позиций промо-КП: секции, drag-n-drop, подытоги, быстрые действия.
 import { useMemo, useState } from "react";
 import {
-  Copy, Plus, Trash2, MoreHorizontal, ChevronDown, ChevronRight, ChevronUp, Bookmark, ListChecks, FolderInput,
+  Copy, Plus, Trash2, MoreHorizontal, ChevronDown, ChevronRight, ChevronUp, Bookmark, ListChecks, FolderInput, LibraryBig,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,8 @@ import {
   movePromoItemToSection, movePromoSection, newPromoItem, reindexPromo, removePromoSection, renamePromoSection,
   PROMO_NO_SECTION, PROMO_SECTION_SUGGESTIONS, type PromoItem,
 } from "@/lib/promo-quote-model";
+import { CatalogPickerDialog, type CatalogPickResult } from "@/components/admin/CatalogPickerDialog";
+import { pickToDocLine, type IncludesMode } from "@/lib/catalog-pick";
 
 
 
@@ -42,6 +44,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [includesFor, setIncludesFor] = useState<PromoItem | null>(null);
   const [deleteSection, setDeleteSection] = useState<string | null>(null);
+  const [catalogFor, setCatalogFor] = useState<string | null>(null);
 
   const sectionNames = useMemo(() => listPromoSections(items), [items]);
   const sections = useMemo(
@@ -99,11 +102,44 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
     onChange(items.map((it) => ((it.section ?? "").trim() === name ? ordered[cursor++] ?? it : it)));
   };
 
+  /** Вставка позиций каталога сайта в указанный раздел. */
+  const addFromCatalog = (
+    section: string,
+    picks: CatalogPickResult[],
+    opts: { includesMode: IncludesMode },
+  ) => {
+    const created = picks.map(({ pick, price }) => {
+      const line = pickToDocLine(pick, { price, includesMode: opts.includesMode });
+      return newPromoItem(section, {
+        title: line.title,
+        unit: line.unit,
+        qty: line.qty,
+        price: line.price,
+        note: line.description.slice(0, 2000),
+        includes: line.includes,
+      });
+    });
+    onChange(insertPromoItems(items, section, created));
+  };
+
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => setCatalogFor(sectionNames[0] ?? PROMO_NO_SECTION)}>
+          <LibraryBig className="mr-1.5 h-4 w-4" />Из каталога
+        </Button>
+      </div>
+
+      <CatalogPickerDialog
+        open={catalogFor !== null}
+        onOpenChange={(v) => setCatalogFor(v ? catalogFor : null)}
+        mode="doc"
+        onConfirm={(picks, opts) => addFromCatalog(catalogFor ?? PROMO_NO_SECTION, picks, opts)}
+      />
+
       {sections.length === 0 && (
         <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          Пока нет позиций. Добавьте первую строку — подсказки подставятся из базы знаний.
+          Пока нет позиций. Добавьте первую строку или подтяните их из каталога сайта.
         </div>
       )}
 
