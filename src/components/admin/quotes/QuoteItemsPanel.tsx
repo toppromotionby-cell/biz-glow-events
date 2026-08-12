@@ -198,9 +198,10 @@ export function QuoteItemsPanel({
                   <div
                     key={it.id}
                     data-item-id={it.id}
-                    className={`px-2 py-2 ${
-                      rowLevel === "error" ? "bg-destructive/5 border-l-2 border-l-destructive"
-                        : rowLevel === "warn" ? "bg-amber-500/5 border-l-2 border-l-amber-500" : ""
+                    className={`m-1 rounded-lg border px-2 py-2 transition-colors ${
+                      rowLevel === "error" ? "border-destructive/40 bg-destructive/5 border-l-2 border-l-destructive"
+                        : rowLevel === "warn" ? "border-amber-500/40 bg-amber-500/5 border-l-2 border-l-amber-500"
+                        : "border-border/60 hover:border-primary/40 hover:bg-primary/5"
                     }`}
                   >
                     <div className="flex items-center gap-1">
