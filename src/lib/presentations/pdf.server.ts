@@ -411,7 +411,16 @@ async function drawSlide(a: DrawArgs) {
 
   fit.layout.frames.forEach((f, i) => {
     const image = images[i];
-    if (!image) return;
+    if (!image) {
+      // Фото не загрузилось — вместо пустоты аккуратная плашка,
+      // чтобы композиция слайда не разъезжалась.
+      page.drawRectangle({
+        x: px(f.x), y: H - px(f.y) - px(f.h), width: px(f.w), height: px(f.h),
+        color: t.card, borderColor: t.line, borderWidth: 1,
+      });
+      return;
+    }
+
     const fw = px(f.w);
     const fh = px(f.h);
     const k = Math.max(fw / image.width, fh / image.height);
