@@ -464,8 +464,8 @@ function Page() {
       company={company}
       template={meta.template}
       presentationTitle={meta.title}
-      horizontal={isMobile}
-      onSelect={(sid) => { setSelected(sid); setMobileTab("slide"); }}
+      horizontal={false}
+      onSelect={(sid) => { setSelected(sid); setSelectedBlock(null); }}
       onMove={move}
       onReorder={reorder}
       onDuplicate={duplicateSlide}
@@ -474,85 +474,122 @@ function Page() {
     />
   );
 
-  const addSlideButton = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full">
-          <Plus className="mr-1.5 h-4 w-4" />Добавить слайд
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        {(Object.keys(SLIDE_TYPE_LABELS) as SlideType[]).map((t) => (
-          <DropdownMenuItem key={t} onClick={() => addSlide(t)}>
-            {SLIDE_TYPE_LABELS[t]}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
-  const canvas = current ? (
-    <div className="rounded-xl border border-border/60 p-3">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span className="tabular-nums">Слайд {currentIndex + 1} из {slides.length}</span>
-        <div className="flex items-center gap-2">
-          <span>{SLIDE_TYPE_LABELS[current.type]}{current.is_visible ? "" : " · скрыт"}</span>
-          {layoutMode && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              disabled={!canUndoLayout}
-              onClick={undoLayout}
+  /* ---------- Разделы левого рельса ---------- */
+  const slidesPanel = (
+    <div className="space-y-3">
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-muted-foreground">Добавить слайд</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {(Object.keys(SLIDE_TYPE_LABELS) as SlideType[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => addSlide(t)}
+              className="rounded-lg border border-border/60 bg-muted/20 px-2 py-3 text-left text-xs font-medium transition hover:border-primary hover:bg-primary/5"
             >
-              <Undo2 className="mr-1 h-3.5 w-3.5" />Отменить
-            </Button>
-          )}
-          <Button
-            variant={layoutMode ? "default" : "outline"}
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={() => setLayoutMode((v) => !v)}
-          >
-            {layoutMode ? "Готово" : "Правка раскладки"}
-          </Button>
+              <Plus className="mb-1 h-3.5 w-3.5 text-primary" />
+              {SLIDE_TYPE_LABELS[t]}
+            </button>
+          ))}
         </div>
       </div>
-      <SlideCanvas
-        slide={current}
-        company={company}
-        template={meta.template}
-        presentationTitle={meta.title}
-        width={Math.max(320, canvasWidth - 32)}
-        index={currentIndex}
-        total={slides.length}
-        showWarnings
-        onEdit={layoutMode ? undefined : (patch) => patchSlide(current.id, patch)}
-        interactive={layoutMode}
-        onLayout={(patch) => patchLayout(current.id, current.content.layout, patch)}
-        {...branding}
-      />
-      <p className="mt-2 text-xs text-muted-foreground">
-        {layoutMode
-          ? "Перетащите блок — слайд соберётся сам. Угловой маркер меняет размер, Ctrl/Cmd + Z отменяет."
-          : "Заголовок и подзаголовок правятся прямо на слайде. Сохранение — Ctrl/Cmd + S."}
-      </p>
-    </div>
-  ) : (
-    <div className="rounded-xl border border-dashed border-border/60 p-10 text-center text-sm text-muted-foreground">
-      {slides.length ? "Выберите слайд в списке" : "Пока нет слайдов — добавьте первый"}
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-muted-foreground">Слайды презентации</p>
+        {rail}
+      </div>
     </div>
   );
 
-  const settings = current ? (
-    <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} />
-  ) : (
-    <div className="text-sm text-muted-foreground">Слайд не выбран</div>
+  const designPanel = (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label>Оформление</Label>
+        <Select value={meta.template} onValueChange={(v) => patchMeta({ template: v as PresentationTemplate })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(TEMPLATE_LABELS) as PresentationTemplate[]).map((t) => (
+              <SelectItem key={t} value={t}>{TEMPLATE_LABELS[t]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <DocFontSelect
+        value={meta.font_family}
+        onChange={(font_family) => patchMeta({ font_family })}
+        hint="Шрифт применяется ко всей презентации: превью, PDF и показ."
+      />
+      <PresentationBrandingPanel
+        logoUrl={meta.logo_url}
+        clientLogoUrl={meta.client_logo_url}
+        layout={meta.logo_layout}
+        onChange={(patch) => patchMeta(patch)}
+      />
+    </div>
   );
+
+  const docPanel = (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="p-title">Название</Label>
+        <Input
+          id="p-title"
+          value={meta.title}
+          aria-invalid={!meta.title.trim()}
+          onChange={(e) => patchMeta({ title: e.target.value })}
+        />
+      </div>
+      <CompanySelect value={meta.company_id} onChange={(companyId) => patchMeta({ company_id: companyId })} />
+      <div className="space-y-1.5">
+        <Label>Статус</Label>
+        <Select value={meta.status} onValueChange={(v) => patchMeta({ status: v as PresentationStatus })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(STATUS_LABELS) as PresentationStatus[]).map((s) => (
+              <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-primary"
+          checked={autosave}
+          onChange={(e) => setAutosave(e.target.checked)}
+        />
+        Автосохранение (через 3 секунды после правки)
+      </label>
+      <DocStatusBar checks={statusChecks} okLabel="Презентация готова к показу" />
+    </div>
+  );
+
+  const checkPanel = (
+    <PresentationCheckPanel
+      check={check}
+      hasQuote={!!data?.quote}
+      onAddMissing={(items) => addMissing.mutate(items)}
+      onSelectSlide={setSelected}
+      onRemoveSlide={(sid) => void askRemoveSlide(sid)}
+    />
+  );
+
+  const sections: EditorSection[] = [
+    { id: "slides", label: "Слайды", Icon: Layers, content: slidesPanel },
+    { id: "design", label: "Дизайн", Icon: Palette, content: designPanel },
+    { id: "doc", label: "Документ", Icon: FileText, content: docPanel },
+    {
+      id: "check",
+      label: "Сверка",
+      Icon: ListChecks,
+      dot: !!data?.quote && check.status !== "synced",
+      content: checkPanel,
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <div className="fixed inset-0 z-30 flex flex-col bg-background">
+      {/* Верхняя панель */}
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <Button
             variant="ghost"
@@ -565,7 +602,7 @@ function Page() {
           <div className="min-w-0">
             <Input
               aria-label="Название презентации"
-              className="h-9 w-full min-w-[220px] border-transparent bg-transparent px-0 text-lg font-semibold focus-visible:border-border focus-visible:px-2 sm:min-w-[320px]"
+              className="h-8 w-full min-w-[200px] border-transparent bg-transparent px-0 text-base font-semibold focus-visible:border-border focus-visible:px-2 sm:min-w-[300px]"
               value={meta.title}
               onChange={(e) => patchMeta({ title: e.target.value })}
             />
@@ -575,11 +612,7 @@ function Page() {
               </StatusPill>
               <span>{slides.length} слайдов{visibleCount !== slides.length ? ` · ${visibleCount} видимых` : ""}</span>
               {data?.quote && (
-                <Link
-                  to="/admin/documents/quotes/$id"
-                  params={{ id: data.quote.id }}
-                  className="hover:text-primary"
-                >
+                <Link to="/admin/documents/quotes/$id" params={{ id: data.quote.id }} className="hover:text-primary">
                   КП {data.quote.number}
                 </Link>
               )}
@@ -590,11 +623,12 @@ function Page() {
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" size="sm" disabled={!canUndoLayout} onClick={undoLayout}>
+            <Undo2 className="mr-1.5 h-4 w-4" />Отменить
+          </Button>
           <Button
-            variant="outline"
-            size="sm"
-            disabled={!visibleCount}
+            variant="outline" size="sm" disabled={!visibleCount}
             title={visibleCount ? undefined : "Нет видимых слайдов"}
             onClick={() => setPresenting(true)}
           >
@@ -604,150 +638,122 @@ function Page() {
             <Download className="mr-1.5 h-4 w-4" />PDF
           </Button>
           <Button size="sm" disabled={save.isPending || !dirty} onClick={() => save.mutate()}>
-            {save.isPending
-              ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              : <Save className="mr-1.5 h-4 w-4" />}
+            {save.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
             {save.isPending ? "Сохраняем…" : "Сохранить"}
           </Button>
         </div>
       </header>
 
-      <DocStatusBar checks={statusChecks} className="mb-3" okLabel="Презентация готова к показу" />
+      <div className="flex min-h-0 flex-1">
+        {/* Левый рельс с панелями */}
+        <div className="hidden min-h-0 md:flex">
+          <EditorSidebar sections={sections} active={sidebar} onChange={setSidebar} />
+        </div>
 
-      <Tabs defaultValue="slides">
-        <TabsList>
-          <TabsTrigger value="slides">Слайды</TabsTrigger>
-          <TabsTrigger value="settings">Оформление</TabsTrigger>
-          <TabsTrigger value="check">
-            Сверка с КП
-            {data?.quote && check.status !== "synced" && (
-              <span className="ml-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" />
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="slides" className="mt-4">
-          {isMobile ? (
-            <div className="space-y-3">
-              {rail}
-              {addSlideButton}
-              <div className="inline-flex w-full gap-1 rounded-lg border border-border/60 p-1">
-                <Button
-                  size="sm"
-                  className="flex-1"
-                  variant={mobileTab === "slide" ? "secondary" : "ghost"}
-                  onClick={() => setMobileTab("slide")}
-                >
-                  Слайд
-                </Button>
-                <Button
-                  size="sm"
-                  className="flex-1"
-                  variant={mobileTab === "settings" ? "secondary" : "ghost"}
-                  onClick={() => setMobileTab("settings")}
-                >
-                  Настройки
-                </Button>
-              </div>
-              {mobileTab === "slide" ? (
-                <div ref={canvasWrap} className="min-w-0">{canvas}</div>
-              ) : (
-                <div className="rounded-xl border border-border/60 p-4">{settings}</div>
+        {/* Центр: холст и статус-строка */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {current ? (
+            <CanvasStage
+              zoom={zoom}
+              onBackgroundClick={() => { setSelectedBlock(null); setTextEditing(false); }}
+            >
+              {(width) => (
+                <SlideCanvas
+                  slide={current}
+                  company={company}
+                  template={meta.template}
+                  presentationTitle={meta.title}
+                  width={width}
+                  index={currentIndex}
+                  total={slides.length}
+                  showWarnings
+                  onEdit={(patch) => patchSlide(current.id, patch)}
+                  interactive
+                  textEditing={textEditing}
+                  selectedBlock={selectedBlock}
+                  onSelectBlock={(k) => { setSelectedBlock(k); if (!k) setTextEditing(false); }}
+                  onTextEdit={() => setTextEditing(true)}
+                  floatingToolbar={isMobile}
+                  onLayout={(patch) => patchLayout(current.id, current.content.layout, patch)}
+                  {...branding}
+                />
               )}
-            </div>
+            </CanvasStage>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)_320px]">
-              <div className="space-y-2">
-                {rail}
-                {addSlideButton}
-              </div>
-              <div ref={canvasWrap} className="min-w-0">{canvas}</div>
-              <div className="max-h-[70vh] overflow-y-auto rounded-xl border border-border/60 p-4">
-                {settings}
-              </div>
+            <div className="flex flex-1 items-center justify-center bg-muted/40 p-10 text-center text-sm text-muted-foreground">
+              {slides.length ? "Выберите слайд слева" : "Пока нет слайдов — добавьте первый в разделе «Слайды»"}
             </div>
           )}
-        </TabsContent>
 
-        <TabsContent value="settings" className="mt-4">
-          <div className="grid max-w-xl gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="p-title">Название</Label>
-              <Input
-                id="p-title"
-                value={meta.title}
-                aria-invalid={!meta.title.trim()}
-                onChange={(e) => patchMeta({ title: e.target.value })}
-              />
-              {!meta.title.trim() && (
-                <p className="text-xs text-destructive">Без названия презентация сохранится как «Без названия»</p>
-              )}
-            </div>
-            <CompanySelect
-              value={meta.company_id}
-              onChange={(companyId) => patchMeta({ company_id: companyId })}
-            />
-            <DocFontSelect
-              value={meta.font_family}
-              onChange={(font_family) => patchMeta({ font_family })}
-              hint="Шрифт применяется ко всей презентации: превью, PDF и показ."
-            />
-            <PresentationBrandingPanel
-              logoUrl={meta.logo_url}
-              clientLogoUrl={meta.client_logo_url}
-              layout={meta.logo_layout}
-              onChange={(patch) => patchMeta(patch)}
-            />
-            <div className="space-y-1.5">
-              <Label>Оформление</Label>
-              <Select
-                value={meta.template}
-                onValueChange={(v) => patchMeta({ template: v as PresentationTemplate })}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(TEMPLATE_LABELS) as PresentationTemplate[]).map((t) => (
-                    <SelectItem key={t} value={t}>{TEMPLATE_LABELS[t]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Статус</Label>
-              <Select
-                value={meta.status}
-                onValueChange={(v) => patchMeta({ status: v as PresentationStatus })}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(STATUS_LABELS) as PresentationStatus[]).map((s) => (
-                    <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-primary"
-                checked={autosave}
-                onChange={(e) => setAutosave(e.target.checked)}
-              />
-              Автосохранение (через 3 секунды после правки)
-            </label>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="check" className="mt-4">
-          <PresentationCheckPanel
-            check={check}
-            hasQuote={!!data?.quote}
-            onAddMissing={(items) => addMissing.mutate(items)}
-            onSelectSlide={setSelected}
-            onRemoveSlide={(sid) => void askRemoveSlide(sid)}
+          <EditorStatusBar
+            index={currentIndex < 0 ? 0 : currentIndex}
+            total={slides.length}
+            zoom={zoom}
+            onZoom={setZoom}
+            onPrev={() => { const p = slides[currentIndex - 1]; if (p) setSelected(p.id); }}
+            onNext={() => { const n = slides[currentIndex + 1]; if (n) setSelected(n.id); }}
+            onGrid={() => setGridOpen(true)}
+            hint="Клик — выделить блок, двойной клик — править текст, стрелки двигают логотип, Ctrl/Cmd + Z — отмена."
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        {/* Правая панель свойств */}
+        {!isMobile && (
+          <aside className="hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-border/60 p-4 lg:flex">
+            {current ? (
+              <div className="space-y-4">
+                {selectedBlock && (
+                  <div className="rounded-lg border border-border/60 p-2">
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">Выбранный блок</p>
+                    <BlockToolbar
+                      kind={selectedBlock}
+                      layout={current.content.layout}
+                      onChange={(patch) => patchLayout(current.id, current.content.layout, patch)}
+                      onClose={() => setSelectedBlock(null)}
+                    />
+                  </div>
+                )}
+                <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Слайд не выбран</p>
+            )}
+          </aside>
+        )}
+      </div>
+
+      {/* Обзор всех слайдов сеткой */}
+      <Dialog open={gridOpen} onOpenChange={setGridOpen}>
+        <DialogContent className="max-h-[85vh] max-w-5xl overflow-y-auto">
+          <DialogHeader><DialogTitle>Все слайды</DialogTitle></DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {slides.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`overflow-hidden rounded-lg border text-left transition ${
+                  s.id === selected ? "border-primary ring-2 ring-primary/30" : "border-border/60 hover:border-primary/60"
+                }`}
+                onClick={() => { setSelected(s.id); setGridOpen(false); }}
+              >
+                <SlideCanvas
+                  slide={s}
+                  company={company}
+                  template={meta.template}
+                  presentationTitle={meta.title}
+                  width={280}
+                  index={i}
+                  total={slides.length}
+                  {...branding}
+                />
+                <span className="block px-2 py-1 text-xs text-muted-foreground">
+                  {i + 1}. {s.title || SLIDE_TYPE_LABELS[s.type]}{s.is_visible ? "" : " · скрыт"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <PresentationFullscreen
         open={presenting}
@@ -764,3 +770,4 @@ function Page() {
     </div>
   );
 }
+
