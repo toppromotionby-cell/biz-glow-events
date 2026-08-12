@@ -2077,6 +2077,7 @@ export type Database = {
           company: string | null
           consent_pd: boolean
           created_at: string
+          editor_prefs: Json
           email: string
           full_name: string
           id: string
@@ -2087,6 +2088,7 @@ export type Database = {
           company?: string | null
           consent_pd?: boolean
           created_at?: string
+          editor_prefs?: Json
           email: string
           full_name: string
           id: string
@@ -2097,6 +2099,7 @@ export type Database = {
           company?: string | null
           consent_pd?: boolean
           created_at?: string
+          editor_prefs?: Json
           email?: string
           full_name?: string
           id?: string
