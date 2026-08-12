@@ -1,7 +1,9 @@
 // Админка промокодов.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
+import type { SaveState } from "@/components/admin/SaveStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +113,17 @@ function Page() {
 function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState<Row>(row);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  // Возврат к другой записи в списке — сбрасываем форму и статус.
+  useEffect(() => {
+    setF(row);
+    setSaveState("idle");
+  }, [row]);
+
+  const patch = (p: Partial<Row>) => {
+    setF((prev) => ({ ...prev, ...p }));
+    setSaveState("dirty");
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -128,26 +141,52 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       const { error } = await supabase.from("promo_codes").update(patch).eq("id", row.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-promo"] }); toast.success("Сохранено"); },
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: () => setSaveState("saving"),
+    onSuccess: () => {
+      setSaveState("saved");
+      qc.invalidateQueries({ queryKey: ["admin-promo"] });
+      toast.success("Сохранено");
+    },
+    onError: (e: Error) => {
+      setSaveState("error");
+      toast.error(e.message);
+    },
   });
 
+  // Защита от потери правок: и при переходах внутри админки, и при закрытии вкладки.
+  const { guardDialog } = useUnsavedGuard(saveState === "dirty" || saveState === "error");
+
+  // Ctrl/Cmd+S — сохранить сразу, как в остальных редакторах.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s")) return;
+      e.preventDefault();
+      if (!save.isPending) save.mutate();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [save]);
+
   return (
+    <>
+    {guardDialog}
     <AdminEditorShell
       title={<span className="font-mono text-xl">{f.code}</span>}
       switches={
         <label className="flex items-center gap-2 text-sm">
-          <Switch checked={!!f.active} onCheckedChange={(v) => setF({ ...f, active: v })} /> Активен
+          <Switch checked={!!f.active} onCheckedChange={(v) => patch({ active: v })} /> Активен
         </label>
       }
       onDelete={onDelete}
       onSave={() => save.mutate()}
       saving={save.isPending}
+      saveState={saveState}
+      errorMessage={save.error instanceof Error ? save.error.message : null}
     >
       <div className="grid md:grid-cols-2 gap-4">
-        <Field label="Код" required><Input value={f.code ?? ""} onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase() })} className="font-mono" /></Field>
+        <Field label="Код" required><Input value={f.code ?? ""} onChange={(e) => patch({ code: e.target.value.toUpperCase() })} className="font-mono" /></Field>
         <Field label="Тип скидки" required>
-          <Select value={f.discount_type} onValueChange={(v) => setF({ ...f, discount_type: v })}>
+          <Select value={f.discount_type} onValueChange={(v) => patch({ discount_type: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="percent">Процент (%)</SelectItem>
@@ -155,17 +194,19 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => setF({ ...f, discount_value: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => setF({ ...f, min_order_total: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Действует с"><Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => setF({ ...f, valid_from: e.target.value })} /></Field>
-        <Field label="Действует до"><Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => setF({ ...f, valid_to: e.target.value })} /></Field>
-        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => setF({ ...f, max_uses: e.target.value ? Number(e.target.value) : null })} /></Field>
+        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => patch({ discount_value: Number(e.target.value) || 0 })} /></Field>
+        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => patch({ min_order_total: Number(e.target.value) || 0 })} /></Field>
+        <Field label="Действует с"><Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_from: e.target.value })} /></Field>
+        <Field label="Действует до"><Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_to: e.target.value })} /></Field>
+        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => patch({ max_uses: e.target.value ? Number(e.target.value) : null })} /></Field>
         <Field label="Использовано"><Input value={f.used_count ?? 0} readOnly className="opacity-70" /></Field>
       </div>
 
       <Field label="Описание" hint="Для внутреннего использования">
-        <Textarea rows={3} value={f.description ?? ""} onChange={(e) => setF({ ...f, description: e.target.value })} />
+        <Textarea rows={3} value={f.description ?? ""} onChange={(e) => patch({ description: e.target.value })} />
       </Field>
     </AdminEditorShell>
+    </>
   );
 }
+

@@ -18,6 +18,7 @@ import { blogPostSchema, type BlogPostInput } from "@/lib/admin/schemas";
 import { useSlugUnique } from "@/lib/admin/use-slug-unique";
 import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
+import { SaveStatus } from "@/components/admin/SaveStatus";
 import { slugify, cn } from "@/lib/utils";
 
 type EditorProps = {
@@ -127,10 +128,11 @@ export function BlogEditor({ initial, onClose, onSaved }: EditorProps) {
           {initial.id ? "Редактировать" : "Новая запись"}
         </h2>
         <SaveStatus
-          isDirty={formState.isDirty}
-          isSaving={save.isPending}
-          isError={save.isError}
-          savedAt={savedAt}
+          state={
+            save.isError ? "error" : save.isPending ? "saving" : formState.isDirty ? "dirty" : savedAt ? "saved" : "idle"
+          }
+          draftSavedAt={savedAt}
+          errorMessage={save.error instanceof Error ? save.error.message : null}
         />
       </div>
 
@@ -269,19 +271,4 @@ function SlugHintLine({ status }: { status: ReturnType<typeof useSlugUnique> }) 
   if (status === "taken") return <span className="inline-flex items-center gap-1 text-destructive"><X className="h-3 w-3" />Занят</span>;
   if (status === "error") return <span className="text-muted-foreground">Не удалось проверить</span>;
   return <span className="text-muted-foreground">URL: /blog/&lt;slug&gt;</span>;
-}
-
-function SaveStatus({ isDirty, isSaving, isError, savedAt }:
-  { isDirty: boolean; isSaving: boolean; isError: boolean; savedAt: Date | null }) {
-  let label = "Без изменений";
-  let cls = "text-muted-foreground";
-  if (isError) { label = "Ошибка сохранения"; cls = "text-destructive"; }
-  else if (isSaving) { label = "Сохраняю…"; cls = "text-muted-foreground"; }
-  else if (isDirty) {
-    label = savedAt
-      ? `Черновик · ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-      : "Не сохранено";
-    cls = "text-amber-500";
-  }
-  return <span className={cn("text-xs", cls)}>{label}</span>;
 }
