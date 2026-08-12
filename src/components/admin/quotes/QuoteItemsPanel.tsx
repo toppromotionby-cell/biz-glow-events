@@ -21,6 +21,8 @@ import {
 } from "@/lib/quotes-model";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
 import { NumField, TextCommitField } from "@/components/admin/field-kit";
+import { SuggestInput } from "@/components/admin/SuggestInput";
+import { useDocSuggest, type ItemHit } from "@/hooks/use-doc-suggest";
 
 function Mini({ label, width, children }: { label: string; width: string; children: ReactNode }) {
   return (
@@ -209,11 +211,28 @@ export function QuoteItemsPanel({
                         </button>
                       </div>
                       <div className="flex-1">
-                        <Input
+                        <SuggestInput<ItemHit>
                           value={it.title}
-                          onChange={(e) => replace(it.id, { title: e.target.value })}
+                          onChange={(v) => replace(it.id, { title: v })}
+                          fetcher={(term) => fetchItems(term, section)}
+                          labelOf={(h) => h.title}
+                          onPick={(h) =>
+                            replace(it.id, {
+                              title: h.title,
+                              unit: h.unit || it.unit,
+                              price: h.price || it.price,
+                              cost: h.cost || it.cost,
+                              description: h.description || it.description,
+                              includes: h.includes.length ? h.includes : it.includes,
+                            })
+                          }
+                          render={(h) => (
+                            <span className="flex items-center justify-between gap-2">
+                              <span className="truncate">{h.title}</span>
+                              <span className="shrink-0 text-xs text-muted-foreground">{fmtMoney(h.price)}</span>
+                            </span>
+                          )}
                           placeholder="Наименование позиции"
-                          aria-label="Наименование позиции"
                           className="h-9"
                         />
                       </div>
