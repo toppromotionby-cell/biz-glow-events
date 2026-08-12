@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { slideLayout, SLIDE_W } from "@/lib/presentations/design";
+import { rectsOverlap, slideLayout, SLIDE_W } from "@/lib/presentations/design";
 import { planSlideLogos } from "@/lib/presentations/logo-plan";
 import {
   DEFAULT_PRESENTATION_LOGO_LAYOUT, blankSlide, normalizeContent,
@@ -113,5 +113,42 @@ describe("выравнивание блоков на слайде", () => {
       expect(t.x + t.w).toBeLessThanOrEqual(SLIDE_W);
       expect(p.x < t.x + t.w && p.x + p.w > t.x).toBe(false);
     }
+  });
+});
+
+describe("сборка слайда без наложений", () => {
+  it("блок цены не попадает на фото ни при одной зоне", () => {
+    for (const photoZone of ["left", "right", "top"] as const) {
+      for (const priceZone of ["under-text", "corner", "beside-photo"] as const) {
+        const l = slideLayout(slideWith({ photoZone, priceZone }));
+        const p = l.priceBox!;
+        expect(p).not.toBeNull();
+        expect(rectsOverlap(p, l.photoBox!, 12)).toBe(false);
+      }
+    }
+  });
+
+  it("текстовая колонка ужимается под блоком цены", () => {
+    const plain = slideLayout(slideWith({ photoZone: "none" }));
+    const withPrice = slideLayout(slideWith({ photoZone: "none", priceZone: "corner" }));
+    expect(withPrice.textBox.h).toBeLessThan(plain.textBox.h);
+    expect(rectsOverlap(withPrice.priceBox!, withPrice.textBox, 8)).toBe(false);
+  });
+
+  it("зона выбирается по попаданию в область, а не только по центру", () => {
+    expect(nearestZone(photoZones(), { x: 10, y: 700 }).id).toBe("left");
+    expect(nearestZone(textZones(), { x: 640, y: 400 }).id).toBe("center");
+  });
+
+  it("логотип уходит из зоны, занятой ценой", () => {
+    const price = { x: SLIDE_W - 360, y: 0, w: 340, h: 120 };
+    const plan = planSlideLogos({
+      slideType: "product",
+      layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
+      hasBrandLogo: false,
+      hasClientLogo: true,
+      blocked: [price],
+    });
+    expect(plan.client?.slot).not.toBe("tr");
   });
 });
