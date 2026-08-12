@@ -61,6 +61,8 @@ import { sheetCss } from "@/lib/documents/sheet";
 import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
 import { A4Sheet } from "@/components/admin/documents/A4Sheet";
 import { useInlineDocEdit } from "@/hooks/use-inline-doc-edit";
+import { useTableWidthSync } from "@/hooks/use-table-width-sync";
+
 
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest } from "@/hooks/use-doc-suggest";
