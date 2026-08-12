@@ -210,11 +210,19 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       setSaveState("saved");
       toast.success("Сохранено");
     },
-    onError: (e: Error) => { setSaveState("error"); setErrorMessage(e.message); toast.error(e.message); },
+    onError: (e: unknown) => {
+      // Ошибку БД привязываем к полю, если удалось определить колонку.
+      const mapped = mapServerError(e);
+      if (mapped.field) setServerErrors((prev) => ({ ...prev, [mapped.field as string]: mapped.message }));
+      setSaveState("error");
+      setErrorMessage(mapped.message);
+      toast.error(mapped.message);
+    },
   });
 
   useEditorHotkeys({ onSave: () => save.mutate() });
-  const errors = validation.errors;
+  const errors: FieldErrors = { ...validation.errors, ...serverErrors };
+
 
   return (
     <AdminEditorShell
