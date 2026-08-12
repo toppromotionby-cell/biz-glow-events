@@ -772,7 +772,7 @@ type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
  */
 function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
   const flexKeys = new Set(["title", "note"]);
-  const pad = 14;
+  const pad = 20;
   const measured = new Map<string, number>();
   let narrow = 0;
   for (const c of cols) {
