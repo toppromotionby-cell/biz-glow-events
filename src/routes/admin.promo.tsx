@@ -181,11 +181,10 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       saveState={saveState}
       errorMessage={save.error instanceof Error ? save.error.message : null}
     >
-
       <div className="grid md:grid-cols-2 gap-4">
-        <Field label="Код" required><Input value={f.code ?? ""} onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase() })} className="font-mono" /></Field>
+        <Field label="Код" required><Input value={f.code ?? ""} onChange={(e) => patch({ code: e.target.value.toUpperCase() })} className="font-mono" /></Field>
         <Field label="Тип скидки" required>
-          <Select value={f.discount_type} onValueChange={(v) => setF({ ...f, discount_type: v })}>
+          <Select value={f.discount_type} onValueChange={(v) => patch({ discount_type: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="percent">Процент (%)</SelectItem>
@@ -193,17 +192,19 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => setF({ ...f, discount_value: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => setF({ ...f, min_order_total: Number(e.target.value) || 0 })} /></Field>
-        <Field label="Действует с"><Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => setF({ ...f, valid_from: e.target.value })} /></Field>
-        <Field label="Действует до"><Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => setF({ ...f, valid_to: e.target.value })} /></Field>
-        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => setF({ ...f, max_uses: e.target.value ? Number(e.target.value) : null })} /></Field>
+        <Field label="Размер скидки" required><Input type="number" min={0} value={f.discount_value ?? 0} onChange={(e) => patch({ discount_value: Number(e.target.value) || 0 })} /></Field>
+        <Field label="Мин. сумма заказа"><Input type="number" min={0} value={f.min_order_total ?? 0} onChange={(e) => patch({ min_order_total: Number(e.target.value) || 0 })} /></Field>
+        <Field label="Действует с"><Input type="datetime-local" value={f.valid_from?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_from: e.target.value })} /></Field>
+        <Field label="Действует до"><Input type="datetime-local" value={f.valid_to?.slice(0, 16) ?? ""} onChange={(e) => patch({ valid_to: e.target.value })} /></Field>
+        <Field label="Лимит применений"><Input type="number" min={1} placeholder="без лимита" value={f.max_uses ?? ""} onChange={(e) => patch({ max_uses: e.target.value ? Number(e.target.value) : null })} /></Field>
         <Field label="Использовано"><Input value={f.used_count ?? 0} readOnly className="opacity-70" /></Field>
       </div>
 
       <Field label="Описание" hint="Для внутреннего использования">
-        <Textarea rows={3} value={f.description ?? ""} onChange={(e) => setF({ ...f, description: e.target.value })} />
+        <Textarea rows={3} value={f.description ?? ""} onChange={(e) => patch({ description: e.target.value })} />
       </Field>
     </AdminEditorShell>
+    </>
   );
 }
+
