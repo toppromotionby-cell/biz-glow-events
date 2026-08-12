@@ -254,6 +254,8 @@ export const EMPTY_CONTENT: SlideContent = {
   sku: "",
   images: [],
   imageLayout: "auto",
+  layout: DEFAULT_LAYOUT_OVERRIDES,
+
   showDescription: true,
   showIncludes: true,
   showSpecs: true,
