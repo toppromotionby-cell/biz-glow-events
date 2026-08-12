@@ -124,7 +124,7 @@ function Page() {
   const [slides, setSlides] = useState<PresentationSlide[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  
   const [presenting, setPresenting] = useState(false);
   // Рабочее пространство: активный раздел рельса, зум, выделенный блок, обзор.
   const [sidebar, setSidebar] = useState<string | null>("slides");
