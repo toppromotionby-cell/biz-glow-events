@@ -235,13 +235,24 @@ function AdminDashboard() {
             <div className="text-xs text-muted-foreground">Даты мероприятий</div>
           </div>
         </Link></>}
-        <Link to="/admin/blog" className="glass rounded-xl p-4 hover:border-primary/40 transition flex items-center gap-3">
-          <Newspaper className="h-5 w-5 text-primary" />
-          <div>
-            <div className="font-medium">Блог</div>
-            <div className="text-xs text-muted-foreground">Публикации</div>
-          </div>
-        </Link>
+        {can("content.manage") && (
+          <Link to="/admin/blog" className="glass rounded-xl p-4 hover:border-primary/40 transition flex items-center gap-3">
+            <Newspaper className="h-5 w-5 text-primary" />
+            <div>
+              <div className="font-medium">Блог</div>
+              <div className="text-xs text-muted-foreground">Публикации</div>
+            </div>
+          </Link>
+        )}
+        {can("content.manage") && (
+          <Link to="/admin/catalog-structure" className="glass rounded-xl p-4 hover:border-primary/40 transition flex items-center gap-3">
+            <Newspaper className="h-5 w-5 text-primary" />
+            <div>
+              <div className="font-medium">Каталог</div>
+              <div className="text-xs text-muted-foreground">Разделы и позиции</div>
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   );
