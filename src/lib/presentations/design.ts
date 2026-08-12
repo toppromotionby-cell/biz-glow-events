@@ -111,7 +111,7 @@ export type SlideThemeTokens = {
   bgAngle: number;
 };
 
-type Palette = {
+export type Palette = {
   stops: string[];
   angle?: number;
   panel: string;

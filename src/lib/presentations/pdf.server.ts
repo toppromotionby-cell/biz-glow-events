@@ -5,8 +5,10 @@ import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf
 import fontkit from "@pdf-lib/fontkit";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { hexToRgb01 } from "@/lib/documents/brand";
-import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
-import { MAX_SLIDE_PHOTOS, SLIDE_W, templatePalette, type Rect } from "@/lib/presentations/design";
+import type { Presentation, PresentationSlide, SlideBackground } from "@/lib/presentations/model";
+import {
+  isDarkBackground, MAX_SLIDE_PHOTOS, SLIDE_W, templatePalette, type Rect,
+} from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
@@ -47,9 +49,13 @@ function solid(css: string, fallback: string): string {
   return /^#?[0-9a-fA-F]{6}$/.test(css.trim()) ? css : fallback;
 }
 
-function themeOf(template: Presentation["template"], accentHex: string): Theme {
-  const p = templatePalette(template, accentHex);
-  const dark = template !== "light" && template !== "glow";
+function themeOf(
+  template: Presentation["template"],
+  accentHex: string,
+  background?: SlideBackground | null,
+): Theme {
+  const p = templatePalette(template, accentHex, background);
+  const dark = isDarkBackground(p.stops);
   return {
     bg: color(p.stops[0]),
     panel: color(solid(p.panel, dark ? "#1b2030" : "#f7f8fa")),
