@@ -1,7 +1,9 @@
 // Интерактивный слой поверх слайда в редакторе: перетаскивание и масштабирование
 // фотоблока, текста, блока цены и логотипов по «умным зонам».
+// Логика как в Canva: блок «летит» за курсором, подсвечивается ровно одна цель,
+// а слайд пересобирается прямо во время перетаскивания — что видишь, то и получишь.
 // Все изменения — это входные параметры автораскладки (design.ts), поэтому
-// остальные элементы перестраиваются автоматически.
+// остальные элементы перестраиваются автоматически и не перекрывают друг друга.
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { GRID, SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import type { SlideFit } from "@/lib/presentations/fit";
@@ -34,13 +36,23 @@ function logoRect(slot: string): Rect | null {
 export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: SlideLayoutOverlayProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState<Kind | null>(null);
-  const [hover, setHover] = useState<string | null>(null);
+  const [zone, setZone] = useState<string | null>(null);
+  const [ghost, setGhost] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const grab = useRef({ dx: 0, dy: 0 });
 
   const zonesFor = (kind: Kind): ZoneDef<string>[] => {
     if (kind === "photo") return photoZones() as ZoneDef<string>[];
     if (kind === "text") return textZones() as ZoneDef<string>[];
     if (kind === "price") return priceZones() as ZoneDef<string>[];
     return logoZones() as ZoneDef<string>[];
+  };
+
+  const currentZone = (kind: Kind): string | null => {
+    if (kind === "photo") return overrides.photoZone === "auto" ? null : overrides.photoZone;
+    if (kind === "text") return overrides.textZone === "auto" ? null : overrides.textZone;
+    if (kind === "price") return overrides.priceZone === "auto" ? null : overrides.priceZone;
+    const o = kind === "brand" ? overrides.brandLogo : overrides.clientLogo;
+    return o.zone === "auto" ? null : o.zone;
   };
 
   const apply = (kind: Kind, zoneId: string) => {
@@ -58,26 +70,35 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
     return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
   };
 
-  const startDrag = (kind: Kind) => (e: ReactPointerEvent) => {
+  const startDrag = (kind: Kind, rect: Rect) => (e: ReactPointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    const p = toCanvas(e);
+    grab.current = { dx: p.x - rect.x, dy: p.y - rect.y };
     setDragging(kind);
-    setHover(null);
+    setZone(currentZone(kind));
+    setGhost({ x: rect.x, y: rect.y, w: rect.w, h: rect.h });
   };
 
-  const onMove = (kind: Kind) => (e: ReactPointerEvent) => {
+  const onMove = (kind: Kind, rect: Rect) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
-    const z = nearestZone(zonesFor(kind), toCanvas(e));
-    setHover(z.id);
+    const p = toCanvas(e);
+    setGhost({ x: p.x - grab.current.dx, y: p.y - grab.current.dy, w: rect.w, h: rect.h });
+    const z = nearestZone(zonesFor(kind), p);
+    if (z.id !== zone) {
+      setZone(z.id);
+      // Живое превью: слайд пересобирается сразу, ещё до отпускания.
+      apply(kind, z.id);
+    }
   };
 
   const endDrag = (kind: Kind) => (e: ReactPointerEvent) => {
     if (dragging !== kind) return;
-    const z = nearestZone(zonesFor(kind), toCanvas(e));
-    apply(kind, z.id);
+    apply(kind, nearestZone(zonesFor(kind), toCanvas(e)).id);
     setDragging(null);
-    setHover(null);
+    setZone(null);
+    setGhost(null);
   };
 
   const startResize = (kind: "photo" | "text") => (e: ReactPointerEvent) => {
@@ -96,7 +117,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
         const box = fit.layout.textBox;
         const base = SLIDE_W - GRID.marginX * 2;
         const raw = (p.x - box.x) / Math.max(120, base - (box.x - GRID.marginX));
-        onLayout({ textWidth: clampNum(raw, TEXT_WIDTH_MIN, TEXT_WIDTH_MAX) });
+        onLayout({ textWidth: clampNum(raw, TEXT_WIDTH_MIN, TEXT_WIDTH_MAX), stretchX: false });
       }
     };
     const up = () => {
@@ -116,6 +137,7 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
   ];
 
   const px = (v: number) => v * scale;
+  const target = dragging ? zonesFor(dragging).find((z) => z.id === zone) : null;
 
   return (
     <div
@@ -123,20 +145,30 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
       className="absolute inset-0 print:hidden"
       style={{ width: px(SLIDE_W), height: px(SLIDE_H) }}
     >
-      {dragging &&
-        zonesFor(dragging).map((z) => (
-          <div
-            key={z.id}
-            className={`pointer-events-none absolute rounded-md border-2 border-dashed transition-colors ${
-              hover === z.id ? "border-primary bg-primary/15" : "border-primary/40 bg-primary/5"
-            }`}
-            style={{ left: px(z.rect.x), top: px(z.rect.y), width: px(z.rect.w), height: px(z.rect.h) }}
-          >
-            <span className="absolute left-1 top-1 rounded bg-background/80 px-1 text-[10px] text-foreground">
-              {z.label}
-            </span>
-          </div>
-        ))}
+      {/* Подсвечивается только та зона, куда попадёт блок. */}
+      {target && (
+        <div
+          className="pointer-events-none absolute flex items-center justify-center rounded-lg border-2 border-primary bg-primary/15 transition-all duration-100"
+          style={{
+            left: px(target.rect.x),
+            top: px(target.rect.y),
+            width: px(target.rect.w),
+            height: px(target.rect.h),
+          }}
+        >
+          <span className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow">
+            {target.label}
+          </span>
+        </div>
+      )}
+
+      {/* «Призрак» — блок под курсором. */}
+      {ghost && (
+        <div
+          className="pointer-events-none absolute rounded-md border-2 border-primary/70 bg-background/40"
+          style={{ left: px(ghost.x), top: px(ghost.y), width: px(ghost.w), height: px(ghost.h) }}
+        />
+      )}
 
       {items.map((it) =>
         it.rect ? (
@@ -145,11 +177,17 @@ export function SlideLayoutOverlay({ fit, plan, overrides, scale, onLayout }: Sl
             role="button"
             tabIndex={0}
             aria-label={`${it.label}: перетащите в нужную зону`}
-            onPointerDown={startDrag(it.kind)}
-            onPointerMove={onMove(it.kind)}
+            onPointerDown={startDrag(it.kind, it.rect)}
+            onPointerMove={onMove(it.kind, it.rect)}
             onPointerUp={endDrag(it.kind)}
-            onPointerCancel={() => setDragging(null)}
-            className="group absolute cursor-move rounded-md border border-transparent hover:border-primary/70 hover:bg-primary/5"
+            onPointerCancel={() => {
+              setDragging(null);
+              setZone(null);
+              setGhost(null);
+            }}
+            className={`group absolute cursor-grab rounded-md border border-transparent hover:border-primary/70 hover:bg-primary/5 ${
+              dragging === it.kind ? "opacity-40" : ""
+            }`}
             style={{
               left: px(it.rect.x),
               top: px(it.rect.y),
