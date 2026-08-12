@@ -24,7 +24,8 @@ import { SlideLayoutOverlay } from "@/components/admin/presentations/SlideLayout
 import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 
 import { fontStacks, resolveDocFont, type DocFontChoice } from "@/lib/documents/doc-font";
-import { staticSlideSpec, type SpecBlock } from "@/lib/presentations/slide-spec";
+import { staticSlideSpec, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
+import { contentSlideSpec } from "@/lib/presentations/content-spec";
 
 
 export { SLIDE_W, SLIDE_H, slideTheme };
