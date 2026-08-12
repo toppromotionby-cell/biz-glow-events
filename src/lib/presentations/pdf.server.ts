@@ -12,6 +12,10 @@ import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont } from "@/lib/documents/doc-font";
 import {
+  createImageCache, embedImageUrl, type ImageCache,
+} from "@/lib/documents/image-embed.server";
+
+import {
   FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock,
 } from "@/lib/presentations/slide-spec";
 
