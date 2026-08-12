@@ -6,8 +6,9 @@ import {
   type Presentation,
   type PresentationSlide,
 } from "@/lib/presentations/model";
-import { SLIDE_W } from "@/lib/presentations/design";
+import { SLIDE_H, SLIDE_W } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
+import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 
 const W = 10; // дюймы, 16:9 => 10 x 5.625
 const H = 5.625;
@@ -60,8 +61,35 @@ export async function exportPresentationPptx(
   const t = themeOf(presentation.template, accent);
   const visible = slides.filter((s) => s.is_visible);
 
-  const logoUrl = await resolveImage(company?.logo_url ?? null);
+  const logoUrl = await resolveImage(presentation.logo_url ?? company?.logo_url ?? null);
   const logoData = logoUrl ? await toDataUrl(logoUrl) : null;
+  const clientLogoUrl = await resolveImage(presentation.client_logo_url ?? null);
+  const clientLogoData = clientLogoUrl ? await toDataUrl(clientLogoUrl) : null;
+
+  const PAD_IN = 0.7;
+  /** Слот планировщика -> позиция в дюймах на слайде 10 x 5.625. */
+  const logoBox = (p: LogoPlacementPlan) => {
+    const w = (p.maxW / SLIDE_W) * W;
+    const h = (p.maxH / SLIDE_H) * H;
+    const right = W - PAD_IN - w;
+    switch (p.slot) {
+      case "hero":
+      case "tl":
+        return { x: PAD_IN, y: 0.5, w, h };
+      case "tr":
+        return { x: right, y: 0.5, w, h };
+      case "footer":
+      case "bl":
+        return { x: PAD_IN, y: H - 0.75, w, h };
+      case "br":
+        return { x: right, y: H - 0.75, w, h };
+    }
+  };
+  const addLogo = (slide: { addImage: (o: Record<string, unknown>) => void }, data: string | null, p: LogoPlacementPlan | null) => {
+    if (!data || !p) return;
+    const b = logoBox(p);
+    slide.addImage({ data, x: b.x, y: b.y, w: b.w, h: b.h, sizing: { type: "contain", w: b.w, h: b.h } });
+  };
 
   for (const [i, s] of visible.entries()) {
     const slide = pptx.addSlide();
@@ -70,6 +98,14 @@ export async function exportPresentationPptx(
 
     // Та же раскладка, что в превью и PDF: переводим пиксели 1280×720 в дюймы.
     const fit = fitSlide(s);
+    const plan = planSlideLogos({
+      slideType: s.type,
+      frames: fit.layout.frames,
+      placement: fit.layout.placement,
+      layout: presentation.logo_layout,
+      hasBrandLogo: !!logoData,
+      hasClientLogo: !!clientLogoData,
+    });
     const IN = W / SLIDE_W;
     const pt = (v: number) => v * 0.75; // px -> pt для кеглей
     const gallery: { data: string; x: number; y: number; w: number; h: number }[] = [];
@@ -99,7 +135,8 @@ export async function exportPresentationPptx(
     }
 
     if (s.type === "title") {
-      if (logoData) slide.addImage({ data: logoData, x: 0.7, y: 0.6, w: 1.8, h: 0.55, sizing: { type: "contain", w: 1.8, h: 0.55 } });
+      addLogo(slide, logoData, plan.brand);
+      addLogo(slide, clientLogoData, plan.client);
       slide.addText(s.title || presentation.title, {
         x: 0.7, y: 1.7, w: W - 1.6, h: 1.4, fontSize: 40, bold: true, color: t.ink,
       });
@@ -161,6 +198,9 @@ export async function exportPresentationPptx(
         color: t.onAccent, fill: { color: t.accent }, align: "center",
       });
     }
+
+    addLogo(slide, logoData, plan.brand);
+    addLogo(slide, clientLogoData, plan.client);
 
     slide.addText(`${i + 1} / ${visible.length}`, {
       x: W - 1.4, y: H - 0.6, w: 0.9, h: 0.3, fontSize: 10, color: t.muted, align: "right",

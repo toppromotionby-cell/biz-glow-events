@@ -11,6 +11,7 @@ import {
   type Rect, type SlideThemeTokens,
 } from "@/lib/presentations/design";
 import { fitSlide, type SlideFit } from "@/lib/presentations/fit";
+import { planSlideLogos, type LogoSlot, type SlideLogoPlan } from "@/lib/presentations/logo-plan";
 import {
   DEFAULT_PRESENTATION_LOGO_LAYOUT,
   type PresentationLogoLayout,
@@ -87,21 +88,19 @@ export type SlideCanvasProps = {
   fontFamily?: DocFontChoice;
 };
 
-/** Свободен ли угол слайда (не перекрыт фотоблоком). */
-function cornerFree(frames: Rect[], corner: "tr" | "tl"): boolean {
-  const zone: Rect =
-    corner === "tr"
-      ? { x: SLIDE_W - 320, y: 0, w: 320, h: 150 }
-      : { x: 0, y: 0, w: 320, h: 150 };
-  return !frames.some(
-    (f) => f.x < zone.x + zone.w && f.x + f.w > zone.x && f.y < zone.y + zone.h && f.y + f.h > zone.y,
-  );
-}
-
 export type SlideBranding = Pick<
   SlideCanvasProps,
   "brandLogoUrl" | "clientLogoUrl" | "logoLayout" | "fontFamily"
 >;
+
+/** Позиционирование логотипа в угловом слоте. */
+function cornerStyle(slot: LogoSlot): CSSProperties {
+  const base: CSSProperties = { position: "absolute" };
+  if (slot === "tl") return { ...base, top: 36, left: 56 };
+  if (slot === "tr") return { ...base, top: 36, right: 56 };
+  if (slot === "bl") return { ...base, bottom: 84, left: 56 };
+  return { ...base, bottom: 84, right: 56 };
+}
 
 export function SlideCanvas(props: SlideCanvasProps) {
   const { slide, company, template, presentationTitle, width, index, total, showWarnings, onEdit } = props;
@@ -110,15 +109,16 @@ export function SlideCanvas(props: SlideCanvasProps) {
   const fit = fitSlide(slide);
   const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
   const stacks = fontStacks(resolveDocFont(props.fontFamily));
-  const brandLogo = props.brandLogoUrl ?? null;
+  const brandLogo = props.brandLogoUrl ?? company?.logo_url ?? null;
   const clientLogo = props.clientLogoUrl ?? null;
-  const isTitleLike = slide.type === "title" || slide.type === "contacts";
-  const showClient =
-    !!clientLogo &&
-    layout.client !== "off" &&
-    (layout.client !== "title-only" || isTitleLike);
-  const showBrandOverlay = !!brandLogo && layout.brand === "always" && !isTitleLike;
-  const clientCorner = cornerFree(fit.layout.frames, "tr") || layout.client === "always" ? "tr" : "tl";
+  const plan = planSlideLogos({
+    slideType: slide.type,
+    frames: fit.layout.frames,
+    placement: fit.layout.placement,
+    layout,
+    hasBrandLogo: !!brandLogo,
+    hasClientLogo: !!clientLogo,
+  });
 
   return (
     <div
@@ -149,32 +149,20 @@ export function SlideCanvas(props: SlideCanvasProps) {
           total={total}
           onEdit={onEdit}
           brandLogo={brandLogo}
+          plan={plan}
         />
-        {showClient && (
-          <div
-            style={{
-              position: "absolute",
-              top: 36,
-              [clientCorner === "tr" ? "right" : "left"]: 56,
-              height: 46 * layout.scale,
-            }}
-          >
-            <Logo path={clientLogo} height={46 * layout.scale} />
+        {plan.client && plan.client.slot !== "hero" && plan.client.slot !== "footer" && (
+          <div style={cornerStyle(plan.client.slot)}>
+            <Logo path={clientLogo} height={plan.client.maxH} />
           </div>
         )}
-        {showBrandOverlay && (
-          <div
-            style={{
-              position: "absolute",
-              top: 36,
-              [clientCorner === "tr" ? "left" : "right"]: 56,
-              height: 40 * layout.scale,
-            }}
-          >
-            <Logo path={brandLogo} height={40 * layout.scale} />
+        {plan.brand && plan.brand.slot !== "hero" && plan.brand.slot !== "footer" && (
+          <div style={cornerStyle(plan.brand.slot)}>
+            <Logo path={brandLogo} height={plan.brand.maxH} />
           </div>
         )}
       </div>
+
       {showWarnings && fit.warnings.length > 0 && (
         <div
           className="absolute right-2 top-2 flex items-center gap-1.5 rounded-md bg-amber-500 px-2 py-1 text-[11px] font-medium text-black shadow print:hidden"
@@ -224,6 +212,7 @@ function SlideBody({
   total,
   onEdit,
   brandLogo,
+  plan,
 }: {
   slide: PresentationSlide;
   company: CompanyProfile | null;
@@ -234,9 +223,12 @@ function SlideBody({
   total?: number;
   onEdit?: SlideCanvasProps["onEdit"];
   brandLogo?: string | null;
+  plan: SlideLogoPlan;
 }) {
   const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
   const logo = brandLogo ?? company?.logo_url ?? null;
+  const footerLogo = plan.brand?.slot === "footer" ? logo : null;
+  const heroLogo = plan.brand?.slot === "hero" ? logo : null;
   const c = slide.content;
   const ts = fit.type;
   const { layout } = fit;
@@ -257,7 +249,11 @@ function SlideBody({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {logo ? <Logo path={logo} height={26} /> : brand ? <span>{brand}</span> : null}
+        {footerLogo ? (
+          <Logo path={footerLogo} height={plan.brand?.maxH ?? 26} />
+        ) : brand ? (
+          <span>{brand}</span>
+        ) : null}
       </div>
       {index !== undefined && total !== undefined && (
         <span>
@@ -286,11 +282,12 @@ function SlideBody({
             justifyContent: "center",
           }}
         >
-          {logo ? (
-            <Logo path={logo} height={72} />
+          {heroLogo ? (
+            <Logo path={heroLogo} height={plan.brand?.maxH ?? 72} />
           ) : brand ? (
             <div style={{ ...heading, fontSize: 30, fontWeight: 700 }}>{brand}</div>
           ) : null}
+
           <Editable
             value={slide.title || presentationTitle}
             placeholder="Название презентации"
