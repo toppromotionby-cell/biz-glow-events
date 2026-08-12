@@ -1,4 +1,5 @@
 // HTML-рендер промо-КП: используется и для live-превью в админке, и для страницы документа.
+import { PRICE_LABEL } from "@/lib/documents/doc-layout";
 import { logoImgStyle, logoWrapStyle } from "@/lib/documents/logo-layout";
 import { fontCssVars, fontLinkTags, resolveDocFont } from "@/lib/documents/doc-font";
 import { vatRateLabel } from "@/lib/documents/vat";
@@ -12,7 +13,6 @@ import {
   groupBySection,
   hasSecondUnit,
   isServiceOnlyRow,
-  soleRateUnit,
   formatNumber,
   rateUnitLabel,
   formatQty,
@@ -79,7 +79,6 @@ export function buildPromoQuoteBody(
   // Вторая единица («час», «смена») показывается отдельными колонками — только
   // если она заполнена хотя бы у одной позиции. Иначе таблица как раньше.
   const dual = hasSecondUnit(items);
-  const rateUnit = soleRateUnit(items);
 
   const cols: Array<{ label: string; cls: string }> = [{ label: "Наименование", cls: "c-title" }];
   cols.push({ label: "Ед. изм.", cls: "c-unit" });
@@ -89,7 +88,7 @@ export function buildPromoQuoteBody(
     cols.push({ label: "Кол-во", cls: "c-num" });
   }
   if (quote.show_total_qty) cols.push({ label: "Всего", cls: "c-num" });
-  cols.push({ label: rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.", cls: "c-money" });
+  cols.push({ label: PRICE_LABEL, cls: "c-money" });
   cols.push({ label: `Всего${t.vatMode === "add" ? ", без НДС" : t.vatMode === "included" ? ", с НДС" : ""}`, cls: "c-money" });
   if (quote.show_notes) cols.push({ label: "Примечания", cls: "c-note" });
 
@@ -270,16 +269,17 @@ export const PROMO_DOC_CSS = `
 .promo-doc .docnum { font-family: var(--font-display, inherit); margin: 16px 0 8px; font-weight: 700; font-size: 13px; }
 .promo-doc table { width: 100%; border-collapse: collapse; }
 .promo-doc .grid th { background: var(--accent); color: #16161a; font-weight: 700; text-align: center; border: 1px solid #b9b9bf; padding: 6px 6px; }
-.promo-doc .grid td { border: 1px solid #d8d8dd; padding: 5px 6px; vertical-align: top; }
+.promo-doc .grid td { border: 1px solid #d8d8dd; padding: 5px 6px; vertical-align: middle; }
 .promo-doc .grid tr.sec td { background: #e7e7ea; font-weight: 600; }
 .promo-doc .grid tr.sec-sub td { background: #f4f4f6; font-weight: 600; text-align: right; }
 .promo-doc .c-inc { margin: 3px 0 0; padding-left: 14px; font-size: 11px; color: #5a5a63; }
 .promo-doc .grid tr.extra td { background: #fbfbfc; font-style: italic; }
-.promo-doc .c-title { width: 26%; }
-.promo-doc .c-unit { width: 9%; text-align: center; }
-.promo-doc .c-num { width: 6%; text-align: center; }
-.promo-doc .c-money { width: 10%; text-align: right; white-space: nowrap; }
-.promo-doc .c-note { width: 33%; color: #45454d; }
+.promo-doc table.grid { table-layout: auto; }
+.promo-doc .c-title { width: 24%; }
+.promo-doc .c-unit { width: 1%; text-align: center; white-space: nowrap; }
+.promo-doc .c-num { width: 1%; text-align: center; white-space: nowrap; }
+.promo-doc .c-money { width: 1%; text-align: center; white-space: nowrap; }
+.promo-doc .c-note { width: 38%; color: #45454d; }
 .promo-doc .empty { text-align: center; color: #86868f; padding: 16px; }
 .promo-doc .totals { margin-top: 10px; width: 320px; margin-left: auto; }
 .promo-doc .totals td { border: 1px solid #b9b9bf; padding: 6px 8px; }

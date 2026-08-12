@@ -13,7 +13,6 @@ import {
   lineTotal,
   promoNumberDisplay,
   rateUnitLabel,
-  soleRateUnit,
   type PromoItem,
   type PromoQuote,
   type PromoTotals,
@@ -82,6 +81,9 @@ export type DocLayout = {
   emptyLabel: string;
 };
 
+/** Единая подпись колонки цены во всех форматах документа. */
+export const PRICE_LABEL = "Цена за единицу";
+
 /** Базовые доли ширины по ключу (нормализуются по фактическому набору колонок). */
 const BASE_WIDTH: Record<DocColumnKey, number> = {
   title: 26,
@@ -94,6 +96,46 @@ const BASE_WIDTH: Record<DocColumnKey, number> = {
   amount: 10,
   note: 27,
 };
+
+/** Узкие колонки — их ширина подгоняется под самое длинное значение. */
+const FIT_KEYS: DocColumnKey[] = ["unit", "qty", "rate_unit", "multiplier", "total_qty", "price", "amount"];
+/** Минимум символов и «воздух» для авто-подгонки. */
+const FIT_MIN_CHARS = 5;
+const FIT_PAD_CHARS = 2.4;
+/** Условная ширина таблицы в «символах» для расчёта долей. */
+const TABLE_CHARS = 104;
+
+/**
+ * Подгоняет ширины колонок под содержимое: узкие колонки сжимаются до самого
+ * длинного значения, а всё освободившееся место уходит в «Наименование» и
+ * «Примечания» (примечаниям — большая часть).
+ */
+export function fitColumnWidths(columns: DocColumn[], rows: DocRow[]): void {
+  const chars: Partial<Record<DocColumnKey, number>> = {};
+  let narrow = 0;
+  for (const c of columns) {
+    if (!FIT_KEYS.includes(c.key)) continue;
+    let max = c.label.length;
+    for (const r of rows) {
+      if (r.serviceRow && (c.key === "unit" || c.key === "qty" || c.key === "rate_unit" || c.key === "multiplier"))
+        continue;
+      const v = r.cells[c.key];
+      if (v) max = Math.max(max, v.length);
+    }
+    const w = Math.max(FIT_MIN_CHARS, max + FIT_PAD_CHARS);
+    chars[c.key] = w;
+    narrow += w;
+  }
+  const hasNote = columns.some((c) => c.key === "note");
+  const flex = Math.max(hasNote ? 46 : 26, TABLE_CHARS - narrow);
+  const total = narrow + flex;
+  for (const c of columns) {
+    if (c.key === "title") c.width = (hasNote ? flex * 0.44 : flex) / total;
+    else if (c.key === "note") c.width = (flex * 0.56) / total;
+    else c.width = (chars[c.key] ?? FIT_MIN_CHARS) / total;
+  }
+}
+
 
 const nf = (n: number) =>
   new Intl.NumberFormat("ru-BY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
@@ -112,7 +154,6 @@ export function buildDocLayout(
 ): DocLayout {
   const computed = computePromoTotals(quote, items);
   const dual = hasSecondUnit(items);
-  const rateUnit = soleRateUnit(items);
 
   const keys: DocColumnKey[] = ["title", "unit"];
   if (quote.show_qty) keys.push("qty");
@@ -128,7 +169,7 @@ export function buildDocLayout(
     rate_unit: "Ед. изм.",
     multiplier: "Кол-во",
     total_qty: "Всего",
-    price: rateUnit ? `Цена за ${rateUnit}` : "Цена за ед.",
+    price: PRICE_LABEL,
     amount: `Всего${computed.vatMode === "add" ? ", без НДС" : computed.vatMode === "included" ? ", с НДС" : ""}`,
     note: "Примечания",
   };
@@ -139,8 +180,8 @@ export function buildDocLayout(
     rate_unit: "center",
     multiplier: "center",
     total_qty: "center",
-    price: "right",
-    amount: "right",
+    price: "center",
+    amount: "center",
     note: "left",
   };
 
@@ -152,6 +193,7 @@ export function buildDocLayout(
     align: align[key],
     money: key === "price" || key === "amount",
   }));
+
 
   const rows: DocRow[] = [];
   const row = (kind: DocRowKind, extra: Partial<DocRow> = {}): DocRow => ({
@@ -256,6 +298,11 @@ export function buildDocLayout(
       if (!r.cells[c.key]) r.cells[c.key] = "—";
     }
   }
+
+  // Ширины колонок — по содержимому; остаток уходит в «Наименование»/«Примечания».
+  fitColumnWidths(columns, rows);
+
+
 
 
 

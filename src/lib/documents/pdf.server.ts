@@ -38,13 +38,13 @@ import {
   hasSecondUnit,
   isServiceOnlyRow,
   rateUnitLabel,
-  soleRateUnit,
   lineTotal,
   promoNumberDisplay,
   type PromoItem as PromoItemT,
   type PromoQuote as PromoQuoteT,
 } from "@/lib/promo-quote-model";
 
+import { PRICE_LABEL } from "@/lib/documents/doc-layout";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { resolveDocFont, type DocFont } from "@/lib/documents/doc-font";
 
@@ -766,6 +766,41 @@ type TableRow = Record<string, string | string[] | TableSpan | undefined> & {
   _span?: { from: string; to: string; text: string };
 };
 
+/**
+ * Подгоняет ширины узких колонок под самый длинный текст, а остаток отдаёт
+ * «Наименованию» и «Примечаниям» (примечаниям — большая доля).
+ */
+function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
+  const flexKeys = new Set(["title", "note"]);
+  const pad = 15;
+  const measured = new Map<string, number>();
+  let narrow = 0;
+  for (const c of cols) {
+    if (flexKeys.has(c.key)) continue;
+    let w = Math.max(
+      ...c.title.toUpperCase().split(" ").map((word) => trackedWidth(ctx.bold, word, F_DOC_KIND, F_DOC_KIND * 0.08)),
+    );
+    const MERGED = new Set(["unit", "qty", "rate_unit", "multiplier"]);
+    for (const r of rows) {
+      if (r._span && MERGED.has(c.key)) continue;
+      const v = typeof r[c.key] === "string" ? (r[c.key] as string) : "";
+      if (v) w = Math.max(w, ctx.regular.widthOfTextAtSize(v, F11));
+    }
+    const width = Math.min(tableW * 0.18, w + pad);
+    measured.set(c.key, width);
+    narrow += width;
+  }
+  const flexCols = cols.filter((c) => flexKeys.has(c.key));
+  if (!flexCols.length) return;
+  const hasNote = flexCols.some((c) => c.key === "note");
+  const rest = Math.max(tableW * (hasNote ? 0.42 : 0.24), tableW - narrow);
+  const scale = (tableW - rest) / (narrow || 1);
+  for (const c of cols) {
+    if (flexKeys.has(c.key)) c.width = hasNote ? rest * (c.key === "note" ? 0.56 : 0.44) : rest;
+    else c.width = (measured.get(c.key) ?? 0) * scale;
+  }
+}
+
 function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
   const startX = MARGIN_X;
@@ -776,36 +811,62 @@ function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const SMALL = F11 - 1;
 
   const headTracking = F_DOC_KIND * 0.08;
+  const headLines = cols.map((c) => {
+    const title = c.title.toUpperCase();
+    const avail = c.width - cellPadX * 2;
+    if (trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking) <= avail) return [title];
+    const words = title.split(" ");
+    const lines: string[] = [];
+    let cur = "";
+    for (const w of words) {
+      const next = cur ? `${cur} ${w}` : w;
+      if (cur && trackedWidth(ctx.bold, next, F_DOC_KIND, headTracking) > avail) {
+        lines.push(cur);
+        cur = w;
+      } else cur = next;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  });
+  const headRows = Math.max(1, ...headLines.map((l) => l.length));
+  const headH = Math.max(headerH, headRows * (F_DOC_KIND + 4) + 10);
+
   const drawHead = () => {
     ctx.page.drawRectangle({
       x: startX,
-      y: ctx.y - headerH,
+      y: ctx.y - headH,
       width: totalW,
-      height: headerH,
+      height: headH,
       color: ACCENT_SOFT,
     });
     let hx = startX;
-    for (const c of cols) {
-      const title = c.title.toUpperCase();
-      const w = trackedWidth(ctx.bold, title, F_DOC_KIND, headTracking);
-      let tx = hx + cellPadX;
-      if (c.align === "right") tx = hx + c.width - cellPadX - w;
-      else if (c.align === "center") tx = hx + (c.width - w) / 2;
-      drawTracked(ctx.page, title, {
-        x: tx,
-        y: ctx.y - headerH + (headerH - F_DOC_KIND) / 2 + 1,
-        size: F_DOC_KIND,
-        font: ctx.bold,
-        color: TEXT,
-        tracking: headTracking,
-      });
+    cols.forEach((c, ci) => {
+      const lines = headLines[ci] ?? [c.title.toUpperCase()];
+      const lineH = F_DOC_KIND + 4;
+      const blockH = lines.length * lineH;
+      let ly = ctx.y - headH + (headH - blockH) / 2 + blockH - lineH + 1;
+      for (const line of lines) {
+        const w = trackedWidth(ctx.bold, line, F_DOC_KIND, headTracking);
+        let tx = hx + cellPadX;
+        if (c.align === "right") tx = hx + c.width - cellPadX - w;
+        else if (c.align === "center") tx = hx + (c.width - w) / 2;
+        drawTracked(ctx.page, line, {
+          x: tx,
+          y: ly,
+          size: F_DOC_KIND,
+          font: ctx.bold,
+          color: TEXT,
+          tracking: headTracking,
+        });
+        ly -= lineH;
+      }
       hx += c.width;
-    }
-    ctx.y -= headerH;
+    });
+    ctx.y -= headH;
   };
 
   // header (шапка повторяется на каждой новой странице таблицы)
-  ensureSpace(ctx, headerH + rowMinH);
+  ensureSpace(ctx, headH + rowMinH);
   drawHead();
 
   /** Перенос строки таблицы на новую страницу с повтором шапки. */
@@ -1985,32 +2046,32 @@ export async function buildPromoQuotePdf(
   const showNotes = quote.show_notes;
   // Вторая единица («час», «смена») — отдельные колонки, только если она задана.
   const dual = hasSecondUnit(items);
-  const rateUnit = soleRateUnit(items);
-  const priceTitle = rateUnit ? `Цена за ${rateUnit}` : "Цена";
+  const priceTitle = PRICE_LABEL;
   const dualCols: Col[] = dual
     ? [
-        { title: "Ед. изм.", key: "unit2", width: tableW * 0.08, align: "center" },
-        { title: "Кол-во", key: "qty2", width: tableW * 0.08, align: "center" },
+        { title: "Ед. изм.", key: "unit2", width: tableW * 0.08, align: "center", valign: "middle" },
+        { title: "Кол-во", key: "qty2", width: tableW * 0.08, align: "center", valign: "middle" },
       ]
     : [];
   const cols: Col[] = showNotes
     ? [
         { title: "Наименование", key: "title", width: tableW * (dual ? 0.24 : 0.3) },
-        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.09 : 0.11), align: "center" },
-        { title: "Кол-во", key: "qty", width: tableW * 0.08, align: "center" },
+        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.09 : 0.11), align: "center", valign: "middle" },
+        { title: "Кол-во", key: "qty", width: tableW * 0.08, align: "center", valign: "middle" },
         ...dualCols,
-        { title: priceTitle, key: "price", width: tableW * 0.12, align: "right" },
-        { title: "Сумма", key: "sum", width: tableW * 0.13, align: "right" },
-        { title: "Примечания", key: "note", width: tableW * (dual ? 0.18 : 0.26) },
+        { title: priceTitle, key: "price", width: tableW * 0.12, align: "center", valign: "middle" },
+        { title: "Сумма", key: "sum", width: tableW * 0.13, align: "center", valign: "middle" },
+        { title: "Примечания", key: "note", width: tableW * (dual ? 0.18 : 0.26), valign: "middle" },
       ]
     : [
         { title: "Наименование", key: "title", width: tableW * (dual ? 0.34 : 0.46) },
-        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.11 : 0.14), align: "center" },
-        { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center" },
+        { title: "Ед. изм.", key: "unit", width: tableW * (dual ? 0.11 : 0.14), align: "center", valign: "middle" },
+        { title: "Кол-во", key: "qty", width: tableW * 0.1, align: "center", valign: "middle" },
         ...dualCols,
-        { title: priceTitle, key: "price", width: tableW * 0.15, align: "right" },
-        { title: "Сумма", key: "sum", width: tableW * 0.15, align: "right" },
+        { title: priceTitle, key: "price", width: tableW * 0.15, align: "center", valign: "middle" },
+        { title: "Сумма", key: "sum", width: tableW * 0.15, align: "center", valign: "middle" },
       ];
+
 
   const rows: TableRow[] = [];
   for (const sec of groupBySection(items)) {
@@ -2080,7 +2141,11 @@ export async function buildPromoQuotePdf(
       note: "",
     });
   }
-  drawTable(ctx, cols, rows.length ? rows : [{ title: "Позиции не добавлены", unit: "", qty: "", price: "", sum: "", note: "" }]);
+  const tableRows = rows.length
+    ? rows
+    : [{ title: "Позиции не добавлены", unit: "", qty: "", price: "", sum: "", note: "" }];
+  fitTableCols(ctx, cols, tableRows, tableW);
+  drawTable(ctx, cols, tableRows);
 
   gap(ctx, 6);
   drawSummary(ctx, [

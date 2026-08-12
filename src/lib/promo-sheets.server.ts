@@ -89,7 +89,7 @@ function buildSheetGrid(quote: PromoQuote, items: PromoItem[], opts: { companyLi
   const refCol = (key: DocColumnKey, fallback: string) =>
     colLetter(visible.includes(key) ? colOf(key) : colOf(fallback));
 
-  const base = { textFormat: { fontFamily: font, fontSize: 9 }, verticalAlignment: "TOP" };
+  const base = { textFormat: { fontFamily: font, fontSize: 9 }, verticalAlignment: "MIDDLE" };
   const rows: Cell[][] = [];
   const merges: Array<{ row: number; from: number; to: number }> = [];
   const pad = (cells: Cell[]) => {
