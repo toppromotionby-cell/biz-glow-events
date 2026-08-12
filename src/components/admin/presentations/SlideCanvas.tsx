@@ -24,7 +24,7 @@ import {
 import { SlideLayoutOverlay } from "@/components/admin/presentations/SlideLayoutOverlay";
 import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 
-import { fontStacks, resolveDocFont, type DocFontChoice } from "@/lib/documents/doc-font";
+import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import { staticSlideSpec, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
 import { contentSlideSpec } from "@/lib/presentations/content-spec";
 
@@ -60,7 +60,7 @@ function SpecBlockView({
 }: {
   block: SpecBlock;
   theme: SlideThemeTokens;
-  heading: CSSProperties;
+  heading: (text: string) => CSSProperties | null;
   logoPath: string | null;
   onEdit?: SlideCanvasProps["onEdit"];
   partAlign: (part: "title" | "subtitle" | "body") => CSSProperties;
@@ -154,7 +154,7 @@ function SpecBlockView({
     textTransform: block.uppercase ? "uppercase" : undefined,
     letterSpacing: block.letterSpacing,
     whiteSpace: "pre-wrap",
-    ...(block.font === "display" ? heading : null),
+    ...(block.font === "display" ? heading(block.text) : null),
     ...(block.id ? partAlign(block.id) : null),
   };
   // Прямо в холсте правятся только заголовок и подзаголовок; описание —
@@ -264,7 +264,8 @@ function SlideCanvasInner(props: SlideCanvasProps) {
   const theme = useMemo(() => slideTheme(template, accent), [template, accent]);
   const fit = useMemo(() => fitSlide(slide), [slide]);
   const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
-  const stacks = useMemo(() => fontStacks(resolveDocFont(props.fontFamily)), [props.fontFamily]);
+  const docFont = resolveDocFont(props.fontFamily);
+  const stacks = useMemo(() => fontStacks(docFont), [docFont]);
   const brandLogo = props.brandLogoUrl ?? company?.logo_url ?? null;
   const clientLogo = props.clientLogoUrl ?? null;
   const plan = planSlideLogos({
@@ -300,6 +301,7 @@ function SlideCanvasInner(props: SlideCanvasProps) {
         }}
       >
         <SlideBody
+          docFont={docFont}
           slide={slide}
           company={company}
           theme={theme}
@@ -385,6 +387,7 @@ function Editable({
 }
 
 function SlideBody({
+  docFont,
   slide,
   company,
   theme,
@@ -396,6 +399,7 @@ function SlideBody({
   brandLogo,
   plan,
 }: {
+  docFont: DocFont;
   slide: PresentationSlide;
   company: CompanyProfile | null;
   theme: Theme;
@@ -414,7 +418,14 @@ function SlideBody({
   const c = slide.content;
   const ts = fit.type;
   const { layout } = fit;
-  const heading = { fontFamily: "var(--slide-font-display, " + FONTS.display + ")", letterSpacing: "-0.03em" } as const;
+  // Кириллицы нет в фирменном display-шрифте — такие заголовки рисуем
+  // основным шрифтом, чтобы превью совпадало с PDF (там та же подмена).
+  const headingStyle: CSSProperties = {
+    fontFamily: "var(--slide-font-display, " + FONTS.display + ")",
+    letterSpacing: "-0.03em",
+  };
+  const heading = (text: string): CSSProperties | null =>
+    needsBodyFallback(docFont, text) ? { fontWeight: 700 } : headingStyle;
   // Выравнивание отдельных частей текста (Canva-подобно): auto = как у блока.
   const ov = slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES;
   const partAlign = (part: "title" | "subtitle" | "body"): CSSProperties => {
