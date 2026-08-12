@@ -1,37 +1,11 @@
 // Раздвижное рабочее пространство редакторов (документы и презентации):
 // левая панель раздела, холст и панель свойств разделены перетаскиваемыми
-// разделителями. Размеры запоминаются в браузере отдельно для каждого
-// редактора, двойной клик по разделителю возвращает размер по умолчанию.
-import { useCallback, useMemo, useRef, type ReactNode } from "react";
+// разделителями. Размеры запоминаются в браузере и в профиле пользователя
+// отдельно для каждого редактора.
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { Group, Panel, Separator, type Layout } from "react-resizable-panels";
+import { prefsVersion, pullRemotePrefs, readPref, subscribePrefs, writePref } from "@/lib/editor/workspace-prefs";
 
-const STORAGE_PREFIX = "editor-layout:";
-
-function readLayout(key: string): Layout | undefined {
-  if (typeof window === "undefined") return undefined;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_PREFIX + key);
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return undefined;
-    const out: Layout = {};
-    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof v === "number" && Number.isFinite(v)) out[k] = v;
-    }
-    return Object.keys(out).length ? out : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function writeLayout(key: string, layout: Layout) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(layout));
-  } catch {
-    /* приватный режим — просто не сохраняем */
-  }
-}
 
 /** Разделитель с видимой «ручкой». */
 function Handle({ id }: { id: string }) {
