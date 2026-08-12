@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DocFontSelect } from "@/components/admin/documents/DocFontSelect";
 import { useEffect, useState, useId, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { FileCog, Save, ExternalLink, Plus, Trash2, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -44,7 +45,7 @@ function DocumentSettingsPage() {
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["document-settings"],
+    queryKey: adminKeys.documentSettings,
     queryFn: () => getFn(),
   });
 

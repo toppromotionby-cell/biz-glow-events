@@ -4,6 +4,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from '@tanstack/react-start'
 import { toast } from 'sonner'
 import {
@@ -65,7 +66,7 @@ function EmailTemplatesAdmin() {
   const [testOpen, setTestOpen] = useState(false)
   const [testEmail, setTestEmail] = useState('')
 
-  const listQuery = useQuery({ queryKey: ['email-templates'], queryFn: () => listFn() })
+  const listQuery = useQuery({ queryKey: adminKeys.emailTemplates, queryFn: () => listFn() })
 
   const filtered = useMemo(() => {
     const items = listQuery.data ?? []
@@ -78,7 +79,7 @@ function EmailTemplatesAdmin() {
   }, [filtered, selected])
 
   const detailQuery = useQuery({
-    queryKey: ['email-template', selected],
+    queryKey: adminKeys.emailTemplate(selected),
     enabled: !!selected,
     queryFn: () => getFn({ data: { key: selected! } }),
   })
@@ -125,8 +126,8 @@ function EmailTemplatesAdmin() {
     },
     onSuccess: () => {
       toast.success('Шаблон сохранён')
-      qc.invalidateQueries({ queryKey: ['email-templates'] })
-      qc.invalidateQueries({ queryKey: ['email-template', selected] })
+      qc.invalidateQueries({ queryKey: adminKeys.emailTemplates })
+      qc.invalidateQueries({ queryKey: adminKeys.emailTemplate(selected) })
     },
     onError: (e: any) => toast.error(e?.message ?? 'Не удалось сохранить'),
   })
@@ -138,8 +139,8 @@ function EmailTemplatesAdmin() {
     },
     onSuccess: () => {
       toast.success('Сброшено к шаблону по умолчанию')
-      qc.invalidateQueries({ queryKey: ['email-templates'] })
-      qc.invalidateQueries({ queryKey: ['email-template', selected] })
+      qc.invalidateQueries({ queryKey: adminKeys.emailTemplates })
+      qc.invalidateQueries({ queryKey: adminKeys.emailTemplate(selected) })
     },
     onError: (e: any) => toast.error(e?.message ?? 'Не удалось сбросить'),
   })

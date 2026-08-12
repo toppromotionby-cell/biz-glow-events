@@ -4,6 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CatalogTabs } from "@/components/admin/CatalogTabs";
@@ -38,13 +39,13 @@ function CatalogStructurePage() {
   const cleanedRef = useRef(false);
 
   const overview = useQuery({
-    queryKey: ["admin", "catalog-structure"],
+    queryKey: adminKeys.catalogStructure,
     queryFn: () => getStructureOverview(),
   });
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["admin", "catalog-structure"] });
-    qc.invalidateQueries({ queryKey: ["catalog-nav"] });
+    qc.invalidateQueries({ queryKey: adminKeys.catalogStructure });
+    qc.invalidateQueries({ queryKey: adminKeys.catalogNav });
   };
 
   const cleanup = useMutation({

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { listUsersWithRoles, assignRole, revokeRole, deleteUser, ALL_ROLES } from "@/lib/users.functions";
 import { Button } from "@/components/ui/button";
@@ -48,11 +49,11 @@ function UsersAdminPage() {
   const [selectedRole, setSelectedRole] = useState<Record<string, string>>({});
 
   const { data: users = [], isLoading, error } = useQuery({
-    queryKey: ["admin", "users"],
+    queryKey: adminKeys.users,
     queryFn: () => fetchUsers(),
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: adminKeys.users });
 
   const assign = useMutation({
     mutationFn: (input: { user_id: string; role: (typeof ALL_ROLES)[number] }) => assignFn({ data: input }),

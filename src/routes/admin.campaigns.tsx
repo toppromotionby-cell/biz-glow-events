@@ -4,6 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useMemo, useRef, useState } from "react";
 import {
   sendClientInvitations,
@@ -141,7 +142,7 @@ function InvitationsPage() {
   };
 
   const { data: log = [], isLoading: logLoading } = useQuery({
-    queryKey: ["admin", "invites", "log"],
+    queryKey: adminKeys.campaignsLog,
     queryFn: () => logFn(),
   });
 
@@ -214,7 +215,7 @@ function InvitationsPage() {
         setRecipientName("");
         setPersonalMessage("");
       }
-      qc.invalidateQueries({ queryKey: ["admin", "invites", "log"] });
+      qc.invalidateQueries({ queryKey: adminKeys.campaignsLog });
     } finally {
       setProgress((p) => p ? { ...p, running: false, paused: false } : p);
     }
@@ -236,7 +237,7 @@ function InvitationsPage() {
     },
     onSuccess: () => {
       toast.success(`Тестовое письмо отправлено на ${user?.email}`);
-      qc.invalidateQueries({ queryKey: ["admin", "invites", "log"] });
+      qc.invalidateQueries({ queryKey: adminKeys.campaignsLog });
     },
     onError: (e: Error) => toast.error(e.message),
   });

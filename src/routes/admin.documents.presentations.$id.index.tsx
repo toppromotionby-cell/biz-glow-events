@@ -10,6 +10,7 @@ import { saveStatus } from "@/lib/editor/save-state";
 import { useEditorSave } from "@/hooks/use-editor-save";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -118,7 +119,7 @@ function Page() {
 
   const getFn = useServerFn(getPresentation);
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["presentation", id],
+    queryKey: adminKeys.presentation(id),
     queryFn: () => getFn({ data: { id } }),
     retry: false,
   });
@@ -424,7 +425,7 @@ function Page() {
     setDirty(false);
     // Открытую презентацию не перезапрашиваем: сервер пересоздаёт слайды с новыми
     // id, и перезагрузка сбрасывала бы выбранный слайд прямо во время работы.
-    qc.invalidateQueries({ queryKey: ["presentations"] });
+    qc.invalidateQueries({ queryKey: adminKeys.presentations });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saveFn, qc]);
 

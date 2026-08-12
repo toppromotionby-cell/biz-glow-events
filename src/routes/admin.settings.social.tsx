@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
 import { Instagram, Save, Loader2, ExternalLink } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -38,7 +39,7 @@ function SocialSettingsPage() {
   const updateFn = useServerFn(updateSiteSettings);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin", "site-settings"],
+    queryKey: adminKeys.siteSettings,
     queryFn: () => getFn(),
   });
 
@@ -66,8 +67,8 @@ function SocialSettingsPage() {
       }),
     onSuccess: () => {
       toast.success("Сохранено");
-      qc.invalidateQueries({ queryKey: ["admin", "site-settings"] });
-      qc.invalidateQueries({ queryKey: ["site-settings", "public"] });
+      qc.invalidateQueries({ queryKey: adminKeys.siteSettings });
+      qc.invalidateQueries({ queryKey: adminKeys.siteSettingsPublic });
     },
     onError: (e: Error) => toast.error(e.message),
   });
