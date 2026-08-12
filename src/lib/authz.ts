@@ -1,5 +1,5 @@
 // Серверная проверка прав: читает роли пользователя и сверяет с матрицей прав.
-import { permissionsForRoles, type Permission } from "@/lib/permissions";
+import { isStaffRoles, permissionsForRoles, type Permission } from "@/lib/permissions";
 
 type Ctx = {
   supabase: {
@@ -31,4 +31,10 @@ export async function hasPermission(context: Ctx, perm: Permission): Promise<boo
 /** Единая проверка доступа к разделу «Документы» (КП, промо, презентации). */
 export async function assertDocumentsStaff(context: { supabase: unknown; userId: string }): Promise<void> {
   await assertPermission(context as never, "documents.manage");
+}
+
+/** Любая сотрудничающая роль (admin/manager/accountant/content_editor). */
+export async function assertStaffRole(context: { supabase: unknown; userId: string }): Promise<void> {
+  const roles = await getRoles(context as never);
+  if (!isStaffRoles(roles)) throw new Error("Доступ запрещён: требуется роль сотрудника");
 }

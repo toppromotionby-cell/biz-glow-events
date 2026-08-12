@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPermission } from "@/lib/authz";
 import {
   SENDER_KINDS,
   buildSender,
@@ -9,10 +10,8 @@ import {
   type SenderRow,
 } from "@/lib/email/sender.server";
 
-async function assertStaff(supabase: any, userId: string): Promise<void> {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const ok = (data ?? []).some((r: { role: string }) => ["admin", "manager"].includes(r.role));
-  if (!ok) throw new Error("Доступ запрещён: требуется роль admin или manager");
+async function assertStaff(supabase: unknown, userId: string): Promise<void> {
+  await assertPermission({ supabase, userId } as never, "marketing.manage");
 }
 
 export type EmailSender = SenderRow & { preview: string; replyPreview: string };
