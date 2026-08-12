@@ -120,13 +120,22 @@ function Page() {
   const canvasWrap = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(720);
 
+  // Данные с сервера принимаем только когда нет несохранённых правок и не идёт
+  // сохранение: иначе ответ затирал бы то, что пользователь печатает прямо сейчас,
+  // а смена id слайдов сбрасывала бы выбранный слайд.
+  const dirtyRef = useRef(false);
+  dirtyRef.current = dirty;
   useEffect(() => {
     if (!data) return;
+    if (dirtyRef.current) return;
     setMeta(data.presentation);
     setSlides(data.slides);
-    setSelected((prev) => prev ?? data.slides[0]?.id ?? null);
+    setSelected((prev) =>
+      prev && data.slides.some((s) => s.id === prev) ? prev : (data.slides[0]?.id ?? null),
+    );
     setDirty(false);
   }, [data]);
+
 
   useEffect(() => {
     const el = canvasWrap.current;
