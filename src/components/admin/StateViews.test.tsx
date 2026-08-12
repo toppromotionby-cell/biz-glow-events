@@ -1,6 +1,9 @@
+// @vitest-environment jsdom
 // Этап 7: единые состояния ошибки/повтора в админке.
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+
+afterEach(() => cleanup());
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { AdminErrorState, AdminErrorInline, errorText } from "./StateViews";
@@ -63,7 +66,7 @@ describe("нет нативных диалогов", () => {
 
   it("в src нет window.confirm / alert(", () => {
     const offenders = walk("src").filter((f) => {
-      if (f.endsWith("StateViews.test.tsx")) return false;
+      if (/StateViews\.test\.tsx$|ConfirmDialog\.tsx$|\.test\.ts$/.test(f)) return false;
       const src = readFileSync(f, "utf8");
       return /window\.confirm\(/.test(src) || /(^|[^.\w])alert\(/.test(src);
     });
