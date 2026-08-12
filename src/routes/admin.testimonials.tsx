@@ -164,6 +164,8 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   });
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
+
 
   const validation = useMemo(() => {
     const r = testimonialSchema.safeParse({
