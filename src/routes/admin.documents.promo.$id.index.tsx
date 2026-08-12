@@ -606,15 +606,18 @@ function EditorPage() {
                   Правка по двойному клику
                 </label>
                 <DetachedPreviewButton
-                  html={`<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>${PROMO_DOC_CSS}</style></head><body style="background:#fff;padding:24px">${previewHtml}</body></html>`}
+                  html={`<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>${sheetCss(BASE_PRINT_PRESET)}${PROMO_DOC_CSS}</style></head><body><div class="sheet">${previewHtml}</div></body></html>`}
                   title="Превью · КП промо"
                 />
               </div>
             </div>
-            <div className="max-h-[70vh] overflow-auto rounded-xl border border-border bg-white p-4">
+            <div className="max-h-[70vh] overflow-auto rounded-xl border border-border bg-muted/40 p-3">
               <style>{PROMO_DOC_CSS}</style>
-              <div onDoubleClick={onPreviewDoubleClick} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              <A4Sheet onDoubleClick={onPreviewDoubleClick}>
+                <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              </A4Sheet>
             </div>
+
           </div>
         </div>
       </div>
