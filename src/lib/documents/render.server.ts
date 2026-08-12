@@ -162,7 +162,9 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   <div class="footer">
     ${esc(settings.company_legal_name)} · ${esc(settings.company_phone)} · ${esc(settings.company_email)} · ${esc(settings.company_website)}
   </div>
+  </div>
 </body></html>`;
+
 }
 
 export function partyCard(opts: {
