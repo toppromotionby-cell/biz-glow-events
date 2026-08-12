@@ -40,6 +40,8 @@ export type DocumentsOverview = {
     expired: number; // срок действия истёк, решения нет
   };
   sum: number;
+  /** Всего найдено строк после фильтров (для «Показать ещё»). */
+  total: number;
 };
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -54,13 +56,14 @@ function isExpired(validUntil: string | null, status: string): boolean {
 export const listAllDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { search?: string; status?: string; kind?: string; templates?: boolean } | undefined) =>
+    (d: { search?: string; status?: string; kind?: string; templates?: boolean; limit?: number } | undefined) =>
       z
         .object({
           search: z.string().max(200).optional(),
           status: z.string().max(30).optional(),
           kind: z.enum(["all", "quote", "promo"]).optional(),
           templates: z.boolean().optional(),
+          limit: z.number().int().min(10).max(2000).optional(),
         })
         .parse(d ?? {}),
   )
@@ -83,7 +86,7 @@ export const listAllDocuments = createServerFn({ method: "GET" })
             )
             .eq("is_template", templatesMode)
             .order("created_at", { ascending: false })
-            .limit(300)
+            .limit(1000)
         : Promise.resolve({ data: [] as unknown[] }),
       wantPromo
         ? context.supabase
@@ -93,7 +96,7 @@ export const listAllDocuments = createServerFn({ method: "GET" })
             )
             .eq("is_template", templatesMode)
             .order("created_at", { ascending: false })
-            .limit(300)
+            .limit(1000)
         : Promise.resolve({ data: [] as unknown[] }),
     ]);
 
@@ -168,10 +171,12 @@ export const listAllDocuments = createServerFn({ method: "GET" })
 
     visible = [...visible].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
+    const limit = data.limit ?? 50;
     return {
-      rows: visible,
+      rows: visible.slice(0, limit),
       counts,
       sum: visible.reduce((s, r) => s + r.total, 0),
+      total: visible.length,
     };
   });
 
