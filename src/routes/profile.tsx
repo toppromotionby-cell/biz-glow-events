@@ -13,6 +13,7 @@ import { ProfileSummary } from "@/components/profile/ProfileSummary";
 import { OrderHistoryList } from "@/components/profile/OrderHistoryList";
 import { EditOrderDialog } from "@/components/profile/EditOrderDialog";
 import { DeleteOrderDialog } from "@/components/profile/DeleteOrderDialog";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import type {
   EditOrderForm,
   OrderDetails,
@@ -170,10 +171,15 @@ function ProfilePage() {
 
   // Хелперы, сохранены для будущих UI-точек входа (повтор заказа из истории).
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function repeatOrder(orderId: string) {
+  async function repeatOrder(orderId: string) {
     const d = details[orderId];
     if (!d || d.items.length === 0) { toast.error("Нет позиций для повтора"); return; }
-    if (typeof window !== "undefined" && !window.confirm("Заменить текущую корзину позициями этой заявки?")) return;
+    const ok = await confirm({
+      title: "Заменить корзину?",
+      description: "Текущая корзина будет очищена и заполнена позициями этой заявки.",
+      confirmText: "Заменить",
+    });
+    if (!ok) return;
     clearCart();
     for (const it of d.items as OrderItemRow[]) {
       const meta = (it.meta as { slug?: string } | null) ?? null;
@@ -246,6 +252,8 @@ function ProfilePage() {
         onCancel={() => setDeleteId(null)}
         onConfirm={confirmDelete}
       />
+
+      {confirmDialog}
     </div>
   );
 }
