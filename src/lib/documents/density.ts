@@ -51,39 +51,50 @@ export function autoFitScript(preset: DocPrintPreset = BASE_PRINT_PRESET, opts: 
   })};
   var ZOOM = ${opts.zoomMode ? "true" : "false"};
   var root = document.documentElement;
-  var sheet = document.querySelector('.sheet');
-  if (!sheet) return;
-  function pageHeightPx(){
+  // Лист ищем заново на каждом проходе: содержимое превью может обновляться
+  // «на лету» (живое превью подменяет разметку без перезагрузки документа).
+  function sheetEl(){ return document.querySelector('.sheet'); }
+  function pageHeightPx(sheet){
     var cs = getComputedStyle(sheet);
     var contentW = sheet.clientWidth - parseFloat(cs.paddingLeft || '0') - parseFloat(cs.paddingRight || '0');
     var paperW = (210 - 2 * P.x) * MM;
     var scale = paperW > 0 ? contentW / paperW : 1;
     return Math.max(1, (297 - P.top - P.bottom) * MM * scale);
   }
-  function apply(k){
+  function apply(sheet, k){
     root.style.setProperty('--dk', String(k));
     root.style.setProperty('--fk', String(0.5 + k / 2));
     if (ZOOM) { var inner = sheet.firstElementChild; if (inner) inner.style.zoom = String(k); }
   }
   function fit(){
+    var sheet = sheetEl();
+    if (!sheet) return;
     var limit = P.maxPages;
     var chosen = LADDER[LADDER.length - 1];
     for (var i = 0; i < LADDER.length; i++){
-      apply(LADDER[i]);
-      var ph = pageHeightPx();
+      apply(sheet, LADDER[i]);
+      var ph = pageHeightPx(sheet);
       var pages = Math.ceil((sheet.scrollHeight - 1) / ph);
       if (pages <= limit) { chosen = LADDER[i]; break; }
     }
-    apply(chosen);
-    var ph2 = pageHeightPx();
+    apply(sheet, chosen);
+    var ph2 = pageHeightPx(sheet);
     root.style.setProperty('--page-h', ph2 + 'px');
     sheet.classList.add('paged');
   }
-  function schedule(){ requestAnimationFrame(function(){ requestAnimationFrame(fit); }); }
+  var raf = 0;
+  function schedule(){
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(function(){ raf = requestAnimationFrame(fit); });
+  }
   schedule();
   window.addEventListener('load', schedule);
   window.addEventListener('resize', schedule);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule).catch(function(){});
+  // Пересчёт при живом обновлении содержимого.
+  if (window.MutationObserver && document.body) {
+    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
 })();
 <\/script>`;
 }
