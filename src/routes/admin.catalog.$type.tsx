@@ -267,7 +267,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
             </p>
           )}
           <AdminListPanel<Row>
-            items={filtered}
+            items={visible}
             isLoading={isLoading}
             isError={isError}
             error={error}
@@ -278,7 +278,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
                 <Plus className="h-4 w-4 mr-1" />Добавить первую
               </Button>
             )}
-            onReorder={q ? undefined : async (ids) => {
+            onReorder={q || hasMore ? undefined : async (ids) => {
               try { await persistSortOrder(table, ids); qc.invalidateQueries({ queryKey: adminKeys.catalog(table) }); }
               catch (e) { toast.error((e as Error).message); throw e; }
             }}
@@ -294,6 +294,22 @@ function CatalogInner({ table }: { table: CatalogTable }) {
               />
             )}
           />
+          {hasMore && (
+            <div className="space-y-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setVisibleCount((n) => n + RENDER_CHUNK)}
+              >
+                Показать ещё ({filtered.length - visible.length})
+              </Button>
+              <p className="px-1 text-[11px] text-muted-foreground">
+                Перетаскивание для сортировки доступно, когда показан весь список.
+              </p>
+            </div>
+          )}
+
         </div>
 
         <div>
