@@ -397,15 +397,16 @@ export function resolveCollisions(
   photoBox: Rect | null,
   zone: PriceZone,
   placement: PhotoPlacement,
+  priceK = 1,
 ): { textBox: Rect; priceBox: Rect | null } {
   if (zone === "auto") return { textBox, priceBox: null };
   const overPhoto = (r: Rect) =>
     placement !== "full" && placement !== "none" && !!photoBox && rectsOverlap(r, photoBox, 12);
 
   const order = [zone, ...PRICE_FALLBACK.filter((z) => z !== zone)];
-  let price = priceRect(zone, textBox);
+  let price = priceRect(zone, textBox, priceK);
   for (const candidate of order) {
-    const r = priceRect(candidate, textBox);
+    const r = priceRect(candidate, textBox, priceK);
     if (!overPhoto(r)) {
       price = r;
       break;
@@ -413,7 +414,7 @@ export function resolveCollisions(
   }
   // Крайний случай — все зоны заняты фото: прижимаем цену к текстовой колонке.
   if (overPhoto(price)) {
-    price = { x: textBox.x, y: textBox.y + textBox.h - PRICE_H, w: Math.min(PRICE_W, textBox.w), h: PRICE_H };
+    price = priceRect("under-text", textBox, priceK);
   }
 
   // Цена под текстом всегда «съедает» низ текстовой колонки, чтобы текст не залезал.
