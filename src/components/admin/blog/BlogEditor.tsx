@@ -271,18 +271,3 @@ function SlugHintLine({ status }: { status: ReturnType<typeof useSlugUnique> }) 
   if (status === "error") return <span className="text-muted-foreground">Не удалось проверить</span>;
   return <span className="text-muted-foreground">URL: /blog/&lt;slug&gt;</span>;
 }
-
-function SaveStatus({ isDirty, isSaving, isError, savedAt }:
-  { isDirty: boolean; isSaving: boolean; isError: boolean; savedAt: Date | null }) {
-  let label = "Без изменений";
-  let cls = "text-muted-foreground";
-  if (isError) { label = "Ошибка сохранения"; cls = "text-destructive"; }
-  else if (isSaving) { label = "Сохраняю…"; cls = "text-muted-foreground"; }
-  else if (isDirty) {
-    label = savedAt
-      ? `Черновик · ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-      : "Не сохранено";
-    cls = "text-amber-500";
-  }
-  return <span className={cn("text-xs", cls)}>{label}</span>;
-}
