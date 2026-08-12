@@ -420,6 +420,8 @@ function SlideBody({
           top: box.y,
           width: box.w,
           maxHeight: box.h,
+          height: layout.textFill ? box.h : undefined,
+          textAlign: layout.textAlignX,
           color: isFullBleed ? "#fff" : theme.ink,
           overflow: "hidden",
         }}
@@ -437,7 +439,17 @@ function SlideBody({
           style={{ marginTop: 8, fontSize: ts.subtitle, color: isFullBleed ? "rgba(255,255,255,0.82)" : theme.muted }}
         />
         {!isFullBleed && (
-          <div style={{ marginTop: 18, height: 3, width: 64, background: theme.accent, borderRadius: 3 }} />
+          <div
+            style={{
+              marginTop: 18,
+              height: 3,
+              width: 64,
+              background: theme.accent,
+              borderRadius: 3,
+              marginLeft: layout.textAlignX === "center" ? "auto" : layout.textAlignX === "right" ? "auto" : 0,
+              marginRight: layout.textAlignX === "center" ? "auto" : 0,
+            }}
+          />
         )}
         {c.showDescription && c.description.trim() && (
           <div style={{ marginTop: ts.blockGap, fontSize: ts.body, lineHeight: ts.lineGap, whiteSpace: "pre-wrap" }}>
@@ -453,7 +465,17 @@ function SlideBody({
             )}
             <ul style={{ marginTop: 10, fontSize: ts.bullet, lineHeight: ts.lineGap, paddingLeft: 0, listStyle: "none" }}>
               {c.includes.map((i, k) => (
-                <li key={k} style={{ display: "flex", gap: 10, marginBottom: 6 }}>
+                <li
+                  key={k}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    marginBottom: 6,
+                    justifyContent:
+                      layout.textAlignX === "center" ? "center" : layout.textAlignX === "right" ? "flex-end" : "flex-start",
+                    textAlign: layout.textAlignX,
+                  }}
+                >
                   <span style={{ color: theme.accent }}>•</span>
                   <span>{i}</span>
                 </li>
@@ -462,7 +484,16 @@ function SlideBody({
           </div>
         )}
         {c.showSpecs && c.specs.length > 0 && (
-          <div style={{ marginTop: ts.blockGap, display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <div
+            style={{
+              marginTop: ts.blockGap,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent:
+                layout.textAlignX === "center" ? "center" : layout.textAlignX === "right" ? "flex-end" : "flex-start",
+            }}
+          >
             {c.specs.map((s, k) => (
               <div key={k} style={{ background: theme.panel, borderRadius: 12, padding: "9px 14px", fontSize: ts.chip }}>
                 <span style={{ color: theme.muted }}>{s.label}: </span>
