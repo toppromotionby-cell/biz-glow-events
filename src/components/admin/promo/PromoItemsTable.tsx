@@ -17,7 +17,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SortableList } from "@/components/admin/SortableList";
-import { NumField, TextCommitField } from "@/components/admin/field-kit";
+import { NumField, TextAreaField, TextCommitField } from "@/components/admin/field-kit";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest, type ItemHit } from "@/hooks/use-doc-suggest";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
@@ -112,8 +112,8 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
         const sum = list.filter(isCounted).reduce((s, it) => s + lineTotal(it), 0);
         const isCollapsed = collapsed[name];
         return (
-          <div key={`sec-${secIdx}`} className="rounded-xl border border-border">
-            <div className="flex items-center gap-2 border-b border-border/60 bg-muted/30 p-2">
+          <div key={`sec-${secIdx}`} className="overflow-hidden rounded-xl border border-primary/25">
+            <div className="flex items-center gap-2 border-b border-primary/20 border-l-2 border-l-primary bg-primary/5 p-2">
               <Button
                 size="icon"
                 variant="ghost"
@@ -128,11 +128,11 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                 onCommit={(v) => onChange(renamePromoSection(items, name, v))}
                 placeholder="Название раздела"
                 aria-label="Название раздела"
-                className="h-8 max-w-[280px] border-transparent bg-transparent font-medium focus-visible:border-input"
+                className="h-8 max-w-[280px] border-transparent bg-transparent text-base font-semibold text-primary focus-visible:border-input"
               />
 
               <span className="ml-auto text-xs text-muted-foreground">{list.length} поз.</span>
-              <span className="w-[130px] text-right text-sm font-medium tabular-nums">
+              <span className="w-[130px] text-right text-sm font-semibold tabular-nums text-primary">
                 {formatMoney(sum, currency)}
               </span>
               <DropdownMenu>
@@ -170,7 +170,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
 
             {!isCollapsed && (
               <div className="p-2">
-                <div className="px-7 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <div className="px-7 pb-1 text-[11px] uppercase tracking-wide text-primary/70">
                   Позиции раздела
                 </div>
 
@@ -179,7 +179,7 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                   onReorder={(ids) => reorderSection(name, ids)}
                   className="space-y-1"
                   renderItem={(it, handle) => (
-                    <div className={`rounded-lg border border-transparent px-1 py-1 hover:border-border/60 hover:bg-muted/30 ${isCounted(it) ? "" : "opacity-60"}`}>
+                    <div className={`rounded-lg border border-border/60 px-1 py-1 transition-colors hover:border-primary/40 hover:bg-primary/5 ${isCounted(it) ? "" : "opacity-60"}`}>
                       <div className="flex items-center gap-1">
                         <div>{handle}</div>
                         <div className="flex-1">
@@ -204,12 +204,12 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                               </span>
                             )}
                             placeholder="Наименование позиции"
-                            className="h-9"
+                            className="h-9 font-medium text-foreground"
                           />
 
                         </div>
                         <div className="flex w-[120px] flex-col items-end">
-                          <span className="text-sm tabular-nums">{formatMoney(lineTotal(it), currency)}</span>
+                          <span className="text-sm font-semibold tabular-nums text-accent">{formatMoney(lineTotal(it), currency)}</span>
                           {showCost && lineCost(it) > 0 && (
                             <span className="text-[11px] tabular-nums text-muted-foreground">
                               маржа {formatMoney(lineTotal(it) - lineCost(it), currency)}
@@ -311,11 +311,13 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
 
                       <div className="ml-7 mt-1 flex flex-wrap items-center gap-3">
                         {showNotes && (
-                          <Textarea
+                          <TextAreaField
                             value={it.note}
-                            onChange={(e) => replace(it.id, { note: e.target.value })}
+                            onChange={(v) => replace(it.id, { note: v })}
                             placeholder="Примечание"
-                            className="min-h-[34px] flex-1 text-xs"
+                            aria-label="Примечание"
+                            minRows={1}
+                            className="min-h-[34px] min-w-[240px] flex-1 border-primary/25 text-xs focus-visible:border-primary"
                           />
                         )}
                         <Label className="flex items-center gap-2 text-[11px] text-muted-foreground">
