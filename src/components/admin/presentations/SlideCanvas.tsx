@@ -211,6 +211,7 @@ function SlideBody({
   total,
   onEdit,
   brandLogo,
+  plan,
 }: {
   slide: PresentationSlide;
   company: CompanyProfile | null;
@@ -221,9 +222,12 @@ function SlideBody({
   total?: number;
   onEdit?: SlideCanvasProps["onEdit"];
   brandLogo?: string | null;
+  plan: SlideLogoPlan;
 }) {
   const brand = company?.company_brand || company?.company_legal_name || company?.name || "";
   const logo = brandLogo ?? company?.logo_url ?? null;
+  const footerLogo = plan.brand?.slot === "footer" ? logo : null;
+  const heroLogo = plan.brand?.slot === "hero" ? logo : null;
   const c = slide.content;
   const ts = fit.type;
   const { layout } = fit;
@@ -244,7 +248,11 @@ function SlideBody({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {logo ? <Logo path={logo} height={26} /> : brand ? <span>{brand}</span> : null}
+        {footerLogo ? (
+          <Logo path={footerLogo} height={plan.brand?.maxH ?? 26} />
+        ) : brand ? (
+          <span>{brand}</span>
+        ) : null}
       </div>
       {index !== undefined && total !== undefined && (
         <span>
@@ -273,11 +281,12 @@ function SlideBody({
             justifyContent: "center",
           }}
         >
-          {logo ? (
-            <Logo path={logo} height={72} />
+          {heroLogo ? (
+            <Logo path={heroLogo} height={plan.brand?.maxH ?? 72} />
           ) : brand ? (
             <div style={{ ...heading, fontSize: 30, fontWeight: 700 }}>{brand}</div>
           ) : null}
+
           <Editable
             value={slide.title || presentationTitle}
             placeholder="Название презентации"
