@@ -44,10 +44,12 @@ export type PlanLogosInput = {
 const ovScale = (o: LogoOverride): number =>
   o.scale == null ? 1 : clampNum(o.scale, LOGO_SCALE_MIN, LOGO_SCALE_MAX);
 
+type Corner = "tl" | "tr" | "bl" | "br";
+
 const CORNER_ZONE = 300;
 const CORNER_ZONE_H = 140;
 
-function cornerRect(slot: Exclude<LogoSlot, "hero" | "footer">): Rect {
+function cornerRect(slot: Corner): Rect {
   switch (slot) {
     case "tl":
       return { x: 0, y: 0, w: CORNER_ZONE, h: CORNER_ZONE_H };
@@ -66,7 +68,7 @@ function overlaps(a: Rect, b: Rect): boolean {
 
 /** Свободен ли угол от фотографий (для full-bleed считаем свободным — есть затемнение). */
 function cornerFree(
-  slot: Exclude<LogoSlot, "hero" | "footer">,
+  slot: Corner,
   frames: Rect[],
   full: boolean,
   blocked: Rect[] = [],
@@ -77,7 +79,7 @@ function cornerFree(
   return !frames.some((f) => overlaps(zone, f));
 }
 
-const CORNERS: Exclude<LogoSlot, "hero" | "footer">[] = ["tr", "tl", "br", "bl"];
+const CORNERS: Corner[] = ["tr", "tl", "br", "bl"];
 
 /** Переносит логотип из занятой области в ближайший свободный угол. */
 function relocate(
@@ -87,7 +89,7 @@ function relocate(
   full: boolean,
   blocked: Rect[],
 ): LogoPlacementPlan | null {
-  if (!place || place.slot === "hero" || place.slot === "footer") return place;
+  if (!place || place.slot === "hero" || place.slot === "footer" || place.slot === "free") return place;
   if (cornerFree(place.slot, frames, full, blocked)) return place;
   const free = CORNERS.find((slot) => !taken.has(slot) && cornerFree(slot, frames, full, blocked));
   return free ? { ...place, slot: free } : place;
@@ -96,12 +98,12 @@ function relocate(
 /** Минимально допустимая доля от исходного размера логотипа (ниже — не рисуем). */
 export const LOGO_MIN_FIT = 0.55;
 
-const SLOT_RECTS: Record<Exclude<LogoSlot, "hero" | "footer">, Rect> = {
+const SLOT_RECTS: Record<Corner, Rect> = {
   tl: cornerRect("tl"), tr: cornerRect("tr"), bl: cornerRect("bl"), br: cornerRect("br"),
 };
 
 /** Ширина/высота свободного просвета в углу с учётом занятых областей. */
-function freeSpace(slot: Exclude<LogoSlot, "hero" | "footer">, obstacles: Rect[]): { w: number; h: number } {
+function freeSpace(slot: Corner, obstacles: Rect[]): { w: number; h: number } {
   const zone = SLOT_RECTS[slot];
   let w = zone.w;
   let h = zone.h;
@@ -130,7 +132,7 @@ function fitIntoFree(
   blocked: Rect[],
 ): LogoPlacementPlan | null {
   if (!place) return null;
-  if (place.slot === "hero" || place.slot === "footer") {
+  if (place.slot === "hero" || place.slot === "footer" || place.slot === "free") {
     // Hero/footer живут в потоке контента, их ужимает только блок цены/текста,
     // если он физически накрывает область логотипа.
     return place;
@@ -195,10 +197,10 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   } else if (clientAllowed) {
     const taken = new Set<LogoSlot>();
     if (brand) taken.add(brand.slot);
-    const order: Exclude<LogoSlot, "hero" | "footer">[] = titleLike
+    const order: Corner[] = titleLike
       ? ["tr", "tl", "br"]
       : ["tr", "tl", "br", "bl"];
-    const candidates = order.filter((slot) => {
+    const candidates: Corner[] = order.filter((slot) => {
       if (taken.has(slot)) return false;
       // Футер компании занимает низ слева — не ставим клиента в bl.
       if (brand?.slot === "footer" && slot === "bl") return false;
