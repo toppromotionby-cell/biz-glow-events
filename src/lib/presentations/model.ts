@@ -45,13 +45,15 @@ export type SlideType = "title" | "product" | "text" | "section" | "contacts";
 
 export type PresentationStatus = "draft" | "ready" | "archived";
 
-export type PresentationTemplate =
-  | "light" | "dark" | "accent"
-  | "night" | "sunset" | "emerald" | "glow";
-
-export const PRESENTATION_TEMPLATES: PresentationTemplate[] = [
+/** Единый список шаблонов — источник правды и для UI, и для валидаторов. */
+export const PRESENTATION_TEMPLATES = [
   "light", "dark", "accent", "night", "sunset", "emerald", "glow",
-];
+] as const;
+
+export type PresentationTemplate = (typeof PRESENTATION_TEMPLATES)[number];
+
+export const PRESENTATION_STATUSES = ["draft", "ready", "archived"] as const;
+
 
 export const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
   title: "Титульный",
