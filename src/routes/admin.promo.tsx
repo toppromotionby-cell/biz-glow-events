@@ -111,6 +111,17 @@ function Page() {
 function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState<Row>(row);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  // Возврат к другой записи в списке — сбрасываем форму и статус.
+  useEffect(() => {
+    setF(row);
+    setSaveState("idle");
+  }, [row]);
+
+  const patch = (p: Partial<Row>) => {
+    setF((prev) => ({ ...prev, ...p }));
+    setSaveState("dirty");
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -128,22 +139,49 @@ function Editor({ row, onDelete }: { row: Row; onDelete: () => void }) {
       const { error } = await supabase.from("promo_codes").update(patch).eq("id", row.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-promo"] }); toast.success("Сохранено"); },
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: () => setSaveState("saving"),
+    onSuccess: () => {
+      setSaveState("saved");
+      qc.invalidateQueries({ queryKey: ["admin-promo"] });
+      toast.success("Сохранено");
+    },
+    onError: (e: Error) => {
+      setSaveState("error");
+      toast.error(e.message);
+    },
   });
 
+  // Защита от потери правок: и при переходах внутри админки, и при закрытии вкладки.
+  const { guardDialog } = useUnsavedGuard(saveState === "dirty" || saveState === "error");
+
+  // Ctrl/Cmd+S — сохранить сразу, как в остальных редакторах.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s")) return;
+      e.preventDefault();
+      if (!save.isPending) save.mutate();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [save]);
+
   return (
+    <>
+    {guardDialog}
     <AdminEditorShell
       title={<span className="font-mono text-xl">{f.code}</span>}
       switches={
         <label className="flex items-center gap-2 text-sm">
-          <Switch checked={!!f.active} onCheckedChange={(v) => setF({ ...f, active: v })} /> Активен
+          <Switch checked={!!f.active} onCheckedChange={(v) => patch({ active: v })} /> Активен
         </label>
       }
       onDelete={onDelete}
       onSave={() => save.mutate()}
       saving={save.isPending}
+      saveState={saveState}
+      errorMessage={save.error instanceof Error ? save.error.message : null}
     >
+
       <div className="grid md:grid-cols-2 gap-4">
         <Field label="Код" required><Input value={f.code ?? ""} onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase() })} className="font-mono" /></Field>
         <Field label="Тип скидки" required>
