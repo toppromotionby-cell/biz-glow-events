@@ -9,7 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, ExternalLink, History, Plus, Search, Send,
+  Download, ExternalLink, History, Plus, Search, Send, ListTree, User, Wallet, ShieldCheck,
   Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation,
 } from "lucide-react";
 import {
@@ -21,11 +21,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SaveStatus, type SaveState } from "@/components/admin/SaveStatus";
 import { Field } from "@/components/admin/Field";
+import { DocEditorShell } from "@/components/admin/editor/DocEditorShell";
+import type { EditorSection } from "@/components/admin/editor/EditorSidebar";
 
 import {
   getQuote, saveQuote, searchCatalogForQuote, getQuoteDocSettings,
