@@ -6,7 +6,7 @@ import {
   type Presentation,
   type PresentationSlide,
 } from "@/lib/presentations/model";
-import { SLIDE_H, SLIDE_W } from "@/lib/presentations/design";
+import { SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 
@@ -106,7 +106,7 @@ export async function exportPresentationPptx(
       overrides: s.content.layout,
       hasBrandLogo: !!logoData,
       hasClientLogo: !!clientLogoData,
-      blocked: fit.layout.priceBox ? [fit.layout.priceBox] : [],
+      blocked: [fit.layout.textBox, fit.layout.priceBox].filter(Boolean) as Rect[],
     });
     const IN = W / SLIDE_W;
     const pt = (v: number) => v * 0.75; // px -> pt для кеглей

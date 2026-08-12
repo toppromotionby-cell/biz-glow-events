@@ -6,7 +6,7 @@ import fontkit from "@pdf-lib/fontkit";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { hexToRgb01 } from "@/lib/documents/brand";
 import type { Presentation, PresentationSlide } from "@/lib/presentations/model";
-import { MAX_SLIDE_PHOTOS, SLIDE_W } from "@/lib/presentations/design";
+import { MAX_SLIDE_PHOTOS, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
 import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
@@ -227,7 +227,7 @@ async function drawSlide(a: DrawArgs) {
     hasBrandLogo: !!logo,
     hasClientLogo: !!clientLogo,
     overrides: slide.content.layout,
-    blocked: slideFit.layout.priceBox ? [slideFit.layout.priceBox] : [],
+    blocked: [slideFit.layout.textBox, slideFit.layout.priceBox].filter(Boolean) as Rect[],
   });
   const drawClientLogo = () => {
     if (clientLogo && plan.client) drawPlannedLogo(page, clientLogo, plan.client);

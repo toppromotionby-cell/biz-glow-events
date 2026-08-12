@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planSlideLogos } from "@/lib/presentations/logo-plan";
+import { LOGO_MIN_FIT, planSlideLogos } from "@/lib/presentations/logo-plan";
 import { DEFAULT_PRESENTATION_LOGO_LAYOUT, type SlideType } from "@/lib/presentations/model";
 
 const TYPES: SlideType[] = ["title", "product", "text", "section", "contacts"];
@@ -61,5 +61,63 @@ describe("planSlideLogos", () => {
     });
     expect(off.brand).toBeNull();
     expect(off.client).toBeNull();
+  });
+});
+
+describe("автоуменьшение логотипа (логика Canva)", () => {
+  const FULL_BLOCK = [
+    { x: 0, y: 0, w: 1280, h: 200 },
+    { x: 0, y: 520, w: 1280, h: 200 },
+  ];
+
+  it("не меняет размер, когда угол свободен", () => {
+    const base = planSlideLogos({
+      slideType: "product",
+      layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
+      hasBrandLogo: false,
+      hasClientLogo: true,
+    });
+    const withBlocked = planSlideLogos({
+      slideType: "product",
+      layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
+      hasBrandLogo: false,
+      hasClientLogo: true,
+      blocked: [{ x: 400, y: 300, w: 200, h: 100 }],
+    });
+    expect(withBlocked.client?.maxH).toBe(base.client?.maxH);
+  });
+
+  it("уменьшает логотип, если все углы частично заняты", () => {
+    const base = planSlideLogos({
+      slideType: "product",
+      layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
+      hasBrandLogo: false,
+      hasClientLogo: true,
+    });
+    const tight = planSlideLogos({
+      slideType: "product",
+      layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
+      hasBrandLogo: false,
+      hasClientLogo: true,
+      blocked: [
+        { x: 140, y: 0, w: 1000, h: 720 },
+        { x: 0, y: 100, w: 1280, h: 620 },
+      ],
+    });
+    expect(tight.client).not.toBeNull();
+    expect(tight.client!.maxW).toBeLessThan(base.client!.maxW);
+    expect(tight.client!.maxW / tight.client!.maxH).toBeCloseTo(base.client!.maxW / base.client!.maxH, 4);
+    expect(tight.client!.maxW / base.client!.maxW).toBeGreaterThanOrEqual(LOGO_MIN_FIT);
+  });
+
+  it("убирает логотип, если места меньше минимума", () => {
+    const plan = planSlideLogos({
+      slideType: "product",
+      layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
+      hasBrandLogo: false,
+      hasClientLogo: true,
+      blocked: FULL_BLOCK.concat([{ x: 0, y: 0, w: 1280, h: 720 }]),
+    });
+    expect(plan.client).toBeNull();
   });
 });

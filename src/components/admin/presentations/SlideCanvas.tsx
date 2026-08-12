@@ -125,7 +125,7 @@ export function SlideCanvas(props: SlideCanvasProps) {
     hasBrandLogo: !!brandLogo,
     hasClientLogo: !!clientLogo,
     overrides: slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES,
-    blocked: fit.layout.priceBox ? [fit.layout.priceBox] : [],
+    blocked: [fit.layout.textBox, fit.layout.priceBox].filter(Boolean) as Rect[],
   });
 
   return (
