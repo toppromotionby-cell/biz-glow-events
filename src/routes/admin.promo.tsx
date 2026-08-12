@@ -69,7 +69,7 @@ function Page() {
         title="Промокоды"
         subtitle={`${items.length} кодов`}
         icon={<Tag className="h-7 w-7" />}
-        action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Создать</Button>}
+        action={<Button disabled={create.isPending} onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Создать</Button>}
       />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
@@ -110,7 +110,7 @@ function Page() {
             description="Выберите код из списка слева или создайте новый — он появится с дефолтной скидкой 10%."
             icon={<Tag className="h-6 w-6" aria-hidden="true" />}
             action={
-              <Button onClick={() => create.mutate()} className="btn-primary-gradient">
+              <Button disabled={create.isPending} onClick={() => create.mutate()} className="btn-primary-gradient">
                 <Plus className="h-4 w-4 mr-2" />Создать промокод
               </Button>
             }
