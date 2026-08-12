@@ -81,7 +81,9 @@ export function htmlToPlainText(html: string): string {
       .replace(/<!--[\s\S]*?-->/g, "")
       .replace(/<\/(p|div|li|h[1-6]|tr|blockquote)\s*>/gi, "\n")
       .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<[^>]+>/g, ""),
+      .replace(/<[^>]+>/g, "")
+      // Обрезанный на середине тег в конце строки (частый след импорта).
+      .replace(/<[^>]*$/, ""),
   )
     .replace(/[ \t\u00a0]+/g, " ")
     .replace(/\n\s*\n\s*/g, "\n")
