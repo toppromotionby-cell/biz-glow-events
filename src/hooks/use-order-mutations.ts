@@ -11,17 +11,19 @@ import {
 } from "@/lib/orders.functions";
 import type { OrderStatus } from "@/components/admin/orders/types";
 
-const ORDERS_KEY = ["admin-orders"] as const;
-const ORDER_MODAL_KEY = ["order-modal"] as const;
-const ORDER_TIMELINE_KEY = ["order-modal-timeline"] as const;
-
 export function useOrderMutations() {
   const qc = useQueryClient();
+  // Инвалидируем по префиксам: список заказов + любые открытые карточки/истории.
+  // Раньше здесь были ключи "order-modal*", которых после унификации кэша нет,
+  // и открытая карточка заказа не обновлялась после действий из списка.
   const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ORDERS_KEY });
-    qc.invalidateQueries({ queryKey: ORDER_MODAL_KEY });
-    qc.invalidateQueries({ queryKey: ORDER_TIMELINE_KEY });
+    qc.invalidateQueries({ queryKey: adminKeys.ordersAll });
+    qc.invalidateQueries({ queryKey: ["order"] });
+    qc.invalidateQueries({ queryKey: ["order-items"] });
+    qc.invalidateQueries({ queryKey: ["order-timeline"] });
+    qc.invalidateQueries({ queryKey: adminKeys.attention });
   };
+
 
   // Запись событий status_changed:* и paid_changed выполняет триггер БД
   // public.log_order_status_change (см. миграцию Stage 5).
