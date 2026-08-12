@@ -296,7 +296,7 @@ export function CatalogEditor({
     >
       {/* === Основное === */}
       <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Заголовок">
+        <Field label="Заголовок" required error={errors["title"]}>
           <Input value={form.title ?? ""} onChange={(e) => onTitleChange(e.target.value)} />
         </Field>
         <Field label="Категория">
@@ -349,14 +349,14 @@ export function CatalogEditor({
 
       {/* === SEO и URL === */}
       <CollapsibleSection title="SEO и URL">
-        <Field label="Slug (URL)">
+        <Field label="Slug (URL)" required error={errors["slug"]} hint="Строчная латиница, цифры и дефис">
           <Input value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
         </Field>
         <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="SEO title">
+          <Field label="SEO title" error={errors["seo_title"]}>
             <Input value={form.seo_title ?? ""} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} />
           </Field>
-          <Field label="SEO description">
+          <Field label="SEO description" error={errors["seo_description"]}>
             <Input value={form.seo_description ?? ""} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} />
           </Field>
         </div>
