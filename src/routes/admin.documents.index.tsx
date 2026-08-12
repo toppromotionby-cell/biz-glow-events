@@ -88,14 +88,31 @@ function Page() {
   const viewer = useDocumentViewer();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [kind, setKind] = useState<"all" | "quote" | "promo">("all");
-  const [view, setView] = useState<"docs" | "templates" | "finance" | "orders" | "analytics">("docs");
+  const sp = Route.useSearch();
+  const routeNavigate = Route.useNavigate();
+
+  const status = sp.status ?? "all";
+  const kind = sp.kind ?? "all";
+  const view = sp.view ?? "docs";
+  const patchSearch = (patch: DocSearch) =>
+    void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...patch }), replace: true });
+  const setStatus = (v: string) => patchSearch({ status: v === "all" ? undefined : v });
+  const setKind = (v: DocKind) => patchSearch({ kind: v === "all" ? undefined : v });
+  const setView = (v: DocView) => patchSearch({ view: v === "docs" ? undefined : v });
+
+  const [search, setSearch] = useState(sp.q ?? "");
   const templates = view === "templates";
   const [createOpen, setCreateOpen] = useState(false);
   const [limit, setLimit] = useState(50);
   const debouncedSearch = useDebouncedValue(search, 300);
+
+  // Поиск попадает в URL после дебаунса — чтобы ссылка была шарабельной.
+  useEffect(() => {
+    if ((sp.q ?? "") === debouncedSearch) return;
+    patchSearch({ q: debouncedSearch || undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
 
   const list = useServerFn(listAllDocuments);
   const listOrderDocs = useServerFn(listOrderDocuments);
