@@ -589,7 +589,7 @@ function EditorPage() {
           <>
             <span>№ {promoNumberDisplay(quote)}</span>
             <span>
-              · {saveStatus(saveMut.isPending ? "saving" : dirty ? "dirty" : "saved", savedAt).text}
+              · {saveStatus(saver.state, saver.savedAt, saver.error).text}
             </span>
             {validity === "expired" && <StatusPill tone="danger">Срок истёк</StatusPill>}
             <QuoteShareStatus share={shareState} />
