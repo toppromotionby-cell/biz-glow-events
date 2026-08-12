@@ -64,7 +64,7 @@ function Page() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (row) => { qc.invalidateQueries({ queryKey: ["admin-testimonials"] }); setSelected(row); },
+    onSuccess: (row) => { qc.invalidateQueries({ queryKey: adminKeys.testimonials }); selectId(row.id); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -73,7 +73,7 @@ function Page() {
       const { error } = await supabase.from("testimonials").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-testimonials"] }); setSelected(null); toast.success("Удалено"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: adminKeys.testimonials }); selectId(null); toast.success("Удалено"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -81,36 +81,65 @@ function Page() {
     <div className="space-y-5">
       <AdminPageHeader
         title="Отзывы"
-        subtitle={`${items.length} записей`}
+        subtitle={debouncedQuery ? `${visible.length} из ${items.length} записей` : `${items.length} записей`}
         action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
       />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
-        <AdminListPanel
-          items={items as Row[]}
-          isLoading={isLoading}
-          onReorder={async (ids) => {
-            try { await persistSortOrder("testimonials", ids); qc.invalidateQueries({ queryKey: ["admin-testimonials"] }); }
-            catch (e) { toast.error((e as Error).message); throw e; }
-          }}
-          renderItem={(it, handle) => (
-            <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
-              {handle}
-              <button onClick={() => setSelected(it)} className="flex-1 text-left p-3 text-sm min-w-0">
-                <div className="font-medium truncate flex items-center gap-1.5">
-                  {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
-                  <span className="truncate">{it.client_name}</span>
-                </div>
-                <div className="text-xs opacity-70 flex items-center gap-2">
-                  <span>{"★".repeat(it.rating)}</span>
-                  <StatusPill tone={it.published ? "success" : "muted"}>
-                    {it.published ? "опубликовано" : "черновик"}
-                  </StatusPill>
-                </div>
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Поиск по отзывам…"
+              aria-label="Поиск по отзывам"
+              className="pl-8 pr-8"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Очистить поиск"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
               </button>
-            </div>
-          )}
-        />
+            )}
+          </div>
+          <AdminListPanel
+            items={visible}
+            isLoading={isLoading}
+            emptyText={debouncedQuery ? "Ничего не найдено" : "Нет отзывов"}
+            // Перетаскивание доступно только без фильтра: иначе порядок сохранится неверно.
+            {...(debouncedQuery
+              ? {}
+              : {
+                  onReorder: async (ids: string[]) => {
+                    try { await persistSortOrder("testimonials", ids); qc.invalidateQueries({ queryKey: adminKeys.testimonials }); }
+                    catch (e) { toast.error((e as Error).message); throw e; }
+                  },
+                })}
+            renderItem={(it, handle) => (
+              <div className={`flex items-center gap-1 rounded-lg ${selected?.id === it.id ? "bg-gradient-primary text-primary-foreground" : "hover:bg-muted/40"}`}>
+                {handle}
+                <button onClick={() => selectId(it.id)} className="flex-1 text-left p-3 text-sm min-w-0">
+                  <div className="font-medium truncate flex items-center gap-1.5">
+                    {it.featured && <Star className="h-3 w-3 fill-current shrink-0" />}
+                    <span className="truncate">{it.client_name}</span>
+                  </div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    <span>{"★".repeat(it.rating)}</span>
+                    <StatusPill tone={it.published ? "success" : "muted"}>
+                      {it.published ? "опубликовано" : "черновик"}
+                    </StatusPill>
+                  </div>
+                </button>
+              </div>
+            )}
+          />
+        </div>
+
 
         {selected ? (
           <Editor key={selected.id} row={selected} onDelete={() => remove.mutate(selected.id)} />
