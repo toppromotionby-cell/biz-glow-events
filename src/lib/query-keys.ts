@@ -38,10 +38,19 @@ export const adminKeys = {
   presentations: ["presentations"] as const,
   presentation: (id: string) => ["presentation", id] as const,
 
-  // Настройки
+  // Настройки и справочники
   users: ["admin", "users"] as const,
   siteSettings: ["admin", "site-settings"] as const,
+  siteSettingsPublic: ["site-settings", "public"] as const,
+  catalogStructure: ["admin", "catalog-structure"] as const,
+  catalogNav: ["catalog-nav"] as const,
+  campaignsLog: ["admin", "invites", "log"] as const,
+  emailTemplates: ["email-templates"] as const,
+  emailTemplate: (id: string | null) => ["email-template", id] as const,
+  hygiene: ["admin-hygiene"] as const,
+  documentSettings: ["document-settings"] as const,
 };
+
 
 /**
  * Обновить всё, что зависит от одного заказа: карточку, позиции, историю,
