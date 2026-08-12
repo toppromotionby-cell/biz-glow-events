@@ -3,7 +3,10 @@
 // клиента, они никогда не занимают один и тот же слот и не наезжают на фото.
 // Используется превью (SlideCanvas), PDF и PPTX — раскладка везде одинаковая.
 import { SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
-import type { PresentationLogoLayout, SlideType } from "@/lib/presentations/model";
+import {
+  clampNum, DEFAULT_LAYOUT_OVERRIDES, LOGO_SCALE_MAX, LOGO_SCALE_MIN,
+  type LogoOverride, type PresentationLogoLayout, type SlideLayoutOverrides, type SlideType,
+} from "@/lib/presentations/model";
 
 export type LogoSlot = "hero" | "footer" | "tl" | "tr" | "bl" | "br";
 
@@ -28,7 +31,12 @@ export type PlanLogosInput = {
   layout: PresentationLogoLayout;
   hasBrandLogo: boolean;
   hasClientLogo: boolean;
+  /** Ручные настройки раскладки слайда (зона и масштаб каждого логотипа). */
+  overrides?: SlideLayoutOverrides;
 };
+
+const ovScale = (o: LogoOverride): number =>
+  o.scale == null ? 1 : clampNum(o.scale, LOGO_SCALE_MIN, LOGO_SCALE_MAX);
 
 const CORNER_ZONE = 300;
 const CORNER_ZONE_H = 140;
@@ -69,10 +77,18 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
   const full = input.placement === "full";
   const titleLike = isTitleLike(slideType);
   const scale = layout.scale;
+  const ov = input.overrides ?? DEFAULT_LAYOUT_OVERRIDES;
 
   // --- Логотип компании: ровно одно место ---
   let brand: LogoPlacementPlan | null = null;
-  if (hasBrandLogo && layout.brand !== "off") {
+  if (hasBrandLogo && layout.brand !== "off" && ov.brandLogo.zone !== "auto") {
+    const k = scale * ovScale(ov.brandLogo);
+    brand = ov.brandLogo.zone === "hero"
+      ? { slot: "hero", maxW: 320 * k, maxH: 76 * k }
+      : ov.brandLogo.zone === "footer"
+        ? { slot: "footer", maxW: 180 * k, maxH: 28 * k }
+        : { slot: ov.brandLogo.zone, maxW: 200 * k, maxH: 48 * k };
+  } else if (hasBrandLogo && layout.brand !== "off") {
     if (slideType === "title") {
       // Крупный логотип в контентной зоне, в футере его уже не рисуем.
       brand = { slot: "hero", maxW: 320 * scale, maxH: 76 * scale };
@@ -88,7 +104,17 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
     layout.client !== "off" &&
     (layout.client !== "title-only" || titleLike);
 
-  if (clientAllowed) {
+  if (clientAllowed && ov.clientLogo.zone !== "auto" && ov.clientLogo.zone !== "hero") {
+    const k = scale * ovScale(ov.clientLogo);
+    const slot = ov.clientLogo.zone;
+    client = slot === "footer"
+      ? { slot: "footer", maxW: 160 * k, maxH: 26 * k }
+      : { slot, maxW: (titleLike ? 220 : 170) * k, maxH: (titleLike ? 54 : 42) * k };
+    // Один слот — один логотип: если совпал с логотипом компании, двигаем компанию.
+    if (brand && brand.slot === client.slot) {
+      brand = { ...brand, slot: brand.slot === "footer" ? "bl" : "footer" };
+    }
+  } else if (clientAllowed) {
     const taken = new Set<LogoSlot>();
     if (brand) taken.add(brand.slot);
     const order: Exclude<LogoSlot, "hero" | "footer">[] = titleLike
