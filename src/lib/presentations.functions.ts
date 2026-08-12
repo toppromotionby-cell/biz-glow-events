@@ -419,28 +419,43 @@ export const savePresentation = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (upErr) throw new Error(upErr.message);
 
-    const { error: delErr } = await context.supabase
-      .from("presentation_slides")
-      .delete()
-      .eq("presentation_id", data.id);
+    // Слайды сохраняем точечно: существующие обновляем по id (id не меняются,
+    // ссылки и история остаются валидными), новые вставляем, лишние удаляем.
+    const isUuid = (v: unknown): v is string =>
+      typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+    const toRow = (s: (typeof data.slides)[number], i: number) => ({
+      presentation_id: data.id,
+      position: i,
+      type: s.type,
+      title: s.title,
+      subtitle: s.subtitle,
+      image_url: s.image_url,
+      content_json: normalizeContent(s.content) as unknown as Record<string, unknown>,
+      entity_type: s.entity_type,
+      entity_id: s.entity_id,
+      quote_item_id: s.quote_item_id,
+      is_visible: s.is_visible,
+    });
+
+    const keepIds = data.slides.map((s) => s.id).filter(isUuid);
+    let delQuery = context.supabase.from("presentation_slides").delete().eq("presentation_id", data.id);
+    if (keepIds.length) delQuery = delQuery.not("id", "in", `(${keepIds.join(",")})`);
+    const { error: delErr } = await delQuery;
     if (delErr) throw new Error(delErr.message);
 
-    if (data.slides.length) {
-      const rows = data.slides.map((s, i) => ({
-        presentation_id: data.id,
-        position: i,
-        type: s.type,
-        title: s.title,
-        subtitle: s.subtitle,
-        image_url: s.image_url,
-        content_json: normalizeContent(s.content) as unknown as Record<string, unknown>,
-        entity_type: s.entity_type,
-        entity_id: s.entity_id,
-        quote_item_id: s.quote_item_id,
-        is_visible: s.is_visible,
-      }));
-      const { error: insErr } = await context.supabase.from("presentation_slides").insert(rows as never);
-      if (insErr) throw new Error(insErr.message);
+    const existing = data.slides.flatMap((s, i) => (isUuid(s.id) ? [{ id: s.id, ...toRow(s, i) }] : []));
+    if (existing.length) {
+      const { error } = await context.supabase
+        .from("presentation_slides")
+        .upsert(existing as never, { onConflict: "id" });
+      if (error) throw new Error(error.message);
+    }
+
+    const fresh = data.slides.flatMap((s, i) => (isUuid(s.id) ? [] : [toRow(s, i)]));
+    if (fresh.length) {
+      const { error } = await context.supabase.from("presentation_slides").insert(fresh as never);
+      if (error) throw new Error(error.message);
     }
 
     // База знаний: тексты слайдов становятся подсказками в документах.
