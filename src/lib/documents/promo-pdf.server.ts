@@ -6,6 +6,7 @@
  * объединения «услуга», итоги и примечания в файле всегда совпадают с тем,
  * что видно на экране. Стили (цвета, рамки, кегли) повторяют CSS превью.
  */
+import { embedImageUrl } from "@/lib/documents/image-embed.server";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 
@@ -142,23 +143,9 @@ function drawLines(
   }
 }
 
-const MAX_LOGO_BYTES = 4 * 1024 * 1024;
-
+/** Логотип: webp/avif конвертируются загрузчиком, ошибки не ломают документ. */
 async function embedLogo(pdf: PDFDocument, url: string | null | undefined): Promise<PDFImage | null> {
-  const src = (url ?? "").trim();
-  if (!src || !/^https?:\/\//i.test(src)) return null;
-  try {
-    const res = await fetch(src, { signal: AbortSignal.timeout(6000) });
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (!bytes.byteLength || bytes.byteLength > MAX_LOGO_BYTES) return null;
-    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
-    const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
-    if (!isPng && !isJpg) return null;
-    return isPng ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
-  } catch {
-    return null;
-  }
+  return await embedImageUrl(pdf, url, { width: 800 });
 }
 
 /** Ширины колонок в pt: доли из макета + гарантированный минимум под текст. */
