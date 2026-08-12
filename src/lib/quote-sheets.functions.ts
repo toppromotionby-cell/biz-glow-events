@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertPermission } from "@/lib/authz";
+import { assertDocumentsStaff } from "@/lib/authz";
 import { computeTotals } from "@/lib/quotes-model";
 import type { SheetDiffRow, SheetItemRow } from "@/lib/quote-sheets.server";
 
@@ -10,9 +10,6 @@ export type { SheetDiffRow, SheetItemRow };
 
 type Ctx = { supabase: never; userId: string };
 
-async function assertStaff(context: unknown) {
-  await assertPermission(context as never, "documents.manage");
-}
 
 type QuoteRow = Record<string, unknown>;
 
@@ -49,7 +46,7 @@ export const ensureQuoteSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ url: string; sheetId: string }> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const { createSpreadsheet, writeRows } = await import("@/lib/quote-sheets.server");
     const { quote, rows } = await loadQuoteAndItems(context.supabase as never, data.id);
 
@@ -73,7 +70,7 @@ export const pushQuoteToSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const { writeRows } = await import("@/lib/quote-sheets.server");
     const { quote, rows } = await loadQuoteAndItems(context.supabase as never, data.id);
     const sheetId = quote.sheet_id as string | null;
@@ -99,7 +96,7 @@ export const getQuoteSheetDiff = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<QuoteSheetState> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const { quote, rows } = await loadQuoteAndItems(context.supabase as never, data.id);
     const sheetId = quote.sheet_id as string | null;
     const url = (quote.sheet_url as string | null) ?? null;
@@ -121,7 +118,7 @@ export const applyQuoteSheetDiff = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), rowIds: z.array(z.string()).max(500) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ applied: number; total: number }> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const sb = context.supabase as never as any;
     const { readRows, diffRows } = await import("@/lib/quote-sheets.server");
     const { quote, rows } = await loadQuoteAndItems(context.supabase as never, data.id);

@@ -2,15 +2,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertPermission } from "@/lib/authz";
+import { assertDocumentsStaff } from "@/lib/authz";
 import { computePromoTotals, normalizePromoItem, normalizePromoQuote } from "@/lib/promo-quote-model";
 import type { PromoSheetDiffRow, PromoSheetRow } from "@/lib/promo-sheets.server";
 
 export type { PromoSheetDiffRow, PromoSheetRow };
 
-async function assertStaff(context: unknown) {
-  await assertPermission(context as never, "documents.manage");
-}
 
 type Row = Record<string, unknown>;
 
@@ -57,7 +54,7 @@ export const ensurePromoSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ url: string; sheetId: string }> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const { createPromoSpreadsheet, writePromoSheet } = await import("@/lib/promo-sheets.server");
     const { quote, promo, itemsModel, rows } = await loadPromo(context.supabase as never, data.id);
 
@@ -83,7 +80,7 @@ export const pushPromoToSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const { writePromoSheet } = await import("@/lib/promo-sheets.server");
     const { quote, promo, itemsModel, rows } = await loadPromo(context.supabase as never, data.id);
     const sheetId = quote.sheet_id as string | null;
@@ -110,7 +107,7 @@ export const getPromoSheetDiff = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<PromoSheetState> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const { quote, rows } = await loadPromo(context.supabase as never, data.id);
     const sheetId = quote.sheet_id as string | null;
     const url = (quote.sheet_url as string | null) ?? null;
@@ -132,7 +129,7 @@ export const applyPromoSheetDiff = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), rowIds: z.array(z.string()).max(500) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ applied: number; total: number }> => {
-    await assertStaff(context);
+    await assertDocumentsStaff(context as never);
     const sb = context.supabase as never as any;
     const { readPromoRows, diffPromoRows, writePromoSheet } = await import("@/lib/promo-sheets.server");
     const { quote, rawItems, rows } = await loadPromo(context.supabase as never, data.id);
