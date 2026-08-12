@@ -14,7 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, Check, Download, FileText, Layers, ListChecks, Loader2,
-  Palette, Play, Plus, RefreshCw, ShieldCheck, Undo2,
+  LibraryBig, Palette, Play, Plus, RefreshCw, ShieldCheck, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,8 @@ import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/p
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CatalogPickerDialog, type CatalogPickResult } from "@/components/admin/CatalogPickerDialog";
+import { pickToSlideDraft } from "@/lib/catalog-pick";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
