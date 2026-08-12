@@ -46,9 +46,13 @@ function Page() {
     void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...p }), replace: true });
   const { query, setQuery, debouncedQuery, selectedId, selectId } = useListUrlState(sp, patchSearch);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: adminKeys.testimonials,
-    queryFn: async () => (await supabase.from("testimonials").select("*").order("sort_order").order("created_at", { ascending: false }).limit(ADMIN_LIST_LIMIT)).data ?? [],
+    queryFn: async () => {
+      const { data, error: e } = await supabase.from("testimonials").select("*").order("sort_order").order("created_at", { ascending: false }).limit(ADMIN_LIST_LIMIT);
+      if (e) throw e;
+      return data ?? [];
+    },
   });
 
   const visible = useMemo(
@@ -112,6 +116,9 @@ function Page() {
           <AdminListPanel
             items={visible}
             isLoading={isLoading}
+            isError={isError}
+            error={error}
+            onRetry={() => void refetch()}
             emptyText={debouncedQuery ? "Ничего не найдено" : "Нет отзывов"}
             // Перетаскивание доступно только без фильтра: иначе порядок сохранится неверно.
             {...(debouncedQuery

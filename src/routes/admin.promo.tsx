@@ -32,9 +32,13 @@ function Page() {
   const qc = useQueryClient();
   const [sel, setSel] = useState<Row | null>(null);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: adminKeys.promo,
-    queryFn: async () => (await supabase.from("promo_codes").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data, error: e } = await supabase.from("promo_codes").select("*").order("created_at", { ascending: false });
+      if (e) throw e;
+      return data ?? [];
+    },
   });
 
   const create = useMutation({
@@ -72,6 +76,9 @@ function Page() {
         <AdminListPanel
           items={items as Row[]}
           isLoading={isLoading}
+          isError={isError}
+          error={error}
+          onRetry={() => void refetch()}
           emptyText="Нет промокодов"
           onReorder={async (ids) => {
             try { await persistSortOrder("promo_codes", ids); qc.invalidateQueries({ queryKey: adminKeys.promo }); }
