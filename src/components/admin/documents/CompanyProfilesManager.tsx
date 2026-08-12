@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
+import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { BRAND_ACCENTS } from "@/lib/documents/brand";
 import { VatSettings } from "@/components/admin/VatSettings";
 import { LogoHeaderDesigner } from "@/components/admin/LogoHeaderDesigner";
@@ -31,6 +32,7 @@ export function CompanyProfilesManager() {
   const saveFn = useServerFn(saveCompanyProfile);
   const delFn = useServerFn(deleteCompanyProfile);
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const { data: companies, isLoading } = useQuery({
     queryKey: adminKeys.companyProfiles,
@@ -131,6 +133,7 @@ export function CompanyProfilesManager() {
 
   return (
     <div className="space-y-3">
+      {confirmDialog}
       {noDefault && (
         <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
           Ни одна компания не отмечена как основная. Её реквизиты подставляются в документы,
@@ -378,9 +381,15 @@ export function CompanyProfilesManager() {
                 type="button"
                 variant="ghost"
                 className="text-destructive"
-                onClick={() => {
-                  if (confirm("Удалить компанию? Документы с ней вернутся к общим настройкам."))
-                    remove.mutate(activeId);
+                disabled={remove.isPending}
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Удалить компанию?",
+                    description: "Документы с этой компанией вернутся к общим настройкам. Действие необратимо.",
+                    confirmText: "Удалить",
+                    destructive: true,
+                  });
+                  if (ok) remove.mutate(activeId);
                 }}
               >
                 <Trash2 className="mr-1 h-4 w-4" />

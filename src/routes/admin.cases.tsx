@@ -48,9 +48,13 @@ function CasesAdmin() {
     void routeNavigate({ to: ".", search: (prev) => ({ ...prev, ...p }), replace: true });
   const { query, setQuery, debouncedQuery, selectedId, selectId } = useListUrlState(sp, patchSearch);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: adminKeys.cases,
-    queryFn: async () => (await supabase.from("cases").select("*").order("sort_order", { ascending: true }).order("event_date", { ascending: false, nullsFirst: false }).limit(ADMIN_LIST_LIMIT)).data ?? [],
+    queryFn: async () => {
+      const { data, error: e } = await supabase.from("cases").select("*").order("sort_order", { ascending: true }).order("event_date", { ascending: false, nullsFirst: false }).limit(ADMIN_LIST_LIMIT);
+      if (e) throw e;
+      return data ?? [];
+    },
   });
 
   const visible = useMemo(
@@ -86,7 +90,7 @@ function CasesAdmin() {
       <AdminPageHeader
         title="Кейсы"
         subtitle={debouncedQuery ? `${visible.length} из ${items.length} записей` : `${items.length} записей`}
-        action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
+        action={<Button disabled={create.isPending} onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
       />
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-5">
@@ -114,6 +118,9 @@ function CasesAdmin() {
           <AdminListPanel
             items={visible}
             isLoading={isLoading}
+            isError={isError}
+            error={error}
+            onRetry={() => void refetch()}
             emptyText={debouncedQuery ? "Ничего не найдено" : "Нет кейсов"}
             // Перетаскивание доступно только без фильтра: иначе порядок сохранится неверно.
             {...(debouncedQuery

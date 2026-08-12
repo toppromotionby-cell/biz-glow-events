@@ -69,6 +69,8 @@ function Page() {
       description: kind === "hide"
         ? "Карточки перестанут показываться на сайте, данные сохранятся."
         : "Действие необратимо: карточки будут удалены из базы.",
+      confirmText: kind === "hide" ? "Скрыть" : "Удалить",
+      destructive: kind === "delete",
     });
     if (!ok) return;
     (kind === "hide" ? hideMut : delMut).mutate({ table, ids: picked });

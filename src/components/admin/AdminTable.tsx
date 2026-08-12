@@ -1,6 +1,7 @@
 // Универсальная обёртка таблицы admin: glass-карточка, единый thead,
-// состояния «Загрузка/Пусто», горизонтальный скролл.
+// состояния «Загрузка/Ошибка/Пусто», горизонтальный скролл.
 import type { ReactNode } from "react";
+import { AdminErrorState } from "./StateViews";
 
 export interface AdminTableColumn {
   key: string;
@@ -12,7 +13,11 @@ export function AdminTable({
   columns,
   isLoading,
   isEmpty,
+  isError,
+  error,
+  onRetry,
   emptyText = "Пусто",
+  emptyAction,
   loadingText = "Загрузка...",
   textSize = "sm",
   children,
@@ -21,7 +26,11 @@ export function AdminTable({
   columns: AdminTableColumn[];
   isLoading?: boolean;
   isEmpty?: boolean;
+  isError?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
   emptyText?: string;
+  emptyAction?: ReactNode;
   loadingText?: string;
   textSize?: "xs" | "sm";
   children?: ReactNode;
@@ -36,13 +45,18 @@ export function AdminTable({
       </div>
     );
   }
+  if (isError) {
+    return <AdminErrorState error={error} onRetry={onRetry} className={className} />;
+  }
   if (isEmpty) {
     return (
-      <div className={`glass rounded-xl overflow-hidden p-8 text-center text-muted-foreground ${className ?? ""}`}>
-        {emptyText}
+      <div className={`glass rounded-xl overflow-hidden p-8 text-center text-muted-foreground space-y-3 ${className ?? ""}`}>
+        <div>{emptyText}</div>
+        {emptyAction}
       </div>
     );
   }
+
   return (
     <div className={`glass rounded-xl overflow-hidden ${className ?? ""}`}>
       <div className="overflow-x-auto">

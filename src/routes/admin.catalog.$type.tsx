@@ -72,13 +72,14 @@ function CatalogInner({ table }: { table: CatalogTable }) {
   useEffect(() => { setSelectedIds(new Set()); setSelectedRow(null); }, [table]);
 
 
-  const { data: items = [], isLoading } = useQuery<Row[]>({
+  const { data: items = [], isLoading, isError, error, refetch } = useQuery<Row[]>({
     queryKey: adminKeys.catalog(table),
     queryFn: async () => {
-      const { data } = await supabase.from(table).select("*")
+      const { data, error: e } = await supabase.from(table).select("*")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false })
         .limit(ADMIN_LIST_LIMIT);
+      if (e) throw e;
       return (data ?? []) as Row[];
     },
   });
@@ -191,7 +192,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
         action={
           <div className="flex flex-wrap items-center gap-2">
             {table === "attractions" && <AttractionsMediaBackfill />}
-            <Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
+            <Button disabled={create.isPending} onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>
           </div>
         }
       />
@@ -258,9 +259,12 @@ function CatalogInner({ table }: { table: CatalogTable }) {
           <AdminListPanel<Row>
             items={filtered}
             isLoading={isLoading}
+            isError={isError}
+            error={error}
+            onRetry={() => void refetch()}
             emptyText={q ? "Ничего не найдено" : "Пока нет карточек"}
             emptyAction={!q && (
-              <Button size="sm" onClick={() => create.mutate()} className="btn-primary-gradient">
+              <Button size="sm" disabled={create.isPending} onClick={() => create.mutate()} className="btn-primary-gradient">
                 <Plus className="h-4 w-4 mr-1" />Добавить первую
               </Button>
             )}
@@ -296,7 +300,7 @@ function CatalogInner({ table }: { table: CatalogTable }) {
             <AdminEmptyEditor
               title="Запись не выбрана"
               description="Кликните по карточке слева, чтобы начать редактирование. Изменения сохраняются автоматически."
-              action={<Button onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-1" />Создать карточку</Button>}
+              action={<Button disabled={create.isPending} onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-1" />Создать карточку</Button>}
             />
           )}
         </div>
