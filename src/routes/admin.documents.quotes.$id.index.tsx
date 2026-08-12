@@ -1,5 +1,6 @@
 import { useRoles } from "@/hooks/use-roles";
 import { DetachedPreviewButton } from "@/components/admin/documents/DetachedPreviewButton";
+import { LivePreviewFrame } from "@/components/admin/documents/LivePreviewFrame";
 import { QuoteSheetPanel } from "@/components/admin/documents/QuoteSheetPanel";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
