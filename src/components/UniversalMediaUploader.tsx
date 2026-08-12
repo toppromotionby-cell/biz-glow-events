@@ -6,6 +6,7 @@ import imageCompression from "browser-image-compression";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { signedMediaUrl } from "@/lib/media-url-cache";
 
 const MAX_PHOTOS = 5;
 const MAX_VIDEOS = 5;
@@ -146,13 +147,9 @@ function MediaThumb({ path, kind, onRemove }: { path: string; kind: "photo" | "v
         setUrl(path);
         return;
       }
-      const { data, error } = await supabase.storage.from("media").createSignedUrl(path, 3600);
+      const signed = await signedMediaUrl(path);
       if (!mounted.current) return;
-      if (error || !data?.signedUrl) {
-        setUrl(null);
-        return;
-      }
-      setUrl(data.signedUrl);
+      setUrl(signed);
     })();
     return () => {
       mounted.current = false;
@@ -236,7 +233,7 @@ function DropZone({
         </p>
       </label>
       {items.length > 0 && (
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {items.map((path) => (
             <MediaThumb key={path} path={path} kind={kind} onRemove={() => onRemove(path)} />
           ))}

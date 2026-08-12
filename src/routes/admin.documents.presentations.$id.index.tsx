@@ -389,9 +389,14 @@ function Page() {
   }, [dirty, meta, slides]);
 
   useBlocker({
-    shouldBlockFn: () => {
+    shouldBlockFn: async () => {
       if (!dirty) return false;
-      return !window.confirm("Есть несохранённые правки. Уйти со страницы без сохранения?");
+      const ok = await confirm({
+        title: "Есть несохранённые правки",
+        description: "Уйти со страницы без сохранения?",
+        confirmText: "Уйти",
+      });
+      return !ok;
     },
     enableBeforeUnload: false,
   });

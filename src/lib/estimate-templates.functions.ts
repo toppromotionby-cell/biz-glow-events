@@ -3,12 +3,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertPermission } from "@/lib/authz";
+import { assertDocumentsStaff } from "@/lib/authz";
 import { normalizeIncludes } from "@/lib/promo-quote-model";
 
-async function assertStaff(context: { supabase: unknown; userId: string }) {
-  await assertPermission(context as never, "documents.manage");
-}
 
 export type EstimateTemplateRow = {
   id: string;
@@ -75,7 +72,7 @@ export const listEstimateTemplates = createServerFn({ method: "GET" })
     z.object({ kind: z.enum(["quote", "promo", "any"]).optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<EstimateTemplateRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data: rows, error } = await context.supabase
       .from("estimate_templates")
       .select("id,name,description,kind,strict,active,version,updated_at")
@@ -126,7 +123,7 @@ export const saveEstimateTemplate = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const isPromo = data.source === "promo";
     const [{ data: doc }, { data: items }] = await Promise.all([
@@ -199,7 +196,7 @@ export const createDocFromEstimateTemplate = createServerFn({ method: "POST" })
     z.object({ templateId: z.string().uuid(), target: z.enum(["quote", "promo"]) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ id: string; kind: "quote" | "promo" }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const [{ data: tpl }, { data: items }] = await Promise.all([
       context.supabase.from("estimate_templates").select("*").eq("id", data.templateId).maybeSingle(),
@@ -285,7 +282,7 @@ export const renameEstimateTemplate = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { id, ...patch } = data;
     const clean = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
     if (Object.keys(clean).length) {
@@ -299,7 +296,7 @@ export const deleteEstimateTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { error } = await context.supabase.from("estimate_templates").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

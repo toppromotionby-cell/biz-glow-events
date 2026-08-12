@@ -1,4 +1,4 @@
-import { assertPermission } from "@/lib/authz";
+import { assertDocumentsStaff } from "@/lib/authz";
 // Серверные функции раздела «Документы → КП промо».
 // Доступ только для staff (admin/manager), данные пишутся под пользователем (RLS).
 import { createServerFn } from "@tanstack/react-start";
@@ -16,9 +16,6 @@ import {
   type PromoQuote,
 } from "@/lib/promo-quote-model";
 
-async function assertStaff(context: { supabase: unknown; userId: string }) {
-  await assertPermission(context as never, "documents.manage");
-}
 
 export type PromoListRow = {
   id: string;
@@ -46,7 +43,7 @@ export const listPromoQuotes = createServerFn({ method: "GET" })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<PromoListRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     let q = context.supabase
       .from("promo_quotes")
       .select("id,doc_number,status,project,client_name,period,total,is_template,template_name,created_at,updated_at")
@@ -65,7 +62,7 @@ export const getPromoQuote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ quote: PromoQuote; items: PromoItem[] }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: row, error }, { data: items }] = await Promise.all([
       context.supabase.from("promo_quotes").select("*").eq("id", data.id).maybeSingle(),
       context.supabase.from("promo_quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
@@ -84,7 +81,7 @@ export const createPromoQuote = createServerFn({ method: "POST" })
     z.object({ preset: z.string().max(40).optional(), fromId: z.string().uuid().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     if (data.fromId) {
       const [{ data: src }, { data: srcItems }] = await Promise.all([
@@ -179,7 +176,7 @@ export const savePromoQuote = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true; total: number }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     if (data.items) {
       await context.supabase.from("promo_quote_items").delete().eq("quote_id", data.id);
@@ -259,7 +256,7 @@ export const deletePromoQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { error } = await context.supabase.from("promo_quotes").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -271,7 +268,7 @@ export const savePromoTemplate = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), name: z.string().min(1).max(200) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: src }, { data: srcItems }] = await Promise.all([
       context.supabase.from("promo_quotes").select("*").eq("id", data.id).maybeSingle(),
       context.supabase.from("promo_quote_items").select("*").eq("quote_id", data.id).order("sort_order"),
@@ -327,7 +324,7 @@ export type PromoSnippetRow = {
 export const listPromoSnippets = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PromoSnippetRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data, error } = await context.supabase
       .from("doc_snippets")
       .select("id,name,description,section,items,created_at")
@@ -357,7 +354,7 @@ export const savePromoSnippet = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data: created, error } = await context.supabase
       .from("doc_snippets")
       .insert({
@@ -378,7 +375,7 @@ export const deletePromoSnippet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { error } = await context.supabase.from("doc_snippets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -392,7 +389,7 @@ export const listPromoVersions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { quoteId: string }) => z.object({ quoteId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<PromoVersionRow[]> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data: rows, error } = await context.supabase
       .from("promo_quote_versions")
       .select("id,label,total,created_at")
@@ -409,7 +406,7 @@ export const createPromoVersion = createServerFn({ method: "POST" })
     z.object({ quoteId: z.string().uuid(), label: z.string().max(200).default("Снимок") }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const [{ data: row }, { data: items }] = await Promise.all([
       context.supabase.from("promo_quotes").select("*").eq("id", data.quoteId).maybeSingle(),
       context.supabase.from("promo_quote_items").select("*").eq("quote_id", data.quoteId).order("sort_order"),
@@ -437,7 +434,7 @@ export const restorePromoVersion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { versionId: string }) => z.object({ versionId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { data: v } = await context.supabase
       .from("promo_quote_versions")
       .select("quote_id,snapshot")
@@ -507,7 +504,7 @@ export const markPromoSent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
     const { error } = await context.supabase
       .from("promo_quotes")
       .update({ status: "sent", sent_at: new Date().toISOString() })
@@ -530,7 +527,7 @@ export const sendPromoQuoteToClient = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true; to: string; url: string }> => {
-    await assertStaff(context as never);
+    await assertDocumentsStaff(context as never);
 
     const [{ data: row }, { data: itemRows }] = await Promise.all([
       context.supabase.from("promo_quotes").select("*").eq("id", data.id).maybeSingle(),

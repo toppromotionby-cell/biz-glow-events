@@ -4,6 +4,16 @@ const SRC = "https://www.play-game.by/wp-json/wc/store/v1";
 const BUCKET = "catalog-media";
 const MAX_PHOTOS = 3;
 const UA = { "User-Agent": "Mozilla/5.0" };
+const FETCH_TIMEOUT_MS = 15000;
+
+/** fetch с таймаутом: внешний источник не должен подвешивать воркер. */
+async function fetchWithTimeout(url: string): Promise<Response | null> {
+  try {
+    return await fetch(url, { headers: UA, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  } catch {
+    return null;
+  }
+}
 
 export type BackfillResult = {
   processed: number;
@@ -14,8 +24,8 @@ export type BackfillResult = {
 };
 
 async function sourceImages(slug: string): Promise<string[]> {
-  const res = await fetch(`${SRC}/products?slug=${encodeURIComponent(slug)}`, { headers: UA });
-  if (!res.ok) return [];
+  const res = await fetchWithTimeout(`${SRC}/products?slug=${encodeURIComponent(slug)}`);
+  if (!res || !res.ok) return [];
   const list = (await res.json()) as Array<{ images?: Array<{ src?: string }> }>;
   const imgs = list?.[0]?.images ?? [];
   return imgs.map((i) => i.src).filter((s): s is string => !!s).slice(0, MAX_PHOTOS);
@@ -43,8 +53,8 @@ export async function backfillAttractionPhotos(limit: number): Promise<BackfillR
       const urls: string[] = [];
       for (let i = 0; i < srcs.length; i++) {
         const src = srcs[i]!;
-        const imgRes = await fetch(src, { headers: UA });
-        if (!imgRes.ok) continue;
+        const imgRes = await fetchWithTimeout(src);
+        if (!imgRes || !imgRes.ok) continue;
         const type = imgRes.headers.get("content-type") ?? "image/jpeg";
         const buf = new Uint8Array(await imgRes.arrayBuffer());
         const extMatch = /\.(jpe?g|png|webp|gif)(?:$|\?)/i.exec(src);

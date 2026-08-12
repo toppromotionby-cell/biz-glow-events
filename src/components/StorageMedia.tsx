@@ -1,8 +1,8 @@
 // Универсальные компоненты для отображения медиа из приватного bucket `media`.
 // Если путь — уже полный URL (http/blob/data), показываем как есть.
-// Иначе подписываем signed URL на 15 минут.
+// Иначе берём подписанный URL из общего кэша (`signedMediaUrl`).
 import { useEffect, useRef, useState } from "react";
-import { createSignedMediaUrl } from "@/components/MediaShield";
+import { signedMediaUrl } from "@/lib/media-url-cache";
 import { cn } from "@/lib/utils";
 
 function isAbsolute(src: string): boolean {
@@ -19,7 +19,7 @@ export function useResolvedUrl(path: string | null | undefined): string | null {
     if (!path) { setUrl(null); return; }
     if (isAbsolute(path)) { setUrl(path); return; }
     (async () => {
-      const signed = await createSignedMediaUrl(path, 900);
+      const signed = await signedMediaUrl(path);
       if (mounted.current) setUrl(signed);
     })();
     return () => { mounted.current = false; };

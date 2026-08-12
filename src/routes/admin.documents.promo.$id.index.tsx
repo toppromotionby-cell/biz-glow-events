@@ -6,7 +6,7 @@ import { DocAppearanceSection } from "@/components/admin/documents/DocAppearance
 
 
 // Редактор промо-КП: вкладки-формы слева, живое превью и итоги справа, автосохранение и Undo.
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveStatus } from "@/lib/editor/save-state";
 import { useEditorSave } from "@/hooks/use-editor-save";
@@ -17,10 +17,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Download, Info, Undo2, Redo2, History, Send, ListTree, User, Wallet, ShieldCheck, Settings2,
-  Eye, Percent, Brain, MoreHorizontal,
+  Eye, Percent, Brain, MoreHorizontal, Trash2,
 } from "lucide-react";
 
 import { useConfirm } from "@/components/admin/ConfirmDialog";
+import { deleteDocument } from "@/lib/documents-overview.functions";
 import { DocEditorShell } from "@/components/admin/editor/DocEditorShell";
 import type { EditorSection } from "@/components/admin/editor/EditorSidebar";
 import { Button } from "@/components/ui/button";
@@ -126,6 +127,22 @@ function EditorPage() {
   const [snippetDraft, setSnippetDraft] = useState<{ name: string; section: string; items: PromoItem[] } | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
   const { confirm, dialog: confirmDialog } = useConfirm();
+  const navigate = useNavigate();
+  const removeDoc = useServerFn(deleteDocument);
+  const onDeleteDocument = async () => {
+    const ok = await confirm({
+      title: "Удалить документ?",
+      description: "КП промо и его позиции будут удалены безвозвратно.",
+    });
+    if (!ok) return;
+    try {
+      await removeDoc({ data: { kind: "promo", id } });
+      toast.success("Документ удалён");
+      void navigate({ to: "/admin/documents" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
   // Общая история правок (undo/redo) — один модуль с презентациями.
   const history = useRef<Snapshot[]>([]);
   const redoStack = useRef<Snapshot[]>([]);
@@ -648,6 +665,10 @@ function EditorPage() {
                   <Link to="/admin/documents/knowledge">
                     <Brain className="mr-2 h-4 w-4" />База знаний подсказок
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={() => void onDeleteDocument()}>
+                  <Trash2 className="mr-2 h-4 w-4" />Удалить документ
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
