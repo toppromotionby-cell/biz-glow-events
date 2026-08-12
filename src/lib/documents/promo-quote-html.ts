@@ -152,12 +152,15 @@ export function buildPromoQuoteBody(
         })
 
         .join("");
+      // Подытог: подпись до колонки сумм, сумма — в колонке «Всего».
+      const amountIdx = colCount - (quote.show_notes ? 2 : 1);
       const sub =
         quote.show_section_subtotals && sec.name && sec.items.length > 1
-          ? `<tr class="sec-sub"><td colspan="${colCount - 1}">Итого по разделу «${esc(sec.name)}»</td><td class="c-money">${nf(
+          ? `<tr class="sec-sub"><td colspan="${amountIdx}">Итого по разделу «${esc(sec.name)}»</td><td class="c-money">${nf(
               sec.items.reduce((s, it) => s + lineTotal(it), 0),
-            )}</td></tr>`
+            )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`
           : "";
+
       return head + body + sub;
 
     })
