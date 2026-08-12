@@ -55,9 +55,11 @@ function themeOf(template: Presentation["template"], accentHex: string): Theme {
 function drawBackground(page: PDFPage, t: Theme): void {
   const stops = t.stops.map((c) => hexToRgb01(c));
   if (stops.length < 2 || t.stops.every((c) => c === t.stops[0])) {
-    drawBackground(page, t);
+    // Однотонный фон — просто заливаем весь слайд.
+    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: t.bg });
     return;
   }
+
   const bands = 96;
   const seg = stops.length - 1;
   for (let i = 0; i < bands; i += 1) {
