@@ -18,6 +18,12 @@ export type TextProps = {
   valign?: "top" | "middle" | "bottom";
   /** Кегль подгоняется под высоту блока (как в Canva). */
   autoFit?: boolean;
+  /** Гарнитура: акцидентная (заголовки) или основная. */
+  font?: "display" | "body";
+  /** Заранее разложенные строки — если заданы, переносы не пересчитываются. */
+  lines?: string[];
+  uppercase?: boolean;
+  letterSpacing?: number;
 };
 
 export type ImageProps = { src?: string; fit?: "cover" | "contain"; radius?: number };
@@ -35,8 +41,10 @@ export type DrawOp =
       kind: "text"; x: number; y: number; w: number; h: number;
       text: string; fontSize: number; lineHeight: number; weight: number;
       color: string; align: NonNullable<TextProps["align"]>; valign: NonNullable<TextProps["valign"]>;
+      font: "display" | "body"; lines?: string[]; uppercase: boolean; letterSpacing: number;
     }
   | { kind: "image"; x: number; y: number; w: number; h: number; src: string; fit: "cover" | "contain"; radius: number };
+
 
 export const MIN_FONT = 7;
 export const MAX_FONT = 160;
