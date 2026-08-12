@@ -6,7 +6,7 @@ import {
   clampNum, DEFAULT_LAYOUT_OVERRIDES, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
   PRICE_SCALE_MAX, PRICE_SCALE_MIN,
   type PhotoZone, type PresentationSlide, type PresentationTemplate,
-  type PriceZone, type SlideImageLayout,
+  type PriceZone, type SlideBackground, type SlideImageLayout,
 } from "@/lib/presentations/model";
 
 export const SLIDE_W = 1280;
@@ -128,13 +128,13 @@ function palette(template: PresentationTemplate, accent: string): Palette {
   switch (template) {
     case "dark":
       return {
-        stops: ["#0f1115", "#0f1115"],
-        panel: "rgba(255,255,255,0.06)",
-        ink: "#f8fafc",
-        muted: "rgba(248,250,252,0.66)",
-        line: "rgba(255,255,255,0.14)",
+        stops: ["#000000", "#000000"],
+        panel: "rgba(255,255,255,0.07)",
+        ink: "#ffffff",
+        muted: "rgba(255,255,255,0.70)",
+        line: "rgba(255,255,255,0.16)",
         accent: null,
-        onAccent: "#0f1115",
+        onAccent: "#000000",
       };
     case "accent":
       return {
@@ -203,13 +203,132 @@ function palette(template: PresentationTemplate, accent: string): Palette {
   }
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Контраст и палитра произвольного фона                               */
+/* ------------------------------------------------------------------ */
+
+function hex2rgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = Number.parseInt(v.slice(0, 6) || "000000", 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function srgb(c: number): number {
+  const x = c / 255;
+  return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+}
+
+/** Относительная яркость 0..1 (WCAG). */
+export function luminance(hex: string): number {
+  const [r, g, b] = hex2rgb(hex);
+  return 0.2126 * srgb(r) + 0.7152 * srgb(g) + 0.0722 * srgb(b);
+}
+
+/** Контраст двух цветов по WCAG (1..21). */
+export function contrastRatio(a: string, b: string): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+function mix(a: string, b: string, k: number): string {
+  const [r1, g1, b1] = hex2rgb(a);
+  const [r2, g2, b2] = hex2rgb(b);
+  const to = (x: number, y: number) => Math.round(x + (y - x) * k).toString(16).padStart(2, "0");
+  return `#${to(r1, r2)}${to(g1, g2)}${to(b1, b2)}`;
+}
+
+/** Средняя яркость фона (учитывает все стопы градиента). */
+export function backgroundLuminance(stops: string[]): number {
+  const list = stops.filter(Boolean);
+  if (!list.length) return 1;
+  return list.reduce((sum, c) => sum + luminance(c), 0) / list.length;
+}
+
+/** Тёмный ли фон — по средней яркости стопов. */
+export function isDarkBackground(stops: string[]): boolean {
+  return backgroundLuminance(stops) < 0.45;
+}
+
+/**
+ * Делает акцент читаемым на конкретном фоне: подмешивает белый или чёрный,
+ * пока контраст не станет комфортным (>= 3.2), сохраняя оттенок бренда.
+ */
+export function readableAccent(accent: string, bg: string, min = 3.2): string {
+  const base = /^#[0-9a-fA-F]{6}$/.test(accent) ? accent : "#ff7500";
+  if (contrastRatio(base, bg) >= min) return base;
+  const target = luminance(bg) > 0.5 ? "#000000" : "#ffffff";
+  let best = base;
+  for (let k = 0.1; k <= 0.9; k += 0.1) {
+    best = mix(base, target, k);
+    if (contrastRatio(best, bg) >= min) return best;
+  }
+  return best;
+}
+
+/** Палитра, вычисленная из произвольного фона (свой цвет/градиент слайда). */
+export function paletteFromStops(stops: string[], angle: number, accent: string): Palette {
+  const list = stops.filter(Boolean);
+  const base = list[0] ?? "#ffffff";
+  const dark = isDarkBackground(list);
+  const acc = readableAccent(accent, base);
+  return dark
+    ? {
+      stops: list,
+      angle,
+      panel: "rgba(255,255,255,0.10)",
+      ink: "#ffffff",
+      muted: "rgba(255,255,255,0.72)",
+      line: "rgba(255,255,255,0.18)",
+      accent: acc,
+      onAccent: luminance(acc) > 0.6 ? "#101014" : "#ffffff",
+    }
+    : {
+      stops: list,
+      angle,
+      panel: "rgba(17,24,39,0.05)",
+      ink: "#111827",
+      muted: "#5b6478",
+      line: "rgba(17,24,39,0.12)",
+      accent: acc,
+      onAccent: luminance(acc) > 0.6 ? "#111827" : "#ffffff",
+    };
+}
+
+/** Готовые фоны в стилистике сайта. */
+export const BACKGROUND_PRESETS: { id: string; label: string; stops: string[]; angle: number }[] = [
+  { id: "black", label: "Чёрный", stops: ["#000000"], angle: 135 },
+  { id: "graphite", label: "Графит", stops: ["#111318", "#1c2028"], angle: 135 },
+  { id: "white", label: "Белый", stops: ["#ffffff"], angle: 135 },
+  { id: "paper", label: "Тёплая бумага", stops: ["#ffffff", "#fdf3ec"], angle: 120 },
+  { id: "night", label: "Ночь", stops: ["#141a3a", "#2b1e63", "#0d1230"], angle: 135 },
+  { id: "sunset", label: "Закат", stops: ["#c2381b", "#a11e4d", "#5d1a75"], angle: 125 },
+  { id: "emerald", label: "Изумруд", stops: ["#046e5a", "#03453f"], angle: 130 },
+  { id: "brand", label: "Фирменный", stops: ["#ff7500", "#111827"], angle: 135 },
+  { id: "steel", label: "Сталь", stops: ["#1f2937", "#0b1220"], angle: 140 },
+  { id: "cloud", label: "Облако", stops: ["#eef2ff", "#ffffff"], angle: 120 },
+];
+
 /** Палитра шаблона в «сыром» виде — для PDF и PPTX. */
-export function templatePalette(template: PresentationTemplate, accent: string): Palette {
+export function templatePalette(
+  template: PresentationTemplate,
+  accent: string,
+  background?: SlideBackground | null,
+): Palette {
+  if (background && background.mode !== "template" && background.stops.length) {
+    return paletteFromStops(background.stops, background.angle, accent);
+  }
   return palette(template, accent);
 }
 
-export function slideTheme(template: PresentationTemplate, accent: string): SlideThemeTokens {
-  const p = palette(template, accent);
+export function slideTheme(
+  template: PresentationTemplate,
+  accent: string,
+  background?: SlideBackground | null,
+): SlideThemeTokens {
+  const p = templatePalette(template, accent, background);
   const angle = p.angle ?? 135;
   const flat = p.stops.every((c) => c === p.stops[0]);
   return {
