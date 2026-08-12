@@ -1,5 +1,5 @@
 // Единый «макет» КП: один расчёт колонок, строк, шапки и итогов для
-// HTML-превью, PDF, Excel, Google Таблиц и Google Документов.
+// HTML-превью, PDF, Excel и Google Таблиц.
 // Модуль чистый и браузеро-безопасный — никаких сетевых вызовов.
 import { BRAND_ACCENT } from "@/lib/documents/brand";
 import { vatRateLabel } from "@/lib/documents/vat";
