@@ -141,7 +141,9 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   @media print { .print-btn { display: none; } body { font-size: 11.5px; } }
 </style></head><body>
   <a class="print-btn" href="?format=pdf">Скачать PDF</a>
+  <div class="sheet">
   <div class="accent-bar"></div>
+
   <div class="head">
     <div class="brand-wrap">
       ${logo}
