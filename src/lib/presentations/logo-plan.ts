@@ -1,7 +1,7 @@
 // Единый планировщик логотипов на слайде презентации.
 // Гарантирует: на слайде не больше ОДНОГО логотипа компании и ОДНОГО логотипа
 // клиента, они никогда не занимают один и тот же слот и не наезжают на фото.
-// Используется превью (SlideCanvas), PDF и PPTX — раскладка везде одинаковая.
+// Используется превью (SlideCanvas), PDF и превью — раскладка везде одинаковая.
 import { SLIDE_H, SLIDE_W, type Rect } from "@/lib/presentations/design";
 import {
   clampNum, DEFAULT_LAYOUT_OVERRIDES, LOGO_SCALE_MAX, LOGO_SCALE_MIN,

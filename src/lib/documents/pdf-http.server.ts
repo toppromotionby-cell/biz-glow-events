@@ -30,7 +30,8 @@ export async function buildPdfResponse(options: PdfBuildOptions): Promise<Respon
       errorId,
       operation: options.operation,
       entityId: options.entityId,
-      error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return Response.json(
       { error: "Не удалось сформировать PDF", errorId },

@@ -1,6 +1,6 @@
 // Автоподбор плотности слайда: оцениваем объём текста и подбираем ступень
 // шкалы кеглей так, чтобы содержимое помещалось в отведённую область.
-// Одна и та же логика используется в превью, PDF и PPTX.
+// Одна и та же логика используется в превью, PDF и превью.
 import {
   DENSITY_STEPS, slideLayout, typeScale,
   type Density, type Rect, type SlideLayout, type TypeScale,
@@ -106,7 +106,7 @@ export function fitSlide(slide: PresentationSlide): SlideFit {
   }
 
   // Вертикальное выравнивание текста в своей зоне: сдвигаем реальную область
-  // под фактическую высоту содержимого — одинаково в превью, PDF и PPTX.
+  // под фактическую высоту содержимого — одинаково в превью, PDF и превью.
   let finalLayout = layout;
   if (!overflow && layout.textAlign !== "top") {
     const free = Math.max(0, box.h - height);
