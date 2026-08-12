@@ -56,3 +56,26 @@ export const caseSchema = z.object({
   featured: z.boolean(),
 });
 export type CaseInput = z.infer<typeof caseSchema>;
+
+export const promoCodeSchema = z.object({
+  code: z
+    .string()
+    .min(3, "Минимум 3 символа")
+    .max(32, "Не более 32 символов")
+    .regex(/^[A-Z0-9-]+$/, "Только латиница в верхнем регистре, цифры и дефис"),
+  description: z.string().max(300).optional().or(z.literal("")),
+  discount_type: z.enum(["percent", "fixed"]),
+  discount_value: z.coerce.number().min(0, "Не меньше 0"),
+  min_order_total: z.coerce.number().min(0, "Не меньше 0"),
+  valid_from: z.string().nullable().optional(),
+  valid_to: z.string().nullable().optional(),
+  max_uses: z.coerce.number().int().min(1, "Минимум 1").nullable().optional(),
+  active: z.boolean(),
+}).refine(
+  (v) => v.discount_type !== "percent" || v.discount_value <= 100,
+  { path: ["discount_value"], message: "Процент не может быть больше 100" },
+).refine(
+  (v) => !v.valid_from || !v.valid_to || v.valid_from <= v.valid_to,
+  { path: ["valid_to"], message: "Дата окончания раньше даты начала" },
+);
+export type PromoCodeInput = z.infer<typeof promoCodeSchema>;
