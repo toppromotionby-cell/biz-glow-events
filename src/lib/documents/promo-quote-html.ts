@@ -8,6 +8,7 @@ import { BRAND_ACCENT } from "@/lib/documents/brand";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
 import { BASE_PRINT_PRESET, printPageMarginCss } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
+import { softHyphenate } from "@/lib/documents/hyphenate";
 
 import {
   computePromoTotals,
@@ -25,6 +26,11 @@ import {
   type PromoQuote,
   type PromoCheck,
 } from "@/lib/promo-quote-model";
+
+/** esc + мягкие переносы: для видимого текста в ячейках. */
+function escw(s: unknown): string {
+  return softHyphenate(esc(s));
+}
 
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -117,14 +123,14 @@ export function buildPromoQuoteBody(
   const rowsHtml = sections
     .map((sec) => {
       const head = sec.name
-        ? `<tr class="sec"${ed("section", sec.name, "Раздел")}><td colspan="${colCount}">${esc(sec.name)}</td></tr>`
+        ? `<tr class="sec"${ed("section", sec.name, "Раздел")}><td colspan="${colCount}">${escw(sec.name)}</td></tr>`
         : "";
       const body = sec.items
         .map((it) => {
           const inc =
             quote.show_item_includes && it.includes.length
               ? `<ul class="c-inc">${it.includes
-                  .map((x) => `<li>${esc(x.text)}${x.note ? ` — ${esc(x.note)}` : ""}</li>`)
+                  .map((x) => `<li>${escw(x.text)}${x.note ? ` — ${escw(x.note)}` : ""}</li>`)
                   .join("")}</ul>`
               : "";
           const rowChecks = checksByIndex.get(items.indexOf(it)) ?? [];
@@ -134,7 +140,7 @@ export function buildPromoQuoteBody(
               ? " chk-row chk-row-warn"
               : "";
           const cells: string[] = [
-            `<td class="c-title">${it.title.trim() ? esc(it.title) : '<span class="c-empty">Новая позиция</span>'}${inc}${chkList(rowChecks)}</td>`,
+            `<td class="c-title">${it.title.trim() ? escw(it.title) : '<span class="c-empty">Новая позиция</span>'}${inc}${chkList(rowChecks)}</td>`,
           ];
           if (isServiceOnlyRow(it)) {
             cells.push(mergedUnitCell(it.unit.trim() || "услуга"));
@@ -151,7 +157,7 @@ export function buildPromoQuoteBody(
           if (quote.show_total_qty) cells.push(`<td class="c-num">${esc(formatTotalQty(it))}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
-          if (quote.show_notes) cells.push(`<td class="c-note">${esc(it.note)}</td>`);
+          if (quote.show_notes) cells.push(`<td class="c-note">${escw(it.note)}</td>`);
           return `<tr class="${rowCls.trim()}"${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
         })
 
@@ -173,14 +179,14 @@ export function buildPromoQuoteBody(
   const extraRows: string[] = [];
   if (quote.management_enabled) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(quote.management_label)}</td>${midCells("услуга")}<td class="c-money"></td><td class="c-money">${nf(
+      `<tr class="extra"><td class="c-title">${escw(quote.management_label)}</td>${midCells("услуга")}<td class="c-money"></td><td class="c-money">${nf(
         t.management,
       )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
     );
   }
   if (quote.commission_enabled) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(quote.commission_label)}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(
+      `<tr class="extra"><td class="c-title">${escw(quote.commission_label)}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(
         t.commission,
       )}</td>${quote.show_notes ? `<td class="c-note">${nf(quote.commission_rate).replace(",00", "")} %</td>` : ""}</tr>`,
     );
@@ -188,7 +194,7 @@ export function buildPromoQuoteBody(
 
   if (t.vatEnabled && quote.vat_as_line) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(
+      `<tr class="extra"><td class="c-title">${escw(
         t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
       )}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(t.vat)}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
     );
@@ -296,7 +302,7 @@ export const PROMO_DOC_CSS = `
 .promo-doc .c-inc { margin: 3px 0 0; padding-left: 14px; font-size: 11px; color: #5a5a63; }
 .promo-doc .doc-grid tr.extra td { background: #fbfbfc; font-style: italic; }
 .promo-doc table.doc-grid { table-layout: fixed; }
-.promo-doc .doc-grid th, .promo-doc .doc-grid td { overflow-wrap: anywhere; }
+.promo-doc .doc-grid th, .promo-doc .doc-grid td { hyphens: manual; -webkit-hyphens: manual; overflow-wrap: break-word; word-break: normal; min-width: 0; }
 .promo-doc .c-title { text-align: left; }
 .promo-doc .c-unit { text-align: center; }
 .promo-doc .c-num { text-align: center; font-variant-numeric: tabular-nums; }

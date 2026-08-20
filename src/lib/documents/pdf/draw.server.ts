@@ -1,6 +1,7 @@
 // Примитивы рисования: текст, переносы, плашки, разделители.
 import { rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { BRAND_ACCENT, mixWithWhite } from "@/lib/documents/brand";
+import { splitWordForWidth } from "@/lib/documents/hyphenate";
 import type { DocCtx } from "@/lib/documents/pdf/ctx.server";
 import { ACCENT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT, c01 } from "@/lib/documents/pdf/style.server";
 
@@ -121,33 +122,76 @@ export function drawText(
   }
 }
 
-// Перенос длинной строки по ширине
+// Перенос длинной строки по ширине: сначала по словам, затем по слогам с дефисом
 export function wrapText(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
-  const words = safe(text).split(/\s+/);
+  const measure = (s: string) => font.widthOfTextAtSize(s, size);
+  const words = safe(text).replace(/\u00ad/g, "").split(/\s+/);
   const out: string[] = [];
   let line = "";
-  for (const w of words) {
-    const cand = line ? `${line} ${w}` : w;
-    if (font.widthOfTextAtSize(cand, size) <= maxWidth) line = cand;
-    else {
-      if (line) out.push(line);
-      // одиночное длинное слово — режем посимвольно
-      if (font.widthOfTextAtSize(w, size) > maxWidth) {
-        let cur = "";
-        for (const ch of w) {
-          const cn = cur + ch;
-          if (font.widthOfTextAtSize(cn, size) > maxWidth) {
-            out.push(cur);
-            cur = ch;
-          } else cur = cn;
-        }
-        line = cur;
-      } else line = w;
+
+  /** Уложить слово, которое не влезает целиком: слоговой перенос, иначе по буквам. */
+  const placeLongWord = (word: string) => {
+    let rest = word;
+    let guard = 0;
+    while (measure(rest) > maxWidth && guard++ < 200) {
+      const avail = maxWidth - (line ? measure(`${line} `) : 0);
+      const split = avail > size ? splitWordForWidth(rest, avail, measure) : null;
+      if (split) {
+        out.push(line ? `${line} ${split.head}` : split.head);
+        line = "";
+        rest = split.tail;
+        continue;
+      }
+      if (line) {
+        out.push(line);
+        line = "";
+        continue;
+      }
+      // Крайний случай — режем посимвольно (артикулы, ссылки без слогов)
+      let cur = "";
+      for (const ch of rest) {
+        if (measure(cur + ch) > maxWidth && cur) break;
+        cur += ch;
+      }
+      if (!cur) cur = rest[0] ?? "";
+      out.push(cur);
+      rest = rest.slice(cur.length);
+      if (!rest) return;
     }
+    line = line ? `${line} ${rest}` : rest;
+  };
+
+  for (const w of words) {
+    if (!w) continue;
+    const cand = line ? `${line} ${w}` : w;
+    if (measure(cand) <= maxWidth) {
+      line = cand;
+      continue;
+    }
+    // Пробуем перенести само слово по слогам в остаток текущей строки
+    if (line) {
+      const avail = maxWidth - measure(`${line} `);
+      const split = avail > size ? splitWordForWidth(w, avail, measure) : null;
+      if (split) {
+        out.push(`${line} ${split.head}`);
+        line = "";
+        if (measure(split.tail) <= maxWidth) {
+          line = split.tail;
+          continue;
+        }
+        placeLongWord(split.tail);
+        continue;
+      }
+      out.push(line);
+      line = "";
+    }
+    if (measure(w) <= maxWidth) line = w;
+    else placeLongWord(w);
   }
   if (line) out.push(line);
   return out.length ? out : [""];
 }
+
 
 export function drawParagraph(
   ctx: DocCtx,
