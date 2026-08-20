@@ -278,6 +278,25 @@ function BackgroundField({
           />
         ))}
       </div>
+
+      {onApplyToAll && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => {
+            onApplyToAll(value);
+            toast.success(
+              value.mode === "template"
+                ? "Все слайды снова наследуют фон шаблона"
+                : "Фон применён ко всем слайдам",
+            );
+          }}
+        >
+          Применить фон ко всем слайдам
+        </Button>
+      )}
     </div>
   );
 }
