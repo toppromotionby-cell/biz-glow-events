@@ -1,6 +1,7 @@
 // Примитивы рисования: текст, переносы, плашки, разделители.
 import { rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { BRAND_ACCENT, mixWithWhite } from "@/lib/documents/brand";
+import { splitWordForWidth } from "@/lib/documents/hyphenate";
 import type { DocCtx } from "@/lib/documents/pdf/ctx.server";
 import { ACCENT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT, c01 } from "@/lib/documents/pdf/style.server";
 
