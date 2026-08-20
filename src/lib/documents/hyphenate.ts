@@ -6,7 +6,7 @@
 //  • переносим только по границам слогов (в каждой части должна быть гласная);
 //  • нельзя оставлять/переносить меньше двух букв;
 //  • нельзя отрывать ь, ъ, й от предыдущей буквы (не начинаем часть с них);
-//  • не переносим короткие слова (<6 букв), числа, аббревиатуры и артикулы.
+//  • не переносим короткие слова (<7 букв), числа, аббревиатуры и артикулы.
 
 export const SOFT_HYPHEN = "\u00ad";
 
@@ -19,7 +19,7 @@ const isCons = (ch: string) => isLetter(ch) && !isVowel(ch);
 
 /** Слово вообще подлежит переносу? */
 function hyphenable(word: string): boolean {
-  if (word.length < 6) return false;
+  if (word.length < 7) return false;
   if (![...word].every(isLetter)) return false; // числа, артикулы, url
   // аббревиатуры (ООО, PDF, УНП) не переносим
   if (word === word.toUpperCase() && word.length <= 6) return false;

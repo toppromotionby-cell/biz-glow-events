@@ -2,35 +2,27 @@ import { describe, expect, it } from "vitest";
 import { hyphenPoints, softHyphenate, splitWordForWidth, SOFT_HYPHEN } from "@/lib/documents/hyphenate";
 
 const VOWELS = "аеёиоуыэюяaeiouy";
-const parts = (w: string) => {
-  const pts = hyphenPoints(w);
-  const out: string[] = [];
-  let prev = 0;
-  for (const i of pts) {
-    out.push(w.slice(prev, i + 1));
-    prev = i + 1;
-  }
-  out.push(w.slice(prev));
-  return out;
-};
+/** Пары «часть до переноса / часть после» для каждой допустимой точки. */
+const splits = (w: string) => hyphenPoints(w).map((i) => [w.slice(0, i + 1), w.slice(i + 1)] as const);
 
 describe("hyphenPoints", () => {
   it("режет длинные слова по слогам", () => {
     for (const w of ["администрирование", "транспортные", "монтажник", "оборудование"]) {
-      const p = parts(w);
-      expect(p.length).toBeGreaterThan(1);
-      expect(p.join("")).toBe(w);
-      // в каждой части есть гласная и минимум 2 буквы
-      for (const seg of p) {
-        expect(seg.length).toBeGreaterThanOrEqual(2);
-        expect([...seg].some((ch) => VOWELS.includes(ch))).toBe(true);
+      const s = splits(w);
+      expect(s.length).toBeGreaterThan(0);
+      for (const [head, tail] of s) {
+        expect(head + tail).toBe(w);
+        expect(head.length).toBeGreaterThanOrEqual(2);
+        expect(tail.length).toBeGreaterThanOrEqual(2);
+        expect([...head].some((ch) => VOWELS.includes(ch))).toBe(true);
+        expect([...tail].some((ch) => VOWELS.includes(ch))).toBe(true);
       }
     }
   });
 
   it("не начинает часть с ь, ъ, й", () => {
     for (const w of ["стройплощадка", "объединение", "пользователь"]) {
-      for (const seg of parts(w)) expect("ьъй").not.toContain(seg[0]!);
+      for (const [, tail] of splits(w)) expect("ьъй").not.toContain(tail[0]!);
     }
   });
 
