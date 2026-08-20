@@ -23,9 +23,12 @@ import { BACKGROUND_PRESETS, isDarkBackground } from "@/lib/presentations/design
 export function SlideSettingsPanel({
   slide,
   onChange,
+  onApplyBackgroundToAll,
 }: {
   slide: PresentationSlide;
   onChange: (patch: Partial<PresentationSlide>) => void;
+  /** Применить текущий фон слайда ко всем слайдам презентации. */
+  onApplyBackgroundToAll?: (background: SlideBackground) => void;
 }) {
   const c = slide.content;
   const setContent = (patch: Partial<SlideContent>) => onChange({ content: { ...c, ...patch } });
@@ -153,6 +156,7 @@ export function SlideSettingsPanel({
       <BackgroundField
         value={c.background}
         onChange={(background) => setContent({ background })}
+        onApplyToAll={onApplyBackgroundToAll}
       />
 
       <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
@@ -170,9 +174,11 @@ export function SlideSettingsPanel({
 function BackgroundField({
   value,
   onChange,
+  onApplyToAll,
 }: {
   value: SlideBackground;
   onChange: (v: SlideBackground) => void;
+  onApplyToAll?: (v: SlideBackground) => void;
 }) {
   const stops = value.stops.length ? value.stops : ["#000000", "#1c2028"];
   const css = (list: string[], angle: number) =>
@@ -272,6 +278,25 @@ function BackgroundField({
           />
         ))}
       </div>
+
+      {onApplyToAll && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => {
+            onApplyToAll(value);
+            toast.success(
+              value.mode === "template"
+                ? "Все слайды снова наследуют фон шаблона"
+                : "Фон применён ко всем слайдам",
+            );
+          }}
+        >
+          Применить фон ко всем слайдам
+        </Button>
+      )}
     </div>
   );
 }

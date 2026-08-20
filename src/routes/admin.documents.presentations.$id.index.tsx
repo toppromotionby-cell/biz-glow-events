@@ -53,7 +53,7 @@ import { checkAgainstQuote, type QuoteItemLite } from "@/lib/presentations/check
 import {
   SLIDE_TYPE_LABELS, STATUS_LABELS, TEMPLATE_LABELS, blankSlide,
   type Presentation, type PresentationSlide, type PresentationStatus,
-  type PresentationTemplate, type SlideLayoutOverrides, type SlideType,
+  type PresentationTemplate, type SlideBackground, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
 import {
   getPresentation, savePresentation, buildSlidesFromQuote,
@@ -186,6 +186,11 @@ function Page() {
 
   const patchSlide = (sid: string, patch: Partial<PresentationSlide>) => {
     setSlides((prev) => prev.map((s) => (s.id === sid ? { ...s, ...patch } : s)));
+    setDirty(true);
+  };
+  /** Один и тот же фон на всех слайдах — одно действие вместо ручного обхода. */
+  const applyBackgroundToAll = (background: SlideBackground) => {
+    setSlides((prev) => prev.map((s) => ({ ...s, content: { ...s.content, background } })));
     setDirty(true);
   };
   /**
@@ -828,7 +833,7 @@ function Page() {
                     />
                   </div>
                 )}
-                <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} />
+                <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} onApplyBackgroundToAll={applyBackgroundToAll} />
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Слайд не выбран</p>
@@ -852,7 +857,7 @@ function Page() {
                 onChange={(patch) => patchLayout(current.id, current.content.layout, patch)}
                 onClose={() => setBlockDialog(null)}
               />
-              <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} />
+              <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} onApplyBackgroundToAll={applyBackgroundToAll} />
             </div>
           )}
         </DialogContent>
