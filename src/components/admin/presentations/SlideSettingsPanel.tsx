@@ -23,9 +23,12 @@ import { BACKGROUND_PRESETS, isDarkBackground } from "@/lib/presentations/design
 export function SlideSettingsPanel({
   slide,
   onChange,
+  onApplyBackgroundToAll,
 }: {
   slide: PresentationSlide;
   onChange: (patch: Partial<PresentationSlide>) => void;
+  /** Применить текущий фон слайда ко всем слайдам презентации. */
+  onApplyBackgroundToAll?: (background: SlideBackground) => void;
 }) {
   const c = slide.content;
   const setContent = (patch: Partial<SlideContent>) => onChange({ content: { ...c, ...patch } });
