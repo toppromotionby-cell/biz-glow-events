@@ -5,7 +5,7 @@ import zlib from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { buildPresentationPdf, type ResolvedSlide } from "@/lib/presentations/pdf.server";
 import {
-  blankSlide, type Presentation, type PresentationTemplate, type SlideBackground,
+  DEFAULT_PRESENTATION_LOGO_LAYOUT, blankSlide, type Presentation, type PresentationTemplate, type SlideBackground,
 } from "@/lib/presentations/model";
 import { PRESENTATION_TEMPLATES } from "@/lib/presentations/model";
 import { slideTheme, templatePalette } from "@/lib/presentations/design";
@@ -22,7 +22,7 @@ function presentation(template: PresentationTemplate): Presentation {
     template,
     logo_url: null,
     client_logo_url: null,
-    logo_layout: "auto",
+    logo_layout: DEFAULT_PRESENTATION_LOGO_LAYOUT,
     font_family: "inherit",
     public_token: "tok",
     share_enabled: false,
