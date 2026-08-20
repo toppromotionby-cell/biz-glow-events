@@ -156,6 +156,7 @@ export function SlideSettingsPanel({
       <BackgroundField
         value={c.background}
         onChange={(background) => setContent({ background })}
+        onApplyToAll={onApplyBackgroundToAll}
       />
 
       <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
