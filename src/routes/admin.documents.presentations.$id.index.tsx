@@ -188,6 +188,11 @@ function Page() {
     setSlides((prev) => prev.map((s) => (s.id === sid ? { ...s, ...patch } : s)));
     setDirty(true);
   };
+  /** Один и тот же фон на всех слайдах — одно действие вместо ручного обхода. */
+  const applyBackgroundToAll = (background: SlideBackground) => {
+    setSlides((prev) => prev.map((s) => ({ ...s, content: { ...s.content, background } })));
+    setDirty(true);
+  };
   /**
    * Правка раскладки. Внутри одного жеста (перетаскивание, изменение размера)
    * приходит много кадров с `transient: true` — шаг отмены создаёт только
