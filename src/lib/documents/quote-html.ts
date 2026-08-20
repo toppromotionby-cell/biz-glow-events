@@ -8,6 +8,7 @@ import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/lo
 import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
+import { softHyphenate } from "@/lib/documents/hyphenate";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
 
 

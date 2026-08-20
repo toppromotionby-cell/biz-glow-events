@@ -8,6 +8,7 @@ import { BRAND_ACCENT } from "@/lib/documents/brand";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
 import { BASE_PRINT_PRESET, printPageMarginCss } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
+import { softHyphenate } from "@/lib/documents/hyphenate";
 
 import {
   computePromoTotals,

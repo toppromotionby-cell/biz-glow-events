@@ -43,7 +43,7 @@ export function sheetCss(p: DocPrintPreset = BASE_PRINT_PRESET): string {
     word-break: normal;
   }
   .sheet img { max-width: 100%; height: auto; }
-  .sheet table { width: 100%; max-width: 100%; table-layout: fixed; }
+  .sheet table { width: 100%; max-width: 100%; }
   .sheet td, .sheet th { min-width: 0; overflow-wrap: break-word; hyphens: manual; -webkit-hyphens: manual; }
   @media screen {
     body { zoom: min(1, calc((100vw - 24px) / ${A4_WIDTH_PX}px)); }
