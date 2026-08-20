@@ -174,9 +174,11 @@ export function SlideSettingsPanel({
 function BackgroundField({
   value,
   onChange,
+  onApplyToAll,
 }: {
   value: SlideBackground;
   onChange: (v: SlideBackground) => void;
+  onApplyToAll?: (v: SlideBackground) => void;
 }) {
   const stops = value.stops.length ? value.stops : ["#000000", "#1c2028"];
   const css = (list: string[], angle: number) =>
