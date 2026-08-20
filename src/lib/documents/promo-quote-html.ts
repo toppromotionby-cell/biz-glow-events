@@ -26,6 +26,11 @@ import {
   type PromoCheck,
 } from "@/lib/promo-quote-model";
 
+/** esc + мягкие переносы: для видимого текста в ячейках. */
+function escw(s: unknown): string {
+  return softHyphenate(esc(s));
+}
+
 function esc(s: unknown): string {
   return String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -117,14 +122,14 @@ export function buildPromoQuoteBody(
   const rowsHtml = sections
     .map((sec) => {
       const head = sec.name
-        ? `<tr class="sec"${ed("section", sec.name, "Раздел")}><td colspan="${colCount}">${esc(sec.name)}</td></tr>`
+        ? `<tr class="sec"${ed("section", sec.name, "Раздел")}><td colspan="${colCount}">${escw(sec.name)}</td></tr>`
         : "";
       const body = sec.items
         .map((it) => {
           const inc =
             quote.show_item_includes && it.includes.length
               ? `<ul class="c-inc">${it.includes
-                  .map((x) => `<li>${esc(x.text)}${x.note ? ` — ${esc(x.note)}` : ""}</li>`)
+                  .map((x) => `<li>${escw(x.text)}${x.note ? ` — ${escw(x.note)}` : ""}</li>`)
                   .join("")}</ul>`
               : "";
           const rowChecks = checksByIndex.get(items.indexOf(it)) ?? [];
@@ -296,7 +301,7 @@ export const PROMO_DOC_CSS = `
 .promo-doc .c-inc { margin: 3px 0 0; padding-left: 14px; font-size: 11px; color: #5a5a63; }
 .promo-doc .doc-grid tr.extra td { background: #fbfbfc; font-style: italic; }
 .promo-doc table.doc-grid { table-layout: fixed; }
-.promo-doc .doc-grid th, .promo-doc .doc-grid td { overflow-wrap: anywhere; }
+.promo-doc .doc-grid th, .promo-doc .doc-grid td { hyphens: manual; -webkit-hyphens: manual; overflow-wrap: break-word; word-break: normal; min-width: 0; }
 .promo-doc .c-title { text-align: left; }
 .promo-doc .c-unit { text-align: center; }
 .promo-doc .c-num { text-align: center; font-variant-numeric: tabular-nums; }

@@ -37,10 +37,14 @@ export function sheetCss(p: DocPrintPreset = BASE_PRINT_PRESET): string {
     padding: ${p.marginTopMm}mm ${p.marginXMm}mm ${p.marginBottomMm}mm;
     background: #fff;
     box-shadow: 0 4px 24px rgba(0,0,0,.10);
-    overflow-wrap: anywhere;
+    hyphens: manual;
+    -webkit-hyphens: manual;
+    overflow-wrap: break-word;
+    word-break: normal;
   }
   .sheet img { max-width: 100%; height: auto; }
-  .sheet table { width: 100%; max-width: 100%; }
+  .sheet table { width: 100%; max-width: 100%; table-layout: fixed; }
+  .sheet td, .sheet th { min-width: 0; overflow-wrap: break-word; hyphens: manual; -webkit-hyphens: manual; }
   @media screen {
     body { zoom: min(1, calc((100vw - 24px) / ${A4_WIDTH_PX}px)); }
   }

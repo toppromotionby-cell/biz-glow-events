@@ -26,6 +26,11 @@ import {
 } from "@/lib/quote-blocks";
 
 
+/** esc + мягкие переносы: для видимого текста в ячейках и абзацах. */
+function escw(s: unknown): string {
+  return softHyphenate(esc(s));
+}
+
 function esc(s: unknown): string {
   return String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -50,7 +55,7 @@ function lines(text: string): string {
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean)
-    .map((l) => `<li>${esc(l)}</li>`)
+    .map((l) => `<li>${escw(l)}</li>`)
     .join("");
 }
 
@@ -59,7 +64,7 @@ function paragraphs(text: string): string {
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean)
-    .map((l) => `<p>${esc(l)}</p>`)
+    .map((l) => `<p>${escw(l)}</p>`)
     .join("");
 }
 
@@ -335,7 +340,7 @@ export function buildQuoteHtmlDoc(
 
   const tableBody = [...sections.entries()]
     .map(([section, rows]) => {
-      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${esc(section)}</td></tr>` : "";
+      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${escw(section)}</td></tr>` : "";
       const body = rows
         .map((it, i) => {
           const rowChecks = checksByItem.get(it.id) ?? [];
@@ -347,12 +352,12 @@ export function buildQuoteHtmlDoc(
           return `<tr${rowCls}${ed("item", it.id, "Позиция")}>
         <td class="idx">${i + 1}</td>
         <td>
-          <div class="it-title">${esc(it.title)}</div>
-          ${it.description ? `<div class="it-desc">${esc(it.description)}</div>` : ""}
+          <div class="it-title">${escw(it.title)}</div>
+          ${it.description ? `<div class="it-desc">${escw(it.description)}</div>` : ""}
           ${
             showIncludes && it.includes?.length
               ? `<ul class="it-inc">${it.includes
-                  .map((inc) => `<li>${esc(inc.text)}${inc.note ? ` — ${esc(inc.note)}` : ""}</li>`)
+                  .map((inc) => `<li>${escw(inc.text)}${inc.note ? ` — ${escw(inc.note)}` : ""}</li>`)
                   .join("")}</ul>`
               : ""
           }
@@ -385,22 +390,22 @@ export function buildQuoteHtmlDoc(
     ["Монтаж / демонтаж", quote.setup_note],
   ].filter(([, v]) => !!v) as Array<[string, string]>;
 
-  const heading = (b: QuoteBlock) => `<h2 class="section">${esc(b.title || "")}</h2>`;
+  const heading = (b: QuoteBlock) => `<h2 class="section">${escw(b.title || "")}</h2>`;
 
   const renderBlockInner = (b: QuoteBlock): string => {
     const text = blockText(b, quote, map, numbers);
     switch (b.type) {
       case "cover":
         return `<div class="cover ${template === "premium" ? "cover-dark" : ""}">
-          <h1>${esc(applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers))}</h1>
-          ${text ? `<p>${esc(text)}</p>` : ""}
+          <h1>${escw(applyPlaceholders(quote.title || "Предложение по организации мероприятия", map, numbers))}</h1>
+          ${text ? `<p>${escw(text)}</p>` : ""}
         </div>
         ${chkList(scopeChecks("doc"))}`;
 
       case "client":
         return `${heading(b)}<div class="card">
           <div class="label">Заказчик</div>
-          <div class="name">${esc(quote.client_company || quote.client_name || "—")}</div>
+          <div class="name">${escw(quote.client_company || quote.client_name || "—")}</div>
           ${[
             quote.client_company && quote.client_name ? `Контакт: ${quote.client_name}` : "",
             quote.client_unp ? `УНП ${quote.client_unp}` : "",
@@ -409,16 +414,16 @@ export function buildQuoteHtmlDoc(
             quote.client_address,
           ]
             .filter(Boolean)
-            .map((l) => `<div class="line">${esc(l)}</div>`)
+            .map((l) => `<div class="line">${escw(l)}</div>`)
             .join("")}
           ${chkList(scopeChecks("client"))}
         </div>`;
       case "event":
         return `${heading(b)}<div class="card">
           <table class="info-table">
-            ${eventRows.map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("") || `<tr><td class="k">Детали</td><td>уточняются</td></tr>`}
+            ${eventRows.map(([k, v]) => `<tr><td class="k">${escw(k)}</td><td>${escw(v)}</td></tr>`).join("") || `<tr><td class="k">Детали</td><td>уточняются</td></tr>`}
           </table>
-          ${quote.event_notes ? `<div class="line" style="margin-top:8px;white-space:pre-line;">${esc(quote.event_notes)}</div>` : ""}
+          ${quote.event_notes ? `<div class="line" style="margin-top:8px;white-space:pre-line;">${escw(quote.event_notes)}</div>` : ""}
         </div>`;
       case "items":
         return `${heading(b)}<table>
@@ -447,7 +452,7 @@ export function buildQuoteHtmlDoc(
         return text ? `${heading(b)}${paragraphs(text)}` : "";
       case "requisites":
         return `${heading(b)}<div class="card">
-          <div class="name">${esc(c.legal)}</div>
+          <div class="name">${escw(c.legal)}</div>
           ${[
             c.unp ? `УНП ${c.unp}` : "",
             c.address,
@@ -457,7 +462,7 @@ export function buildQuoteHtmlDoc(
             [c.phone, c.email, c.website].filter(Boolean).join(" · "),
           ]
             .filter(Boolean)
-            .map((l) => `<div class="line">${esc(l)}</div>`)
+            .map((l) => `<div class="line">${escw(l)}</div>`)
             .join("")}
         </div>`;
       case "signature":
