@@ -833,7 +833,7 @@ function Page() {
                     />
                   </div>
                 )}
-                <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} />
+                <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} onApplyBackgroundToAll={applyBackgroundToAll} />
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Слайд не выбран</p>
@@ -857,7 +857,7 @@ function Page() {
                 onChange={(patch) => patchLayout(current.id, current.content.layout, patch)}
                 onClose={() => setBlockDialog(null)}
               />
-              <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} />
+              <SlideSettingsPanel slide={current} onChange={(patch) => patchSlide(current.id, patch)} onApplyBackgroundToAll={applyBackgroundToAll} />
             </div>
           )}
         </DialogContent>
