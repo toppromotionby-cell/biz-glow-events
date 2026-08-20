@@ -56,7 +56,7 @@ export function hyphenPoints(word: string): number[] {
     const ok =
       (isVowel(cur) && isCons(next)) || // мо-роз
       (curIsSoft && isCons(next)) || // поль-за
-      (isCons(cur) && isCons(next) && !isVowel(l[i - 1]!) === false); // вер-стка
+      (isCons(cur) && isCons(next) && isVowel(l[i - 1]!)); // вер-стка
     if (!ok) continue;
     out.push(i);
   }
