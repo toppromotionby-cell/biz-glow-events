@@ -53,7 +53,7 @@ import { checkAgainstQuote, type QuoteItemLite } from "@/lib/presentations/check
 import {
   SLIDE_TYPE_LABELS, STATUS_LABELS, TEMPLATE_LABELS, blankSlide,
   type Presentation, type PresentationSlide, type PresentationStatus,
-  type PresentationTemplate, type SlideLayoutOverrides, type SlideType,
+  type PresentationTemplate, type SlideBackground, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
 import {
   getPresentation, savePresentation, buildSlidesFromQuote,
