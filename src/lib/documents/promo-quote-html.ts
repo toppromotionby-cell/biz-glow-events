@@ -140,7 +140,7 @@ export function buildPromoQuoteBody(
               ? " chk-row chk-row-warn"
               : "";
           const cells: string[] = [
-            `<td class="c-title">${it.title.trim() ? esc(it.title) : '<span class="c-empty">Новая позиция</span>'}${inc}${chkList(rowChecks)}</td>`,
+            `<td class="c-title">${it.title.trim() ? escw(it.title) : '<span class="c-empty">Новая позиция</span>'}${inc}${chkList(rowChecks)}</td>`,
           ];
           if (isServiceOnlyRow(it)) {
             cells.push(mergedUnitCell(it.unit.trim() || "услуга"));
@@ -157,7 +157,7 @@ export function buildPromoQuoteBody(
           if (quote.show_total_qty) cells.push(`<td class="c-num">${esc(formatTotalQty(it))}</td>`);
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
-          if (quote.show_notes) cells.push(`<td class="c-note">${esc(it.note)}</td>`);
+          if (quote.show_notes) cells.push(`<td class="c-note">${escw(it.note)}</td>`);
           return `<tr class="${rowCls.trim()}"${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
         })
 
@@ -179,14 +179,14 @@ export function buildPromoQuoteBody(
   const extraRows: string[] = [];
   if (quote.management_enabled) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(quote.management_label)}</td>${midCells("услуга")}<td class="c-money"></td><td class="c-money">${nf(
+      `<tr class="extra"><td class="c-title">${escw(quote.management_label)}</td>${midCells("услуга")}<td class="c-money"></td><td class="c-money">${nf(
         t.management,
       )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
     );
   }
   if (quote.commission_enabled) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(quote.commission_label)}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(
+      `<tr class="extra"><td class="c-title">${escw(quote.commission_label)}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(
         t.commission,
       )}</td>${quote.show_notes ? `<td class="c-note">${nf(quote.commission_rate).replace(",00", "")} %</td>` : ""}</tr>`,
     );
@@ -194,7 +194,7 @@ export function buildPromoQuoteBody(
 
   if (t.vatEnabled && quote.vat_as_line) {
     extraRows.push(
-      `<tr class="extra"><td class="c-title">${esc(
+      `<tr class="extra"><td class="c-title">${escw(
         t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
       )}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(t.vat)}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
     );
