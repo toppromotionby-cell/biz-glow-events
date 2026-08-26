@@ -529,9 +529,42 @@ function GalleryField({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          «Авто» подбирает сетку под количество фото и объём текста.
+          «Авто» подбирает сетку под количество фото, их пропорции и объём текста.
+          Отмеченные звёздочкой фото попадают в самые заметные кадры.
         </p>
       </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Кадрирование</Label>
+          <Select value={fit} onValueChange={(v) => onFit(v as PhotoFit)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PHOTO_FITS.map((v) => (
+                <SelectItem key={v} value={v}>{PHOTO_FIT_LABELS[v]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Привязка кадра</Label>
+          <Select
+            value={anchor}
+            disabled={fit === "contain"}
+            onValueChange={(v) => onAnchor(v as PhotoAnchor)}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PHOTO_ANCHORS.map((v) => (
+                <SelectItem key={v} value={v}>{PHOTO_ANCHOR_LABELS[v]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Настройки кадрирования одинаково применяются в превью и PDF.
+      </p>
     </div>
   );
 }
