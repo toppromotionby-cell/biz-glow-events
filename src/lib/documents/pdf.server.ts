@@ -78,7 +78,7 @@ function header(order: DocOrder) {
   };
 }
 
-async function createCtx(
+export async function createCtx(
   logoUrl?: string | null,
   clientLogoUrl?: string | null,
   logoLayoutRaw?: unknown,
