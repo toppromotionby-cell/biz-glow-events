@@ -27,7 +27,7 @@ import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import type { SpecBlock, SpecPaint } from "@/lib/presentations/slide-spec";
 import { slideSpec } from "@/lib/presentations/spec";
-import { applyBrandKit, type BrandKit } from "@/lib/presentations/brand-kit";
+import { applyBrandKit, type BrandFrame, type BrandKit } from "@/lib/presentations/brand-kit";
 import {
   cssObjectPosition, type PhotoAnchor, type PhotoFit,
 } from "@/lib/presentations/photo-fit";
@@ -355,6 +355,7 @@ function SlideCanvasInner(props: SlideCanvasProps) {
           onEdit={onEdit}
           brandLogo={brandLogo}
           plan={plan}
+          frame={kit?.frame ?? "none"}
         />
         {plan.client && plan.client.slot !== "hero" && plan.client.slot !== "footer" && (
           <div data-block="clientLogo" style={logoStyle(plan.client)}>
@@ -441,7 +442,9 @@ function SlideBody({
   onEdit,
   brandLogo,
   plan,
+  frame,
 }: {
+  frame: BrandFrame;
   docFont: DocFont;
   slide: PresentationSlide;
   company: CompanyProfile | null;
@@ -518,7 +521,7 @@ function SlideBody({
     index: index ?? 0,
     total: total ?? 1,
     reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
-    frame: kit?.frame ?? "none",
+    frame,
   });
 
   return (
