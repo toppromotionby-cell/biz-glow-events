@@ -173,10 +173,18 @@ export type SlideContent = {
   priceUnit: string;
   qty: number | null;
   sku: string;
-  /** Фотографии слайда (до 5), первая — главная. */
+  /** Фотографии слайда (до 15), первая — главная. */
   images: string[];
   /** Раскладка фотоблока. */
   imageLayout: SlideImageLayout;
+  /** Правило кадрирования фото (общее для превью, PDF и экспорта). */
+  photoFit: PhotoFit;
+  /** Точка привязки при обрезке. */
+  photoAnchor: PhotoAnchor;
+  /** До 3 «главных» фото: попадают в самые заметные слоты раскладки. */
+  photoPriority: string[];
+  /** Пропорции кадров (url → w/h), нужны автоподбору паттерна. */
+  photoAspect: Record<string, number>;
   /** Ручные настройки раскладки («умные зоны»). Пустые значения = авто. */
   layout: SlideLayoutOverrides;
   /** Фон слайда: «как в шаблоне» либо свой цвет/градиент. */
