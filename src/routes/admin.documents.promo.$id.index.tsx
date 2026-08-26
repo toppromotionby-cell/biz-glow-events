@@ -59,7 +59,9 @@ import {
 } from "@/lib/promo-quote-model";
 import { lineQty, isCounted } from "@/lib/promo-quote-model";
 import { EconomicsPanel } from "@/components/admin/documents/EconomicsPanel";
-import { normalizeCostMode } from "@/lib/documents/economics";
+import { buildEconomics, normalizeCostMode } from "@/lib/documents/economics";
+import { promoEconRows } from "@/lib/documents/economics-source";
+import { buildEconomicsSheetBody, ECON_SHEET_CSS } from "@/lib/documents/economics-sheet";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
 import { sheetCss } from "@/lib/documents/sheet";
 import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
@@ -130,6 +132,7 @@ function EditorPage() {
   const { can } = useRoles();
   const canCost = can("documents.cost_margin");
   const [showCostRaw, setShowCost] = useState(false);
+  const [internalView, setInternalView] = useState(false);
   const showCost = showCostRaw && canCost;
   const [snippetDraft, setSnippetDraft] = useState<{ name: string; section: string; items: PromoItem[] } | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -309,6 +312,22 @@ function EditorPage() {
     () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit, companyLine, checks: previewChecks }) : ""),
     [quote, items, inlineEdit, companyLine, previewChecks],
   );
+  // Внутренний вид превью: себестоимость и прибыль по каждой строке.
+  const internalHtml = useMemo(
+    () =>
+      quote && canCost && internalView
+        ? buildEconomicsSheetBody(
+            {
+              docLabel: `КП промо №${promoNumberDisplay(quote)}`,
+              client: quote.client_company || quote.client_name || undefined,
+              netLabel: "После комиссии, скидки и НДС",
+            },
+            buildEconomics(promoEconRows(items), { netRevenue: computePromoTotals(quote, items).net }),
+          )
+        : "",
+    [quote, items, canCost, internalView],
+  );
+  const showInternal = canCost && internalView;
 
 
 
@@ -673,9 +692,20 @@ function EditorPage() {
                 >
                   <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
+  <DropdownMenuItem onClick={() => setTemplateOpen(true)}>
                   Сохранить в библиотеку
                 </DropdownMenuItem>
+                {canCost && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      viewer.openDocument(`/admin/documents/promo/${id}/render?internal=1&format=pdf`, {
+                        name: "КП-промо-внутренний.pdf",
+                      })
+                    }
+                  >
+                    <Calculator className="mr-2 h-4 w-4" />Внутренний PDF (себестоимость)
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/admin/documents/knowledge">
@@ -696,6 +726,12 @@ function EditorPage() {
               <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
               <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" />Правка двойным кликом</span>
             </label>
+            {canCost && (
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={internalView} onCheckedChange={setInternalView} />
+                <span className="flex items-center gap-1"><Calculator className="h-3.5 w-3.5" />Внутренний вид (себестоимость и прибыль)</span>
+              </label>
+            )}
             <DetachedPreviewButton
               html={`<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>${sheetCss(BASE_PRINT_PRESET)}${PROMO_DOC_CSS}</style></head><body><div class="sheet">${previewHtml}</div></body></html>`}
               title="Превью · КП промо"
@@ -705,9 +741,9 @@ function EditorPage() {
         rightPanel={<PromoTotalsPanel quote={quote} totals={totals} showMargin={showCost} />}
         sheet={() => (
           <>
-            <style>{PROMO_DOC_CSS}</style>
+            <style>{showInternal ? ECON_SHEET_CSS : PROMO_DOC_CSS}</style>
             <A4Sheet ref={sheetRef}>
-              <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              <div dangerouslySetInnerHTML={{ __html: showInternal ? internalHtml : previewHtml }} />
             </A4Sheet>
           </>
         )}
