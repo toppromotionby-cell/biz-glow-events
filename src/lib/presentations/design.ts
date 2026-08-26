@@ -407,85 +407,9 @@ export function slidePhotos(slide: PresentationSlide): string[] {
 }
 
 function splitFrames(box: Rect, count: number): Rect[] {
-  const g = GRID.photoGap;
-  const portrait = box.h >= box.w;
-  if (count <= 1) return [box];
-
-  if (count === 2) {
-    if (portrait) {
-      const h = (box.h - g) / 2;
-      return [
-        { x: box.x, y: box.y, w: box.w, h },
-        { x: box.x, y: box.y + h + g, w: box.w, h },
-      ];
-    }
-    const w = (box.w - g) / 2;
-    return [
-      { x: box.x, y: box.y, w, h: box.h },
-      { x: box.x + w + g, y: box.y, w, h: box.h },
-    ];
-  }
-
-  if (count === 3) {
-    if (portrait) {
-      const hero = (box.h - g) * 0.6;
-      const rest = box.h - g - hero;
-      const w = (box.w - g) / 2;
-      return [
-        { x: box.x, y: box.y, w: box.w, h: hero },
-        { x: box.x, y: box.y + hero + g, w, h: rest },
-        { x: box.x + w + g, y: box.y + hero + g, w, h: rest },
-      ];
-    }
-    const hero = (box.w - g) * 0.58;
-    const rest = box.w - g - hero;
-    const h = (box.h - g) / 2;
-    return [
-      { x: box.x, y: box.y, w: hero, h: box.h },
-      { x: box.x + hero + g, y: box.y, w: rest, h },
-      { x: box.x + hero + g, y: box.y + h + g, w: rest, h },
-    ];
-  }
-
-  if (count === 4) {
-    const w = (box.w - g) / 2;
-    const h = (box.h - g) / 2;
-    return [
-      { x: box.x, y: box.y, w, h },
-      { x: box.x + w + g, y: box.y, w, h },
-      { x: box.x, y: box.y + h + g, w, h },
-      { x: box.x + w + g, y: box.y + h + g, w, h },
-    ];
-  }
-
-  // 5: крупное фото + полоса из четырёх миниатюр.
-  if (portrait) {
-    const hero = (box.h - g) * 0.62;
-    const rest = box.h - g - hero;
-    const w = (box.w - g * 3) / 4;
-    return [
-      { x: box.x, y: box.y, w: box.w, h: hero },
-      ...[0, 1, 2, 3].map((i) => ({
-        x: box.x + i * (w + g),
-        y: box.y + hero + g,
-        w,
-        h: rest,
-      })),
-    ];
-  }
-  const hero = (box.w - g) * 0.6;
-  const rest = box.w - g - hero;
-  const h = (box.h - g * 3) / 4;
-  return [
-    { x: box.x, y: box.y, w: hero, h: box.h },
-    ...[0, 1, 2, 3].map((i) => ({
-      x: box.x + hero + g,
-      y: box.y + i * (h + g),
-      w: rest,
-      h,
-    })),
-  ];
+  return photoFrames(box, count, { gap: GRID.photoGap });
 }
+
 
 /** Пересекаются ли прямоугольники (с допуском). */
 export function rectsOverlap(a: Rect, b: Rect, gap = 0): boolean {
