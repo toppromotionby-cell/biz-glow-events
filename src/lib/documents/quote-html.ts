@@ -9,6 +9,10 @@ import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
 import { softHyphenate } from "@/lib/documents/hyphenate";
+import {
+  landscapeSheetCss, marginBodyCells, marginEmptyCells, marginHeadCells,
+  MARGIN_COLS_CSS, type MarginCols,
+} from "@/lib/documents/margin-cols";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
 
 
