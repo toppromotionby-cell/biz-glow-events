@@ -100,10 +100,10 @@ export async function buildEconomicsPdf(
   gap(ctx, 10);
 
   drawSummary(ctx, [
-    { label: "Сумма позиций", value: `${money(econ.revenue)} BYN` },
-    { label: "Себестоимость", value: `${money(econ.cost)} BYN` },
+    { label: "Сумма позиций", value: money(econ.revenue) },
+    { label: "Себестоимость", value: money(econ.cost) },
     { label: `Средняя наценка`, value: pct(econ.avgMarkupPct) },
-    { label: `Прибыль (${meta.netLabel ?? "после скидки и доставки"})`, value: `${money(econ.netMargin)} BYN`, emphasis: true },
+    { label: `Прибыль (${meta.netLabel ?? "после скидки и доставки"})`, value: money(econ.netMargin), emphasis: true },
     { label: "Рентабельность", value: pct(econ.netMarginPct) },
   ]);
 
