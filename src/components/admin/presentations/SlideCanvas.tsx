@@ -27,6 +27,7 @@ import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import type { SpecBlock, SpecPaint } from "@/lib/presentations/slide-spec";
 import { slideSpec } from "@/lib/presentations/spec";
+import { applyBrandKit, type BrandKit } from "@/lib/presentations/brand-kit";
 import {
   cssObjectPosition, type PhotoAnchor, type PhotoFit,
 } from "@/lib/presentations/photo-fit";
@@ -259,6 +260,8 @@ export type SlideCanvasProps = {
   logoLayout?: PresentationLogoLayout;
   /** Шрифт презентации. */
   fontFamily?: DocFontChoice;
+  /** Применённый бренд-набор: цвета, акцент и стиль рамки. */
+  brandKit?: BrandKit | null;
   /** Режим редактора: перетаскивание и масштабирование элементов слайда. */
   interactive?: boolean;
   onLayout?: import("@/components/admin/presentations/SlideLayoutOverlay").LayoutPatch;
@@ -296,10 +299,11 @@ function logoStyle(p: { slot: LogoSlot; x?: number; y?: number }): CSSProperties
 function SlideCanvasInner(props: SlideCanvasProps) {
   const { slide, company, template, presentationTitle, width, index, total, showWarnings, onEdit } = props;
   const scale = width / SLIDE_W;
-  const accent = company?.accent_color || "#FF7500";
+  const kit = props.brandKit ?? null;
+  const accent = kit?.accent || company?.accent_color || "#FF7500";
   const theme = useMemo(
-    () => slideTheme(template, accent, slide.content.background),
-    [template, accent, slide.content.background],
+    () => slideTheme(template, accent, applyBrandKit(slide.content.background, kit, accent).background),
+    [template, accent, kit, slide.content.background],
   );
   const fit = useMemo(() => fitSlide(slide), [slide]);
   const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
@@ -514,6 +518,7 @@ function SlideBody({
     index: index ?? 0,
     total: total ?? 1,
     reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
+    frame: kit?.frame ?? "none",
   });
 
   return (
