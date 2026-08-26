@@ -110,6 +110,25 @@ export function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW:
   }
 }
 
+/**
+ * Значение обычной ячейки: сначала пробуем уложить в одну строку, слегка
+ * уменьшив кегль (важно для сумм вида «5 250,00 BYN» — их нельзя рвать),
+ * и только если не получилось — обычный перенос по словам.
+ */
+function fitCell(ctx: DocCtx, text: string, maxWidth: number): { lines: string[]; size: number } {
+  const value = safe(text);
+  if (!value) return { lines: [], size: M.F11 };
+  const avail = Math.max(1, maxWidth);
+  if (ctx.regular.widthOfTextAtSize(value, M.F11) <= avail) return { lines: [value], size: M.F11 };
+  const min = M.F11 * 0.72;
+  for (let s = M.F11 - 0.25; s >= min; s -= 0.25) {
+    if (ctx.regular.widthOfTextAtSize(value, s) <= avail) {
+      return { lines: [value], size: Math.round(s * 100) / 100 };
+    }
+  }
+  return { lines: wrapText(ctx.regular, value, M.F11, avail), size: M.F11 };
+}
+
 
 export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
