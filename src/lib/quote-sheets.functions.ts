@@ -53,7 +53,14 @@ export const ensureQuoteSheet = createServerFn({ method: "POST" })
     let sheetId = (quote.sheet_id as string | null) ?? null;
     let url = (quote.sheet_url as string | null) ?? null;
     if (!sheetId) {
-      const created = await createSpreadsheet(sheetTitle(quote));
+      const created = await (async () => {
+        try {
+          return await createSpreadsheet(sheetTitle(quote));
+        } catch (e) {
+          console.error(`[sheets] quotes ensure ${data.id} failed:`, (e as Error).message);
+          throw e;
+        }
+      })();
       sheetId = created.id;
       url = created.url;
     }
