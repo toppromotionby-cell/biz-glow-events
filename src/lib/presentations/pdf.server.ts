@@ -25,9 +25,8 @@ import {
 } from "@/lib/documents/image-embed.server";
 
 import {
-  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock, type SpecPaint,
+  FULL_BLEED_SHADE, type SpecBlock, type SpecPaint,
 } from "@/lib/presentations/slide-spec";
-import { contentSlideSpec } from "@/lib/presentations/content-spec";
 import { slideSpec } from "@/lib/presentations/spec";
 
 
