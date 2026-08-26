@@ -571,6 +571,31 @@ function Page() {
         </div>
       ),
     },
+    ...(canCost
+      ? [{
+          id: "economics",
+          label: "Экономика",
+          Icon: Calculator,
+          wide: true,
+          content: (
+            <EconomicsPanel
+              docTitle={`КП ${quoteNumberDisplay(quote)}`}
+              netRevenue={totals?.net}
+              rows={items.map((it) => ({
+                id: it.id,
+                section: it.section,
+                title: it.title,
+                qty: num(it.qty),
+                qtyLabel: `${num(it.qty)} ${it.unit}`,
+                price: num(it.price),
+                unitCost: num(it.cost),
+                costMode: normalizeCostMode(it.cost_mode),
+                costInput: num(it.cost_input),
+              }))}
+            />
+          ),
+        } as EditorSection]
+      : []),
     {
       id: "money",
       label: "Финансы",
