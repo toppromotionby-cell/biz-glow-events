@@ -1020,6 +1020,15 @@ function Page() {
         onSave={onSaveToLibrary}
       />
 
+      <QuoteStoryboardDialog
+        open={storyboardOpen}
+        onOpenChange={setStoryboardOpen}
+        quoteId={id}
+        defaultTitle={`Презентация · КП ${quoteNumberDisplay(quote)}`}
+        companyId={quote.company_id ?? null}
+        onCreated={(pid) => navigate({ to: "/admin/documents/presentations/$id", params: { id: pid } })}
+      />
+
       {confirmDialog}
     </DocEditorShell>
   );
