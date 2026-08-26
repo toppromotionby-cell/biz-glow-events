@@ -27,6 +27,7 @@ import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import type { SpecBlock, SpecPaint } from "@/lib/presentations/slide-spec";
 import { slideSpec } from "@/lib/presentations/spec";
+import { SlideDebugOverlay } from "@/components/admin/presentations/SlideDebugOverlay";
 import { applyBrandKit, type BrandFrame, type BrandKit } from "@/lib/presentations/brand-kit";
 import {
   cssObjectPosition, type PhotoAnchor, type PhotoFit,
@@ -276,12 +277,14 @@ export type SlideCanvasProps = {
   textEditing?: boolean;
   /** Плавающая панель блока (мобильный режим — свойств справа нет). */
   floatingToolbar?: boolean;
+  /** Режим отладки: слой-схема зон, пустые места и конфликты. */
+  debug?: boolean;
 };
 
 
 export type SlideBranding = Pick<
   SlideCanvasProps,
-  "brandLogoUrl" | "clientLogoUrl" | "logoLayout" | "fontFamily"
+  "brandLogoUrl" | "clientLogoUrl" | "logoLayout" | "fontFamily" | "brandKit"
 >;
 
 /** Позиционирование логотипа в угловом слоте. */
@@ -386,6 +389,8 @@ function SlideCanvasInner(props: SlideCanvasProps) {
         </div>
       )}
 
+
+      {props.debug && <SlideDebugOverlay slide={slide} fit={fit} plan={plan} scale={scale} />}
 
       {showWarnings && fit.warnings.length > 0 && (
         <div
