@@ -446,21 +446,7 @@ function Page() {
 
 
 
-  // Этап 5: собрать презентацию по позициям этого КП.
-  const onBuildPresentation = async () => {
-    try {
-      const res = await makePresentation({
-        data: {
-          title: `Презентация · КП ${quoteNumberDisplay(quote)}`,
-          companyId: quote.company_id ?? null,
-          template: "light",
-          quoteId: id,
-        },
-      });
-      toast.success("Презентация создана по позициям КП");
-      navigate({ to: "/admin/documents/presentations/$id", params: { id: res.id } });
-    } catch (e) { toast.error((e as Error).message); }
-  };
+  // Сборка презентации из КП — через окно сценария (сториборд).
 
   const sections: EditorSection[] = [
     {
@@ -951,7 +937,7 @@ function Page() {
               <DropdownMenuItem onClick={onCreateOrder}>
                 <FileCheck2 className="mr-2 h-4 w-4" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onBuildPresentation}>
+              <DropdownMenuItem onClick={() => setStoryboardOpen(true)}>
                 <Presentation className="mr-2 h-4 w-4" />Собрать презентацию
               </DropdownMenuItem>
               {canCost && (
