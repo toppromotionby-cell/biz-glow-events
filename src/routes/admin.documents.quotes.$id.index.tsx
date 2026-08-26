@@ -44,7 +44,7 @@ import {
   saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
 import { saveEstimateTemplate } from "@/lib/estimate-templates.functions";
-import { createPresentation } from "@/lib/presentations.functions";
+import { QuoteStoryboardDialog } from "@/components/admin/presentations/QuoteStoryboardDialog";
 
 import {
   checkQuote, computeTotals, emptyQuoteItem, num, quotePatchSchema, normalizeTime, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
@@ -188,7 +188,7 @@ function Page() {
   const markSent = useServerFn(markQuoteSent);
   const sendToClient = useServerFn(sendQuoteToClient);
   const makeOrder = useServerFn(createOrderFromQuote);
-  const makePresentation = useServerFn(createPresentation);
+  const [storyboardOpen, setStoryboardOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({ queryKey: adminKeys.quote(id), queryFn: () => load({ data: { id } }) });
   const activeCompanyId = data?.quote?.company_id ?? null;
