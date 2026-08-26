@@ -17,7 +17,8 @@ describe("integrity", () => {
   it("ловит дубликаты и пустые слайды и чинит их", () => {
     const a = slide(0);
     const dup = { ...a, id: "dup" };
-    const empty = blankSlide("text", 2);
+    const base = blankSlide("text", 2);
+    const empty = { ...base, title: "", subtitle: "", content: { ...base.content, description: "", includes: [], specs: [], images: [], price: null } };
     const report = checkPresentation([a, dup, empty]);
     expect(report.issues.some((i) => i.code === "duplicate-slide")).toBe(true);
     expect(report.issues.some((i) => i.code === "empty-slide")).toBe(true);
