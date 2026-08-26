@@ -1030,7 +1030,7 @@ export const createPresentationFromTemplate = createServerFn({ method: "POST" })
         quote_id: data.quoteId,
         template: tpl.theme,
         status: "draft",
-        brand_kit: kit as unknown as Record<string, unknown>,
+        brand_kit: kit as never,
         font_family: kit.font,
         created_by: context.userId,
       })
