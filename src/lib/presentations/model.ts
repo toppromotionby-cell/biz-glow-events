@@ -2,6 +2,9 @@
 // Файл клиент-безопасный — используется и в редакторе, и в server fns, и в PDF.
 import { clamp } from "@/lib/canvas/model";
 import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
+import {
+  PHOTO_ANCHORS, PHOTO_FITS, type PhotoAnchor, type PhotoFit,
+} from "@/lib/presentations/photo-fit";
 import { htmlToPlainText, isHtml } from "@/lib/rich-text";
 
 /** Как накладывать логотипы на слайды. */
@@ -173,10 +176,18 @@ export type SlideContent = {
   priceUnit: string;
   qty: number | null;
   sku: string;
-  /** Фотографии слайда (до 5), первая — главная. */
+  /** Фотографии слайда (до 15), первая — главная. */
   images: string[];
   /** Раскладка фотоблока. */
   imageLayout: SlideImageLayout;
+  /** Правило кадрирования фото (общее для превью, PDF и экспорта). */
+  photoFit: PhotoFit;
+  /** Точка привязки при обрезке. */
+  photoAnchor: PhotoAnchor;
+  /** До 3 «главных» фото: попадают в самые заметные слоты раскладки. */
+  photoPriority: string[];
+  /** Пропорции кадров (url → w/h), нужны автоподбору паттерна. */
+  photoAspect: Record<string, number>;
   /** Ручные настройки раскладки («умные зоны»). Пустые значения = авто. */
   layout: SlideLayoutOverrides;
   /** Фон слайда: «как в шаблоне» либо свой цвет/градиент. */
@@ -426,6 +437,10 @@ export const EMPTY_CONTENT: SlideContent = {
   sku: "",
   images: [],
   imageLayout: "auto",
+  photoFit: "cover",
+  photoAnchor: "center",
+  photoPriority: [],
+  photoAspect: {},
   layout: DEFAULT_LAYOUT_OVERRIDES,
   background: { ...DEFAULT_SLIDE_BACKGROUND },
 
@@ -465,6 +480,24 @@ export function normalizeContent(raw: unknown): SlideContent {
     imageLayout: IMAGE_LAYOUTS.includes(r.imageLayout as SlideImageLayout)
       ? (r.imageLayout as SlideImageLayout)
       : "auto",
+    photoFit: PHOTO_FITS.includes(r.photoFit as PhotoFit) ? (r.photoFit as PhotoFit) : "cover",
+    photoAnchor: PHOTO_ANCHORS.includes(r.photoAnchor as PhotoAnchor)
+      ? (r.photoAnchor as PhotoAnchor)
+      : "center",
+    photoPriority: Array.isArray(r.photoPriority)
+      ? Array.from(new Set(r.photoPriority.map((i) => str(i).trim()).filter(Boolean)))
+        .filter((u) => images.includes(u))
+        .slice(0, 3)
+      : [],
+    photoAspect: (() => {
+      const src = (r.photoAspect ?? {}) as Record<string, unknown>;
+      const out: Record<string, number> = {};
+      for (const [k, v] of Object.entries(src)) {
+        const n = Number(v);
+        if (images.includes(k) && Number.isFinite(n) && n > 0.05 && n < 20) out[k] = n;
+      }
+      return out;
+    })(),
     layout: normalizeLayoutOverrides(r.layout),
     background: normalizeSlideBackground(r.background),
 

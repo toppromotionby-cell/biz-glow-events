@@ -27,6 +27,9 @@ import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import { staticSlideSpec, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
 import { contentSlideSpec } from "@/lib/presentations/content-spec";
+import {
+  cssObjectPosition, type PhotoAnchor, type PhotoFit,
+} from "@/lib/presentations/photo-fit";
 
 
 export { SLIDE_W, SLIDE_H, slideTheme };
@@ -37,10 +40,23 @@ function money(n: number): string {
   return `${new Intl.NumberFormat("ru-BY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} BYN`;
 }
 
-function SlideImage({ path, style }: { path: string | null; style: CSSProperties }) {
+function SlideImage({ path, style, fit = "cover", anchor = "center", alt = "" }: {
+  path: string | null;
+  style: CSSProperties;
+  fit?: PhotoFit;
+  anchor?: PhotoAnchor;
+  alt?: string;
+}) {
   const url = useResolvedUrl(path);
   if (!url) return <div style={{ ...style, background: "rgba(127,127,127,0.12)" }} aria-hidden />;
-  return <img src={url} alt="" style={{ ...style, objectFit: "cover" }} />;
+  return (
+    <img
+      src={url}
+      alt={alt}
+      title={alt || undefined}
+      style={{ ...style, objectFit: fit, objectPosition: cssObjectPosition(anchor) }}
+    />
+  );
 }
 
 function Logo({ path, height }: { path: string | null; height: number }) {
@@ -89,6 +105,9 @@ function SpecBlockView({
     return (
       <SlideImage
         path={block.path}
+        fit={block.fit}
+        anchor={block.anchor}
+        alt={block.alt}
         style={{
           position: "absolute",
           left: block.x,

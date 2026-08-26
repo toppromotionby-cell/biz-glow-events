@@ -1,6 +1,7 @@
 // Экспорт презентации в PDF: альбомный формат 16:9 (960×540 pt), pdf-lib.
 // Работает только на сервере. Шрифты — те же Inter/Space Grotesk, что и в
 // остальных документах, чтобы PDF совпадал с превью.
+import { photoDrawRectPdf } from "@/lib/presentations/photo-fit";
 import {
   PDFDocument, rgb, clip, closePath, endPath, lineTo, moveTo,
   popGraphicsState, pushGraphicsState,
@@ -308,9 +309,11 @@ function drawSpecBlocks(
         });
         continue;
       }
-      const k = Math.max(fw / img.width, fh / img.height);
-      const w = img.width * k;
-      const h = img.height * k;
+      // Кадрирование считает общий модуль — превью и PDF совпадают пиксель в пиксель.
+      const dr = photoDrawRectPdf(
+        { x: fx, y: fy, w: fw, h: fh }, img.width, img.height,
+        b.fit ?? "cover", b.anchor ?? "center",
+      );
       // object-fit: cover — лишнее обрезаем рамкой, иначе фото «вылезает»
       // за свою колонку и наезжает на текст (в превью этого не происходит).
       page.pushOperators(
@@ -318,7 +321,7 @@ function drawSpecBlocks(
         moveTo(fx, fy), lineTo(fx + fw, fy), lineTo(fx + fw, fy + fh), lineTo(fx, fy + fh),
         closePath(), clip(), endPath(),
       );
-      page.drawImage(img, { x: fx + fw / 2 - w / 2, y: fy + fh / 2 - h / 2, width: w, height: h });
+      page.drawImage(img, { x: dr.x, y: dr.y, width: dr.w, height: dr.h });
       page.pushOperators(popGraphicsState());
       continue;
 
