@@ -19,6 +19,7 @@ import {
   QUOTE_SECTION_SUGGESTIONS, removeSection, renameSection, type QuoteItem,
 } from "@/lib/quotes-model";
 import { QuoteItemIncludesEditor } from "@/components/admin/quotes/QuoteItemIncludesEditor";
+import { CostField } from "@/components/admin/documents/CostField";
 import { NumField, TextAreaField, TextCommitField } from "@/components/admin/field-kit";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest, type ItemHit } from "@/hooks/use-doc-suggest";
@@ -323,9 +324,8 @@ export function QuoteItemsPanel({
                           onChange={(v) => replace(it.id, { price: v })} />
                       </Mini>
                       {showCost && (
-                        <Mini label="Себест." width="w-[110px]">
-                          <NumField value={it.cost} step="0.01" aria-label="Себестоимость" className="h-8"
-                            onChange={(v) => replace(it.id, { cost: v })} />
+                        <Mini label="Себест." width="w-[152px]">
+                          <CostField item={it} onChange={(patch) => replace(it.id, patch as Partial<QuoteItem>)} />
                         </Mini>
                       )}
                       <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setIncludesFor(it.id)}>
