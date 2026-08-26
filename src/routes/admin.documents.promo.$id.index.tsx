@@ -19,7 +19,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Download, Info, Undo2, Redo2, History, Send, ListTree, User, Wallet, ShieldCheck, Settings2,
-  Eye, Percent, Brain, MoreHorizontal, Trash2,
+  Eye, Percent, Brain, MoreHorizontal, Trash2, Calculator,
 } from "lucide-react";
 
 import { useConfirm } from "@/components/admin/ConfirmDialog";
@@ -57,6 +57,9 @@ import {
   PROMO_STATUS_LABELS, PROMO_STATUSES, checkPromoQuote, computePromoTotals, isPristinePromoItem, promoNumberDisplay,
   promoValidityState, type PromoDiscountType, type PromoItem, type PromoQuote, type PromoStatus,
 } from "@/lib/promo-quote-model";
+import { lineQty, lineTotal, isCounted } from "@/lib/promo-quote-model";
+import { EconomicsPanel } from "@/components/admin/documents/EconomicsPanel";
+import { normalizeCostMode } from "@/lib/documents/economics";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
 import { sheetCss } from "@/lib/documents/sheet";
 import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
@@ -435,6 +438,33 @@ function EditorPage() {
         </div>
       ),
     },
+    ...(canCost
+      ? [{
+          id: "economics",
+          label: "Экономика",
+          Icon: Calculator,
+          wide: true,
+          content: (
+            <EconomicsPanel
+              docTitle={`КП промо ${promoNumberDisplay(quote)}`}
+              netRevenue={totals?.net}
+              netLabel="После комиссии, скидки и НДС"
+              rows={items.map((it) => ({
+                id: it.id,
+                section: it.section,
+                title: it.title,
+                qty: lineQty(it),
+                qtyLabel: lineTotal(it) && lineQty(it) ? String(lineQty(it)) : String(lineQty(it)),
+                price: Number(it.price) || 0,
+                unitCost: Number(it.cost) || 0,
+                costMode: normalizeCostMode(it.cost_mode),
+                costInput: Number(it.cost_input) || 0,
+                excluded: !isCounted(it),
+              }))}
+            />
+          ),
+        } as EditorSection]
+      : []),
     {
       id: "money",
       label: "Финансы",
