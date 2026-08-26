@@ -6,6 +6,7 @@ import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
 import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
+import { normalizeCostMode, resolveUnitCost, type CostMode } from "@/lib/documents/economics";
 
 export { normalizeIncludes };
 export type { QuoteItemInclude };
