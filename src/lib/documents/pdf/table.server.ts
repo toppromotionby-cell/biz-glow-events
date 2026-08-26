@@ -31,40 +31,104 @@ export type TableRow = Record<string, string | string[] | TableSpan | undefined>
   _span?: { from: string; to: string; text: string };
 };
 
+/** Ширина самого длинного слова заголовка колонки (капсом, с трекингом). */
+function headWordWidth(ctx: DocCtx, title: string): number {
+  return Math.max(
+    0,
+    ...title
+      .toUpperCase()
+      .split(" ")
+      .map((word) => trackedWidth(ctx.bold, word, M.F_DOC_KIND, M.F_DOC_KIND * 0.08)),
+  );
+}
+
 /**
  * Подгоняет ширины узких колонок под самый длинный текст, а остаток отдаёт
  * «Наименованию» и «Примечаниям» (примечаниям — большая доля).
+ *
+ * Колонка никогда не становится уже самого длинного слова своего заголовка:
+ * иначе шапка выходит за границу ячейки и налезает на соседнюю.
  */
 export function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
   const flexKeys = new Set(["title", "note"]);
   const pad = 15;
-  const measured = new Map<string, number>();
-  let narrow = 0;
+  const cap = tableW * 0.18;
+  const desired = new Map<string, number>();
+  const minimal = new Map<string, number>();
+  let narrowDesired = 0;
+  let narrowMin = 0;
   for (const c of cols) {
     if (flexKeys.has(c.key)) continue;
-    let w = Math.max(
-      ...c.title.toUpperCase().split(" ").map((word) => trackedWidth(ctx.bold, word, M.F_DOC_KIND, M.F_DOC_KIND * 0.08)),
-    );
+    let w = headWordWidth(ctx, c.title);
+    const min = Math.min(cap, w + 8);
     const MERGED = new Set(["unit", "qty", "rate_unit", "multiplier"]);
     for (const r of rows) {
       if (r._span && MERGED.has(c.key)) continue;
       const v = typeof r[c.key] === "string" ? (r[c.key] as string) : "";
       if (v) w = Math.max(w, ctx.regular.widthOfTextAtSize(v, M.F11));
     }
-    const width = Math.min(tableW * 0.18, w + pad);
-    measured.set(c.key, width);
-    narrow += width;
+    const width = Math.max(min, Math.min(cap, w + pad));
+    desired.set(c.key, width);
+    minimal.set(c.key, min);
+    narrowDesired += width;
+    narrowMin += min;
   }
   const flexCols = cols.filter((c) => flexKeys.has(c.key));
-  if (!flexCols.length) return;
+  if (!flexCols.length) {
+    // Таблица без «резиновых» колонок: раскладываем остаток пропорционально.
+    const k = tableW / (narrowDesired || 1);
+    for (const c of cols) c.width = (desired.get(c.key) ?? 0) * k;
+    return;
+  }
   const hasNote = flexCols.some((c) => c.key === "note");
-  const rest = Math.max(tableW * (hasNote ? 0.42 : 0.24), tableW - narrow);
-  const scale = (tableW - rest) / (narrow || 1);
+  const restWanted = tableW * (hasNote ? 0.42 : 0.24);
+  const availNarrow = tableW - restWanted;
+
+  const finalNarrow = new Map<string, number>();
+  if (narrowDesired <= availNarrow) {
+    for (const [k, v] of desired) finalNarrow.set(k, v);
+  } else if (narrowMin <= availNarrow) {
+    // Сжимаем «лишнее» сверх минимума, минимум остаётся неприкосновенным.
+    const slack = narrowDesired - narrowMin;
+    const keep = (availNarrow - narrowMin) / (slack || 1);
+    for (const [k, v] of desired) {
+      const min = minimal.get(k) ?? 0;
+      finalNarrow.set(k, min + (v - min) * keep);
+    }
+  } else {
+    // Даже минимумы не помещаются — жмём их пропорционально; шапка и числа
+    // дополнительно уменьшатся по кеглю при отрисовке.
+    const k = availNarrow / (narrowMin || 1);
+    for (const key of desired.keys()) finalNarrow.set(key, (minimal.get(key) ?? 0) * k);
+  }
+
+  const narrowTotal = [...finalNarrow.values()].reduce((s, v) => s + v, 0);
+  const rest = Math.max(tableW * 0.18, tableW - narrowTotal);
   for (const c of cols) {
     if (flexKeys.has(c.key)) c.width = hasNote ? rest * (c.key === "note" ? 0.56 : 0.44) : rest;
-    else c.width = (measured.get(c.key) ?? 0) * scale;
+    else c.width = finalNarrow.get(c.key) ?? 0;
   }
 }
+
+/**
+ * Значение обычной ячейки: сначала пробуем уложить в одну строку, слегка
+ * уменьшив кегль (важно для сумм вида «5 250,00 BYN» — их нельзя рвать),
+ * и только если не получилось — обычный перенос по словам.
+ */
+function fitCell(ctx: DocCtx, text: string, maxWidth: number): { lines: string[]; size: number } {
+  const value = safe(text);
+  if (!value) return { lines: [], size: M.F11 };
+  const avail = Math.max(1, maxWidth);
+  if (ctx.regular.widthOfTextAtSize(value, M.F11) <= avail) return { lines: [value], size: M.F11 };
+  const min = M.F11 * 0.72;
+  for (let s = M.F11 - 0.25; s >= min; s -= 0.25) {
+    if (ctx.regular.widthOfTextAtSize(value, s) <= avail) {
+      return { lines: [value], size: Math.round(s * 100) / 100 };
+    }
+  }
+  return { lines: wrapText(ctx.regular, value, M.F11, avail), size: M.F11 };
+}
+
 
 export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
@@ -75,26 +139,55 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const rowMinH = 18 * RD;
   const SMALL = M.F11 - 1;
 
-  const headTracking = M.F_DOC_KIND * 0.08;
-  const headLines = cols.map((c) => {
+  // Шапка: для каждой колонки подбираем кегль так, чтобы самое длинное слово
+  // помещалось в ячейку; при необходимости переносим по словам, а совсем
+  // длинное слово режем с дефисом. Так заголовки не налезают друг на друга.
+  const HEAD_MIN = Math.max(5, M.F_DOC_KIND * 0.62);
+  const head = cols.map((c) => {
     const title = c.title.toUpperCase();
-    const avail = c.width - cellPadX * 2;
-    if (trackedWidth(ctx.bold, title, M.F_DOC_KIND, headTracking) <= avail) return [title];
-    const words = title.split(" ");
+    const avail = Math.max(1, c.width - cellPadX * 2);
+    let size = M.F_DOC_KIND;
+    const trackOf = (s: number) => s * 0.08;
+    const wordFits = (s: number) =>
+      title.split(" ").every((w) => trackedWidth(ctx.bold, w, s, trackOf(s)) <= avail);
+    while (size > HEAD_MIN && !wordFits(size)) size = Math.round((size - 0.25) * 100) / 100;
+    const tracking = trackOf(size);
+    const width = (s: string) => trackedWidth(ctx.bold, s, size, tracking);
+
+    if (width(title) <= avail) return { lines: [title], size, tracking };
+
     const lines: string[] = [];
+    const pushWord = (word: string) => {
+      if (width(word) <= avail) {
+        lines.push(word);
+        return;
+      }
+      // Слово шире ячейки даже на минимальном кегле — режем по буквам.
+      let chunk = "";
+      for (const ch of word) {
+        if (chunk && width(`${chunk}${ch}-`) > avail) {
+          lines.push(`${chunk}-`);
+          chunk = ch;
+        } else chunk += ch;
+      }
+      if (chunk) lines.push(chunk);
+    };
     let cur = "";
-    for (const w of words) {
+    for (const w of title.split(" ")) {
       const next = cur ? `${cur} ${w}` : w;
-      if (cur && trackedWidth(ctx.bold, next, M.F_DOC_KIND, headTracking) > avail) {
+      if (cur && width(next) > avail) {
         lines.push(cur);
-        cur = w;
+        cur = "";
+        pushWord(w);
+        cur = lines.pop() ?? "";
       } else cur = next;
     }
-    if (cur) lines.push(cur);
-    return lines;
+    if (cur) pushWord(cur);
+    return { lines, size, tracking };
   });
-  const headRows = Math.max(1, ...headLines.map((l) => l.length));
-  const headH = Math.max(headerH, headRows * (M.F_DOC_KIND + 4) + 10);
+  const headLineH = Math.max(...head.map((h) => h.size)) + 4;
+  const headRows = Math.max(1, ...head.map((h) => h.lines.length));
+  const headH = Math.max(headerH, headRows * headLineH + 10);
 
   const drawHead = () => {
     ctx.page.drawRectangle({
@@ -106,27 +199,30 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     });
     let hx = startX;
     cols.forEach((c, ci) => {
-      const lines = headLines[ci] ?? [c.title.toUpperCase()];
-      const lineH = M.F_DOC_KIND + 4;
-      const blockH = lines.length * lineH;
+      const h = head[ci];
+      const lineH = headLineH;
+      const blockH = h.lines.length * lineH;
       let ly = ctx.y - headH + (headH - blockH) / 2 + blockH - lineH + 1;
-      for (const line of lines) {
-        const w = trackedWidth(ctx.bold, line, M.F_DOC_KIND, headTracking);
+      for (const line of h.lines) {
+        const w = trackedWidth(ctx.bold, line, h.size, h.tracking);
         let tx = hx + cellPadX;
         if (c.align === "right") tx = hx + c.width - cellPadX - w;
         else if (c.align === "center") tx = hx + (c.width - w) / 2;
+        // страховка: текст не выходит за границы своей ячейки
+        tx = Math.max(hx + cellPadX, Math.min(tx, hx + c.width - cellPadX - w));
         drawTracked(ctx.page, line, {
           x: tx,
           y: ly,
-          size: M.F_DOC_KIND,
+          size: h.size,
           font: ctx.bold,
           color: TEXT,
-          tracking: headTracking,
+          tracking: h.tracking,
         });
         ly -= lineH;
       }
       hx += c.width;
     });
+
     ctx.y -= headH;
   };
 
@@ -255,8 +351,9 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
     );
     const restWrapped = cols.map((c, i) =>
-      i === richIdx ? [] : wrapText(ctx.regular, cell(c.key), M.F11, c.width - cellPadX * 2),
+      i === richIdx ? { lines: [] as string[], size: M.F11 } : fitCell(ctx, cell(c.key), c.width - cellPadX * 2),
     );
+
 
     ctx.page.drawLine({
       start: { x: startX, y: ctx.y - rowH },
@@ -305,22 +402,20 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         cx += c.width;
         continue;
       }
-      const lines = restWrapped[i];
-      const blockH = Math.max(lines.length, 1) * M.F11 * M.LH;
+      const { lines, size: cellSize } = restWrapped[i];
+      const blockH = Math.max(lines.length, 1) * cellSize * M.LH;
       let ly = c.valign === "middle" ? ctx.y - Math.max(5 * RD, (rowH - blockH) / 2) : ctx.y - 5 * RD;
       const color = c.key === "idx" ? MUTED : TEXT;
       for (const line of lines) {
+        const w = ctx.regular.widthOfTextAtSize(line, cellSize);
         let tx = cx + cellPadX;
-        if (c.align === "right") {
-          const w = ctx.regular.widthOfTextAtSize(line, M.F11);
-          tx = cx + c.width - cellPadX - w;
-        } else if (c.align === "center") {
-          const w = ctx.regular.widthOfTextAtSize(line, M.F11);
-          tx = cx + (c.width - w) / 2;
-        }
-        ctx.page.drawText(line, { x: tx, y: ly - M.F11, size: M.F11, font: ctx.regular, color });
-        ly -= M.F11 * M.LH;
+        if (c.align === "right") tx = cx + c.width - cellPadX - w;
+        else if (c.align === "center") tx = cx + (c.width - w) / 2;
+        tx = Math.max(cx + cellPadX, Math.min(tx, cx + c.width - cellPadX - w));
+        ctx.page.drawText(line, { x: tx, y: ly - cellSize, size: cellSize, font: ctx.regular, color });
+        ly -= cellSize * M.LH;
       }
+
       cx += c.width;
     }
 
