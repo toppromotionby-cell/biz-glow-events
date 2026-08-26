@@ -15,7 +15,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   AlertTriangle, ArrowLeft, Check, Download, FileText, Layers, ListChecks, Loader2,
-  LibraryBig, Palette, Play, Plus, RefreshCw, Share2, ShieldCheck, Undo2,
+  LibraryBig, Palette, Play, Plus, RefreshCw, Share2, ShieldCheck, Undo2, Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,9 @@ import { EditorWorkspace } from "@/components/admin/editor/EditorWorkspace";
 import { SlideAuditPanel } from "@/components/admin/presentations/SlideAuditPanel";
 import { PresentationSharePanel } from "@/components/admin/presentations/PresentationSharePanel";
 import { auditPresentation } from "@/lib/presentations/audit";
+import { BrandKitPanel } from "@/components/admin/presentations/BrandKitPanel";
+import { IntegrityPanel } from "@/components/admin/presentations/IntegrityPanel";
+import { checkPresentation, repairPresentation, type RepairAction } from "@/lib/presentations/integrity";
 import { CanvasStage } from "@/components/admin/presentations/CanvasStage";
 import { EditorStatusBar } from "@/components/admin/presentations/EditorStatusBar";
 import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/presentations/BlockToolbar";
@@ -56,7 +59,7 @@ import {
   type PresentationTemplate, type SlideBackground, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
 import {
-  getPresentation, savePresentation, buildSlidesFromQuote,
+  getPresentation, savePresentation, buildSlidesFromQuote, logPresentationRepair,
 } from "@/lib/presentations.functions";
 
 export const Route = createFileRoute("/admin/documents/presentations/$id/")({
@@ -140,6 +143,9 @@ function Page() {
   const [gridOpen, setGridOpen] = useState(false);
   // Двойной клик по фото/цене/логотипу открывает окно с данными этого блока.
   const [blockDialog, setBlockDialog] = useState<BlockKind | null>(null);
+  // Отладка макета и отчёт последней автопочинки.
+  const [debugLayout, setDebugLayout] = useState(false);
+  const [repairActions, setRepairActions] = useState<RepairAction[] | null>(null);
 
   // История раскладки текущего слайда: одно перетаскивание — один шаг отмены.
   const layoutHistory = useRef<{ slideId: string; layout: SlideLayoutOverrides }[]>([]);
@@ -390,6 +396,7 @@ function Page() {
   };
 
   const saveFn = useServerFn(savePresentation);
+  const logRepairFn = useServerFn(logPresentationRepair);
   const metaRef = useRef(meta);
   metaRef.current = meta;
   const slidesRef = useRef(slides);
@@ -411,6 +418,7 @@ function Page() {
           clientLogoUrl: m.client_logo_url,
           logoLayout: m.logo_layout,
           fontFamily: m.font_family,
+          brandKit: m.brand_kit,
           slides: slidesRef.current.map((s, i) => ({
             id: s.id.startsWith("new-") ? undefined : s.id,
             position: i,
@@ -536,6 +544,7 @@ function Page() {
     clientLogoUrl: meta.client_logo_url,
     logoLayout: meta.logo_layout,
     fontFamily: meta.font_family,
+    brandKit: meta.brand_kit,
   } as const;
 
   const rail = (
@@ -638,6 +647,7 @@ function Page() {
         onChange={(font_family) => patchMeta({ font_family })}
         hint="Шрифт применяется ко всей презентации: превью, PDF и показ."
       />
+      <BrandKitPanel value={meta.brand_kit} onChange={(brand_kit) => patchMeta({ brand_kit })} />
       <PresentationBrandingPanel
         logoUrl={meta.logo_url}
         clientLogoUrl={meta.client_logo_url}
@@ -687,6 +697,23 @@ function Page() {
     />
   );
 
+  const integrity = checkPresentation(slides);
+  const runRepair = () => {
+    const res = repairPresentation(slides);
+    setSlides(res.slides.map((s, i) => ({ ...s, position: i })));
+    setRepairActions(res.actions);
+    setDirty(true);
+    if (res.actions.length) toast.success(`Исправлено правил: ${res.actions.length}`);
+    else toast.info("Автопочинке нечего исправлять");
+    void logRepairFn({
+      data: {
+        id,
+        actions: res.actions,
+        issues: integrity.issues.map((i) => ({ code: i.code, level: i.level, message: i.message })),
+      },
+    }).catch(() => undefined);
+  };
+
   const auditReport = auditPresentation(slides);
   const auditPanel = <SlideAuditPanel slides={slides} onSelectSlide={setSelected} />;
 
@@ -721,6 +748,22 @@ function Page() {
       Icon: ShieldCheck,
       dot: auditReport.errors > 0,
       content: auditPanel,
+    },
+    {
+      id: "integrity",
+      label: "Целостность",
+      Icon: Wrench,
+      dot: integrity.errors > 0,
+      content: (
+        <IntegrityPanel
+          report={integrity}
+          actions={repairActions}
+          debug={debugLayout}
+          onDebug={setDebugLayout}
+          onRepair={runRepair}
+          onSelectSlide={setSelected}
+        />
+      ),
     },
   ];
   const currentSection = sections.find((s) => s.id === sidebar) ?? null;
@@ -821,6 +864,7 @@ function Page() {
                   onTextEdit={(kind) => { setSelectedBlock(kind); setTextEditing(true); }}
                   onBlockEdit={(kind) => { setSelectedBlock(kind); setTextEditing(false); setBlockDialog(kind); }}
                   floatingToolbar={isMobile}
+                  debug={debugLayout}
                   onLayout={(patch, opts) => patchLayout(current.id, current.content.layout, patch, opts)}
                   {...branding}
                 />
