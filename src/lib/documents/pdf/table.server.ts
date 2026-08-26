@@ -332,8 +332,9 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
       wrapText(ctx.regular, `•  ${b}`, SMALL, titleW - 8),
     );
     const restWrapped = cols.map((c, i) =>
-      i === richIdx ? [] : wrapText(ctx.regular, cell(c.key), M.F11, c.width - cellPadX * 2),
+      i === richIdx ? { lines: [] as string[], size: M.F11 } : fitCell(ctx, cell(c.key), c.width - cellPadX * 2),
     );
+
 
     ctx.page.drawLine({
       start: { x: startX, y: ctx.y - rowH },
