@@ -560,14 +560,25 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
     });
   }
 
+  // Галерея (6+ кадров) в боковой колонке мельчает, поэтому в авторежиме
+  // она уходит полосой над текстом — это и есть «контактный лист».
+  const gallery = photos.length >= 6;
   const placement: PhotoPlacement =
-    mode === "left" || mode === "right" || mode === "top" ? mode : weight > 900 ? "right" : "left";
+    mode === "left" || mode === "right" || mode === "top"
+      ? mode
+      : gallery ? "top" : weight > 900 ? "right" : "left";
 
   if (placement === "top") {
+    const autoH = !hasText
+      ? contentH
+      : gallery
+        ? Math.min(contentH - 180, photos.length >= 10 ? 400 : 340)
+        : weight > 700 ? 240 : 300;
     const h = ov.photoScale != null
       ? clampNum(ov.photoScale, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) * SLIDE_H
-      : weight > 700 ? 240 : 300;
+      : autoH;
     const box: Rect = { x: GRID.marginX, y: contentTop, w: SLIDE_W - GRID.marginX * 2, h };
+
     return done({
       photos,
       placement,
