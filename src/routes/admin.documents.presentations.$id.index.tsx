@@ -51,7 +51,7 @@ import { DocStatusBar, type DocCheckLike } from "@/components/admin/documents/Do
 import { PresentationFullscreen } from "@/components/admin/presentations/PresentationFullscreen";
 import { checkAgainstQuote, type QuoteItemLite } from "@/lib/presentations/check";
 import {
-  SLIDE_TYPE_LABELS, STATUS_LABELS, TEMPLATE_LABELS, blankSlide,
+  SLIDE_TYPE_HINTS, SLIDE_TYPE_LABELS, SLIDE_VARIANTS, STATUS_LABELS, TEMPLATE_LABELS, blankSlide,
   type Presentation, type PresentationSlide, type PresentationStatus,
   type PresentationTemplate, type SlideBackground, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
@@ -234,8 +234,10 @@ function Page() {
     setDirty(true);
   };
 
-  const addSlide = (type: SlideType) => {
-    const next = blankSlide(type, slides.length);
+  const [variantPickerFor, setVariantPickerFor] = useState<SlideType | null>(null);
+
+  const addSlide = (type: SlideType, variant?: string) => {
+    const next = blankSlide(type, slides.length, variant);
     setSlides((prev) => [...prev, next]);
     setSelected(next.id);
     setDirty(true);
@@ -554,21 +556,43 @@ function Page() {
   );
 
   /* ---------- Разделы левого рельса ---------- */
+
   const slidesPanel = (
     <div className="space-y-3">
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">Добавить слайд</p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="space-y-1.5">
           {(Object.keys(SLIDE_TYPE_LABELS) as SlideType[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => addSlide(t)}
-              className="rounded-lg border border-border/60 bg-muted/20 px-2 py-3 text-left text-xs font-medium transition hover:border-primary hover:bg-primary/5"
-            >
-              <Plus className="mb-1 h-3.5 w-3.5 text-primary" />
-              {SLIDE_TYPE_LABELS[t]}
-            </button>
+            <div key={t} className="rounded-lg border border-border/60 bg-muted/20">
+              <button
+                type="button"
+                onClick={() => setVariantPickerFor((prev) => (prev === t ? null : t))}
+                className="flex w-full items-start gap-2 px-2 py-2 text-left text-xs font-medium transition hover:bg-primary/5"
+              >
+                <Plus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="min-w-0">
+                  <span className="block truncate">{SLIDE_TYPE_LABELS[t]}</span>
+                  <span className="block truncate text-[11px] font-normal text-muted-foreground">
+                    {SLIDE_TYPE_HINTS[t]}
+                  </span>
+                </span>
+              </button>
+              {variantPickerFor === t && (
+                <div className="grid gap-1 border-t border-border/60 p-1.5">
+                  {SLIDE_VARIANTS[t].map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => { addSlide(t, v.id); setVariantPickerFor(null); }}
+                      className="rounded-md px-2 py-1.5 text-left text-[11px] transition hover:bg-primary/10"
+                    >
+                      <span className="font-medium">{v.label}</span>
+                      <span className="ml-1 text-muted-foreground">· {v.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </div>
