@@ -9,6 +9,7 @@ import {
   type PriceZone, type SlideBackground, type SlideImageLayout,
 } from "@/lib/presentations/model";
 import { photoFrames } from "@/lib/presentations/photo-grid";
+import { variantPlan } from "@/lib/presentations/variant-layout";
 
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
@@ -512,8 +513,11 @@ export function resolveCollisions(
 export function slideLayout(slide: PresentationSlide): SlideLayout {
   const photos = slidePhotos(slide);
   const ov = slide.content.layout ?? DEFAULT_LAYOUT_OVERRIDES;
+  // Вариант оформления задаёт базовую композицию; ручные настройки сильнее.
+  const vp = variantPlan(slide.type, slide.content.variant);
   const legacy: SlideImageLayout = slide.content.imageLayout ?? "auto";
-  const mode: PhotoZone = ov.photoZone !== "auto" ? ov.photoZone : (legacy as PhotoZone);
+  const zone: PhotoZone = ov.photoZone !== "auto" ? ov.photoZone : (legacy as PhotoZone);
+  const mode: PhotoZone = zone !== "auto" ? zone : vp.photoZone;
   const weight = textWeight(slide);
 
   const contentTop = GRID.marginTop;
@@ -521,8 +525,8 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
   const align: SlideLayout["textAlign"] = ov.stretchY
     ? "top"
     : ov.textZone === "auto" ? "top" : ov.textZone;
-  const alignX: SlideLayout["textAlignX"] = ov.alignX === "auto" ? "left" : ov.alignX;
-  const widthK = ov.stretchX ? 1 : (ov.textWidth ?? 1);
+  const alignX: SlideLayout["textAlignX"] = ov.alignX === "auto" ? vp.alignX : ov.alignX;
+  const widthK = ov.stretchX ? 1 : (ov.textWidth ?? vp.textWidth);
 
   /**
    * Ужимает текстовую колонку по ручной ширине и выравнивает её внутри

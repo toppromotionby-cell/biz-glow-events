@@ -534,6 +534,7 @@ function SlideBody({
       brandName: brand,
       heroLogo: heroLogo && plan.brand ? { w: plan.brand.maxW, h: plan.brand.maxH } : null,
       dateLabel: slide.type === "title" ? new Date().toLocaleDateString("ru-RU") : "",
+      layout: fit.layout,
     });
     return (
       <>
