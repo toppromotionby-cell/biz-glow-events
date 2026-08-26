@@ -1,7 +1,12 @@
 // Экспорт презентации в PDF: альбомный формат 16:9 (960×540 pt), pdf-lib.
 // Работает только на сервере. Шрифты — те же Inter/Space Grotesk, что и в
 // остальных документах, чтобы PDF совпадал с превью.
-import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import {
+  PDFDocument, rgb, clip, closePath, endPath, lineTo, moveTo,
+  popGraphicsState, pushGraphicsState,
+  type PDFFont, type PDFImage, type PDFPage,
+} from "pdf-lib";
+
 import fontkit from "@pdf-lib/fontkit";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { hexToRgb01 } from "@/lib/documents/brand";
