@@ -418,7 +418,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     const rawX = pb ? pb.x : x + offsetX(baseAlign, w, pillW);
     const px = Math.max(GRID.marginX, Math.min(rawX, SLIDE_W - GRID.marginX - pillW));
     const rawY = pb ? pb.y : y + ts.blockGap;
-    const py = Math.max(GRID.marginY, Math.min(rawY, SLIDE_H - GRID.marginY - pillH));
+    const py = Math.max(GRID.marginTop, Math.min(rawY, SLIDE_H - GRID.marginBottom - pillH));
 
     blocks.push({
       kind: "rect", x: px, y: py, w: pillW, h: pillH,
