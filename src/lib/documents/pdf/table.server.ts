@@ -120,26 +120,55 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const rowMinH = 18 * RD;
   const SMALL = M.F11 - 1;
 
-  const headTracking = M.F_DOC_KIND * 0.08;
-  const headLines = cols.map((c) => {
+  // Шапка: для каждой колонки подбираем кегль так, чтобы самое длинное слово
+  // помещалось в ячейку; при необходимости переносим по словам, а совсем
+  // длинное слово режем с дефисом. Так заголовки не налезают друг на друга.
+  const HEAD_MIN = Math.max(5, M.F_DOC_KIND * 0.62);
+  const head = cols.map((c) => {
     const title = c.title.toUpperCase();
-    const avail = c.width - cellPadX * 2;
-    if (trackedWidth(ctx.bold, title, M.F_DOC_KIND, headTracking) <= avail) return [title];
-    const words = title.split(" ");
+    const avail = Math.max(1, c.width - cellPadX * 2);
+    let size = M.F_DOC_KIND;
+    const trackOf = (s: number) => s * 0.08;
+    const wordFits = (s: number) =>
+      title.split(" ").every((w) => trackedWidth(ctx.bold, w, s, trackOf(s)) <= avail);
+    while (size > HEAD_MIN && !wordFits(size)) size = Math.round((size - 0.25) * 100) / 100;
+    const tracking = trackOf(size);
+    const width = (s: string) => trackedWidth(ctx.bold, s, size, tracking);
+
+    if (width(title) <= avail) return { lines: [title], size, tracking };
+
     const lines: string[] = [];
+    const pushWord = (word: string) => {
+      if (width(word) <= avail) {
+        lines.push(word);
+        return;
+      }
+      // Слово шире ячейки даже на минимальном кегле — режем по буквам.
+      let chunk = "";
+      for (const ch of word) {
+        if (chunk && width(`${chunk}${ch}-`) > avail) {
+          lines.push(`${chunk}-`);
+          chunk = ch;
+        } else chunk += ch;
+      }
+      if (chunk) lines.push(chunk);
+    };
     let cur = "";
-    for (const w of words) {
+    for (const w of title.split(" ")) {
       const next = cur ? `${cur} ${w}` : w;
-      if (cur && trackedWidth(ctx.bold, next, M.F_DOC_KIND, headTracking) > avail) {
+      if (cur && width(next) > avail) {
         lines.push(cur);
-        cur = w;
+        cur = "";
+        pushWord(w);
+        cur = lines.pop() ?? "";
       } else cur = next;
     }
-    if (cur) lines.push(cur);
-    return lines;
+    if (cur) pushWord(cur);
+    return { lines, size, tracking };
   });
-  const headRows = Math.max(1, ...headLines.map((l) => l.length));
-  const headH = Math.max(headerH, headRows * (M.F_DOC_KIND + 4) + 10);
+  const headLineH = Math.max(...head.map((h) => h.size)) + 4;
+  const headRows = Math.max(1, ...head.map((h) => h.lines.length));
+  const headH = Math.max(headerH, headRows * headLineH + 10);
 
   const drawHead = () => {
     ctx.page.drawRectangle({
@@ -151,27 +180,30 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
     });
     let hx = startX;
     cols.forEach((c, ci) => {
-      const lines = headLines[ci] ?? [c.title.toUpperCase()];
-      const lineH = M.F_DOC_KIND + 4;
-      const blockH = lines.length * lineH;
+      const h = head[ci];
+      const lineH = headLineH;
+      const blockH = h.lines.length * lineH;
       let ly = ctx.y - headH + (headH - blockH) / 2 + blockH - lineH + 1;
-      for (const line of lines) {
-        const w = trackedWidth(ctx.bold, line, M.F_DOC_KIND, headTracking);
+      for (const line of h.lines) {
+        const w = trackedWidth(ctx.bold, line, h.size, h.tracking);
         let tx = hx + cellPadX;
         if (c.align === "right") tx = hx + c.width - cellPadX - w;
         else if (c.align === "center") tx = hx + (c.width - w) / 2;
+        // страховка: текст не выходит за границы своей ячейки
+        tx = Math.max(hx + cellPadX, Math.min(tx, hx + c.width - cellPadX - w));
         drawTracked(ctx.page, line, {
           x: tx,
           y: ly,
-          size: M.F_DOC_KIND,
+          size: h.size,
           font: ctx.bold,
           color: TEXT,
-          tracking: headTracking,
+          tracking: h.tracking,
         });
         ly -= lineH;
       }
       hx += c.width;
     });
+
     ctx.y -= headH;
   };
 
