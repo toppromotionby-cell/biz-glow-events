@@ -1117,7 +1117,7 @@ export const logPresentationRepair = createServerFn({ method: "POST" })
       action: "presentation.repair",
       table_name: "presentations",
       record_id: data.id,
-      new_data: { actions: data.actions, issues: data.issues } as unknown as Record<string, unknown>,
+      new_data: { actions: data.actions, issues: data.issues } as never,
     } as never);
     if (error) console.error("[logPresentationRepair]", error.message);
     return { ok: true };
