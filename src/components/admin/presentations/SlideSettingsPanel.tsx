@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import {
   DEFAULT_LAYOUT_OVERRIDES, DEFAULT_SLIDE_BACKGROUND, IMAGE_LAYOUT_LABELS, MAX_IMAGES,
-  SLIDE_TYPE_LABELS, isAutoLayout, normalizeHexColor,
+  SLIDE_TYPE_LABELS, SLIDE_VARIANTS, slideVariantId, isAutoLayout, normalizeHexColor,
   type PresentationSlide, type SlideBackground, type SlideContent, type SlideImageLayout,
   type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
@@ -43,11 +43,29 @@ export function SlideSettingsPanel({
     <div className="space-y-5">
       <div className="space-y-1.5">
         <Label>Тип слайда</Label>
-        <Select value={slide.type} onValueChange={(v) => onChange({ type: v as SlideType })}>
+        <Select value={slide.type} onValueChange={(v) => onChange({
+            type: v as SlideType,
+            content: { ...c, variant: slideVariantId(v as SlideType, c.variant) },
+          })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             {(Object.keys(SLIDE_TYPE_LABELS) as SlideType[]).map((t) => (
               <SelectItem key={t} value={t}>{SLIDE_TYPE_LABELS[t]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Оформление слайда</Label>
+        <Select
+          value={slideVariantId(slide.type, c.variant)}
+          onValueChange={(v) => setContent({ variant: v })}
+        >
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {SLIDE_VARIANTS[slide.type].map((v) => (
+              <SelectItem key={v.id} value={v.id}>{v.label} · {v.hint}</SelectItem>
             ))}
           </SelectContent>
         </Select>
