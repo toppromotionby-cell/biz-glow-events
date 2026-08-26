@@ -176,6 +176,9 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
 }
 
 export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
+  const priceValue = num(row.price);
+  const costMode = normalizeCostMode(row.cost_mode);
+  const costInput = num(row.cost_input, costMode === "percent" ? 0 : num(row.cost));
   return {
     id: str(row.id),
     quote_id: str(row.quote_id),
