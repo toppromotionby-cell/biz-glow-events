@@ -296,3 +296,31 @@ export function planSlideLogos(input: PlanLogosInput): SlideLogoPlan {
 export function footerShowsBrandText(plan: SlideLogoPlan): boolean {
   return plan.brand?.slot !== "footer";
 }
+
+/**
+ * Прямоугольник, который логотип реально занимает на холсте 1280×720.
+ * Нужен рендерам, чтобы заранее сузить текстовую колонку и не допустить
+ * наезда заголовка на логотип (в PDF и в превью одинаково).
+ */
+export function logoReserveRect(plan: LogoPlacementPlan | null): Rect | null {
+  if (!plan) return null;
+  const w = plan.maxW;
+  const h = plan.maxH;
+  const pad = 56;
+  switch (plan.slot) {
+    case "free":
+      return { x: plan.x ?? 0, y: plan.y ?? 0, w, h };
+    case "hero":
+    case "tl":
+      return { x: pad, y: 36, w, h };
+    case "tr":
+      return { x: SLIDE_W - pad - w, y: 36, w, h };
+    case "footer":
+    case "bl":
+      return { x: pad, y: SLIDE_H - 84 - h, w, h };
+    case "br":
+      return { x: SLIDE_W - pad - w, y: SLIDE_H - 84 - h, w, h };
+    default:
+      return null;
+  }
+}
