@@ -417,7 +417,8 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     // Плашка не должна вылезать за правый край слайда даже при крупном акценте.
     const rawX = pb ? pb.x : x + offsetX(baseAlign, w, pillW);
     const px = Math.max(GRID.marginX, Math.min(rawX, SLIDE_W - GRID.marginX - pillW));
-    const py = pb ? pb.y : y + ts.blockGap;
+    const rawY = pb ? pb.y : y + ts.blockGap;
+    const py = Math.max(GRID.marginY, Math.min(rawY, SLIDE_H - GRID.marginY - pillH));
 
     blocks.push({
       kind: "rect", x: px, y: py, w: pillW, h: pillH,
