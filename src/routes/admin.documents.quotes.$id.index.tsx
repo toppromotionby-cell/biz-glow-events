@@ -288,6 +288,8 @@ function Page() {
       prepayment_type: q.prepayment_type, prepayment_value: num(q.prepayment_value),
       delivery_amount: num(q.delivery_amount), vat_note: q.vat_note ?? "",
       vat_mode: q.vat_mode, vat_rate: num(q.vat_rate), vat_as_line: q.vat_as_line,
+      management_type: q.management_type, management_value: num(q.management_value),
+      agency_fee_type: q.agency_fee_type, agency_fee_value: num(q.agency_fee_value),
     };
     // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
     // остальные поля сохраняются, а поле подсветится в списке проверок.
@@ -663,6 +665,35 @@ function Page() {
                 <Field label="Доставка и логистика, BYN">
                   <Input type="number" min={0} value={quote.delivery_amount} onChange={(e) => patch({ delivery_amount: num(e.target.value) })} />
                 </Field>
+                <Field label="Менеджмент">
+                  <Select value={quote.management_type} onValueChange={(v) => patch({ management_type: v as Quote["management_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Не начисляется</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={quote.management_type === "percent" ? "Менеджмент, %" : "Менеджмент, BYN"}>
+                  <Input type="number" min={0} disabled={quote.management_type === "none"} value={quote.management_value}
+                    onChange={(e) => patch({ management_value: num(e.target.value) })} />
+                </Field>
+                <Field label="Комиссия агентства">
+                  <Select value={quote.agency_fee_type} onValueChange={(v) => patch({ agency_fee_type: v as Quote["agency_fee_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Не начисляется</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={quote.agency_fee_type === "percent" ? "Комиссия, %" : "Комиссия, BYN"}>
+                  <Input type="number" min={0} disabled={quote.agency_fee_type === "none"} value={quote.agency_fee_value}
+                    onChange={(e) => patch({ agency_fee_value: num(e.target.value) })} />
+                </Field>
+
                 <Field label="Примечание по НДС">
                   <Input value={quote.vat_note ?? ""} onChange={(e) => patch({ vat_note: e.target.value })} />
                 </Field>
@@ -681,6 +712,12 @@ function Page() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Позиции</span><span>{fmtMoney(totals.subtotal)}</span></div>
                 {!!totals.discount && <div className="flex justify-between"><span className="text-muted-foreground">Скидка</span><span>− {fmtMoney(totals.discount)}</span></div>}
                 {!!totals.delivery && <div className="flex justify-between"><span className="text-muted-foreground">Доставка</span><span>{fmtMoney(totals.delivery)}</span></div>}
+                {totals.feeLines.map((f) => (
+                  <div key={f.key} className="flex justify-between">
+                    <span className="text-muted-foreground">{f.label}<span className="ml-1 text-[11px] opacity-70">{f.hint}</span></span>
+                    <span>{fmtMoney(f.amount)}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between font-semibold text-base"><span>Итого</span><span>{fmtMoney(totals.total)}</span></div>
                 {!!totals.prepayment && (
                   <>

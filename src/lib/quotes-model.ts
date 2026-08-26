@@ -11,6 +11,7 @@ import {
   type QuoteTemplate,
 } from "@/lib/quote-blocks";
 import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
+import { checkFeesConfig, documentFees, normalizeFeeType, type FeeLine, type FeeType } from "@/lib/documents/fees";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
 import { normalizeCostMode, resolveUnitCost, type CostMode } from "@/lib/documents/economics";
@@ -229,6 +230,12 @@ export type Quote = {
   prepayment_type: "none" | "percent" | "amount";
   prepayment_value: number;
   delivery_amount: number;
+  /** Менеджмент: нет / процент от суммы после скидки и доставки / фикс. сумма. */
+  management_type: FeeType;
+  management_value: number;
+  /** Комиссия агентства: считается после менеджмента, до НДС. */
+  agency_fee_type: FeeType;
+  agency_fee_value: number;
   vat_mode: VatMode;
   vat_rate: number;
   vat_as_line: boolean;
@@ -257,6 +264,12 @@ export type QuoteTotals = {
   subtotal: number;
   discount: number;
   delivery: number;
+  /** Менеджмент — начисление до НДС. */
+  management: number;
+  /** Комиссия агентства — начисление до НДС. */
+  agencyFee: number;
+  /** Строки начислений для блока «Итого» (только ненулевые). */
+  feeLines: FeeLine[];
   /** Сумма до НДС (в режиме «в том числе» — очищенная от налога). */
   net: number;
   vat: number;
@@ -274,7 +287,8 @@ export type QuoteTotals = {
 
 export function computeTotals(
   quote: Pick<Quote, "discount_type" | "discount_value" | "prepayment_type" | "prepayment_value" | "delivery_amount"> &
-    Partial<Pick<Quote, "vat_mode" | "vat_rate" | "vat_as_line">>,
+    Partial<Pick<Quote, "vat_mode" | "vat_rate" | "vat_as_line">> &
+    Partial<Pick<Quote, "management_type" | "management_value" | "agency_fee_type" | "agency_fee_value">>,
   items: Array<Pick<QuoteItem, "qty" | "price"> & { cost?: number }>,
 ): QuoteTotals {
   const subtotal = items.reduce((s, it) => s + num(it.qty) * num(it.price), 0);
@@ -285,7 +299,9 @@ export function computeTotals(
     : quote.discount_type === "amount" ? Math.min(dv, subtotal)
     : 0;
   const delivery = Math.max(0, num(quote.delivery_amount));
-  const base = Math.max(0, subtotal - discount + delivery);
+  const feeBase = Math.max(0, subtotal - discount + delivery);
+  const fees = documentFees(feeBase, quote);
+  const base = Math.max(0, feeBase + fees.total);
   const v = computeVat(base, vatConfig(quote));
   const total = v.gross;
   const pv = Math.max(0, num(quote.prepayment_value));
@@ -297,6 +313,9 @@ export function computeTotals(
   const margin = revenue - cost;
   return {
     subtotal, discount, delivery,
+    management: fees.management,
+    agencyFee: fees.agency,
+    feeLines: fees.lines,
     net: v.net,
     vat: v.vat,
     vatRate: v.rate,
@@ -308,6 +327,7 @@ export function computeTotals(
     margin,
     marginPct: revenue > 0 ? (margin / revenue) * 100 : 0,
   };
+
 }
 
 
@@ -369,6 +389,9 @@ export function checkQuote(quote: Quote, items: QuoteItem[]): QuoteCheck[] {
   }
   if (totals.prepayment > totals.total && totals.total > 0) {
     out.push({ level: "error", code: "prepayment_too_big", scope: "totals", message: "Предоплата больше итоговой суммы" });
+  }
+  for (const f of checkFeesConfig(quote, totals.subtotal)) {
+    out.push({ level: f.level, code: f.code, scope: "totals", message: f.message });
   }
   for (const v of checkVatConfig(quote)) {
     out.push({ level: v.level, code: v.code, scope: "totals", message: v.message });
@@ -550,6 +573,10 @@ export const quotePatchSchema = z.object({
   vat_rate: z.number().min(0).max(30).optional(),
   vat_as_line: z.boolean().optional(),
   vat_note: z.string().max(300).optional(),
+  management_type: z.enum(["none", "percent", "amount"]).optional(),
+  management_value: z.number().min(0).max(10_000_000).optional(),
+  agency_fee_type: z.enum(["none", "percent", "amount"]).optional(),
+  agency_fee_value: z.number().min(0).max(10_000_000).optional(),
   order_id: z.string().uuid().nullable().optional(),
 });
 
@@ -574,6 +601,10 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
     vat_mode: normalizeVatMode(row.vat_mode),
     vat_rate: num(row.vat_rate, DEFAULT_VAT_RATE) || DEFAULT_VAT_RATE,
     vat_as_line: row.vat_as_line === true,
+    management_type: normalizeFeeType(row.management_type),
+    management_value: num(row.management_value),
+    agency_fee_type: normalizeFeeType(row.agency_fee_type),
+    agency_fee_value: num(row.agency_fee_value),
     total: num(row.total),
   };
 }

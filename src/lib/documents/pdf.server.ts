@@ -782,9 +782,10 @@ async function renderQuotePdf(
           { label: `Стоимость позиций${t.vatEnabled ? " (без НДС)" : ""}`, value: money(t.subtotal) },
           ...(t.discount ? [{ label: "Скидка", value: `− ${money(t.discount)}` }] : []),
           ...(t.delivery ? [{ label: "Доставка и логистика", value: money(t.delivery) }] : []),
+          ...t.feeLines.map((f) => ({ label: f.label, value: money(f.amount) })),
           ...(t.vatEnabled
             ? [
-                ...(t.discount || t.delivery ? [{ label: "Сумма без НДС", value: money(t.net) }] : []),
+                ...(t.discount || t.delivery || t.feeLines.length ? [{ label: "Сумма без НДС", value: money(t.net) }] : []),
                 { label: `НДС ${vatRateLabel(t.vatRate)}%`, value: money(t.vat) },
               ]
             : []),
