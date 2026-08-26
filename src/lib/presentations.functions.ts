@@ -769,7 +769,15 @@ export const planPresentationFromQuote = createServerFn({ method: "POST" })
         photos: (i.images ?? []).length,
         feature: isFeatureItem(i),
       })),
-      steps: buildStoryboard(story.meta, story.items, story.totals, data.options ?? {}),
+      steps: buildStoryboard(story.meta, story.items, story.totals, data.options ?? {}).map((s) => ({
+        key: s.key,
+        type: s.type,
+        title: s.title,
+        subtitle: s.subtitle,
+        note: s.note,
+        image_url: s.image_url,
+        quote_item_id: s.quote_item_id,
+      })),
     };
   });
 
