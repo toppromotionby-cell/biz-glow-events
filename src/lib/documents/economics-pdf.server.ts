@@ -6,7 +6,7 @@ import { buildEconomics, type EconInput } from "@/lib/documents/economics";
 import { createCtx } from "@/lib/documents/pdf.server";
 import { drawHeader, drawFooter } from "@/lib/documents/pdf/chrome.server";
 import { drawTable, drawSummary, fitTableCols, type Col, type TableRow } from "@/lib/documents/pdf/table.server";
-import { ensureSpace, gap, money, roundedRect } from "@/lib/documents/pdf/draw.server";
+import { ensureSpace, gap, money, num, roundedRect } from "@/lib/documents/pdf/draw.server";
 import { M, MUTED, PAGE_W } from "@/lib/documents/pdf/style.server";
 import { fmtDate } from "@/lib/formatters";
 
