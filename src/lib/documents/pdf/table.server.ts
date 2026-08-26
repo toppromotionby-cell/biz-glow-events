@@ -383,22 +383,20 @@ export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
         cx += c.width;
         continue;
       }
-      const lines = restWrapped[i];
-      const blockH = Math.max(lines.length, 1) * M.F11 * M.LH;
+      const { lines, size: cellSize } = restWrapped[i];
+      const blockH = Math.max(lines.length, 1) * cellSize * M.LH;
       let ly = c.valign === "middle" ? ctx.y - Math.max(5 * RD, (rowH - blockH) / 2) : ctx.y - 5 * RD;
       const color = c.key === "idx" ? MUTED : TEXT;
       for (const line of lines) {
+        const w = ctx.regular.widthOfTextAtSize(line, cellSize);
         let tx = cx + cellPadX;
-        if (c.align === "right") {
-          const w = ctx.regular.widthOfTextAtSize(line, M.F11);
-          tx = cx + c.width - cellPadX - w;
-        } else if (c.align === "center") {
-          const w = ctx.regular.widthOfTextAtSize(line, M.F11);
-          tx = cx + (c.width - w) / 2;
-        }
-        ctx.page.drawText(line, { x: tx, y: ly - M.F11, size: M.F11, font: ctx.regular, color });
-        ly -= M.F11 * M.LH;
+        if (c.align === "right") tx = cx + c.width - cellPadX - w;
+        else if (c.align === "center") tx = cx + (c.width - w) / 2;
+        tx = Math.max(cx + cellPadX, Math.min(tx, cx + c.width - cellPadX - w));
+        ctx.page.drawText(line, { x: tx, y: ly - cellSize, size: cellSize, font: ctx.regular, color });
+        ly -= cellSize * M.LH;
       }
+
       cx += c.width;
     }
 
