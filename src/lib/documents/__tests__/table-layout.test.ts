@@ -52,13 +52,17 @@ describe("PDF table layout", () => {
   it("собирает внутренний расчёт с длинными названиями и большими суммами", async () => {
     const bytes = await buildEconomicsPdf(
       Array.from({ length: 30 }, (_, i) => ({
+        id: `row-${i}`,
+        section: "Без раздела",
         title: `Фермовый конструктив для установки экрана на высоте 1-2м, позиция ${i}`,
         qty: 1,
-        unitLabel: "услуга",
+        qtyLabel: "1 услуга",
         price: 125250.55,
+        unitCost: 115130.4,
         costMode: "amount" as const,
         costInput: 115130.4,
       })),
+
       DEFAULT_DOCUMENT_SETTINGS,
       { docLabel: "КП промо №20.08.2026-01", client: "БЕЛАГРОПРОМБАНК" },
     );
