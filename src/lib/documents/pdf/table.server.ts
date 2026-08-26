@@ -31,40 +31,85 @@ export type TableRow = Record<string, string | string[] | TableSpan | undefined>
   _span?: { from: string; to: string; text: string };
 };
 
+/** Ширина самого длинного слова заголовка колонки (капсом, с трекингом). */
+function headWordWidth(ctx: DocCtx, title: string): number {
+  return Math.max(
+    0,
+    ...title
+      .toUpperCase()
+      .split(" ")
+      .map((word) => trackedWidth(ctx.bold, word, M.F_DOC_KIND, M.F_DOC_KIND * 0.08)),
+  );
+}
+
 /**
  * Подгоняет ширины узких колонок под самый длинный текст, а остаток отдаёт
  * «Наименованию» и «Примечаниям» (примечаниям — большая доля).
+ *
+ * Колонка никогда не становится уже самого длинного слова своего заголовка:
+ * иначе шапка выходит за границу ячейки и налезает на соседнюю.
  */
 export function fitTableCols(ctx: DocCtx, cols: Col[], rows: TableRow[], tableW: number) {
   const flexKeys = new Set(["title", "note"]);
   const pad = 15;
-  const measured = new Map<string, number>();
-  let narrow = 0;
+  const cap = tableW * 0.18;
+  const desired = new Map<string, number>();
+  const minimal = new Map<string, number>();
+  let narrowDesired = 0;
+  let narrowMin = 0;
   for (const c of cols) {
     if (flexKeys.has(c.key)) continue;
-    let w = Math.max(
-      ...c.title.toUpperCase().split(" ").map((word) => trackedWidth(ctx.bold, word, M.F_DOC_KIND, M.F_DOC_KIND * 0.08)),
-    );
+    let w = headWordWidth(ctx, c.title);
+    const min = Math.min(cap, w + 8);
     const MERGED = new Set(["unit", "qty", "rate_unit", "multiplier"]);
     for (const r of rows) {
       if (r._span && MERGED.has(c.key)) continue;
       const v = typeof r[c.key] === "string" ? (r[c.key] as string) : "";
       if (v) w = Math.max(w, ctx.regular.widthOfTextAtSize(v, M.F11));
     }
-    const width = Math.min(tableW * 0.18, w + pad);
-    measured.set(c.key, width);
-    narrow += width;
+    const width = Math.max(min, Math.min(cap, w + pad));
+    desired.set(c.key, width);
+    minimal.set(c.key, min);
+    narrowDesired += width;
+    narrowMin += min;
   }
   const flexCols = cols.filter((c) => flexKeys.has(c.key));
-  if (!flexCols.length) return;
+  if (!flexCols.length) {
+    // Таблица без «резиновых» колонок: раскладываем остаток пропорционально.
+    const k = tableW / (narrowDesired || 1);
+    for (const c of cols) c.width = (desired.get(c.key) ?? 0) * k;
+    return;
+  }
   const hasNote = flexCols.some((c) => c.key === "note");
-  const rest = Math.max(tableW * (hasNote ? 0.42 : 0.24), tableW - narrow);
-  const scale = (tableW - rest) / (narrow || 1);
+  const restWanted = tableW * (hasNote ? 0.42 : 0.24);
+  const availNarrow = tableW - restWanted;
+
+  const finalNarrow = new Map<string, number>();
+  if (narrowDesired <= availNarrow) {
+    for (const [k, v] of desired) finalNarrow.set(k, v);
+  } else if (narrowMin <= availNarrow) {
+    // Сжимаем «лишнее» сверх минимума, минимум остаётся неприкосновенным.
+    const slack = narrowDesired - narrowMin;
+    const keep = (availNarrow - narrowMin) / (slack || 1);
+    for (const [k, v] of desired) {
+      const min = minimal.get(k) ?? 0;
+      finalNarrow.set(k, min + (v - min) * keep);
+    }
+  } else {
+    // Даже минимумы не помещаются — жмём их пропорционально; шапка и числа
+    // дополнительно уменьшатся по кеглю при отрисовке.
+    const k = availNarrow / (narrowMin || 1);
+    for (const key of desired.keys()) finalNarrow.set(key, (minimal.get(key) ?? 0) * k);
+  }
+
+  const narrowTotal = [...finalNarrow.values()].reduce((s, v) => s + v, 0);
+  const rest = Math.max(tableW * 0.18, tableW - narrowTotal);
   for (const c of cols) {
     if (flexKeys.has(c.key)) c.width = hasNote ? rest * (c.key === "note" ? 0.56 : 0.44) : rest;
-    else c.width = (measured.get(c.key) ?? 0) * scale;
+    else c.width = finalNarrow.get(c.key) ?? 0;
   }
 }
+
 
 export function drawTable(ctx: DocCtx, cols: Col[], rows: TableRow[]) {
   const totalW = cols.reduce((s, c) => s + c.width, 0);
