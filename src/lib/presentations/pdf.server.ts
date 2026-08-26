@@ -1,7 +1,7 @@
 // Экспорт презентации в PDF: альбомный формат 16:9 (960×540 pt), pdf-lib.
 // Работает только на сервере. Шрифты — те же Inter/Space Grotesk, что и в
 // остальных документах, чтобы PDF совпадал с превью.
-import { photoDrawRect, type PhotoAnchor } from "@/lib/presentations/photo-fit";
+import { photoDrawRectPdf } from "@/lib/presentations/photo-fit";
 import {
   PDFDocument, rgb, clip, closePath, endPath, lineTo, moveTo,
   popGraphicsState, pushGraphicsState,
@@ -271,11 +271,6 @@ type SlideFonts = {
   displayCyrillic: boolean;
 };
 
-/** В PDF ось Y растёт вверх: верх кадра — это максимальный y. */
-function flipAnchor(a: PhotoAnchor): PhotoAnchor {
-  return a === "top" ? "bottom" : a === "bottom" ? "top" : a === "faces" ? "faces-flipped" as PhotoAnchor : a;
-}
-
 /** Рисует блоки общего спека слайда (координаты холста 1280×720 → points). */
 function drawSpecBlocks(
   page: PDFPage,
@@ -315,10 +310,9 @@ function drawSpecBlocks(
         continue;
       }
       // Кадрирование считает общий модуль — превью и PDF совпадают пиксель в пиксель.
-      const dr = photoDrawRect(
-        { x: fx, y: fy, w: fw, h: fh }, img.width, img.height, b.fit ?? "cover",
-        // В PDF ось Y направлена вверх, поэтому вертикальную привязку зеркалим.
-        flipAnchor(b.anchor ?? "center"),
+      const dr = photoDrawRectPdf(
+        { x: fx, y: fy, w: fw, h: fh }, img.width, img.height,
+        b.fit ?? "cover", b.anchor ?? "center",
       );
       // object-fit: cover — лишнее обрезаем рамкой, иначе фото «вылезает»
       // за свою колонку и наезжает на текст (в превью этого не происходит).

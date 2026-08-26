@@ -58,3 +58,27 @@ export function photoDrawRect(
     : frame.y + (frame.h - h) * anchorRatio(anchor);
   return { x, y, w, h };
 }
+
+/**
+ * Тот же расчёт для PDF-системы координат (ось Y растёт вверх):
+ * вертикальная привязка зеркалится, поэтому кроп совпадает с превью.
+ */
+export function photoDrawRectPdf(
+  frame: Rect,
+  imgW: number,
+  imgH: number,
+  fit: PhotoFit = "cover",
+  anchor: PhotoAnchor = "center",
+): Rect {
+  if (!(imgW > 0) || !(imgH > 0)) return frame;
+  const k = fit === "contain"
+    ? Math.min(frame.w / imgW, frame.h / imgH)
+    : Math.max(frame.w / imgW, frame.h / imgH);
+  const w = imgW * k;
+  const h = imgH * k;
+  const x = frame.x + (frame.w - w) / 2;
+  const y = fit === "contain"
+    ? frame.y + (frame.h - h) / 2
+    : frame.y + (frame.h - h) * (1 - anchorRatio(anchor));
+  return { x, y, w, h };
+}
