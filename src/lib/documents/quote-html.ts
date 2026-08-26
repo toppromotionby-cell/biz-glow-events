@@ -391,7 +391,7 @@ export function buildQuoteHtmlDoc(
         showSubtotals && section && rows.length > 1
           ? `<tr class="section-sub"><td colspan="4">Итого по разделу «${esc(section)}»</td><td class="num strong">${money(
               rows.reduce((s, it) => s + it.price * it.qty, 0),
-            )}</td></tr>`
+            )}</td>${mgEmpty}</tr>`
           : "";
       return head + body + subtotal;
     })
