@@ -61,7 +61,14 @@ export const ensurePromoSheet = createServerFn({ method: "POST" })
     let sheetId = (quote.sheet_id as string | null) ?? null;
     let url = (quote.sheet_url as string | null) ?? null;
     if (!sheetId) {
-      const created = await createPromoSpreadsheet(sheetTitle(quote));
+      const created = await (async () => {
+        try {
+          return await createPromoSpreadsheet(sheetTitle(quote));
+        } catch (e) {
+          console.error(`[sheets] promo_quotes ensure ${data.id} failed:`, (e as Error).message);
+          throw e;
+        }
+      })();
       sheetId = created.id;
       url = created.url;
     }
