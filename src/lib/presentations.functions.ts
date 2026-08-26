@@ -731,3 +731,141 @@ export const restorePresentationVersion = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+/* ---------------- Презентация из КП (сториборд) ---------------- */
+
+const storyOptionsInput = z
+  .object({
+    cover: z.boolean().default(true),
+    about: z.boolean().default(true),
+    sections: z.boolean().default(true),
+    extras: z.boolean().default(true),
+    terms: z.boolean().default(true),
+    budget: z.boolean().default(true),
+    contacts: z.boolean().default(true),
+    prices: z.boolean().default(true),
+    itemIds: z.array(z.string().uuid()).default([]),
+  })
+  .partial()
+  .default({});
+
+/** Превью сценария: какие слайды получатся из КП (ничего не создаёт). */
+export const planPresentationFromQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ quoteId: z.string().uuid(), options: storyOptionsInput }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertDocumentsStaff(context as never);
+    const { loadQuoteStory } = await import("@/lib/presentations/from-quote.server");
+    const { buildStoryboard, isFeatureItem } = await import("@/lib/presentations/from-quote");
+    const story = await loadQuoteStory(context.supabase, data.quoteId);
+    return {
+      meta: story.meta,
+      items: story.items.map((i) => ({
+        id: i.id,
+        title: i.title,
+        section: i.section ?? "",
+        photos: (i.images ?? []).length,
+        feature: isFeatureItem(i),
+      })),
+      steps: buildStoryboard(story.meta, story.items, story.totals, data.options ?? {}),
+    };
+  });
+
+/** Создание презентации по сценарию из КП. */
+export const createPresentationFromQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        quoteId: z.string().uuid(),
+        title: z.string().trim().max(200).optional(),
+        companyId: z.string().uuid().nullable().default(null),
+        template: templateInput,
+        options: storyOptionsInput,
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string; slides: number }> => {
+    await assertDocumentsStaff(context as never);
+    const { loadQuoteStory } = await import("@/lib/presentations/from-quote.server");
+    const { buildStoryboard, stepsToSlideRows } = await import("@/lib/presentations/from-quote");
+
+    const story = await loadQuoteStory(context.supabase, data.quoteId);
+    const steps = buildStoryboard(story.meta, story.items, story.totals, data.options ?? {});
+    const title = (data.title ?? "").trim() || story.meta.title || "Презентация";
+
+    const { data: created, error } = await context.supabase
+      .from("presentations")
+      .insert({
+        title,
+        company_id: data.companyId,
+        quote_id: data.quoteId,
+        template: data.template,
+        status: "draft",
+        created_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    const id = String((created as Row).id);
+
+    const rows = stepsToSlideRows(steps).map((s) => ({
+      presentation_id: id,
+      position: s.position,
+      type: s.type,
+      title: s.title,
+      subtitle: s.subtitle,
+      image_url: s.image_url,
+      content_json: s.content_json,
+      entity_type: s.entity_type,
+      entity_id: s.entity_id,
+      quote_item_id: s.quote_item_id,
+      is_visible: s.is_visible,
+    }));
+    if (rows.length) {
+      const { error: slidesError } = await context.supabase
+        .from("presentation_slides")
+        .insert(rows as never);
+      if (slidesError) throw new Error(slidesError.message);
+    }
+    return { id, slides: rows.length };
+  });
+
+/** Расхождения слайдов и текущих позиций КП. */
+export const diffPresentationWithQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertDocumentsStaff(context as never);
+    const { loadQuoteStory } = await import("@/lib/presentations/from-quote.server");
+    const { diffSlidesAgainstItems } = await import("@/lib/presentations/from-quote");
+
+    const { data: row } = await context.supabase
+      .from("presentations")
+      .select("quote_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    const quoteId = row ? String((row as Row).quote_id ?? "") : "";
+    if (!quoteId) return { linked: false, added: [], removed: [], changed: [] };
+
+    const { data: slideRows } = await context.supabase
+      .from("presentation_slides")
+      .select("*")
+      .eq("presentation_id", data.id)
+      .order("position");
+    const slides = ((slideRows ?? []) as Row[]).map((r, i) => normalizeSlide(r, i));
+    const story = await loadQuoteStory(context.supabase, quoteId);
+    const diff = diffSlidesAgainstItems(
+      slides.map((s) => ({
+        id: s.id,
+        type: s.type,
+        title: s.title,
+        quote_item_id: s.quote_item_id,
+        content: { price: s.content.price ?? null, qty: s.content.qty ?? null },
+      })),
+      story.items,
+    );
+    return { linked: true, ...diff };
+  });
