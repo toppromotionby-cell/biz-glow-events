@@ -351,6 +351,8 @@ export type SlideContent = {
   showSpecs: boolean;
   showPrice: boolean;
   showImage: boolean;
+  /** Вариант оформления слайда (id из SLIDE_VARIANTS для его типа). */
+  variant: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -602,6 +604,7 @@ export const EMPTY_CONTENT: SlideContent = {
   showSpecs: true,
   showPrice: true,
   showImage: true,
+  variant: "classic",
 };
 
 const IMAGE_LAYOUTS: SlideImageLayout[] = ["auto", "left", "right", "top", "none"];
@@ -659,6 +662,7 @@ export function normalizeContent(raw: unknown): SlideContent {
     showSpecs: bool(r.showSpecs),
     showPrice: bool(r.showPrice),
     showImage: bool(r.showImage),
+    variant: str(r.variant, "classic") || "classic",
   };
 }
 
