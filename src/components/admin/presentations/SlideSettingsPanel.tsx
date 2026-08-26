@@ -1,7 +1,7 @@
 // Правая панель редактора: настройки выбранного слайда.
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImagePlus, Loader2, Plus, Star, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,10 @@ import {
   type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
 import { BACKGROUND_PRESETS, isDarkBackground } from "@/lib/presentations/design";
+import {
+  PHOTO_ANCHOR_LABELS, PHOTO_ANCHORS, PHOTO_FIT_LABELS, PHOTO_FITS,
+  type PhotoAnchor, type PhotoFit,
+} from "@/lib/presentations/photo-fit";
 
 export function SlideSettingsPanel({
   slide,
@@ -127,9 +131,23 @@ export function SlideSettingsPanel({
           images={c.images}
           layout={c.imageLayout}
           enabled={c.showImage}
+          fit={c.photoFit}
+          anchor={c.photoAnchor}
+          priority={c.photoPriority ?? []}
           onToggle={(v) => setContent({ showImage: v })}
-          onChange={(images) => setContent({ images })}
+          onChange={(images) => setContent({
+            images,
+            photoPriority: (c.photoPriority ?? []).filter((u) => images.includes(u)),
+          })}
           onLayout={(imageLayout) => setContent({ imageLayout })}
+          onFit={(photoFit) => setContent({ photoFit })}
+          onAnchor={(photoAnchor) => setContent({ photoAnchor })}
+          onPriority={(photoPriority) => setContent({ photoPriority })}
+          onAspect={(url, ratio) => {
+            const cur = c.photoAspect ?? {};
+            if (Math.abs((cur[url] ?? 0) - ratio) < 0.01) return;
+            setContent({ photoAspect: { ...cur, [url]: ratio } });
+          }}
         />
       )}
 
@@ -450,6 +468,16 @@ function GalleryField({
               src={src}
               index={i}
               count={images.length}
+              starred={priority.includes(src)}
+              onStar={() => {
+                if (priority.includes(src)) {
+                  onPriority(priority.filter((u) => u !== src));
+                  return;
+                }
+                if (priority.length >= 3) { toast.info("Главными можно отметить до 3 фото"); return; }
+                onPriority([...priority, src]);
+              }}
+              onAspect={(ratio) => onAspect(src, ratio)}
               onMove={(dir) => move(i, dir)}
               onRemove={() => onChange(images.filter((_, k) => k !== i))}
             />
@@ -509,11 +537,14 @@ function GalleryField({
 }
 
 function GalleryThumb({
-  src, index, count, onMove, onRemove,
+  src, index, count, starred, onStar, onAspect, onMove, onRemove,
 }: {
   src: string;
   index: number;
   count: number;
+  starred: boolean;
+  onStar: () => void;
+  onAspect: (ratio: number) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
 }) {
@@ -521,13 +552,31 @@ function GalleryThumb({
   return (
     <div className="relative overflow-hidden rounded-lg border border-border/60">
       {preview ? (
-        <img src={preview} alt="" className="h-24 w-full object-cover" />
+        <img
+          src={preview}
+          alt=""
+          className="h-24 w-full object-cover"
+          onLoad={(e) => {
+            const el = e.currentTarget;
+            if (el.naturalWidth && el.naturalHeight) onAspect(el.naturalWidth / el.naturalHeight);
+          }}
+        />
       ) : (
         <div className="h-24 w-full bg-muted/40" />
       )}
       <span className="absolute left-1.5 top-1.5 rounded bg-background/85 px-1.5 text-[11px] font-medium">
         {index + 1}
       </span>
+      <Button
+        variant={starred ? "default" : "secondary"}
+        size="icon"
+        className="absolute bottom-1 left-1 h-6 w-6"
+        aria-label={starred ? "Снять отметку «главное»" : "Отметить как главное"}
+        title="Главное фото — попадает в самый заметный кадр"
+        onClick={onStar}
+      >
+        <Star className={`h-3.5 w-3.5 ${starred ? "fill-current" : ""}`} />
+      </Button>
       <div className="absolute right-1 top-1 flex gap-1">
         <Button
           variant="secondary" size="icon" className="h-6 w-6"
