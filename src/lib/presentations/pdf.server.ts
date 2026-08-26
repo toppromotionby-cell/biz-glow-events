@@ -15,7 +15,7 @@ import {
   isDarkBackground, MAX_SLIDE_PHOTOS, SLIDE_W, templatePalette, type Rect,
 } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
-import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
+import { planSlideLogos, logoReserveRect, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { pickDisplayFont } from "@/lib/documents/pdf/ctx.server";
 import { resolveDocFont } from "@/lib/documents/doc-font";
@@ -460,6 +460,7 @@ async function drawSlide(a: DrawArgs) {
     footerLogo: plan.brand?.slot === "footer" && !!logo,
     index,
     total,
+    reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
   });
   drawSpecBlocks(page, blocks, t, fonts, logo, images);
 
