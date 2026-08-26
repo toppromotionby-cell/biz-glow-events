@@ -10,7 +10,15 @@ import type { Rect } from "@/lib/presentations/design";
 export const MIN_FRAME_W = 96;
 export const MIN_FRAME_H = 72;
 
-export type PhotoGridOptions = { gap?: number };
+export type PhotoGridOptions = {
+  gap?: number;
+  /**
+   * Пропорции (w/h) кадров в порядке фотографий. Используются автоподбором
+   * паттерна: вертикальные снимки тянут раскладку к колонкам, горизонтальные —
+   * к широким рядам. Неизвестные значения можно не передавать.
+   */
+  aspects?: (number | undefined)[];
+};
 
 const r = (x: number, y: number, w: number, h: number): Rect => ({ x, y, w, h });
 
@@ -53,8 +61,34 @@ function bentoGrid(box: Rect, count: number, cols: number, g: number): Rect[] | 
 }
 
 /** Оценка качества: чем крупнее самый мелкий кадр, тем лучше композиция. */
-const score = (frames: Rect[]): number =>
+const sizeScore = (frames: Rect[]): number =>
   Math.min(...frames.map((f) => Math.min(f.w / MIN_FRAME_W, f.h / MIN_FRAME_H)));
+
+/**
+ * Насколько пропорции кадров совпадают с пропорциями фотографий: 1 — идеально,
+ * 0 — рамка «съедает» больше половины снимка при обрезке.
+ */
+function aspectScore(frames: Rect[], aspects?: (number | undefined)[]): number {
+  if (!aspects || !aspects.length) return 0.5;
+  let sum = 0;
+  let n = 0;
+  frames.forEach((f, i) => {
+    const a = aspects[i];
+    if (!a || !Number.isFinite(a) || a <= 0) return;
+    const frameA = f.w / Math.max(1, f.h);
+    // Доля площади снимка, остающаяся в кадре при object-fit: cover.
+    const keep = Math.min(frameA / a, a / frameA);
+    // Первый кадр — герой: его совпадение весит больше.
+    const weight = i === 0 ? 2 : 1;
+    sum += keep * weight;
+    n += weight;
+  });
+  return n ? sum / n : 0.5;
+}
+
+/** Итоговая оценка раскладки: крупные кадры + минимум обрезки. */
+const score = (frames: Rect[], aspects?: (number | undefined)[]): number =>
+  Math.min(3, sizeScore(frames)) * 0.6 + aspectScore(frames, aspects) * 1.6;
 
 /** Фиксированные «авторские» раскладки для 2–5 кадров (историческое поведение). */
 function classic(box: Rect, count: number, g: number): Rect[] | null {
@@ -128,24 +162,32 @@ export function photoFrames(box: Rect, count: number, opts: PhotoGridOptions = {
   if (n === 0) return [];
   if (n === 1) return [box];
 
-  const fixed = classic(box, n, g);
-  if (fixed) return fixed;
-
+  const asp = opts.aspects;
   const portrait = box.h >= box.w;
-  // Кандидаты: узкая колонка тяготеет к 2 столбцам, широкая — к 3–5.
-  const candidates = portrait ? [2, 3, 1] : [3, 4, 5, 2];
-  let best: Rect[] | null = null;
-  let bestScore = -Infinity;
+  const variants: Rect[][] = [];
+
+  // «Авторская» раскладка (герой + спутники) для 2–5 кадров.
+  const fixed = classic(box, n, g);
+  if (fixed) variants.push(fixed);
+
+  // Кандидаты-сетки: узкая колонка тяготеет к 2 столбцам, широкая — к 3–5.
+  const candidates = portrait ? [2, 3, 4, 1] : [3, 4, 5, 2];
   for (const cols of candidates) {
     if (cols > n) continue;
-    for (const frames of [bentoGrid(box, n, cols, g), uniformGrid(box, n, cols, g)]) {
-      if (!frames) continue;
-      const s = score(frames);
-      // Bento при равном качестве выигрывает: он идёт первым в списке.
-      if (s > bestScore + 0.0001) {
-        bestScore = s;
-        best = frames;
-      }
+    const bento = bentoGrid(box, n, cols, g);
+    if (bento) variants.push(bento);
+    const uniform = uniformGrid(box, n, cols, g);
+    if (uniform) variants.push(uniform);
+  }
+
+  let best: Rect[] | null = null;
+  let bestScore = -Infinity;
+  for (const frames of variants) {
+    const s = score(frames, asp);
+    // Первый вариант при равном качестве выигрывает — порядок задаёт приоритет.
+    if (s > bestScore + 0.0001) {
+      bestScore = s;
+      best = frames;
     }
   }
   return best ?? uniformGrid(box, n, Math.min(n, portrait ? 2 : 4), g);
