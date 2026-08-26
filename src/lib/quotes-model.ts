@@ -96,7 +96,12 @@ export type QuoteItem = {
   qty: number;
   unit: string;
   price: number;
+  /** Себестоимость за единицу (вычисляется из cost_mode + cost_input). */
   cost: number;
+  /** Режим ввода себестоимости: сумма или процент от цены. */
+  cost_mode: CostMode;
+  /** Введённое значение себестоимости в выбранном режиме. */
+  cost_input: number;
   sort_order: number;
   entity_type: string | null;
   entity_id: string | null;
