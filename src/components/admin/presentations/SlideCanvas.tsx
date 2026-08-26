@@ -499,87 +499,36 @@ function SlideBody({
     </div>
   );
 
-  if (isLayoutSlideType(slide.type)) {
-    const blocks = layoutSlideSpec({
-      slide,
-      ts,
-      brandName: brand,
-      footerLogo: !!footerLogo,
-      index,
-      total,
-    });
-    return (
-      <>
-        {blocks.map((b, i) => (
-          <SpecBlockView
-            key={i}
-            block={b}
-            theme={theme}
-            heading={heading}
-            logoPath={null}
-            onEdit={onEdit}
-            partAlign={partAlign}
-          />
-        ))}
-      </>
-    );
-  }
-
-  if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
-    const blocks = staticSlideSpec({
-      slide,
-      ts,
-      company,
-      presentationTitle,
-      brandName: brand,
-      heroLogo: heroLogo && plan.brand ? { w: plan.brand.maxW, h: plan.brand.maxH } : null,
-      dateLabel: slide.type === "title" ? new Date().toLocaleDateString("ru-RU") : "",
-      layout: fit.layout,
-    });
-    return (
-      <>
-        {blocks.map((b, i) => (
-          <SpecBlockView
-            key={i}
-            block={b}
-            theme={theme}
-            heading={heading}
-            logoPath={heroLogo}
-            onEdit={onEdit}
-            partAlign={partAlign}
-          />
-        ))}
-        {slide.type !== "title" && footer}
-      </>
-    );
-  }
-
-
-  // Текстовый слайд и слайд позиции: рисуем ровно тот же спек, что и PDF.
-  const blocks = contentSlideSpec({
+  // Один диспетчер на превью и PDF: расхождения между ними невозможны.
+  const spec = slideSpec({
     slide,
     fit,
+    company,
+    presentationTitle,
     brandName: brand,
+    heroLogo: heroLogo && plan.brand ? { w: plan.brand.maxW, h: plan.brand.maxH } : null,
     footerLogo: !!footerLogo,
-    index,
-    total,
+    dateLabel: new Date().toLocaleDateString("ru-RU"),
+    index: index ?? 0,
+    total: total ?? 1,
     reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
   });
 
   return (
     <>
-      {blocks.map((b, i) => (
+      {spec.blocks.map((b, i) => (
         <SpecBlockView
           key={i}
           block={b}
           theme={theme}
           heading={heading}
-          logoPath={null}
+          logoPath={spec.kind === "static" ? heroLogo : null}
           onEdit={onEdit}
           partAlign={partAlign}
         />
       ))}
-      {footerLogo && (
+      {spec.footer && footer}
+      {spec.kind === "content" && footerLogo && (
         <div style={{ position: "absolute", left: GRID.marginX, bottom: 28 }}>
           <Logo path={footerLogo} height={plan.brand?.maxH ?? 26} />
         </div>
