@@ -82,6 +82,8 @@ export type ContentSpecInput = {
   footerLogo: boolean;
   index?: number;
   total?: number;
+  /** Зоны логотипов на холсте — текстовая колонка их обтекает. */
+  reserved?: (Rect | null)[];
 };
 
 /**
@@ -126,6 +128,18 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
   const w = box.w;
   let y = box.y;
 
+  const reserved = (a.reserved ?? []).filter(Boolean) as Rect[];
+  /** Ширина текста с учётом логотипа, стоящего справа на той же высоте. */
+  const availWidth = (top: number, bottom: number, width: number): number => {
+    let right = x + width;
+    for (const r of reserved) {
+      if (r.y >= bottom || r.y + r.h <= top) continue; // по вертикали не пересекается
+      if (r.x + r.w <= x + width * 0.4) continue; // логотип слева — не мешает
+      right = Math.min(right, r.x - 16);
+    }
+    return Math.max(width * 0.45, right - x);
+  };
+
   const push = (
     text: string,
     opts: {
@@ -143,9 +157,12 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
       keepEmpty?: boolean;
     },
   ): void => {
-    const width = opts.width ?? w;
+    const full = opts.width ?? w;
     const face = opts.font === "display" ? "display" : opts.weight >= 600 ? "bold" : "body";
-    const lines = text.trim() ? wrapText(text, opts.size, width, face) : [];
+    const rough = text.trim() ? wrapText(text, opts.size, full, face) : [];
+    const bandH = Math.max(1, rough.length) * opts.size * opts.lineHeight;
+    const width = availWidth(y, y + bandH, full);
+    const lines = width < full && text.trim() ? wrapText(text, opts.size, width, face) : rough;
     if (!lines.length && !opts.keepEmpty) return;
     blocks.push({
       kind: "text",
