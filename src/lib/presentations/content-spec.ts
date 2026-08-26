@@ -144,7 +144,8 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     },
   ): void => {
     const width = opts.width ?? w;
-    const lines = text.trim() ? wrapText(text, opts.size, width) : [];
+    const face = opts.font === "display" ? "display" : opts.weight >= 600 ? "bold" : "body";
+    const lines = text.trim() ? wrapText(text, opts.size, width, face) : [];
     if (!lines.length && !opts.keepEmpty) return;
     blocks.push({
       kind: "text",
@@ -276,7 +277,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     let rowW = 0;
     for (const s of c.specs) {
       const text = `${s.label}: ${s.value}`;
-      const cw = measureText(text, size) + CONTENT.chipPadX * 2;
+      const cw = measureText(text, size, "body") + CONTENT.chipPadX * 2;
       const add = rows[rows.length - 1].length ? cw + CONTENT.chipGap : cw;
       if (rowW + add > w && rows[rows.length - 1].length) {
         rows.push([]);
@@ -326,7 +327,8 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     const padX = CONTENT.pricePadX * k;
     const padY = CONTENT.pricePadY * k;
     const gap = CONTENT.priceGap * k;
-    const pillW = measureText(sum, sumSize) + gap + measureText(unit, unitSize) + padX * 2;
+    const sumW = measureText(sum, sumSize, "display");
+    const pillW = sumW + gap + measureText(unit, unitSize, "body") + padX * 2;
     const pillH = sumSize * 1.25 + padY * 2;
     const pb = layout.priceBox;
     const px = pb ? pb.x : x + offsetX(baseAlign, w, pillW);
@@ -343,7 +345,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     });
     blocks.push({
       kind: "text",
-      x: px + padX + measureText(sum, sumSize) + gap,
+      x: px + padX + sumW + gap,
       y: py + padY + (sumSize - unitSize) * 0.9,
       w: pillW,
       size: unitSize,
