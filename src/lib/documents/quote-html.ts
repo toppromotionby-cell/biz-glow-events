@@ -257,6 +257,10 @@ export type QuoteHtmlOptions = {
   editable?: boolean;
   /** Проверки документа — показываются прямо в превью рядом с проблемными местами. */
   checks?: QuoteCheck[];
+  /** Внутренние колонки себестоимости/прибыли. Клиентский вывод их не передаёт. */
+  margin?: MarginCols;
+  /** Альбомная ориентация листа (только превью и печать из превью). */
+  landscape?: boolean;
 };
 
 export function buildQuoteHtmlDoc(
