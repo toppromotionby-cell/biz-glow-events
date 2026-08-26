@@ -32,6 +32,8 @@ import { useEditorSave } from "@/hooks/use-editor-save";
 
 import { Field } from "@/components/admin/Field";
 import { EconomicsPanel } from "@/components/admin/documents/EconomicsPanel";
+import { quoteEconRows } from "@/lib/documents/economics-source";
+import { buildEconomicsSheetDoc } from "@/lib/documents/economics-sheet";
 import { normalizeCostMode } from "@/lib/documents/economics";
 import { DocEditorShell } from "@/components/admin/editor/DocEditorShell";
 import type { EditorSection } from "@/components/admin/editor/EditorSidebar";
@@ -205,6 +207,7 @@ function Page() {
   const { can } = useRoles();
   const canCost = can("documents.cost_margin");
   const [showCostRaw, setShowCost] = useState(true);
+  const [internalView, setInternalView] = useState(false);
   const showCost = showCostRaw && canCost;
   const [templateOpen, setTemplateOpen] = useState(false);
   const dirtyRef = useRef(false);
@@ -327,7 +330,7 @@ function Page() {
     return checks.filter((c) => !(c.refId && pristine.has(c.refId)));
   }, [checks, items]);
 
-  const previewHtml = useMemo(
+  const clientHtml = useMemo(
     () =>
       quote && totals
         ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings, {
@@ -337,6 +340,23 @@ function Page() {
         : "",
     [quote, items, settings, totals, inlineEdit, previewChecks],
   );
+  // Внутренний вид превью: себестоимость и прибыль по каждой строке.
+  const internalHtml = useMemo(
+    () =>
+      quote && totals && canCost && internalView
+        ? buildEconomicsSheetDoc(
+            {
+              docLabel: `КП №${quoteNumberDisplay(quote)}`,
+              client: quote.client_company || quote.client_name || undefined,
+            },
+            quoteEconRows(items),
+            totals.net,
+          )
+        : "",
+    [quote, items, totals, canCost, internalView],
+  );
+  const showInternal = canCost && internalView;
+  const previewHtml = showInternal ? internalHtml : clientHtml;
 
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
@@ -891,6 +911,17 @@ function Page() {
               <DropdownMenuItem onClick={onBuildPresentation}>
                 <Presentation className="mr-2 h-4 w-4" />Собрать презентацию
               </DropdownMenuItem>
+              {canCost && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    viewer.openDocument(`/admin/documents/quotes/${id}/render?internal=1&format=pdf`, {
+                      name: "КП-внутренний.pdf",
+                    })
+                  }
+                >
+                  <Calculator className="mr-2 h-4 w-4" />Внутренний PDF (себестоимость)
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}
               >
@@ -917,6 +948,12 @@ function Page() {
             <Switch checked={inlineEdit} onCheckedChange={setInlineEdit} />
             <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" />Правка двойным кликом</span>
           </label>
+          {canCost && (
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Switch checked={internalView} onCheckedChange={setInternalView} />
+              <span className="flex items-center gap-1"><Calculator className="h-3.5 w-3.5" />Внутренний вид (себестоимость и прибыль)</span>
+            </label>
+          )}
           <DetachedPreviewButton html={previewHtml} title={`Превью · ${quote.title || "КП"}`} />
         </>
       }
