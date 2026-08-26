@@ -552,6 +552,8 @@ ${fontLinkTags(docFont)}
   * { box-sizing: border-box; }
   body { margin:0; background:#f3f4f6; color:var(--ink); font-family:var(--font-body); font-size:var(--fs-body); line-height:var(--lh); }
   ${sheetCss(print)}
+  ${mg ? MARGIN_COLS_CSS : ""}
+  ${opts.landscape ? landscapeSheetCss() : ""}
   h1,h2,h3 { font-family:var(--font-display); letter-spacing:-0.02em; margin:0; }
   .bar { height:3px; background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff)); border-radius:3px; }
   .head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding:10px 0 8px; border-bottom:1px solid var(--line); }
