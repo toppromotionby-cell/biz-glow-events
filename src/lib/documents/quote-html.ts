@@ -336,9 +336,16 @@ export function buildQuoteHtmlDoc(
     sections.get(key)!.push(it);
   }
 
+  // Внутренние колонки маржи: включаются только когда передана карта.
+  const mg = opts.margin;
+  const mgHead = mg ? marginHeadCells() : "";
+  const mgEmpty = mg ? marginEmptyCells() : "";
+  const mgCell = (id: string) => (mg ? marginBodyCells(mg[id]) : "");
+  const COLS = mg ? 8 : 5;
+
   const vatRow =
     t.vatEnabled && quote.vat_as_line
-      ? `<tr class="section-row"><td></td><td>${esc(t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`)}</td><td class="qty"></td><td class="num"></td><td class="num">${money(t.vat)}</td></tr>`
+      ? `<tr class="section-row"><td></td><td>${esc(t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`)}</td><td class="qty"></td><td class="num"></td><td class="num">${money(t.vat)}</td>${mgEmpty}</tr>`
       : "";
   const vatFootNote = t.vatEnabled
     ? `В том числе НДС ${vatRateLabel(t.vatRate)}% — ${money(t.vat)}`
