@@ -164,26 +164,28 @@ export function photoFrames(box: Rect, count: number, opts: PhotoGridOptions = {
 
   const asp = opts.aspects;
   const portrait = box.h >= box.w;
-  const variants: Rect[][] = [];
+  // Бонус — приоритет паттерна при близком качестве.
+  const variants: { frames: Rect[]; bonus: number }[] = [];
 
-  // «Авторская» раскладка (герой + спутники) для 2–5 кадров.
+  // «Авторская» раскладка (герой + спутники) для 2–5 кадров: остаётся
+  // выбором по умолчанию, пропорции фото могут её перевесить.
   const fixed = classic(box, n, g);
-  if (fixed) variants.push(fixed);
+  if (fixed) variants.push({ frames: fixed, bonus: 0.5 });
 
   // Кандидаты-сетки: узкая колонка тяготеет к 2 столбцам, широкая — к 3–5.
   const candidates = portrait ? [2, 3, 4, 1] : [3, 4, 5, 2];
   for (const cols of candidates) {
     if (cols > n) continue;
     const bento = bentoGrid(box, n, cols, g);
-    if (bento) variants.push(bento);
+    if (bento) variants.push({ frames: bento, bonus: 0.1 });
     const uniform = uniformGrid(box, n, cols, g);
-    if (uniform) variants.push(uniform);
+    if (uniform) variants.push({ frames: uniform, bonus: 0 });
   }
 
   let best: Rect[] | null = null;
   let bestScore = -Infinity;
-  for (const frames of variants) {
-    const s = score(frames, asp);
+  for (const { frames, bonus } of variants) {
+    const s = score(frames, asp) + bonus;
     // Первый вариант при равном качестве выигрывает — порядок задаёт приоритет.
     if (s > bestScore + 0.0001) {
       bestScore = s;
