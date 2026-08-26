@@ -13,7 +13,7 @@ import {
 } from "@/lib/presentations/model";
 import { footerSpec } from "@/lib/presentations/content-spec";
 import {
-  FULL_BLEED_SHADE, SPEC, type SpecBlock, type SpecPaint,
+  FULL_BLEED_SHADE, SPEC, type SpecBlock, type SpecImage, type SpecPaint,
 } from "@/lib/presentations/slide-spec";
 
 /** Типы слайдов со своей структурной раскладкой (не текст и не позиция). */
@@ -502,8 +502,8 @@ function photoBlock(
   index: number,
   r: Rect,
   total: number,
-  radius = GRID.radius,
-): SpecBlock {
+  radius: number = GRID.radius,
+): SpecImage {
   return {
     kind: "image",
     index,
@@ -526,7 +526,7 @@ function gallerySpec(a: LayoutSpecInput, variant: string): SpecBlock[] {
 
   if (variant === "fullbleed") {
     const frames = photoFrames({ x: 0, y: 0, w: SLIDE_W, h: SLIDE_H }, photos.length, {
-      aspects: [], gap: photos.length > 1 ? 6 : 0, pattern: "uniform",
+      aspects: [], gap: photos.length > 1 ? 6 : 0,
     });
     const out: SpecBlock[] = frames.map((f, i) => photoBlock(slide, photos[i], i, f, photos.length, 0));
     out.push({ kind: "shade", from: FULL_BLEED_SHADE.from, alpha: FULL_BLEED_SHADE.alpha });
@@ -546,10 +546,7 @@ function gallerySpec(a: LayoutSpecInput, variant: string): SpecBlock[] {
   const h = header(a, { rule: variant === "captions" });
   const out = [...h.blocks];
   const box = area(h.y);
-  const pattern = variant === "bento" ? "bento" : variant === "contact-sheet" ? "uniform" : undefined;
-  const frames = photoFrames(box, photos.length, {
-    aspects: [], gap: 14, ...(pattern ? { pattern } : {}),
-  });
+  const frames = photoFrames(box, photos.length, { aspects: [], gap: 14 });
   frames.forEach((f, i) => {
     const capH = variant === "captions" ? ts.caption * 1.4 + 8 : 0;
     const r: Rect = { ...f, h: Math.max(40, f.h - capH) };
