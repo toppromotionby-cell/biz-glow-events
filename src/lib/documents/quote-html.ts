@@ -9,6 +9,10 @@ import { BRAND_ACCENT, docCssVars } from "@/lib/documents/brand";
 import { printPageMarginCss, resolvePrintPreset } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
 import { softHyphenate } from "@/lib/documents/hyphenate";
+import {
+  landscapeSheetCss, marginBodyCells, marginEmptyCells, marginHeadCells,
+  MARGIN_COLS_CSS, type MarginCols,
+} from "@/lib/documents/margin-cols";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
 
 
@@ -257,6 +261,10 @@ export type QuoteHtmlOptions = {
   editable?: boolean;
   /** Проверки документа — показываются прямо в превью рядом с проблемными местами. */
   checks?: QuoteCheck[];
+  /** Внутренние колонки себестоимости/прибыли. Клиентский вывод их не передаёт. */
+  margin?: MarginCols;
+  /** Альбомная ориентация листа (только превью и печать из превью). */
+  landscape?: boolean;
 };
 
 export function buildQuoteHtmlDoc(
@@ -328,9 +336,16 @@ export function buildQuoteHtmlDoc(
     sections.get(key)!.push(it);
   }
 
+  // Внутренние колонки маржи: включаются только когда передана карта.
+  const mg = opts.margin;
+  const mgHead = mg ? marginHeadCells() : "";
+  const mgEmpty = mg ? marginEmptyCells() : "";
+  const mgCell = (id: string) => (mg ? marginBodyCells(mg[id]) : "");
+  const COLS = mg ? 8 : 5;
+
   const vatRow =
     t.vatEnabled && quote.vat_as_line
-      ? `<tr class="section-row"><td></td><td>${esc(t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`)}</td><td class="qty"></td><td class="num"></td><td class="num">${money(t.vat)}</td></tr>`
+      ? `<tr class="section-row"><td></td><td>${esc(t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`)}</td><td class="qty"></td><td class="num"></td><td class="num">${money(t.vat)}</td>${mgEmpty}</tr>`
       : "";
   const vatFootNote = t.vatEnabled
     ? `В том числе НДС ${vatRateLabel(t.vatRate)}% — ${money(t.vat)}`
@@ -341,7 +356,7 @@ export function buildQuoteHtmlDoc(
 
   const tableBody = [...sections.entries()]
     .map(([section, rows]) => {
-      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${escw(section)}</td></tr>` : "";
+      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="${COLS}">${escw(section)}</td></tr>` : "";
       const body = rows
         .map((it, i) => {
           const rowChecks = checksByItem.get(it.id) ?? [];
@@ -367,6 +382,7 @@ export function buildQuoteHtmlDoc(
         <td class="qty">${esc(it.qty)}${it.unit ? `<span class="unit">${esc(it.unit)}</span>` : ""}</td>
         <td class="num">${money(it.price)}</td>
         <td class="num strong">${money(it.price * it.qty)}</td>
+        ${mgCell(it.id)}
       </tr>`;
         })
         .join("");
@@ -375,7 +391,7 @@ export function buildQuoteHtmlDoc(
         showSubtotals && section && rows.length > 1
           ? `<tr class="section-sub"><td colspan="4">Итого по разделу «${esc(section)}»</td><td class="num strong">${money(
               rows.reduce((s, it) => s + it.price * it.qty, 0),
-            )}</td></tr>`
+            )}</td>${mgEmpty}</tr>`
           : "";
       return head + body + subtotal;
     })
@@ -428,8 +444,8 @@ export function buildQuoteHtmlDoc(
         </div>`;
       case "items":
         return `${heading(b)}<table>
-          <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
-          <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}${vatRow}</tbody>
+          <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th>${mgHead}</tr></thead>
+          <tbody>${tableBody || `<tr><td colspan="${COLS}" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}${vatRow}</tbody>
         </table>
         ${chkList(scopeChecks("item"))}`;
       case "totals":
@@ -536,6 +552,8 @@ ${fontLinkTags(docFont)}
   * { box-sizing: border-box; }
   body { margin:0; background:#f3f4f6; color:var(--ink); font-family:var(--font-body); font-size:var(--fs-body); line-height:var(--lh); }
   ${sheetCss(print)}
+  ${mg ? MARGIN_COLS_CSS : ""}
+  ${opts.landscape ? landscapeSheetCss() : ""}
   h1,h2,h3 { font-family:var(--font-display); letter-spacing:-0.02em; margin:0; }
   .bar { height:3px; background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff)); border-radius:3px; }
   .head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; padding:10px 0 8px; border-bottom:1px solid var(--line); }

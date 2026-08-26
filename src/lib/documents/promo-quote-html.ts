@@ -8,6 +8,10 @@ import { BRAND_ACCENT } from "@/lib/documents/brand";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
 import { BASE_PRINT_PRESET, printPageMarginCss } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
+import {
+  landscapeSheetCss, marginBodyCells, marginEmptyCells, marginHeadCells,
+  MARGIN_COLS_CSS, type MarginCols,
+} from "@/lib/documents/margin-cols";
 import { softHyphenate } from "@/lib/documents/hyphenate";
 
 import {
@@ -49,7 +53,14 @@ function nf(n: number): string {
 export function buildPromoQuoteBody(
   quote: PromoQuote,
   items: PromoItem[],
-  opts: { editable?: boolean; companyLine?: string; checks?: PromoCheck[]; fontDefault?: unknown } = {},
+  opts: {
+    editable?: boolean;
+    companyLine?: string;
+    checks?: PromoCheck[];
+    fontDefault?: unknown;
+    /** Внутренние колонки себестоимости/прибыли (клиенту не передаются). */
+    margin?: MarginCols;
+  } = {},
 ): string {
   const editable = opts.editable === true;
   const docFont = resolveDocFont(quote.font_family, opts.fontDefault);
@@ -116,7 +127,12 @@ export function buildPromoQuoteBody(
     (quote.show_total_qty ? '<td class="c-num">—</td>' : "");
 
 
-  const colCount = cols.length;
+  // Внутренние колонки маржи (только когда передана карта себестоимости).
+  const mg = opts.margin;
+  const mgHead = mg ? marginHeadCells() : "";
+  const mgEmpty = mg ? marginEmptyCells() : "";
+  const mgCell = (id: string) => (mg ? marginBodyCells(mg[id]) : "");
+  const colCount = cols.length + (mg ? 3 : 0);
   // Ширины колонок берём из общего макета документа — те же доли, что в PDF.
   const colWidths = docColumnWidths(quote, items);
 
@@ -158,17 +174,18 @@ export function buildPromoQuoteBody(
           cells.push(`<td class="c-money">${it.price ? nf(it.price) : ""}</td>`);
           cells.push(`<td class="c-money">${lineTotal(it) ? nf(lineTotal(it)) : ""}</td>`);
           if (quote.show_notes) cells.push(`<td class="c-note">${escw(it.note)}</td>`);
+          if (mg) cells.push(mgCell(it.id));
           return `<tr class="${rowCls.trim()}"${ed("item", it.id, "Позиция")}>${cells.join("")}</tr>`;
         })
 
         .join("");
       // Подытог: подпись до колонки сумм, сумма — в колонке «Всего».
-      const amountIdx = colCount - (quote.show_notes ? 2 : 1);
+      const amountIdx = cols.length - (quote.show_notes ? 2 : 1);
       const sub =
         quote.show_section_subtotals && sec.name && sec.items.length > 1
           ? `<tr class="sec-sub"><td colspan="${amountIdx}">Итого по разделу «${esc(sec.name)}»</td><td class="c-money">${nf(
               sec.items.reduce((s, it) => s + lineTotal(it), 0),
-            )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`
+            )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}${mgEmpty}</tr>`
           : "";
 
       return head + body + sub;
@@ -181,14 +198,14 @@ export function buildPromoQuoteBody(
     extraRows.push(
       `<tr class="extra"><td class="c-title">${escw(quote.management_label)}</td>${midCells("услуга")}<td class="c-money"></td><td class="c-money">${nf(
         t.management,
-      )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
+      )}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}${mgEmpty}</tr>`,
     );
   }
   if (quote.commission_enabled) {
     extraRows.push(
       `<tr class="extra"><td class="c-title">${escw(quote.commission_label)}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(
         t.commission,
-      )}</td>${quote.show_notes ? `<td class="c-note">${nf(quote.commission_rate).replace(",00", "")} %</td>` : ""}</tr>`,
+      )}</td>${quote.show_notes ? `<td class="c-note">${nf(quote.commission_rate).replace(",00", "")} %</td>` : ""}${mgEmpty}</tr>`,
     );
   }
 
@@ -196,7 +213,7 @@ export function buildPromoQuoteBody(
     extraRows.push(
       `<tr class="extra"><td class="c-title">${escw(
         t.vatMode === "included" ? `В том числе НДС ${vatRateLabel(t.vatRate)}%` : `НДС ${vatRateLabel(t.vatRate)}%`,
-      )}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(t.vat)}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}</tr>`,
+      )}</td>${midCells("—")}<td class="c-money"></td><td class="c-money">${nf(t.vat)}</td>${quote.show_notes ? '<td class="c-note"></td>' : ""}${mgEmpty}</tr>`,
     );
   }
 
@@ -258,8 +275,8 @@ export function buildPromoQuoteBody(
 
   <div class="docnum">КП № ${esc(promoNumberDisplay(quote))}</div>
   <table class="doc-grid">
-    <colgroup>${colWidths.map((c) => `<col style="width:${c.pct}%" />`).join("")}</colgroup>
-    <thead><tr>${cols.map((c) => `<th class="${c.cls}">${esc(c.label)}</th>`).join("")}</tr></thead>
+    <colgroup>${colWidths.map((c) => `<col style="width:${(mg ? c.pct * 0.76 : c.pct).toFixed(2)}%" />`).join("")}${mg ? '<col style="width:8%" /><col style="width:8%" /><col style="width:8%" />' : ""}</colgroup>
+    <thead><tr>${cols.map((c) => `<th class="${c.cls}">${esc(c.label)}</th>`).join("")}${mgHead}</tr></thead>
     <tbody>${rowsHtml || `<tr><td colspan="${colCount}" class="empty">Позиции не добавлены</td></tr>`}${extraRows.join("")}</tbody>
   </table>
   <table class="totals"${ed("totals", undefined, "Итоги")}><tbody>${totalsRows}</tbody></table>
