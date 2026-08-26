@@ -311,8 +311,17 @@ function drawSpecBlocks(
       const k = Math.max(fw / img.width, fh / img.height);
       const w = img.width * k;
       const h = img.height * k;
+      // object-fit: cover — лишнее обрезаем рамкой, иначе фото «вылезает»
+      // за свою колонку и наезжает на текст (в превью этого не происходит).
+      page.pushOperators(
+        pushGraphicsState(),
+        moveTo(fx, fy), lineTo(fx + fw, fy), lineTo(fx + fw, fy + fh), lineTo(fx, fy + fh),
+        closePath(), clip(), endPath(),
+      );
       page.drawImage(img, { x: fx + fw / 2 - w / 2, y: fy + fh / 2 - h / 2, width: w, height: h });
+      page.pushOperators(popGraphicsState());
       continue;
+
     }
     if (b.kind === "circle") {
       page.drawCircle({
