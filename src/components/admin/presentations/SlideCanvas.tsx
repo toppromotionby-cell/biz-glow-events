@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 // Единый рендер слайда презентации 16:9 (1280×720) — используется в
 // миниатюрах, крупном предпросмотре и показе. Масштабируется через transform.
 // Сетка, кегли и раскладка фото берутся из design.ts / fit.ts, поэтому
@@ -49,12 +49,26 @@ function SlideImage({ path, style, fit = "cover", anchor = "center", alt = "" }:
   alt?: string;
 }) {
   const url = useResolvedUrl(path);
-  if (!url) return <div style={{ ...style, background: "rgba(127,127,127,0.12)" }} aria-hidden />;
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); }, [url]);
+  if (!url || failed) {
+    return (
+      <div
+        style={{
+          ...style,
+          background: "rgba(127,127,127,0.12)",
+          border: failed ? "1px dashed rgba(127,127,127,0.45)" : undefined,
+        }}
+        aria-hidden
+      />
+    );
+  }
   return (
     <img
       src={url}
       alt={alt}
       title={alt || undefined}
+      onError={() => setFailed(true)}
       style={{ ...style, objectFit: fit, objectPosition: cssObjectPosition(anchor) }}
     />
   );

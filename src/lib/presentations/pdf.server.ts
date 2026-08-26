@@ -179,11 +179,12 @@ export async function buildPresentationPdf(
     // Фон слайда может быть переопределён — тогда и токены текста считаются от него.
     const st = themeOf(presentation.template, accentHex, slide.content.background);
     drawBackground(page, st);
-    const sources = slide.content.showImage
-      ? (slide.resolved_images.length
-          ? slide.resolved_images
-          : [slide.resolved_image_url].filter((v): v is string => !!v))
-      : [];
+    // Список уже отфильтрован и упорядочен в loadPresentationBundle (slidePhotos).
+    const sources = slide.resolved_images.length
+      ? slide.resolved_images
+      : (slide.content.showImage
+          ? [slide.resolved_image_url].filter((v): v is string => !!v)
+          : []);
     // Фото грузятся параллельно — сборка PDF не упирается в сеть.
     const images: (PDFImage | null)[] = await Promise.all(
       sources.slice(0, MAX_SLIDE_PHOTOS).map((src) => embedImage(pdf, src, cache)),
