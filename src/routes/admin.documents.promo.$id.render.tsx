@@ -33,7 +33,7 @@ export const Route = createFileRoute("/admin/documents/promo/$id/render")({
           const rows = promoEconRows(items);
           const totals = computePromoTotals(quote, items);
           const label = `КП промо №${promoNumberDisplay(quote)}`;
-          const client = quote.client_company || quote.client_name || undefined;
+          const client = quote.client_name || undefined;
           if (url.searchParams.get("format") === "pdf") {
             const { buildEconomicsPdf } = await import("@/lib/documents/economics-pdf.server");
             return buildPdfResponse({

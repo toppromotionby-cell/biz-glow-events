@@ -319,7 +319,7 @@ function EditorPage() {
         ? buildEconomicsSheetBody(
             {
               docLabel: `КП промо №${promoNumberDisplay(quote)}`,
-              client: quote.client_company || quote.client_name || undefined,
+              client: quote.client_name || undefined,
               netLabel: "После комиссии, скидки и НДС",
             },
             buildEconomics(promoEconRows(items), { netRevenue: computePromoTotals(quote, items).net }),
