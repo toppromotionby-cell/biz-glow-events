@@ -414,7 +414,7 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-export const MAX_IMAGES = 5;
+export const MAX_IMAGES = 15;
 
 export const EMPTY_CONTENT: SlideContent = {
   description: "",
