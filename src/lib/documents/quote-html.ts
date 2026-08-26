@@ -444,8 +444,8 @@ export function buildQuoteHtmlDoc(
         </div>`;
       case "items":
         return `${heading(b)}<table>
-          <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
-          <tbody>${tableBody || `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}${vatRow}</tbody>
+          <thead><tr><th></th><th>Позиция</th><th class="qty">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th>${mgHead}</tr></thead>
+          <tbody>${tableBody || `<tr><td colspan="${COLS}" style="text-align:center;color:#9ca3af;padding:22px;">Позиции не добавлены</td></tr>`}${vatRow}</tbody>
         </table>
         ${chkList(scopeChecks("item"))}`;
       case "totals":
