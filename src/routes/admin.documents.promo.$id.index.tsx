@@ -454,7 +454,7 @@ function EditorPage() {
                 section: it.section,
                 title: it.title,
                 qty: lineQty(it),
-                qtyLabel: lineTotal(it) && lineQty(it) ? String(lineQty(it)) : String(lineQty(it)),
+                qtyLabel: `${lineQty(it)} ${it.unit}`.trim(),
                 price: Number(it.price) || 0,
                 unitCost: Number(it.cost) || 0,
                 costMode: normalizeCostMode(it.cost_mode),
