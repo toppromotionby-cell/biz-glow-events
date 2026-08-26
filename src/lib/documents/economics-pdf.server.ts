@@ -6,7 +6,7 @@ import { buildEconomics, type EconInput } from "@/lib/documents/economics";
 import { createCtx } from "@/lib/documents/pdf.server";
 import { drawHeader, drawFooter } from "@/lib/documents/pdf/chrome.server";
 import { drawTable, drawSummary, fitTableCols, type Col, type TableRow } from "@/lib/documents/pdf/table.server";
-import { ensureSpace, gap, money, roundedRect } from "@/lib/documents/pdf/draw.server";
+import { ensureSpace, gap, money, num, roundedRect } from "@/lib/documents/pdf/draw.server";
 import { M, MUTED, PAGE_W } from "@/lib/documents/pdf/style.server";
 import { fmtDate } from "@/lib/formatters";
 
@@ -63,11 +63,11 @@ export async function buildEconomicsPdf(
   const cols: Col[] = [
     { key: "title", title: "Позиция", width: 0, align: "left" },
     { key: "qty", title: "Кол-во", width: 0, align: "center" },
-    { key: "price", title: "Цена", width: 0, align: "right" },
-    { key: "unitCost", title: "Себест./ед.", width: 0, align: "right" },
-    { key: "revenue", title: "Сумма в КП", width: 0, align: "right" },
-    { key: "cost", title: "Себестоимость", width: 0, align: "right" },
-    { key: "margin", title: "Прибыль", width: 0, align: "right" },
+    { key: "price", title: "Цена, BYN", width: 0, align: "right" },
+    { key: "unitCost", title: "С/с ед., BYN", width: 0, align: "right" },
+    { key: "revenue", title: "Сумма, BYN", width: 0, align: "right" },
+    { key: "cost", title: "С/с, BYN", width: 0, align: "right" },
+    { key: "margin", title: "Прибыль, BYN", width: 0, align: "right" },
     { key: "marginPct", title: "%", width: 0, align: "right" },
   ];
 
@@ -78,11 +78,11 @@ export async function buildEconomicsPdf(
       tableRows.push({
         title: `${r.title || "Без названия"}${r.excluded ? " (не в итоге)" : ""}`,
         qty: r.qtyLabel,
-        price: money(r.price),
-        unitCost: money(r.unitCost),
-        revenue: money(r.revenue),
-        cost: money(r.cost),
-        margin: money(r.margin),
+        price: num(r.price),
+        unitCost: num(r.unitCost),
+        revenue: num(r.revenue),
+        cost: num(r.cost),
+        margin: num(r.margin),
         marginPct: r.hasCost ? pct(r.marginPct) : "—",
       });
     }
@@ -93,16 +93,17 @@ export async function buildEconomicsPdf(
     });
   }
 
+
   const tableW = PAGE_W - M.MARGIN_X * 2;
   fitTableCols(ctx, cols, tableRows, tableW);
   drawTable(ctx, cols, tableRows);
   gap(ctx, 10);
 
   drawSummary(ctx, [
-    { label: "Сумма позиций", value: `${money(econ.revenue)} BYN` },
-    { label: "Себестоимость", value: `${money(econ.cost)} BYN` },
+    { label: "Сумма позиций", value: money(econ.revenue) },
+    { label: "Себестоимость", value: money(econ.cost) },
     { label: `Средняя наценка`, value: pct(econ.avgMarkupPct) },
-    { label: `Прибыль (${meta.netLabel ?? "после скидки и доставки"})`, value: `${money(econ.netMargin)} BYN`, emphasis: true },
+    { label: `Прибыль (${meta.netLabel ?? "после скидки и доставки"})`, value: money(econ.netMargin), emphasis: true },
     { label: "Рентабельность", value: pct(econ.netMarginPct) },
   ]);
 

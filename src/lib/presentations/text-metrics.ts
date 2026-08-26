@@ -5,6 +5,8 @@
 // классам символов (кириллица шире латиницы, цифры моноширинные, пробелы и
 // пунктуация узкие) — это заметно точнее прежнего единого коэффициента 0.52
 // и даёт одинаковый перенос строк в превью и в экспорте.
+import { FACE_WIDTHS, FALLBACK_WIDTH, type FaceKey } from "@/lib/presentations/font-widths";
+
 
 /** Доля от кегля для разных классов символов. */
 const W_SPACE = 0.26;
@@ -30,10 +32,26 @@ function charWidth(ch: string): number {
   return upper ? base * W_UPPER_K : base;
 }
 
-/** Ширина строки в px при заданном кегле. */
-export function measureText(text: string, size: number): number {
+/** Начертание, которым реально рисуется текст (в превью и в PDF). */
+export type TextFace = "body" | "bold" | "display";
+
+const CYR = /[\u0400-\u04FF]/;
+
+/**
+ * Space Grotesk не содержит кириллицы — в PDF её рисует Inter Bold
+ * (см. pickDisplayFont), поэтому и меряем её этой же таблицей.
+ */
+function faceKey(text: string, face: TextFace): FaceKey {
+  if (face === "body") return "regular";
+  if (face === "bold") return "bold";
+  return CYR.test(text) ? "bold" : "display";
+}
+
+/** Ширина строки в px при заданном кегле (реальные метрики шрифта). */
+export function measureText(text: string, size: number, face: TextFace = "body"): number {
+  const table = FACE_WIDTHS[faceKey(text, face)];
   let w = 0;
-  for (const ch of text) w += charWidth(ch);
+  for (const ch of text) w += table.get(ch) ?? charWidth(ch) ?? FALLBACK_WIDTH;
   return w * size;
 }
 
@@ -41,9 +59,15 @@ export function measureText(text: string, size: number): number {
  * Перенос по словам в заданную ширину. Слово длиннее строки режется —
  * так же ведут себя и браузер, и наш PDF-рендер.
  */
-export function wrapText(text: string, size: number, maxWidth: number): string[] {
+export function wrapText(
+  text: string,
+  size: number,
+  maxWidth: number,
+  face: TextFace = "body",
+): string[] {
   const out: string[] = [];
   const limit = Math.max(size, maxWidth);
+  const m = (s: string) => measureText(s, size, face);
   for (const para of text.split("\n")) {
     const words = para.split(/\s+/).filter(Boolean);
     if (!words.length) {
@@ -53,16 +77,16 @@ export function wrapText(text: string, size: number, maxWidth: number): string[]
     let line = "";
     for (const word of words) {
       const candidate = line ? `${line} ${word}` : word;
-      if (measureText(candidate, size) <= limit) {
+      if (m(candidate) <= limit) {
         line = candidate;
         continue;
       }
       if (line) out.push(line);
       // Слишком длинное слово — режем по символам.
-      if (measureText(word, size) > limit) {
+      if (m(word) > limit) {
         let chunk = "";
         for (const ch of word) {
-          if (measureText(chunk + ch, size) > limit && chunk) {
+          if (m(chunk + ch) > limit && chunk) {
             out.push(chunk);
             chunk = ch;
           } else {
@@ -80,10 +104,16 @@ export function wrapText(text: string, size: number, maxWidth: number): string[]
 }
 
 /** Количество строк после переноса. */
-export function countLines(text: string, size: number, maxWidth: number): number {
+export function countLines(
+  text: string,
+  size: number,
+  maxWidth: number,
+  face: TextFace = "body",
+): number {
   if (!text.trim()) return 0;
-  return wrapText(text, size, maxWidth).length;
+  return wrapText(text, size, maxWidth, face).length;
 }
+
 
 /**
  * «Висячее» слово: последняя строка заголовка состоит из одного короткого

@@ -8,11 +8,11 @@ import {
 import {
   DEFAULT_LAYOUT_OVERRIDES, partTextScale, type PresentationSlide,
 } from "@/lib/presentations/model";
-import { countLines, hasOrphanWord } from "@/lib/presentations/text-metrics";
+import { countLines, hasOrphanWord, type TextFace } from "@/lib/presentations/text-metrics";
 
 /** Перенос считаем по реальным метрикам шрифта — как в превью и в PDF. */
-function lineCount(text: string, size: number, width: number): number {
-  return countLines(text, size, width);
+function lineCount(text: string, size: number, width: number, face: TextFace = "body"): number {
+  return countLines(text, size, width, face);
 }
 
 /** Ступени микро-подгонки кегля: общая шкала, чтобы слайды не «плясали». */
@@ -49,7 +49,7 @@ export function estimateTextHeight(
     body: ts.body * partTextScale(ov.bodyScale),
   };
   const titleSize = sizes.title;
-  h += lineCount(slide.title, titleSize, w) * titleSize * 1.14;
+  h += lineCount(slide.title, titleSize, w, "display") * titleSize * 1.14;
   if (slide.subtitle.trim()) {
     h += 10 + lineCount(slide.subtitle, sizes.subtitle, w) * sizes.subtitle * 1.3;
   }

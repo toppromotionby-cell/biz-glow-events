@@ -468,17 +468,25 @@ export function drawSummary(
     const labelFont = r.emphasis ? displayFont(ctx, r.label) : ctx.regular;
     const valueFont = r.emphasis ? displayFont(ctx, r.value) : ctx.regular;
     const baseline = cy - (h + size * 0.72) / 2;
-    const labelW = labelFont.widthOfTextAtSize(r.label, size);
+    // подпись тоже ужимаем, если вместе со значением не помещается в карточку
+    const valueW0 = valueFont.widthOfTextAtSize(r.value, size);
+    let lSize = size;
+    let labelW = labelFont.widthOfTextAtSize(r.label, lSize);
+    while (labelW + valueW0 > width - padX * 2 - 10 && lSize > size * 0.7) {
+      lSize -= 0.4;
+      labelW = labelFont.widthOfTextAtSize(r.label, lSize);
+    }
     ctx.page.drawText(r.label, {
       x: x + padX,
       y: baseline,
-      size,
+      size: lSize,
       font: labelFont,
       color: r.emphasis ? TEXT : MUTED,
     });
     // значение не должно вылезать за рамку и наезжать на подпись:
     // если места мало — уменьшаем кегль значения.
     const avail = width - padX * 2 - labelW - 8;
+
     let vSize = size;
     let w = valueFont.widthOfTextAtSize(r.value, vSize);
     while (w > avail && vSize > size * 0.7) {

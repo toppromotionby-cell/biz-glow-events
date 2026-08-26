@@ -15,6 +15,15 @@ export function money(n: number): string {
   return `${fmt} BYN`;
 }
 
+/** Число без валюты — для узких колонок таблиц (валюта указана в шапке). */
+export function num(n: number): string {
+  return new Intl.NumberFormat("ru-BY", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n || 0);
+}
+
+
 export function safe(s: unknown): string {
   return String(s ?? "").replace(/\s+\n/g, "\n").trim();
 }

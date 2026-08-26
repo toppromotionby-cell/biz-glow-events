@@ -12,7 +12,7 @@ import {
   type Rect, type SlideThemeTokens,
 } from "@/lib/presentations/design";
 import { fitSlide, type SlideFit } from "@/lib/presentations/fit";
-import { planSlideLogos, type LogoSlot, type SlideLogoPlan } from "@/lib/presentations/logo-plan";
+import { planSlideLogos, logoReserveRect, type LogoSlot, type SlideLogoPlan } from "@/lib/presentations/logo-plan";
 import {
   DEFAULT_LAYOUT_OVERRIDES,
   DEFAULT_PRESENTATION_LOGO_LAYOUT,
@@ -502,6 +502,7 @@ function SlideBody({
     footerLogo: !!footerLogo,
     index,
     total,
+    reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
   });
 
   return (

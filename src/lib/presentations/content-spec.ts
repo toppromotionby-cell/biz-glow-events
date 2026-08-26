@@ -82,6 +82,8 @@ export type ContentSpecInput = {
   footerLogo: boolean;
   index?: number;
   total?: number;
+  /** Зоны логотипов на холсте — текстовая колонка их обтекает. */
+  reserved?: (Rect | null)[];
 };
 
 /**
@@ -126,6 +128,18 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
   const w = box.w;
   let y = box.y;
 
+  const reserved = (a.reserved ?? []).filter(Boolean) as Rect[];
+  /** Ширина текста с учётом логотипа, стоящего справа на той же высоте. */
+  const availWidth = (top: number, bottom: number, width: number): number => {
+    let right = x + width;
+    for (const r of reserved) {
+      if (r.y >= bottom || r.y + r.h <= top) continue; // по вертикали не пересекается
+      if (r.x + r.w <= x + width * 0.4) continue; // логотип слева — не мешает
+      right = Math.min(right, r.x - 16);
+    }
+    return Math.max(width * 0.45, right - x);
+  };
+
   const push = (
     text: string,
     opts: {
@@ -143,8 +157,12 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
       keepEmpty?: boolean;
     },
   ): void => {
-    const width = opts.width ?? w;
-    const lines = text.trim() ? wrapText(text, opts.size, width) : [];
+    const full = opts.width ?? w;
+    const face = opts.font === "display" ? "display" : opts.weight >= 600 ? "bold" : "body";
+    const rough = text.trim() ? wrapText(text, opts.size, full, face) : [];
+    const bandH = Math.max(1, rough.length) * opts.size * opts.lineHeight;
+    const width = availWidth(y, y + bandH, full);
+    const lines = width < full && text.trim() ? wrapText(text, opts.size, width, face) : rough;
     if (!lines.length && !opts.keepEmpty) return;
     blocks.push({
       kind: "text",
@@ -276,7 +294,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     let rowW = 0;
     for (const s of c.specs) {
       const text = `${s.label}: ${s.value}`;
-      const cw = measureText(text, size) + CONTENT.chipPadX * 2;
+      const cw = measureText(text, size, "body") + CONTENT.chipPadX * 2;
       const add = rows[rows.length - 1].length ? cw + CONTENT.chipGap : cw;
       if (rowW + add > w && rows[rows.length - 1].length) {
         rows.push([]);
@@ -326,7 +344,8 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     const padX = CONTENT.pricePadX * k;
     const padY = CONTENT.pricePadY * k;
     const gap = CONTENT.priceGap * k;
-    const pillW = measureText(sum, sumSize) + gap + measureText(unit, unitSize) + padX * 2;
+    const sumW = measureText(sum, sumSize, "display");
+    const pillW = sumW + gap + measureText(unit, unitSize, "body") + padX * 2;
     const pillH = sumSize * 1.25 + padY * 2;
     const pb = layout.priceBox;
     const px = pb ? pb.x : x + offsetX(baseAlign, w, pillW);
@@ -343,7 +362,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     });
     blocks.push({
       kind: "text",
-      x: px + padX + measureText(sum, sumSize) + gap,
+      x: px + padX + sumW + gap,
       y: py + padY + (sumSize - unitSize) * 0.9,
       w: pillW,
       size: unitSize,

@@ -1,7 +1,12 @@
 // Экспорт презентации в PDF: альбомный формат 16:9 (960×540 pt), pdf-lib.
 // Работает только на сервере. Шрифты — те же Inter/Space Grotesk, что и в
 // остальных документах, чтобы PDF совпадал с превью.
-import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import {
+  PDFDocument, rgb, clip, closePath, endPath, lineTo, moveTo,
+  popGraphicsState, pushGraphicsState,
+  type PDFFont, type PDFImage, type PDFPage,
+} from "pdf-lib";
+
 import fontkit from "@pdf-lib/fontkit";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { hexToRgb01 } from "@/lib/documents/brand";
@@ -10,7 +15,7 @@ import {
   isDarkBackground, MAX_SLIDE_PHOTOS, SLIDE_W, templatePalette, type Rect,
 } from "@/lib/presentations/design";
 import { fitSlide } from "@/lib/presentations/fit";
-import { planSlideLogos, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
+import { planSlideLogos, logoReserveRect, type LogoPlacementPlan } from "@/lib/presentations/logo-plan";
 import { pdfFontSet } from "@/lib/documents/pdf-fonts.server";
 import { pickDisplayFont } from "@/lib/documents/pdf/ctx.server";
 import { resolveDocFont } from "@/lib/documents/doc-font";
@@ -306,8 +311,17 @@ function drawSpecBlocks(
       const k = Math.max(fw / img.width, fh / img.height);
       const w = img.width * k;
       const h = img.height * k;
+      // object-fit: cover — лишнее обрезаем рамкой, иначе фото «вылезает»
+      // за свою колонку и наезжает на текст (в превью этого не происходит).
+      page.pushOperators(
+        pushGraphicsState(),
+        moveTo(fx, fy), lineTo(fx + fw, fy), lineTo(fx + fw, fy + fh), lineTo(fx, fy + fh),
+        closePath(), clip(), endPath(),
+      );
       page.drawImage(img, { x: fx + fw / 2 - w / 2, y: fy + fh / 2 - h / 2, width: w, height: h });
+      page.pushOperators(popGraphicsState());
       continue;
+
     }
     if (b.kind === "circle") {
       page.drawCircle({
@@ -351,11 +365,19 @@ function drawSpecBlocks(
     const lines = (b.lines ?? wrap(font, b.text, size, width)).map(cast);
     let y = H - b.y * K - size;
     for (const line of lines) {
-      const lw = font.widthOfTextAtSize(line, size);
+      // Страховка от рассинхрона метрик: если строка всё же шире блока
+      // (плашка, цена, узкая колонка) — ужимаем кегль, но не рвём вёрстку.
+      let s = size;
+      let lw = font.widthOfTextAtSize(line, s);
+      while (lw > width + 0.5 && s > size * 0.6) {
+        s -= size * 0.02;
+        lw = font.widthOfTextAtSize(line, s);
+      }
       const dx = b.align === "center" ? (width - lw) / 2 : b.align === "right" ? width - lw : 0;
-      page.drawText(line, { x: b.x * K + dx, y, size, font, color: paint(b.color) });
+      page.drawText(line, { x: b.x * K + dx, y, size: s, font, color: paint(b.color) });
       y -= size * b.lineHeight;
     }
+
   }
 }
 
@@ -438,6 +460,7 @@ async function drawSlide(a: DrawArgs) {
     footerLogo: plan.brand?.slot === "footer" && !!logo,
     index,
     total,
+    reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
   });
   drawSpecBlocks(page, blocks, t, fonts, logo, images);
 
