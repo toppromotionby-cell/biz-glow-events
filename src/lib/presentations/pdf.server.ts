@@ -28,6 +28,7 @@ import {
   FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock, type SpecPaint,
 } from "@/lib/presentations/slide-spec";
 import { contentSlideSpec } from "@/lib/presentations/content-spec";
+import { isLayoutSlideType, layoutSlideSpec } from "@/lib/presentations/blocks";
 
 
 const W = 960;
@@ -435,6 +436,21 @@ async function drawSlide(a: DrawArgs) {
     page.drawText(label, { x: W - PAD - w, y: fy, size, font: fonts.regular, color: t.muted });
   };
 
+
+  if (isLayoutSlideType(slide.type)) {
+    const blocks = layoutSlideSpec({
+      slide,
+      ts: slideFit.type,
+      brandName: brand,
+      footerLogo: plan.brand?.slot === "footer" && !!logo,
+      index,
+      total,
+    });
+    drawSpecBlocks(page, blocks, t, fonts, logo, images);
+    drawClientLogo();
+    if (logo && plan.brand) drawPlannedLogo(page, logo, plan.brand);
+    return;
+  }
 
   if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
     const heroPlan = plan.brand?.slot === "hero" ? plan.brand : null;

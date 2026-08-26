@@ -27,6 +27,7 @@ import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import { staticSlideSpec, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
 import { contentSlideSpec } from "@/lib/presentations/content-spec";
+import { isLayoutSlideType, layoutSlideSpec } from "@/lib/presentations/blocks";
 import {
   cssObjectPosition, type PhotoAnchor, type PhotoFit,
 } from "@/lib/presentations/photo-fit";
@@ -483,6 +484,32 @@ function SlideBody({
       )}
     </div>
   );
+
+  if (isLayoutSlideType(slide.type)) {
+    const blocks = layoutSlideSpec({
+      slide,
+      ts,
+      brandName: brand,
+      footerLogo: !!footerLogo,
+      index,
+      total,
+    });
+    return (
+      <>
+        {blocks.map((b, i) => (
+          <SpecBlockView
+            key={i}
+            block={b}
+            theme={theme}
+            heading={heading}
+            logoPath={null}
+            onEdit={onEdit}
+            partAlign={partAlign}
+          />
+        ))}
+      </>
+    );
+  }
 
   if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
     const blocks = staticSlideSpec({
