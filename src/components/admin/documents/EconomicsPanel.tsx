@@ -1,7 +1,7 @@
 // Вкладка «Экономика» документа: себестоимость, маржа, подытоги по разделам.
 // Только для внутреннего использования (право documents.cost_margin) —
 // в клиентский HTML/PDF и публичную ссылку эти данные не попадают.
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { AlertTriangle, Download, EyeOff, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -103,8 +103,8 @@ export function EconomicsPanel({
         textSize="xs"
       >
         {econ.sections.map((s) => (
-          <>
-            <tr key={`sec-${s.name}`} className="bg-muted/40">
+          <Fragment key={s.name}>
+            <tr className="bg-muted/40">
               <td className="p-2 font-semibold">{s.name}</td>
               <td colSpan={3} />
               <td className="p-2 text-right tabular-nums">{fmt(s.revenue)}</td>
@@ -140,7 +140,7 @@ export function EconomicsPanel({
                 </td>
               </tr>
             ))}
-          </>
+          </Fragment>
         ))}
         <tr className="border-t-2 border-border bg-muted/30 font-semibold">
           <td className="p-2">Итого</td>
