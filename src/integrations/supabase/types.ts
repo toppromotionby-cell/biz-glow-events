@@ -1899,6 +1899,51 @@ export type Database = {
         }
         Relationships: []
       }
+      presentation_brand_kits: {
+        Row: {
+          accent: string
+          angle: number
+          created_at: string
+          created_by: string | null
+          font: string
+          frame: string
+          id: string
+          is_default: boolean
+          logo_url: string | null
+          name: string
+          stops: Json
+          updated_at: string
+        }
+        Insert: {
+          accent?: string
+          angle?: number
+          created_at?: string
+          created_by?: string | null
+          font?: string
+          frame?: string
+          id?: string
+          is_default?: boolean
+          logo_url?: string | null
+          name: string
+          stops?: Json
+          updated_at?: string
+        }
+        Update: {
+          accent?: string
+          angle?: number
+          created_at?: string
+          created_by?: string | null
+          font?: string
+          frame?: string
+          id?: string
+          is_default?: boolean
+          logo_url?: string | null
+          name?: string
+          stops?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       presentation_slides: {
         Row: {
           content_json: Json
@@ -1995,6 +2040,7 @@ export type Database = {
       }
       presentations: {
         Row: {
+          brand_kit: Json | null
           client_logo_url: string | null
           company_id: string | null
           created_at: string
@@ -2013,6 +2059,7 @@ export type Database = {
           viewed_at: string | null
         }
         Insert: {
+          brand_kit?: Json | null
           client_logo_url?: string | null
           company_id?: string | null
           created_at?: string
@@ -2031,6 +2078,7 @@ export type Database = {
           viewed_at?: string | null
         }
         Update: {
+          brand_kit?: Json | null
           client_logo_url?: string | null
           company_id?: string | null
           created_at?: string

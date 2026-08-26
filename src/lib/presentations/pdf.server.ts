@@ -338,14 +338,23 @@ function drawSpecBlocks(
       continue;
     }
     if (b.kind === "rect") {
-      page.drawRectangle({
+      const geom = {
         x: b.x * K,
         y: H - (b.y + b.h) * K,
         width: b.w * K,
         height: b.h * K,
-        color: paint(b.color),
-        opacity: b.opacity ?? 1,
-      });
+      };
+      if (b.stroke) {
+        page.drawRectangle({
+          ...geom,
+          borderColor: paint(b.color),
+          borderWidth: b.stroke * K,
+          borderOpacity: b.opacity ?? 1,
+
+        });
+      } else {
+        page.drawRectangle({ ...geom, color: paint(b.color), opacity: b.opacity ?? 1 });
+      }
       continue;
     }
     if (b.kind === "logo") {

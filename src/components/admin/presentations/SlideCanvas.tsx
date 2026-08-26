@@ -151,6 +151,7 @@ function SpecBlockView({
     );
   }
   if (block.kind === "rect") {
+    const stroked = !!block.stroke;
     return (
       <div
         style={{
@@ -160,7 +161,9 @@ function SpecBlockView({
           width: block.w,
           height: block.h,
           borderRadius: block.radius,
-          background: paint(block.color),
+          background: stroked ? "transparent" : paint(block.color),
+          border: stroked ? `${block.stroke}px solid ${paint(block.color)}` : undefined,
+          boxSizing: "border-box",
           opacity: block.opacity ?? 1,
         }}
       />

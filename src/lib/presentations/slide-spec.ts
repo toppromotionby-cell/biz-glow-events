@@ -49,6 +49,8 @@ export type SpecRect = {
   radius: number;
   color: SpecPaint;
   opacity?: number;
+  /** Если задано — рисуем контур указанной толщины вместо заливки. */
+  stroke?: number;
 };
 
 export type SpecCircle = {
