@@ -57,7 +57,7 @@ import {
   PROMO_STATUS_LABELS, PROMO_STATUSES, checkPromoQuote, computePromoTotals, isPristinePromoItem, promoNumberDisplay,
   promoValidityState, type PromoDiscountType, type PromoItem, type PromoQuote, type PromoStatus,
 } from "@/lib/promo-quote-model";
-import { lineQty, lineTotal, isCounted } from "@/lib/promo-quote-model";
+import { lineQty, isCounted } from "@/lib/promo-quote-model";
 import { EconomicsPanel } from "@/components/admin/documents/EconomicsPanel";
 import { normalizeCostMode } from "@/lib/documents/economics";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
