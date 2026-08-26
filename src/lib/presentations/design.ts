@@ -1,13 +1,14 @@
 // Единая дизайн-система слайдов презентации.
 // Холст 1280×720 (16:9) = пропорции стандартных 1920×1080, делённые на 1.5.
 // Здесь живут сетка, шкала кеглей, ступени плотности, темы и автораскладка
-// фотографий (1–5). Модуль клиент-безопасный: используется в превью, PDF и превью.
+// фотографий (1–15). Модуль клиент-безопасный: используется в превью, PDF и превью.
 import {
   clampNum, DEFAULT_LAYOUT_OVERRIDES, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
   PRICE_SCALE_MAX, PRICE_SCALE_MIN,
   type PhotoZone, type PresentationSlide, type PresentationTemplate,
   type PriceZone, type SlideBackground, type SlideImageLayout,
 } from "@/lib/presentations/model";
+import { photoFrames } from "@/lib/presentations/photo-grid";
 
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
@@ -360,12 +361,12 @@ export function slideTheme(
 /* Автораскладка фотографий                                            */
 /* ------------------------------------------------------------------ */
 
-export const MAX_SLIDE_PHOTOS = 5;
+export const MAX_SLIDE_PHOTOS = 15;
 
 export type PhotoPlacement = "none" | "left" | "right" | "top" | "full";
 
 export type SlideLayout = {
-  /** Фото, попавшие на слайд (не более 5). */
+  /** Фото, попавшие на слайд (не более 15). */
   photos: string[];
   placement: PhotoPlacement;
   /** Область под фото в координатах холста. */
@@ -407,85 +408,9 @@ export function slidePhotos(slide: PresentationSlide): string[] {
 }
 
 function splitFrames(box: Rect, count: number): Rect[] {
-  const g = GRID.photoGap;
-  const portrait = box.h >= box.w;
-  if (count <= 1) return [box];
-
-  if (count === 2) {
-    if (portrait) {
-      const h = (box.h - g) / 2;
-      return [
-        { x: box.x, y: box.y, w: box.w, h },
-        { x: box.x, y: box.y + h + g, w: box.w, h },
-      ];
-    }
-    const w = (box.w - g) / 2;
-    return [
-      { x: box.x, y: box.y, w, h: box.h },
-      { x: box.x + w + g, y: box.y, w, h: box.h },
-    ];
-  }
-
-  if (count === 3) {
-    if (portrait) {
-      const hero = (box.h - g) * 0.6;
-      const rest = box.h - g - hero;
-      const w = (box.w - g) / 2;
-      return [
-        { x: box.x, y: box.y, w: box.w, h: hero },
-        { x: box.x, y: box.y + hero + g, w, h: rest },
-        { x: box.x + w + g, y: box.y + hero + g, w, h: rest },
-      ];
-    }
-    const hero = (box.w - g) * 0.58;
-    const rest = box.w - g - hero;
-    const h = (box.h - g) / 2;
-    return [
-      { x: box.x, y: box.y, w: hero, h: box.h },
-      { x: box.x + hero + g, y: box.y, w: rest, h },
-      { x: box.x + hero + g, y: box.y + h + g, w: rest, h },
-    ];
-  }
-
-  if (count === 4) {
-    const w = (box.w - g) / 2;
-    const h = (box.h - g) / 2;
-    return [
-      { x: box.x, y: box.y, w, h },
-      { x: box.x + w + g, y: box.y, w, h },
-      { x: box.x, y: box.y + h + g, w, h },
-      { x: box.x + w + g, y: box.y + h + g, w, h },
-    ];
-  }
-
-  // 5: крупное фото + полоса из четырёх миниатюр.
-  if (portrait) {
-    const hero = (box.h - g) * 0.62;
-    const rest = box.h - g - hero;
-    const w = (box.w - g * 3) / 4;
-    return [
-      { x: box.x, y: box.y, w: box.w, h: hero },
-      ...[0, 1, 2, 3].map((i) => ({
-        x: box.x + i * (w + g),
-        y: box.y + hero + g,
-        w,
-        h: rest,
-      })),
-    ];
-  }
-  const hero = (box.w - g) * 0.6;
-  const rest = box.w - g - hero;
-  const h = (box.h - g * 3) / 4;
-  return [
-    { x: box.x, y: box.y, w: hero, h: box.h },
-    ...[0, 1, 2, 3].map((i) => ({
-      x: box.x + hero + g,
-      y: box.y + i * (h + g),
-      w: rest,
-      h,
-    })),
-  ];
+  return photoFrames(box, count, { gap: GRID.photoGap });
 }
+
 
 /** Пересекаются ли прямоугольники (с допуском). */
 export function rectsOverlap(a: Rect, b: Rect, gap = 0): boolean {
@@ -635,14 +560,25 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
     });
   }
 
+  // Галерея (6+ кадров) в боковой колонке мельчает, поэтому в авторежиме
+  // она уходит полосой над текстом — это и есть «контактный лист».
+  const gallery = photos.length >= 6;
   const placement: PhotoPlacement =
-    mode === "left" || mode === "right" || mode === "top" ? mode : weight > 900 ? "right" : "left";
+    mode === "left" || mode === "right" || mode === "top"
+      ? mode
+      : gallery ? "top" : weight > 900 ? "right" : "left";
 
   if (placement === "top") {
+    const autoH = !hasText
+      ? contentH
+      : gallery
+        ? Math.min(contentH - 180, photos.length >= 10 ? 400 : 340)
+        : weight > 700 ? 240 : 300;
     const h = ov.photoScale != null
       ? clampNum(ov.photoScale, PHOTO_SCALE_MIN, PHOTO_SCALE_MAX) * SLIDE_H
-      : weight > 700 ? 240 : 300;
+      : autoH;
     const box: Rect = { x: GRID.marginX, y: contentTop, w: SLIDE_W - GRID.marginX * 2, h };
+
     return done({
       photos,
       placement,
