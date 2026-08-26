@@ -365,11 +365,19 @@ function drawSpecBlocks(
     const lines = (b.lines ?? wrap(font, b.text, size, width)).map(cast);
     let y = H - b.y * K - size;
     for (const line of lines) {
-      const lw = font.widthOfTextAtSize(line, size);
+      // Страховка от рассинхрона метрик: если строка всё же шире блока
+      // (плашка, цена, узкая колонка) — ужимаем кегль, но не рвём вёрстку.
+      let s = size;
+      let lw = font.widthOfTextAtSize(line, s);
+      while (lw > width + 0.5 && s > size * 0.6) {
+        s -= size * 0.02;
+        lw = font.widthOfTextAtSize(line, s);
+      }
       const dx = b.align === "center" ? (width - lw) / 2 : b.align === "right" ? width - lw : 0;
-      page.drawText(line, { x: b.x * K + dx, y, size, font, color: paint(b.color) });
+      page.drawText(line, { x: b.x * K + dx, y, size: s, font, color: paint(b.color) });
       y -= size * b.lineHeight;
     }
+
   }
 }
 
