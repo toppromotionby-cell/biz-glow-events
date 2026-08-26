@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Presentation as PresentationIcon, Plus, Search, ArrowRight, MoreHorizontal, Copy, Trash2,
-  Download, Pencil, X, RefreshCw, AlertTriangle, LayoutGrid, Rows3,
+  Download, Pencil, X, RefreshCw, AlertTriangle, LayoutGrid, LayoutTemplate, Rows3,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTable } from "@/components/admin/AdminTable";
@@ -127,9 +127,18 @@ function Page() {
         title="Презентации"
         subtitle={subtitle}
         action={
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />Создать презентацию
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate({ to: "/admin/documents/presentations/templates" })}
+            >
+              <LayoutTemplate className="mr-1.5 h-4 w-4" />Шаблоны
+            </Button>
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-1.5" />Создать презентацию
+            </Button>
+          </div>
         }
       />
 

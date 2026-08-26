@@ -102,6 +102,7 @@ import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$i
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
 import { Route as AdminOrdersIdContractRouteImport } from './routes/admin.orders.$id.contract'
 import { Route as AdminOrdersIdActRouteImport } from './routes/admin.orders.$id.act'
+import { Route as AdminDocumentsPresentationsTemplatesRouteImport } from './routes/admin.documents.presentations.templates'
 import { Route as AdminDocumentsQuotesIdIndexRouteImport } from './routes/admin.documents.quotes.$id.index'
 import { Route as AdminDocumentsPromoIdIndexRouteImport } from './routes/admin.documents.promo.$id.index'
 import { Route as AdminDocumentsPresentationsIdIndexRouteImport } from './routes/admin.documents.presentations.$id.index'
@@ -583,6 +584,12 @@ const AdminOrdersIdActRoute = AdminOrdersIdActRouteImport.update({
   path: '/act',
   getParentRoute: () => AdminOrdersIdRoute,
 } as any)
+const AdminDocumentsPresentationsTemplatesRoute =
+  AdminDocumentsPresentationsTemplatesRouteImport.update({
+    id: '/documents/presentations/templates',
+    path: '/documents/presentations/templates',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminDocumentsQuotesIdIndexRoute =
   AdminDocumentsQuotesIdIndexRouteImport.update({
     id: '/documents/quotes/$id/',
@@ -706,6 +713,7 @@ export interface FileRoutesByFullPath {
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
+  '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
@@ -806,6 +814,7 @@ export interface FileRoutesByTo {
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents': typeof AdminDocumentsIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
+  '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
@@ -909,6 +918,7 @@ export interface FileRoutesById {
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
+  '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
@@ -1013,6 +1023,7 @@ export interface FileRouteTypes {
     | '/order/success/$id'
     | '/admin/documents/'
     | '/admin/orders/'
+    | '/admin/documents/presentations/templates'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
@@ -1113,6 +1124,7 @@ export interface FileRouteTypes {
     | '/order/success/$id'
     | '/admin/documents'
     | '/admin/orders'
+    | '/admin/documents/presentations/templates'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
@@ -1215,6 +1227,7 @@ export interface FileRouteTypes {
     | '/order/success/$id'
     | '/admin/documents/'
     | '/admin/orders/'
+    | '/admin/documents/presentations/templates'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
     | '/admin/orders/$id/invoice'
@@ -1949,6 +1962,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdActRouteImport
       parentRoute: typeof AdminOrdersIdRoute
     }
+    '/admin/documents/presentations/templates': {
+      id: '/admin/documents/presentations/templates'
+      path: '/documents/presentations/templates'
+      fullPath: '/admin/documents/presentations/templates'
+      preLoaderRoute: typeof AdminDocumentsPresentationsTemplatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/documents/quotes/$id/': {
       id: '/admin/documents/quotes/$id/'
       path: '/documents/quotes/$id'
@@ -2067,6 +2087,7 @@ interface AdminRouteChildren {
   AdminSettingsHygieneRoute: typeof AdminSettingsHygieneRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
+  AdminDocumentsPresentationsTemplatesRoute: typeof AdminDocumentsPresentationsTemplatesRoute
   AdminDocumentsPresentationsIndexRoute: typeof AdminDocumentsPresentationsIndexRoute
   AdminDocumentsPromoIndexRoute: typeof AdminDocumentsPromoIndexRoute
   AdminDocumentsQuotesIndexRoute: typeof AdminDocumentsQuotesIndexRoute
@@ -2101,6 +2122,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsHygieneRoute: AdminSettingsHygieneRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
+  AdminDocumentsPresentationsTemplatesRoute:
+    AdminDocumentsPresentationsTemplatesRoute,
   AdminDocumentsPresentationsIndexRoute: AdminDocumentsPresentationsIndexRoute,
   AdminDocumentsPromoIndexRoute: AdminDocumentsPromoIndexRoute,
   AdminDocumentsQuotesIndexRoute: AdminDocumentsQuotesIndexRoute,

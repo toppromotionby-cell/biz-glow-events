@@ -11,6 +11,7 @@ import type { PresentationSlide } from "@/lib/presentations/model";
 import { isLayoutSlideType, layoutSlideSpec } from "@/lib/presentations/blocks";
 import { contentSlideSpec } from "@/lib/presentations/content-spec";
 import { staticSlideSpec, type SpecBlock } from "@/lib/presentations/slide-spec";
+import { brandFrameBlock, type BrandFrame } from "@/lib/presentations/brand-kit";
 
 export type SlideSpecKind = "layout" | "static" | "content";
 
@@ -31,6 +32,8 @@ export type SlideSpecInput = {
   total: number;
   /** Области, занятые логотипами: текст их обтекает. */
   reserved?: (Rect | null)[];
+  /** Стиль рамки из бренд-набора — рисуется под содержимым слайда. */
+  frame?: BrandFrame;
 };
 
 export type SlideSpecResult = {
@@ -42,6 +45,12 @@ export type SlideSpecResult = {
 
 /** Собирает блоки слайда любого типа — одинаково для превью, PDF и проверок. */
 export function slideSpec(a: SlideSpecInput): SlideSpecResult {
+  const res = buildSpec(a);
+  const frame = brandFrameBlock(a.frame ?? "none");
+  return frame ? { ...res, blocks: [frame, ...res.blocks] } : res;
+}
+
+function buildSpec(a: SlideSpecInput): SlideSpecResult {
   const { slide, fit } = a;
 
   if (isLayoutSlideType(slide.type)) {

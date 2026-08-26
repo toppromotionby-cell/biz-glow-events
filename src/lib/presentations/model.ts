@@ -8,6 +8,8 @@ import {
 import { htmlToPlainText, isHtml } from "@/lib/rich-text";
 
 /** Как накладывать логотипы на слайды. */
+import { normalizeBrandKit, type BrandKit } from "@/lib/presentations/brand-kit";
+
 export type LogoPlacement = "auto" | "always" | "title-only" | "off";
 
 export const LOGO_PLACEMENT_LABELS: Record<LogoPlacement, string> = {
@@ -565,6 +567,8 @@ export type Presentation = {
   logo_layout: PresentationLogoLayout;
   /** Шрифт презентации: inherit — как в настройках документов. */
   font_family: DocFontChoice;
+  /** Применённый бренд-набор (снимок), null — оформление шаблона. */
+  brand_kit: BrandKit | null;
   /** Постоянный токен публичной ссылки /p/<token>. */
   public_token: string;
   /** Доступ по публичной ссылке включён. */
@@ -709,6 +713,7 @@ export function normalizePresentation(row: Record<string, unknown>): Presentatio
     client_logo_url: row.client_logo_url ? str(row.client_logo_url) : null,
     logo_layout: normalizePresentationLogoLayout(row.logo_layout),
     font_family: normalizeDocFontChoice(row.font_family),
+    brand_kit: normalizeBrandKit(row.brand_kit),
     public_token: str(row.public_token),
     share_enabled: row.share_enabled === true,
     created_at: str(row.created_at),

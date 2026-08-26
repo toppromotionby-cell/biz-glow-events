@@ -27,6 +27,8 @@ import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import type { SpecBlock, SpecPaint } from "@/lib/presentations/slide-spec";
 import { slideSpec } from "@/lib/presentations/spec";
+import { SlideDebugOverlay } from "@/components/admin/presentations/SlideDebugOverlay";
+import { applyBrandKit, type BrandFrame, type BrandKit } from "@/lib/presentations/brand-kit";
 import {
   cssObjectPosition, type PhotoAnchor, type PhotoFit,
 } from "@/lib/presentations/photo-fit";
@@ -151,6 +153,7 @@ function SpecBlockView({
     );
   }
   if (block.kind === "rect") {
+    const stroked = !!block.stroke;
     return (
       <div
         style={{
@@ -160,7 +163,9 @@ function SpecBlockView({
           width: block.w,
           height: block.h,
           borderRadius: block.radius,
-          background: paint(block.color),
+          background: stroked ? "transparent" : paint(block.color),
+          border: stroked ? `${block.stroke}px solid ${paint(block.color)}` : undefined,
+          boxSizing: "border-box",
           opacity: block.opacity ?? 1,
         }}
       />
@@ -256,6 +261,8 @@ export type SlideCanvasProps = {
   logoLayout?: PresentationLogoLayout;
   /** Шрифт презентации. */
   fontFamily?: DocFontChoice;
+  /** Применённый бренд-набор: цвета, акцент и стиль рамки. */
+  brandKit?: BrandKit | null;
   /** Режим редактора: перетаскивание и масштабирование элементов слайда. */
   interactive?: boolean;
   onLayout?: import("@/components/admin/presentations/SlideLayoutOverlay").LayoutPatch;
@@ -270,12 +277,14 @@ export type SlideCanvasProps = {
   textEditing?: boolean;
   /** Плавающая панель блока (мобильный режим — свойств справа нет). */
   floatingToolbar?: boolean;
+  /** Режим отладки: слой-схема зон, пустые места и конфликты. */
+  debug?: boolean;
 };
 
 
 export type SlideBranding = Pick<
   SlideCanvasProps,
-  "brandLogoUrl" | "clientLogoUrl" | "logoLayout" | "fontFamily"
+  "brandLogoUrl" | "clientLogoUrl" | "logoLayout" | "fontFamily" | "brandKit"
 >;
 
 /** Позиционирование логотипа в угловом слоте. */
@@ -293,10 +302,11 @@ function logoStyle(p: { slot: LogoSlot; x?: number; y?: number }): CSSProperties
 function SlideCanvasInner(props: SlideCanvasProps) {
   const { slide, company, template, presentationTitle, width, index, total, showWarnings, onEdit } = props;
   const scale = width / SLIDE_W;
-  const accent = company?.accent_color || "#FF7500";
+  const kit = props.brandKit ?? null;
+  const accent = kit?.accent || company?.accent_color || "#FF7500";
   const theme = useMemo(
-    () => slideTheme(template, accent, slide.content.background),
-    [template, accent, slide.content.background],
+    () => slideTheme(template, accent, applyBrandKit(slide.content.background, kit, accent).background),
+    [template, accent, kit, slide.content.background],
   );
   const fit = useMemo(() => fitSlide(slide), [slide]);
   const layout = props.logoLayout ?? DEFAULT_PRESENTATION_LOGO_LAYOUT;
@@ -348,6 +358,7 @@ function SlideCanvasInner(props: SlideCanvasProps) {
           onEdit={onEdit}
           brandLogo={brandLogo}
           plan={plan}
+          frame={kit?.frame ?? "none"}
         />
         {plan.client && plan.client.slot !== "hero" && plan.client.slot !== "footer" && (
           <div data-block="clientLogo" style={logoStyle(plan.client)}>
@@ -378,6 +389,8 @@ function SlideCanvasInner(props: SlideCanvasProps) {
         </div>
       )}
 
+
+      {props.debug && <SlideDebugOverlay slide={slide} fit={fit} plan={plan} scale={scale} />}
 
       {showWarnings && fit.warnings.length > 0 && (
         <div
@@ -434,7 +447,9 @@ function SlideBody({
   onEdit,
   brandLogo,
   plan,
+  frame,
 }: {
+  frame: BrandFrame;
   docFont: DocFont;
   slide: PresentationSlide;
   company: CompanyProfile | null;
@@ -511,6 +526,7 @@ function SlideBody({
     index: index ?? 0,
     total: total ?? 1,
     reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
+    frame,
   });
 
   return (

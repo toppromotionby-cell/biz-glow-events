@@ -15,7 +15,11 @@ import {
 } from "@/components/ui/select";
 import { CompanySelect } from "@/components/admin/documents/CompanySelect";
 import { TEMPLATE_LABELS, type PresentationTemplate } from "@/lib/presentations/model";
-import { createPresentation, listQuotesForPresentation } from "@/lib/presentations.functions";
+import {
+  createPresentation, createPresentationFromTemplate, listQuotesForPresentation,
+  suggestTemplateForQuote,
+} from "@/lib/presentations.functions";
+import { Switch } from "@/components/ui/switch";
 
 export function CreatePresentationDialog({
   open,
@@ -31,6 +35,8 @@ export function CreatePresentationDialog({
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [template, setTemplate] = useState<PresentationTemplate>("light");
   const [quoteId, setQuoteId] = useState<string>("");
+  // Автоподбор структуры по данным КП (шаблон + вариант оформления).
+  const [useAuto, setUseAuto] = useState(true);
 
   useEffect(() => {
     if (!open) return;
@@ -46,17 +52,38 @@ export function CreatePresentationDialog({
     enabled: open,
   });
 
+  const suggestFn = useServerFn(suggestTemplateForQuote);
+  const suggestion = useQuery({
+    queryKey: ["presentation-template-suggestion", quoteId],
+    queryFn: () => suggestFn({ data: { quoteId } }),
+    enabled: open && mode === "quote" && !!quoteId,
+  });
+
+  const fromTemplateFn = useServerFn(createPresentationFromTemplate);
   const createFn = useServerFn(createPresentation);
   const create = useMutation({
-    mutationFn: () =>
-      createFn({
+    mutationFn: () => {
+      const pick = suggestion.data;
+      if (mode === "quote" && quoteId && useAuto && pick) {
+        return fromTemplateFn({
+          data: {
+            templateId: pick.templateId,
+            title: title.trim() || autoTitle(),
+            companyId,
+            quoteId,
+            photoRich: pick.photoRich,
+          },
+        });
+      }
+      return createFn({
         data: {
           title: title.trim() || (mode === "quote" ? autoTitle() : "Новая презентация"),
           companyId,
           template,
           quoteId: mode === "quote" && quoteId ? quoteId : null,
         },
-      }),
+      });
+    },
     onSuccess: (r) => { onOpenChange(false); onCreated(r.id); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -109,6 +136,21 @@ export function CreatePresentationDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {mode === "quote" && quoteId && suggestion.data && (
+            <div className="space-y-1.5 rounded-lg border border-border/60 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Рекомендуем: {suggestion.data.templateName}</p>
+                <Switch checked={useAuto} onCheckedChange={setUseAuto} aria-label="Использовать автоподбор" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {suggestion.data.reasons.join(" · ") || "Структура подобрана по составу КП"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {suggestion.data.blueprint.length} слайдов в правильном порядке
+              </p>
             </div>
           )}
 

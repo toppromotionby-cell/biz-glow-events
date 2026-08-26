@@ -20,6 +20,9 @@ import {
   type SlideType,
 } from "@/lib/presentations/model";
 import type { QuoteItemLite } from "@/lib/presentations/check";
+import { normalizeBrandKit, type BrandKit } from "@/lib/presentations/brand-kit";
+import { deckTemplateById, buildDeckSlides } from "@/lib/presentations/deck-templates";
+import { autoPickTemplate, tuneVariant } from "@/lib/presentations/auto-template";
 import { toCardExcerpt } from "@/lib/rich-text";
 
 
@@ -400,6 +403,7 @@ export const savePresentation = createServerFn({ method: "POST" })
         clientLogoUrl: z.string().max(1000).nullable().default(null),
         logoLayout: z.unknown().optional().transform(normalizePresentationLogoLayout),
         fontFamily: z.unknown().optional().transform(normalizeDocFontChoice),
+        brandKit: z.unknown().optional(),
         slides: z.array(slideInput).max(200),
       })
       .parse(d),
@@ -418,6 +422,7 @@ export const savePresentation = createServerFn({ method: "POST" })
         client_logo_url: data.clientLogoUrl,
         logo_layout: data.logoLayout,
         font_family: data.fontFamily,
+        brand_kit: normalizeBrandKit(data.brandKit),
       })
       .eq("id", data.id);
     if (upErr) throw new Error(upErr.message);
@@ -876,4 +881,244 @@ export const diffPresentationWithQuote = createServerFn({ method: "POST" })
       story.items,
     );
     return { linked: true, ...diff };
+  });
+
+
+/* ---------------- Бренд-наборы ---------------- */
+
+type BrandKitRow = BrandKit & { isDefault: boolean; createdAt: string };
+
+function brandKitRow(r: Row): BrandKitRow {
+  const kit = normalizeBrandKit({
+    id: r.id,
+    name: r.name,
+    stops: r.stops,
+    angle: r.angle,
+    accent: r.accent,
+    font: r.font,
+    logoUrl: r.logo_url,
+    frame: r.frame,
+  });
+  return {
+    ...(kit ?? {
+      id: String(r.id), name: String(r.name ?? "Бренд-набор"), stops: ["#ffffff"], angle: 135,
+      accent: "#c2410c", font: "inherit" as const, logoUrl: null, frame: "none" as const,
+    }),
+    id: String(r.id),
+    isDefault: r.is_default === true,
+    createdAt: String(r.created_at ?? ""),
+  };
+}
+
+export const listBrandKits = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<BrandKitRow[]> => {
+    await assertDocumentsStaff(context as never);
+    const { data, error } = await context.supabase
+      .from("presentation_brand_kits")
+      .select("*")
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as Row[]).map(brandKitRow);
+  });
+
+const brandKitInput = z.object({
+  id: z.string().uuid().nullable().default(null),
+  name: z.string().trim().min(1).max(80),
+  stops: z.array(z.string().max(9)).min(1).max(3),
+  angle: z.number().int().min(0).max(360).default(135),
+  accent: z.string().max(9),
+  font: z.unknown().transform(normalizeDocFontChoice),
+  logoUrl: z.string().max(1000).nullable().default(null),
+  frame: z.string().max(16).default("none"),
+  isDefault: z.boolean().default(false),
+});
+
+export const saveBrandKit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => brandKitInput.parse(d))
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    await assertDocumentsStaff(context as never);
+    const kit = normalizeBrandKit({ ...data, id: data.id ?? "custom" });
+    if (!kit) throw new Error("Некорректный бренд-набор");
+    const payload = {
+      name: kit.name,
+      stops: kit.stops,
+      angle: kit.angle,
+      accent: kit.accent,
+      font: kit.font,
+      logo_url: kit.logoUrl,
+      frame: kit.frame,
+      is_default: data.isDefault,
+      created_by: context.userId,
+    };
+    if (data.id) {
+      const { error } = await context.supabase
+        .from("presentation_brand_kits")
+        .update(payload as never)
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      if (data.isDefault) {
+        await context.supabase
+          .from("presentation_brand_kits")
+          .update({ is_default: false } as never)
+          .neq("id", data.id);
+      }
+      return { id: data.id };
+    }
+    const { data: created, error } = await context.supabase
+      .from("presentation_brand_kits")
+      .insert(payload as never)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    const id = String((created as Row).id);
+    if (data.isDefault) {
+      await context.supabase
+        .from("presentation_brand_kits")
+        .update({ is_default: false } as never)
+        .neq("id", id);
+    }
+    return { id };
+  });
+
+export const deleteBrandKit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertDocumentsStaff(context as never);
+    const { error } = await context.supabase
+      .from("presentation_brand_kits")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ---------------- Каталог шаблонов ---------------- */
+
+/** Создание презентации из шаблона каталога (одним кликом). */
+export const createPresentationFromTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        templateId: z.string().max(60),
+        title: z.string().trim().max(200).optional(),
+        companyId: z.string().uuid().nullable().default(null),
+        quoteId: z.string().uuid().nullable().default(null),
+        brandKit: z.unknown().optional(),
+        photoRich: z.boolean().default(false),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string; slides: number }> => {
+    await assertDocumentsStaff(context as never);
+    const tpl = deckTemplateById(data.templateId);
+    if (!tpl) throw new Error("Шаблон не найден");
+
+    const { deckBrandKit } = await import("@/lib/presentations/deck-templates");
+    const kit = normalizeBrandKit(data.brandKit) ?? deckBrandKit(tpl);
+    const title = (data.title ?? "").trim() || tpl.name;
+
+    const { data: created, error } = await context.supabase
+      .from("presentations")
+      .insert({
+        title,
+        company_id: data.companyId,
+        quote_id: data.quoteId,
+        template: tpl.theme,
+        status: "draft",
+        brand_kit: kit as never,
+        font_family: kit.font,
+        created_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    const id = String((created as Row).id);
+
+    const slides = buildDeckSlides(tpl).map((s, i) => ({
+      presentation_id: id,
+      position: i,
+      type: s.type,
+      title: i === 0 ? title : s.title,
+      subtitle: s.subtitle,
+      image_url: null,
+      content_json: {
+        ...s.content,
+        variant: tuneVariant(tpl.id, s.type, s.content.variant, data.photoRich),
+      } as unknown as Record<string, unknown>,
+      entity_type: null,
+      entity_id: null,
+      quote_item_id: null,
+      is_visible: true,
+    }));
+    const { error: slidesError } = await context.supabase
+      .from("presentation_slides")
+      .insert(slides as never);
+    if (slidesError) throw new Error(slidesError.message);
+
+    return { id, slides: slides.length };
+  });
+
+/** Автоподбор шаблона и оформления по данным КП. */
+export const suggestTemplateForQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { quoteId: string }) => z.object({ quoteId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertDocumentsStaff(context as never);
+    const { loadQuoteStory } = await import("@/lib/presentations/from-quote.server");
+    const story = await loadQuoteStory(context.supabase, data.quoteId);
+    const pick = autoPickTemplate({
+      title: story.meta.title ?? "",
+      labels: story.items.flatMap((i) => [i.title, i.section ?? ""]),
+      itemsCount: story.items.length,
+      photosCount: story.items.reduce((a, i) => a + (i.images?.length ?? 0), 0),
+      total: Number(story.totals?.total ?? 0),
+    });
+    return {
+      templateId: pick.templateId,
+      templateName: pick.template.name,
+      theme: pick.template.theme,
+      brandKitId: pick.template.brandKitId,
+      photoRich: pick.photoRich,
+      reasons: pick.reasons,
+      blueprint: pick.template.blueprint.map((b) => ({
+        type: b.type,
+        variant: tuneVariant(pick.templateId, b.type, b.variant, pick.photoRich),
+        title: b.title ?? "",
+      })),
+    };
+  });
+
+/* ---------------- Отчёт о починке макета ---------------- */
+
+export const logPresentationRepair = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        actions: z
+          .array(z.object({ rule: z.string().max(60), slideTitle: z.string().max(200), detail: z.string().max(300) }))
+          .max(200),
+        issues: z
+          .array(z.object({ code: z.string().max(40), level: z.string().max(10), message: z.string().max(300) }))
+          .max(200),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertDocumentsStaff(context as never);
+    const { error } = await context.supabase.from("audit_log").insert({
+      user_id: context.userId,
+      action: "presentation.repair",
+      table_name: "presentations",
+      record_id: data.id,
+      new_data: { actions: data.actions, issues: data.issues } as never,
+    } as never);
+    if (error) console.error("[logPresentationRepair]", error.message);
+    return { ok: true };
   });

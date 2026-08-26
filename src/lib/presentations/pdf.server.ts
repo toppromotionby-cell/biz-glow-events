@@ -28,6 +28,8 @@ import {
   FULL_BLEED_SHADE, type SpecBlock, type SpecPaint,
 } from "@/lib/presentations/slide-spec";
 import { slideSpec } from "@/lib/presentations/spec";
+import { applyBrandKit } from "@/lib/presentations/brand-kit";
+import { DEFAULT_SLIDE_BACKGROUND } from "@/lib/presentations/model";
 
 
 const W = 960;
@@ -157,8 +159,13 @@ export async function buildPresentationPdf(
   const display = await pdf.embedFont(set.display, { subset: true });
 
   pdf.setTitle(presentation.title);
-  const accentHex = company?.accent_color ?? "#FF7500";
-  const t = themeOf(presentation.template, accentHex);
+  const kit = presentation.brand_kit;
+  const accentHex = kit?.accent ?? company?.accent_color ?? "#FF7500";
+  const t = themeOf(
+    presentation.template,
+    accentHex,
+    applyBrandKit(DEFAULT_SLIDE_BACKGROUND, kit, accentHex).background,
+  );
   const cache = createImageCache();
   const logo = await embedImage(pdf, logoUrl, cache);
   const clientLogo = await embedImage(pdf, clientLogoUrl, cache);
@@ -176,7 +183,11 @@ export async function buildPresentationPdf(
   for (const [index, slide] of visible.entries()) {
     const page = pdf.addPage([W, H]);
     // Фон слайда может быть переопределён — тогда и токены текста считаются от него.
-    const st = themeOf(presentation.template, accentHex, slide.content.background);
+    const st = themeOf(
+      presentation.template,
+      accentHex,
+      applyBrandKit(slide.content.background, kit, accentHex).background,
+    );
     drawBackground(page, st);
     // Список уже отфильтрован и упорядочен в loadPresentationBundle (slidePhotos).
     const sources = slide.resolved_images.length
@@ -338,14 +349,23 @@ function drawSpecBlocks(
       continue;
     }
     if (b.kind === "rect") {
-      page.drawRectangle({
+      const geom = {
         x: b.x * K,
         y: H - (b.y + b.h) * K,
         width: b.w * K,
         height: b.h * K,
-        color: paint(b.color),
-        opacity: b.opacity ?? 1,
-      });
+      };
+      if (b.stroke) {
+        page.drawRectangle({
+          ...geom,
+          borderColor: paint(b.color),
+          borderWidth: b.stroke * K,
+          borderOpacity: b.opacity ?? 1,
+
+        });
+      } else {
+        page.drawRectangle({ ...geom, color: paint(b.color), opacity: b.opacity ?? 1 });
+      }
       continue;
     }
     if (b.kind === "logo") {
@@ -450,6 +470,7 @@ async function drawSlide(a: DrawArgs) {
     index,
     total,
     reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
+    frame: presentation.brand_kit?.frame ?? "none",
   });
 
   drawSpecBlocks(page, spec.blocks, t, fonts, logo, images);
