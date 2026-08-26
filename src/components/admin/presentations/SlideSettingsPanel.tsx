@@ -400,14 +400,22 @@ function SpecsEditor({
 }
 
 function GalleryField({
-  images, layout, enabled, onToggle, onChange, onLayout,
+  images, layout, enabled, fit, anchor, priority,
+  onToggle, onChange, onLayout, onFit, onAnchor, onPriority, onAspect,
 }: {
   images: string[];
   layout: SlideImageLayout;
   enabled: boolean;
+  fit: PhotoFit;
+  anchor: PhotoAnchor;
+  priority: string[];
   onToggle: (v: boolean) => void;
   onChange: (images: string[]) => void;
   onLayout: (v: SlideImageLayout) => void;
+  onFit: (v: PhotoFit) => void;
+  onAnchor: (v: PhotoAnchor) => void;
+  onPriority: (v: string[]) => void;
+  onAspect: (url: string, ratio: number) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
