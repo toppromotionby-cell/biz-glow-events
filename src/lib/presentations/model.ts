@@ -84,7 +84,155 @@ export const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
   text: "Текстовый",
   section: "Разделитель",
   contacts: "Контакты",
+  agenda: "Оглавление / программа",
+  stats: "Цифры и факты",
+  timeline: "Тайминг / этапы",
+  team: "Команда",
+  compare: "Сравнение",
+  gallery: "Галерея / портфолио",
+  quote: "Отзыв / цитата",
+  estimate: "Смета",
+  logos: "Партнёры / логотипы",
+  cta: "Призыв к действию",
 };
+
+/** Короткая подсказка под названием типа в блоке добавления слайда. */
+export const SLIDE_TYPE_HINTS: Record<SlideType, string> = {
+  title: "Обложка презентации",
+  product: "Позиция с фото и ценой",
+  text: "Свободный текст и тезисы",
+  section: "Начало нового блока",
+  contacts: "Телефон, почта, сайт",
+  agenda: "Список разделов встречи",
+  stats: "Ключевые метрики крупно",
+  timeline: "Хронология по этапам",
+  team: "Люди проекта с фото",
+  compare: "Две колонки / пакеты",
+  gallery: "Сетка фотографий",
+  quote: "Слова клиента",
+  estimate: "Позиции и итог",
+  logos: "Клиенты и партнёры",
+  cta: "Следующий шаг",
+};
+
+/** Вариант оформления слайда: 5 раскладок на каждый тип. */
+export type SlideVariant = { id: string; label: string; hint: string };
+
+export const SLIDE_VARIANTS: Record<SlideType, SlideVariant[]> = {
+  title: [
+    { id: "classic", label: "Классика", hint: "Текст слева, воздух справа" },
+    { id: "hero-photo", label: "Фото на весь экран", hint: "Крупный кадр с затемнением" },
+    { id: "split", label: "Split 50/50", hint: "Половина фото, половина текст" },
+    { id: "minimal", label: "Минимал", hint: "По центру, много воздуха" },
+    { id: "bento", label: "Bento", hint: "Обложка из модулей" },
+  ],
+  product: [
+    { id: "classic", label: "Классика", hint: "Фото слева, описание справа" },
+    { id: "hero-top", label: "Фото сверху", hint: "Широкий кадр над текстом" },
+    { id: "gallery", label: "Галерея", hint: "Сетка кадров сбоку" },
+    { id: "price-accent", label: "Акцент на цене", hint: "Крупная плашка стоимости" },
+    { id: "full", label: "Фото на весь слайд", hint: "Текст поверх кадра" },
+  ],
+  text: [
+    { id: "classic", label: "Одна колонка", hint: "Заголовок и текст" },
+    { id: "two-cols", label: "Две колонки", hint: "Текст в два потока" },
+    { id: "checklist", label: "Чек-лист", hint: "Тезисы списком" },
+    { id: "quote", label: "Крупная мысль", hint: "Большая типографика" },
+    { id: "with-photo", label: "С фото", hint: "Иллюстрация сбоку" },
+  ],
+  section: [
+    { id: "classic", label: "Линия", hint: "Тонкий акцент и заголовок" },
+    { id: "number", label: "Номер главы", hint: "Крупная цифра" },
+    { id: "band", label: "Цветная плашка", hint: "Акцентная полоса" },
+    { id: "photo", label: "Фото на весь экран", hint: "Кадр с затемнением" },
+    { id: "minimal", label: "Минимал", hint: "Только заголовок по центру" },
+  ],
+  contacts: [
+    { id: "classic", label: "Карточки 2×2", hint: "Контакты сеткой" },
+    { id: "center", label: "По центру", hint: "Крупно и симметрично" },
+    { id: "columns", label: "Три колонки", hint: "Контакты в ряд" },
+    { id: "band", label: "Полоса", hint: "Акцентная лента снизу" },
+    { id: "split", label: "Split", hint: "Текст слева, контакты справа" },
+  ],
+  agenda: [
+    { id: "numbered", label: "Нумерованный список", hint: "01 · 02 · 03" },
+    { id: "two-cols", label: "Две колонки", hint: "До 10 пунктов" },
+    { id: "cards", label: "Карточки", hint: "Модули с номерами" },
+    { id: "rail", label: "Лента", hint: "Вертикальная линия" },
+    { id: "minimal", label: "Минимал", hint: "Только пункты, много воздуха" },
+  ],
+  stats: [
+    { id: "row3", label: "Три метрики", hint: "Крупно в ряд" },
+    { id: "bento", label: "Bento 2×2", hint: "Модули разного веса" },
+    { id: "giant", label: "Одна цифра", hint: "Гигантское число" },
+    { id: "strip", label: "Полоса", hint: "Метрики лентой" },
+    { id: "cards", label: "Карточки", hint: "Акцентные плашки" },
+  ],
+  timeline: [
+    { id: "horizontal", label: "Горизонталь", hint: "Линия со стопами" },
+    { id: "vertical", label: "Вертикаль", hint: "Список этапов" },
+    { id: "steps", label: "Шаги-карточки", hint: "Модули по этапам" },
+    { id: "numbered", label: "Нумерация", hint: "Крупные цифры этапов" },
+    { id: "compact", label: "Компакт", hint: "Много этапов подряд" },
+  ],
+  team: [
+    { id: "cards3", label: "Три карточки", hint: "Фото, имя, роль" },
+    { id: "grid4", label: "Сетка 4", hint: "Компактные карточки" },
+    { id: "split", label: "Split", hint: "Один человек крупно" },
+    { id: "strip", label: "Лента", hint: "Портреты в ряд" },
+    { id: "minimal", label: "Без фото", hint: "Имена и роли" },
+  ],
+  compare: [
+    { id: "two-cols", label: "Две колонки", hint: "Слева / справа" },
+    { id: "checklist", label: "Чек-лист", hint: "Построчное сравнение" },
+    { id: "before-after", label: "До / после", hint: "Контраст двух состояний" },
+    { id: "accent", label: "С акцентом", hint: "Правая колонка выделена" },
+    { id: "packages", label: "Пакеты", hint: "Карточки тарифов" },
+  ],
+  gallery: [
+    { id: "auto", label: "Авто", hint: "Паттерн под количество фото" },
+    { id: "contact-sheet", label: "Контактный лист", hint: "Ровная сетка" },
+    { id: "bento", label: "Bento", hint: "Герой и модули" },
+    { id: "fullbleed", label: "Во весь слайд", hint: "Без полей" },
+    { id: "captions", label: "С подписями", hint: "Сетка и заголовок" },
+  ],
+  quote: [
+    { id: "center", label: "По центру", hint: "Цитата крупно" },
+    { id: "side-photo", label: "С портретом", hint: "Фото автора сбоку" },
+    { id: "big", label: "Крупная типографика", hint: "Во весь слайд" },
+    { id: "card", label: "Карточка", hint: "Цитата на плашке" },
+    { id: "minimal", label: "Минимал", hint: "Тонко и сдержанно" },
+  ],
+  estimate: [
+    { id: "table", label: "Таблица", hint: "Позиции и суммы" },
+    { id: "total", label: "Таблица + итог", hint: "Акцент на сумме" },
+    { id: "cards", label: "Карточки", hint: "Блоки услуг" },
+    { id: "split", label: "Split", hint: "Список слева, итог справа" },
+    { id: "compact", label: "Компакт", hint: "Много строк" },
+  ],
+  logos: [
+    { id: "grid", label: "Сетка", hint: "Ровные логотипы" },
+    { id: "strip", label: "Лента", hint: "В одну линию" },
+    { id: "rows", label: "Два ряда", hint: "До 12 логотипов" },
+    { id: "cards", label: "Карточки", hint: "Логотипы на плашках" },
+    { id: "minimal", label: "Минимал", hint: "Заголовок и логотипы" },
+  ],
+  cta: [
+    { id: "center", label: "По центру", hint: "Крупный призыв" },
+    { id: "split", label: "Split", hint: "Текст и шаги" },
+    { id: "band", label: "Полоса", hint: "Акцентная лента" },
+    { id: "card", label: "Карточка", hint: "Контакты на плашке" },
+    { id: "steps", label: "Шаги", hint: "Что дальше — по пунктам" },
+  ],
+};
+
+/** Валидный вариант оформления для типа слайда (дефолт — первый). */
+export function slideVariantId(type: SlideType, raw: unknown): string {
+  const list = SLIDE_VARIANTS[type] ?? [];
+  const v = typeof raw === "string" ? raw : "";
+  return list.some((x) => x.id === v) ? v : (list[0]?.id ?? "classic");
+}
+
 
 export const STATUS_LABELS: Record<PresentationStatus, string> = {
   draft: "Черновик",
