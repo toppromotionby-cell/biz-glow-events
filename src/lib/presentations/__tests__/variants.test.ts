@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  SLIDE_TYPE_LABELS, SLIDE_VARIANTS, blankSlide, hasVariants,
+  SLIDE_TYPE_LABELS, SLIDE_VARIANTS, blankSlide,
   type PresentationSlide, type SlideType,
 } from "@/lib/presentations/model";
 import { SLIDE_H, SLIDE_W } from "@/lib/presentations/design";
@@ -16,11 +16,11 @@ function demoSlide(type: SlideType, variant: string): PresentationSlide {
   s.subtitle = "Y2K nostalgia party";
   s.content = {
     ...s.content,
-    text: "Первый абзац описания идеи.\nВторой абзац с деталями площадки.\nТретий абзац про технику.",
+    description: "Первый абзац описания идеи.\nВторой абзац с деталями площадки.\nТретий абзац про технику.",
     images: ["a.jpg", "b.jpg", "c.jpg"],
     price: 12800,
-    unit: "усл.",
-    items: ["Площадка", "Декор", "Звук и свет", "Ведущий"],
+    priceUnit: "усл.",
+    includes: ["Площадка", "Декор", "Звук и свет", "Ведущий"],
     specs: [
       { label: "Гостей", value: "120" },
       { label: "Длительность", value: "6 ч" },
@@ -51,7 +51,6 @@ describe("варианты слайдов", () => {
       const list = SLIDE_VARIANTS[t];
       expect(list.length, t).toBe(5);
       expect(new Set(list.map((v) => v.id)).size, t).toBe(5);
-      expect(hasVariants(t), t).toBe(true);
     }
   });
 
@@ -62,11 +61,11 @@ describe("варианты слайдов", () => {
           specOf(t, v.id).blocks.map((b) =>
             b.kind === "shade"
               ? ["shade", b.from, b.alpha]
-              : b.kind === "logo"
-                ? ["logo", Math.round(b.x), Math.round(b.y)]
+              : b.kind === "circle"
+                ? ["circle", Math.round(b.cx), Math.round(b.cy), Math.round(b.r)]
                 : b.kind === "text"
                   ? ["text", Math.round(b.x), Math.round(b.y), Math.round(b.w), Math.round(b.size)]
-                  : [b.kind, Math.round(b.x), Math.round(b.y)],
+                  : [b.kind, Math.round(b.x), Math.round(b.y), Math.round(b.w)],
           ),
         ),
       );
@@ -79,7 +78,7 @@ describe("варианты слайдов", () => {
     for (const t of types) {
       for (const v of SLIDE_VARIANTS[t]) {
         for (const b of specOf(t, v.id).blocks) {
-          if (b.kind === "shade") continue;
+          if (b.kind === "shade" || b.kind === "circle") continue;
           expect(b.x, `${t}/${v.id} ${b.kind}: слева`).toBeGreaterThanOrEqual(-slack);
           expect(b.y, `${t}/${v.id} ${b.kind}: сверху`).toBeGreaterThanOrEqual(-slack);
           expect(b.x + b.w, `${t}/${v.id} ${b.kind}: справа`).toBeLessThanOrEqual(SLIDE_W + slack);
