@@ -89,6 +89,10 @@ export type PromoItem = {
   multiplier: number;
   price: number;
   cost: number;
+  /** Режим ввода себестоимости: сумма или процент от цены. */
+  cost_mode: CostMode;
+  /** Введённое значение себестоимости в выбранном режиме. */
+  cost_input: number;
   note: string;
   includes: QuoteItemInclude[];
   exclude_from_commission: boolean;
