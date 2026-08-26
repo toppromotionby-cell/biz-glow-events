@@ -63,6 +63,7 @@ import { buildEconomics, normalizeCostMode } from "@/lib/documents/economics";
 import { promoEconRows } from "@/lib/documents/economics-source";
 import { buildEconomicsSheetBody, ECON_SHEET_CSS } from "@/lib/documents/economics-sheet";
 import { buildPromoQuoteBody, PROMO_DOC_CSS } from "@/lib/documents/promo-quote-html";
+import { buildMarginCols, MARGIN_COLS_CSS } from "@/lib/documents/margin-cols";
 import { sheetCss } from "@/lib/documents/sheet";
 import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
 import { A4Sheet } from "@/components/admin/documents/A4Sheet";
@@ -133,6 +134,8 @@ function EditorPage() {
   const canCost = can("documents.cost_margin");
   const [showCostRaw, setShowCost] = useState(false);
   const [internalView, setInternalView] = useState(false);
+  // Альбомный лист с колонками «Себестоимость / Прибыль / %» прямо в КП.
+  const [wideMargin, setWideMargin] = useState(false);
   const showCost = showCostRaw && canCost;
   const [snippetDraft, setSnippetDraft] = useState<{ name: string; section: string; items: PromoItem[] } | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -309,8 +312,16 @@ function EditorPage() {
     [checks, items],
   );
   const previewHtml = useMemo(
-    () => (quote ? buildPromoQuoteBody(quote, items, { editable: inlineEdit, companyLine, checks: previewChecks }) : ""),
-    [quote, items, inlineEdit, companyLine, previewChecks],
+    () =>
+      quote
+        ? buildPromoQuoteBody(quote, items, {
+            editable: inlineEdit,
+            companyLine,
+            checks: previewChecks,
+            ...(canCost && wideMargin && !internalView ? { margin: buildMarginCols(promoEconRows(items)) } : {}),
+          })
+        : "",
+    [quote, items, inlineEdit, companyLine, previewChecks, canCost, wideMargin, internalView],
   );
   // Внутренний вид превью: себестоимость и прибыль по каждой строке.
   const internalHtml = useMemo(
@@ -328,6 +339,7 @@ function EditorPage() {
     [quote, items, canCost, internalView],
   );
   const showInternal = canCost && internalView;
+  const wideLand = canCost && wideMargin && !internalView;
 
 
 
@@ -741,8 +753,8 @@ function EditorPage() {
         rightPanel={<PromoTotalsPanel quote={quote} totals={totals} showMargin={showCost} />}
         sheet={() => (
           <>
-            <style>{showInternal ? ECON_SHEET_CSS : PROMO_DOC_CSS}</style>
-            <A4Sheet ref={sheetRef}>
+            <style>{showInternal ? ECON_SHEET_CSS : PROMO_DOC_CSS + MARGIN_COLS_CSS}</style>
+            <A4Sheet ref={sheetRef} orientation={wideLand ? "landscape" : "portrait"}>
               <div dangerouslySetInnerHTML={{ __html: showInternal ? internalHtml : previewHtml }} />
             </A4Sheet>
           </>

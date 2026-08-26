@@ -52,6 +52,7 @@ import {
 } from "@/lib/quotes-model";
 import { friendlyZodMessage } from "@/lib/admin/zod-message";
 import { buildQuoteHtmlDoc, quoteNumberDisplay } from "@/lib/documents/quote-html";
+import { buildMarginCols } from "@/lib/documents/margin-cols";
 import { QuoteBlocksEditor } from "@/components/admin/quotes/QuoteBlocksEditor";
 import { QuoteItemsPanel } from "@/components/admin/quotes/QuoteItemsPanel";
 import { QuoteShareActions, QuoteShareStatus, type ShareState } from "@/components/admin/quotes/QuoteShareActions";
@@ -208,6 +209,8 @@ function Page() {
   const canCost = can("documents.cost_margin");
   const [showCostRaw, setShowCost] = useState(true);
   const [internalView, setInternalView] = useState(false);
+  // Альбомный лист с колонками «Себестоимость / Прибыль / %» прямо в КП.
+  const [wideMargin, setWideMargin] = useState(false);
   const showCost = showCostRaw && canCost;
   const [templateOpen, setTemplateOpen] = useState(false);
   const dirtyRef = useRef(false);
@@ -336,9 +339,12 @@ function Page() {
         ? buildQuoteHtmlDoc({ ...quote, total: totals.total }, items, settings, {
             editable: inlineEdit,
             checks: previewChecks,
+            ...(canCost && wideMargin && !internalView
+              ? { margin: buildMarginCols(quoteEconRows(items)), landscape: true }
+              : {}),
           })
         : "",
-    [quote, items, settings, totals, inlineEdit, previewChecks],
+    [quote, items, settings, totals, inlineEdit, previewChecks, canCost, wideMargin, internalView],
   );
   // Внутренний вид превью: себестоимость и прибыль по каждой строке.
   const internalHtml = useMemo(
@@ -952,6 +958,12 @@ function Page() {
             <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
               <Switch checked={internalView} onCheckedChange={setInternalView} />
               <span className="flex items-center gap-1"><Calculator className="h-3.5 w-3.5" />Внутренний вид (себестоимость и прибыль)</span>
+            </label>
+          )}
+          {canCost && !internalView && (
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Switch checked={wideMargin} onCheckedChange={setWideMargin} />
+              <span>Альбом + маржа</span>
             </label>
           )}
           <DetachedPreviewButton html={previewHtml} title={`Превью · ${quote.title || "КП"}`} />
