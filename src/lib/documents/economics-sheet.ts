@@ -83,9 +83,10 @@ export function buildEconomicsSheetBody(meta: EconSheetMeta, econ: Economics): s
   </div>
   <table>
     <thead><tr>
-      <th>Позиция</th><th class="num">Кол-во</th><th class="num">Цена</th><th class="num">Себест./ед.</th>
-      <th class="num">Сумма в КП</th><th class="num">Себестоимость</th><th class="num">Прибыль</th><th class="num">%</th>
+      <th>Позиция</th><th class="num">Кол-во</th><th class="num">Цена, BYN</th><th class="num">С/с ед., BYN</th>
+      <th class="num">Сумма, BYN</th><th class="num">С/с, BYN</th><th class="num">Прибыль, BYN</th><th class="num">%</th>
     </tr></thead>
+
     <tbody>${rows || `<tr><td colspan="8" class="muted" style="padding:22px;text-align:center">Позиции не добавлены</td></tr>`}</tbody>
     <tfoot><tr>
       <td>Итого</td><td colspan="3"></td>
