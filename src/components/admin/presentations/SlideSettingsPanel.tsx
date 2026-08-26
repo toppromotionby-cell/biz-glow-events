@@ -444,6 +444,8 @@ function GalleryField({
     const merged = Array.from(new Set([...images, ...next].map((v) => v.trim()).filter(Boolean)));
     if (merged.length > MAX_IMAGES) toast.info(`На слайд помещается не более ${MAX_IMAGES} фото`);
     onChange(merged.slice(0, MAX_IMAGES));
+    // Добавили фото — сразу показываем их на слайде: иначе снимки «пропадают».
+    if (merged.length && !enabled) onToggle(true);
   };
 
   const upload = async (files: File[]) => {
@@ -486,8 +488,18 @@ function GalleryField({
         <Toggle checked={enabled} onChange={onToggle} />
       </div>
 
+      {images.length > 0 && !enabled && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-2.5">
+          <div className="min-w-0 text-xs">
+            <div className="font-medium">Фото не отображаются на слайде</div>
+            <div className="text-muted-foreground">Показ фото выключен — снимки не попадут в превью и PDF</div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => onToggle(true)}>Показать</Button>
+        </div>
+      )}
+
       {images.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className={`grid grid-cols-2 gap-2 ${enabled ? "" : "opacity-50"}`}>
           {images.map((src, i) => (
             <GalleryThumb
               key={`${src}-${i}`}
