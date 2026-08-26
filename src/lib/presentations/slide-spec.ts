@@ -2,6 +2,7 @@
 // контакты), футера и затемнения под фото — в координатах холста 1280×720.
 // Один и тот же спек рисуют превью (SlideCanvas) и PDF (pdf.server), поэтому
 // документ выглядит одинаково на экране и в файле.
+import type { PhotoAnchor, PhotoFit } from "@/lib/presentations/photo-fit";
 import { GRID, SLIDE_H, SLIDE_W, type TypeScale } from "@/lib/presentations/design";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import {
@@ -67,6 +68,11 @@ export type SpecImage = {
   w: number;
   h: number;
   radius: number;
+  /** Правило кадрирования — одинаковое в превью и PDF. */
+  fit: PhotoFit;
+  anchor: PhotoAnchor;
+  /** Автоподпись/alt-текст для доступности и юзабилити. */
+  alt: string;
 };
 
 /** Затемнение снизу под текстом (фото на весь слайд). */

@@ -12,6 +12,7 @@ import {
   partTextScale,
   type PresentationSlide, type SlideLayoutOverrides, type TextAlignX,
 } from "@/lib/presentations/model";
+import { photoAlt } from "@/lib/presentations/captions";
 import { measureText, wrapText } from "@/lib/presentations/text-metrics";
 import { FULL_BLEED_SHADE, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
 
@@ -112,6 +113,14 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
       w: f.w,
       h: f.h,
       radius: fullEdge ? 0 : GRID.radius,
+      fit: c.photoFit ?? "cover",
+      anchor: c.photoAnchor ?? "center",
+      alt: photoAlt({
+        slideTitle: slide.title,
+        context: slide.subtitle,
+        index: i,
+        total: layout.photos.length,
+      }),
     });
   });
 
