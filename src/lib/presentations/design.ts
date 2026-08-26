@@ -1,13 +1,14 @@
 // Единая дизайн-система слайдов презентации.
 // Холст 1280×720 (16:9) = пропорции стандартных 1920×1080, делённые на 1.5.
 // Здесь живут сетка, шкала кеглей, ступени плотности, темы и автораскладка
-// фотографий (1–5). Модуль клиент-безопасный: используется в превью, PDF и превью.
+// фотографий (1–15). Модуль клиент-безопасный: используется в превью, PDF и превью.
 import {
   clampNum, DEFAULT_LAYOUT_OVERRIDES, PHOTO_SCALE_MAX, PHOTO_SCALE_MIN,
   PRICE_SCALE_MAX, PRICE_SCALE_MIN,
   type PhotoZone, type PresentationSlide, type PresentationTemplate,
   type PriceZone, type SlideBackground, type SlideImageLayout,
 } from "@/lib/presentations/model";
+import { photoFrames } from "@/lib/presentations/photo-grid";
 
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
@@ -360,12 +361,12 @@ export function slideTheme(
 /* Автораскладка фотографий                                            */
 /* ------------------------------------------------------------------ */
 
-export const MAX_SLIDE_PHOTOS = 5;
+export const MAX_SLIDE_PHOTOS = 15;
 
 export type PhotoPlacement = "none" | "left" | "right" | "top" | "full";
 
 export type SlideLayout = {
-  /** Фото, попавшие на слайд (не более 5). */
+  /** Фото, попавшие на слайд (не более 15). */
   photos: string[];
   placement: PhotoPlacement;
   /** Область под фото в координатах холста. */
