@@ -147,7 +147,7 @@ export function checkPresentation(slides: PresentationSlide[]): IntegrityReport 
         if (!r) continue;
         const out =
           r.x < -1 || r.y < -1 ||
-          r.x + r.w > SLIDE_W + 1 || r.y + r.h > SLIDE_H + GRID.marginY;
+          r.x + r.w > SLIDE_W + 1 || r.y + r.h > SLIDE_H + GRID.marginBottom;
         if (out) {
           push("out-of-bounds", "error", `Блок «${String(b.kind)}» выходит за границы слайда`, true);
           break;
