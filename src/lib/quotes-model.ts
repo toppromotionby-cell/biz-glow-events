@@ -13,6 +13,7 @@ import {
 import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
+import { normalizeCostMode, resolveUnitCost, type CostMode } from "@/lib/documents/economics";
 
 export * from "@/lib/quote-blocks";
 export * from "@/lib/documents/vat";
