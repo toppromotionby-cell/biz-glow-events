@@ -14,6 +14,7 @@ export type SheetSyncRow = { id: string; kind: "added" | "changed" | "removed" }
 
 export type SheetSyncState<Row extends SheetSyncRow> = {
   connected?: boolean;
+  url?: string | null;
   syncedAt?: string | null;
   error?: string | null;
   diff?: Row[];
@@ -64,6 +65,7 @@ export function SheetSyncPanel<Row extends SheetSyncRow>({
   const [busy, setBusy] = useState(false);
   const [compare, setCompare] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const { data, refetch, isFetching } = useQuery({
     queryKey,
@@ -76,10 +78,13 @@ export function SheetSyncPanel<Row extends SheetSyncRow>({
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
+    setLocalError(null);
     try {
       await fn();
     } catch (e) {
-      toast.error((e as Error).message);
+      const msg = (e as Error).message || "Не удалось выполнить действие";
+      setLocalError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -133,9 +138,24 @@ export function SheetSyncPanel<Row extends SheetSyncRow>({
           </span>
         )}
         <div className="ml-auto flex flex-wrap gap-2">
+          {data?.connected && data.url && (
+            <Button asChild size="sm" variant="outline">
+              <a href={data.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-1.5" />Открыть таблицу
+              </a>
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={onOpenSheet} disabled={busy}>
-            <ExternalLink className="h-4 w-4 mr-1.5" />
-            {data?.connected ? "Открыть таблицу" : createLabel}
+            {busy ? (
+              <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <ExternalLink className="h-4 w-4 mr-1.5" />
+            )}
+            {busy
+              ? "Создаём таблицу…"
+              : data?.connected
+                ? "Пересоздать и открыть"
+                : createLabel}
           </Button>
           {data?.connected && (
             <>
@@ -152,9 +172,10 @@ export function SheetSyncPanel<Row extends SheetSyncRow>({
 
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
 
-      {data?.error && (
-        <p className="text-xs text-destructive flex items-center gap-1.5">
-          <AlertTriangle className="h-3.5 w-3.5" />{data.error}
+      {(localError || data?.error) && (
+        <p className="text-xs text-destructive flex items-start gap-1.5">
+          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <span>{localError || data?.error}</span>
         </p>
       )}
 
@@ -168,7 +189,7 @@ export function SheetSyncPanel<Row extends SheetSyncRow>({
         </button>
       )}
 
-      {data?.connected && diff.length === 0 && !data.error && (
+      {data?.connected && diff.length === 0 && !data.error && !localError && (
         <p className="text-xs text-muted-foreground">Расхождений с таблицей нет.</p>
       )}
 
