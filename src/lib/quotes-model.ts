@@ -608,6 +608,8 @@ export function emptyQuoteItem(quoteId: string, sortOrder: number, init?: Partia
     unit: "шт.",
     price: 0,
     cost: 0,
+    cost_mode: "amount",
+    cost_input: 0,
     sort_order: sortOrder,
     entity_type: null,
     entity_id: null,
