@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 // Единый рендер слайда презентации 16:9 (1280×720) — используется в
 // миниатюрах, крупном предпросмотре и показе. Масштабируется через transform.
 // Сетка, кегли и раскладка фото берутся из design.ts / fit.ts, поэтому
