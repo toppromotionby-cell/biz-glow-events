@@ -577,11 +577,16 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
 }
 
 export function normalizeItem(row: Record<string, unknown>): QuoteItem {
+  const price = num(row.price);
+  const cost_mode = normalizeCostMode(row.cost_mode);
+  const cost_input = num(row.cost_input, cost_mode === "percent" ? 0 : num(row.cost));
   return {
     ...(row as unknown as QuoteItem),
     qty: num(row.qty, 1),
-    price: num(row.price),
-    cost: num(row.cost),
+    price,
+    cost_mode,
+    cost_input,
+    cost: resolveUnitCost(price, cost_mode, cost_input, row.cost),
     sort_order: Math.trunc(num(row.sort_order)),
     section: String(row.section ?? ""),
     description: String(row.description ?? ""),
