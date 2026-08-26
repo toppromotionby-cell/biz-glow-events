@@ -356,7 +356,7 @@ export function buildQuoteHtmlDoc(
 
   const tableBody = [...sections.entries()]
     .map(([section, rows]) => {
-      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="5">${escw(section)}</td></tr>` : "";
+      const head = section ? `<tr class="section-row"${ed("section", section, "Раздел")}><td colspan="${COLS}">${escw(section)}</td></tr>` : "";
       const body = rows
         .map((it, i) => {
           const rowChecks = checksByItem.get(it.id) ?? [];
