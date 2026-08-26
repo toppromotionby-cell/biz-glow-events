@@ -414,8 +414,11 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     const pillW = sumW + gap + measureText(unit, unitSize, "body") + padX * 2;
     const pillH = sumSize * 1.25 + padY * 2;
     const pb = layout.priceBox;
-    const px = pb ? pb.x : x + offsetX(baseAlign, w, pillW);
-    const py = pb ? pb.y : y + ts.blockGap;
+    // Плашка не должна вылезать за правый край слайда даже при крупном акценте.
+    const rawX = pb ? pb.x : x + offsetX(baseAlign, w, pillW);
+    const px = Math.max(GRID.marginX, Math.min(rawX, SLIDE_W - GRID.marginX - pillW));
+    const rawY = pb ? pb.y : y + ts.blockGap;
+    const py = Math.max(GRID.marginTop, Math.min(rawY, SLIDE_H - GRID.marginBottom - pillH));
 
     blocks.push({
       kind: "rect", x: px, y: py, w: pillW, h: pillH,
@@ -430,7 +433,7 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
       kind: "text",
       x: px + padX + sumW + gap,
       y: py + padY + (sumSize - unitSize) * 0.9,
-      w: pillW,
+      w: Math.max(0, pillW - padX * 2 - sumW - gap),
       size: unitSize,
       lineHeight: 1.25,
       font: "body",

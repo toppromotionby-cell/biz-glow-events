@@ -25,10 +25,9 @@ import {
 } from "@/lib/documents/image-embed.server";
 
 import {
-  FULL_BLEED_SHADE, staticSlideSpec, type SpecBlock, type SpecPaint,
+  FULL_BLEED_SHADE, type SpecBlock, type SpecPaint,
 } from "@/lib/presentations/slide-spec";
-import { contentSlideSpec } from "@/lib/presentations/content-spec";
-import { isLayoutSlideType, layoutSlideSpec } from "@/lib/presentations/blocks";
+import { slideSpec } from "@/lib/presentations/spec";
 
 
 const W = 960;
@@ -438,55 +437,29 @@ async function drawSlide(a: DrawArgs) {
   };
 
 
-  if (isLayoutSlideType(slide.type)) {
-    const blocks = layoutSlideSpec({
-      slide,
-      ts: slideFit.type,
-      brandName: brand,
-      footerLogo: plan.brand?.slot === "footer" && !!logo,
-      index,
-      total,
-    });
-    drawSpecBlocks(page, blocks, t, fonts, logo, images);
-    drawClientLogo();
-    if (logo && plan.brand) drawPlannedLogo(page, logo, plan.brand);
-    return;
-  }
-
-  if (slide.type === "title" || slide.type === "section" || slide.type === "contacts") {
-    const heroPlan = plan.brand?.slot === "hero" ? plan.brand : null;
-    const blocks = staticSlideSpec({
-      slide,
-      ts: slideFit.type,
-      company,
-      presentationTitle: presentation.title,
-      brandName: brand,
-      heroLogo: logo && heroPlan ? { w: heroPlan.maxW, h: heroPlan.maxH } : null,
-      dateLabel: slide.type === "title" ? formatSlideDate() : "",
-      layout: slideFit.layout,
-    });
-    drawSpecBlocks(page, blocks, t, fonts, logo, images);
-    drawClientLogo();
-    if (logo && plan.brand && plan.brand.slot !== "hero") drawPlannedLogo(page, logo, plan.brand);
-    if (slide.type !== "title") footer(slideFit.type.caption * (W / SLIDE_W));
-    return;
-  }
-
-
-  // Контентный слайд: рисуем ровно тот же спек, что и превью на экране.
-  const blocks = contentSlideSpec({
+  const heroPlan = plan.brand?.slot === "hero" ? plan.brand : null;
+  const spec = slideSpec({
     slide,
     fit: slideFit,
+    company,
+    presentationTitle: presentation.title,
     brandName: brand,
+    heroLogo: logo && heroPlan ? { w: heroPlan.maxW, h: heroPlan.maxH } : null,
     footerLogo: plan.brand?.slot === "footer" && !!logo,
+    dateLabel: formatSlideDate(),
     index,
     total,
     reserved: [logoReserveRect(plan.client), logoReserveRect(plan.brand)],
   });
-  drawSpecBlocks(page, blocks, t, fonts, logo, images);
+
+  drawSpecBlocks(page, spec.blocks, t, fonts, logo, images);
 
   // Логотипы: ровно один логотип компании и один клиента, слоты уже посчитаны.
   drawClientLogo();
-  if (logo && plan.brand) drawPlannedLogo(page, logo, plan.brand);
+  if (logo && plan.brand && !(spec.kind === "static" && plan.brand.slot === "hero")) {
+    drawPlannedLogo(page, logo, plan.brand);
+  }
+  if (spec.footer) footer();
 }
+
 
