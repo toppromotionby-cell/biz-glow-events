@@ -404,11 +404,31 @@ export function slidePhotos(slide: PresentationSlide): string[] {
   if (!c.showImage) return [];
   const list = [...c.images];
   if (slide.image_url && !list.includes(slide.image_url)) list.unshift(slide.image_url);
-  return list.filter(Boolean).slice(0, MAX_SLIDE_PHOTOS);
+  const all = list.filter(Boolean);
+  // «Главные» фото уходят в начало: первые слоты любой раскладки — самые
+  // заметные (герой, крупная плитка bento), поэтому приоритет соблюдается
+  // одинаково в превью, PDF и экспорте.
+  const priority = (c.photoPriority ?? []).filter((u) => all.includes(u)).slice(0, 3);
+  const ordered = priority.length
+    ? [...priority, ...all.filter((u) => !priority.includes(u))]
+    : all;
+  return ordered.slice(0, MAX_SLIDE_PHOTOS);
 }
 
-function splitFrames(box: Rect, count: number): Rect[] {
-  return photoFrames(box, count, { gap: GRID.photoGap });
+/** Пропорции фотографий в порядке слайда (для автоподбора паттерна). */
+export function slidePhotoAspects(slide: PresentationSlide): (number | undefined)[] {
+  const map = slide.content.photoAspect ?? {};
+  return slidePhotos(slide).map((u) => {
+    const v = map[u];
+    return Number.isFinite(v) && v > 0 ? v : undefined;
+  });
+}
+
+function splitFrames(box: Rect, count: number, slide?: PresentationSlide): Rect[] {
+  return photoFrames(box, count, {
+    gap: GRID.photoGap,
+    aspects: slide ? slidePhotoAspects(slide) : undefined,
+  });
 }
 
 
@@ -583,7 +603,7 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
       photos,
       placement,
       photoBox: box,
-      frames: splitFrames(box, photos.length),
+      frames: splitFrames(box, photos.length, slide),
       textBox: withWidth({
         x: GRID.marginX,
         y: contentTop + h + 28,
@@ -608,6 +628,6 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
       : { x: GRID.marginX, y: contentTop, w: SLIDE_W - photoW - gap - GRID.marginX, h: contentH },
   );
 
-  return done({ photos, placement, photoBox: box, frames: splitFrames(box, photos.length), textBox });
+  return done({ photos, placement, photoBox: box, frames: splitFrames(box, photos.length, slide), textBox });
 
 }
