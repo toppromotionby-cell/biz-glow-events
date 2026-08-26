@@ -711,28 +711,106 @@ export function draftSlideId(): string {
   return `new-${Date.now()}-${localSeq}`;
 }
 
-export function blankSlide(type: SlideType, position: number): PresentationSlide {
-  const titles: Record<SlideType, string> = {
-    title: "Титульный слайд",
-    product: "Новая позиция",
-    text: "Заголовок слайда",
-    section: "Новый раздел",
-    contacts: "Свяжитесь с нами",
-  };
+const SLIDE_SEED: Record<SlideType, { title: string; subtitle?: string; content?: Partial<SlideContent> }> = {
+  title: { title: "Титульный слайд" },
+  product: { title: "Новая позиция" },
+  text: { title: "Заголовок слайда" },
+  section: { title: "Новый раздел" },
+  contacts: { title: "Свяжитесь с нами" },
+  agenda: {
+    title: "Программа",
+    content: { includes: ["Знакомство и задача", "Концепция", "Площадка и тайминг", "Смета", "Следующие шаги"] },
+  },
+  stats: {
+    title: "Цифры проекта",
+    content: {
+      specs: [
+        { label: "Гостей", value: "350" },
+        { label: "Площадок", value: "3" },
+        { label: "Часов шоу", value: "6" },
+      ],
+    },
+  },
+  timeline: {
+    title: "Тайминг мероприятия",
+    content: {
+      specs: [
+        { label: "17:00", value: "Сбор гостей, велком-зона" },
+        { label: "18:00", value: "Официальная часть" },
+        { label: "19:30", value: "Шоу-программа" },
+        { label: "22:00", value: "Финал и афтепати" },
+      ],
+    },
+  },
+  team: {
+    title: "Команда проекта",
+    content: {
+      specs: [
+        { label: "Имя Фамилия", value: "Продюсер" },
+        { label: "Имя Фамилия", value: "Арт-директор" },
+        { label: "Имя Фамилия", value: "Технический директор" },
+      ],
+    },
+  },
+  compare: {
+    title: "Сравнение вариантов",
+    content: {
+      includes: ["Базовый", "Расширенный"],
+      specs: [
+        { label: "Сцена 6×4 м", value: "Сцена 10×6 м" },
+        { label: "Свет: базовый комплект", value: "Свет: полный райдер" },
+        { label: "Звук до 200 гостей", value: "Звук до 500 гостей" },
+      ],
+    },
+  },
+  gallery: { title: "Портфолио" },
+  quote: {
+    title: "Отзыв клиента",
+    subtitle: "Имя Фамилия, компания",
+    content: { description: "Команда собрала мероприятие под ключ и держала тайминг до минуты." },
+  },
+  estimate: {
+    title: "Смета",
+    content: {
+      specs: [
+        { label: "Техническое обеспечение", value: "12 000 BYN" },
+        { label: "Шоу-программа", value: "8 000 BYN" },
+        { label: "Декор и застройка", value: "6 500 BYN" },
+      ],
+    },
+  },
+  logos: { title: "Нам доверяют" },
+  cta: {
+    title: "Готовы начать?",
+    subtitle: "Забронируем дату и соберём финальную смету",
+    content: { includes: ["Согласуем концепцию", "Фиксируем дату", "Подписываем договор"] },
+  },
+};
+
+export function blankSlide(type: SlideType, position: number, variant?: string): PresentationSlide {
+  const seed = SLIDE_SEED[type];
   return {
     id: draftSlideId(),
     position,
     type,
-    title: titles[type],
-    subtitle: "",
+    title: seed.title,
+    subtitle: seed.subtitle ?? "",
     image_url: null,
-    content: { ...EMPTY_CONTENT, includes: [], specs: [], images: [] },
+    content: {
+      ...EMPTY_CONTENT,
+      includes: [],
+      specs: [],
+      images: [],
+      ...seed.content,
+      variant: slideVariantId(type, variant),
+    },
     entity_type: null,
     entity_id: null,
     quote_item_id: null,
     is_visible: true,
   };
 }
+
 
 /** Отображаемое имя файла экспорта: Prezentatsiya_Nazvanie_2026-06-22.pdf */
 export function presentationFileName(title: string, ext: "pdf"): string {
