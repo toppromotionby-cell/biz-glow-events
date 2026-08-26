@@ -115,6 +115,14 @@ export const SLIDE_TYPE_HINTS: Record<SlideType, string> = {
   cta: "Следующий шаг",
 };
 
+/** Группы типов слайда для компактного меню добавления. */
+export const SLIDE_TYPE_GROUPS: { label: string; types: SlideType[] }[] = [
+  { label: "Основные", types: ["title", "text", "product", "section"] },
+  { label: "Структура", types: ["agenda", "timeline", "compare", "estimate"] },
+  { label: "Доказательства", types: ["stats", "gallery", "team", "quote", "logos"] },
+  { label: "Финал", types: ["cta", "contacts"] },
+];
+
 /** Вариант оформления слайда: 5 раскладок на каждый тип. */
 export type SlideVariant = { id: string; label: string; hint: string };
 

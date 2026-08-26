@@ -51,7 +51,7 @@ import { DocStatusBar, type DocCheckLike } from "@/components/admin/documents/Do
 import { PresentationFullscreen } from "@/components/admin/presentations/PresentationFullscreen";
 import { checkAgainstQuote, type QuoteItemLite } from "@/lib/presentations/check";
 import {
-  SLIDE_TYPE_HINTS, SLIDE_TYPE_LABELS, SLIDE_VARIANTS, STATUS_LABELS, TEMPLATE_LABELS, blankSlide,
+  SLIDE_TYPE_GROUPS, SLIDE_TYPE_HINTS, SLIDE_TYPE_LABELS, STATUS_LABELS, TEMPLATE_LABELS, blankSlide,
   type Presentation, type PresentationSlide, type PresentationStatus,
   type PresentationTemplate, type SlideBackground, type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
@@ -234,7 +234,7 @@ function Page() {
     setDirty(true);
   };
 
-  const [variantPickerFor, setVariantPickerFor] = useState<SlideType | null>(null);
+  const [slideSearch, setSlideSearch] = useState("");
 
   const addSlide = (type: SlideType, variant?: string) => {
     const next = blankSlide(type, slides.length, variant);
@@ -561,40 +561,43 @@ function Page() {
     <div className="space-y-3">
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">Добавить слайд</p>
-        <div className="space-y-1.5">
-          {(Object.keys(SLIDE_TYPE_LABELS) as SlideType[]).map((t) => (
-            <div key={t} className="rounded-lg border border-border/60 bg-muted/20">
-              <button
-                type="button"
-                onClick={() => setVariantPickerFor((prev) => (prev === t ? null : t))}
-                className="flex w-full items-start gap-2 px-2 py-2 text-left text-xs font-medium transition hover:bg-primary/5"
-              >
-                <Plus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                <span className="min-w-0">
-                  <span className="block truncate">{SLIDE_TYPE_LABELS[t]}</span>
-                  <span className="block truncate text-[11px] font-normal text-muted-foreground">
-                    {SLIDE_TYPE_HINTS[t]}
-                  </span>
-                </span>
-              </button>
-              {variantPickerFor === t && (
-                <div className="grid gap-1 border-t border-border/60 p-1.5">
-                  {SLIDE_VARIANTS[t].map((v) => (
+        <Input
+          value={slideSearch}
+          onChange={(e) => setSlideSearch(e.target.value)}
+          placeholder="Поиск типа слайда"
+          className="mb-2 h-8 text-xs"
+        />
+        <div className="space-y-2">
+          {SLIDE_TYPE_GROUPS.map((g) => {
+            const items = g.types.filter((t) =>
+              !slideSearch.trim() ||
+              `${SLIDE_TYPE_LABELS[t]} ${SLIDE_TYPE_HINTS[t]}`.toLowerCase().includes(slideSearch.trim().toLowerCase()),
+            );
+            if (!items.length) return null;
+            return (
+              <div key={g.label}>
+                <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground/70">{g.label}</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {items.map((t) => (
                     <button
-                      key={v.id}
+                      key={t}
                       type="button"
-                      onClick={() => { addSlide(t, v.id); setVariantPickerFor(null); }}
-                      className="rounded-md px-2 py-1.5 text-left text-[11px] transition hover:bg-primary/10"
+                      title={SLIDE_TYPE_HINTS[t]}
+                      onClick={() => addSlide(t)}
+                      className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-2 py-1.5 text-left text-[11px] font-medium transition hover:border-primary/40 hover:bg-primary/5"
                     >
-                      <span className="font-medium">{v.label}</span>
-                      <span className="ml-1 text-muted-foreground">· {v.hint}</span>
+                      <Plus className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span className="truncate">{SLIDE_TYPE_LABELS[t]}</span>
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
+        <p className="mt-1.5 text-[10px] text-muted-foreground">
+          Вариант оформления выбирается справа, в настройках слайда.
+        </p>
       </div>
       <div>
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">Каталог сайта</p>

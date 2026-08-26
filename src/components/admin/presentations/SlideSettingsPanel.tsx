@@ -12,9 +12,10 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useResolvedUrl } from "@/components/StorageMedia";
+import { VariantPicker } from "@/components/admin/presentations/VariantPicker";
 import {
   DEFAULT_LAYOUT_OVERRIDES, DEFAULT_SLIDE_BACKGROUND, IMAGE_LAYOUT_LABELS, MAX_IMAGES,
-  SLIDE_TYPE_LABELS, SLIDE_VARIANTS, slideVariantId, isAutoLayout, normalizeHexColor,
+  SLIDE_TYPE_LABELS, slideVariantId, isAutoLayout, normalizeHexColor,
   type PresentationSlide, type SlideBackground, type SlideContent, type SlideImageLayout,
   type SlideLayoutOverrides, type SlideType,
 } from "@/lib/presentations/model";
@@ -58,17 +59,11 @@ export function SlideSettingsPanel({
 
       <div className="space-y-1.5">
         <Label>Оформление слайда</Label>
-        <Select
+        <VariantPicker
+          type={slide.type}
           value={slideVariantId(slide.type, c.variant)}
-          onValueChange={(v) => setContent({ variant: v })}
-        >
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {SLIDE_VARIANTS[slide.type].map((v) => (
-              <SelectItem key={v.id} value={v.id}>{v.label} · {v.hint}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(v) => setContent({ variant: v })}
+        />
       </div>
 
       <div className="space-y-1.5">

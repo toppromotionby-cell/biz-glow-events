@@ -463,8 +463,9 @@ async function drawSlide(a: DrawArgs) {
       brandName: brand,
       heroLogo: logo && heroPlan ? { w: heroPlan.maxW, h: heroPlan.maxH } : null,
       dateLabel: slide.type === "title" ? formatSlideDate() : "",
+      layout: slideFit.layout,
     });
-    drawSpecBlocks(page, blocks, t, fonts, logo);
+    drawSpecBlocks(page, blocks, t, fonts, logo, images);
     drawClientLogo();
     if (logo && plan.brand && plan.brand.slot !== "hero") drawPlannedLogo(page, logo, plan.brand);
     if (slide.type !== "title") footer(slideFit.type.caption * (W / SLIDE_W));

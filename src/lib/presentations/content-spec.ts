@@ -15,6 +15,7 @@ import {
 import { photoAlt } from "@/lib/presentations/captions";
 import { measureText, wrapText } from "@/lib/presentations/text-metrics";
 import { FULL_BLEED_SHADE, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
+import { variantPlan } from "@/lib/presentations/variant-layout";
 
 /** Геометрия элементов контентного слайда — общая для превью и PDF. */
 export const CONTENT = {
@@ -62,6 +63,13 @@ export function partSizes(
     subtitle: base.subtitle * partTextScale(ov.subtitleScale),
     body: base.body * partTextScale(ov.bodyScale),
   };
+}
+
+/** Делит сплошной абзац примерно пополам по границе слова — для двух колонок. */
+function splitInHalf(text: string): [string, string] {
+  const words = text.trim().split(/\s+/);
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
 const resolveAlign = (part: TextAlignX, base: Align): Align =>
@@ -194,10 +202,12 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
     y += Math.max(1, lines.length) * opts.size * opts.lineHeight;
   };
 
+  // Вариант оформления задаёт кегли, колонки, чек-лист и акцент цены.
+  const vp = variantPlan(slide.type, c.variant);
   const sizes = partSizes(ov, {
-    title: ts.titleSlide,
+    title: ts.titleSlide * vp.titleBoost,
     subtitle: ts.subtitle,
-    body: ts.body,
+    body: ts.body * vp.bodyBoost,
   });
   const titleSize = sizes.title;
   push(slide.title, {
@@ -242,15 +252,57 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
 
   if (c.showDescription && c.description.trim()) {
     y += ts.blockGap;
-    push(c.description, {
-      id: "body",
-      size: sizes.body,
-      lineHeight: ts.lineGap,
-      font: "body",
-      weight: 400,
-      color: ink,
-      align: resolveAlign(ov.bodyAlignX, baseAlign),
-    });
+    const bodyAlign = resolveAlign(ov.bodyAlignX, baseAlign);
+    const paras = c.description.split("\n").map((s) => s.trim()).filter(Boolean);
+
+    if (vp.checklist && paras.length > 1) {
+      // Чек-лист: каждый абзац — тезис с маркером.
+      for (const item of paras) {
+        const innerW = w - CONTENT.bulletIndent;
+        const lines = wrapText(item, sizes.body, innerW);
+        blocks.push({
+          kind: "text", x, y, w: CONTENT.bulletIndent, size: sizes.body, lineHeight: ts.lineGap,
+          font: "body", weight: 400, color: "accent", text: "—", align: "left", lines: ["—"],
+        });
+        blocks.push({
+          kind: "text", x: x + CONTENT.bulletIndent, y, w: innerW, size: sizes.body,
+          lineHeight: ts.lineGap, font: "body", weight: 400, color: ink, text: item,
+          align: "left", lines,
+        });
+        y += Math.max(1, lines.length) * sizes.body * ts.lineGap + CONTENT.bulletGap;
+      }
+    } else if (vp.columns === 2 && w > 520) {
+      // Две колонки: текст делится по абзацам примерно пополам.
+      const gap = 32;
+      const colW = (w - gap) / 2;
+      const half = Math.ceil(paras.length / 2) || 1;
+      const chunks = paras.length > 1
+        ? [paras.slice(0, half).join("\n"), paras.slice(half).join("\n")]
+        : splitInHalf(c.description);
+      const heights = chunks.map((t) => {
+        const lines = t.trim() ? wrapText(t, sizes.body, colW) : [];
+        return Math.max(1, lines.length) * sizes.body * ts.lineGap;
+      });
+      chunks.forEach((t, i) => {
+        if (!t.trim()) return;
+        blocks.push({
+          kind: "text", x: x + i * (colW + gap), y, w: colW, size: sizes.body,
+          lineHeight: ts.lineGap, font: "body", weight: 400, color: ink, text: t,
+          align: bodyAlign, lines: wrapText(t, sizes.body, colW),
+        });
+      });
+      y += Math.max(...heights);
+    } else {
+      push(c.description, {
+        id: "body",
+        size: sizes.body,
+        lineHeight: ts.lineGap,
+        font: "body",
+        weight: 400,
+        color: ink,
+        align: bodyAlign,
+      });
+    }
   }
 
   if (c.showIncludes && c.includes.length) {
@@ -345,7 +397,12 @@ export function contentSlideSpec(a: ContentSpecInput): SpecBlock[] {
   // --- Цена ----------------------------------------------------------
   const showPrice = c.showPrice && c.price != null && c.price > 0;
   if (showPrice) {
-    const k = clampNum(ov.priceScale ?? 1, PRICE_SCALE_MIN, PRICE_SCALE_MAX);
+    // «Акцент на цене» увеличивает плашку, если масштаб не задан вручную.
+    const k = clampNum(
+      ov.priceScale ?? (vp.priceAccent ? 1.6 : 1),
+      PRICE_SCALE_MIN,
+      PRICE_SCALE_MAX,
+    );
     const sum = money(c.price as number);
     const unit = `/ ${c.priceUnit}`;
     const sumSize = ts.stat * k;
