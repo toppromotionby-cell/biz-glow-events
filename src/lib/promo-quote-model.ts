@@ -215,6 +215,8 @@ export const promoItemSchema = z.object({
   multiplier: z.number().min(0).max(100000).default(1),
   price: z.number().min(0).max(100000000).default(0),
   cost: z.number().min(0).max(100000000).default(0),
+  cost_mode: z.enum(["amount", "percent"]).default("amount"),
+  cost_input: z.number().min(0).max(100000000).default(0),
   note: z.string().max(2000).default(""),
   includes: z
     .array(z.object({ text: z.string().max(300).default(""), note: z.string().max(300).default("") }))
@@ -487,6 +489,8 @@ export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): Prom
     multiplier: 1,
     price: 0,
     cost: 0,
+    cost_mode: "amount",
+    cost_input: 0,
     note: "",
     includes: [],
     exclude_from_commission: false,
