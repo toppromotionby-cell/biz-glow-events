@@ -406,6 +406,14 @@ function Page() {
   const persist = useCallback(async () => {
     const m = metaRef.current;
     if (!m) return;
+    // Проверка целостности при сохранении: об ошибках предупреждаем сразу.
+    const guard = checkPresentation(slidesRef.current);
+    if (guard.errors > 0) {
+      toast.warning(
+        `Проверка макета: ${guard.errors} ошибок. Откройте раздел «Целостность» и нажмите «Исправить макет».`,
+        { id: "presentation-integrity" },
+      );
+    }
     try {
       await saveFn({
         data: {
