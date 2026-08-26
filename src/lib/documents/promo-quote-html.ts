@@ -127,7 +127,12 @@ export function buildPromoQuoteBody(
     (quote.show_total_qty ? '<td class="c-num">—</td>' : "");
 
 
-  const colCount = cols.length;
+  // Внутренние колонки маржи (только когда передана карта себестоимости).
+  const mg = opts.margin;
+  const mgHead = mg ? marginHeadCells() : "";
+  const mgEmpty = mg ? marginEmptyCells() : "";
+  const mgCell = (id: string) => (mg ? marginBodyCells(mg[id]) : "");
+  const colCount = cols.length + (mg ? 3 : 0);
   // Ширины колонок берём из общего макета документа — те же доли, что в PDF.
   const colWidths = docColumnWidths(quote, items);
 
