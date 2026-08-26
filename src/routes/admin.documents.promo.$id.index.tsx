@@ -744,6 +744,12 @@ function EditorPage() {
                 <span className="flex items-center gap-1"><Calculator className="h-3.5 w-3.5" />Внутренний вид (себестоимость и прибыль)</span>
               </label>
             )}
+            {canCost && !internalView && (
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={wideMargin} onCheckedChange={setWideMargin} />
+                <span>Альбом + маржа</span>
+              </label>
+            )}
             <DetachedPreviewButton
               html={`<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>${sheetCss(BASE_PRINT_PRESET)}${PROMO_DOC_CSS}</style></head><body><div class="sheet">${previewHtml}</div></body></html>`}
               title="Превью · КП промо"
