@@ -49,7 +49,14 @@ function nf(n: number): string {
 export function buildPromoQuoteBody(
   quote: PromoQuote,
   items: PromoItem[],
-  opts: { editable?: boolean; companyLine?: string; checks?: PromoCheck[]; fontDefault?: unknown } = {},
+  opts: {
+    editable?: boolean;
+    companyLine?: string;
+    checks?: PromoCheck[];
+    fontDefault?: unknown;
+    /** Внутренние колонки себестоимости/прибыли (клиенту не передаются). */
+    margin?: MarginCols;
+  } = {},
 ): string {
   const editable = opts.editable === true;
   const docFont = resolveDocFont(quote.font_family, opts.fontDefault);
