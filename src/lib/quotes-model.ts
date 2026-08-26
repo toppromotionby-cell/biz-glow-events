@@ -13,6 +13,7 @@ import {
 import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
+import { normalizeCostMode, resolveUnitCost, type CostMode } from "@/lib/documents/economics";
 
 export * from "@/lib/quote-blocks";
 export * from "@/lib/documents/vat";
@@ -96,7 +97,12 @@ export type QuoteItem = {
   qty: number;
   unit: string;
   price: number;
+  /** Себестоимость за единицу (вычисляется из cost_mode + cost_input). */
   cost: number;
+  /** Режим ввода себестоимости: сумма или процент от цены. */
+  cost_mode: CostMode;
+  /** Введённое значение себестоимости в выбранном режиме. */
+  cost_input: number;
   sort_order: number;
   entity_type: string | null;
   entity_id: string | null;
@@ -472,6 +478,8 @@ export const quoteItemSchema = z.object({
   unit: z.string().max(40).default("шт."),
   price: z.number().min(0, "Не может быть отрицательной").max(10_000_000),
   cost: z.number().min(0).max(10_000_000).default(0),
+  cost_mode: z.enum(["amount", "percent"]).default("amount"),
+  cost_input: z.number().min(0).max(10_000_000).default(0),
   sort_order: z.number().int().min(0).default(0),
   entity_type: z.string().max(40).nullable().default(null),
   entity_id: z.string().uuid().nullable().default(null),
@@ -571,11 +579,16 @@ export function normalizeQuote(row: Record<string, unknown>): Quote {
 }
 
 export function normalizeItem(row: Record<string, unknown>): QuoteItem {
+  const price = num(row.price);
+  const cost_mode = normalizeCostMode(row.cost_mode);
+  const cost_input = num(row.cost_input, cost_mode === "percent" ? 0 : num(row.cost));
   return {
     ...(row as unknown as QuoteItem),
     qty: num(row.qty, 1),
-    price: num(row.price),
-    cost: num(row.cost),
+    price,
+    cost_mode,
+    cost_input,
+    cost: resolveUnitCost(price, cost_mode, cost_input, row.cost),
     sort_order: Math.trunc(num(row.sort_order)),
     section: String(row.section ?? ""),
     description: String(row.description ?? ""),
@@ -597,6 +610,8 @@ export function emptyQuoteItem(quoteId: string, sortOrder: number, init?: Partia
     unit: "шт.",
     price: 0,
     cost: 0,
+    cost_mode: "amount",
+    cost_input: 0,
     sort_order: sortOrder,
     entity_type: null,
     entity_id: null,

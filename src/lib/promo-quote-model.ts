@@ -6,6 +6,7 @@ import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
 import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
 import { normalizeLogoLayout, type LogoLayout } from "@/lib/documents/logo-layout";
 import { normalizeCompanyOverrides, type CompanyOverrides } from "@/lib/documents/company";
+import { normalizeCostMode, resolveUnitCost, type CostMode } from "@/lib/documents/economics";
 
 export { normalizeIncludes };
 export type { QuoteItemInclude };
@@ -88,6 +89,10 @@ export type PromoItem = {
   multiplier: number;
   price: number;
   cost: number;
+  /** Режим ввода себестоимости: сумма или процент от цены. */
+  cost_mode: CostMode;
+  /** Введённое значение себестоимости в выбранном режиме. */
+  cost_input: number;
   note: string;
   includes: QuoteItemInclude[];
   exclude_from_commission: boolean;
@@ -171,6 +176,9 @@ export function normalizePromoQuote(row: Record<string, unknown>): PromoQuote {
 }
 
 export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
+  const priceValue = num(row.price);
+  const costMode = normalizeCostMode(row.cost_mode);
+  const costInput = num(row.cost_input, costMode === "percent" ? 0 : num(row.cost));
   return {
     id: str(row.id),
     quote_id: str(row.quote_id),
@@ -179,8 +187,10 @@ export function normalizePromoItem(row: Record<string, unknown>): PromoItem {
     unit: str(row.unit, "услуга"),
     qty: num(row.qty, 1),
     multiplier: num(row.rate_qty ?? row.multiplier, 1),
-    price: num(row.price),
-    cost: num(row.cost),
+    price: priceValue,
+    cost: resolveUnitCost(priceValue, costMode, costInput, row.cost),
+    cost_mode: costMode,
+    cost_input: costInput,
     note: str(row.note),
     includes: normalizeIncludes(row.includes),
     exclude_from_commission: row.exclude_from_commission === true,
@@ -205,6 +215,8 @@ export const promoItemSchema = z.object({
   multiplier: z.number().min(0).max(100000).default(1),
   price: z.number().min(0).max(100000000).default(0),
   cost: z.number().min(0).max(100000000).default(0),
+  cost_mode: z.enum(["amount", "percent"]).default("amount"),
+  cost_input: z.number().min(0).max(100000000).default(0),
   note: z.string().max(2000).default(""),
   includes: z
     .array(z.object({ text: z.string().max(300).default(""), note: z.string().max(300).default("") }))
@@ -477,6 +489,8 @@ export function newPromoItem(section = "", patch: Partial<PromoItem> = {}): Prom
     multiplier: 1,
     price: 0,
     cost: 0,
+    cost_mode: "amount",
+    cost_input: 0,
     note: "",
     includes: [],
     exclude_from_commission: false,

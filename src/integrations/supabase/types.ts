@@ -2206,6 +2206,8 @@ export type Database = {
       promo_quote_items: {
         Row: {
           cost: number
+          cost_input: number
+          cost_mode: string
           created_at: string
           exclude_from_commission: boolean
           group_key: string
@@ -2228,6 +2230,8 @@ export type Database = {
         }
         Insert: {
           cost?: number
+          cost_input?: number
+          cost_mode?: string
           created_at?: string
           exclude_from_commission?: boolean
           group_key?: string
@@ -2250,6 +2254,8 @@ export type Database = {
         }
         Update: {
           cost?: number
+          cost_input?: number
+          cost_mode?: string
           created_at?: string
           exclude_from_commission?: boolean
           group_key?: string
@@ -2500,6 +2506,8 @@ export type Database = {
       quote_items: {
         Row: {
           cost: number
+          cost_input: number
+          cost_mode: string
           created_at: string
           description: string
           entity_id: string | null
@@ -2523,6 +2531,8 @@ export type Database = {
         }
         Insert: {
           cost?: number
+          cost_input?: number
+          cost_mode?: string
           created_at?: string
           description?: string
           entity_id?: string | null
@@ -2546,6 +2556,8 @@ export type Database = {
         }
         Update: {
           cost?: number
+          cost_input?: number
+          cost_mode?: string
           created_at?: string
           description?: string
           entity_id?: string | null

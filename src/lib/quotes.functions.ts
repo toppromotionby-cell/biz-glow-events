@@ -17,6 +17,7 @@ import {
   type Quote,
   type QuoteItem,
 } from "@/lib/quotes-model";
+import { resolveUnitCost } from "@/lib/documents/economics";
 
 
 export type QuoteListRow = {
@@ -175,7 +176,9 @@ export const saveQuote = createServerFn({ method: "POST" })
           qty: it.qty,
           unit: it.unit ?? "шт.",
           price: it.price,
-          cost: it.cost ?? 0,
+          cost: resolveUnitCost(it.price, it.cost_mode, it.cost_input, it.cost),
+          cost_mode: it.cost_mode ?? "amount",
+          cost_input: it.cost_input ?? it.cost ?? 0,
           sort_order: i,
           entity_type: it.entity_type ?? null,
           entity_id: it.entity_id ?? null,
@@ -214,7 +217,8 @@ export const saveQuote = createServerFn({ method: "POST" })
         }],
         items: (items ?? []).map((it) => ({
           section: it.section ?? "", title: it.title, description: it.description ?? "",
-          unit: it.unit ?? "шт.", price: it.price, cost: it.cost ?? 0, includes: it.includes ?? [],
+          unit: it.unit ?? "шт.", price: it.price, cost: it.cost ?? 0,
+          cost_mode: it.cost_mode ?? "amount", cost_input: it.cost_input ?? it.cost ?? 0, includes: it.includes ?? [],
         })),
         texts: [
           { kind: "venue" as const, value: m.venue },

@@ -14,7 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   Download, ExternalLink, History, Plus, Search, Send, ListTree, User, Wallet, ShieldCheck,
-  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation, Trash2,
+  Settings2, Eye, BookmarkPlus, FileCheck2, MoreHorizontal, Brain, Presentation, Trash2, Calculator,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -31,6 +31,8 @@ import { SaveStatus } from "@/components/admin/SaveStatus";
 import { useEditorSave } from "@/hooks/use-editor-save";
 
 import { Field } from "@/components/admin/Field";
+import { EconomicsPanel } from "@/components/admin/documents/EconomicsPanel";
+import { normalizeCostMode } from "@/lib/documents/economics";
 import { DocEditorShell } from "@/components/admin/editor/DocEditorShell";
 import type { EditorSection } from "@/components/admin/editor/EditorSidebar";
 
@@ -571,6 +573,31 @@ function Page() {
         </div>
       ),
     },
+    ...(canCost
+      ? [{
+          id: "economics",
+          label: "Экономика",
+          Icon: Calculator,
+          wide: true,
+          content: (
+            <EconomicsPanel
+              docTitle={`КП ${quoteNumberDisplay(quote)}`}
+              netRevenue={totals?.net}
+              rows={items.map((it) => ({
+                id: it.id,
+                section: it.section,
+                title: it.title,
+                qty: num(it.qty),
+                qtyLabel: `${num(it.qty)} ${it.unit}`,
+                price: num(it.price),
+                unitCost: num(it.cost),
+                costMode: normalizeCostMode(it.cost_mode),
+                costInput: num(it.cost_input),
+              }))}
+            />
+          ),
+        } as EditorSection]
+      : []),
     {
       id: "money",
       label: "Финансы",

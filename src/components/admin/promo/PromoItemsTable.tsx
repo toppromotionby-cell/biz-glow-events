@@ -16,6 +16,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SortableList } from "@/components/admin/SortableList";
+import { CostField } from "@/components/admin/documents/CostField";
 import { NumField, TextAreaField, TextCommitField } from "@/components/admin/field-kit";
 import { SuggestInput } from "@/components/admin/SuggestInput";
 import { useDocSuggest, type ItemHit } from "@/hooks/use-doc-suggest";
@@ -309,8 +310,8 @@ export function PromoItemsTable({ items, currency, showCost, showNotes, onChange
                           <NumField value={it.price} step="0.01" onChange={(v) => replace(it.id, { price: v })} aria-label="Цена" className="h-8" />
                         </Mini>
                         {showCost && (
-                          <Mini label="Себест." width="w-[100px]">
-                            <NumField value={it.cost} step="0.01" onChange={(v) => replace(it.id, { cost: v })} aria-label="Себестоимость" className="h-8" />
+                          <Mini label="Себест." width="w-[148px]">
+                            <CostField item={it} onChange={(patch) => replace(it.id, patch as Partial<PromoItem>)} />
                           </Mini>
 
                         )}
