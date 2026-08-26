@@ -1,5 +1,6 @@
 // Общая сборка данных презентации для PDF: используется и админским роутом
 // /admin/documents/presentations/$id/render, и публичной ссылкой /p/$token.
+import { slidePhotos } from "@/lib/presentations/design";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { mediaPublicUrl } from "@/lib/media-url";
 import { normalizeCompanyProfile, type CompanyProfile } from "@/lib/documents/company-profile";
@@ -55,7 +56,9 @@ export async function loadPresentationBundle(
   ]) if (p) urls.set(p, mediaPublicUrl(p));
 
   const resolved: ResolvedSlide[] = slides.map((s) => {
-    const unique = Array.from(new Set([...(s.image_url ? [s.image_url] : []), ...(s.content.images ?? [])]));
+    // Порядок и лимит кадров считает та же функция, что и превью: приоритетные
+    // («главные») фото стоят первыми, поэтому PDF совпадает с экраном.
+    const unique = slidePhotos(s);
     return {
       ...s,
       resolved_image_url: s.image_url ? (urls.get(s.image_url) ?? null) : null,

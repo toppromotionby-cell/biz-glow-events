@@ -65,6 +65,12 @@ export function auditSlide(slide: PresentationSlide, index: number): AuditIssue[
   if (slide.content.showImage && !slide.content.images.length) {
     issues.push({ ...base, block: "photo", level: "warn", message: "Показ фото включён, но фото не выбрано" });
   }
+  if (!slide.content.showImage && slide.content.images.length) {
+    issues.push({
+      ...base, block: "photo", level: "warn",
+      message: "Фото загружены, но не отображаются: включите показ фото",
+    });
+  }
 
   for (const w of fit.warnings) {
     if (issues.some((i) => i.message === w)) continue;
