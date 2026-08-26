@@ -44,7 +44,7 @@ import {
   saveQuoteAsTemplate, markQuoteSent, sendQuoteToClient, createOrderFromQuote,
 } from "@/lib/quotes.functions";
 import { saveEstimateTemplate } from "@/lib/estimate-templates.functions";
-import { createPresentation } from "@/lib/presentations.functions";
+import { QuoteStoryboardDialog } from "@/components/admin/presentations/QuoteStoryboardDialog";
 
 import {
   checkQuote, computeTotals, emptyQuoteItem, num, quotePatchSchema, normalizeTime, QUOTE_STATUSES, QUOTE_STATUS_LABELS,
@@ -188,7 +188,7 @@ function Page() {
   const markSent = useServerFn(markQuoteSent);
   const sendToClient = useServerFn(sendQuoteToClient);
   const makeOrder = useServerFn(createOrderFromQuote);
-  const makePresentation = useServerFn(createPresentation);
+  const [storyboardOpen, setStoryboardOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({ queryKey: adminKeys.quote(id), queryFn: () => load({ data: { id } }) });
   const activeCompanyId = data?.quote?.company_id ?? null;
@@ -288,6 +288,8 @@ function Page() {
       prepayment_type: q.prepayment_type, prepayment_value: num(q.prepayment_value),
       delivery_amount: num(q.delivery_amount), vat_note: q.vat_note ?? "",
       vat_mode: q.vat_mode, vat_rate: num(q.vat_rate), vat_as_line: q.vat_as_line,
+      management_type: q.management_type, management_value: num(q.management_value),
+      agency_fee_type: q.agency_fee_type, agency_fee_value: num(q.agency_fee_value),
     };
     // Промежуточный ввод (например «18:0» или недописанная дата) не отправляем —
     // остальные поля сохраняются, а поле подсветится в списке проверок.
@@ -444,21 +446,7 @@ function Page() {
 
 
 
-  // Этап 5: собрать презентацию по позициям этого КП.
-  const onBuildPresentation = async () => {
-    try {
-      const res = await makePresentation({
-        data: {
-          title: `Презентация · КП ${quoteNumberDisplay(quote)}`,
-          companyId: quote.company_id ?? null,
-          template: "light",
-          quoteId: id,
-        },
-      });
-      toast.success("Презентация создана по позициям КП");
-      navigate({ to: "/admin/documents/presentations/$id", params: { id: res.id } });
-    } catch (e) { toast.error((e as Error).message); }
-  };
+  // Сборка презентации из КП — через окно сценария (сториборд).
 
   const sections: EditorSection[] = [
     {
@@ -663,6 +651,35 @@ function Page() {
                 <Field label="Доставка и логистика, BYN">
                   <Input type="number" min={0} value={quote.delivery_amount} onChange={(e) => patch({ delivery_amount: num(e.target.value) })} />
                 </Field>
+                <Field label="Менеджмент">
+                  <Select value={quote.management_type} onValueChange={(v) => patch({ management_type: v as Quote["management_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Не начисляется</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={quote.management_type === "percent" ? "Менеджмент, %" : "Менеджмент, BYN"}>
+                  <Input type="number" min={0} disabled={quote.management_type === "none"} value={quote.management_value}
+                    onChange={(e) => patch({ management_value: num(e.target.value) })} />
+                </Field>
+                <Field label="Комиссия агентства">
+                  <Select value={quote.agency_fee_type} onValueChange={(v) => patch({ agency_fee_type: v as Quote["agency_fee_type"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Не начисляется</SelectItem>
+                      <SelectItem value="percent">Процент</SelectItem>
+                      <SelectItem value="amount">Сумма</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label={quote.agency_fee_type === "percent" ? "Комиссия, %" : "Комиссия, BYN"}>
+                  <Input type="number" min={0} disabled={quote.agency_fee_type === "none"} value={quote.agency_fee_value}
+                    onChange={(e) => patch({ agency_fee_value: num(e.target.value) })} />
+                </Field>
+
                 <Field label="Примечание по НДС">
                   <Input value={quote.vat_note ?? ""} onChange={(e) => patch({ vat_note: e.target.value })} />
                 </Field>
@@ -681,6 +698,12 @@ function Page() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Позиции</span><span>{fmtMoney(totals.subtotal)}</span></div>
                 {!!totals.discount && <div className="flex justify-between"><span className="text-muted-foreground">Скидка</span><span>− {fmtMoney(totals.discount)}</span></div>}
                 {!!totals.delivery && <div className="flex justify-between"><span className="text-muted-foreground">Доставка</span><span>{fmtMoney(totals.delivery)}</span></div>}
+                {totals.feeLines.map((f) => (
+                  <div key={f.key} className="flex justify-between">
+                    <span className="text-muted-foreground">{f.label}<span className="ml-1 text-[11px] opacity-70">{f.hint}</span></span>
+                    <span>{fmtMoney(f.amount)}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between font-semibold text-base"><span>Итого</span><span>{fmtMoney(totals.total)}</span></div>
                 {!!totals.prepayment && (
                   <>
@@ -914,7 +937,7 @@ function Page() {
               <DropdownMenuItem onClick={onCreateOrder}>
                 <FileCheck2 className="mr-2 h-4 w-4" />{quote.order_id ? "Открыть заказ" : "Создать заказ"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onBuildPresentation}>
+              <DropdownMenuItem onClick={() => setStoryboardOpen(true)}>
                 <Presentation className="mr-2 h-4 w-4" />Собрать презентацию
               </DropdownMenuItem>
               {canCost && (
@@ -995,6 +1018,15 @@ function Page() {
         defaultName={quote.title || "Шаблон КП"}
         typeLabel="КП"
         onSave={onSaveToLibrary}
+      />
+
+      <QuoteStoryboardDialog
+        open={storyboardOpen}
+        onOpenChange={setStoryboardOpen}
+        quoteId={id}
+        defaultTitle={`Презентация · КП ${quoteNumberDisplay(quote)}`}
+        companyId={quote.company_id ?? null}
+        onCreated={(pid) => navigate({ to: "/admin/documents/presentations/$id", params: { id: pid } })}
       />
 
       {confirmDialog}

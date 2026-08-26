@@ -119,6 +119,8 @@ export function buildNumericValues(quote: Quote, items: QuoteItem[]): NumericMap
     subtotal: t.subtotal,
     discount: t.discount,
     delivery: t.delivery,
+    management: t.management,
+    agency_fee: t.agencyFee,
     total: t.total,
     prepayment: t.prepayment,
     advance: t.prepayment,
@@ -156,6 +158,8 @@ export function buildPlaceholderValues(
     subtotal: money(t.subtotal),
     discount: money(t.discount),
     delivery: money(t.delivery),
+    management: money(t.management),
+    agency_fee: money(t.agencyFee),
     total: money(t.total),
     total_words: amountToWords(t.total),
     prepayment: money(t.prepayment),
@@ -199,6 +203,7 @@ export function buildConditionContext(
     has_items: items.length > 0,
     has_discount: t.discount > 0,
     has_delivery: t.delivery > 0,
+    has_fees: t.management > 0 || t.agencyFee > 0,
     has_prepayment: t.prepayment > 0,
     has_requisites: Boolean((c.bank_account || "").trim() || (c.unp || "").trim()),
     has_event_date: Boolean(quote.event_date),
@@ -453,7 +458,8 @@ export function buildQuoteHtmlDoc(
           <div class="row"><span>Стоимость позиций${t.vatEnabled ? " (без НДС)" : ""}</span><span>${money(t.subtotal)}</span></div>
           ${t.discount ? `<div class="row"><span>Скидка</span><span>−${money(t.discount)}</span></div>` : ""}
           ${t.delivery ? `<div class="row"><span>Доставка и логистика</span><span>${money(t.delivery)}</span></div>` : ""}
-          ${t.vatEnabled ? `${t.discount || t.delivery ? `<div class="row"><span>Сумма без НДС</span><span>${money(t.net)}</span></div>` : ""}<div class="row"><span>НДС ${vatRateLabel(t.vatRate)}%</span><span>${money(t.vat)}</span></div>` : ""}
+          ${t.feeLines.map((f) => `<div class="row"><span>${escw(f.label)}</span><span>${money(f.amount)}</span></div>`).join("")}
+          ${t.vatEnabled ? `${t.discount || t.delivery || t.feeLines.length ? `<div class="row"><span>Сумма без НДС</span><span>${money(t.net)}</span></div>` : ""}<div class="row"><span>НДС ${vatRateLabel(t.vatRate)}%</span><span>${money(t.vat)}</span></div>` : ""}
           <div class="row total"><span>${t.vatEnabled ? "Итого с НДС" : "Итого"}</span><span>${money(t.total)}</span></div>
           ${t.prepayment ? `<div class="row"><span>Предоплата</span><span>${money(t.prepayment)}</span></div><div class="row"><span>Остаток</span><span>${money(t.balance)}</span></div>` : ""}
         </div>

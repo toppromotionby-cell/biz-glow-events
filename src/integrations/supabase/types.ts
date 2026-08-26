@@ -727,6 +727,8 @@ export type Database = {
           act_footer: string
           act_intro: string
           act_validity_days: number
+          agency_fee_type: string
+          agency_fee_value: number
           bank_account: string
           bank_bic: string
           bank_name: string
@@ -748,6 +750,8 @@ export type Database = {
           invoice_validity_days: number
           logo_layout: Json
           logo_url: string | null
+          management_type: string
+          management_value: number
           quote_footer: string
           quote_print_presets: Json
           quote_validity_days: number
@@ -767,6 +771,8 @@ export type Database = {
           act_footer?: string
           act_intro?: string
           act_validity_days?: number
+          agency_fee_type?: string
+          agency_fee_value?: number
           bank_account?: string
           bank_bic?: string
           bank_name?: string
@@ -788,6 +794,8 @@ export type Database = {
           invoice_validity_days?: number
           logo_layout?: Json
           logo_url?: string | null
+          management_type?: string
+          management_value?: number
           quote_footer?: string
           quote_print_presets?: Json
           quote_validity_days?: number
@@ -807,6 +815,8 @@ export type Database = {
           act_footer?: string
           act_intro?: string
           act_validity_days?: number
+          agency_fee_type?: string
+          agency_fee_value?: number
           bank_account?: string
           bank_bic?: string
           bank_name?: string
@@ -828,6 +838,8 @@ export type Database = {
           invoice_validity_days?: number
           logo_layout?: Json
           logo_url?: string | null
+          management_type?: string
+          management_value?: number
           quote_footer?: string
           quote_print_presets?: Json
           quote_validity_days?: number
@@ -2327,6 +2339,8 @@ export type Database = {
       promo_quotes: {
         Row: {
           accent_color: string
+          agency_fee_type: string
+          agency_fee_value: number
           client_comment: string
           client_logo_url: string | null
           client_name: string
@@ -2355,6 +2369,8 @@ export type Database = {
           management_amount: number
           management_enabled: boolean
           management_label: string
+          management_type: string
+          management_value: number
           period: string
           project: string
           public_token: string
@@ -2383,6 +2399,8 @@ export type Database = {
         }
         Insert: {
           accent_color?: string
+          agency_fee_type?: string
+          agency_fee_value?: number
           client_comment?: string
           client_logo_url?: string | null
           client_name?: string
@@ -2411,6 +2429,8 @@ export type Database = {
           management_amount?: number
           management_enabled?: boolean
           management_label?: string
+          management_type?: string
+          management_value?: number
           period?: string
           project?: string
           public_token?: string
@@ -2439,6 +2459,8 @@ export type Database = {
         }
         Update: {
           accent_color?: string
+          agency_fee_type?: string
+          agency_fee_value?: number
           client_comment?: string
           client_logo_url?: string | null
           client_name?: string
@@ -2467,6 +2489,8 @@ export type Database = {
           management_amount?: number
           management_enabled?: boolean
           management_label?: string
+          management_type?: string
+          management_value?: number
           period?: string
           project?: string
           public_token?: string
@@ -2629,6 +2653,8 @@ export type Database = {
       }
       quotes: {
         Row: {
+          agency_fee_type: string
+          agency_fee_value: number
           blocks: Json
           client_address: string
           client_comment: string
@@ -2658,6 +2684,8 @@ export type Database = {
           is_template: boolean
           logo_layout: Json
           logo_url: string | null
+          management_type: string
+          management_value: number
           order_id: string | null
           prepayment_type: string
           prepayment_value: number
@@ -2689,6 +2717,8 @@ export type Database = {
           viewed_at: string | null
         }
         Insert: {
+          agency_fee_type?: string
+          agency_fee_value?: number
           blocks?: Json
           client_address?: string
           client_comment?: string
@@ -2718,6 +2748,8 @@ export type Database = {
           is_template?: boolean
           logo_layout?: Json
           logo_url?: string | null
+          management_type?: string
+          management_value?: number
           order_id?: string | null
           prepayment_type?: string
           prepayment_value?: number
@@ -2749,6 +2781,8 @@ export type Database = {
           viewed_at?: string | null
         }
         Update: {
+          agency_fee_type?: string
+          agency_fee_value?: number
           blocks?: Json
           client_address?: string
           client_comment?: string
@@ -2778,6 +2812,8 @@ export type Database = {
           is_template?: boolean
           logo_layout?: Json
           logo_url?: string | null
+          management_type?: string
+          management_value?: number
           order_id?: string | null
           prepayment_type?: string
           prepayment_value?: number
