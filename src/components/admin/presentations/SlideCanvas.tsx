@@ -27,7 +27,7 @@ import type { BlockKind } from "@/components/admin/presentations/BlockToolbar";
 import { fontStacks, needsBodyFallback, resolveDocFont, type DocFont, type DocFontChoice } from "@/lib/documents/doc-font";
 import { staticSlideSpec, type SpecBlock, type SpecPaint } from "@/lib/presentations/slide-spec";
 import { contentSlideSpec } from "@/lib/presentations/content-spec";
-import { isLayoutSlideType, layoutSlideSpec } from "@/lib/presentations/blocks";
+import { slideSpec } from "@/lib/presentations/spec";
 import {
   cssObjectPosition, type PhotoAnchor, type PhotoFit,
 } from "@/lib/presentations/photo-fit";
