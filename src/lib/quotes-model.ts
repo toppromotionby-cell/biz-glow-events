@@ -478,6 +478,8 @@ export const quoteItemSchema = z.object({
   unit: z.string().max(40).default("шт."),
   price: z.number().min(0, "Не может быть отрицательной").max(10_000_000),
   cost: z.number().min(0).max(10_000_000).default(0),
+  cost_mode: z.enum(["amount", "percent"]).default("amount"),
+  cost_input: z.number().min(0).max(10_000_000).default(0),
   sort_order: z.number().int().min(0).default(0),
   entity_type: z.string().max(40).nullable().default(null),
   entity_id: z.string().uuid().nullable().default(null),
