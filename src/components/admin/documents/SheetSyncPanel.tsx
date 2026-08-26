@@ -85,13 +85,25 @@ export function SheetSyncPanel<Row extends SheetSyncRow>({
     }
   };
 
-  const onOpenSheet = () =>
-    run(async () => {
-      const res = await ensureSheet();
-      window.open(res.url, "_blank", "noopener");
-      await refetch();
-      toast.success(createdToast);
+  const onOpenSheet = () => {
+    // Вкладку открываем синхронно, в момент клика: если сделать это после
+    // await, браузер посчитает окно «не пользовательским» и молча заблокирует.
+    const win = typeof window !== "undefined" ? window.open("", "_blank", "noopener") : null;
+    return run(async () => {
+      try {
+        const res = await ensureSheet();
+        if (win && !win.closed) win.location.href = res.url;
+        else window.open(res.url, "_blank", "noopener");
+        await refetch();
+        toast.success(createdToast);
+      } catch (e) {
+        if (win && !win.closed) win.close();
+        setLocalError((e as Error).message);
+        throw e;
+      }
     });
+  };
+
 
   const onPush = () =>
     run(async () => {
