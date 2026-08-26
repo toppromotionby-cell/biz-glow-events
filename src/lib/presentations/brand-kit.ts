@@ -124,3 +124,22 @@ export function brandFrameBlock(frame: BrandFrame): SpecRect | null {
     stroke: frame === "soft" ? 3 : 1.5,
   };
 }
+
+/**
+ * Фон и акцент с учётом набора: собственный фон слайда всегда важнее,
+ * бренд-набор подменяет только оформление «как в шаблоне».
+ */
+export function applyBrandKit<T extends { mode: string; stops: string[]; angle: number }>(
+  background: T,
+  kit: BrandKit | null,
+  accent: string,
+): { background: T; accent: string } {
+  if (!kit) return { background, accent };
+  if (background.mode !== "template" && background.stops.length) {
+    return { background, accent: kit.accent };
+  }
+  return {
+    background: { ...background, mode: "gradient", stops: kit.stops, angle: kit.angle },
+    accent: kit.accent,
+  };
+}
