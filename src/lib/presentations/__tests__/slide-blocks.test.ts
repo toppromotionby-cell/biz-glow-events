@@ -5,7 +5,7 @@ import { LAYOUT_SLIDE_TYPES, layoutSlideSpec } from "@/lib/presentations/blocks"
 import { SLIDE_H, SLIDE_W, typeScale } from "@/lib/presentations/design";
 import { SLIDE_VARIANTS, blankSlide } from "@/lib/presentations/model";
 
-const ts = typeScale(1);
+const ts = typeScale("normal");
 
 describe("структурные слайды", () => {
   for (const type of LAYOUT_SLIDE_TYPES) {
