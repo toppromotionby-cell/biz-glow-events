@@ -23,7 +23,7 @@ import {
 } from "@/lib/paperwork/model";
 import { missingBlocks, pwKind } from "@/lib/paperwork/kinds";
 import { applyVarsToBlocks, autoContext, documentVariables, resolveValues, varKey } from "@/lib/paperwork/variables";
-import { paperworkHtml } from "@/lib/paperwork/html";
+import { clientLogoUrlFrom, paperworkHtml } from "@/lib/paperwork/html";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 
 export function PaperworkEditor({
@@ -76,6 +76,7 @@ export function PaperworkEditor({
         blocks: applyVarsToBlocks(blocks, resolved),
         company,
         blank,
+        clientLogoUrl: clientLogoUrlFrom(resolved),
       }),
     [docMeta, blocks, resolved, company, blank],
   );
