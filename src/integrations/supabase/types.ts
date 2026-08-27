@@ -755,7 +755,6 @@ export type Database = {
           quote_footer: string
           quote_print_presets: Json
           quote_validity_days: number
-          show_facsimile: boolean
           signer_basis: string
           signer_name: string
           signer_title: string
@@ -800,7 +799,6 @@ export type Database = {
           quote_footer?: string
           quote_print_presets?: Json
           quote_validity_days?: number
-          show_facsimile?: boolean
           signer_basis?: string
           signer_name?: string
           signer_title?: string
@@ -845,7 +843,6 @@ export type Database = {
           quote_footer?: string
           quote_print_presets?: Json
           quote_validity_days?: number
-          show_facsimile?: boolean
           signer_basis?: string
           signer_name?: string
           signer_title?: string

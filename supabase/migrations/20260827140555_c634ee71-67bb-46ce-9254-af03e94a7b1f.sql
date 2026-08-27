@@ -1,0 +1,1 @@
+ALTER TABLE public.document_settings DROP COLUMN IF EXISTS show_facsimile;
