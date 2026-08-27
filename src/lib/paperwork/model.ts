@@ -125,6 +125,24 @@ export type PwBlock = {
   size: number;
   /** Абзац с отступом первой строки. */
   indent: boolean;
+  /** Позиции с суммами (lineitems). */
+  lines: PwLine[];
+  currency: string;
+  vatPct: number;
+  totalWords: boolean;
+  /** Реквизиты сторон (parties). */
+  leftTitle: string;
+  leftText: string;
+  rightTitle: string;
+  rightText: string;
+};
+
+/** Строка блока «Позиции с суммами». */
+export type PwLine = {
+  name: string;
+  qty: number;
+  unit: string;
+  price: number;
 };
 
 export type PwVariable = {
