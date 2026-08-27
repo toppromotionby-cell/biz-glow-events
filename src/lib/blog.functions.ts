@@ -30,3 +30,15 @@ export const listBlogPosts = createServerFn({ method: "GET" })
     }
     return (rows ?? []) as BlogListItem[];
   });
+
+export const getBlogPostBySlug = createServerFn({ method: "GET" })
+  .inputValidator((i) => z.object({ slug: z.string().min(1).max(200) }).parse(i))
+  .handler(async ({ data }) => {
+    const { data: post } = await supabaseAdmin
+      .from("blog_posts")
+      .select("id, slug, title, excerpt, body, cover_url, tags, published_at, seo_title, seo_description, published")
+      .eq("slug", data.slug)
+      .eq("published", true)
+      .maybeSingle();
+    return { post: post ?? null };
+  });
