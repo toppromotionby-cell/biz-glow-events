@@ -61,7 +61,7 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
   }, [html, measure]);
 
   const { scale } = fitScale({
-    boxW: box.w,
+    boxW: box.w + PAD * 2, // щуп меряет уже без внутренних отступов
     boxH: box.h,
     sheetW: sheet.w,
     sheetH: sheet.h,
