@@ -71,9 +71,10 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
 
 
   return (
-    <div className={className}>
+    <div ref={shellRef} className={className}>
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <span className="text-xs text-muted-foreground">Превью A4</span>
+
         <div className="flex items-center gap-1">
           <Button
             type="button"
@@ -127,8 +128,7 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
         </div>
       </div>
       <div ref={boxRef} className="relative h-[75vh] overflow-auto bg-muted/40" style={{ padding: PAD }}>
-        {/* Щуп ширины: не участвует в потоке и не может быть раздут листом. */}
-        <div ref={gaugeRef} className="pointer-events-none absolute inset-x-0 top-0 h-px" aria-hidden />
+
         <div
           style={{
             width: sheet.w * scale,
