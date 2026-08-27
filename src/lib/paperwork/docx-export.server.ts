@@ -18,6 +18,8 @@ import {
 } from "docx";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { lineItemColFractions, tableColFractions } from "@/lib/paperwork/table-cols";
+
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const ALIGN: Record<string, (typeof AlignmentType)[keyof typeof AlignmentType]> = {
@@ -75,21 +77,22 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
     case "table": {
       const cols = Math.max(b.header.length, ...b.rows.map((r) => r.length), 1);
       const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
-      const colW = Math.floor(totalW / cols);
-      const widths = Array.from({ length: cols }, () => colW);
-      const cell = (text: string, head: boolean) =>
+      const widths = tableColFractions(b.header, b.rows, cols).map((f) => Math.floor(totalW * f));
+      const cell = (text: string, head: boolean, i: number) =>
         new TableCell({
-          width: { size: colW, type: WidthType.DXA },
+          width: { size: widths[i] ?? Math.floor(totalW / cols), type: WidthType.DXA },
           margins: { top: 60, bottom: 60, left: 100, right: 100 },
           shading: head ? { fill: "F4F5F7", type: ShadingType.CLEAR } : undefined,
           children: [textParagraph(text, { bold: head, size: base - 1 })],
         });
+
       const rows: TableRow[] = [];
       if (b.header.length) {
-        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(b.header[i] ?? "", true)) }));
+        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(b.header[i] ?? "", true, i)) }));
       }
       for (const r of b.rows) {
-        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(r[i] ?? "", false)) }));
+        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(r[i] ?? "", false, i)) }));
+
       }
       return [
         new Table({ width: { size: widths.reduce((a, c) => a + c, 0), type: WidthType.DXA }, columnWidths: widths, rows }),
@@ -99,8 +102,17 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
     case "lineitems": {
       const t = blockTotals(b);
       const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
-      const ratios = [0.06, 0.44, 0.1, 0.1, 0.15, 0.15];
+      const ratios = lineItemColFractions(
+        b.lines.map((l) => ({
+          name: l.name,
+          qty: l.qty,
+          unit: l.unit,
+          price: formatMoney(l.price),
+          total: formatMoney(lineTotal(l)),
+        })),
+      );
       const widths = ratios.map((r) => Math.floor(totalW * r));
+
       const cell = (text: string, i: number, head: boolean, right = false) =>
         new TableCell({
           width: { size: widths[i], type: WidthType.DXA },

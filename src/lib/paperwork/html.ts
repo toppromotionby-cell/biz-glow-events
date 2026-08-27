@@ -5,6 +5,8 @@ import { fontStacks } from "@/lib/documents/doc-font";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
+import { colgroupHtml, lineItemColFractions, tableColFractions } from "@/lib/paperwork/table-cols";
+
 
 const esc = (s: string): string =>
   String(s ?? "")
@@ -80,8 +82,10 @@ function blockHtml(b: PwBlock): string {
       const body = b.rows
         .map((r) => `<tr>${r.map((c) => `<td>${nl2br(c)}</td>`).join("")}</tr>`)
         .join("");
-      return `<table class="tbl">${head}<tbody>${body}</tbody></table>`;
+      const cg = colgroupHtml(tableColFractions(b.header, b.rows));
+      return `<table class="tbl">${cg}${head}<tbody>${body}</tbody></table>`;
     }
+
     case "signature":
       return `<div class="sign">
         <div class="sign-title">${nl2br(b.signerTitle)}</div>
@@ -107,7 +111,19 @@ function blockHtml(b: PwBlock): string {
       const words = b.totalWords
         ? `<div class="words">Сумма прописью: ${esc(t.words)}</div>`
         : "";
-      return `<table class="tbl items"><thead><tr><th>№</th><th>Наименование</th><th>Кол-во</th><th>Ед.</th><th>Цена</th><th>Сумма</th></tr></thead>
+      const cg = colgroupHtml(
+        lineItemColFractions(
+          b.lines.map((l) => ({
+            name: l.name,
+            qty: l.qty,
+            unit: l.unit,
+            price: formatMoney(l.price),
+            total: formatMoney(lineTotal(l)),
+          })),
+        ),
+      );
+      return `<table class="tbl items">${cg}<thead><tr><th>№</th><th>Наименование</th><th>Кол-во</th><th>Ед.</th><th>Цена</th><th>Сумма</th></tr></thead>
+
         <tbody>${rows}</tbody>
         <tfoot>
           <tr><td colspan="5" class="num">Итого без НДС</td><td class="num">${formatMoney(t.net)}</td></tr>
@@ -188,8 +204,10 @@ export function paperworkHtml(opts: {
     font-size:9.5pt; color:#41474f; }
   .list { margin:0 0 10px; padding-left:7mm; }
   .list li { margin-bottom:4px; }
-  .tbl { width:100%; border-collapse:collapse; margin:10px 0; font-size:10pt; }
-  .tbl th, .tbl td { border:1px solid #d7dbe2; padding:5px 7px; text-align:left; vertical-align:top; }
+  .tbl { width:100%; table-layout:fixed; border-collapse:collapse; margin:10px 0; font-size:10pt; }
+  .tbl th, .tbl td { border:1px solid #d7dbe2; padding:5px 7px; text-align:left; vertical-align:top;
+    overflow-wrap:break-word; hyphens:manual; -webkit-hyphens:manual; }
+
   .tbl th { background:#f4f5f7; font-weight:600; }
   .tbl .num { text-align:right; white-space:nowrap; }
   .tbl tfoot td { font-weight:600; background:#fafbfc; }
