@@ -1,4 +1,5 @@
 // Настройки фирменного бланка компании: шапка, поля, шрифт, подложка.
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -194,8 +195,23 @@ export function PwBlankPanel({
         )}
       </div>
 
+      <div className="space-y-2 rounded-lg border border-border p-3">
+        <Label className="text-xs">Логотип клиента — ссылка (переменная client_logo)</Label>
+        <Input
+          value={clientLogoUrl}
+          placeholder="https://…/client-logo.png"
+          onChange={(e) => onClientLogoUrlChange(e.target.value.trim())}
+        />
+        {clientLogoUrl && blank.clientLogo && (
+          <img src={clientLogoUrl} alt="Логотип клиента" className="h-10 w-auto object-contain" />
+        )}
+        {clientLogoUrl && !blank.clientLogo && (
+          <p className="text-xs text-muted-foreground">Включите тумблер «Логотип клиента», чтобы он появился в шапке.</p>
+        )}
+      </div>
+
       <Button onClick={onSave} disabled={saving}>
-        <Save className="mr-1 h-4 w-4" /> Сохранить бланк компании
+        <Save className="mr-1 h-4 w-4" /> Сохранить бланк: {companyName}
       </Button>
     </div>
   );

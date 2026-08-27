@@ -39,15 +39,12 @@ function Page() {
     return <p className="p-8 text-center text-sm text-destructive">Документ не найден.</p>;
   }
 
-  const companyId = detail.data.document.company_profile_id;
-  const company = (profiles.data ?? []).find((p) => p.id === companyId) ?? null;
-
   return (
     <div className="space-y-4">
       <Link to="/admin/paperwork" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline">
         <ArrowLeft className="h-4 w-4" /> Все документы
       </Link>
-      <PaperworkEditor detail={detail.data} company={company} />
+      <PaperworkEditor detail={detail.data} companies={profiles.data ?? []} />
     </div>
   );
 }
