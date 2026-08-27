@@ -245,16 +245,26 @@ const BlockCard = memo(function BlockCard({
               <Label className="text-xs">ФИО</Label>
               <Input value={block.signerName} onChange={(e) => onChange({ signerName: e.target.value })} />
             </div>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Switch checked={block.withSignature} onCheckedChange={(v) => onChange({ withSignature: v })} />
-              Подставлять факсимиле
-            </label>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Switch checked={block.withStamp} onCheckedChange={(v) => onChange({ withStamp: v })} />
-              Ставить печать
-            </label>
+            {sign.hasSignature && (
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={block.withSignature} onCheckedChange={(v) => onChange({ withSignature: v })} />
+                Накладывать подпись
+              </label>
+            )}
+            {sign.hasStamp && (
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={block.withStamp} onCheckedChange={(v) => onChange({ withStamp: v })} />
+                Ставить печать
+              </label>
+            )}
+            {!sign.hasSignature && !sign.hasStamp && (
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Загрузите подпись или печать в карточке компании — тогда их можно будет накладывать на документ.
+              </p>
+            )}
           </div>
         )}
+
 
         {block.type === "spacer" && (
           <div className="flex items-center gap-2">
