@@ -8,6 +8,8 @@ export const PW_CATEGORIES = [
   "certificates",
   "notices",
   "internal",
+  "contracts",
+  "finance",
   "custom",
 ] as const;
 export type PwCategory = (typeof PW_CATEGORIES)[number];
@@ -19,6 +21,8 @@ export const PW_CATEGORY_LABELS: Record<PwCategory, string> = {
   certificates: "Справки",
   notices: "Уведомления",
   internal: "Внутренние документы",
+  contracts: "Договоры",
+  finance: "Счета и акты",
   custom: "Пользовательские",
 };
 
