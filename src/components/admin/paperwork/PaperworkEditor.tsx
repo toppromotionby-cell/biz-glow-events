@@ -1,6 +1,6 @@
 // Редактор корпоративного документа: содержание слева, живое A4-превью справа.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ChevronDown, Download, FileText, Loader2, Palette, Save, Sparkles } from "lucide-react";
@@ -15,7 +15,7 @@ import { adminKeys } from "@/lib/query-keys";
 import { PwBlockList } from "@/components/admin/paperwork/PwBlockList";
 import { PwBlankPanel } from "@/components/admin/paperwork/PwBlankPanel";
 import { PwAiPanel } from "@/components/admin/paperwork/PwAiPanel";
-import { savePaperworkBlank, savePaperworkDocument } from "@/lib/paperwork.functions";
+import { getPaperworkBlank, savePaperworkBlank, savePaperworkDocument } from "@/lib/paperwork.functions";
 import type { PaperworkDetail } from "@/lib/paperwork.functions";
 import {
   PW_BLOCK_LABELS, PW_DOC_TYPES, PW_DOC_TYPE_LABELS, PW_STATUSES, PW_STATUS_LABELS, pwId,
@@ -28,15 +28,21 @@ import type { CompanyProfile } from "@/lib/documents/company-profile";
 
 export function PaperworkEditor({
   detail,
-  company,
+  companies,
 }: {
   detail: PaperworkDetail;
-  company: CompanyProfile | null;
+  companies: CompanyProfile[];
 }) {
   const qc = useQueryClient();
   const viewer = useDocumentViewer();
   const saveDoc = useServerFn(savePaperworkDocument);
   const saveBlankFn = useServerFn(savePaperworkBlank);
+  const getBlank = useServerFn(getPaperworkBlank);
+
+  const defaultCompanyId = useMemo(
+    () => companies.find((c) => c.is_default)?.id ?? companies[0]?.id ?? null,
+    [companies],
+  );
 
   const [title, setTitle] = useState(detail.document.title);
   const [docNumber, setDocNumber] = useState(detail.document.doc_number);
@@ -49,9 +55,34 @@ export function PaperworkEditor({
   const [blank, setBlank] = useState<PwBlank>(detail.blank);
   const dirty = useRef(false);
 
+  // Документ без компании подхватывает основную — иначе шапка и бланк пустые.
+  useEffect(() => {
+    if (!companyId && defaultCompanyId) setCompanyId(defaultCompanyId);
+  }, [companyId, defaultCompanyId]);
+
+  const companyOptions = useMemo(
+    () => companies.map((c) => ({ id: c.id, name: c.name })),
+    [companies],
+  );
+  const company = useMemo(
+    () => companies.find((c) => c.id === companyId) ?? null,
+    [companies, companyId],
+  );
+
+  // Настройки бланка всегда принадлежат выбранной компании.
+  const blankQuery = useQuery({
+    queryKey: ["paperwork-blank", companyId],
+    queryFn: () => getBlank({ data: { companyId: companyId! } }),
+    enabled: !!companyId && companyId !== detail.document.company_profile_id,
+  });
+  useEffect(() => {
+    if (blankQuery.data) setBlank(blankQuery.data);
+  }, [blankQuery.data]);
+
   useEffect(() => {
     dirty.current = true;
   }, [title, docNumber, docDate, docType, status, companyId, blocks, values]);
+
 
   const docMeta = useMemo(
     () => ({ title, doc_number: docNumber, doc_date: docDate }),
@@ -137,6 +168,14 @@ export function PaperworkEditor({
           </SelectContent>
         </Select>
 
+        <Select value={companyId ?? "none"} onValueChange={(v) => setCompanyId(v === "none" ? null : v)}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Компания" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Без бланка</SelectItem>
+            {companyOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm"><Palette className="mr-1 h-4 w-4" /> Бланк</Button>
@@ -148,12 +187,16 @@ export function PaperworkEditor({
                 blank={blank}
                 onChange={setBlank}
                 onSave={() => saveBlank.mutate()}
-                saving={saveBlank.isPending}
-                disabled={!companyId}
+                saving={saveBlank.isPending || blankQuery.isFetching}
+                companyName={company?.name ?? null}
+                hasCompanies={companyOptions.length > 0}
+                clientLogoUrl={values[varKey("client_logo")] ?? ""}
+                onClientLogoUrlChange={(v: string) => setValues({ ...values, [varKey("client_logo")]: v })}
               />
             </div>
           </SheetContent>
         </Sheet>
+
 
         <Sheet>
           <SheetTrigger asChild>
@@ -222,16 +265,7 @@ export function PaperworkEditor({
                     <Label className="text-xs">Дата</Label>
                     <Input type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
                   </div>
-                  <div className="w-52 space-y-1">
-                    <Label className="text-xs">Компания</Label>
-                    <Select value={companyId ?? "none"} onValueChange={(v) => setCompanyId(v === "none" ? null : v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Без бланка</SelectItem>
-                        {detail.companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+
                 </div>
               </CollapsibleContent>
             </div>
