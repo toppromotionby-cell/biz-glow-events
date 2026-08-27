@@ -8,6 +8,8 @@ export const PW_CATEGORIES = [
   "certificates",
   "notices",
   "internal",
+  "contracts",
+  "finance",
   "custom",
 ] as const;
 export type PwCategory = (typeof PW_CATEGORIES)[number];
@@ -19,6 +21,8 @@ export const PW_CATEGORY_LABELS: Record<PwCategory, string> = {
   certificates: "Справки",
   notices: "Уведомления",
   internal: "Внутренние документы",
+  contracts: "Договоры",
+  finance: "Счета и акты",
   custom: "Пользовательские",
 };
 
@@ -30,6 +34,8 @@ export const PW_DOC_TYPES = [
   "notice",
   "memo",
   "contract",
+  "invoice",
+  "act",
   "custom",
 ] as const;
 export type PwDocType = (typeof PW_DOC_TYPES)[number];
@@ -41,7 +47,9 @@ export const PW_DOC_TYPE_LABELS: Record<PwDocType, string> = {
   certificate: "Справка",
   notice: "Уведомление",
   memo: "Служебная записка",
-  contract: "Договорный документ",
+  contract: "Договор",
+  invoice: "Счёт",
+  act: "Акт",
   custom: "Произвольный документ",
 };
 
@@ -53,7 +61,9 @@ export const PW_TYPE_CATEGORY: Record<PwDocType, PwCategory> = {
   certificate: "certificates",
   notice: "notices",
   memo: "internal",
-  contract: "internal",
+  contract: "contracts",
+  invoice: "finance",
+  act: "finance",
   custom: "custom",
 };
 
@@ -74,6 +84,8 @@ export const PW_BLOCK_TYPES = [
   "signature",
   "spacer",
   "note",
+  "lineitems",
+  "parties",
 ] as const;
 export type PwBlockType = (typeof PW_BLOCK_TYPES)[number];
 
@@ -86,6 +98,8 @@ export const PW_BLOCK_LABELS: Record<PwBlockType, string> = {
   signature: "Подпись и печать",
   spacer: "Отступ",
   note: "Примечание",
+  lineitems: "Позиции с суммами",
+  parties: "Реквизиты сторон",
 };
 
 export type PwAlign = "left" | "center" | "right" | "justify";
@@ -111,6 +125,24 @@ export type PwBlock = {
   size: number;
   /** Абзац с отступом первой строки. */
   indent: boolean;
+  /** Позиции с суммами (lineitems). */
+  lines: PwLine[];
+  currency: string;
+  vatPct: number;
+  totalWords: boolean;
+  /** Реквизиты сторон (parties). */
+  leftTitle: string;
+  leftText: string;
+  rightTitle: string;
+  rightText: string;
+};
+
+/** Строка блока «Позиции с суммами». */
+export type PwLine = {
+  name: string;
+  qty: number;
+  unit: string;
+  price: number;
 };
 
 export type PwVariable = {
@@ -212,6 +244,20 @@ export function pwId(prefix = "b"): string {
   return `${prefix}_${Date.now().toString(36)}${seq.toString(36)}${rnd}`;
 }
 
+export function normalizeLine(raw: unknown): PwLine {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return {
+    name: str(r.name),
+    qty: num(r.qty),
+    unit: str(r.unit) || "шт.",
+    price: num(r.price),
+  };
+}
+
 export function normalizeBlock(raw: unknown): PwBlock {
   const r = (raw ?? {}) as Record<string, unknown>;
   const items = Array.isArray(r.items) ? r.items.map((i) => str(i)) : [];
@@ -219,6 +265,7 @@ export function normalizeBlock(raw: unknown): PwBlock {
   const rows = Array.isArray(r.rows)
     ? (r.rows as unknown[]).map((row) => (Array.isArray(row) ? row.map((c) => str(c)) : []))
     : [];
+  const vat = Number(r.vatPct);
   return {
     id: str(r.id) || pwId(),
     type: oneOf(PW_BLOCK_TYPES, r.type, "paragraph"),
