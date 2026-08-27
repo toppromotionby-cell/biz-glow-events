@@ -2,6 +2,7 @@
 // расчёт итогов и валидация. Файл browser-safe — используется и в админке,
 // и на сервере при генерации документа.
 import { z } from "zod";
+import { swapAt, canSwapAt } from "@/lib/array-move";
 import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
 import {
   QUOTE_TEMPLATES,
@@ -151,12 +152,8 @@ export function renameSection(items: QuoteItem[], from: string, to: string): Quo
 export function moveSection(items: QuoteItem[], section: string, dir: -1 | 1): QuoteItem[] {
   const order = listSections(items);
   const i = order.indexOf(section);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= order.length) return items;
-  const next = [...order];
-  next[i] = order[j]!;
-  next[j] = order[i]!;
-  return orderBySections(items, next);
+  if (!canSwapAt(order.length, i, dir)) return items;
+  return orderBySections(items, swapAt(order, i, dir));
 }
 
 /** Удалить раздел: вместе с позициями или с переносом их в «без раздела». */
