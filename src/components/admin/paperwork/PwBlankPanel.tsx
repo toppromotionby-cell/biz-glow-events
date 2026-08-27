@@ -22,23 +22,39 @@ export function PwBlankPanel({
   onChange,
   onSave,
   saving,
-  disabled,
+  companyName,
+  hasCompanies,
+  clientLogoUrl,
+  onClientLogoUrlChange,
 }: {
   blank: PwBlank;
   onChange: (next: PwBlank) => void;
   onSave: () => void;
   saving: boolean;
-  disabled: boolean;
+  companyName: string | null;
+  hasCompanies: boolean;
+  clientLogoUrl: string;
+  onClientLogoUrlChange: (value: string) => void;
 }) {
   const set = <K extends keyof PwBlank>(k: K, v: PwBlank[K]) => onChange({ ...blank, [k]: v });
 
-  if (disabled) {
+  if (!companyName) {
     return (
-      <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-        Выберите компанию — настройки бланка сохраняются для её профиля.
-      </p>
+      <div className="space-y-3 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        {hasCompanies ? (
+          <p>Выберите компанию в верхней панели редактора — настройки бланка сохраняются для её профиля.</p>
+        ) : (
+          <>
+            <p>Пока нет ни одной компании: создайте профиль, чтобы настроить фирменный бланк.</p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/settings/documents">Настройки компаний</Link>
+            </Button>
+          </>
+        )}
+      </div>
     );
   }
+
 
   return (
     <div className="space-y-5">
