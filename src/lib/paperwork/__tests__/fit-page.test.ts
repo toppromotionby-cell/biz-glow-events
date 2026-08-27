@@ -31,7 +31,7 @@ describe("pickFitFactor", () => {
     expect(k).toBeLessThan(1);
     expect(k).toBeGreaterThanOrEqual(MIN_FIT_K);
     const fitted = fittedBlank(all, blank);
-    expect(estimateContentHeightPt(fitted, fitted)).toBeLessThanOrEqual(availableHeightPt(fitted) * 1.02);
+    expect(estimateContentHeightPt(all, fitted)).toBeLessThanOrEqual(availableHeightPt(fitted) * 1.02);
   });
 
   it("большой документ не сжимается — верстается на несколько страниц", () => {
