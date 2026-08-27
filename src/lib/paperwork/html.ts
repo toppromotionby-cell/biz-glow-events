@@ -192,10 +192,12 @@ export function paperworkHtml(opts: {
 <style>
   :root { --accent:${accent}; }
   * { box-sizing:border-box; }
-  body { margin:0; background:#eef0f4; font-family:${stacks.body}; color:#1c1f24; }
-  .sheet { position:relative; width:210mm; min-height:297mm; margin:0 auto; background:#fff;
+  body { margin:0; background:#eef0f4; font-family:${stacks.body}; color:#1c1f24; overflow-x:hidden; }
+  .sheet { position:relative; width:210mm; max-width:210mm; min-height:297mm; margin:0 auto; background:#fff;
     padding:${blank.marginTopMm}mm ${blank.marginXMm}mm ${blank.marginBottomMm}mm;
     font-size:${blank.fontSizePt}pt; line-height:1.45; overflow-wrap:anywhere; }
+  .sheet img, .sheet table { max-width:100%; }
+
   .bar { position:absolute; left:0; right:0; top:0; height:5px; background:var(--accent); }
   .bg { position:absolute; left:50%; top:45%; transform:translate(-50%,-50%); width:120mm; pointer-events:none; }
   .hd { display:flex; align-items:flex-start; justify-content:space-between; gap:14px;

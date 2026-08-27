@@ -26,3 +26,19 @@ describe("fitScale", () => {
     expect(b.scale).toBeCloseTo(a.scale * 2, 5);
   });
 });
+
+describe("fitScale — широкое содержимое", () => {
+  it("уменьшает лист, если содержимое шире A4 (иначе обрезалось бы справа)", () => {
+    const wide = fitScale({ boxW: 600, boxH: 800, sheetW: DOC_PAGE_W * 1.5 });
+    expect(DOC_PAGE_W * 1.5 * wide.scale).toBeLessThanOrEqual(600);
+  });
+
+  it("масштабированный лист никогда не шире области просмотра", () => {
+    for (const boxW of [320, 480, 540, 900, 1440]) {
+      for (const sheetW of [DOC_PAGE_W, 900, 1200]) {
+        const { scale } = fitScale({ boxW, boxH: 900, sheetW, pad: 16 });
+        expect(sheetW * scale).toBeLessThanOrEqual(boxW);
+      }
+    }
+  });
+});
