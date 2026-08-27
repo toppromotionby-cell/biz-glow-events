@@ -94,7 +94,7 @@ export function PaperworkEditor({
       }),
     onSuccess: () => {
       dirty.current = false;
-      qc.invalidateQueries({ queryKey: adminKeys.all });
+      qc.invalidateQueries({ queryKey: adminKeys.paperwork });
       toast.success("Документ сохранён");
     },
     onError: (e: Error) => toast.error(e.message),
