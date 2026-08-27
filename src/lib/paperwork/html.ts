@@ -71,6 +71,36 @@ function blockHtml(b: PwBlock): string {
       </div>`;
     case "spacer":
       return `<div style="height:${Math.round(b.size)}px"></div>`;
+    case "lineitems": {
+      const t = blockTotals(b);
+      const rows = b.lines
+        .map(
+          (l, i) => `<tr><td>${i + 1}</td><td>${nl2br(l.name)}</td><td class="num">${esc(
+            String(l.qty),
+          )}</td><td>${esc(l.unit)}</td><td class="num">${formatMoney(l.price)}</td><td class="num">${formatMoney(
+            lineTotal(l),
+          )}</td></tr>`,
+        )
+        .join("");
+      const vatRow = b.vatPct
+        ? `<tr><td colspan="5" class="num">НДС ${b.vatPct}%</td><td class="num">${formatMoney(t.vat)}</td></tr>`
+        : "";
+      const words = b.totalWords
+        ? `<div class="words">Сумма прописью: ${esc(t.words)}</div>`
+        : "";
+      return `<table class="tbl items"><thead><tr><th>№</th><th>Наименование</th><th>Кол-во</th><th>Ед.</th><th>Цена</th><th>Сумма</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr><td colspan="5" class="num">Итого без НДС</td><td class="num">${formatMoney(t.net)}</td></tr>
+          ${vatRow}
+          <tr class="grand"><td colspan="5" class="num">Всего к оплате, ${esc(t.currency)}</td><td class="num">${formatMoney(t.gross)}</td></tr>
+        </tfoot></table>${words}`;
+    }
+    case "parties":
+      return `<div class="parties">
+        <div><div class="pt">${esc(b.leftTitle)}</div><div class="pv">${nl2br(b.leftText)}</div></div>
+        <div><div class="pt">${esc(b.rightTitle)}</div><div class="pv">${nl2br(b.rightText)}</div></div>
+      </div>`;
     default:
       return `<p class="p${b.indent ? " ind" : ""}" style="text-align:${align}">${nl2br(b.text)}</p>`;
   }
