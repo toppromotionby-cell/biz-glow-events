@@ -204,8 +204,10 @@ export function paperworkHtml(opts: {
     font-size:9.5pt; color:#41474f; }
   .list { margin:0 0 10px; padding-left:7mm; }
   .list li { margin-bottom:4px; }
-  .tbl { width:100%; border-collapse:collapse; margin:10px 0; font-size:10pt; }
-  .tbl th, .tbl td { border:1px solid #d7dbe2; padding:5px 7px; text-align:left; vertical-align:top; }
+  .tbl { width:100%; table-layout:fixed; border-collapse:collapse; margin:10px 0; font-size:10pt; }
+  .tbl th, .tbl td { border:1px solid #d7dbe2; padding:5px 7px; text-align:left; vertical-align:top;
+    overflow-wrap:break-word; hyphens:manual; -webkit-hyphens:manual; }
+
   .tbl th { background:#f4f5f7; font-weight:600; }
   .tbl .num { text-align:right; white-space:nowrap; }
   .tbl tfoot td { font-weight:600; background:#fafbfc; }
