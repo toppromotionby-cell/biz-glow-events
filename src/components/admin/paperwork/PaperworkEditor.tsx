@@ -1,6 +1,6 @@
 // Редактор корпоративного документа: содержание слева, живое A4-превью справа.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ChevronDown, Download, FileText, Loader2, Palette, Save, Sparkles } from "lucide-react";
@@ -15,7 +15,7 @@ import { adminKeys } from "@/lib/query-keys";
 import { PwBlockList } from "@/components/admin/paperwork/PwBlockList";
 import { PwBlankPanel } from "@/components/admin/paperwork/PwBlankPanel";
 import { PwAiPanel } from "@/components/admin/paperwork/PwAiPanel";
-import { savePaperworkBlank, savePaperworkDocument } from "@/lib/paperwork.functions";
+import { getPaperworkBlank, savePaperworkBlank, savePaperworkDocument } from "@/lib/paperwork.functions";
 import type { PaperworkDetail } from "@/lib/paperwork.functions";
 import {
   PW_BLOCK_LABELS, PW_DOC_TYPES, PW_DOC_TYPE_LABELS, PW_STATUSES, PW_STATUS_LABELS, pwId,
@@ -191,7 +191,7 @@ export function PaperworkEditor({
                 companyName={company?.name ?? null}
                 hasCompanies={companyOptions.length > 0}
                 clientLogoUrl={values[varKey("client_logo")] ?? ""}
-                onClientLogoUrlChange={(v) => setValues({ ...values, [varKey("client_logo")]: v })}
+                onClientLogoUrlChange={(v: string) => setValues({ ...values, [varKey("client_logo")]: v })}
               />
             </div>
           </SheetContent>
