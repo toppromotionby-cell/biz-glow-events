@@ -8,7 +8,13 @@ import { FileSignature, LayoutTemplate, Search, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -92,7 +98,9 @@ function Page() {
                 {k.label}
                 <span className="text-xs text-muted-foreground">{counts[k.type] ?? 0}</span>
               </span>
-              <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">{k.description}</span>
+              <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
+                {k.description}
+              </span>
             </Link>
           ))}
         </div>
@@ -110,7 +118,9 @@ function Page() {
             />
           </div>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Все статусы</SelectItem>
               <SelectItem value="draft">Черновики</SelectItem>
@@ -142,13 +152,17 @@ function Page() {
                     >
                       {d.title}
                     </button>
-                    {d.doc_number && <span className="ml-2 text-xs text-muted-foreground">№ {d.doc_number}</span>}
+                    {d.doc_number && (
+                      <span className="ml-2 text-xs text-muted-foreground">№ {d.doc_number}</span>
+                    )}
                   </td>
                   <td className="p-3 text-muted-foreground">{PW_DOC_TYPE_LABELS[d.doc_type]}</td>
                   <td className="p-3 text-muted-foreground">{d.company_name ?? "—"}</td>
                   <td className="p-3 text-muted-foreground">{fmtDate(d.updated_at)}</td>
                   <td className="p-3">
-                    <StatusPill tone={TONE[d.status] ?? "muted"}>{PW_STATUS_LABELS[d.status]}</StatusPill>
+                    <StatusPill tone={TONE[d.status] ?? "muted"}>
+                      {PW_STATUS_LABELS[d.status]}
+                    </StatusPill>
                   </td>
                   <td className="p-3 text-right">
                     <Button

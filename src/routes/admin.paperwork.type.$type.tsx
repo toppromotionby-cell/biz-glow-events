@@ -4,11 +4,25 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, FileSignature, LayoutTemplate, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  FileSignature,
+  LayoutTemplate,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -99,7 +113,10 @@ function Page() {
   return (
     <div className="space-y-5">
       {dialog}
-      <Link to="/admin/paperwork" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline">
+      <Link
+        to="/admin/paperwork"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+      >
         <ArrowLeft className="h-4 w-4" /> Все документы
       </Link>
 
@@ -109,7 +126,11 @@ function Page() {
         subtitle={kind.description}
         action={
           <Button onClick={() => create.mutate(undefined)} disabled={create.isPending}>
-            {create.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Plus className="mr-1 h-4 w-4" />}
+            {create.isPending ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-1 h-4 w-4" />
+            )}
             Создать документ
           </Button>
         }
@@ -120,7 +141,10 @@ function Page() {
         {tpls.length ? (
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {tpls.map((t) => (
-              <div key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-card p-3">
+              <div
+                key={t.id}
+                className="flex items-start gap-2 rounded-lg border border-border bg-card p-3"
+              >
                 <LayoutTemplate className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{t.name}</p>
@@ -175,7 +199,9 @@ function Page() {
             />
           </div>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Все статусы</SelectItem>
               <SelectItem value="draft">Черновики</SelectItem>
@@ -200,15 +226,22 @@ function Page() {
               {list.map((d) => (
                 <tr key={d.id} className="border-t border-border hover:bg-muted/30">
                   <td className="p-3">
-                    <button className="text-left font-medium hover:underline" onClick={() => open(d.id)}>
+                    <button
+                      className="text-left font-medium hover:underline"
+                      onClick={() => open(d.id)}
+                    >
                       {d.title}
                     </button>
-                    {d.doc_number && <span className="ml-2 text-xs text-muted-foreground">№ {d.doc_number}</span>}
+                    {d.doc_number && (
+                      <span className="ml-2 text-xs text-muted-foreground">№ {d.doc_number}</span>
+                    )}
                   </td>
                   <td className="p-3 text-muted-foreground">{d.company_name ?? "—"}</td>
                   <td className="p-3 text-muted-foreground">{fmtDate(d.updated_at)}</td>
                   <td className="p-3">
-                    <StatusPill tone={TONE[d.status] ?? "muted"}>{PW_STATUS_LABELS[d.status]}</StatusPill>
+                    <StatusPill tone={TONE[d.status] ?? "muted"}>
+                      {PW_STATUS_LABELS[d.status]}
+                    </StatusPill>
                   </td>
                   <td className="p-3 text-right">
                     <Button
