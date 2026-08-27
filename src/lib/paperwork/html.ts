@@ -3,6 +3,7 @@
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { fontStacks } from "@/lib/documents/doc-font";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const esc = (s: string): string =>
   String(s ?? "")
