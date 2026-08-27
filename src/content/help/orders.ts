@@ -41,7 +41,7 @@ export const ORDERS_ARTICLES: HelpArticle[] = [
       "Итоговая сумма пересчитывается автоматически из состава заказа.",
       "Изменение статуса и оплаты фиксируется в таймлайне.",
     ],
-    related: ["orders-items", "orders-payments", "orders-timeline"],
+    related: ["orders-items", "orders-payments", "admin-history"],
   }),
   a({
     id: "orders-statuses",
@@ -58,7 +58,7 @@ export const ORDERS_ARTICLES: HelpArticle[] = [
       "Отменён — сделка не состоялась.",
     ],
     tips: ["Меняйте статус сразу после действия — по нему строятся напоминания и аналитика."],
-    related: ["orders-timeline"],
+    related: ["admin-history"],
   }),
   a({
     id: "orders-items",
