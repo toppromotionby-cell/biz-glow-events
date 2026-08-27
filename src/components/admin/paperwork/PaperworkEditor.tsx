@@ -222,16 +222,7 @@ export function PaperworkEditor({
                     <Label className="text-xs">Дата</Label>
                     <Input type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
                   </div>
-                  <div className="w-52 space-y-1">
-                    <Label className="text-xs">Компания</Label>
-                    <Select value={companyId ?? "none"} onValueChange={(v) => setCompanyId(v === "none" ? null : v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Без бланка</SelectItem>
-                        {detail.companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+
                 </div>
               </CollapsibleContent>
             </div>
