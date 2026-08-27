@@ -17,10 +17,10 @@ import { SaveStatus } from "@/components/admin/SaveStatus";
 import { PwBlockList } from "@/components/admin/paperwork/PwBlockList";
 import { PwBlankPanel } from "@/components/admin/paperwork/PwBlankPanel";
 import { PwAiPanel } from "@/components/admin/paperwork/PwAiPanel";
-import { getPaperworkBlank, savePaperworkBlank, savePaperworkDocument } from "@/lib/paperwork.functions";
+import { getPaperworkBlank, savePaperworkBlank, savePaperworkDocument, savePaperworkTemplate } from "@/lib/paperwork.functions";
 import type { PaperworkDetail } from "@/lib/paperwork.functions";
 import {
-  PW_BLOCK_LABELS, PW_DOC_TYPES, PW_DOC_TYPE_LABELS, PW_STATUSES, PW_STATUS_LABELS, pwId,
+  PW_BLOCK_LABELS, PW_DOC_TYPE_LABELS, PW_STATUSES, PW_STATUS_LABELS, pwId,
   type PwBlank, type PwBlock, type PwBlockType, type PwDocType, type PwStatus,
 } from "@/lib/paperwork/model";
 import { missingBlocks, pwKind } from "@/lib/paperwork/kinds";
@@ -41,6 +41,7 @@ export function PaperworkEditor({
   const viewer = useDocumentViewer();
   const saveDoc = useServerFn(savePaperworkDocument);
   const saveBlankFn = useServerFn(savePaperworkBlank);
+  const saveTpl = useServerFn(savePaperworkTemplate);
   const getBlank = useServerFn(getPaperworkBlank);
 
   const defaultCompanyId = useMemo(
@@ -51,7 +52,8 @@ export function PaperworkEditor({
   const [title, setTitle] = useState(detail.document.title);
   const [docNumber, setDocNumber] = useState(detail.document.doc_number);
   const [docDate, setDocDate] = useState(detail.document.doc_date);
-  const [docType, setDocType] = useState<PwDocType>(detail.document.doc_type);
+  // Вид документа задаётся при создании и дальше не меняется — чтобы документы не «переезжали» между разделами.
+  const docType: PwDocType = detail.document.doc_type;
   const [status, setStatus] = useState<PwStatus>(detail.document.status);
   const [companyId, setCompanyId] = useState<string | null>(detail.document.company_profile_id);
   const [blocks, setBlocks] = useState<PwBlock[]>(detail.document.blocks);
@@ -280,12 +282,9 @@ export function PaperworkEditor({
                 <div className="flex flex-wrap gap-3 border-t border-border p-3">
                   <div className="w-48 space-y-1">
                     <Label className="text-xs">Вид документа</Label>
-                    <Select value={docType} onValueChange={(v) => setDocType(v as PwDocType)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PW_DOC_TYPES.map((t) => <SelectItem key={t} value={t}>{PW_DOC_TYPE_LABELS[t]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex h-9 items-center rounded-md border border-border bg-muted/40 px-3 text-sm text-muted-foreground">
+                      {PW_DOC_TYPE_LABELS[docType]}
+                    </div>
                   </div>
                   {kind.numbered && (
                     <div className="w-32 space-y-1">
