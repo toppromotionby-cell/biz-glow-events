@@ -30,6 +30,8 @@ export const PW_DOC_TYPES = [
   "notice",
   "memo",
   "contract",
+  "invoice",
+  "act",
   "custom",
 ] as const;
 export type PwDocType = (typeof PW_DOC_TYPES)[number];
@@ -41,7 +43,9 @@ export const PW_DOC_TYPE_LABELS: Record<PwDocType, string> = {
   certificate: "Справка",
   notice: "Уведомление",
   memo: "Служебная записка",
-  contract: "Договорный документ",
+  contract: "Договор",
+  invoice: "Счёт",
+  act: "Акт",
   custom: "Произвольный документ",
 };
 
@@ -53,7 +57,9 @@ export const PW_TYPE_CATEGORY: Record<PwDocType, PwCategory> = {
   certificate: "certificates",
   notice: "notices",
   memo: "internal",
-  contract: "internal",
+  contract: "contracts",
+  invoice: "finance",
+  act: "finance",
   custom: "custom",
 };
 
