@@ -8,6 +8,7 @@ import { wrapText } from "@/lib/documents/pdf/draw.server";
 import { hexToRgb01 } from "@/lib/documents/brand";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const MM = 72 / 25.4;
 const PAGE_W = 595.28;
