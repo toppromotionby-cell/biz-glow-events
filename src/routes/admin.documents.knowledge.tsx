@@ -50,6 +50,7 @@ function Page() {
       <AdminPageHeader
         icon={<Brain className="h-5 w-5" />}
         title="Информационная база"
+        help="infobase-what"
         subtitle="Данные, накопленные из КП, КП промо, заказов, презентаций и каталога сайта. Удаление не меняет сами документы."
         action={
           <Button variant="outline" onClick={() => syncMut.mutate()} disabled={syncMut.isPending}>

@@ -210,6 +210,7 @@ function Page() {
       <AdminPageHeader
         icon={<FileStack className="h-5 w-5 text-primary" />}
         title="Коммерческие предложения"
+        help="quotes-create"
         subtitle={`${rows.length} КП · на сумму ${fmtMoney(data?.sum ?? 0)}`}
         action={
           <div className="flex flex-wrap gap-2">

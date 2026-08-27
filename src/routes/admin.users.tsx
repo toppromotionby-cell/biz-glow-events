@@ -88,6 +88,7 @@ function UsersAdminPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Пользователи и роли"
+        help="settings-users"
         subtitle="Назначение прав сотрудникам. Доступно только администраторам."
         icon={
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl btn-primary-gradient">

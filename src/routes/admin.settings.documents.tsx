@@ -120,6 +120,7 @@ function DocumentSettingsPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Компании"
+        help="settings-company"
         subtitle="Юрлица с реквизитами, банком, подписантом и логотипом, а также шаблоны КП, счёта, договора и акта. Сохраняются автоматически."
         icon={<FileCog className="h-6 w-6" />}
         action={
