@@ -111,7 +111,19 @@ function blockHtml(b: PwBlock): string {
       const words = b.totalWords
         ? `<div class="words">Сумма прописью: ${esc(t.words)}</div>`
         : "";
-      return `<table class="tbl items"><thead><tr><th>№</th><th>Наименование</th><th>Кол-во</th><th>Ед.</th><th>Цена</th><th>Сумма</th></tr></thead>
+      const cg = colgroupHtml(
+        lineItemColFractions(
+          b.lines.map((l) => ({
+            name: l.name,
+            qty: l.qty,
+            unit: l.unit,
+            price: formatMoney(l.price),
+            total: formatMoney(lineTotal(l)),
+          })),
+        ),
+      );
+      return `<table class="tbl items">${cg}<thead><tr><th>№</th><th>Наименование</th><th>Кол-во</th><th>Ед.</th><th>Цена</th><th>Сумма</th></tr></thead>
+
         <tbody>${rows}</tbody>
         <tfoot>
           <tr><td colspan="5" class="num">Итого без НДС</td><td class="num">${formatMoney(t.net)}</td></tr>
