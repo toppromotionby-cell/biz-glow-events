@@ -517,7 +517,15 @@ export function slideLayout(slide: PresentationSlide): SlideLayout {
   const vp = variantPlan(slide.type, slide.content.variant);
   const legacy: SlideImageLayout = slide.content.imageLayout ?? "auto";
   const zone: PhotoZone = ov.photoZone !== "auto" ? ov.photoZone : (legacy as PhotoZone);
-  const mode: PhotoZone = zone !== "auto" ? zone : vp.photoZone;
+  // Вариант может не предусматривать фото (photoZone: "none"), но если к слайду
+  // прикреплены снимки и пользователь не выбрал «Без фото» вручную — не теряем их,
+  // а раскладываем автоматически.
+  const mode: PhotoZone =
+    zone !== "auto"
+      ? zone
+      : vp.photoZone === "none" && photos.length > 0
+        ? "auto"
+        : vp.photoZone;
   const weight = textWeight(slide);
 
   const contentTop = GRID.marginTop;
