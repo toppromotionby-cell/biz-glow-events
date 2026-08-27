@@ -1,5 +1,5 @@
 // Обвязка документа: шапка, футер, карточки и блок подписей.
-import { rgb } from "pdf-lib";
+import { rgb, type PDFImage } from "pdf-lib";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { DOC_FONT_PT } from "@/lib/documents/brand";
 import { DEFAULT_LOGO_LAYOUT, computeLogoPlacement, requisitesFontPt } from "@/lib/documents/logo-layout";
@@ -7,6 +7,7 @@ import { displayFont, type DocCtx } from "@/lib/documents/pdf/ctx.server";
 import {
   divider, drawTracked, trackedWidth, ensureSpace, roundedRect, safe, wrapText,
 } from "@/lib/documents/pdf/draw.server";
+import { SIGN_MEDIA_MM } from "@/lib/documents/signature";
 import { ACCENT, LINE, M, MUTED, PAGE_H, PAGE_W, SURFACE, TEXT } from "@/lib/documents/pdf/style.server";
 
 export function drawHeader(
@@ -327,8 +328,19 @@ export function drawSignatures(
   ctx: DocCtx,
   left: { title: string; lines: string[]; signName: string },
   right: { title: string; lines: string[]; signName: string },
+  /** Факсимиле и печать исполнителя — те же размеры, что и в HTML-превью. */
+  media?: { signature?: PDFImage | null; stamp?: PDFImage | null },
 ) {
   const colW = (PAGE_W - M.MARGIN_X * 2 - 24) / 2;
+  const MM = 72 / 25.4;
+  const hasMedia = Boolean(media?.signature || media?.stamp);
+  // Место под факсимиле/печать резервируем заранее — иначе картинка налезает на текст.
+  const mediaH = hasMedia
+    ? Math.max(
+        media?.signature ? SIGN_MEDIA_MM.signatureH * MM : 0,
+        media?.stamp ? SIGN_MEDIA_MM.stampH * MM * (1 - SIGN_MEDIA_MM.stampOverlap) : 0,
+      )
+    : 0;
   // Подпись нельзя рвать между страницами: считаем реальную высоту заранее.
   const measureCol = (b: { lines: string[] }) =>
     16 +
@@ -336,14 +348,14 @@ export function drawSignatures(
     28 +
     M.F11 * 2 +
     10;
-  ensureSpace(ctx, 14 + Math.max(measureCol(left), measureCol(right)));
+  ensureSpace(ctx, 14 + mediaH + Math.max(measureCol(left), measureCol(right)));
   ctx.y -= 14;
   const yStart = ctx.y;
   // Линия подписи в обеих колонках на одном уровне — независимо от числа строк.
   const linesH = (b: typeof left) =>
     b.lines.filter(Boolean).reduce((s, l) => s + wrapText(ctx.regular, l, M.F11, colW).length * M.F11 * M.LH_TEXT, 0);
   const blockH = Math.max(linesH(left), linesH(right));
-  const drawCol = (x: number, b: typeof left) => {
+  const drawCol = (x: number, b: typeof left, withMedia: boolean) => {
     let cy = yStart;
     drawTracked(ctx.page, b.title.toUpperCase(), {
       x,
@@ -361,7 +373,9 @@ export function drawSignatures(
         cy -= M.F11 * M.LH_TEXT;
       }
     }
-    cy = yStart - 16 - blockH - 28;
+    cy = yStart - 16 - blockH - 28 - (withMedia ? mediaH : 0);
+
+    if (withMedia) drawSignMedia(ctx, x, cy, colW, media);
 
     ctx.page.drawLine({
       start: { x, y: cy },
@@ -378,7 +392,47 @@ export function drawSignatures(
     });
     return yStart - (cy - M.F11 - 6); // фактически занятая высота
   };
-  const usedL = drawCol(M.MARGIN_X, left);
-  const usedR = drawCol(M.MARGIN_X + colW + 24, right);
+  const usedL = drawCol(M.MARGIN_X, left, hasMedia);
+  const usedR = drawCol(M.MARGIN_X + colW + 24, right, false);
   ctx.y -= Math.max(usedL, usedR);
 }
+
+/**
+ * Рисует факсимиле и печать относительно линии подписи (y = lineY).
+ * Общая геометрия для КП, счетов и корпоративных документов.
+ */
+export function drawSignMedia(
+  ctx: DocCtx,
+  x: number,
+  lineY: number,
+  colW: number,
+  media?: { signature?: PDFImage | null; stamp?: PDFImage | null },
+) {
+  const MM = 72 / 25.4;
+  const maxW = Math.max(20, colW);
+  const sig = media?.signature ?? null;
+  const stamp = media?.stamp ?? null;
+  if (sig) {
+    const h = SIGN_MEDIA_MM.signatureH * MM;
+    const k = Math.min(h / sig.height, maxW / sig.width);
+    ctx.page.drawImage(sig, {
+      x: x + 6,
+      y: lineY + SIGN_MEDIA_MM.signatureLift,
+      width: sig.width * k,
+      height: sig.height * k,
+      opacity: 0.95,
+    });
+  }
+  if (stamp) {
+    const h = SIGN_MEDIA_MM.stampH * MM;
+    const k = Math.min(h / stamp.height, maxW / stamp.width);
+    ctx.page.drawImage(stamp, {
+      x: x + SIGN_MEDIA_MM.stampOffsetX * MM,
+      y: lineY - stamp.height * k * SIGN_MEDIA_MM.stampOverlap,
+      width: stamp.width * k,
+      height: stamp.height * k,
+      opacity: 0.85,
+    });
+  }
+}
+

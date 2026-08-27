@@ -25,6 +25,11 @@ export type DocumentSettings = {
   company_email: string;
   company_website: string;
   logo_url: string | null;
+  /** Факсимиле и печать — не хранятся в настройках, приезжают из профиля компании. */
+  signature_url?: string | null;
+  stamp_url?: string | null;
+  /** Ставить факсимиле и печать в счёт, договор и акт. */
+  show_facsimile: boolean;
   logo_layout: LogoLayout;
   /** Шрифт документов по умолчанию. */
   font_family: DocFont;
@@ -65,6 +70,9 @@ export const DEFAULT_DOCUMENT_SETTINGS: DocumentSettings = {
   company_email: "hello@event-hub.by",
   company_website: "event-hub.by",
   logo_url: null,
+  signature_url: null,
+  stamp_url: null,
+  show_facsimile: false,
   logo_layout: DEFAULT_LOGO_LAYOUT,
   font_family: "brand",
   accent_color: "#FF7500",
@@ -112,6 +120,7 @@ const SettingsSchema = z.object({
   company_email: z.string().trim().email().max(200),
   company_website: z.string().trim().max(200),
   logo_url: z.string().trim().max(500).nullable().optional(),
+  show_facsimile: z.boolean().optional().default(false),
   logo_layout: z.unknown().optional().transform(normalizeLogoLayout),
   font_family: z.unknown().optional().transform((v) => normalizeDocFont(v)),
   accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Ожидается hex-цвет, напр. #FF7500"),
@@ -194,6 +203,9 @@ function normalize(row: Record<string, unknown>): DocumentSettings {
     vat_rate: Number(row.vat_rate) || DEFAULT_VAT_RATE,
     vat_as_line: row.vat_as_line === true,
     logo_layout: normalizeLogoLayout(row.logo_layout),
+    signature_url: typeof row.signature_url === "string" && row.signature_url ? row.signature_url : null,
+    stamp_url: typeof row.stamp_url === "string" && row.stamp_url ? row.stamp_url : null,
+    show_facsimile: row.show_facsimile === true,
     font_family: normalizeDocFont(row.font_family),
     quote_print_presets: normalizePrintPresets(row.quote_print_presets),
   };

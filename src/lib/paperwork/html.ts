@@ -6,6 +6,7 @@ import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
 import { colgroupHtml, lineItemColFractions, tableColFractions } from "@/lib/paperwork/table-cols";
+import { resolveSignature, signatureMediaHtml, SIGN_MEDIA_CSS } from "@/lib/documents/signature";
 
 
 const esc = (s: string): string =>
@@ -62,7 +63,7 @@ function headerHtml(company: CompanyProfile | null, blank: PwBlank, clientLogo: 
   </header>`;
 }
 
-function blockHtml(b: PwBlock): string {
+function blockHtml(b: PwBlock, company: CompanyProfile | null): string {
   const align = b.align === "justify" ? "justify" : b.align;
   switch (b.type) {
     case "heading":
@@ -86,12 +87,22 @@ function blockHtml(b: PwBlock): string {
       return `<table class="tbl">${cg}${head}<tbody>${body}</tbody></table>`;
     }
 
-    case "signature":
+    case "signature": {
+      // Факсимиле и печать берём из карточки компании — как в PDF и DOCX.
+      const media = signatureMediaHtml(
+        resolveSignature({
+          companySignatureUrl: company?.signature_url ?? null,
+          companyStampUrl: company?.stamp_url ?? null,
+          showSignature: b.withSignature,
+          showStamp: b.withStamp,
+        }),
+      );
       return `<div class="sign">
         <div class="sign-title">${nl2br(b.signerTitle)}</div>
-        <div class="sign-line"></div>
+        <div class="sign-line-wrap">${media}<div class="sign-line"></div></div>
         <div class="sign-name">${nl2br(b.signerName)}</div>
       </div>`;
+    }
     case "spacer":
       return `<div style="height:${Math.round(b.size)}px"></div>`;
     case "lineitems": {
@@ -219,7 +230,10 @@ export function paperworkHtml(opts: {
   .pv { white-space:pre-line; color:#41474f; }
   .sign { margin-top:22px; display:flex; align-items:flex-end; gap:10px; font-size:10.5pt; }
   .sign-title { min-width:45mm; }
-  .sign-line { flex:1; border-bottom:1px solid #9aa1ac; height:1px; max-width:55mm; }
+  .sign-line-wrap { position:relative; flex:1; max-width:55mm; }
+  .sign-line { border-bottom:1px solid #9aa1ac; height:1px; }
+  ${SIGN_MEDIA_CSS}
+  .sign-line-wrap .sign-media { position:absolute; left:0; right:0; bottom:0; height:0; }
   .sign-name { min-width:45mm; text-align:right; }
   .ft { margin-top:24px; padding-top:8px; border-top:1px solid #e2e5ea; font-size:8.5pt; color:#7a828f; text-align:center; }
   @media print { body { background:#fff; } .sheet { margin:0; } }
@@ -227,7 +241,7 @@ export function paperworkHtml(opts: {
 <body><div class="sheet">${blank.accentBar ? '<div class="bar"></div>' : ""}${bg}
 ${headerHtml(company, blank, opts.clientLogoUrl ?? null)}
 ${meta}
-${blocks.map(blockHtml).join("\n")}
+${blocks.map((b) => blockHtml(b, company)).join("\n")}
 ${footer}
 </div></body></html>`;
 }

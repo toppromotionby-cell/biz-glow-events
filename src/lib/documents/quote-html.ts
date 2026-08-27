@@ -14,6 +14,7 @@ import {
   MARGIN_COLS_CSS, type MarginCols,
 } from "@/lib/documents/margin-cols";
 import { autoFitScript, densityRootVars, DENSITY_PAGE_CSS } from "@/lib/documents/density";
+import { resolveSignature, signatureMediaHtml, SIGN_MEDIA_CSS } from "@/lib/documents/signature";
 
 
 
@@ -493,8 +494,16 @@ export function buildQuoteHtmlDoc(
           <div>
             <div class="who">Исполнитель</div>
             <div>${esc(c.legal)}</div>
-            ${quote.signature_url ? `<img src="${esc(quote.signature_url)}" alt="" />` : ""}
-            ${quote.design.show_stamp && quote.stamp_url ? `<img src="${esc(quote.stamp_url)}" alt="" />` : ""}
+            ${signatureMediaHtml(
+              resolveSignature({
+                docSignatureUrl: quote.signature_url,
+                docStampUrl: quote.stamp_url,
+                companySignatureUrl: (settings as { signature_url?: string | null }).signature_url ?? null,
+                companyStampUrl: (settings as { stamp_url?: string | null }).stamp_url ?? null,
+                showSignature: quote.design.show_signature,
+                showStamp: quote.design.show_stamp,
+              }),
+            )}
             <div class="sign-line">${esc(c.signer_name)}${c.signer_title ? `, ${esc(c.signer_title)}` : ""}</div>
           </div>
           <div>
@@ -608,8 +617,8 @@ ${fontLinkTags(docFont)}
   p { margin:4px 0; }
   .sign { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:14px; break-inside:avoid; page-break-inside:avoid; }
   .sign .who { text-transform:uppercase; font-size:var(--fs-card-label); letter-spacing:.12em; color:var(--accent); font-weight:600; }
+  ${SIGN_MEDIA_CSS}
   .sign-line { margin-top:26px; border-top:1px solid var(--line); padding-top:3px; color:var(--muted); font-size:var(--fs-small); }
-  .sign img { max-height:46px; display:block; margin-top:4px; }
   .footer { margin-top:12px; padding-top:7px; border-top:1px solid var(--line); color:var(--muted); font-size:var(--fs-footer); }
   /* Инлайн-предупреждения превью: не попадают в печать и PDF */
   .chk-list { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }

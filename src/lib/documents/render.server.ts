@@ -5,6 +5,7 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { DEFAULT_DOCUMENT_SETTINGS } from "@/lib/document-settings.functions";
 import { BASE_PRINT_PRESET } from "@/lib/documents/print-preset";
 import { sheetCss } from "@/lib/documents/sheet";
+import { SIGN_MEDIA_CSS } from "@/lib/documents/signature";
 
 
 export function esc(s: unknown): string {
@@ -128,6 +129,8 @@ export function renderShell({ title, kind, number, date, settings, body }: Shell
   .sign { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; font-size: 11px; }
   .sign h3 { font-size: 10.5px; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; letter-spacing: .5px; }
   .sign .line { border-top: 1px solid #cbd5e1; padding-top: 4px; margin-top: 36px; color: #475569; }
+  ${SIGN_MEDIA_CSS}
+  .sign .sign-media { margin-top: 4px; }
   .footer { margin-top: 26px; font-size: 10px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 8px; }
   .notes { margin-top: 14px; font-size: 11.5px; color: #374151; white-space: pre-wrap; padding: 10px 12px; background: #fafafa; border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
   ol, ul { margin: 4px 0 4px 18px; padding: 0; }

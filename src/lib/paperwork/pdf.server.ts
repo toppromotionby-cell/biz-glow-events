@@ -12,6 +12,7 @@ import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 import { requisitesFontPt, resolveLogoLayout } from "@/lib/documents/logo-layout";
 import { companyRequisiteLines } from "@/lib/paperwork/html";
 import { tableColFractions } from "@/lib/paperwork/table-cols";
+import { SIGN_MEDIA_MM } from "@/lib/documents/signature";
 
 
 const MM = 72 / 25.4;
@@ -271,16 +272,16 @@ function drawSignature(ctx: Ctx, block: PwBlock, sig: PDFImage | null, stamp: PD
   ctx.page.drawText(name, { x: ctx.right - nameW, y: baseY, size, font: ctx.regular, color: TEXT });
 
   if (block.withSignature && sig) {
-    const h = Math.min(18 * MM, sig.height);
+    const h = SIGN_MEDIA_MM.signatureH * MM;
     const k = h / sig.height;
-    ctx.page.drawImage(sig, { x: lineX1 + 6, y: baseY + 2, width: sig.width * k, height: h, opacity: 0.95 });
+    ctx.page.drawImage(sig, { x: lineX1 + 6, y: baseY + SIGN_MEDIA_MM.signatureLift, width: sig.width * k, height: h, opacity: 0.95 });
   }
   if (block.withStamp && stamp) {
-    const h = Math.min(28 * MM, stamp.height);
+    const h = SIGN_MEDIA_MM.stampH * MM;
     const k = h / stamp.height;
     ctx.page.drawImage(stamp, {
-      x: lineX1 - 12,
-      y: baseY - h * 0.45,
+      x: lineX1 + SIGN_MEDIA_MM.stampOffsetX * MM,
+      y: baseY - h * SIGN_MEDIA_MM.stampOverlap,
       width: stamp.width * k,
       height: h,
       opacity: 0.85,
