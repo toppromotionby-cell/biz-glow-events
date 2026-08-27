@@ -281,6 +281,14 @@ export function normalizeBlock(raw: unknown): PwBlock {
     withSignature: r.withSignature !== false,
     size: Number(r.size) > 0 ? Number(r.size) : 12,
     indent: r.indent === true,
+    lines: Array.isArray(r.lines) ? r.lines.map(normalizeLine) : [],
+    currency: str(r.currency) || "BYN",
+    vatPct: Number.isFinite(vat) && vat >= 0 && vat <= 100 ? vat : 0,
+    totalWords: r.totalWords === true,
+    leftTitle: str(r.leftTitle),
+    leftText: str(r.leftText),
+    rightTitle: str(r.rightTitle),
+    rightText: str(r.rightText),
   };
 }
 
