@@ -75,15 +75,15 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
     case "table": {
       const cols = Math.max(b.header.length, ...b.rows.map((r) => r.length), 1);
       const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
-      const colW = Math.floor(totalW / cols);
-      const widths = Array.from({ length: cols }, () => colW);
-      const cell = (text: string, head: boolean) =>
+      const widths = tableColFractions(b.header, b.rows, cols).map((f) => Math.floor(totalW * f));
+      const cell = (text: string, head: boolean, i: number) =>
         new TableCell({
-          width: { size: colW, type: WidthType.DXA },
+          width: { size: widths[i] ?? Math.floor(totalW / cols), type: WidthType.DXA },
           margins: { top: 60, bottom: 60, left: 100, right: 100 },
           shading: head ? { fill: "F4F5F7", type: ShadingType.CLEAR } : undefined,
           children: [textParagraph(text, { bold: head, size: base - 1 })],
         });
+
       const rows: TableRow[] = [];
       if (b.header.length) {
         rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(b.header[i] ?? "", true)) }));
