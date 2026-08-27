@@ -58,7 +58,7 @@ export const getCatalogItem = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: row, error } = await supabaseAdmin
       .from(data.type)
-      .select(SELECT)
+      .select(CATALOG_SELECT_FULL)
       .eq("published", true)
       .eq("slug", data.slug)
       .maybeSingle();
@@ -67,8 +67,7 @@ export const getCatalogItem = createServerFn({ method: "GET" })
       throw new Error("Не удалось загрузить элемент каталога.");
     }
     if (!row) return null;
-    const signed = await signMediaUrls([row as CatalogRow]);
-    return signed[0];
+    return signMediaUrls([row as CatalogRow])[0];
   });
 
 // Категории каталога — единый источник истины (таблица catalog_categories).
