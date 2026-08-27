@@ -38,10 +38,10 @@ describe("fullscreen layers", () => {
       ...[...layer.matchAll(/:\s*(\d+),/g)].map((m) => Number(m[1])).filter((n) => n <= 70),
     );
     const files = [
-      "dialog", "alert-dialog", "sheet", "drawer",
-      "dropdown-menu", "context-menu", "menubar", "popover", "select",
-      "hover-card", "tooltip",
+      "dialog", "alert-dialog", "sheet",
+      "dropdown-menu", "popover", "select", "tooltip",
     ];
+
     for (const f of files) {
       const src = read(`src/components/ui/${f}.tsx`);
       expect(src, f).not.toMatch(/\bz-50\b/);

@@ -1,8 +1,11 @@
-// Админ-настройки соцсетей: Instagram + TikTok URL.
+// Админ-настройки соцсетей: Instagram + TikTok URL. Правки уходят автоматически.
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminKeys } from "@/lib/query-keys";
+import { invalidateEntity } from "@/lib/admin/invalidate";
+import { useEditorSave } from "@/hooks/use-editor-save";
+import { SaveStatus } from "@/components/admin/SaveStatus";
 import { useServerFn } from "@tanstack/react-start";
 import { Instagram, Save, Loader2, ExternalLink } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -12,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { TikTokIcon } from "@/components/icons/TikTokIcon";
 import { getSiteSettings, updateSiteSettings } from "@/lib/site-settings.functions";
+
 
 export const Route = createFileRoute("/admin/settings/social")({
   head: () => ({
@@ -45,33 +49,41 @@ function SocialSettingsPage() {
 
   const [instagram, setInstagram] = useState("");
   const [tiktok, setTiktok] = useState("");
-
-  useEffect(() => {
-    if (data) {
-      setInstagram(data.instagram_url ?? "");
-      setTiktok(data.tiktok_url ?? "");
-    }
-  }, [data]);
+  const loaded = useRef(false);
 
   const igValid = isValidUrl(instagram);
   const ttValid = isValidUrl(tiktok);
   const canSave = igValid && ttValid;
 
-  const save = useMutation({
-    mutationFn: () =>
-      updateFn({
-        data: {
-          instagram_url: instagram.trim() ? instagram.trim() : null,
-          tiktok_url: tiktok.trim() ? tiktok.trim() : null,
-        },
-      }),
-    onSuccess: () => {
-      toast.success("Сохранено");
-      qc.invalidateQueries({ queryKey: adminKeys.siteSettings });
-      qc.invalidateQueries({ queryKey: adminKeys.siteSettingsPublic });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  // Автосохранение: правки уходят через ~1.2 с после последнего ввода.
+  const save = useEditorSave(async () => {
+    if (!isValidUrl(instagram) || !isValidUrl(tiktok)) return;
+    await updateFn({
+      data: {
+        instagram_url: instagram.trim() ? instagram.trim() : null,
+        tiktok_url: tiktok.trim() ? tiktok.trim() : null,
+      },
+    });
+    invalidateEntity(qc, "social");
+  }, loaded.current);
+
+  useEffect(() => {
+    if (!data || loaded.current) return;
+    loaded.current = true;
+    setInstagram(data.instagram_url ?? "");
+    setTiktok(data.tiktok_url ?? "");
+    save.reset();
+  }, [data, save]);
+
+  useEffect(() => {
+    if (save.state === "error" && save.error) toast.error(save.error);
+  }, [save.state, save.error]);
+
+  const edit = (setter: (v: string) => void) => (v: string) => {
+    setter(v);
+    save.markDirty();
+  };
+
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -95,7 +107,7 @@ function SocialSettingsPage() {
             type="url"
             placeholder="https://instagram.com/your-profile"
             value={instagram}
-            onChange={(e) => setInstagram(e.target.value)}
+            onChange={(e) => edit(setInstagram)(e.target.value)}
             disabled={isLoading}
             className={!igValid ? "border-destructive" : ""}
           />
@@ -121,7 +133,7 @@ function SocialSettingsPage() {
             type="url"
             placeholder="https://tiktok.com/@your-profile"
             value={tiktok}
-            onChange={(e) => setTiktok(e.target.value)}
+            onChange={(e) => edit(setTiktok)(e.target.value)}
             disabled={isLoading}
             className={!ttValid ? "border-destructive" : ""}
           />
@@ -140,17 +152,21 @@ function SocialSettingsPage() {
 
         <div className="pt-2 flex items-center justify-between gap-3 flex-wrap">
           <p className="text-xs text-muted-foreground">
-            Оставьте поле пустым, чтобы скрыть соответствующую иконку.
+            Оставьте поле пустым, чтобы скрыть соответствующую иконку. Правки сохраняются автоматически.
           </p>
-          <Button
-            onClick={() => save.mutate()}
-            disabled={!canSave || save.isPending || isLoading}
-            className="btn-primary-gradient"
-          >
-            {save.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-            Сохранить
-          </Button>
+          <div className="flex items-center gap-3">
+            <SaveStatus state={save.state} errorMessage={save.error} />
+            <Button
+              onClick={save.saveNow}
+              disabled={!canSave || save.state === "saving" || isLoading}
+              className="btn-primary-gradient"
+            >
+              {save.state === "saving" ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+              Сохранить
+            </Button>
+          </div>
         </div>
+
       </div>
     </div>
   );

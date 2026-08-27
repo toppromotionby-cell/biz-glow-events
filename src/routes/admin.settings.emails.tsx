@@ -5,6 +5,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminKeys } from "@/lib/query-keys";
+import { invalidateEntity } from "@/lib/admin/invalidate";
+import { useAutoSaveDraft, readDraft, clearDraft } from "@/lib/admin/use-autosave-draft";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
+import { SaveStatus } from "@/components/admin/SaveStatus";
 import { useServerFn } from '@tanstack/react-start'
 import { toast } from 'sonner'
 import {
@@ -84,15 +88,36 @@ function EmailTemplatesAdmin() {
     queryFn: () => getFn({ data: { key: selected! } }),
   })
 
-  // Sync editor with loaded data
+  // Sync editor with loaded data. Черновик из localStorage имеет приоритет:
+  // шаблоны писем сохраняются кнопкой, поэтому правки не должны теряться.
+  const draftKey = `email-template:${selected ?? 'none'}`
+  const [serverSnapshot, setServerSnapshot] = useState('')
   useEffect(() => {
     const d = detailQuery.data
     if (!d) return
-    setDraftSubject(d.override?.subject ?? d.defaultSubject ?? '')
-    setDraftPreheader(d.override?.preheader ?? '')
-    setDraftHtml(d.override?.html_body ?? d.defaultHtml ?? '')
-    setEnabled(d.override?.enabled ?? true)
-  }, [detailQuery.data])
+    const server = {
+      subject: d.override?.subject ?? d.defaultSubject ?? '',
+      preheader: d.override?.preheader ?? '',
+      html: d.override?.html_body ?? d.defaultHtml ?? '',
+      enabled: d.override?.enabled ?? true,
+    }
+    const draft = readDraft<typeof server>(draftKey)
+    const next = draft ?? server
+    setServerSnapshot(JSON.stringify(server))
+    setDraftSubject(next.subject)
+    setDraftPreheader(next.preheader)
+    setDraftHtml(next.html)
+    setEnabled(next.enabled)
+    if (draft) toast.info('Восстановлен несохранённый черновик шаблона')
+  }, [detailQuery.data, draftKey])
+
+  const current = useMemo(
+    () => ({ subject: draftSubject, preheader: draftPreheader, html: draftHtml, enabled }),
+    [draftSubject, draftPreheader, draftHtml, enabled],
+  )
+  const dirty = !!serverSnapshot && JSON.stringify(current) !== serverSnapshot
+  const { savedAt: draftSavedAt } = useAutoSaveDraft(draftKey, current, { enabled: dirty })
+  const { guardDialog } = useUnsavedGuard(dirty)
 
   // Debounced live preview
   useEffect(() => {
@@ -126,11 +151,14 @@ function EmailTemplatesAdmin() {
     },
     onSuccess: () => {
       toast.success('Шаблон сохранён')
-      qc.invalidateQueries({ queryKey: adminKeys.emailTemplates })
+      clearDraft(draftKey)
+      setServerSnapshot(JSON.stringify(current))
+      invalidateEntity(qc, 'emails')
       qc.invalidateQueries({ queryKey: adminKeys.emailTemplate(selected) })
     },
     onError: (e: any) => toast.error(e?.message ?? 'Не удалось сохранить'),
   })
+
 
   const resetMutation = useMutation({
     mutationFn: async () => {
@@ -139,9 +167,11 @@ function EmailTemplatesAdmin() {
     },
     onSuccess: () => {
       toast.success('Сброшено к шаблону по умолчанию')
-      qc.invalidateQueries({ queryKey: adminKeys.emailTemplates })
+      clearDraft(draftKey)
+      invalidateEntity(qc, 'emails')
       qc.invalidateQueries({ queryKey: adminKeys.emailTemplate(selected) })
     },
+
     onError: (e: any) => toast.error(e?.message ?? 'Не удалось сбросить'),
   })
 
@@ -169,6 +199,7 @@ function EmailTemplatesAdmin() {
 
   return (
     <div className="space-y-4">
+      {guardDialog}
       <header className="flex items-center gap-3 flex-wrap">
         <h1 className="admin-h1 flex items-center gap-2">
           <Mail className="h-6 w-6 text-primary" /> Шаблоны писем
@@ -253,9 +284,14 @@ function EmailTemplatesAdmin() {
                 >
                   <RotateCcw className="h-4 w-4 mr-1.5" /> Сбросить
                 </Button>
-                <Button size="sm" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                <SaveStatus
+                  state={saveMutation.isPending ? 'saving' : dirty ? 'dirty' : 'idle'}
+                  draftSavedAt={draftSavedAt}
+                />
+                <Button size="sm" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !dirty}>
                   <Save className="h-4 w-4 mr-1.5" /> Сохранить
                 </Button>
+
               </div>
             </div>
 
