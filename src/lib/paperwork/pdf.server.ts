@@ -11,6 +11,8 @@ import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 import { requisitesFontPt, resolveLogoLayout } from "@/lib/documents/logo-layout";
 import { companyRequisiteLines } from "@/lib/paperwork/html";
+import { tableColFractions } from "@/lib/paperwork/table-cols";
+
 
 const MM = 72 / 25.4;
 const PAGE_W = 595.28;
