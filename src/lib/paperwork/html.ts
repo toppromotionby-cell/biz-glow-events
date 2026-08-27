@@ -3,6 +3,7 @@
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { fontStacks } from "@/lib/documents/doc-font";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { fittedBlank } from "./fit-page";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
 import { colgroupHtml, lineItemColFractions, tableColFractions } from "@/lib/paperwork/table-cols";
@@ -160,7 +161,9 @@ export function paperworkHtml(opts: {
   /** URL логотипа клиента (опционально). */
   clientLogoUrl?: string | null;
 }): string {
-  const { doc, blocks, company, blank } = opts;
+  const { doc, blocks, company } = opts;
+  // Кегль и поля берём уже подогнанными: тот же расчёт применяется в PDF и DOCX.
+  const blank = fittedBlank(opts.blocks, opts.blank);
   const stacks = fontStacks(blank.font);
   const accent = blank.accentColor || "#FF7500";
   const dateLabel = (() => {

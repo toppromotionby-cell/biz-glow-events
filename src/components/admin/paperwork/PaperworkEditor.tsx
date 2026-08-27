@@ -26,6 +26,7 @@ import {
 import { missingBlocks, pwKind } from "@/lib/paperwork/kinds";
 import { applyVarsToBlocks, autoContext, documentVariables, resolveValues, varKey } from "@/lib/paperwork/variables";
 import { clientLogoUrlFrom, paperworkHtml } from "@/lib/paperwork/html";
+import { PwPreviewFrame } from "@/components/admin/paperwork/PwPreviewFrame";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 
 export function PaperworkEditor({
@@ -319,15 +320,7 @@ export function PaperworkEditor({
         </div>
 
         <div className="xl:sticky xl:top-4 xl:self-start">
-          <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
-            <div className="border-b border-border px-3 py-2 text-xs text-muted-foreground">Превью A4</div>
-            <iframe
-              title="Превью документа"
-              srcDoc={previewHtml}
-              className="h-[75vh] w-full bg-white"
-              sandbox="allow-same-origin"
-            />
-          </div>
+          <PwPreviewFrame html={previewHtml} className="overflow-hidden rounded-lg border border-border bg-muted/30" />
         </div>
       </div>
     </div>

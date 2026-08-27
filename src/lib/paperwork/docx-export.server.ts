@@ -1,4 +1,5 @@
 // Экспорт корпоративного документа в DOCX из тех же блоков, что PDF и превью.
+import { fittedBlank } from "./fit-page";
 import {
   AlignmentType,
   BorderStyle,
@@ -243,7 +244,8 @@ export async function buildPaperworkDocx(opts: {
   company: CompanyProfile | null;
   blank: PwBlank;
 }): Promise<Uint8Array> {
-  const { doc, blocks, company, blank } = opts;
+  const { doc, blocks, company } = opts;
+  const blank = fittedBlank(opts.blocks, opts.blank);
 
   // Факсимиле и печать грузим один раз: те же источники и высоты, что в PDF.
   const needSign = blocks.some((b) => b.type === "signature" && (b.withSignature || b.withStamp));
