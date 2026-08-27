@@ -127,11 +127,13 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
           </Button>
         </div>
       </div>
-      <div ref={boxRef} className="h-[75vh] overflow-auto bg-muted/40" style={{ padding: PAD }}>
+      <div ref={boxRef} className="relative h-[75vh] overflow-auto bg-muted/40" style={{ padding: PAD }}>
+        {/* Щуп ширины: не участвует в потоке и не может быть раздут листом. */}
+        <div ref={gaugeRef} className="pointer-events-none absolute inset-x-0 top-0 h-px" aria-hidden />
         <div
           style={{
-            width: DOC_PAGE_W * scale,
-            height: sheetH * scale,
+            width: sheet.w * scale,
+            height: sheet.h * scale,
             margin: "0 auto",
           }}
         >
@@ -142,8 +144,8 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
             onLoad={measure}
             sandbox="allow-same-origin"
             style={{
-              width: DOC_PAGE_W,
-              height: sheetH,
+              width: sheet.w,
+              height: sheet.h,
               transform: `scale(${scale})`,
               transformOrigin: "top left",
               border: 0,
@@ -153,6 +155,7 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
           />
         </div>
       </div>
+
     </div>
   );
 }
