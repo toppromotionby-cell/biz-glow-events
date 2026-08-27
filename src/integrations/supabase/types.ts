@@ -1931,10 +1931,49 @@ export type Database = {
           },
         ]
       }
+      paperwork_brand_kits: {
+        Row: {
+          company_profile_id: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          company_profile_id: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          company_profile_id?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paperwork_brand_kits_company_profile_id_fkey"
+            columns: ["company_profile_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       paperwork_documents: {
         Row: {
           author_id: string | null
           blocks: Json
+          brand_kit_id: string | null
           company_profile_id: string | null
           created_at: string
           doc_date: string
@@ -1943,6 +1982,7 @@ export type Database = {
           id: string
           status: string
           template_id: string | null
+          template_revision: number | null
           title: string
           updated_at: string
           values: Json
@@ -1950,6 +1990,7 @@ export type Database = {
         Insert: {
           author_id?: string | null
           blocks?: Json
+          brand_kit_id?: string | null
           company_profile_id?: string | null
           created_at?: string
           doc_date?: string
@@ -1958,6 +1999,7 @@ export type Database = {
           id?: string
           status?: string
           template_id?: string | null
+          template_revision?: number | null
           title?: string
           updated_at?: string
           values?: Json
@@ -1965,6 +2007,7 @@ export type Database = {
         Update: {
           author_id?: string | null
           blocks?: Json
+          brand_kit_id?: string | null
           company_profile_id?: string | null
           created_at?: string
           doc_date?: string
@@ -1973,11 +2016,19 @@ export type Database = {
           id?: string
           status?: string
           template_id?: string | null
+          template_revision?: number | null
           title?: string
           updated_at?: string
           values?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "paperwork_documents_brand_kit_id_fkey"
+            columns: ["brand_kit_id"]
+            isOneToOne: false
+            referencedRelation: "paperwork_brand_kits"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "paperwork_documents_company_profile_id_fkey"
             columns: ["company_profile_id"]
@@ -2008,8 +2059,10 @@ export type Database = {
           is_archived: boolean
           is_favorite: boolean
           name: string
+          revision: number
           updated_at: string
           variables: Json
+          variables_schema: Json
         }
         Insert: {
           background_url?: string | null
@@ -2024,8 +2077,10 @@ export type Database = {
           is_archived?: boolean
           is_favorite?: boolean
           name?: string
+          revision?: number
           updated_at?: string
           variables?: Json
+          variables_schema?: Json
         }
         Update: {
           background_url?: string | null
@@ -2040,8 +2095,10 @@ export type Database = {
           is_archived?: boolean
           is_favorite?: boolean
           name?: string
+          revision?: number
           updated_at?: string
           variables?: Json
+          variables_schema?: Json
         }
         Relationships: [
           {
