@@ -1,10 +1,10 @@
 // Раздел «Документы»: быстрый старт по виду документа и список созданных документов.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { FileSignature, LayoutTemplate, Loader2, Search, Trash2 } from "lucide-react";
+import { FileSignature, LayoutTemplate, Search, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,7 @@ import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
 import { PW_DOC_TYPE_LABELS, PW_STATUS_LABELS } from "@/lib/paperwork/model";
 import { PW_KIND_LIST } from "@/lib/paperwork/kinds";
-import {
-  createDocumentFromTemplate, deletePaperworkDocument, listPaperworkDocuments,
-} from "@/lib/paperwork.functions";
+import { deletePaperworkDocument, listPaperworkDocuments } from "@/lib/paperwork.functions";
 
 export const Route = createFileRoute("/admin/paperwork/")({
   head: () => ({ meta: [{ title: "Документы — админка" }] }),
@@ -41,7 +39,6 @@ function Page() {
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
-  const createDoc = useServerFn(createDocumentFromTemplate);
   const delDoc = useServerFn(deletePaperworkDocument);
 
   const docs = useQuery({
@@ -49,14 +46,12 @@ function Page() {
     queryFn: () => listDocs({ data: { search: term, status } }),
   });
 
-  const create = useMutation({
-    mutationFn: (kind: string) => createDoc({ data: { kind: kind as never } }),
-    onSuccess: ({ id }) => {
-      qc.invalidateQueries({ queryKey: adminKeys.paperwork });
-      navigate({ to: "/admin/paperwork/$id", params: { id } });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  // Счётчики по видам — тайлы работают как фильтр, документы создаются внутри вида.
+  const counts = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const d of docs.data ?? []) acc[d.doc_type] = (acc[d.doc_type] ?? 0) + 1;
+    return acc;
+  }, [docs.data]);
 
   const removeDoc = useMutation({
     mutationFn: (id: string) => delDoc({ data: { id } }),
@@ -84,24 +79,21 @@ function Page() {
       />
 
       <section className="space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Создать документ</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">Виды документов</h2>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {PW_KIND_LIST.map((k) => (
-            <button
+            <Link
               key={k.type}
-              type="button"
-              disabled={create.isPending}
-              onClick={() => create.mutate(k.type)}
-              className="rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-primary hover:bg-muted/40 disabled:opacity-60"
+              to="/admin/paperwork/type/$type"
+              params={{ type: k.type }}
+              className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary hover:bg-muted/40"
             >
-              <span className="flex items-center gap-2 text-sm font-medium">
-                {create.isPending && create.variables === k.type && (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                )}
+              <span className="flex items-center justify-between gap-2 text-sm font-medium">
                 {k.label}
+                <span className="text-xs text-muted-foreground">{counts[k.type] ?? 0}</span>
               </span>
               <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">{k.description}</span>
-            </button>
+            </Link>
           ))}
         </div>
       </section>
@@ -181,7 +173,7 @@ function Page() {
               {!docs.isLoading && !(docs.data ?? []).length && (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
-                    Документов пока нет — выберите вид документа выше.
+                    Документов пока нет — откройте нужный вид документа выше и создайте первый.
                   </td>
                 </tr>
               )}
