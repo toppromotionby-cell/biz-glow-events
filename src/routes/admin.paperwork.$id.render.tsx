@@ -62,6 +62,17 @@ export const Route = createFileRoute("/admin/paperwork/$id/render")({
         if (format === "docx") {
           const { buildPaperworkDocx } = await import("@/lib/paperwork/docx-export.server");
           const bytes = await buildPaperworkDocx(payload);
+          const head = new Uint8Array(bytes as unknown as ArrayBufferLike, 0, Math.min(4, (bytes as Uint8Array).byteLength));
+          const validZip =
+            (bytes as Uint8Array).byteLength > 0 && head[0] === 0x50 && head[1] === 0x4b && head[2] === 0x03 && head[3] === 0x04;
+          if (!validZip) {
+            const errorId = crypto.randomUUID();
+            console.error("[paperwork] docx build produced invalid file", { errorId, id: params.id });
+            return new Response("Не удалось собрать DOCX", {
+              status: 500,
+              headers: { "x-document-error-id": errorId },
+            });
+          }
           return new Response(bytes as unknown as BodyInit, {
             status: 200,
             headers: {
