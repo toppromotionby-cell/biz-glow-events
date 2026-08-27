@@ -14,6 +14,7 @@ export const PW_CATEGORIES = [
   "notices",
   "internal",
   "contracts",
+  "hr",
   "finance",
   "custom",
 ] as const;
@@ -27,6 +28,7 @@ export const PW_CATEGORY_LABELS: Record<PwCategory, string> = {
   notices: "Уведомления",
   internal: "Внутренние документы",
   contracts: "Договоры",
+  hr: "Кадровые документы",
   finance: "Счета и акты",
   custom: "Пользовательские",
 };
@@ -39,8 +41,12 @@ export const PW_DOC_TYPES = [
   "notice",
   "memo",
   "contract",
+  "workact",
+  "loan",
   "invoice",
   "act",
+  "payroll",
+  "staffing",
   "custom",
 ] as const;
 export type PwDocType = (typeof PW_DOC_TYPES)[number];
@@ -53,8 +59,12 @@ export const PW_DOC_TYPE_LABELS: Record<PwDocType, string> = {
   notice: "Уведомление",
   memo: "Служебная записка",
   contract: "Договор",
+  workact: "Договор подряда + акт",
+  loan: "Договор займа",
   invoice: "Счёт",
   act: "Акт",
+  payroll: "Зарплатная ведомость",
+  staffing: "Штатное расписание",
   custom: "Произвольный документ",
 };
 
@@ -67,8 +77,12 @@ export const PW_TYPE_CATEGORY: Record<PwDocType, PwCategory> = {
   notice: "notices",
   memo: "internal",
   contract: "contracts",
+  workact: "contracts",
+  loan: "contracts",
   invoice: "finance",
   act: "finance",
+  payroll: "hr",
+  staffing: "hr",
   custom: "custom",
 };
 
