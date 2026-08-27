@@ -12,6 +12,7 @@ import {
   TableCell,
   TableRow,
   TextRun,
+  ImageRun,
   WidthType,
   ShadingType,
   convertMillimetersToTwip,
@@ -21,6 +22,28 @@ import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
 import { lineItemColFractions, tableColFractions } from "@/lib/paperwork/table-cols";
 
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
+import { resolveSignature, SIGN_MEDIA_MM } from "@/lib/documents/signature";
+
+/** Картинка подписи/печати для DOCX: байты + тип, иначе ImageRun не собрать. */
+type DocxImage = { data: Uint8Array; type: "png" | "jpg" | "gif" | "bmp"; width: number; height: number };
+
+async function loadDocxImage(url: string | null, heightMm: number): Promise<DocxImage | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = new Uint8Array(await res.arrayBuffer());
+    const ct = res.headers.get("content-type") ?? "";
+    const type = ct.includes("jpeg") || /\.jpe?g($|\?)/i.test(url)
+      ? "jpg"
+      : ct.includes("gif") ? "gif" : ct.includes("bmp") ? "bmp" : "png";
+    // Реальных размеров не знаем — держим фиксированную высоту и разумную ширину.
+    const height = Math.round(heightMm * 3.7795);
+    return { data, type, width: Math.round(height * 2.2), height };
+  } catch {
+    return null;
+  }
+}
 
 const ALIGN: Record<string, (typeof AlignmentType)[keyof typeof AlignmentType]> = {
   left: AlignmentType.LEFT,
@@ -47,7 +70,7 @@ function textParagraph(text: string, opts: { align?: string; bold?: boolean; siz
   });
 }
 
-function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
+function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxImage | null; stamp: DocxImage | null }): (Paragraph | Table)[] {
   const base = blank.fontSizePt;
   switch (b.type) {
     case "heading":
@@ -181,10 +204,24 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
         new Paragraph({ spacing: { after: 120 }, children: [] }),
       ];
     }
-    case "signature":
+    case "signature": {
+      const img = (m: DocxImage | null) =>
+        m
+          ? new ImageRun({
+              type: m.type,
+              data: m.data,
+              transformation: { width: m.width, height: m.height },
+              altText: { title: "Подпись", description: "Факсимиле или печать", name: "sign" },
+            })
+          : null;
+      const marks = [
+        b.withSignature ? img(media?.signature ?? null) : null,
+        b.withStamp ? img(media?.stamp ?? null) : null,
+      ].filter(Boolean) as ImageRun[];
       return [
+        ...(marks.length ? [new Paragraph({ spacing: { before: 200 }, children: marks })] : []),
         new Paragraph({
-          spacing: { before: 320, after: 120 },
+          spacing: { before: marks.length ? 0 : 320, after: 120 },
           tabStops: [{ type: "right" as never, position: 9000 }],
           children: [
             new TextRun({ text: b.signerTitle, size: Math.round(base * 2), font: FONT }),
@@ -192,6 +229,7 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
           ],
         }),
       ];
+    }
     case "spacer":
       return [new Paragraph({ spacing: { after: Math.round(b.size * 20) }, children: [] })];
     default:
@@ -206,6 +244,22 @@ export async function buildPaperworkDocx(opts: {
   blank: PwBlank;
 }): Promise<Uint8Array> {
   const { doc, blocks, company, blank } = opts;
+
+  // Факсимиле и печать грузим один раз: те же источники и высоты, что в PDF.
+  const needSign = blocks.some((b) => b.type === "signature" && (b.withSignature || b.withStamp));
+  const signSrc = resolveSignature({
+    companySignatureUrl: company?.signature_url ?? null,
+    companyStampUrl: company?.stamp_url ?? null,
+    showSignature: needSign,
+    showStamp: needSign,
+  });
+  const [signature, stamp] = needSign
+    ? await Promise.all([
+        loadDocxImage(signSrc.signatureUrl, SIGN_MEDIA_MM.signatureH),
+        loadDocxImage(signSrc.stampUrl, SIGN_MEDIA_MM.stampH),
+      ])
+    : [null, null];
+  const media = { signature, stamp };
 
   const header: Paragraph[] = [];
   if (blank.headerLayout !== "none" && company) {
@@ -305,7 +359,7 @@ export async function buildPaperworkDocx(opts: {
               }),
             }
           : undefined,
-        children: [...header, meta, ...blocks.flatMap((b) => blockParagraphs(b, blank))],
+        children: [...header, meta, ...blocks.flatMap((b) => blockParagraphs(b, blank, media))],
       },
     ],
   });

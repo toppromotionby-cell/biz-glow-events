@@ -4,6 +4,7 @@
 // кириллица в Standard 14 шрифтах PDF не работает, поэтому встраиваем TTF
 // подмножеством (subset:true).
 import { embedImageUrl } from "@/lib/documents/image-embed.server";
+import { resolveSignature } from "@/lib/documents/signature";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { DocumentSettings } from "@/lib/document-settings.functions";
@@ -172,6 +173,21 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
   return await ctx.pdf.save();
 }
 
+/** Факсимиле и печать исполнителя для счёта/договора/акта (тумблер в настройках). */
+async function financeSignMedia(ctx: DocCtx, settings: DocumentSettings) {
+  const src = resolveSignature({
+    companySignatureUrl: settings.signature_url ?? null,
+    companyStampUrl: settings.stamp_url ?? null,
+    showSignature: settings.show_facsimile === true,
+    showStamp: settings.show_facsimile === true,
+  });
+  const [signature, stamp] = await Promise.all([
+    embedImageUrl(ctx.pdf, src.signatureUrl),
+    embedImageUrl(ctx.pdf, src.stampUrl),
+  ]);
+  return { signature, stamp };
+}
+
 async function buildInvoice(order: DocOrder, items: DocItem[], settings: DocumentSettings): Promise<Uint8Array> {
   const ctx = await createCtx(settings.logo_url, null, settings.logo_layout);
   const { num, date } = header(order);
@@ -270,6 +286,7 @@ async function buildInvoice(order: DocOrder, items: DocItem[], settings: Documen
       lines: ["Подпись: _______________"],
       signName: order.client_name,
     },
+    await financeSignMedia(ctx, settings),
   );
 
   drawFooter(ctx, settings);
@@ -369,7 +386,8 @@ async function buildContract(order: DocOrder, items: DocItem[], settings: Docume
       ],
       signName: order.client_name,
     },
-  );
+     await financeSignMedia(ctx, settings),
+ );
 
   drawFooter(ctx, settings);
   return await ctx.pdf.save();
@@ -469,7 +487,8 @@ async function buildAct(order: DocOrder, items: DocItem[], settings: DocumentSet
       lines: [order.client_company || order.client_name],
       signName: order.client_name,
     },
-  );
+     await financeSignMedia(ctx, settings),
+ );
 
   gap(ctx, 4);
   drawParagraph(
@@ -616,6 +635,20 @@ async function renderQuotePdf(
   if (!quote.design.show_cover) hidden.add("cover");
   if (!quote.design.show_requisites) hidden.add("requisites");
   if (!quote.design.show_signature) hidden.add("signature");
+
+  // Факсимиле и печать — тот же источник и те же размеры, что в HTML-превью.
+  const signSrc = resolveSignature({
+    docSignatureUrl: quote.signature_url,
+    docStampUrl: quote.stamp_url,
+    companySignatureUrl: eff.signature_url ?? null,
+    companyStampUrl: eff.stamp_url ?? null,
+    showSignature: quote.design.show_signature,
+    showStamp: quote.design.show_stamp,
+  });
+  const [signImg, stampImg] = await Promise.all([
+    embedImageUrl(ctx.pdf, signSrc.signatureUrl),
+    embedImageUrl(ctx.pdf, signSrc.stampUrl),
+  ]);
 
   const heading = (title: string) => {
     gap(ctx, 8);
@@ -846,6 +879,7 @@ async function renderQuotePdf(
             lines: [quote.client_company || quote.client_name || ""],
             signName: quote.client_name || "",
           },
+          { signature: signImg, stamp: stampImg },
         );
         break;
       }

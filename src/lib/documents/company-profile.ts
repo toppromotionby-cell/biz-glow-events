@@ -123,6 +123,9 @@ export function applyCompanyProfile(
     company_email: pick(profile.company_email, settings.company_email),
     company_website: pick(profile.company_website, settings.company_website),
     logo_url: profile.logo_url ?? settings.logo_url,
+    // Факсимиле и печать раньше терялись при наложении профиля — теперь доезжают до рендера.
+    signature_url: profile.signature_url ?? settings.signature_url ?? null,
+    stamp_url: profile.stamp_url ?? settings.stamp_url ?? null,
     logo_layout: profile.logo_layout,
     accent_color: pick(profile.accent_color, settings.accent_color),
     bank_name: pick(profile.bank_name, settings.bank_name),

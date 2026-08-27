@@ -6,6 +6,19 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { esc, money, renderShell, partyCard } from "@/lib/documents/render.server";
 import { computeVat, vatConfig, vatRateLabel } from "@/lib/documents/vat";
 
+/** Факсимиле и печать исполнителя в HTML счёта/договора/акта (тумблер настроек). */
+function financeSignMediaHtml(settings: DocumentSettings): string {
+  return signatureMediaHtml(
+    resolveSignature({
+      companySignatureUrl: settings.signature_url ?? null,
+      companyStampUrl: settings.stamp_url ?? null,
+      showSignature: settings.show_facsimile === true,
+      showStamp: settings.show_facsimile === true,
+    }),
+  );
+}
+import { resolveSignature, signatureMediaHtml, SIGN_MEDIA_CSS } from "@/lib/documents/signature";
+
 export type DocOrder = {
   id: string;
   order_number?: string | null;
@@ -144,6 +157,7 @@ export function buildInvoiceHtml(order: DocOrder, items: DocItem[], settings: Do
       <div>
         <h3>Исполнитель</h3>
         <div>Подпись: _______________</div>
+        ${financeSignMediaHtml(settings)}
         <div class="line">${esc(settings.signer_name)} / ${esc(settings.signer_title)}</div>
       </div>
       <div>
@@ -227,6 +241,7 @@ export function buildContractHtml(order: DocOrder, items: DocItem[], settings: D
       <div>
         <h3>Исполнитель</h3>
         <div>${esc(settings.company_legal_name)}<br/>УНП ${esc(settings.company_unp)}<br/>${esc(settings.company_address)}<br/>${settings.bank_account ? `р/с ${esc(settings.bank_account)}` : ""}</div>
+        ${financeSignMediaHtml(settings)}
         <div class="line">${esc(settings.signer_name)}, ${esc(settings.signer_title)}</div>
       </div>
       <div>
@@ -311,6 +326,7 @@ export function buildActHtml(order: DocOrder, items: DocItem[], settings: Docume
       <div>
         <h3>Сдал — Исполнитель</h3>
         <div>${esc(settings.company_legal_name)}<br/>УНП ${esc(settings.company_unp)}</div>
+        ${financeSignMediaHtml(settings)}
         <div class="line">${esc(settings.signer_name)}, ${esc(settings.signer_title)}</div>
       </div>
       <div>
