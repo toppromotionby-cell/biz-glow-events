@@ -101,6 +101,10 @@ export function PwBlankPanel({
           <Switch checked={blank.footer} onCheckedChange={(v) => set("footer", v)} />
           Подвал с контактами
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <Switch checked={blank.fitOnePage !== false} onCheckedChange={(v) => set("fitOnePage", v)} />
+          Умещать в один лист A4
+        </label>
         <div className="flex items-center gap-2">
           <Label className="text-xs">Акцентный цвет</Label>
           <input
