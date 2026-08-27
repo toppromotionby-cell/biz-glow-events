@@ -6,18 +6,18 @@ import type { DocumentSettings } from "@/lib/document-settings.functions";
 import { esc, money, renderShell, partyCard } from "@/lib/documents/render.server";
 import { computeVat, vatConfig, vatRateLabel } from "@/lib/documents/vat";
 
-/** Факсимиле и печать исполнителя в HTML счёта/договора/акта (тумблер настроек). */
+import { resolveSignature, signatureMediaHtml, SIGN_MEDIA_CSS } from "@/lib/documents/signature";
+
+/** Подпись и печать исполнителя в HTML счёта/договора/акта — если картинки загружены. */
 function financeSignMediaHtml(settings: DocumentSettings): string {
   return signatureMediaHtml(
     resolveSignature({
       companySignatureUrl: settings.signature_url ?? null,
       companyStampUrl: settings.stamp_url ?? null,
-      showSignature: settings.show_facsimile === true,
-      showStamp: settings.show_facsimile === true,
     }),
   );
 }
-import { resolveSignature, signatureMediaHtml, SIGN_MEDIA_CSS } from "@/lib/documents/signature";
+
 
 export type DocOrder = {
   id: string;

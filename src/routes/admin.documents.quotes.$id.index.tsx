@@ -8,6 +8,7 @@ import { deleteDocument } from "@/lib/documents-overview.functions";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { signatureAvailability } from "@/lib/documents/signature";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
@@ -243,7 +244,19 @@ function Page() {
   const warnsCount = checks.filter((c) => c.level === "warn").length;
   const itemIssues = useMemo(() => itemIssueMap(checks), [checks]);
   const blockIssues = useMemo(() => blockIssueMap(checks), [checks]);
+  // Подпись и печать предлагаем только когда картинка загружена в КП или карточке компании.
+  const quoteSign = useMemo(
+    () =>
+      signatureAvailability({
+        docSignatureUrl: quote?.signature_url ?? null,
+        docStampUrl: quote?.stamp_url ?? null,
+        companySignatureUrl: (settings as { signature_url?: string | null }).signature_url ?? null,
+        companyStampUrl: (settings as { stamp_url?: string | null }).stamp_url ?? null,
+      }),
+    [quote?.signature_url, quote?.stamp_url, settings],
+  );
   const [tab, setTab] = useState<string | null>("items");
+
 
   // Переход от замечания к полю, которое его вызвало.
   const gotoCheck = (c: { scope?: string; refId?: string }) => {
@@ -806,15 +819,20 @@ function Page() {
                       toggles={([
                         ["show_cover", "Титульный блок"],
                         ["show_requisites", "Реквизиты"],
-                        ["show_signature", "Подписи"],
-                        ["show_stamp", "Печать"],
+                        ["show_signature", "Блок подписи"],
+                        ["show_stamp", "Накладывать печать"],
                         ["show_logo", "Логотип"],
                         ["show_about", "Блок о компании"],
-                      ] as const).map(([key, label]) => ({
+                      ] as const)
+                        // Печать предлагаем только когда её изображение реально загружено.
+                        .filter(([key]) => (key === "show_stamp" ? quoteSign.hasStamp : true))
+
+                        .map(([key, label]) => ({
                         key, label,
                         value: !!quote.design[key],
                         onChange: (v: boolean) => patch({ design: { ...quote.design, [key]: v } }),
                       }))}
+
                       fontFamily={quote.font_family}
                       onFontChange={(font_family) => patch({ font_family })}
                       accent={quote.design.accent_color}

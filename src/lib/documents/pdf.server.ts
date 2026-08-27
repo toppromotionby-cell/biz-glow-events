@@ -173,14 +173,13 @@ async function buildQuote(order: DocOrder, items: DocItem[], settings: DocumentS
   return await ctx.pdf.save();
 }
 
-/** Факсимиле и печать исполнителя для счёта/договора/акта (тумблер в настройках). */
+/** Подпись и печать исполнителя для счёта/договора/акта — если картинки загружены. */
 async function financeSignMedia(ctx: DocCtx, settings: DocumentSettings) {
   const src = resolveSignature({
     companySignatureUrl: settings.signature_url ?? null,
     companyStampUrl: settings.stamp_url ?? null,
-    showSignature: settings.show_facsimile === true,
-    showStamp: settings.show_facsimile === true,
   });
+
   const [signature, stamp] = await Promise.all([
     embedImageUrl(ctx.pdf, src.signatureUrl),
     embedImageUrl(ctx.pdf, src.stampUrl),
@@ -636,7 +635,7 @@ async function renderQuotePdf(
   if (!quote.design.show_requisites) hidden.add("requisites");
   if (!quote.design.show_signature) hidden.add("signature");
 
-  // Факсимиле и печать — тот же источник и те же размеры, что в HTML-превью.
+  // Подпись и печать — тот же источник и те же размеры, что в HTML-превью.
   const signSrc = resolveSignature({
     docSignatureUrl: quote.signature_url,
     docStampUrl: quote.stamp_url,

@@ -28,6 +28,7 @@ import { applyVarsToBlocks, autoContext, documentVariables, resolveValues, varKe
 import { clientLogoUrlFrom, paperworkHtml } from "@/lib/paperwork/html";
 import { PwPreviewFrame } from "@/components/admin/paperwork/PwPreviewFrame";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
+import { signatureAvailability } from "@/lib/documents/signature";
 
 export function PaperworkEditor({
   detail,
@@ -101,6 +102,15 @@ export function PaperworkEditor({
   );
 
   const auto = useMemo(() => autoContext(company, docMeta), [company, docMeta]);
+  // Подпись и печать предлагаем только когда в карточке компании есть картинки.
+  const signAvail = useMemo(
+    () =>
+      signatureAvailability({
+        companySignatureUrl: company?.signature_url ?? null,
+        companyStampUrl: company?.stamp_url ?? null,
+      }),
+    [company],
+  );
   const variables = useMemo(() => documentVariables(blocks, auto), [blocks, auto]);
   const manualVars = variables.filter((v) => v.source !== "auto");
   const resolved = useMemo(() => resolveValues(auto, values), [auto, values]);
@@ -299,7 +309,7 @@ export function PaperworkEditor({
             </p>
           )}
 
-          <PwBlockList blocks={blocks} onChange={setBlocks} suggested={kind.starterBlocks} />
+          <PwBlockList blocks={blocks} onChange={setBlocks} suggested={kind.starterBlocks} sign={signAvail} />
 
           {!!manualVars.length && (
             <div className="space-y-2 rounded-lg border border-border bg-card p-3">

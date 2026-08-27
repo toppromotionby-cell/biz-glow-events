@@ -89,7 +89,7 @@ function blockHtml(b: PwBlock, company: CompanyProfile | null): string {
     }
 
     case "signature": {
-      // Факсимиле и печать берём из карточки компании — как в PDF и DOCX.
+      // Подпись и печать берём из карточки компании — как в PDF и DOCX.
       const media = signatureMediaHtml(
         resolveSignature({
           companySignatureUrl: company?.signature_url ?? null,

@@ -17,6 +17,7 @@ import {
   type PwAlign, type PwBlock, type PwBlockType,
 } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
+import type { SignatureAvailability } from "@/lib/documents/signature";
 
 const ALIGNS: { key: PwAlign; label: string }[] = [
   { key: "left", label: "Слева" },
@@ -52,10 +53,12 @@ type BlockProps = {
   onMove: (dir: -1 | 1) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  /** Что доступно по загруженным картинкам компании. */
+  sign: SignatureAvailability;
 };
 
 const BlockCard = memo(function BlockCard({
-  block, index, total, onChange, onMove, onDuplicate, onRemove,
+  block, index, total, onChange, onMove, onDuplicate, onRemove, sign,
 }: BlockProps) {
   const cols = Math.max(block.header.length, ...block.rows.map((r) => r.length), 1);
 
@@ -245,16 +248,26 @@ const BlockCard = memo(function BlockCard({
               <Label className="text-xs">ФИО</Label>
               <Input value={block.signerName} onChange={(e) => onChange({ signerName: e.target.value })} />
             </div>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Switch checked={block.withSignature} onCheckedChange={(v) => onChange({ withSignature: v })} />
-              Подставлять факсимиле
-            </label>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Switch checked={block.withStamp} onCheckedChange={(v) => onChange({ withStamp: v })} />
-              Ставить печать
-            </label>
+            {sign.hasSignature && (
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={block.withSignature} onCheckedChange={(v) => onChange({ withSignature: v })} />
+                Накладывать подпись
+              </label>
+            )}
+            {sign.hasStamp && (
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={block.withStamp} onCheckedChange={(v) => onChange({ withStamp: v })} />
+                Ставить печать
+              </label>
+            )}
+            {!sign.hasSignature && !sign.hasStamp && (
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Загрузите подпись или печать в карточке компании — тогда их можно будет накладывать на документ.
+              </p>
+            )}
           </div>
         )}
+
 
         {block.type === "spacer" && (
           <div className="flex items-center gap-2">
@@ -409,9 +422,12 @@ export function PwBlockList({
   blocks,
   onChange,
   suggested = [],
+  sign = { hasSignature: false, hasStamp: false },
 }: {
   blocks: PwBlock[];
   onChange: (next: PwBlock[]) => void;
+  /** Доступность подписи и печати — считается по картинкам карточки компании. */
+  sign?: SignatureAvailability;
   /** Блоки, релевантные текущему виду документа — показываем их кнопками. */
   suggested?: PwBlockType[];
 }) {
@@ -447,6 +463,7 @@ export function PwBlockList({
             onChange(next);
           }}
           onRemove={() => onChange(blocks.filter((_, bi) => bi !== i))}
+          sign={sign}
         />
       ))}
 
