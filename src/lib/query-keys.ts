@@ -38,6 +38,8 @@ export const adminKeys = {
 
   // Презентации
   presentations: ["presentations"] as const,
+  paperwork: ["paperwork"] as const,
+  paperworkTemplates: ["paperwork-templates"] as const,
   presentation: (id: string) => ["presentation", id] as const,
 
   // Настройки и справочники

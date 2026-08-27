@@ -9,6 +9,7 @@ import {
   Newspaper, UserCog, Trophy, MessageSquareQuote,
   Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
   FileStack,
+  FileSignature,
   Brain,
   Layers,
   Presentation,
@@ -48,6 +49,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/documents", label: "Все КП", icon: FileStack, exact: true, perm: "documents.manage" },
       { to: "/admin/documents/presentations", label: "Презентации", icon: Presentation, matchPrefix: "/admin/documents/presentations", perm: "documents.manage" },
+      { to: "/admin/paperwork", label: "Документы и шаблоны", icon: FileSignature, matchPrefix: "/admin/paperwork", perm: "documents.manage" },
       { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain, perm: "documents.knowledge" },
       { to: "/admin/settings/documents", label: "Компании", icon: FileCog, perm: "documents.settings" },
 

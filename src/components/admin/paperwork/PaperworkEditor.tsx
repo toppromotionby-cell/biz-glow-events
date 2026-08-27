@@ -1,0 +1,247 @@
+// Редактор корпоративного документа: блоки, переменные, бланк, AI и A4-превью.
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Download, FileText, Loader2, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDocumentViewer } from "@/hooks/use-document-viewer";
+import { adminKeys } from "@/lib/query-keys";
+import { PwBlockList } from "@/components/admin/paperwork/PwBlockList";
+import { PwBlankPanel } from "@/components/admin/paperwork/PwBlankPanel";
+import { PwAiPanel } from "@/components/admin/paperwork/PwAiPanel";
+import { savePaperworkBlank, savePaperworkDocument } from "@/lib/paperwork.functions";
+import type { PaperworkDetail } from "@/lib/paperwork.functions";
+import {
+  PW_DOC_TYPES, PW_DOC_TYPE_LABELS, PW_STATUSES, PW_STATUS_LABELS, pwId,
+  type PwBlank, type PwBlock, type PwDocType, type PwStatus,
+} from "@/lib/paperwork/model";
+import { applyVarsToBlocks, autoContext, documentVariables, resolveValues, varKey } from "@/lib/paperwork/variables";
+import { paperworkHtml } from "@/lib/paperwork/html";
+import type { CompanyProfile } from "@/lib/documents/company-profile";
+
+export function PaperworkEditor({
+  detail,
+  company,
+}: {
+  detail: PaperworkDetail;
+  company: CompanyProfile | null;
+}) {
+  const qc = useQueryClient();
+  const viewer = useDocumentViewer();
+  const saveDoc = useServerFn(savePaperworkDocument);
+  const saveBlankFn = useServerFn(savePaperworkBlank);
+
+  const [title, setTitle] = useState(detail.document.title);
+  const [docNumber, setDocNumber] = useState(detail.document.doc_number);
+  const [docDate, setDocDate] = useState(detail.document.doc_date);
+  const [docType, setDocType] = useState<PwDocType>(detail.document.doc_type);
+  const [status, setStatus] = useState<PwStatus>(detail.document.status);
+  const [companyId, setCompanyId] = useState<string | null>(detail.document.company_profile_id);
+  const [blocks, setBlocks] = useState<PwBlock[]>(detail.document.blocks);
+  const [values, setValues] = useState<Record<string, string>>(detail.document.values);
+  const [blank, setBlank] = useState<PwBlank>(detail.blank);
+  const dirty = useRef(false);
+
+  useEffect(() => {
+    dirty.current = true;
+  }, [title, docNumber, docDate, docType, status, companyId, blocks, values]);
+
+  const docMeta = useMemo(
+    () => ({ title, doc_number: docNumber, doc_date: docDate }),
+    [title, docNumber, docDate],
+  );
+
+  const auto = useMemo(() => autoContext(company, docMeta), [company, docMeta]);
+  const variables = useMemo(() => documentVariables(blocks, auto), [blocks, auto]);
+  const resolved = useMemo(() => resolveValues(auto, values), [auto, values]);
+
+  const previewHtml = useMemo(
+    () =>
+      paperworkHtml({
+        doc: docMeta,
+        blocks: applyVarsToBlocks(blocks, resolved),
+        company,
+        blank,
+      }),
+    [docMeta, blocks, resolved, company, blank],
+  );
+
+  const plainText = useMemo(
+    () => blocks.map((b) => [b.text, ...b.items, ...b.header, ...b.rows.flat()].filter(Boolean).join("\n")).join("\n\n"),
+    [blocks],
+  );
+
+  const save = useMutation({
+    mutationFn: () =>
+      saveDoc({
+        data: {
+          id: detail.document.id,
+          template_id: detail.document.template_id,
+          company_profile_id: companyId,
+          doc_type: docType,
+          title,
+          doc_number: docNumber,
+          doc_date: docDate,
+          blocks,
+          values,
+          status,
+        },
+      }),
+    onSuccess: () => {
+      dirty.current = false;
+      qc.invalidateQueries({ queryKey: adminKeys.paperwork });
+      toast.success("Документ сохранён");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveBlank = useMutation({
+    mutationFn: () => saveBlankFn({ data: { companyId: companyId!, settings: blank } }),
+    onSuccess: () => toast.success("Настройки бланка сохранены"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const download = async (format: "pdf" | "docx") => {
+    if (dirty.current) await save.mutateAsync();
+    await viewer.openDocument(`/admin/paperwork/${detail.document.id}/render?format=${format}`, { auth: true });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-3">
+        <div className="min-w-[220px] flex-1 space-y-1">
+          <Label className="text-xs">Название</Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div className="w-32 space-y-1">
+          <Label className="text-xs">Номер</Label>
+          <Input value={docNumber} onChange={(e) => setDocNumber(e.target.value)} placeholder="12/25" />
+        </div>
+        <div className="w-40 space-y-1">
+          <Label className="text-xs">Дата</Label>
+          <Input type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
+        </div>
+        <div className="w-48 space-y-1">
+          <Label className="text-xs">Тип</Label>
+          <Select value={docType} onValueChange={(v) => setDocType(v as PwDocType)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PW_DOC_TYPES.map((t) => <SelectItem key={t} value={t}>{PW_DOC_TYPE_LABELS[t]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-52 space-y-1">
+          <Label className="text-xs">Компания</Label>
+          <Select value={companyId ?? "none"} onValueChange={(v) => setCompanyId(v === "none" ? null : v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Без бланка</SelectItem>
+              {detail.companies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-40 space-y-1">
+          <Label className="text-xs">Статус</Label>
+          <Select value={status} onValueChange={(v) => setStatus(v as PwStatus)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PW_STATUSES.map((s) => <SelectItem key={s} value={s}>{PW_STATUS_LABELS[s]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => download("docx")}>
+            <FileText className="mr-1 h-4 w-4" /> DOCX
+          </Button>
+          <Button variant="outline" onClick={() => download("pdf")}>
+            <Download className="mr-1 h-4 w-4" /> PDF
+          </Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
+            Сохранить
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,540px)]">
+        <Tabs defaultValue="blocks">
+          <TabsList>
+            <TabsTrigger value="blocks">Содержание</TabsTrigger>
+            <TabsTrigger value="vars">Переменные {variables.length ? `(${variables.length})` : ""}</TabsTrigger>
+            <TabsTrigger value="blank">Бланк</TabsTrigger>
+            <TabsTrigger value="ai">AI и импорт</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="blocks" className="mt-3">
+            <PwBlockList blocks={blocks} onChange={setBlocks} />
+          </TabsContent>
+
+          <TabsContent value="vars" className="mt-3 space-y-3">
+            {!variables.length && (
+              <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                В тексте нет переменных. Добавьте их в фигурных скобках, например {"{{"}Получатель{"}}"}.
+              </p>
+            )}
+            {variables.map((v) => (
+              <div key={v.key} className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3">
+                <code className="rounded bg-muted px-2 py-1 text-xs">{`{{${v.key}}}`}</code>
+                {v.source === "auto" ? (
+                  <span className="text-xs text-muted-foreground">
+                    Заполняется автоматически: {auto[varKey(v.key)] || "—"}
+                  </span>
+                ) : (
+                  <Input
+                    className="min-w-[220px] flex-1"
+                    value={values[varKey(v.key)] ?? ""}
+                    placeholder="Значение"
+                    onChange={(e) => setValues({ ...values, [varKey(v.key)]: e.target.value })}
+                  />
+                )}
+              </div>
+            ))}
+          </TabsContent>
+
+          <TabsContent value="blank" className="mt-3">
+            <PwBlankPanel
+              blank={blank}
+              onChange={setBlank}
+              onSave={() => saveBlank.mutate()}
+              saving={saveBlank.isPending}
+              disabled={!companyId}
+            />
+          </TabsContent>
+
+          <TabsContent value="ai" className="mt-3">
+            <PwAiPanel
+              docType={docType}
+              companyName={company?.company_brand || company?.company_legal_name || ""}
+              currentText={plainText}
+              onApply={(next, aiTitle, mode) => {
+                const withIds = next.map((b) => ({ ...b, id: pwId() }));
+                setBlocks(mode === "append" ? [...blocks, ...withIds] : withIds);
+                if (aiTitle && (!title || title === "Новый документ")) setTitle(aiTitle);
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <div className="xl:sticky xl:top-4 xl:self-start">
+          <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
+            <div className="border-b border-border px-3 py-2 text-xs text-muted-foreground">Превью A4</div>
+            <iframe
+              title="Превью документа"
+              srcDoc={previewHtml}
+              className="h-[70vh] w-full bg-white"
+              sandbox="allow-same-origin"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
