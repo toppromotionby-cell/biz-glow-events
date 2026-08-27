@@ -408,6 +408,68 @@ export async function buildPaperworkPdf(opts: {
       case "table":
         drawTable(ctx, b);
         break;
+      case "lineitems": {
+        const t = blockTotals(b);
+        drawTable(ctx, {
+          ...b,
+          header: ["№", "Наименование", "Кол-во", "Ед.", "Цена", "Сумма"],
+          rows: b.lines.map((l, i) => [
+            String(i + 1),
+            l.name,
+            String(l.qty),
+            l.unit,
+            formatMoney(l.price),
+            formatMoney(lineTotal(l)),
+          ]),
+        });
+        const size = Math.max(8, ctx.base - 0.5);
+        const totalLines = [
+          `Итого без НДС: ${formatMoney(t.net)} ${b.currency}`,
+          ...(b.vatPct > 0 ? [`НДС ${b.vatPct}%: ${formatMoney(t.vat)} ${b.currency}`] : []),
+          `Всего к оплате: ${formatMoney(t.gross)} ${b.currency}`,
+        ];
+        for (const line of totalLines) {
+          ensure(ctx, size * 1.5);
+          const isLast = line === totalLines[totalLines.length - 1];
+          const font = isLast ? ctx.bold : ctx.regular;
+          const w = font.widthOfTextAtSize(clean(line), size);
+          ctx.page.drawText(clean(line), { x: ctx.right - w, y: ctx.y - size, size, font, color: TEXT });
+          ctx.y -= size * 1.5;
+        }
+        if (b.totalWords) {
+          ctx.y -= 2;
+          paragraph(ctx, `Сумма прописью: ${totalInWords(t.gross, b.currency)}`, {
+            size: Math.max(8, ctx.base - 1),
+          });
+        }
+        ctx.y -= 6;
+        break;
+      }
+      case "parties": {
+        const size = Math.max(8, ctx.base - 1);
+        const colW = (contentWidth(ctx) - 8 * MM) / 2;
+        const cols: { title: string; text: string; x: number }[] = [
+          { title: b.leftTitle, text: b.leftText, x: ctx.left },
+          { title: b.rightTitle, text: b.rightText, x: ctx.left + colW + 8 * MM },
+        ];
+        const wrapped = cols.map((c) => [
+          ...(c.title ? [clean(c.title)] : []),
+          ...clean(c.text).split("\n").flatMap((l) => wrapText(ctx.regular, l, size, colW)),
+        ]);
+        const h = Math.max(...wrapped.map((w) => w.length)) * size * 1.4 + 8;
+        ensure(ctx, h);
+        const top = ctx.y;
+        cols.forEach((c, ci) => {
+          let ty = top;
+          wrapped[ci].forEach((line, li) => {
+            const font = li === 0 && c.title ? ctx.bold : ctx.regular;
+            ctx.page.drawText(line, { x: c.x, y: ty - size, size, font, color: TEXT });
+            ty -= size * 1.4;
+          });
+        });
+        ctx.y = top - h;
+        break;
+      }
       case "signature":
         drawSignature(ctx, b, sig, stamp);
         break;
