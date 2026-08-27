@@ -153,6 +153,50 @@ export type PwVariable = {
   defaultValue: string;
 };
 
+/* --------------------------- Схема полей документа --------------------------- */
+
+export const PW_FIELD_TYPES = ["text", "multiline", "date", "number", "money"] as const;
+export type PwFieldType = (typeof PW_FIELD_TYPES)[number];
+
+export const PW_FIELD_TYPE_LABELS: Record<PwFieldType, string> = {
+  text: "Строка",
+  multiline: "Многострочный текст",
+  date: "Дата",
+  number: "Число",
+  money: "Сумма",
+};
+
+/** Объявленное поле шаблона: контракт «что нужно заполнить». */
+export type PwFieldSpec = {
+  key: string;
+  label: string;
+  type: PwFieldType;
+  required: boolean;
+  defaultValue: string;
+  /** auto — подставляется из компании/метаданных, manual — вводится вручную. */
+  source: "auto" | "manual";
+  hint: string;
+};
+
+export function normalizeFieldSpec(raw: unknown): PwFieldSpec {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const key = str(r.key).trim();
+  return {
+    key,
+    label: str(r.label) || key,
+    type: oneOf(PW_FIELD_TYPES, r.type, "text"),
+    required: r.required === true,
+    defaultValue: str(r.defaultValue),
+    source: r.source === "auto" ? "auto" : "manual",
+    hint: str(r.hint),
+  };
+}
+
+export function normalizeFieldSchema(raw: unknown): PwFieldSpec[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizeFieldSpec).filter((f) => f.key);
+}
+
 export type PwTemplate = {
   id: string;
   company_profile_id: string | null;
@@ -162,6 +206,8 @@ export type PwTemplate = {
   description: string;
   blocks: PwBlock[];
   variables: PwVariable[];
+  variables_schema: PwFieldSpec[];
+  revision: number;
   background_url: string | null;
   is_archived: boolean;
   is_favorite: boolean;
@@ -172,7 +218,9 @@ export type PwTemplate = {
 export type PwDocument = {
   id: string;
   template_id: string | null;
+  template_revision: number | null;
   company_profile_id: string | null;
+  brand_kit_id: string | null;
   doc_type: PwDocType;
   title: string;
   doc_number: string;
@@ -188,6 +236,17 @@ export type PwDocument = {
 export type PwDocumentListRow = PwDocument & {
   company_name: string | null;
   author_name: string | null;
+};
+
+/** Фирменный набор компании: несколько на компанию, один основной. */
+export type PwBrandKit = {
+  id: string;
+  company_profile_id: string;
+  name: string;
+  is_default: boolean;
+  settings: PwBlank;
+  created_at: string;
+  updated_at: string;
 };
 
 /* ------------------------- Настройки фирменного бланка ------------------------- */
