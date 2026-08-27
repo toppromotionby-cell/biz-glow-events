@@ -12,18 +12,23 @@ const PAD = 16;
 
 export function PwPreviewFrame({ html, className }: { html: string; className?: string }) {
   const boxRef = useRef<HTMLDivElement>(null);
+  const gaugeRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [box, setBox] = useState({ w: 640, h: 720 });
-  const [sheetH, setSheetH] = useState(DOC_PAGE_H);
+  const [sheet, setSheet] = useState({ w: DOC_PAGE_W, h: DOC_PAGE_H });
   const [mode, setMode] = useState<DocFitMode>("width");
   const [zoom, setZoom] = useState(1);
 
+  // Ширину меряем по абсолютному «щупу», а не по самому контейнеру: лист
+  // никогда не может раздуть измерение и загнать масштаб в петлю.
   useEffect(() => {
-    const el = boxRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const read = () => setBox({ w: el.clientWidth, h: el.clientHeight });
+    const el = gaugeRef.current;
+    const boxEl = boxRef.current;
+    if (!el || !boxEl || typeof ResizeObserver === "undefined") return;
+    const read = () => setBox({ w: el.clientWidth, h: boxEl.clientHeight });
     const ro = new ResizeObserver(read);
     ro.observe(el);
+    ro.observe(boxEl);
     read();
     window.addEventListener("orientationchange", read);
     return () => {
@@ -32,13 +37,22 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
     };
   }, []);
 
-  // Реальная высота содержимого листа — чтобы «страница целиком» и прокрутка
-  // считались от документа, а не от одной страницы A4.
+  // Реальные размеры содержимого листа: высота — чтобы «страница целиком» и
+  // прокрутка считались от документа, ширина — чтобы широкое содержимое
+  // (длинные таблицы, подписи) уменьшалось, а не обрезалось справа.
   const measure = useCallback(() => {
     const doc = frameRef.current?.contentDocument;
     if (!doc?.body) return;
     const h = Math.max(doc.body.scrollHeight, doc.documentElement?.scrollHeight ?? 0);
-    if (h > 0) setSheetH(Math.max(DOC_PAGE_H, h));
+    const w = Math.max(
+      doc.body.scrollWidth,
+      doc.documentElement?.scrollWidth ?? 0,
+      ...Array.from(doc.querySelectorAll<HTMLElement>(".sheet")).map((el) => el.scrollWidth),
+    );
+    setSheet((prev) => {
+      const next = { w: Math.max(DOC_PAGE_W, w || 0), h: Math.max(DOC_PAGE_H, h || 0) };
+      return next.w === prev.w && next.h === prev.h ? prev : next;
+    });
   }, []);
 
   useEffect(() => {
@@ -49,11 +63,13 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
   const { scale } = fitScale({
     boxW: box.w,
     boxH: box.h,
-    sheetH,
+    sheetW: sheet.w,
+    sheetH: sheet.h,
     pad: PAD,
     mode,
     zoom,
   });
+
 
   return (
     <div className={className}>
