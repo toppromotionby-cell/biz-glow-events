@@ -979,7 +979,7 @@ function Page() {
                 <BookmarkPlus className="mr-2 h-4 w-4" />Сохранить в библиотеку
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/admin/documents/knowledge"><Brain className="mr-2 h-4 w-4" />База знаний подсказок</Link>
+                <Link to="/admin/documents/knowledge"><Brain className="mr-2 h-4 w-4" />Информационная база</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={() => void onDeleteDocument()}>

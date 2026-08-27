@@ -214,7 +214,7 @@ function Page() {
         action={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link to="/admin/documents/knowledge"><Brain className="h-4 w-4 mr-1.5" />База знаний</Link>
+              <Link to="/admin/documents/knowledge"><Brain className="h-4 w-4 mr-1.5" />Информационная база</Link>
             </Button>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-1.5" />Создать КП
