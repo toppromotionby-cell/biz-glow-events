@@ -12,6 +12,7 @@ import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AdminCommandPalette, CommandPaletteTrigger } from "@/components/admin/AdminCommandPalette";
 import { DocumentViewerProvider } from "@/hooks/use-document-viewer";
+import { HelpDrawer } from "@/components/admin/help/HelpDrawer";
 import { isStaffRoles, permissionForPath, firstAllowedAdminPath, permissionsForRoles } from "@/lib/permissions";
 
 
