@@ -1,11 +1,9 @@
-import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { listBlogPosts, type BlogListItem } from "@/lib/blog.functions";
+import { listBlogPosts } from "@/lib/blog.functions";
 import { MediaCard } from "@/components/ui/MediaCard";
 import { PaginationControls, type PerPage } from "@/components/ui/PaginationControls";
-
-type Post = BlogListItem;
 
 const blogQuery = queryOptions({
   queryKey: ["blog", "list"],
@@ -13,8 +11,6 @@ const blogQuery = queryOptions({
   staleTime: 5 * 60_000,
   gcTime: 30 * 60_000,
 });
-
-const routeApi = getRouteApi("/blog");
 
 export const Route = createFileRoute("/blog")({
   loader: ({ context }) => context.queryClient.ensureQueryData(blogQuery),
