@@ -5,15 +5,19 @@
 // устройства (десктоп, планшет, телефон, поворот).
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-/** Ширина листа A4 при 96 dpi. */
-export const DOC_PAGE_W = 794;
-export const DOC_ZOOM_MIN = 0.25;
-export const DOC_ZOOM_MAX = 2;
-/** Как вписывать лист: по ширине области или страницу целиком. */
-export type DocFitMode = "width" | "page";
+import {
+  clampScale as clamp,
+  DOC_PAGE_W,
+  DOC_ZOOM_MAX,
+  DOC_ZOOM_MIN,
+  fitScale,
+  type DocFitMode,
+} from "@/lib/documents/fit-scale";
+
+export { DOC_PAGE_W, DOC_ZOOM_MIN, DOC_ZOOM_MAX };
+export type { DocFitMode };
 
 const PAD = 32;
-const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
 export function DocCanvasStage({
   zoom,
@@ -58,10 +62,7 @@ export function DocCanvasStage({
     return () => ro.disconnect();
   }, []);
 
-  const fitWidth = Math.max(0.15, (box.w - PAD * 2) / DOC_PAGE_W);
-  const fitPage = Math.min(fitWidth, Math.max(0.15, (box.h - PAD * 2) / sheetH));
-  const base = fitMode === "page" ? fitPage : fitWidth;
-  const scale = clamp(base * zoom, 0.1, 4);
+  const { base, scale } = fitScale({ boxW: box.w, boxH: box.h, sheetH, pad: PAD, mode: fitMode, zoom });
   const viewH = Math.max(320, box.h - PAD * 2);
 
   // Зум колесом (Ctrl/Cmd) и пинчем на тачпаде — с якорем под курсором.

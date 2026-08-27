@@ -548,13 +548,11 @@ export async function buildPaperworkPdf(opts: PwPdfOpts): Promise<Uint8Array> {
   if (first.pages <= 1 || opts.blank.fitOnePage === false) return first.bytes;
   // Реальная вёрстка переполнилась на одну страницу — пробуем дожать.
   if (first.pages > 2) return first.bytes;
-  let best = first;
   for (const k of PDF_FIT_STEPS) {
     const blank = shrinkBlank(opts.blank, k);
     if (blank.fontSizePt < MIN_FONT_PT) break;
     const r = await renderPaperworkPdf({ ...opts, blank });
     if (r.pages <= 1) return r.bytes;
-    best = r;
   }
   return first.bytes;
 }
