@@ -806,15 +806,23 @@ function Page() {
                       toggles={([
                         ["show_cover", "Титульный блок"],
                         ["show_requisites", "Реквизиты"],
-                        ["show_signature", "Подписи"],
+                        ["show_signature", "Подпись"],
                         ["show_stamp", "Печать"],
                         ["show_logo", "Логотип"],
                         ["show_about", "Блок о компании"],
-                      ] as const).map(([key, label]) => ({
+                      ] as const)
+                        // Подпись и печать предлагаем только когда картинка реально загружена.
+                        .filter(([key]) =>
+                          key === "show_signature" ? quoteSign.hasSignature
+                            : key === "show_stamp" ? quoteSign.hasStamp
+                            : true,
+                        )
+                        .map(([key, label]) => ({
                         key, label,
                         value: !!quote.design[key],
                         onChange: (v: boolean) => patch({ design: { ...quote.design, [key]: v } }),
                       }))}
+
                       fontFamily={quote.font_family}
                       onFontChange={(font_family) => patch({ font_family })}
                       accent={quote.design.accent_color}
