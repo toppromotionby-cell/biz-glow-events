@@ -18,7 +18,38 @@ const routeApi = getRouteApi("/blog");
 
 export const Route = createFileRoute("/blog")({
   loader: ({ context }) => context.queryClient.ensureQueryData(blogQuery),
+  head: () => ({
+    meta: [
+      { title: "Блог о event-индустрии — event-hub.by" },
+      { name: "description", content: "Кейсы, тренды и аналитика event-рынка Беларуси: оборудование, организация мероприятий, продакшн." },
+      { property: "og:title", content: "Блог event-hub.by" },
+      { property: "og:description", content: "Кейсы, тренды и аналитика event-рынка Беларуси." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://event-hub.by/blog" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://event-hub.by/blog" }],
+    scripts: [{
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        name: "Блог event-hub.by",
+        description: "Кейсы, тренды и аналитика event-рынка Беларуси.",
+        url: "https://event-hub.by/blog",
+        publisher: { "@type": "Organization", name: "event-hub.by" },
+      }),
+    }],
+  }),
+  component: BlogIndex,
+});
 
+function BlogIndex() {
+  const { data: posts } = useSuspenseQuery(blogQuery);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<PerPage>(30);
+  useEffect(() => { setPage(1); }, [perPage]);
+  const paged = posts.slice((page - 1) * perPage, page * perPage);
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-5xl">
