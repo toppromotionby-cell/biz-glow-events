@@ -243,7 +243,19 @@ function Page() {
   const warnsCount = checks.filter((c) => c.level === "warn").length;
   const itemIssues = useMemo(() => itemIssueMap(checks), [checks]);
   const blockIssues = useMemo(() => blockIssueMap(checks), [checks]);
+  // Подпись и печать предлагаем только когда картинка загружена в КП или карточке компании.
+  const quoteSign = useMemo(
+    () =>
+      signatureAvailability({
+        docSignatureUrl: quote?.signature_url ?? null,
+        docStampUrl: quote?.stamp_url ?? null,
+        companySignatureUrl: (settings as { signature_url?: string | null }).signature_url ?? null,
+        companyStampUrl: (settings as { stamp_url?: string | null }).stamp_url ?? null,
+      }),
+    [quote?.signature_url, quote?.stamp_url, settings],
+  );
   const [tab, setTab] = useState<string | null>("items");
+
 
   // Переход от замечания к полю, которое его вызвало.
   const gotoCheck = (c: { scope?: string; refId?: string }) => {
