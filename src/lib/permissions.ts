@@ -85,6 +85,8 @@ export const ROUTE_PERMISSIONS: { match: RegExp; perm: Permission }[] = [
   { match: /^\/admin\/documents\/(invoices|contracts|acts|finance)/, perm: "documents.finance" },
   { match: /^\/admin\/documents\/(quotes|promo|presentations)/, perm: "documents.manage" },
   { match: /^\/admin\/documents/, perm: "documents.manage" },
+  // Корпоративные документы и их шаблоны — те же права, что и у КП.
+  { match: /^\/admin\/paperwork/, perm: "documents.manage" },
   { match: /^\/admin\/orders/, perm: "orders.manage" },
   { match: /^\/admin\/calendar/, perm: "orders.manage" },
   { match: /^\/admin\/(catalog|catalog-structure|cases|testimonials|blog)/, perm: "content.manage" },

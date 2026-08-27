@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
 
-import { PaginationControls, type PerPage, PER_PAGE_OPTIONS } from "@/components/ui/PaginationControls";
+import {
+  PaginationControls,
+  type PerPage,
+  PER_PAGE_OPTIONS,
+} from "@/components/ui/PaginationControls";
 import { useResolvedUrl } from "@/components/StorageMedia";
 import { useClampedText } from "@/components/ui/ClampedTitle";
 
@@ -30,7 +34,6 @@ const PRICE_FILTERS: { key: PriceKey; label: string; test: (p: number) => boolea
   { key: "gt1500", label: "от 1500 BYN", test: (p) => p > 1500 },
   { key: "request", label: "По запросу", test: (p) => !p },
 ];
-
 
 export function CatalogGrid({
   items,
@@ -118,23 +121,39 @@ export function CatalogGrid({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (activeTags.length) params.set("tags", activeTags.join(",")); else params.delete("tags");
-    if (activeCategory) params.set("category", activeCategory); else params.delete("category");
-    if (page > 1) params.set("page", String(page)); else params.delete("page");
-    if (perPage !== 30) params.set("per", String(perPage)); else params.delete("per");
-    if (price !== "all") params.set("price", price); else params.delete("price");
-    if (sort !== "default") params.set("sort", sort); else params.delete("sort");
-    if (query.trim()) params.set("q", query.trim()); else params.delete("q");
+    if (activeTags.length) params.set("tags", activeTags.join(","));
+    else params.delete("tags");
+    if (activeCategory) params.set("category", activeCategory);
+    else params.delete("category");
+    if (page > 1) params.set("page", String(page));
+    else params.delete("page");
+    if (perPage !== 30) params.set("per", String(perPage));
+    else params.delete("per");
+    if (price !== "all") params.set("price", price);
+    else params.delete("price");
+    if (sort !== "default") params.set("sort", sort);
+    else params.delete("sort");
+    if (query.trim()) params.set("q", query.trim());
+    else params.delete("q");
     const qs = params.toString();
     const url = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
     window.history.replaceState(null, "", url);
   }, [activeTags, activeCategory, page, perPage, price, sort, query]);
 
   // Reset page when filter changes
-  useEffect(() => { setPage(1); }, [activeTags, activeCategory, perPage, sort, price, query]);
+  useEffect(() => {
+    setPage(1);
+  }, [activeTags, activeCategory, perPage, sort, price, query]);
 
-  const toggleTag = (t: string) =>
-    setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const toggleTag = useCallback(
+    (t: string) =>
+      setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t])),
+    [],
+  );
+  const openItem = useCallback((slug: string) => setOpenSlug(slug), []);
+
+  // Поиск не блокирует ввод: тяжёлая фильтрация идёт по «отложенному» значению.
+  const deferredQuery = useDeferredValue(query);
 
   const filtered = useMemo(() => {
     let result = items;
@@ -149,7 +168,7 @@ export function CatalogGrid({
       const f = PRICE_FILTERS.find((x) => x.key === price);
       if (f) result = result.filter((it) => f.test(it.priceFrom || 0));
     }
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     if (q) {
       result = result.filter(
         (it) =>
@@ -173,8 +192,7 @@ export function CatalogGrid({
       );
     }
     return result;
-  }, [items, activeTags, activeCategory, sort, price, query]);
-
+  }, [items, activeTags, activeCategory, sort, price, deferredQuery]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
   const currentPage = Math.min(page, pageCount);
@@ -213,7 +231,8 @@ export function CatalogGrid({
             Все категории
           </button>
           {categoryChips.map((name) => {
-            const active = !!activeCategory && activeCategory.trim().toLowerCase() === name.trim().toLowerCase();
+            const active =
+              !!activeCategory && activeCategory.trim().toLowerCase() === name.trim().toLowerCase();
             return (
               <button
                 key={name}
@@ -235,7 +254,10 @@ export function CatalogGrid({
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <label className="relative flex-1 min-w-[12rem] max-w-sm">
           <span className="sr-only">Поиск по разделу</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <input
             type="search"
             value={query}
@@ -335,15 +357,17 @@ export function CatalogGrid({
           </button>
           {items.length > 0 && (
             <div className="mt-8 text-left">
-              <p className="mb-3 text-sm font-semibold text-foreground">Популярные позиции раздела</p>
+              <p className="mb-3 text-sm font-semibold text-foreground">
+                Популярные позиции раздела
+              </p>
               <div className="grid-cards">
                 {items.slice(0, 6).map((it) => (
                   <CatalogCard
                     key={it.slug}
                     item={it}
                     category={category}
-                    activeTags={[]}
-                    onOpen={() => setOpenSlug(it.slug)}
+                    activeTags={EMPTY_TAGS}
+                    onOpen={openItem}
                     onToggleTag={toggleTag}
                   />
                 ))}
@@ -360,8 +384,7 @@ export function CatalogGrid({
                 item={it}
                 category={category}
                 activeTags={activeTags}
-                
-                onOpen={() => setOpenSlug(it.slug)}
+                onOpen={openItem}
                 onToggleTag={toggleTag}
               />
             ))}
@@ -379,7 +402,9 @@ export function CatalogGrid({
       {openSlug && (
         <CatalogQuickView
           open={!!openSlug}
-          onOpenChange={(v) => { if (!v) setOpenSlug(null); }}
+          onOpenChange={(v) => {
+            if (!v) setOpenSlug(null);
+          }}
           type={entityType}
           slug={openSlug}
           basePath={basePath}
@@ -412,7 +437,9 @@ function SlidePhoto({ src, alt, active }: { src: string; alt: string; active: bo
   );
 }
 
-function CatalogCard({
+const EMPTY_TAGS: string[] = [];
+
+const CatalogCard = memo(function CatalogCard({
   item,
   category,
   activeTags,
@@ -422,11 +449,14 @@ function CatalogCard({
   item: CatalogItem;
   category: string;
   activeTags: string[];
-  onOpen: () => void;
+  onOpen: (slug: string) => void;
   onToggleTag: (t: string) => void;
 }) {
+  const handleOpen = useCallback(() => onOpen(item.slug), [onOpen, item.slug]);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const photos = (item.images && item.images.length > 0 ? item.images : [item.image]).filter(Boolean);
+  const photos = (item.images && item.images.length > 0 ? item.images : [item.image]).filter(
+    Boolean,
+  );
   const hasMultiple = photos.length > 1;
   const [index, setIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
@@ -454,9 +484,6 @@ function CatalogCard({
     }
   };
 
-
-
-
   const titleRef = useRef<HTMLButtonElement>(null);
   const clamped = useClampedText(titleRef, item.title, 2);
 
@@ -468,19 +495,14 @@ function CatalogCard({
     >
       <button
         type="button"
-        onClick={onOpen}
+        onClick={handleOpen}
         aria-label={`Открыть ${item.title}`}
         className="block text-left"
       >
         <MediaShield>
           <div className="aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-surface relative">
             {photos.map((src, i) => (
-              <SlidePhoto
-                key={src + i}
-                src={src}
-                alt={item.title}
-                active={i === index}
-              />
+              <SlidePhoto key={src + i} src={src} alt={item.title} active={i === index} />
             ))}
             {item.video ? (
               <>
@@ -498,7 +520,6 @@ function CatalogCard({
                 </span>
               </>
             ) : null}
-
           </div>
         </MediaShield>
       </button>
@@ -507,7 +528,7 @@ function CatalogCard({
           <button
             ref={titleRef}
             type="button"
-            onClick={onOpen}
+            onClick={handleOpen}
             title={item.title}
             aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient"
@@ -516,7 +537,9 @@ function CatalogCard({
           </button>
         </h3>
         <span className="card-title-accent mt-2" aria-hidden />
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3 min-h-[2.5rem] sm:min-h-[3.9rem]">{item.description}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 flex-1 line-clamp-2 sm:line-clamp-3 min-h-[2.5rem] sm:min-h-[3.9rem]">
+          {item.description}
+        </p>
         <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2 sm:mt-3">
           {item.tags.slice(0, 3).map((t) => (
             <button
@@ -533,18 +556,23 @@ function CatalogCard({
             </button>
           ))}
         </div>
-        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40" data-category={category}>
+        <div
+          className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/40"
+          data-category={category}
+        >
           <PriceGate>
             <div className="flex items-baseline gap-1.5 flex-wrap">
               <span className="text-[11px] sm:text-xs text-muted-foreground">от</span>
-              <span className="text-xl sm:text-2xl font-display font-bold gradient-text">{item.priceFrom.toLocaleString("ru-BY")}</span>
+              <span className="text-xl sm:text-2xl font-display font-bold gradient-text">
+                {item.priceFrom.toLocaleString("ru-BY")}
+              </span>
               <span className="text-xs sm:text-sm text-muted-foreground">BYN</span>
             </div>
           </PriceGate>
           <div className="mt-3 flex items-center gap-2">
             <button
               type="button"
-              onClick={onOpen}
+              onClick={handleOpen}
               aria-label={`Подробнее: ${item.title}`}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
@@ -552,12 +580,8 @@ function CatalogCard({
               Подробнее
             </button>
           </div>
-
-
-
         </div>
       </div>
     </article>
   );
-}
-
+});
