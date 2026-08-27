@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { PriceGate } from "@/components/PriceGate";
 import { MediaShield } from "@/components/MediaShield";
 import { CatalogQuickView } from "@/components/CatalogQuickView";
@@ -133,8 +133,14 @@ export function CatalogGrid({
   // Reset page when filter changes
   useEffect(() => { setPage(1); }, [activeTags, activeCategory, perPage, sort, price, query]);
 
-  const toggleTag = (t: string) =>
-    setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const toggleTag = useCallback(
+    (t: string) => setActiveTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t])),
+    [],
+  );
+  const openItem = useCallback((slug: string) => setOpenSlug(slug), []);
+
+  // Поиск не блокирует ввод: тяжёлая фильтрация идёт по «отложенному» значению.
+  const deferredQuery = useDeferredValue(query);
 
   const filtered = useMemo(() => {
     let result = items;
@@ -149,7 +155,7 @@ export function CatalogGrid({
       const f = PRICE_FILTERS.find((x) => x.key === price);
       if (f) result = result.filter((it) => f.test(it.priceFrom || 0));
     }
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     if (q) {
       result = result.filter(
         (it) =>
@@ -173,7 +179,7 @@ export function CatalogGrid({
       );
     }
     return result;
-  }, [items, activeTags, activeCategory, sort, price, query]);
+  }, [items, activeTags, activeCategory, sort, price, deferredQuery]);
 
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -342,8 +348,8 @@ export function CatalogGrid({
                     key={it.slug}
                     item={it}
                     category={category}
-                    activeTags={[]}
-                    onOpen={() => setOpenSlug(it.slug)}
+                    activeTags={EMPTY_TAGS}
+                    onOpen={openItem}
                     onToggleTag={toggleTag}
                   />
                 ))}
@@ -360,8 +366,7 @@ export function CatalogGrid({
                 item={it}
                 category={category}
                 activeTags={activeTags}
-                
-                onOpen={() => setOpenSlug(it.slug)}
+                onOpen={openItem}
                 onToggleTag={toggleTag}
               />
             ))}
@@ -412,7 +417,9 @@ function SlidePhoto({ src, alt, active }: { src: string; alt: string; active: bo
   );
 }
 
-function CatalogCard({
+const EMPTY_TAGS: string[] = [];
+
+const CatalogCard = memo(function CatalogCard({
   item,
   category,
   activeTags,
@@ -422,9 +429,10 @@ function CatalogCard({
   item: CatalogItem;
   category: string;
   activeTags: string[];
-  onOpen: () => void;
+  onOpen: (slug: string) => void;
   onToggleTag: (t: string) => void;
 }) {
+  const handleOpen = useCallback(() => onOpen(item.slug), [onOpen, item.slug]);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const photos = (item.images && item.images.length > 0 ? item.images : [item.image]).filter(Boolean);
   const hasMultiple = photos.length > 1;
@@ -468,7 +476,7 @@ function CatalogCard({
     >
       <button
         type="button"
-        onClick={onOpen}
+        onClick={handleOpen}
         aria-label={`Открыть ${item.title}`}
         className="block text-left"
       >
@@ -507,7 +515,7 @@ function CatalogCard({
           <button
             ref={titleRef}
             type="button"
-            onClick={onOpen}
+            onClick={handleOpen}
             title={item.title}
             aria-label={`Открыть: ${item.title}`}
             className="card-title-gradient"
@@ -544,7 +552,7 @@ function CatalogCard({
           <div className="mt-3 flex items-center gap-2">
             <button
               type="button"
-              onClick={onOpen}
+              onClick={handleOpen}
               aria-label={`Подробнее: ${item.title}`}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
@@ -559,5 +567,4 @@ function CatalogCard({
       </div>
     </article>
   );
-}
-
+});
