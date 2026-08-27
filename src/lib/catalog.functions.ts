@@ -4,19 +4,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { mediaPublicUrl } from "@/lib/media-url";
-
-
-// Каталог публичный: пути хранилища превращаются в постоянные публичные ссылки.
-async function signMediaUrls<T extends { photo_urls?: string[] | null; video_urls?: string[] | null }>(
-  rows: T[],
-): Promise<T[]> {
-  return rows.map((r) => ({
-    ...r,
-    photo_urls: (r.photo_urls ?? []).map((u) => (u ? mediaPublicUrl(u) : u)),
-    video_urls: (r.video_urls ?? []).map((u) => (u ? mediaPublicUrl(u) : u)),
-  }));
-}
+import {
+  CATALOG_LIST_MAX,
+  CATALOG_SELECT_FULL,
+  CATALOG_SELECT_LIST,
+  LIST_PHOTO_LIMIT,
+  signMediaUrls,
+} from "@/lib/catalog-media";
 
 export type CatalogType = "zones" | "tech_equipment" | "services" | "production_items" | "attractions";
 
@@ -33,32 +27,30 @@ export type CatalogRow = {
   photo_urls: string[] | null;
   video_urls: string[] | null;
   pricing: Json;
-  features: Json;
-  extras: Json;
-  faq: Json;
-  requirements: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
+  features?: Json;
+  extras?: Json;
+  faq?: Json;
+  requirements?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
   category: string | null;
 };
-
-const SELECT = "id,slug,title,description,photo_urls,video_urls,pricing,features,extras,faq,requirements,seo_title,seo_description,category";
 
 export const listCatalog = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ type: z.enum(TYPES) }).parse(i))
   .handler(async ({ data }) => {
     const { data: rows, error } = await supabaseAdmin
       .from(data.type)
-      .select(SELECT)
+      .select(CATALOG_SELECT_LIST)
       .eq("published", true)
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(CATALOG_LIST_MAX);
     if (error) {
       console.error("[listCatalog] DB error:", error);
       throw new Error("Не удалось загрузить каталог.");
     }
-    const signed = await signMediaUrls((rows ?? []) as CatalogRow[]);
-    return signed;
+    return signMediaUrls((rows ?? []) as CatalogRow[], LIST_PHOTO_LIMIT);
   });
 
 export const getCatalogItem = createServerFn({ method: "GET" })
