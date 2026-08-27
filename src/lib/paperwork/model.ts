@@ -279,6 +279,8 @@ export type PwBlank = {
   /** Логотип-подложка (URL) на первой странице. */
   backgroundUrl: string | null;
   backgroundOpacity: number;
+  /** Стараться уместить документ на один лист A4 (лёгкое сжатие кегля и полей). */
+  fitOnePage: boolean;
 };
 
 export const DEFAULT_BLANK: PwBlank = {
@@ -297,6 +299,7 @@ export const DEFAULT_BLANK: PwBlank = {
   marginBottomMm: 18,
   backgroundUrl: null,
   backgroundOpacity: 0.12,
+  fitOnePage: true,
 };
 
 /* ------------------------------- Нормализация ------------------------------- */
@@ -409,6 +412,7 @@ export function normalizeBlank(raw: unknown): PwBlank {
     marginBottomMm: num(r.marginBottomMm, DEFAULT_BLANK.marginBottomMm, 8, 40),
     backgroundUrl: str(r.backgroundUrl) || null,
     backgroundOpacity: num(r.backgroundOpacity, DEFAULT_BLANK.backgroundOpacity, 0.02, 1),
+    fitOnePage: r.fitOnePage !== false,
   };
 }
 
