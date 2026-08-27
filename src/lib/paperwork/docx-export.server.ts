@@ -18,6 +18,8 @@ import {
 } from "docx";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { lineItemColFractions, tableColFractions } from "@/lib/paperwork/table-cols";
+
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const ALIGN: Record<string, (typeof AlignmentType)[keyof typeof AlignmentType]> = {
