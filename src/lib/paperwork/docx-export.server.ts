@@ -102,8 +102,17 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
     case "lineitems": {
       const t = blockTotals(b);
       const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
-      const ratios = [0.06, 0.44, 0.1, 0.1, 0.15, 0.15];
+      const ratios = lineItemColFractions(
+        b.lines.map((l) => ({
+          name: l.name,
+          qty: l.qty,
+          unit: l.unit,
+          price: formatMoney(l.price),
+          total: formatMoney(lineTotal(l)),
+        })),
+      );
       const widths = ratios.map((r) => Math.floor(totalW * r));
+
       const cell = (text: string, i: number, head: boolean, right = false) =>
         new TableCell({
           width: { size: widths[i], type: WidthType.DXA },
