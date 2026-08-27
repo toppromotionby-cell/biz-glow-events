@@ -4,6 +4,7 @@ import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { fontStacks } from "@/lib/documents/doc-font";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
+import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
 
 const esc = (s: string): string =>
   String(s ?? "")
@@ -14,32 +15,49 @@ const esc = (s: string): string =>
 
 const nl2br = (s: string): string => esc(s).replace(/\n/g, "<br/>");
 
-function headerHtml(company: CompanyProfile | null, blank: PwBlank): string {
+/** Строки реквизитов НАШЕЙ компании (данные клиента в шапку не попадают). */
+export function companyRequisiteLines(company: CompanyProfile | null): string[] {
+  if (!company) return [];
+  const lines: string[] = [];
+  if (company.company_legal_name) lines.push(company.company_legal_name);
+  if (company.company_unp) lines.push(`УНП ${company.company_unp}`);
+  if (company.company_address) lines.push(company.company_address);
+  const contacts = [company.company_phone, company.company_email, company.company_website]
+    .filter(Boolean)
+    .join(" · ");
+  if (contacts) lines.push(contacts);
+  return lines;
+}
+
+/** Логотип клиента берётся из переменной документа `client_logo` (URL). */
+export function clientLogoUrlFrom(values: Record<string, string> | undefined | null): string | null {
+  const raw = String(values?.client_logo ?? values?.client_logo_url ?? "").trim();
+  return /^https?:\/\//i.test(raw) ? raw : null;
+}
+
+function headerHtml(company: CompanyProfile | null, blank: PwBlank, clientLogo: string | null): string {
   if (blank.headerLayout === "none") return "";
+  const align =
+    blank.headerLayout === "logo-center" ? "center" : blank.headerLayout === "logo-right" ? "right" : "left";
+  const layout = { ...blank.logoLayout, align } as PwBlank["logoLayout"];
   const logo = company?.logo_url
-    ? `<img src="${esc(company.logo_url)}" alt="" class="logo"/>`
+    ? `<img src="${esc(company.logo_url)}" alt="" class="logo" style="${logoImgStyle(layout)}"/>`
     : `<div class="brand">${esc(company?.company_brand || company?.company_legal_name || "")}</div>`;
-  const req = blank.headerRequisites
-    ? `<div class="req">
-        <div class="req-name">${esc(company?.company_legal_name || "")}</div>
-        ${company?.company_unp ? `<div>УНП ${esc(company.company_unp)}</div>` : ""}
-        ${company?.company_address ? `<div>${esc(company.company_address)}</div>` : ""}
-        <div>${[company?.company_phone, company?.company_email, company?.company_website]
-          .filter(Boolean)
-          .map((v) => esc(String(v)))
-          .join(" · ")}</div>
+  const lines = blank.headerRequisites ? companyRequisiteLines(company) : [];
+  const req = lines.length
+    ? `<div class="req" style="${requisitesStyle(lines.join(" "), 9)}">
+        <div class="req-name">${esc(lines[0])}</div>
+        ${lines.slice(1).map((l) => `<div>${esc(l)}</div>`).join("")}
       </div>`
     : "";
-  const align =
-    blank.headerLayout === "logo-center"
-      ? "center"
-      : blank.headerLayout === "logo-right"
-        ? "row-reverse"
-        : "row";
-  if (blank.headerLayout === "logo-center") {
-    return `<header class="hd hd-center">${logo}${req}</header>`;
-  }
-  return `<header class="hd" style="flex-direction:${align}">${logo}${req}</header>`;
+  const client =
+    blank.clientLogo && clientLogo
+      ? `<div class="hd-client"><img src="${esc(clientLogo)}" alt="" class="logo-client"/></div>`
+      : "";
+  return `<header class="hd${align === "center" ? " hd-center" : ""}">
+    <div class="hd-main" style="${logoWrapStyle(layout)}">${logo}${req}</div>
+    ${client}
+  </header>`;
 }
 
 function blockHtml(b: PwBlock): string {
@@ -112,6 +130,8 @@ export function paperworkHtml(opts: {
   blocks: PwBlock[];
   company: CompanyProfile | null;
   blank: PwBlank;
+  /** URL логотипа клиента (опционально). */
+  clientLogoUrl?: string | null;
 }): string {
   const { doc, blocks, company, blank } = opts;
   const stacks = fontStacks(blank.font);
@@ -150,11 +170,14 @@ export function paperworkHtml(opts: {
   .bg { position:absolute; left:50%; top:45%; transform:translate(-50%,-50%); width:120mm; pointer-events:none; }
   .hd { display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
     border-bottom:1px solid #e2e5ea; padding-bottom:10px; margin-bottom:16px; }
-  .hd-center { flex-direction:column; align-items:center; text-align:center; }
-  .logo { max-height:22mm; max-width:70mm; object-fit:contain; }
+  .hd-main { flex:1 1 auto; min-width:0; }
+  .hd-center { justify-content:center; }
+  .hd-center .hd-main { text-align:center; }
+  .hd-client { flex:0 0 auto; padding-left:12px; border-left:1px solid #e2e5ea; }
+  .logo-client { max-height:16mm; max-width:40mm; object-fit:contain; display:block; }
+  .logo { display:block; object-fit:contain; }
   .brand { font-family:${stacks.display}; font-size:16pt; font-weight:700; color:var(--accent); }
-  .req { font-size:8.5pt; line-height:1.35; color:#5b6270; text-align:right; }
-  .hd-center .req { text-align:center; }
+  .req { color:#5b6270; }
   .req-name { font-weight:600; color:#1c1f24; }
   .meta { display:flex; justify-content:space-between; font-size:9.5pt; color:#5b6270; margin-bottom:12px; }
   .h { font-family:${stacks.display}; font-size:13.5pt; font-weight:700; margin:14px 0 8px; }
@@ -184,7 +207,7 @@ export function paperworkHtml(opts: {
   @media print { body { background:#fff; } .sheet { margin:0; } }
 </style></head>
 <body><div class="sheet">${blank.accentBar ? '<div class="bar"></div>' : ""}${bg}
-${headerHtml(company, blank)}
+${headerHtml(company, blank, opts.clientLogoUrl ?? null)}
 ${meta}
 ${blocks.map(blockHtml).join("\n")}
 ${footer}
