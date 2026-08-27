@@ -12,7 +12,12 @@ import {
   signMediaUrls,
 } from "@/lib/catalog-media";
 
-export type CatalogType = "zones" | "tech_equipment" | "services" | "production_items" | "attractions";
+export type CatalogType =
+  | "zones"
+  | "tech_equipment"
+  | "services"
+  | "production_items"
+  | "attractions";
 
 const TYPES = ["zones", "tech_equipment", "services", "production_items", "attractions"] as const;
 
@@ -54,7 +59,9 @@ export const listCatalog = createServerFn({ method: "GET" })
   });
 
 export const getCatalogItem = createServerFn({ method: "GET" })
-  .inputValidator((i) => z.object({ type: z.enum(TYPES), slug: z.string().min(1).max(160) }).parse(i))
+  .inputValidator((i) =>
+    z.object({ type: z.enum(TYPES), slug: z.string().min(1).max(160) }).parse(i),
+  )
   .handler(async ({ data }) => {
     const { data: row, error } = await supabaseAdmin
       .from(data.type)
