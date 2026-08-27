@@ -54,14 +54,17 @@ export function HelpDrawer() {
 
         <div className="border-t border-border/60 px-5 py-3">
           <Button asChild variant="outline" size="sm" className="w-full">
-            <Link
-              to={article ? "/admin/help/$slug" : "/admin/help"}
-              params={article ? { slug: article.id } : undefined}
-              onClick={() => closeHelp()}
-            >
-              <ExternalLink className="mr-2 h-3.5 w-3.5" />
-              Открыть в справке
-            </Link>
+            {article ? (
+              <Link to="/admin/help/$slug" params={{ slug: article.id }} onClick={() => closeHelp()}>
+                <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                Открыть в справке
+              </Link>
+            ) : (
+              <Link to="/admin/help" onClick={() => closeHelp()}>
+                <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                Открыть справку
+              </Link>
+            )}
           </Button>
         </div>
       </SheetContent>
