@@ -20,6 +20,8 @@ import {
   type PwDocumentListRow,
   type PwTemplate,
 } from "@/lib/paperwork/model";
+import { emptyBlock } from "@/lib/paperwork/model";
+import { pwKind } from "@/lib/paperwork/kinds";
 import { PW_PRESETS } from "@/lib/paperwork/preset-templates";
 
 type Row = Record<string, unknown>;
@@ -301,6 +303,7 @@ export const createDocumentFromTemplate = createServerFn({ method: "POST" })
       .object({
         templateId: z.string().uuid().nullable().optional(),
         presetId: z.string().max(60).nullable().optional(),
+        kind: z.enum(PW_DOC_TYPES).nullable().optional(),
         companyId: z.string().uuid().nullable().optional(),
         title: z.string().max(300).optional(),
       })
@@ -335,6 +338,11 @@ export const createDocumentFromTemplate = createServerFn({ method: "POST" })
         docType = preset.doc_type;
         if (!data.title) title = preset.name;
       }
+    } else if (data.kind) {
+      const kind = pwKind(data.kind);
+      docType = kind.type;
+      blocks = normalizeBlocks(kind.starterBlocks.map((t) => emptyBlock(t)));
+      if (!data.title) title = kind.label;
     }
 
     const { data: row, error } = await context.supabase
