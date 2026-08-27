@@ -5,6 +5,8 @@ import { fontStacks } from "@/lib/documents/doc-font";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 import { logoImgStyle, logoWrapStyle, requisitesStyle } from "@/lib/documents/logo-layout";
+import { colgroupHtml, lineItemColFractions, tableColFractions } from "@/lib/paperwork/table-cols";
+
 
 const esc = (s: string): string =>
   String(s ?? "")
