@@ -399,6 +399,18 @@ export function normalizeBlank(raw: unknown): PwBlank {
   };
 }
 
+export function normalizeBrandKit(row: Record<string, unknown>): PwBrandKit {
+  return {
+    id: str(row.id),
+    company_profile_id: str(row.company_profile_id),
+    name: str(row.name, "Основной бланк") || "Основной бланк",
+    is_default: row.is_default === true,
+    settings: normalizeBlank(row.settings),
+    created_at: str(row.created_at),
+    updated_at: str(row.updated_at),
+  };
+}
+
 export function normalizeTemplate(row: Record<string, unknown>): PwTemplate {
   return {
     id: str(row.id),
