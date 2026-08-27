@@ -8,6 +8,7 @@ import { deleteDocument } from "@/lib/documents-overview.functions";
 // Редактор коммерческого предложения: вкладки слева, живое превью справа.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { signatureAvailability } from "@/lib/documents/signature";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminKeys } from "@/lib/query-keys";
 import { useServerFn } from "@tanstack/react-start";
