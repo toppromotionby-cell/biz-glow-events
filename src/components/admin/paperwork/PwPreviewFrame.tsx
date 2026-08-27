@@ -11,23 +11,23 @@ import { DOC_PAGE_H, DOC_PAGE_W, fitScale, type DocFitMode } from "@/lib/documen
 const PAD = 16;
 
 export function PwPreviewFrame({ html, className }: { html: string; className?: string }) {
+  const shellRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
-  const gaugeRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [box, setBox] = useState({ w: 640, h: 720 });
-  const [sheet, setSheet] = useState({ w: DOC_PAGE_W, h: DOC_PAGE_H });
+  const [sheetH, setSheetH] = useState(DOC_PAGE_H);
   const [mode, setMode] = useState<DocFitMode>("width");
   const [zoom, setZoom] = useState(1);
 
-  // Ширину меряем по абсолютному «щупу», а не по самому контейнеру: лист
-  // никогда не может раздуть измерение и загнать масштаб в петлю.
+  // Ширину меряем по внешней (непрокручиваемой) обёртке: содержимое области
+  // просмотра не может раздуть измерение и загнать масштаб в петлю.
   useEffect(() => {
-    const el = gaugeRef.current;
+    const shell = shellRef.current;
     const boxEl = boxRef.current;
-    if (!el || !boxEl || typeof ResizeObserver === "undefined") return;
-    const read = () => setBox({ w: el.clientWidth, h: boxEl.clientHeight });
+    if (!shell || !boxEl || typeof ResizeObserver === "undefined") return;
+    const read = () => setBox({ w: shell.clientWidth, h: boxEl.clientHeight });
     const ro = new ResizeObserver(read);
-    ro.observe(el);
+    ro.observe(shell);
     ro.observe(boxEl);
     read();
     window.addEventListener("orientationchange", read);
@@ -37,21 +37,16 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
     };
   }, []);
 
-  // Реальные размеры содержимого листа: высота — чтобы «страница целиком» и
-  // прокрутка считались от документа, ширина — чтобы широкое содержимое
-  // (длинные таблицы, подписи) уменьшалось, а не обрезалось справа.
+  // Ширина листа всегда A4: HTML-лист жёстко ограничен 210 мм, поэтому из
+  // документа читаем только реальную высоту (многостраничные документы и
+  // режим «страница целиком»).
   const measure = useCallback(() => {
     const doc = frameRef.current?.contentDocument;
     if (!doc?.body) return;
     const h = Math.max(doc.body.scrollHeight, doc.documentElement?.scrollHeight ?? 0);
-    const w = Math.max(
-      doc.body.scrollWidth,
-      doc.documentElement?.scrollWidth ?? 0,
-      ...Array.from(doc.querySelectorAll<HTMLElement>(".sheet")).map((el) => el.scrollWidth),
-    );
-    setSheet((prev) => {
-      const next = { w: Math.max(DOC_PAGE_W, w || 0), h: Math.max(DOC_PAGE_H, h || 0) };
-      return next.w === prev.w && next.h === prev.h ? prev : next;
+    setSheetH((prev) => {
+      const next = Math.max(DOC_PAGE_H, h || 0);
+      return Math.abs(next - prev) < 2 ? prev : next;
     });
   }, []);
 
@@ -60,15 +55,19 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
     return () => window.clearTimeout(t);
   }, [html, measure]);
 
+  const sheet = { w: DOC_PAGE_W, h: sheetH };
+
   const { scale } = fitScale({
-    boxW: box.w + PAD * 2, // щуп меряет уже без внутренних отступов
+    boxW: box.w,
     boxH: box.h,
     sheetW: sheet.w,
     sheetH: sheet.h,
     pad: PAD,
     mode,
     zoom,
+    maxBase: 1,
   });
+
 
 
   return (

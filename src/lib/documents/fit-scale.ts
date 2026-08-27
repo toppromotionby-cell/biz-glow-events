@@ -27,6 +27,8 @@ export function fitScale(opts: {
   mode?: DocFitMode;
   /** Пользовательский множитель поверх «вписать». */
   zoom?: number;
+  /** Потолок для «вписать» (без учёта ручного зума): 1 — не увеличивать лист. */
+  maxBase?: number;
 }): { base: number; scale: number } {
   const {
     boxW,
@@ -36,9 +38,11 @@ export function fitScale(opts: {
     pad = 32,
     mode = "width",
     zoom = 1,
+    maxBase = Number.POSITIVE_INFINITY,
   } = opts;
   const fitW = Math.max(0.15, (boxW - pad * 2) / Math.max(1, sheetW));
   const fitP = Math.min(fitW, Math.max(0.15, (boxH - pad * 2) / Math.max(1, sheetH)));
-  const base = mode === "page" ? fitP : fitW;
+  const base = Math.min(mode === "page" ? fitP : fitW, maxBase);
   return { base, scale: clampScale(base * zoom, 0.1, 4) };
 }
+
