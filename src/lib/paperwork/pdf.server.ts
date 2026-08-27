@@ -200,15 +200,22 @@ async function drawHeader(
 function drawTable(ctx: Ctx, block: PwBlock) {
   const cols = Math.max(block.header.length, ...block.rows.map((r) => r.length), 1);
   const total = contentWidth(ctx);
-  const colW = total / cols;
+  // Ширины по содержимому — тот же расчёт, что в превью и DOCX.
+  const fractions = tableColFractions(block.header, block.rows, cols);
+  const widths = fractions.map((f) => f * total);
+  const offsets = widths.reduce<number[]>((acc, w, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1]! + widths[i - 1]!);
+    return acc;
+  }, []);
   const size = Math.max(7.5, ctx.base - 1);
   const pad = 5;
 
-  const cellLines = (text: string, font: PDFFont) => wrapText(font, clean(text), size, colW - pad * 2);
+  const cellLines = (text: string, font: PDFFont, w: number) =>
+    wrapText(font, clean(text), size, Math.max(size, w - pad * 2));
 
   const drawRow = (cells: string[], isHead: boolean) => {
     const font = isHead ? ctx.bold : ctx.regular;
-    const lines = Array.from({ length: cols }, (_, i) => cellLines(cells[i] ?? "", font));
+    const lines = Array.from({ length: cols }, (_, i) => cellLines(cells[i] ?? "", font, widths[i]!));
     const h = Math.max(...lines.map((l) => l.length)) * size * 1.32 + pad * 2;
     ensure(ctx, h);
     const top = ctx.y;
@@ -216,11 +223,11 @@ function drawTable(ctx: Ctx, block: PwBlock) {
       ctx.page.drawRectangle({ x: ctx.left, y: top - h, width: total, height: h, color: HEAD_BG });
     }
     for (let i = 0; i < cols; i++) {
-      const x = ctx.left + colW * i;
+      const x = ctx.left + offsets[i]!;
       ctx.page.drawRectangle({
         x,
         y: top - h,
-        width: colW,
+        width: widths[i]!,
         height: h,
         borderColor: LINE,
         borderWidth: 0.6,
@@ -238,6 +245,7 @@ function drawTable(ctx: Ctx, block: PwBlock) {
   for (const row of block.rows) drawRow(row, false);
   ctx.y -= 8;
 }
+
 
 /* -------------------------------- Подпись -------------------------------- */
 
