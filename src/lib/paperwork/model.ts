@@ -409,6 +409,8 @@ export function normalizeTemplate(row: Record<string, unknown>): PwTemplate {
     description: str(row.description),
     blocks: normalizeBlocks(row.blocks),
     variables: normalizeVariables(row.variables),
+    variables_schema: normalizeFieldSchema(row.variables_schema),
+    revision: Number(row.revision) > 0 ? Number(row.revision) : 1,
     background_url: str(row.background_url) || null,
     is_archived: row.is_archived === true,
     is_favorite: row.is_favorite === true,
