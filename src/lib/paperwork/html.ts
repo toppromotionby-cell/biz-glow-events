@@ -80,8 +80,10 @@ function blockHtml(b: PwBlock): string {
       const body = b.rows
         .map((r) => `<tr>${r.map((c) => `<td>${nl2br(c)}</td>`).join("")}</tr>`)
         .join("");
-      return `<table class="tbl">${head}<tbody>${body}</tbody></table>`;
+      const cg = colgroupHtml(tableColFractions(b.header, b.rows));
+      return `<table class="tbl">${cg}${head}<tbody>${body}</tbody></table>`;
     }
+
     case "signature":
       return `<div class="sign">
         <div class="sign-title">${nl2br(b.signerTitle)}</div>
