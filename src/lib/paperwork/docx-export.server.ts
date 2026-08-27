@@ -1,4 +1,5 @@
 // Экспорт корпоративного документа в DOCX из тех же блоков, что PDF и превью.
+import { fittedBlank } from "./fit-page";
 import {
   AlignmentType,
   BorderStyle,
