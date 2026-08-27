@@ -208,6 +208,23 @@ function DocumentSettingsPage() {
         <TabsContent value="invoice">
           <Card title="Счёт" preview="invoice" onPreview={openPreview}>
             <Field label="Срок оплаты (банковских дней)" type="number" value={String(form.invoice_validity_days)} onChange={(v) => update("invoice_validity_days", Number(v) || 5)} />
+            <label className="mt-4 flex items-start gap-3 rounded-xl border border-border/60 p-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={form.show_facsimile === true}
+                onChange={(e) => update("show_facsimile", e.target.checked)}
+              />
+              <span>
+                Ставить факсимиле и печать
+                <span className="block text-xs text-muted-foreground">
+                  Применяется к счёту, договору и акту. Картинки берутся из карточки компании
+                  {form.show_facsimile && !form.signature_url && !form.stamp_url
+                    ? " — сейчас подпись и печать не загружены, документ выйдет без них."
+                    : "."}
+                </span>
+              </span>
+            </label>
             <FieldArea label="Текст футера" value={form.invoice_footer} onChange={(v) => update("invoice_footer", v)} rows={3} />
           </Card>
         </TabsContent>
