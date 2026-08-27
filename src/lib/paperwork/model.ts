@@ -84,6 +84,8 @@ export const PW_BLOCK_TYPES = [
   "signature",
   "spacer",
   "note",
+  "lineitems",
+  "parties",
 ] as const;
 export type PwBlockType = (typeof PW_BLOCK_TYPES)[number];
 
@@ -96,6 +98,8 @@ export const PW_BLOCK_LABELS: Record<PwBlockType, string> = {
   signature: "Подпись и печать",
   spacer: "Отступ",
   note: "Примечание",
+  lineitems: "Позиции с суммами",
+  parties: "Реквизиты сторон",
 };
 
 export type PwAlign = "left" | "center" | "right" | "justify";
