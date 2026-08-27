@@ -11,7 +11,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
-import { adminKeys } from "@/lib/query-keys";
+import { invalidateEntity } from "@/lib/admin/invalidate";
+import { useEditorSave } from "@/hooks/use-editor-save";
+import { SaveStatus } from "@/components/admin/SaveStatus";
 import { PwBlockList } from "@/components/admin/paperwork/PwBlockList";
 import { PwBlankPanel } from "@/components/admin/paperwork/PwBlankPanel";
 import { PwAiPanel } from "@/components/admin/paperwork/PwAiPanel";
@@ -84,6 +86,8 @@ export function PaperworkEditor({
   }, [title, docNumber, docDate, docType, status, companyId, blocks, values]);
 
 
+
+
   const docMeta = useMemo(
     () => ({ title, doc_number: docNumber, doc_date: docDate }),
     [title, docNumber, docDate],
@@ -117,29 +121,40 @@ export function PaperworkEditor({
     [blocks],
   );
 
+  const persist = async () => {
+    await saveDoc({
+      data: {
+        id: detail.document.id,
+        template_id: detail.document.template_id,
+        company_profile_id: companyId,
+        doc_type: docType,
+        title,
+        doc_number: docNumber,
+        doc_date: docDate,
+        blocks,
+        values,
+        status,
+      },
+    });
+    dirty.current = false;
+    invalidateEntity(qc, "paperwork");
+  };
+
+  // Автосохранение: правки уходят через ~1.2 с после последнего изменения.
+  const autosave = useEditorSave(persist);
+
   const save = useMutation({
-    mutationFn: () =>
-      saveDoc({
-        data: {
-          id: detail.document.id,
-          template_id: detail.document.template_id,
-          company_profile_id: companyId,
-          doc_type: docType,
-          title,
-          doc_number: docNumber,
-          doc_date: docDate,
-          blocks,
-          values,
-          status,
-        },
-      }),
-    onSuccess: () => {
-      dirty.current = false;
-      qc.invalidateQueries({ queryKey: adminKeys.paperwork });
-      toast.success("Документ сохранён");
-    },
+    mutationFn: persist,
+    onSuccess: () => toast.success("Документ сохранён"),
     onError: (e: Error) => toast.error(e.message),
   });
+
+  // Любая правка помечает документ грязным и планирует автосохранение.
+  useEffect(() => {
+    if (!dirty.current) return;
+    autosave.markDirty();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, docNumber, docDate, docType, status, companyId, blocks, values]);
 
   const saveBlank = useMutation({
     mutationFn: () => saveBlankFn({ data: { companyId: companyId!, settings: blank } }),
@@ -149,6 +164,7 @@ export function PaperworkEditor({
 
   const download = async (format: "pdf" | "docx") => {
     if (dirty.current) await save.mutateAsync();
+
     await viewer.openDocument(`/admin/paperwork/${detail.document.id}/render?format=${format}`, {
       auth: true,
       mode: format === "docx" ? "download" : "preview",
@@ -222,18 +238,20 @@ export function PaperworkEditor({
           </SheetContent>
         </Sheet>
 
-        <div className="ml-auto flex flex-wrap gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <SaveStatus state={autosave.state} errorMessage={autosave.error} />
           <Button variant="outline" onClick={() => download("docx")}>
             <FileText className="mr-1 h-4 w-4" /> DOCX
           </Button>
           <Button variant="outline" onClick={() => download("pdf")}>
             <Download className="mr-1 h-4 w-4" /> PDF
           </Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || autosave.state === "saving"}>
             {save.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
             Сохранить
           </Button>
         </div>
+
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,540px)]">

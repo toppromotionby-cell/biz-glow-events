@@ -8,6 +8,9 @@ import { adminKeys } from "@/lib/query-keys";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CatalogTabs } from "@/components/admin/CatalogTabs";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { AUTOSAVE_DELAY } from "@/lib/editor/save-state";
+import { invalidateEntity } from "@/lib/admin/invalidate";
 
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -43,10 +46,8 @@ function CatalogStructurePage() {
     queryFn: () => getStructureOverview(),
   });
 
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: adminKeys.catalogStructure });
-    qc.invalidateQueries({ queryKey: adminKeys.catalogNav });
-  };
+  const invalidate = () => invalidateEntity(qc, "catalog-structure");
+
 
   const cleanup = useMutation({
     mutationFn: () => cleanupCatalogStructure(),
@@ -314,8 +315,14 @@ function SectionCard({
     if (typeof window !== "undefined") window.localStorage.setItem(storageKey, v ? "1" : "0");
   };
 
+  // Автосохранение названия и описания раздела через 1.2 с после ввода.
+  const autosave = useDebouncedCallback((t: string, d: string) => {
+    if (t.trim() === section.title && d.trim() === (section.description ?? "")) return;
+    onSaveSection({ title: t.trim(), description: d.trim() });
+  }, AUTOSAVE_DELAY);
 
   const move = (index: number, dir: -1 | 1) => {
+
     const target = categories[index + dir];
     const current = categories[index];
     if (!target || !current) return;
@@ -350,17 +357,19 @@ function SectionCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название раздела" />
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Короткое описание" />
+          <Input
+            value={title}
+            onChange={(e) => { setTitle(e.target.value); autosave(e.target.value, description); }}
+            placeholder="Название раздела"
+          />
+          <Input
+            value={description}
+            onChange={(e) => { setDescription(e.target.value); autosave(title, e.target.value); }}
+            placeholder="Короткое описание"
+          />
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onSaveSection({ title: title.trim(), description: description.trim() })}
-          disabled={title.trim() === section.title && description.trim() === (section.description ?? "")}
-        >
-          Сохранить раздел
-        </Button>
+        <p className="text-xs text-muted-foreground">Правки сохраняются автоматически.</p>
+
 
         <Collapsible open={listOpen} onOpenChange={toggleList} className="border-t border-border/50 pt-4">
           <CollapsibleTrigger asChild>
@@ -458,13 +467,24 @@ function CategoryRowEditor({
   const [name, setName] = useState(cat.name);
   const [description, setDescription] = useState(cat.description ?? "");
 
+  // Автосохранение направления — без отдельной кнопки «Сохранить».
+  const autosave = useDebouncedCallback((n: string, d: string) => {
+    if (n.trim() === cat.name && d.trim() === (cat.description ?? "")) return;
+    if (!n.trim()) return;
+    onSave({ name: n.trim(), description: d.trim() });
+  }, AUTOSAVE_DELAY);
+
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border border-border/50 p-2">
-      <Input className="w-48" value={name} onChange={(e) => setName(e.target.value)} />
+      <Input
+        className="w-48"
+        value={name}
+        onChange={(e) => { setName(e.target.value); autosave(e.target.value, description); }}
+      />
       <Input
         className="flex-1 min-w-[12rem]"
         value={description}
-        onChange={(e) => setDescription(e.target.value)}
+        onChange={(e) => { setDescription(e.target.value); autosave(name, e.target.value); }}
         placeholder="Описание (необязательно)"
       />
       <Badge variant={cat.count > 0 ? "secondary" : "outline"}>{cat.count}</Badge>
@@ -472,14 +492,7 @@ function CategoryRowEditor({
         Видно
         <Switch checked={cat.visible} onCheckedChange={(v) => onSave({ visible: v })} />
       </label>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => onSave({ name: name.trim(), description: description.trim() })}
-        disabled={name.trim() === cat.name && description.trim() === (cat.description ?? "")}
-      >
-        Сохранить
-      </Button>
+
       <Button size="icon" variant="ghost" onClick={onUp} disabled={!onUp} aria-label="Выше">
         <ArrowUp className="h-4 w-4" />
       </Button>
