@@ -28,15 +28,21 @@ import type { CompanyProfile } from "@/lib/documents/company-profile";
 
 export function PaperworkEditor({
   detail,
-  company,
+  companies,
 }: {
   detail: PaperworkDetail;
-  company: CompanyProfile | null;
+  companies: CompanyProfile[];
 }) {
   const qc = useQueryClient();
   const viewer = useDocumentViewer();
   const saveDoc = useServerFn(savePaperworkDocument);
   const saveBlankFn = useServerFn(savePaperworkBlank);
+  const getBlank = useServerFn(getPaperworkBlank);
+
+  const defaultCompanyId = useMemo(
+    () => companies.find((c) => c.is_default)?.id ?? companies[0]?.id ?? null,
+    [companies],
+  );
 
   const [title, setTitle] = useState(detail.document.title);
   const [docNumber, setDocNumber] = useState(detail.document.doc_number);
@@ -49,9 +55,34 @@ export function PaperworkEditor({
   const [blank, setBlank] = useState<PwBlank>(detail.blank);
   const dirty = useRef(false);
 
+  // Документ без компании подхватывает основную — иначе шапка и бланк пустые.
+  useEffect(() => {
+    if (!companyId && defaultCompanyId) setCompanyId(defaultCompanyId);
+  }, [companyId, defaultCompanyId]);
+
+  const companyOptions = useMemo(
+    () => companies.map((c) => ({ id: c.id, name: c.name })),
+    [companies],
+  );
+  const company = useMemo(
+    () => companies.find((c) => c.id === companyId) ?? null,
+    [companies, companyId],
+  );
+
+  // Настройки бланка всегда принадлежат выбранной компании.
+  const blankQuery = useQuery({
+    queryKey: ["paperwork-blank", companyId],
+    queryFn: () => getBlank({ data: { companyId: companyId! } }),
+    enabled: !!companyId && companyId !== detail.document.company_profile_id,
+  });
+  useEffect(() => {
+    if (blankQuery.data) setBlank(blankQuery.data);
+  }, [blankQuery.data]);
+
   useEffect(() => {
     dirty.current = true;
   }, [title, docNumber, docDate, docType, status, companyId, blocks, values]);
+
 
   const docMeta = useMemo(
     () => ({ title, doc_number: docNumber, doc_date: docDate }),
