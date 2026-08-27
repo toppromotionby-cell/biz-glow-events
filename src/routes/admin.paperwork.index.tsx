@@ -39,7 +39,7 @@ const TONE: Record<string, "muted" | "info" | "success"> = {
 function Page() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const confirm = useConfirm();
+  const { confirm, dialog } = useConfirm();
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
@@ -101,6 +101,7 @@ function Page() {
 
   return (
     <div className="space-y-5">
+      {dialog}
       <AdminPageHeader
         icon={<FileSignature className="h-5 w-5" />}
         title="Документы и шаблоны"

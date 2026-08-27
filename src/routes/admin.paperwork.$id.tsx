@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { adminKeys } from "@/lib/query-keys";
 import { getPaperworkDocument } from "@/lib/paperwork.functions";
-import { getCompanyProfiles } from "@/lib/company-profiles.functions";
+import { listCompanyProfiles } from "@/lib/company-profiles.functions";
 import { PaperworkEditor } from "@/components/admin/paperwork/PaperworkEditor";
 
 export const Route = createFileRoute("/admin/paperwork/$id")({
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/admin/paperwork/$id")({
 function Page() {
   const { id } = Route.useParams();
   const getDoc = useServerFn(getPaperworkDocument);
-  const getProfiles = useServerFn(getCompanyProfiles);
+  const getProfiles = useServerFn(listCompanyProfiles);
 
   const detail = useQuery({
     queryKey: [...adminKeys.paperwork, id],
