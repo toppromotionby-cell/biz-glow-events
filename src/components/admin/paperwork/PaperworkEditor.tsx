@@ -137,6 +137,14 @@ export function PaperworkEditor({
           </SelectContent>
         </Select>
 
+        <Select value={companyId ?? "none"} onValueChange={(v) => setCompanyId(v === "none" ? null : v)}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="Компания" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Без бланка</SelectItem>
+            {companyOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm"><Palette className="mr-1 h-4 w-4" /> Бланк</Button>
@@ -148,12 +156,16 @@ export function PaperworkEditor({
                 blank={blank}
                 onChange={setBlank}
                 onSave={() => saveBlank.mutate()}
-                saving={saveBlank.isPending}
-                disabled={!companyId}
+                saving={saveBlank.isPending || blankQuery.isFetching}
+                companyName={company?.name ?? null}
+                hasCompanies={companyOptions.length > 0}
+                clientLogoUrl={values[varKey("client_logo")] ?? ""}
+                onClientLogoUrlChange={(v) => setValues({ ...values, [varKey("client_logo")]: v })}
               />
             </div>
           </SheetContent>
         </Sheet>
+
 
         <Sheet>
           <SheetTrigger asChild>
