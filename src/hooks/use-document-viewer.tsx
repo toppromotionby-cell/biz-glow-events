@@ -5,8 +5,15 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentViewerDialog, type ViewerDoc } from "@/components/admin/DocumentViewerDialog";
 import { documentFetchError } from "@/lib/document-fetch-error";
+import { downloadBlob } from "@/lib/download";
+import { expectedSignature, isPreviewableMime, matchesSignature } from "@/lib/document-mime";
 
-type OpenOpts = { name?: string; auth?: boolean };
+type OpenOpts = {
+  name?: string;
+  auth?: boolean;
+  /** «download» — сразу сохранить файл, «preview» — открыть диалог (по умолчанию авто по типу). */
+  mode?: "preview" | "download";
+};
 
 type Ctx = {
   /** Загрузить документ по URL (с bearer-токеном) и показать в диалоге. */
@@ -71,12 +78,25 @@ export function DocumentViewerProvider({ children }: { children: ReactNode }) {
         }
         const blob = await res.blob();
         const declaredType = (res.headers.get("content-type") ?? "").split(";", 1)[0].toLowerCase();
-        if (declaredType === "application/pdf" || opts.name?.toLowerCase().endsWith(".pdf")) {
-          const signature = new TextDecoder("ascii").decode(new Uint8Array(await blob.slice(0, 5).arrayBuffer()));
-          if (blob.size === 0 || signature !== "%PDF-") throw new Error("Сервер вернул некорректный PDF. Повторите попытку");
-        }
         const name = filenameFrom(res.headers.get("content-disposition") ?? "", opts.name ?? "document");
-        show(declaredType && blob.type !== declaredType ? new Blob([blob], { type: declaredType }) : blob, name);
+
+        if (blob.size === 0) throw new Error("Сервер вернул пустой файл. Повторите попытку");
+        const signature = expectedSignature(declaredType, name);
+        if (signature) {
+          const head = new TextDecoder("latin1").decode(new Uint8Array(await blob.slice(0, signature.length).arrayBuffer()));
+          if (!matchesSignature(head, signature)) {
+            throw new Error("Сервер вернул повреждённый файл. Повторите попытку");
+          }
+        }
+
+        const typed = declaredType && blob.type !== declaredType ? new Blob([blob], { type: declaredType }) : blob;
+        const mode = opts.mode ?? (isPreviewableMime(declaredType) ? "preview" : "download");
+        if (mode === "download") {
+          await downloadBlob(typed, name, { fallbackUrl: url });
+          toast.success(`Файл готов: ${name}`);
+          return;
+        }
+        show(typed, name);
       } catch (e) {
         revoke();
         setDoc(null);
