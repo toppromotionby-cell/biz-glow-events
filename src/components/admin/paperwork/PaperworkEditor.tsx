@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ChevronDown, Download, FileText, Loader2, Palette, Save, Sparkles } from "lucide-react";
+import { ChevronDown, Download, FileText, LayoutTemplate, Loader2, Palette, Save, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,6 +169,25 @@ export function PaperworkEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, docNumber, docDate, docType, status, companyId, blocks, values]);
 
+  // Шаблон всегда наследует вид документа — перенос между видами исключён.
+  const makeTemplate = useMutation({
+    mutationFn: () =>
+      saveTpl({
+        data: {
+          category: kind.category,
+          doc_type: docType,
+          name: title.trim() || kind.label,
+          description: `Шаблон вида «${kind.label}»`,
+          blocks,
+        },
+      }),
+    onSuccess: () => {
+      invalidateEntity(qc, "paperwork");
+      toast.success("Шаблон создан");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const saveBlank = useMutation({
     mutationFn: () => saveBlankFn({ data: { companyId: companyId!, settings: blank } }),
     onSuccess: () => toast.success("Настройки бланка сохранены"),
@@ -255,6 +274,9 @@ export function PaperworkEditor({
           <SaveStatus state={autosave.state} errorMessage={autosave.error} />
           <Button variant="outline" onClick={() => download("docx")}>
             <FileText className="mr-1 h-4 w-4" /> DOCX
+          </Button>
+          <Button variant="outline" onClick={() => makeTemplate.mutate()} disabled={makeTemplate.isPending}>
+            <LayoutTemplate className="mr-1 h-4 w-4" /> В шаблоны
           </Button>
           <Button variant="outline" onClick={() => download("pdf")}>
             <Download className="mr-1 h-4 w-4" /> PDF

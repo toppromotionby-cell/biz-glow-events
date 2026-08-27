@@ -189,6 +189,7 @@ export const listPaperworkTemplates = createServerFn({ method: "GET" })
       .object({
         search: z.string().max(160).optional(),
         category: z.string().max(30).optional(),
+        docType: z.string().max(20).optional(),
         includeArchived: z.boolean().optional(),
       })
       .parse(d ?? {}),
@@ -204,6 +205,7 @@ export const listPaperworkTemplates = createServerFn({ method: "GET" })
       .limit(300);
     if (!data.includeArchived) q = q.eq("is_archived", false);
     if (data.category && data.category !== "all") q = q.eq("category", data.category);
+    if (data.docType && data.docType !== "all") q = q.eq("doc_type", data.docType);
     const term = (data.search ?? "").trim();
     if (term) q = q.ilike("name", `%${term}%`);
 
