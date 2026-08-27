@@ -74,6 +74,7 @@ import { Route as AdminCampaignsRouteImport } from './routes/admin.campaigns'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwork.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as AdminDocumentsIndexRouteImport } from './routes/admin.documents.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
@@ -437,6 +438,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPaperworkIndexRoute = AdminPaperworkIndexRouteImport.update({
+  id: '/paperwork/',
+  path: '/paperwork/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersIndexRoute = AdminOrdersIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -719,6 +725,7 @@ export interface FileRoutesByFullPath {
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
+  '/admin/paperwork/': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -821,6 +828,7 @@ export interface FileRoutesByTo {
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents': typeof AdminDocumentsIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
+  '/admin/paperwork': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -926,6 +934,7 @@ export interface FileRoutesById {
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
+  '/admin/paperwork/': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
   '/admin/orders/$id/act': typeof AdminOrdersIdActRoute
   '/admin/orders/$id/contract': typeof AdminOrdersIdContractRoute
@@ -1032,6 +1041,7 @@ export interface FileRouteTypes {
     | '/order/success/$id'
     | '/admin/documents/'
     | '/admin/orders/'
+    | '/admin/paperwork/'
     | '/admin/documents/presentations/templates'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -1134,6 +1144,7 @@ export interface FileRouteTypes {
     | '/order/success/$id'
     | '/admin/documents'
     | '/admin/orders'
+    | '/admin/paperwork'
     | '/admin/documents/presentations/templates'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -1238,6 +1249,7 @@ export interface FileRouteTypes {
     | '/order/success/$id'
     | '/admin/documents/'
     | '/admin/orders/'
+    | '/admin/paperwork/'
     | '/admin/documents/presentations/templates'
     | '/admin/orders/$id/act'
     | '/admin/orders/$id/contract'
@@ -1778,6 +1790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/paperwork/': {
+      id: '/admin/paperwork/'
+      path: '/paperwork'
+      fullPath: '/admin/paperwork/'
+      preLoaderRoute: typeof AdminPaperworkIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders/': {
       id: '/admin/orders/'
       path: '/'
@@ -2106,6 +2125,7 @@ interface AdminRouteChildren {
   AdminSettingsHygieneRoute: typeof AdminSettingsHygieneRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
+  AdminPaperworkIndexRoute: typeof AdminPaperworkIndexRoute
   AdminDocumentsPresentationsTemplatesRoute: typeof AdminDocumentsPresentationsTemplatesRoute
   AdminPaperworkIdRenderRoute: typeof AdminPaperworkIdRenderRoute
   AdminDocumentsPresentationsIndexRoute: typeof AdminDocumentsPresentationsIndexRoute
@@ -2142,6 +2162,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsHygieneRoute: AdminSettingsHygieneRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
+  AdminPaperworkIndexRoute: AdminPaperworkIndexRoute,
   AdminDocumentsPresentationsTemplatesRoute:
     AdminDocumentsPresentationsTemplatesRoute,
   AdminPaperworkIdRenderRoute: AdminPaperworkIdRenderRoute,
