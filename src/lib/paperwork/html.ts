@@ -168,6 +168,14 @@ export function paperworkHtml(opts: {
   .tbl { width:100%; border-collapse:collapse; margin:10px 0; font-size:10pt; }
   .tbl th, .tbl td { border:1px solid #d7dbe2; padding:5px 7px; text-align:left; vertical-align:top; }
   .tbl th { background:#f4f5f7; font-weight:600; }
+  .tbl .num { text-align:right; white-space:nowrap; }
+  .tbl tfoot td { font-weight:600; background:#fafbfc; }
+  .tbl tfoot .grand td { background:#f4f5f7; font-size:10.5pt; }
+  .words { font-size:9.5pt; color:#41474f; margin:-4px 0 10px; }
+  .parties { display:flex; gap:10mm; margin:12px 0; font-size:9.5pt; }
+  .parties > div { flex:1; }
+  .pt { font-weight:600; margin-bottom:4px; }
+  .pv { white-space:pre-line; color:#41474f; }
   .sign { margin-top:22px; display:flex; align-items:flex-end; gap:10px; font-size:10.5pt; }
   .sign-title { min-width:45mm; }
   .sign-line { flex:1; border-bottom:1px solid #9aa1ac; height:1px; max-width:55mm; }
