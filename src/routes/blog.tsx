@@ -58,20 +58,7 @@ function BlogIndex() {
         <p className="mt-3 text-muted-foreground max-w-2xl">Кейсы, разбор оборудования и тренды белорусской event-индустрии.</p>
       </header>
 
-      {loading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true" aria-label="Загрузка публикаций">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="glass rounded-xl overflow-hidden">
-              <div className="aspect-[16/10] bg-muted/40 animate-pulse" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 w-1/3 bg-muted/40 rounded animate-pulse" />
-                <div className="h-5 w-4/5 bg-muted/40 rounded animate-pulse" />
-                <div className="h-4 w-full bg-muted/30 rounded animate-pulse" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : posts.length === 0 ? (
+      {posts.length === 0 ? (
         <div className="glass rounded-xl p-10 text-center text-muted-foreground">
           Скоро здесь появятся первые публикации.
         </div>
