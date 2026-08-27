@@ -244,6 +244,20 @@ export function pwId(prefix = "b"): string {
   return `${prefix}_${Date.now().toString(36)}${seq.toString(36)}${rnd}`;
 }
 
+export function normalizeLine(raw: unknown): PwLine {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return {
+    name: str(r.name),
+    qty: num(r.qty),
+    unit: str(r.unit) || "шт.",
+    price: num(r.price),
+  };
+}
+
 export function normalizeBlock(raw: unknown): PwBlock {
   const r = (raw ?? {}) as Record<string, unknown>;
   const items = Array.isArray(r.items) ? r.items.map((i) => str(i)) : [];
@@ -251,6 +265,7 @@ export function normalizeBlock(raw: unknown): PwBlock {
   const rows = Array.isArray(r.rows)
     ? (r.rows as unknown[]).map((row) => (Array.isArray(row) ? row.map((c) => str(c)) : []))
     : [];
+  const vat = Number(r.vatPct);
   return {
     id: str(r.id) || pwId(),
     type: oneOf(PW_BLOCK_TYPES, r.type, "paragraph"),
