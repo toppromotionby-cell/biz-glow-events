@@ -86,6 +86,7 @@ import { Route as AdminSettingsSocialRouteImport } from './routes/admin.settings
 import { Route as AdminSettingsHygieneRouteImport } from './routes/admin.settings.hygiene'
 import { Route as AdminSettingsEmailsRouteImport } from './routes/admin.settings.emails'
 import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.settings.documents'
+import { Route as AdminPaperworkTemplatesRouteImport } from './routes/admin.paperwork.templates'
 import { Route as AdminPaperworkIdRouteImport } from './routes/admin.paperwork.$id'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
@@ -500,6 +501,11 @@ const AdminSettingsDocumentsRoute = AdminSettingsDocumentsRouteImport.update({
   path: '/settings/documents',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPaperworkTemplatesRoute = AdminPaperworkTemplatesRouteImport.update({
+  id: '/paperwork/templates',
+  path: '/paperwork/templates',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPaperworkIdRoute = AdminPaperworkIdRouteImport.update({
   id: '/paperwork/$id',
   path: '/paperwork/$id',
@@ -721,6 +727,7 @@ export interface FileRoutesByFullPath {
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/paperwork/$id': typeof AdminPaperworkIdRouteWithChildren
+  '/admin/paperwork/templates': typeof AdminPaperworkTemplatesRoute
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
   '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
@@ -825,6 +832,7 @@ export interface FileRoutesByTo {
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/paperwork/$id': typeof AdminPaperworkIdRouteWithChildren
+  '/admin/paperwork/templates': typeof AdminPaperworkTemplatesRoute
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
   '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
@@ -932,6 +940,7 @@ export interface FileRoutesById {
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/paperwork/$id': typeof AdminPaperworkIdRouteWithChildren
+  '/admin/paperwork/templates': typeof AdminPaperworkTemplatesRoute
   '/admin/settings/documents': typeof AdminSettingsDocumentsRoute
   '/admin/settings/emails': typeof AdminSettingsEmailsRoute
   '/admin/settings/hygiene': typeof AdminSettingsHygieneRoute
@@ -1040,6 +1049,7 @@ export interface FileRouteTypes {
     | '/admin/documents/knowledge'
     | '/admin/orders/$id'
     | '/admin/paperwork/$id'
+    | '/admin/paperwork/templates'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
     | '/admin/settings/hygiene'
@@ -1144,6 +1154,7 @@ export interface FileRouteTypes {
     | '/admin/documents/knowledge'
     | '/admin/orders/$id'
     | '/admin/paperwork/$id'
+    | '/admin/paperwork/templates'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
     | '/admin/settings/hygiene'
@@ -1250,6 +1261,7 @@ export interface FileRouteTypes {
     | '/admin/documents/knowledge'
     | '/admin/orders/$id'
     | '/admin/paperwork/$id'
+    | '/admin/paperwork/templates'
     | '/admin/settings/documents'
     | '/admin/settings/emails'
     | '/admin/settings/hygiene'
@@ -1886,6 +1898,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsDocumentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/paperwork/templates': {
+      id: '/admin/paperwork/templates'
+      path: '/paperwork/templates'
+      fullPath: '/admin/paperwork/templates'
+      preLoaderRoute: typeof AdminPaperworkTemplatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/paperwork/$id': {
       id: '/admin/paperwork/$id'
       path: '/paperwork/$id'
@@ -2151,6 +2170,7 @@ interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminPaperworkIdRoute: typeof AdminPaperworkIdRouteWithChildren
+  AdminPaperworkTemplatesRoute: typeof AdminPaperworkTemplatesRoute
   AdminSettingsDocumentsRoute: typeof AdminSettingsDocumentsRoute
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsHygieneRoute: typeof AdminSettingsHygieneRoute
@@ -2188,6 +2208,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminPaperworkIdRoute: AdminPaperworkIdRouteWithChildren,
+  AdminPaperworkTemplatesRoute: AdminPaperworkTemplatesRoute,
   AdminSettingsDocumentsRoute: AdminSettingsDocumentsRoute,
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsHygieneRoute: AdminSettingsHygieneRoute,

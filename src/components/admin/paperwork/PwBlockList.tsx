@@ -1,15 +1,19 @@
 // Редактор блоков корпоративного документа: добавление, порядок, содержимое.
 import { memo } from "react";
 import {
-  ArrowDown, ArrowUp, Copy, GripVertical, Plus, Trash2, X,
+  ArrowDown, ArrowUp, ChevronDown, Copy, GripVertical, Plus, Trash2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { TextAreaField } from "@/components/admin/field-kit";
 import {
-  PW_BLOCK_LABELS, PW_BLOCK_TYPES, emptyBlock, pwId,
+  PW_BLOCK_LABELS, emptyBlock, pwId,
   type PwAlign, type PwBlock, type PwBlockType,
 } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
@@ -395,15 +399,29 @@ const BlockCard = memo(function BlockCard({
   );
 });
 
+const BLOCK_GROUPS: { label: string; types: PwBlockType[] }[] = [
+  { label: "Текст", types: ["heading", "paragraph", "list", "note"] },
+  { label: "Таблицы", types: ["table", "lineitems"] },
+  { label: "Реквизиты", types: ["recipient", "parties", "signature", "spacer"] },
+];
+
 export function PwBlockList({
   blocks,
   onChange,
+  suggested = [],
 }: {
   blocks: PwBlock[];
   onChange: (next: PwBlock[]) => void;
+  /** Блоки, релевантные текущему виду документа — показываем их кнопками. */
+  suggested?: PwBlockType[];
 }) {
   const patch = (i: number, p: Partial<PwBlock>) =>
     onChange(blocks.map((b, bi) => (bi === i ? { ...b, ...p } : b)));
+
+  const add = (t: PwBlockType) => onChange([...blocks, emptyBlock(t)]);
+  const quick: PwBlockType[] = (suggested.length ? suggested : (["heading", "paragraph", "list"] as PwBlockType[])).filter(
+    (t, i, arr) => arr.indexOf(t) === i,
+  );
 
   const move = (i: number, dir: -1 | 1) => {
     const j = i + dir;
@@ -438,13 +456,34 @@ export function PwBlockList({
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2 rounded-lg border border-dashed border-border p-3">
-        {PW_BLOCK_TYPES.map((t: PwBlockType) => (
-          <Button key={t} size="sm" variant="outline" onClick={() => onChange([...blocks, emptyBlock(t)])}>
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
+        {quick.map((t) => (
+          <Button key={t} size="sm" variant="outline" onClick={() => add(t)}>
             <Plus className="mr-1 h-4 w-4" />
             {PW_BLOCK_LABELS[t]}
           </Button>
         ))}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="ghost">
+              <Plus className="mr-1 h-4 w-4" /> Ещё блок
+              <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            {BLOCK_GROUPS.map((g, gi) => (
+              <div key={g.label}>
+                {gi > 0 && <DropdownMenuSeparator />}
+                <DropdownMenuLabel className="text-xs text-muted-foreground">{g.label}</DropdownMenuLabel>
+                {g.types.map((t) => (
+                  <DropdownMenuItem key={t} onSelect={() => add(t)}>
+                    {PW_BLOCK_LABELS[t]}
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
