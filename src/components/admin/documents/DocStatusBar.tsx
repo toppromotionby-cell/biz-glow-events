@@ -20,7 +20,7 @@ interface DocStatusBarProps<T extends DocCheckLike> {
 }
 
 export function DocStatusBar<T extends DocCheckLike>({
-  checks, onGoto, okLabel = "Документ готов к отправке", className,
+  checks, onGoto, okLabel = "КП готово к отправке", className,
 }: DocStatusBarProps<T>) {
   const errors = checks.filter((c) => c.level === "error");
   const warns = checks.filter((c) => c.level === "warn");

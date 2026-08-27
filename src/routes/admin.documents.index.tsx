@@ -165,7 +165,7 @@ function Page() {
 
   const remove = useMutation({
     mutationFn: (r: DocumentRow) => delFn({ data: { kind: r.kind, id: r.id } }),
-    onSuccess: () => { toast.success("Документ удалён"); refresh(); },
+    onSuccess: () => { toast.success("КП удалено"); refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -197,7 +197,7 @@ function Page() {
 
   const askDelete = async (r: DocumentRow) => {
     const ok = await confirm({
-      title: "Удалить документ?",
+      title: "Удалить КП?",
       description: `${r.number} · ${r.client}. Действие нельзя отменить.`,
       confirmText: "Удалить",
       destructive: true,
@@ -209,15 +209,15 @@ function Page() {
     <div className="space-y-5">
       <AdminPageHeader
         icon={<FileStack className="h-5 w-5 text-primary" />}
-        title="Документы"
-        subtitle={`${rows.length} документов · на сумму ${fmtMoney(data?.sum ?? 0)}`}
+        title="Коммерческие предложения"
+        subtitle={`${rows.length} КП · на сумму ${fmtMoney(data?.sum ?? 0)}`}
         action={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link to="/admin/documents/knowledge"><Brain className="h-4 w-4 mr-1.5" />База знаний</Link>
             </Button>
             <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />Создать документ
+              <Plus className="h-4 w-4 mr-1.5" />Создать КП
             </Button>
           </div>
         }
@@ -235,7 +235,7 @@ function Page() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-border/60 p-0.5">
           {([
-            { key: "docs", label: "Документы" },
+            { key: "docs", label: "КП" },
             { key: "templates", label: "Шаблоны" },
             { key: "finance", label: "Счета и акты" },
             { key: "orders", label: "Файлы по заказам" },
@@ -302,13 +302,13 @@ function Page() {
               {orderDocs.isError && (
                 <tr>
                   <td colSpan={6} className="p-6 text-center text-sm text-destructive">
-                    Не удалось загрузить документы.{" "}
+                    Не удалось загрузить КП.{" "}
                     <Button size="sm" variant="outline" onClick={() => void orderDocs.refetch()}>Повторить</Button>
                   </td>
                 </tr>
               )}
               {!orderDocs.isLoading && !orderDocs.isError && !(orderDocs.data ?? []).length && (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Документов по заказам пока нет</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Файлов по заказам пока нет</td></tr>
               )}
               {(orderDocs.data ?? []).map((d) => (
                 <tr key={d.id} className="border-t border-border/50 transition-colors hover:bg-muted/30">
@@ -366,20 +366,20 @@ function Page() {
             {isError && (
               <tr>
                 <td colSpan={7} className="p-6 text-center text-sm text-destructive">
-                  Не удалось загрузить документы.{" "}
+                  Не удалось загрузить КП.{" "}
                   <Button size="sm" variant="outline" onClick={() => void refetch()}>Повторить</Button>
                 </td>
               </tr>
             )}
             {!isLoading && !isError && !rows.length && (
-              <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Документов не найдено</td></tr>
+              <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">КП не найдено</td></tr>
             )}
             {rows.map((r) => (
               <tr
                 key={`${r.kind}-${r.id}`}
                 tabIndex={0}
                 role="link"
-                aria-label={`Открыть документ ${r.number}`}
+                aria-label={`Открыть КП ${r.number}`}
                 className="cursor-pointer border-t border-border/50 transition-colors hover:bg-muted/30 focus-visible:bg-muted/40 focus-visible:outline-none"
                 onClick={() => openDoc(r)}
                 onKeyDown={(e) => { if (e.key === "Enter") openDoc(r); }}
@@ -441,7 +441,7 @@ function Page() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => duplicate.mutate(r)}>
                           <Copy className="mr-2 h-4 w-4" />
-                          {templates ? "Создать документ из шаблона" : "Дублировать"}
+                          {templates ? "Создать КП из шаблона" : "Дублировать"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => toggleTemplate.mutate({ r, isTemplate: !templates })}

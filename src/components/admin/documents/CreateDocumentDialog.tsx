@@ -82,16 +82,16 @@ export function CreateDocumentDialog({ open, onOpenChange, onCreated }: Props) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {step === "kind" ? "Создать документ" : step === "quote" ? "Коммерческое предложение" : "КП промо"}
+            {step === "kind" ? "Создать КП" : step === "quote" ? "Коммерческое предложение" : "КП промо"}
           </DialogTitle>
           <DialogDescription>
-            {step === "kind" ? "Выберите тип документа" : "Выберите, с чего начать"}
+            {step === "kind" ? "Выберите тип КП" : "Выберите, с чего начать"}
           </DialogDescription>
         </DialogHeader>
 
         {busy.isPending && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />Создаём документ…
+            <Loader2 className="h-4 w-4 animate-spin" />Создаём КП…
           </div>
         )}
 

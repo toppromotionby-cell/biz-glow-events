@@ -44,9 +44,9 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Документы",
+    label: "Коммерческие предложения",
     items: [
-      { to: "/admin/documents", label: "Все документы", icon: FileStack, exact: true, perm: "documents.manage" },
+      { to: "/admin/documents", label: "Все КП", icon: FileStack, exact: true, perm: "documents.manage" },
       { to: "/admin/documents/presentations", label: "Презентации", icon: Presentation, matchPrefix: "/admin/documents/presentations", perm: "documents.manage" },
       { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain, perm: "documents.knowledge" },
       { to: "/admin/settings/documents", label: "Компании", icon: FileCog, perm: "documents.settings" },

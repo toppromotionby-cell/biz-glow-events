@@ -144,13 +144,13 @@ function EditorPage() {
   const removeDoc = useServerFn(deleteDocument);
   const onDeleteDocument = async () => {
     const ok = await confirm({
-      title: "Удалить документ?",
+      title: "Удалить КП?",
       description: "КП промо и его позиции будут удалены безвозвратно.",
     });
     if (!ok) return;
     try {
       await removeDoc({ data: { kind: "promo", id } });
-      toast.success("Документ удалён");
+      toast.success("КП удалено");
       void navigate({ to: "/admin/documents" });
     } catch (e) {
       toast.error((e as Error).message);
@@ -363,7 +363,7 @@ function EditorPage() {
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Загрузка…</div>;
   if (error || !quote || !totals) {
-    return <div className="p-8 text-destructive">{(error as Error)?.message ?? "Документ не найден"}</div>;
+    return <div className="p-8 text-destructive">{(error as Error)?.message ?? "КП не найдено"}</div>;
   }
 
   const validity = promoValidityState(quote);
@@ -726,7 +726,7 @@ function EditorPage() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive" onClick={() => void onDeleteDocument()}>
-                  <Trash2 className="mr-2 h-4 w-4" />Удалить документ
+                  <Trash2 className="mr-2 h-4 w-4" />Удалить КП
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
