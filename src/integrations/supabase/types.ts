@@ -1899,6 +1899,160 @@ export type Database = {
         }
         Relationships: []
       }
+      paperwork_brand_blanks: {
+        Row: {
+          company_profile_id: string
+          created_at: string
+          id: string
+          settings: Json
+          updated_at: string
+        }
+        Insert: {
+          company_profile_id: string
+          created_at?: string
+          id?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          company_profile_id?: string
+          created_at?: string
+          id?: string
+          settings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paperwork_brand_blanks_company_profile_id_fkey"
+            columns: ["company_profile_id"]
+            isOneToOne: true
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paperwork_documents: {
+        Row: {
+          author_id: string | null
+          blocks: Json
+          company_profile_id: string | null
+          created_at: string
+          doc_date: string
+          doc_number: string
+          doc_type: string
+          id: string
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          values: Json
+        }
+        Insert: {
+          author_id?: string | null
+          blocks?: Json
+          company_profile_id?: string | null
+          created_at?: string
+          doc_date?: string
+          doc_number?: string
+          doc_type?: string
+          id?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          values?: Json
+        }
+        Update: {
+          author_id?: string | null
+          blocks?: Json
+          company_profile_id?: string | null
+          created_at?: string
+          doc_date?: string
+          doc_number?: string
+          doc_type?: string
+          id?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paperwork_documents_company_profile_id_fkey"
+            columns: ["company_profile_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paperwork_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "paperwork_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paperwork_templates: {
+        Row: {
+          background_url: string | null
+          blocks: Json
+          category: string
+          company_profile_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          doc_type: string
+          id: string
+          is_archived: boolean
+          is_favorite: boolean
+          name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          background_url?: string | null
+          blocks?: Json
+          category?: string
+          company_profile_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          doc_type?: string
+          id?: string
+          is_archived?: boolean
+          is_favorite?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          background_url?: string | null
+          blocks?: Json
+          category?: string
+          company_profile_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          doc_type?: string
+          id?: string
+          is_archived?: boolean
+          is_favorite?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paperwork_templates_company_profile_id_fkey"
+            columns: ["company_profile_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presentation_brand_kits: {
         Row: {
           accent: string
