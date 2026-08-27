@@ -467,6 +467,21 @@ export function emptyBlock(type: PwBlockType): PwBlock {
   if (type === "signature")
     return { ...base, signerName: "{{ФИО директора}}", signerTitle: "Директор", withStamp: true };
   if (type === "note") return { ...base, text: "Примечание" };
+  if (type === "lineitems")
+    return {
+      ...base,
+      lines: [{ name: "Услуга", qty: 1, unit: "усл.", price: 0 }],
+      currency: "BYN",
+      totalWords: true,
+    };
+  if (type === "parties")
+    return {
+      ...base,
+      leftTitle: "Исполнитель",
+      leftText: "{{Компания}}\nУНП {{УНП}}\n{{Адрес}}",
+      rightTitle: "Заказчик",
+      rightText: "{{Заказчик}}\nУНП {{УНП заказчика}}\n{{Адрес заказчика}}",
+    };
   return base;
 }
 
