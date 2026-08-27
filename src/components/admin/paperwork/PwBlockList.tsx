@@ -17,6 +17,7 @@ import {
   type PwAlign, type PwBlock, type PwBlockType,
 } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
+import type { SignatureAvailability } from "@/lib/documents/signature";
 
 const ALIGNS: { key: PwAlign; label: string }[] = [
   { key: "left", label: "Слева" },
@@ -52,10 +53,12 @@ type BlockProps = {
   onMove: (dir: -1 | 1) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  /** Что доступно по загруженным картинкам компании. */
+  sign: SignatureAvailability;
 };
 
 const BlockCard = memo(function BlockCard({
-  block, index, total, onChange, onMove, onDuplicate, onRemove,
+  block, index, total, onChange, onMove, onDuplicate, onRemove, sign,
 }: BlockProps) {
   const cols = Math.max(block.header.length, ...block.rows.map((r) => r.length), 1);
 
@@ -419,9 +422,12 @@ export function PwBlockList({
   blocks,
   onChange,
   suggested = [],
+  sign = { hasSignature: false, hasStamp: false },
 }: {
   blocks: PwBlock[];
   onChange: (next: PwBlock[]) => void;
+  /** Доступность подписи и печати — считается по картинкам карточки компании. */
+  sign?: SignatureAvailability;
   /** Блоки, релевантные текущему виду документа — показываем их кнопками. */
   suggested?: PwBlockType[];
 }) {
@@ -457,6 +463,7 @@ export function PwBlockList({
             onChange(next);
           }}
           onRemove={() => onChange(blocks.filter((_, bi) => bi !== i))}
+          sign={sign}
         />
       ))}
 
