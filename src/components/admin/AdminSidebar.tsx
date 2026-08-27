@@ -14,6 +14,7 @@ import {
   Layers,
   Presentation,
   ShieldCheck,
+  BookOpen,
 
 } from "lucide-react";
 import {
@@ -90,6 +91,12 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/settings/social", label: "Соцсети", icon: Share2, perm: "system.manage" },
       { to: "/admin/settings/hygiene", label: "Гигиена данных", icon: ShieldCheck, perm: "system.manage" },
       { to: "/admin/audit", label: "Аудит", icon: FileText, perm: "audit.view" },
+    ],
+  },
+  {
+    label: "Помощь",
+    items: [
+      { to: "/admin/help", label: "Справка для сотрудников", icon: BookOpen, matchPrefix: "/admin/help" },
     ],
   },
 ];
