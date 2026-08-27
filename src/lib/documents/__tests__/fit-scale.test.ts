@@ -42,3 +42,23 @@ describe("fitScale — широкое содержимое", () => {
     }
   });
 });
+
+describe("fitScale — потолок увеличения (maxBase)", () => {
+  it("не увеличивает лист сверх натуральной величины в режиме «по ширине»", () => {
+    const { scale } = fitScale({ boxW: 1600, boxH: 1200, pad: 16, maxBase: 1 });
+    expect(scale).toBeLessThanOrEqual(1);
+  });
+
+  it("ручной зум по-прежнему работает поверх потолка", () => {
+    const { scale } = fitScale({ boxW: 1600, boxH: 1200, pad: 16, maxBase: 1, zoom: 1.5 });
+    expect(scale).toBeCloseTo(1.5, 5);
+  });
+
+  it("нет петли обратной связи: раздутая ширина области не увеличивает лист", () => {
+    const normal = fitScale({ boxW: 540, boxH: 900, pad: 16, maxBase: 1 });
+    const inflated = fitScale({ boxW: 540 * 3, boxH: 900, pad: 16, maxBase: 1 });
+    expect(inflated.scale).toBeLessThanOrEqual(1);
+    expect(DOC_PAGE_W * normal.scale).toBeLessThanOrEqual(540);
+  });
+});
+
