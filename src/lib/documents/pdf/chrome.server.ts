@@ -328,7 +328,7 @@ export function drawSignatures(
   ctx: DocCtx,
   left: { title: string; lines: string[]; signName: string },
   right: { title: string; lines: string[]; signName: string },
-  /** Факсимиле и печать исполнителя — те же размеры, что и в HTML-превью. */
+  /** Подпись и печать исполнителя — те же размеры, что и в HTML-превью. */
   media?: { signature?: PDFImage | null; stamp?: PDFImage | null },
 ) {
   const colW = (PAGE_W - M.MARGIN_X * 2 - 24) / 2;

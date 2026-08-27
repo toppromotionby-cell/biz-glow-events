@@ -635,7 +635,7 @@ async function renderQuotePdf(
   if (!quote.design.show_requisites) hidden.add("requisites");
   if (!quote.design.show_signature) hidden.add("signature");
 
-  // Факсимиле и печать — тот же источник и те же размеры, что в HTML-превью.
+  // Подпись и печать — тот же источник и те же размеры, что в HTML-превью.
   const signSrc = resolveSignature({
     docSignatureUrl: quote.signature_url,
     docStampUrl: quote.stamp_url,

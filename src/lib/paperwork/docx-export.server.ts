@@ -212,7 +212,7 @@ function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxIm
               type: m.type,
               data: m.data,
               transformation: { width: m.width, height: m.height },
-              altText: { title: "Подпись", description: "Факсимиле или печать", name: "sign" },
+              altText: { title: "Подпись", description: "Подпись или печать", name: "sign" },
             })
           : null;
       const marks = [
