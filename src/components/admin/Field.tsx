@@ -25,7 +25,7 @@ export function Field({ label, required, hint, tooltip, help, error, counter, ch
       <div className="flex items-center justify-between gap-2">
         <Label className="flex items-center gap-1.5">
           <span>{label}{required && <span className="text-destructive ml-0.5" aria-label="обязательное">*</span>}</span>
-          {tooltip && <HelpTip>{tooltip}</HelpTip>}
+          {(tooltip || help) && <HelpTip article={help}>{tooltip}</HelpTip>}
         </Label>
         {counter && (
           <span className={cn("text-[10px] tabular-nums", overLimit ? "text-destructive" : "text-muted-foreground")}>
