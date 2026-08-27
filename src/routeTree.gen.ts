@@ -77,6 +77,7 @@ import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwork.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
+import { Route as AdminHelpIndexRouteImport } from './routes/admin.help.index'
 import { Route as AdminDocumentsIndexRouteImport } from './routes/admin.documents.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -457,6 +458,11 @@ const AdminOrdersIndexRoute = AdminOrdersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminOrdersRoute,
 } as any)
+const AdminHelpIndexRoute = AdminHelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminHelpRoute,
+} as any)
 const AdminDocumentsIndexRoute = AdminDocumentsIndexRouteImport.update({
   id: '/documents/',
   path: '/documents/',
@@ -711,7 +717,7 @@ export interface FileRoutesByFullPath {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
-  '/admin/help': typeof AdminHelpRoute
+  '/admin/help': typeof AdminHelpRouteWithChildren
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
@@ -751,6 +757,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
+  '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/paperwork/': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
@@ -819,7 +826,6 @@ export interface FileRoutesByTo {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
-  '/admin/help': typeof AdminHelpRoute
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/promo': typeof AdminPromoRoute
@@ -858,6 +864,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents': typeof AdminDocumentsIndexRoute
+  '/admin/help': typeof AdminHelpIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
   '/admin/paperwork': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
@@ -928,7 +935,7 @@ export interface FileRoutesById {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
-  '/admin/help': typeof AdminHelpRoute
+  '/admin/help': typeof AdminHelpRouteWithChildren
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
@@ -968,6 +975,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
+  '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/paperwork/': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
@@ -1079,6 +1087,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/documents/'
+    | '/admin/help/'
     | '/admin/orders/'
     | '/admin/paperwork/'
     | '/admin/documents/presentations/templates'
@@ -1147,7 +1156,6 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/catalog-structure'
-    | '/admin/help'
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/promo'
@@ -1186,6 +1194,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/documents'
+    | '/admin/help'
     | '/admin/orders'
     | '/admin/paperwork'
     | '/admin/documents/presentations/templates'
@@ -1295,6 +1304,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/documents/'
+    | '/admin/help/'
     | '/admin/orders/'
     | '/admin/paperwork/'
     | '/admin/documents/presentations/templates'
@@ -1859,6 +1869,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIndexRouteImport
       parentRoute: typeof AdminOrdersRoute
     }
+    '/admin/help/': {
+      id: '/admin/help/'
+      path: '/'
+      fullPath: '/admin/help/'
+      preLoaderRoute: typeof AdminHelpIndexRouteImport
+      parentRoute: typeof AdminHelpRoute
+    }
     '/admin/documents/': {
       id: '/admin/documents/'
       path: '/documents'
@@ -2147,6 +2164,18 @@ const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
   AdminCatalogRouteChildren,
 )
 
+interface AdminHelpRouteChildren {
+  AdminHelpIndexRoute: typeof AdminHelpIndexRoute
+}
+
+const AdminHelpRouteChildren: AdminHelpRouteChildren = {
+  AdminHelpIndexRoute: AdminHelpIndexRoute,
+}
+
+const AdminHelpRouteWithChildren = AdminHelpRoute._addFileChildren(
+  AdminHelpRouteChildren,
+)
+
 interface AdminOrdersIdRouteChildren {
   AdminOrdersIdActRoute: typeof AdminOrdersIdActRoute
   AdminOrdersIdContractRoute: typeof AdminOrdersIdContractRoute
@@ -2198,7 +2227,7 @@ interface AdminRouteChildren {
   AdminCasesRoute: typeof AdminCasesRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCatalogStructureRoute: typeof AdminCatalogStructureRoute
-  AdminHelpRoute: typeof AdminHelpRoute
+  AdminHelpRoute: typeof AdminHelpRouteWithChildren
   AdminMailAccountsRoute: typeof AdminMailAccountsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
@@ -2238,7 +2267,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCasesRoute: AdminCasesRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCatalogStructureRoute: AdminCatalogStructureRoute,
-  AdminHelpRoute: AdminHelpRoute,
+  AdminHelpRoute: AdminHelpRouteWithChildren,
   AdminMailAccountsRoute: AdminMailAccountsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
