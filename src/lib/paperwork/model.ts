@@ -424,7 +424,9 @@ export function normalizeDocument(row: Record<string, unknown>): PwDocument {
   return {
     id: str(row.id),
     template_id: str(row.template_id) || null,
+    template_revision: Number(row.template_revision) > 0 ? Number(row.template_revision) : null,
     company_profile_id: str(row.company_profile_id) || null,
+    brand_kit_id: str(row.brand_kit_id) || null,
     doc_type: oneOf(PW_DOC_TYPES, row.doc_type, "custom"),
     title: str(row.title, "Без названия") || "Без названия",
     doc_number: str(row.doc_number),
