@@ -3,6 +3,7 @@
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import { fontStacks } from "@/lib/documents/doc-font";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const esc = (s: string): string =>
   String(s ?? "")
@@ -71,6 +72,36 @@ function blockHtml(b: PwBlock): string {
       </div>`;
     case "spacer":
       return `<div style="height:${Math.round(b.size)}px"></div>`;
+    case "lineitems": {
+      const t = blockTotals(b);
+      const rows = b.lines
+        .map(
+          (l, i) => `<tr><td>${i + 1}</td><td>${nl2br(l.name)}</td><td class="num">${esc(
+            String(l.qty),
+          )}</td><td>${esc(l.unit)}</td><td class="num">${formatMoney(l.price)}</td><td class="num">${formatMoney(
+            lineTotal(l),
+          )}</td></tr>`,
+        )
+        .join("");
+      const vatRow = b.vatPct
+        ? `<tr><td colspan="5" class="num">НДС ${b.vatPct}%</td><td class="num">${formatMoney(t.vat)}</td></tr>`
+        : "";
+      const words = b.totalWords
+        ? `<div class="words">Сумма прописью: ${esc(t.words)}</div>`
+        : "";
+      return `<table class="tbl items"><thead><tr><th>№</th><th>Наименование</th><th>Кол-во</th><th>Ед.</th><th>Цена</th><th>Сумма</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr><td colspan="5" class="num">Итого без НДС</td><td class="num">${formatMoney(t.net)}</td></tr>
+          ${vatRow}
+          <tr class="grand"><td colspan="5" class="num">Всего к оплате, ${esc(t.currency)}</td><td class="num">${formatMoney(t.gross)}</td></tr>
+        </tfoot></table>${words}`;
+    }
+    case "parties":
+      return `<div class="parties">
+        <div><div class="pt">${esc(b.leftTitle)}</div><div class="pv">${nl2br(b.leftText)}</div></div>
+        <div><div class="pt">${esc(b.rightTitle)}</div><div class="pv">${nl2br(b.rightText)}</div></div>
+      </div>`;
     default:
       return `<p class="p${b.indent ? " ind" : ""}" style="text-align:${align}">${nl2br(b.text)}</p>`;
   }
@@ -137,6 +168,14 @@ export function paperworkHtml(opts: {
   .tbl { width:100%; border-collapse:collapse; margin:10px 0; font-size:10pt; }
   .tbl th, .tbl td { border:1px solid #d7dbe2; padding:5px 7px; text-align:left; vertical-align:top; }
   .tbl th { background:#f4f5f7; font-weight:600; }
+  .tbl .num { text-align:right; white-space:nowrap; }
+  .tbl tfoot td { font-weight:600; background:#fafbfc; }
+  .tbl tfoot .grand td { background:#f4f5f7; font-size:10.5pt; }
+  .words { font-size:9.5pt; color:#41474f; margin:-4px 0 10px; }
+  .parties { display:flex; gap:10mm; margin:12px 0; font-size:9.5pt; }
+  .parties > div { flex:1; }
+  .pt { font-weight:600; margin-bottom:4px; }
+  .pv { white-space:pre-line; color:#41474f; }
   .sign { margin-top:22px; display:flex; align-items:flex-end; gap:10px; font-size:10.5pt; }
   .sign-title { min-width:45mm; }
   .sign-line { flex:1; border-bottom:1px solid #9aa1ac; height:1px; max-width:55mm; }

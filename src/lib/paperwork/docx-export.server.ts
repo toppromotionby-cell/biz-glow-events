@@ -18,6 +18,7 @@ import {
 } from "docx";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const ALIGN: Record<string, (typeof AlignmentType)[keyof typeof AlignmentType]> = {
   left: AlignmentType.LEFT,
@@ -92,6 +93,79 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
       }
       return [
         new Table({ width: { size: widths.reduce((a, c) => a + c, 0), type: WidthType.DXA }, columnWidths: widths, rows }),
+        new Paragraph({ spacing: { after: 120 }, children: [] }),
+      ];
+    }
+    case "lineitems": {
+      const t = blockTotals(b);
+      const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
+      const ratios = [0.06, 0.44, 0.1, 0.1, 0.15, 0.15];
+      const widths = ratios.map((r) => Math.floor(totalW * r));
+      const cell = (text: string, i: number, head: boolean, right = false) =>
+        new TableCell({
+          width: { size: widths[i], type: WidthType.DXA },
+          margins: { top: 60, bottom: 60, left: 100, right: 100 },
+          shading: head ? { fill: "F4F5F7", type: ShadingType.CLEAR } : undefined,
+          children: [textParagraph(text, { bold: head, size: base - 1, align: right ? "right" : "left" })],
+        });
+      const head = ["№", "Наименование", "Кол-во", "Ед.", "Цена", "Сумма"];
+      const rows: TableRow[] = [
+        new TableRow({ children: head.map((h, i) => cell(h, i, true, i >= 4)) }),
+        ...b.lines.map(
+          (l, idx) =>
+            new TableRow({
+              children: [
+                cell(String(idx + 1), 0, false),
+                cell(l.name, 1, false),
+                cell(String(l.qty), 2, false),
+                cell(l.unit, 3, false),
+                cell(formatMoney(l.price), 4, false, true),
+                cell(formatMoney(lineTotal(l)), 5, false, true),
+              ],
+            }),
+        ),
+      ];
+      const out: (Paragraph | Table)[] = [
+        new Table({ width: { size: widths.reduce((a, c) => a + c, 0), type: WidthType.DXA }, columnWidths: widths, rows }),
+        textParagraph(`Итого без НДС: ${formatMoney(t.net)} ${t.currency}`, { align: "right", size: base }),
+      ];
+      if (b.vatPct > 0) {
+        out.push(textParagraph(`НДС ${b.vatPct}%: ${formatMoney(t.vat)} ${t.currency}`, { align: "right", size: base }));
+      }
+      out.push(
+        textParagraph(`Всего к оплате: ${formatMoney(t.gross)} ${t.currency}`, {
+          align: "right",
+          size: base,
+          bold: true,
+        }),
+      );
+      if (b.totalWords) out.push(textParagraph(`Сумма прописью: ${t.words}`, { size: base - 1 }));
+      return out;
+    }
+    case "parties": {
+      const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
+      const colW = Math.floor(totalW / 2);
+      const side = (title: string, text: string) =>
+        new TableCell({
+          width: { size: colW, type: WidthType.DXA },
+          margins: { top: 60, bottom: 60, left: 100, right: 100 },
+          borders: {
+            top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+            right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+          },
+          children: [
+            ...(title ? [textParagraph(title, { bold: true, size: base - 0.5 })] : []),
+            textParagraph(text, { size: base - 1 }),
+          ],
+        });
+      return [
+        new Table({
+          width: { size: colW * 2, type: WidthType.DXA },
+          columnWidths: [colW, colW],
+          rows: [new TableRow({ children: [side(b.leftTitle, b.leftText), side(b.rightTitle, b.rightText)] })],
+        }),
         new Paragraph({ spacing: { after: 120 }, children: [] }),
       ];
     }

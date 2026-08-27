@@ -153,6 +153,50 @@ export type PwVariable = {
   defaultValue: string;
 };
 
+/* --------------------------- Схема полей документа --------------------------- */
+
+export const PW_FIELD_TYPES = ["text", "multiline", "date", "number", "money"] as const;
+export type PwFieldType = (typeof PW_FIELD_TYPES)[number];
+
+export const PW_FIELD_TYPE_LABELS: Record<PwFieldType, string> = {
+  text: "Строка",
+  multiline: "Многострочный текст",
+  date: "Дата",
+  number: "Число",
+  money: "Сумма",
+};
+
+/** Объявленное поле шаблона: контракт «что нужно заполнить». */
+export type PwFieldSpec = {
+  key: string;
+  label: string;
+  type: PwFieldType;
+  required: boolean;
+  defaultValue: string;
+  /** auto — подставляется из компании/метаданных, manual — вводится вручную. */
+  source: "auto" | "manual";
+  hint: string;
+};
+
+export function normalizeFieldSpec(raw: unknown): PwFieldSpec {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const key = str(r.key).trim();
+  return {
+    key,
+    label: str(r.label) || key,
+    type: oneOf(PW_FIELD_TYPES, r.type, "text"),
+    required: r.required === true,
+    defaultValue: str(r.defaultValue),
+    source: r.source === "auto" ? "auto" : "manual",
+    hint: str(r.hint),
+  };
+}
+
+export function normalizeFieldSchema(raw: unknown): PwFieldSpec[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizeFieldSpec).filter((f) => f.key);
+}
+
 export type PwTemplate = {
   id: string;
   company_profile_id: string | null;
@@ -162,6 +206,8 @@ export type PwTemplate = {
   description: string;
   blocks: PwBlock[];
   variables: PwVariable[];
+  variables_schema: PwFieldSpec[];
+  revision: number;
   background_url: string | null;
   is_archived: boolean;
   is_favorite: boolean;
@@ -172,7 +218,9 @@ export type PwTemplate = {
 export type PwDocument = {
   id: string;
   template_id: string | null;
+  template_revision: number | null;
   company_profile_id: string | null;
+  brand_kit_id: string | null;
   doc_type: PwDocType;
   title: string;
   doc_number: string;
@@ -188,6 +236,17 @@ export type PwDocument = {
 export type PwDocumentListRow = PwDocument & {
   company_name: string | null;
   author_name: string | null;
+};
+
+/** Фирменный набор компании: несколько на компанию, один основной. */
+export type PwBrandKit = {
+  id: string;
+  company_profile_id: string;
+  name: string;
+  is_default: boolean;
+  settings: PwBlank;
+  created_at: string;
+  updated_at: string;
 };
 
 /* ------------------------- Настройки фирменного бланка ------------------------- */
@@ -281,6 +340,14 @@ export function normalizeBlock(raw: unknown): PwBlock {
     withSignature: r.withSignature !== false,
     size: Number(r.size) > 0 ? Number(r.size) : 12,
     indent: r.indent === true,
+    lines: Array.isArray(r.lines) ? r.lines.map(normalizeLine) : [],
+    currency: str(r.currency) || "BYN",
+    vatPct: Number.isFinite(vat) && vat >= 0 && vat <= 100 ? vat : 0,
+    totalWords: r.totalWords === true,
+    leftTitle: str(r.leftTitle),
+    leftText: str(r.leftText),
+    rightTitle: str(r.rightTitle),
+    rightText: str(r.rightText),
   };
 }
 
@@ -332,6 +399,18 @@ export function normalizeBlank(raw: unknown): PwBlank {
   };
 }
 
+export function normalizeBrandKit(row: Record<string, unknown>): PwBrandKit {
+  return {
+    id: str(row.id),
+    company_profile_id: str(row.company_profile_id),
+    name: str(row.name, "Основной бланк") || "Основной бланк",
+    is_default: row.is_default === true,
+    settings: normalizeBlank(row.settings),
+    created_at: str(row.created_at),
+    updated_at: str(row.updated_at),
+  };
+}
+
 export function normalizeTemplate(row: Record<string, unknown>): PwTemplate {
   return {
     id: str(row.id),
@@ -342,6 +421,8 @@ export function normalizeTemplate(row: Record<string, unknown>): PwTemplate {
     description: str(row.description),
     blocks: normalizeBlocks(row.blocks),
     variables: normalizeVariables(row.variables),
+    variables_schema: normalizeFieldSchema(row.variables_schema),
+    revision: Number(row.revision) > 0 ? Number(row.revision) : 1,
     background_url: str(row.background_url) || null,
     is_archived: row.is_archived === true,
     is_favorite: row.is_favorite === true,
@@ -355,7 +436,9 @@ export function normalizeDocument(row: Record<string, unknown>): PwDocument {
   return {
     id: str(row.id),
     template_id: str(row.template_id) || null,
+    template_revision: Number(row.template_revision) > 0 ? Number(row.template_revision) : null,
     company_profile_id: str(row.company_profile_id) || null,
+    brand_kit_id: str(row.brand_kit_id) || null,
     doc_type: oneOf(PW_DOC_TYPES, row.doc_type, "custom"),
     title: str(row.title, "Без названия") || "Без названия",
     doc_number: str(row.doc_number),
@@ -384,6 +467,21 @@ export function emptyBlock(type: PwBlockType): PwBlock {
   if (type === "signature")
     return { ...base, signerName: "{{ФИО директора}}", signerTitle: "Директор", withStamp: true };
   if (type === "note") return { ...base, text: "Примечание" };
+  if (type === "lineitems")
+    return {
+      ...base,
+      lines: [{ name: "Услуга", qty: 1, unit: "усл.", price: 0 }],
+      currency: "BYN",
+      totalWords: true,
+    };
+  if (type === "parties")
+    return {
+      ...base,
+      leftTitle: "Исполнитель",
+      leftText: "{{Компания}}\nУНП {{УНП}}\n{{Адрес}}",
+      rightTitle: "Заказчик",
+      rightText: "{{Заказчик}}\nУНП {{УНП заказчика}}\n{{Адрес заказчика}}",
+    };
   return base;
 }
 

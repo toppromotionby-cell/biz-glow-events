@@ -12,6 +12,7 @@ import {
   PW_BLOCK_LABELS, PW_BLOCK_TYPES, emptyBlock, pwId,
   type PwAlign, type PwBlock, type PwBlockType,
 } from "@/lib/paperwork/model";
+import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const ALIGNS: { key: PwAlign; label: string }[] = [
   { key: "left", label: "Слева" },
@@ -262,6 +263,131 @@ const BlockCard = memo(function BlockCard({
               onChange={(e) => onChange({ size: Number(e.target.value) || 12 })}
               className="h-8 w-24"
             />
+          </div>
+        )}
+
+        {block.type === "lineitems" && (
+          <div className="space-y-2">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="text-xs text-muted-foreground">
+                    <th className="p-1 text-left">Наименование</th>
+                    <th className="w-20 p-1">Кол-во</th>
+                    <th className="w-20 p-1">Ед.</th>
+                    <th className="w-28 p-1">Цена</th>
+                    <th className="w-28 p-1">Сумма</th>
+                    <th className="w-9" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.lines.map((l, i) => {
+                    const setLine = (p: Partial<typeof l>) =>
+                      onChange({ lines: block.lines.map((x, xi) => (xi === i ? { ...x, ...p } : x)) });
+                    return (
+                      <tr key={i}>
+                        <td className="p-1">
+                          <Input value={l.name} onChange={(e) => setLine({ name: e.target.value })} className="h-8 text-xs" />
+                        </td>
+                        <td className="p-1">
+                          <Input
+                            type="number"
+                            value={l.qty}
+                            onChange={(e) => setLine({ qty: Number(e.target.value) || 0 })}
+                            className="h-8 text-xs"
+                          />
+                        </td>
+                        <td className="p-1">
+                          <Input value={l.unit} onChange={(e) => setLine({ unit: e.target.value })} className="h-8 text-xs" />
+                        </td>
+                        <td className="p-1">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={l.price}
+                            onChange={(e) => setLine({ price: Number(e.target.value) || 0 })}
+                            className="h-8 text-xs"
+                          />
+                        </td>
+                        <td className="p-1 text-right text-xs tabular-nums">{formatMoney(lineTotal(l))}</td>
+                        <td className="p-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => onChange({ lines: block.lines.filter((_, xi) => xi !== i) })}
+                            aria-label="Удалить позицию"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  onChange({ lines: [...block.lines, { name: "", qty: 1, unit: "шт.", price: 0 }] })
+                }
+              >
+                <Plus className="mr-1 h-4 w-4" /> Позиция
+              </Button>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs">Валюта</Label>
+                <Input
+                  value={block.currency}
+                  onChange={(e) => onChange({ currency: e.target.value })}
+                  className="h-8 w-24"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs">НДС, %</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={block.vatPct}
+                  onChange={(e) => onChange({ vatPct: Number(e.target.value) || 0 })}
+                  className="h-8 w-20"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={block.totalWords} onCheckedChange={(v) => onChange({ totalWords: v })} />
+                Сумма прописью
+              </label>
+              <span className="ml-auto text-sm font-medium tabular-nums">
+                Итого: {formatMoney(blockTotals(block).gross)} {block.currency}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {block.type === "parties" && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Заголовок слева</Label>
+              <Input value={block.leftTitle} onChange={(e) => onChange({ leftTitle: e.target.value })} />
+              <TextAreaField
+                value={block.leftText}
+                minRows={4}
+                onChange={(v) => onChange({ leftText: v })}
+                placeholder="Реквизиты исполнителя"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Заголовок справа</Label>
+              <Input value={block.rightTitle} onChange={(e) => onChange({ rightTitle: e.target.value })} />
+              <TextAreaField
+                value={block.rightText}
+                minRows={4}
+                onChange={(v) => onChange({ rightText: v })}
+                placeholder="Реквизиты заказчика"
+              />
+            </div>
           </div>
         )}
       </div>
