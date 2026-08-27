@@ -1,4 +1,5 @@
 // Настройки фирменного бланка компании: шапка, поля, шрифт, подложка.
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,23 +23,39 @@ export function PwBlankPanel({
   onChange,
   onSave,
   saving,
-  disabled,
+  companyName,
+  hasCompanies,
+  clientLogoUrl,
+  onClientLogoUrlChange,
 }: {
   blank: PwBlank;
   onChange: (next: PwBlank) => void;
   onSave: () => void;
   saving: boolean;
-  disabled: boolean;
+  companyName: string | null;
+  hasCompanies: boolean;
+  clientLogoUrl: string;
+  onClientLogoUrlChange: (value: string) => void;
 }) {
   const set = <K extends keyof PwBlank>(k: K, v: PwBlank[K]) => onChange({ ...blank, [k]: v });
 
-  if (disabled) {
+  if (!companyName) {
     return (
-      <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-        Выберите компанию — настройки бланка сохраняются для её профиля.
-      </p>
+      <div className="space-y-3 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        {hasCompanies ? (
+          <p>Выберите компанию в верхней панели редактора — настройки бланка сохраняются для её профиля.</p>
+        ) : (
+          <>
+            <p>Пока нет ни одной компании: создайте профиль, чтобы настроить фирменный бланк.</p>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/settings/documents">Настройки компаний</Link>
+            </Button>
+          </>
+        )}
+      </div>
     );
   }
+
 
   return (
     <div className="space-y-5">
@@ -178,8 +195,23 @@ export function PwBlankPanel({
         )}
       </div>
 
+      <div className="space-y-2 rounded-lg border border-border p-3">
+        <Label className="text-xs">Логотип клиента — ссылка (переменная client_logo)</Label>
+        <Input
+          value={clientLogoUrl}
+          placeholder="https://…/client-logo.png"
+          onChange={(e) => onClientLogoUrlChange(e.target.value.trim())}
+        />
+        {clientLogoUrl && blank.clientLogo && (
+          <img src={clientLogoUrl} alt="Логотип клиента" className="h-10 w-auto object-contain" />
+        )}
+        {clientLogoUrl && !blank.clientLogo && (
+          <p className="text-xs text-muted-foreground">Включите тумблер «Логотип клиента», чтобы он появился в шапке.</p>
+        )}
+      </div>
+
       <Button onClick={onSave} disabled={saving}>
-        <Save className="mr-1 h-4 w-4" /> Сохранить бланк компании
+        <Save className="mr-1 h-4 w-4" /> Сохранить бланк: {companyName}
       </Button>
     </div>
   );

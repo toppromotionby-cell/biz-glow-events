@@ -149,7 +149,10 @@ export function PaperworkEditor({
 
   const download = async (format: "pdf" | "docx") => {
     if (dirty.current) await save.mutateAsync();
-    await viewer.openDocument(`/admin/paperwork/${detail.document.id}/render?format=${format}`, { auth: true });
+    await viewer.openDocument(`/admin/paperwork/${detail.document.id}/render?format=${format}`, {
+      auth: true,
+      mode: format === "docx" ? "download" : "preview",
+    });
   };
 
   return (
