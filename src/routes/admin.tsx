@@ -138,6 +138,8 @@ function AdminLayoutContent() {
             <Outlet />
           </main>
           <AdminCommandPalette />
+          {/* Контекстная справка: открывается иконками «?» из любого места админки. */}
+          <HelpDrawer />
         </div>
       </div>
       </DocumentViewerProvider>
