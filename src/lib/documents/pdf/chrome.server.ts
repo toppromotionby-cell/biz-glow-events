@@ -334,7 +334,7 @@ export function drawSignatures(
   const colW = (PAGE_W - M.MARGIN_X * 2 - 24) / 2;
   const MM = 72 / 25.4;
   const hasMedia = Boolean(media?.signature || media?.stamp);
-  // Место под факсимиле/печать резервируем заранее — иначе картинка налезает на текст.
+  // Место под подпись и печать резервируем заранее — иначе картинка налезает на текст.
   const mediaH = hasMedia
     ? Math.max(
         media?.signature ? SIGN_MEDIA_MM.signatureH * MM : 0,
@@ -398,7 +398,7 @@ export function drawSignatures(
 }
 
 /**
- * Рисует факсимиле и печать относительно линии подписи (y = lineY).
+ * Рисует подпись и печать относительно линии подписи (y = lineY).
  * Общая геометрия для КП, счетов и корпоративных документов.
  */
 export function drawSignMedia(
