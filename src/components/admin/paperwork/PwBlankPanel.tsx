@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TextAreaField } from "@/components/admin/field-kit";
 import { Save } from "lucide-react";
 import type { PwBlank } from "@/lib/paperwork/model";
+import { LOGO_LAYOUT_LIMITS } from "@/lib/documents/logo-layout";
 
 const HEADERS: { key: PwBlank["headerLayout"]; label: string }[] = [
   { key: "logo-left", label: "Логотип слева" },
@@ -69,6 +70,13 @@ export function PwBlankPanel({
           Реквизиты в шапке
         </label>
         <label className="flex items-center gap-2 text-sm">
+          <Switch
+            checked={blank.clientLogo}
+            onCheckedChange={(v) => set("clientLogo", v)}
+          />
+          Логотип клиента (переменная client_logo)
+        </label>
+        <label className="flex items-center gap-2 text-sm">
           <Switch checked={blank.accentBar} onCheckedChange={(v) => set("accentBar", v)} />
           Фирменная полоса сверху
         </label>
@@ -93,6 +101,42 @@ export function PwBlankPanel({
           <TextAreaField value={blank.footerText} onChange={(v) => set("footerText", v)} minRows={1} />
         </div>
       )}
+
+      <div className="space-y-3 rounded-lg border border-border p-3">
+        <label className="flex items-center gap-2 text-sm">
+          <Switch
+            checked={blank.logoLayout.mode === "auto"}
+            onCheckedChange={(v) =>
+              set("logoLayout", { ...blank.logoLayout, mode: v ? "auto" : "manual" })
+            }
+          />
+          Автоподбор размера логотипа
+        </label>
+        {blank.logoLayout.mode !== "auto" && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Макс. ширина: {blank.logoLayout.maxW} pt</Label>
+              <Slider
+                value={[blank.logoLayout.maxW]}
+                min={LOGO_LAYOUT_LIMITS.maxW.min}
+                max={LOGO_LAYOUT_LIMITS.maxW.max}
+                step={LOGO_LAYOUT_LIMITS.maxW.step}
+                onValueChange={([v]) => set("logoLayout", { ...blank.logoLayout, maxW: v })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Макс. высота: {blank.logoLayout.maxH} pt</Label>
+              <Slider
+                value={[blank.logoLayout.maxH]}
+                min={LOGO_LAYOUT_LIMITS.maxH.min}
+                max={LOGO_LAYOUT_LIMITS.maxH.max}
+                step={LOGO_LAYOUT_LIMITS.maxH.step}
+                onValueChange={([v]) => set("logoLayout", { ...blank.logoLayout, maxH: v })}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">

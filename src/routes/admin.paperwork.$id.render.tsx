@@ -7,7 +7,7 @@ import { buildPdfResponse } from "@/lib/documents/pdf-http.server";
 import { normalizeCompanyProfile } from "@/lib/documents/company-profile";
 import { DEFAULT_BLANK, normalizeBlank, normalizeDocument, pwFileName } from "@/lib/paperwork/model";
 import { applyVarsToBlocks, autoContext, resolveValues } from "@/lib/paperwork/variables";
-import { paperworkHtml } from "@/lib/paperwork/html";
+import { clientLogoUrlFrom, paperworkHtml } from "@/lib/paperwork/html";
 
 export const Route = createFileRoute("/admin/paperwork/$id/render")({
   server: {
@@ -45,7 +45,7 @@ export const Route = createFileRoute("/admin/paperwork/$id/render")({
 
         const values = resolveValues(autoContext(company, doc), doc.values);
         const blocks = applyVarsToBlocks(doc.blocks, values);
-        const payload = { doc, blocks, company, blank };
+        const payload = { doc, blocks, company, blank, clientLogoUrl: clientLogoUrlFrom(values) };
 
         const format = new URL(request.url).searchParams.get("format");
 

@@ -214,8 +214,14 @@ export async function buildPaperworkDocx(opts: {
         .filter(Boolean)
         .join("\n");
       header.push(
+        // Реквизиты идут под названием компании и выравниваются так же, как логотип.
         textParagraph(req, {
-          align: blank.headerLayout === "logo-center" ? "center" : "right",
+          align:
+            blank.headerLayout === "logo-center"
+              ? "center"
+              : blank.headerLayout === "logo-right"
+                ? "right"
+                : "left",
           size: 8.5,
           color: "5B6270",
         }),

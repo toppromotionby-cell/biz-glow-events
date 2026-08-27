@@ -1,5 +1,10 @@
 // Модель раздела «Документы и шаблоны»: блоки документа, типы, категории,
 // нормализация строк БД. Модуль клиент-безопасный (используется и в PDF).
+import {
+  DEFAULT_LOGO_LAYOUT,
+  normalizeLogoLayout,
+  type LogoLayout,
+} from "@/lib/documents/logo-layout";
 
 export const PW_CATEGORIES = [
   "letters",
@@ -256,6 +261,10 @@ export type PwBlank = {
   headerLayout: "logo-left" | "logo-center" | "logo-right" | "none";
   /** Показывать реквизиты в шапке. */
   headerRequisites: boolean;
+  /** Размеры логотипа в шапке (тот же движок, что в КП). */
+  logoLayout: LogoLayout;
+  /** Показывать логотип клиента (если он задан переменной `client_logo`). */
+  clientLogo: boolean;
   /** Полоса фирменного цвета сверху. */
   accentBar: boolean;
   /** Футер с контактами. */
@@ -275,6 +284,8 @@ export type PwBlank = {
 export const DEFAULT_BLANK: PwBlank = {
   headerLayout: "logo-left",
   headerRequisites: true,
+  logoLayout: DEFAULT_LOGO_LAYOUT,
+  clientLogo: true,
   accentBar: true,
   footer: true,
   footerText: "",
@@ -385,6 +396,8 @@ export function normalizeBlank(raw: unknown): PwBlank {
       DEFAULT_BLANK.headerLayout,
     ),
     headerRequisites: r.headerRequisites !== false,
+    logoLayout: normalizeLogoLayout(r.logoLayout),
+    clientLogo: r.clientLogo !== false,
     accentBar: r.accentBar !== false,
     footer: r.footer !== false,
     footerText: str(r.footerText),

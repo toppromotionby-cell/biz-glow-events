@@ -9,6 +9,8 @@ import { hexToRgb01 } from "@/lib/documents/brand";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
+import { requisitesFontPt, resolveLogoLayout } from "@/lib/documents/logo-layout";
+import { companyRequisiteLines } from "@/lib/paperwork/html";
 
 const MM = 72 / 25.4;
 const PAGE_W = 595.28;
@@ -104,74 +106,85 @@ function paragraph(
 
 /* --------------------------------- Шапка --------------------------------- */
 
-async function drawHeader(ctx: Ctx, company: CompanyProfile | null, logo: PDFImage | null) {
+async function drawHeader(
+  ctx: Ctx,
+  company: CompanyProfile | null,
+  logo: PDFImage | null,
+  clientLogo: PDFImage | null,
+) {
   if (ctx.blank.headerLayout === "none") return;
   const startY = ctx.y;
   const centered = ctx.blank.headerLayout === "logo-center";
   const rightSide = ctx.blank.headerLayout === "logo-right";
-  const maxLogoH = 22 * MM;
-  const maxLogoW = 62 * MM;
+  const align = centered ? "center" : rightSide ? "right" : "left";
+
+  // Логотип клиента — компактный блок у противоположного края шапки.
+  let clW = 0;
+  let clH = 0;
+  if (clientLogo && ctx.blank.clientLogo) {
+    const k = Math.min((40 * MM) / clientLogo.width, (16 * MM) / clientLogo.height, 1);
+    clW = clientLogo.width * k;
+    clH = clientLogo.height * k;
+  }
+
+  // Размер логотипа компании — тем же авто-движком, что в КП.
+  const aspect = logo ? logo.width / logo.height : 3;
+  const layout = resolveLogoLayout({ ...ctx.blank.logoLayout, align }, aspect);
+  const colW = Math.max(60, contentWidth(ctx) - (clW ? clW + 14 : 0));
   let logoW = 0;
   let logoH = 0;
   if (logo) {
-    const k = Math.min(maxLogoW / logo.width, maxLogoH / logo.height, 1);
-    logoW = logo.width * k;
-    logoH = logo.height * k;
+    const boxW = Math.min(layout.maxW, colW);
+    logoH = Math.min(boxW / aspect, layout.maxH);
+    logoW = logoH * aspect;
   }
 
-  const reqLines: string[] = [];
-  if (ctx.blank.headerRequisites && company) {
-    if (company.company_legal_name) reqLines.push(company.company_legal_name);
-    if (company.company_unp) reqLines.push(`УНП ${company.company_unp}`);
-    if (company.company_address) reqLines.push(company.company_address);
-    const contacts = [company.company_phone, company.company_email, company.company_website]
-      .filter(Boolean)
-      .join(" · ");
-    if (contacts) reqLines.push(contacts);
+  const reqLines = ctx.blank.headerRequisites ? companyRequisiteLines(company) : [];
+  const reqSize = requisitesFontPt(Math.max(7.5, ctx.base - 2.5), reqLines.join(" "), colW);
+  const wrapped = reqLines.flatMap((l) => wrapText(ctx.regular, l, reqSize, colW));
+
+  // Горизонтальные координаты колонки бренда.
+  const colLeft = centered ? ctx.left : rightSide ? ctx.left + (clW ? clW + 14 : 0) : ctx.left;
+  const colRight = colLeft + colW;
+  const posX = (w: number) =>
+    centered ? ctx.left + (contentWidth(ctx) - w) / 2 : rightSide ? colRight - w : colLeft;
+
+  let y = startY;
+  if (logo) {
+    ctx.page.drawImage(logo, { x: posX(logoW), y: y - logoH, width: logoW, height: logoH });
+    y -= logoH + Math.max(4, layout.gap * 0.5);
+  } else if (company) {
+    const brand = company.company_brand || company.company_legal_name;
+    const size = 15;
+    const font = dispFont(ctx, brand);
+    ctx.page.drawText(clean(brand), {
+      x: posX(font.widthOfTextAtSize(clean(brand), size)),
+      y: y - size,
+      size,
+      font,
+      color: ctx.accent,
+    });
+    y -= size + 6;
   }
 
-  const reqSize = 8;
-  const reqW = 78 * MM;
-  const wrapped = reqLines.flatMap((l) => wrapText(ctx.regular, l, reqSize, centered ? contentWidth(ctx) : reqW));
-
-  if (centered) {
-    if (logo) {
-      ctx.page.drawImage(logo, { x: ctx.left + (contentWidth(ctx) - logoW) / 2, y: ctx.y - logoH, width: logoW, height: logoH });
-      ctx.y -= logoH + 6;
-    } else if (company) {
-      const brand = company.company_brand || company.company_legal_name;
-      paragraph(ctx, brand, { size: 15, align: "center", font: dispFont(ctx, brand), color: ctx.accent });
-    }
-    drawLines(ctx, wrapped, { font: ctx.regular, size: reqSize, color: MUTED, align: "center" });
-  } else {
-    const logoX = rightSide ? ctx.right - logoW : ctx.left;
-    const reqX = rightSide ? ctx.left : ctx.right - reqW;
-    if (logo) {
-      ctx.page.drawImage(logo, { x: logoX, y: startY - logoH, width: logoW, height: logoH });
-    } else if (company) {
-      const brand = company.company_brand || company.company_legal_name;
-      ctx.page.drawText(clean(brand), {
-        x: logoX,
-        y: startY - 15,
-        size: 15,
-        font: dispFont(ctx, brand),
-        color: ctx.accent,
-      });
-    }
-    let ry = startY;
-    for (const line of wrapped) {
-      const w = ctx.regular.widthOfTextAtSize(line, reqSize);
-      ctx.page.drawText(line, {
-        x: rightSide ? reqX : reqX + reqW - w,
-        y: ry - reqSize,
-        size: reqSize,
-        font: ctx.regular,
-        color: MUTED,
-      });
-      ry -= reqSize * 1.35;
-    }
-    ctx.y = Math.min(startY - Math.max(logoH, 15), ry) - 8;
+  for (const line of wrapped) {
+    const w = ctx.regular.widthOfTextAtSize(line, reqSize);
+    ctx.page.drawText(line, {
+      x: posX(w),
+      y: y - reqSize,
+      size: reqSize,
+      font: ctx.regular,
+      color: MUTED,
+    });
+    y -= reqSize * 1.35;
   }
+
+  if (clientLogo && clW) {
+    const cx = rightSide ? ctx.left : ctx.right - clW;
+    ctx.page.drawImage(clientLogo, { x: cx, y: startY - clH, width: clW, height: clH });
+  }
+
+  ctx.y = Math.min(y, startY - clH) - 8;
 
   ctx.page.drawLine({
     start: { x: ctx.left, y: ctx.y },
@@ -273,6 +286,7 @@ export async function buildPaperworkPdf(opts: {
   blocks: PwBlock[];
   company: CompanyProfile | null;
   blank: PwBlank;
+  clientLogoUrl?: string | null;
 }): Promise<Uint8Array> {
   const { doc, blocks, company, blank } = opts;
   const pdf = await PDFDocument.create();
@@ -302,11 +316,12 @@ export async function buildPaperworkPdf(opts: {
   };
   newPage(ctx);
 
-  const [logo, sig, stamp, bg] = await Promise.all([
+  const [logo, sig, stamp, bg, clientLogo] = await Promise.all([
     embedImageUrl(pdf, company?.logo_url ?? null),
     embedImageUrl(pdf, company?.signature_url ?? null),
     embedImageUrl(pdf, company?.stamp_url ?? null),
     embedImageUrl(pdf, blank.backgroundUrl),
+    embedImageUrl(pdf, opts.clientLogoUrl ?? null),
   ]);
 
   if (bg) {
@@ -321,7 +336,7 @@ export async function buildPaperworkPdf(opts: {
     });
   }
 
-  await drawHeader(ctx, company, logo);
+  await drawHeader(ctx, company, logo, clientLogo);
 
   // Номер и дата
   const dateLabel = (() => {
