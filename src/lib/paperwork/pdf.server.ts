@@ -439,7 +439,7 @@ export async function buildPaperworkPdf(opts: {
         }
         if (b.totalWords) {
           ctx.y -= 2;
-          paragraph(ctx, `Сумма прописью: ${totalInWords(t.gross, b.currency)}`, {
+          paragraph(ctx, `Сумма прописью: ${t.words}`, {
             size: Math.max(8, ctx.base - 1),
           });
         }
