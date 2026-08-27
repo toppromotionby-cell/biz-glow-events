@@ -8,6 +8,7 @@ import { wrapText } from "@/lib/documents/pdf/draw.server";
 import { hexToRgb01 } from "@/lib/documents/brand";
 import type { CompanyProfile } from "@/lib/documents/company-profile";
 import type { PwBlank, PwBlock, PwDocument } from "@/lib/paperwork/model";
+import { fittedBlank, MIN_FONT_PT, PDF_FIT_STEPS, shrinkBlank } from "./fit-page";
 import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 import { requisitesFontPt, resolveLogoLayout } from "@/lib/documents/logo-layout";
 import { companyRequisiteLines } from "@/lib/paperwork/html";
@@ -292,13 +293,19 @@ function drawSignature(ctx: Ctx, block: PwBlock, sig: PDFImage | null, stamp: PD
 
 /* --------------------------------- Сборка --------------------------------- */
 
-export async function buildPaperworkPdf(opts: {
+type PwPdfOpts = {
   doc: Pick<PwDocument, "title" | "doc_number" | "doc_date">;
   blocks: PwBlock[];
   company: CompanyProfile | null;
   blank: PwBlank;
   clientLogoUrl?: string | null;
-}): Promise<Uint8Array> {
+};
+
+/**
+ * Один проход вёрстки. Возвращает файл и число страниц — по нему решаем,
+ * нужно ли пересобрать документ со сжатием, чтобы уместить его на один лист.
+ */
+async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array; pages: number }> {
   const { doc, blocks, company, blank } = opts;
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -531,5 +538,23 @@ export async function buildPaperworkPdf(opts: {
     }
   });
 
-  return pdf.save();
+  return { bytes: await pdf.save(), pages: ctx.pages.length };
+}
+
+export async function buildPaperworkPdf(opts: PwPdfOpts): Promise<Uint8Array> {
+  // Первый проход — с уже оценённой подгонкой (тот же расчёт, что в превью).
+  const fitted = fittedBlank(opts.blocks, opts.blank);
+  const first = await renderPaperworkPdf({ ...opts, blank: fitted });
+  if (first.pages <= 1 || opts.blank.fitOnePage === false) return first.bytes;
+  // Реальная вёрстка переполнилась на одну страницу — пробуем дожать.
+  if (first.pages > 2) return first.bytes;
+  let best = first;
+  for (const k of PDF_FIT_STEPS) {
+    const blank = shrinkBlank(opts.blank, k);
+    if (blank.fontSizePt < MIN_FONT_PT) break;
+    const r = await renderPaperworkPdf({ ...opts, blank });
+    if (r.pages <= 1) return r.bytes;
+    best = r;
+  }
+  return first.bytes;
 }
