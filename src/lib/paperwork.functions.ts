@@ -345,11 +345,23 @@ export const createDocumentFromTemplate = createServerFn({ method: "POST" })
       if (!data.title) title = kind.label;
     }
 
+    // Без компании документ остаётся без шапки и бланка — берём основную.
+    let companyId = data.companyId ?? null;
+    if (!companyId) {
+      const { data: companies } = await context.supabase
+        .from("company_profiles")
+        .select("id,is_default")
+        .order("is_default", { ascending: false })
+        .order("sort_order")
+        .limit(1);
+      companyId = (companies?.[0] as Row | undefined)?.id ? String((companies![0] as Row).id) : null;
+    }
+
     const { data: row, error } = await context.supabase
       .from("paperwork_documents")
       .insert({
         template_id: templateId,
-        company_profile_id: data.companyId ?? null,
+        company_profile_id: companyId,
         doc_type: docType,
         title,
         doc_date: new Date().toISOString().slice(0, 10),
