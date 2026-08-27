@@ -22,6 +22,8 @@ export type PwKind = {
   numbered: boolean;
   /** Финансовый документ: показываем суммы, НДС и сумму прописью. */
   financial: boolean;
+  /** Устаревший вид: остаётся для старых документов, но не предлагается в интерфейсе. */
+  hidden?: boolean;
 };
 
 const base = (
@@ -58,11 +60,29 @@ export const PW_KINDS: Record<PwDocType, PwKind> = {
   }),
   memo: base("memo", "Внутренняя служебная записка", {
     numbered: false,
+    hidden: true,
     starterBlocks: ["recipient", "heading", "paragraph", "signature"],
   }),
   contract: base("contract", "Договор с реквизитами сторон", {
     requiredBlocks: ["heading", "parties"],
     starterBlocks: ["heading", "paragraph", "list", "parties", "signature"],
+  }),
+  workact: base("workact", "Договор подряда с приложением акта выполненных работ", {
+    requiredBlocks: ["heading", "parties"],
+    starterBlocks: ["heading", "paragraph", "list", "lineitems", "parties", "signature"],
+  }),
+  loan: base("loan", "Договор займа между сторонами", {
+    requiredBlocks: ["heading", "parties"],
+    starterBlocks: ["heading", "paragraph", "list", "parties", "signature"],
+  }),
+  payroll: base("payroll", "Ведомость на выплату заработной платы", {
+    financial: true,
+    requiredBlocks: ["heading", "table"],
+    starterBlocks: ["heading", "table", "signature"],
+  }),
+  staffing: base("staffing", "Штатное расписание организации", {
+    requiredBlocks: ["heading", "table"],
+    starterBlocks: ["heading", "table", "signature"],
   }),
   invoice: base("invoice", "Счёт на оплату с позициями и суммой прописью", {
     financial: true,
@@ -81,7 +101,8 @@ export const PW_KINDS: Record<PwDocType, PwKind> = {
   }),
 };
 
-export const PW_KIND_LIST: PwKind[] = Object.values(PW_KINDS);
+/** Виды, доступные для выбора и создания документов. */
+export const PW_KIND_LIST: PwKind[] = Object.values(PW_KINDS).filter((k) => !k.hidden);
 
 export function pwKind(type: PwDocType): PwKind {
   return PW_KINDS[type] ?? PW_KINDS.custom;

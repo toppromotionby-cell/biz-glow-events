@@ -101,6 +101,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
 import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
+import { Route as AdminPaperworkTypeTypeRouteImport } from './routes/admin.paperwork.type.$type'
 import { Route as AdminPaperworkIdRenderRouteImport } from './routes/admin.paperwork.$id.render'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
 import { Route as AdminOrdersIdInvoiceRouteImport } from './routes/admin.orders.$id.invoice'
@@ -583,6 +584,11 @@ const ApiPublicHooksKnowledgeHygieneRoute =
     path: '/api/public/hooks/knowledge-hygiene',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminPaperworkTypeTypeRoute = AdminPaperworkTypeTypeRouteImport.update({
+  id: '/paperwork/type/$type',
+  path: '/paperwork/type/$type',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPaperworkIdRenderRoute = AdminPaperworkIdRenderRouteImport.update({
   id: '/render',
   path: '/render',
@@ -746,6 +752,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
+  '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -851,6 +858,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
+  '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -959,6 +967,7 @@ export interface FileRoutesById {
   '/admin/orders/$id/invoice': typeof AdminOrdersIdInvoiceRoute
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
+  '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1068,6 +1077,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
+    | '/admin/paperwork/type/$type'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
@@ -1173,6 +1183,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
+    | '/admin/paperwork/type/$type'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
@@ -1280,6 +1291,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/invoice'
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
+    | '/admin/paperwork/type/$type'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/lovable/email/auth/preview'
@@ -2003,6 +2015,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksKnowledgeHygieneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/paperwork/type/$type': {
+      id: '/admin/paperwork/type/$type'
+      path: '/paperwork/type/$type'
+      fullPath: '/admin/paperwork/type/$type'
+      preLoaderRoute: typeof AdminPaperworkTypeTypeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/paperwork/$id/render': {
       id: '/admin/paperwork/$id/render'
       path: '/render'
@@ -2178,6 +2197,7 @@ interface AdminRouteChildren {
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
   AdminPaperworkIndexRoute: typeof AdminPaperworkIndexRoute
   AdminDocumentsPresentationsTemplatesRoute: typeof AdminDocumentsPresentationsTemplatesRoute
+  AdminPaperworkTypeTypeRoute: typeof AdminPaperworkTypeTypeRoute
   AdminDocumentsPresentationsIndexRoute: typeof AdminDocumentsPresentationsIndexRoute
   AdminDocumentsPromoIndexRoute: typeof AdminDocumentsPromoIndexRoute
   AdminDocumentsQuotesIndexRoute: typeof AdminDocumentsQuotesIndexRoute
@@ -2217,6 +2237,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPaperworkIndexRoute: AdminPaperworkIndexRoute,
   AdminDocumentsPresentationsTemplatesRoute:
     AdminDocumentsPresentationsTemplatesRoute,
+  AdminPaperworkTypeTypeRoute: AdminPaperworkTypeTypeRoute,
   AdminDocumentsPresentationsIndexRoute: AdminDocumentsPresentationsIndexRoute,
   AdminDocumentsPromoIndexRoute: AdminDocumentsPromoIndexRoute,
   AdminDocumentsQuotesIndexRoute: AdminDocumentsQuotesIndexRoute,
