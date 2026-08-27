@@ -1,64 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { listBlogPosts, type BlogListItem } from "@/lib/blog.functions";
 import { MediaCard } from "@/components/ui/MediaCard";
 import { PaginationControls, type PerPage } from "@/components/ui/PaginationControls";
 
-type Post = {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string | null;
-  cover_url: string | null;
-  tags: string[] | null;
-  published_at: string | null;
-};
+type Post = BlogListItem;
 
-export const Route = createFileRoute("/blog")({
-  head: () => ({
-    meta: [
-      { title: "Блог о event-индустрии — event-hub.by" },
-      { name: "description", content: "Кейсы, тренды и аналитика event-рынка Беларуси: оборудование, организация мероприятий, продакшн." },
-      { property: "og:title", content: "Блог event-hub.by" },
-      { property: "og:description", content: "Кейсы, тренды и аналитика event-рынка Беларуси." },
-      { property: "og:url", content: "https://event-hub.by/blog" },
-    ],
-    links: [{ rel: "canonical", href: "https://event-hub.by/blog" }],
-    scripts: [{
-      type: "application/ld+json",
-      children: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Blog",
-        name: "Блог event-hub.by",
-        description: "Кейсы, тренды и аналитика event-рынка Беларуси.",
-        url: "https://event-hub.by/blog",
-        publisher: { "@type": "Organization", name: "event-hub.by" },
-      }),
-    }],
-  }),
-  component: BlogIndex,
+const blogQuery = queryOptions({
+  queryKey: ["blog", "list"],
+  queryFn: () => listBlogPosts({ data: {} }),
+  staleTime: 5 * 60_000,
+  gcTime: 30 * 60_000,
 });
 
-function BlogIndex() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState<PerPage>(30);
-  useEffect(() => { setPage(1); }, [perPage]);
-  const paged = posts.slice((page - 1) * perPage, page * perPage);
+const routeApi = getRouteApi("/blog");
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("blog_posts")
-        .select("id, slug, title, excerpt, cover_url, tags, published_at")
-        .eq("published", true)
-        .order("sort_order", { ascending: true })
-        .order("published_at", { ascending: false, nullsFirst: false });
-      setPosts((data ?? []) as Post[]);
-      setLoading(false);
-    })();
-  }, []);
+export const Route = createFileRoute("/blog")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(blogQuery),
+
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-5xl">
