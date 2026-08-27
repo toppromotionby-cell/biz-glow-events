@@ -12,6 +12,7 @@ import {
   PW_BLOCK_LABELS, PW_BLOCK_TYPES, emptyBlock, pwId,
   type PwAlign, type PwBlock, type PwBlockType,
 } from "@/lib/paperwork/model";
+import { blockTotals, formatMoney, lineTotal } from "@/lib/paperwork/totals";
 
 const ALIGNS: { key: PwAlign; label: string }[] = [
   { key: "left", label: "Слева" },
