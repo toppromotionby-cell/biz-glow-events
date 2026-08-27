@@ -162,13 +162,13 @@ function Page() {
   const removeDoc = useServerFn(deleteDocument);
   const onDeleteDocument = async () => {
     const ok = await confirm({
-      title: "Удалить документ?",
+      title: "Удалить КП?",
       description: "КП и его позиции будут удалены безвозвратно.",
     });
     if (!ok) return;
     try {
       await removeDoc({ data: { kind: "quote", id } });
-      toast.success("Документ удалён");
+      toast.success("КП удалено");
       void navigate({ to: "/admin/documents" });
     } catch (e) {
       toast.error((e as Error).message);
@@ -965,7 +965,7 @@ function Page() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={() => void onDeleteDocument()}>
-                <Trash2 className="mr-2 h-4 w-4" />Удалить документ
+                <Trash2 className="mr-2 h-4 w-4" />Удалить КП
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

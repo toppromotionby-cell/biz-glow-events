@@ -19,7 +19,7 @@ const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard, hint: "g d" },
   { to: "/admin/orders", label: "Заказы и запросы", icon: ShoppingCart, hint: "g o" },
   { to: "/admin/calendar", label: "Календарь", icon: Calendar },
-  { to: "/admin/documents", label: "Документы", icon: FileText },
+  { to: "/admin/documents", label: "Коммерческие предложения", icon: FileText },
   { to: "/admin/catalog/zones", label: "Каталог", icon: Package, hint: "g c" },
   { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Package },
   { to: "/admin/cases", label: "Кейсы", icon: Trophy },
