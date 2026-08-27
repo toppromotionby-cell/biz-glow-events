@@ -86,10 +86,11 @@ function blockParagraphs(b: PwBlock, blank: PwBlank): (Paragraph | Table)[] {
 
       const rows: TableRow[] = [];
       if (b.header.length) {
-        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(b.header[i] ?? "", true)) }));
+        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(b.header[i] ?? "", true, i)) }));
       }
       for (const r of b.rows) {
-        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(r[i] ?? "", false)) }));
+        rows.push(new TableRow({ children: Array.from({ length: cols }, (_, i) => cell(r[i] ?? "", false, i)) }));
+
       }
       return [
         new Table({ width: { size: widths.reduce((a, c) => a + c, 0), type: WidthType.DXA }, columnWidths: widths, rows }),
