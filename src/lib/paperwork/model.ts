@@ -256,6 +256,10 @@ export type PwBlank = {
   headerLayout: "logo-left" | "logo-center" | "logo-right" | "none";
   /** Показывать реквизиты в шапке. */
   headerRequisites: boolean;
+  /** Размеры логотипа в шапке (тот же движок, что в КП). */
+  logoLayout: LogoLayout;
+  /** Показывать логотип клиента (если он задан переменной `client_logo`). */
+  clientLogo: boolean;
   /** Полоса фирменного цвета сверху. */
   accentBar: boolean;
   /** Футер с контактами. */
