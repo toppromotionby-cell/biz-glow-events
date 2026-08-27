@@ -89,6 +89,7 @@ function SocialSettingsPage() {
     <div className="space-y-6 max-w-2xl">
       <AdminPageHeader
         title="Соцсети"
+        help="settings-social"
         subtitle="Укажите ссылки на ваши профили — иконки появятся в подвале сайта и на странице «Контакты»."
         icon={
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl btn-primary-gradient">

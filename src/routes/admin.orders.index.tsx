@@ -145,6 +145,7 @@ function AdminOrders() {
     <div className="space-y-5">
       <AdminPageHeader
         title="Заказы (CRM)"
+        help="orders-list"
         subtitle={`${orders.length} записей · клик по строке — подробности`}
         action={<Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-2" />Экспорт CSV</Button>}
       />

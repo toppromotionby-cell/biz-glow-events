@@ -82,6 +82,7 @@ function Page() {
       <AdminPageHeader
         icon={<ShieldCheck className="h-5 w-5" />}
         title="Гигиена данных"
+        help="settings-hygiene"
         subtitle="Проверка сайта и админки на дубли, одинаковые карточки и незаполненный контент."
         action={
           <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>

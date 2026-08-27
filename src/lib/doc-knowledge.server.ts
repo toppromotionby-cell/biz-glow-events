@@ -238,8 +238,10 @@ export async function searchItems(term: string, section?: string): Promise<ItemH
     .order("usage_count", { ascending: false })
     .order("last_used_at", { ascending: false })
     .limit(LIMIT);
+  // Изоляция данных: раздел ограничивает выдачу ВСЕГДА, в том числе при поиске по строке.
+  // Иначе позиции одного раздела «протекали» бы в поля другого.
+  if (s(section)) q = q.eq("section", s(section));
   if (t) q = q.ilike("title", `%${t}%`);
-  else if (s(section)) q = q.eq("section", s(section));
   const { data } = await q;
   return ((data ?? []) as ItemHit[]).map((r) => ({
     ...r,

@@ -1,4 +1,4 @@
-// База знаний документов: просмотр, поиск и удаление накопленных данных.
+// Информационная база документов: просмотр, поиск и удаление накопленных данных.
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +49,8 @@ function Page() {
     <div className="space-y-6">
       <AdminPageHeader
         icon={<Brain className="h-5 w-5" />}
-        title="База знаний"
+        title="Информационная база"
+        help="infobase-what"
         subtitle="Данные, накопленные из КП, КП промо, заказов, презентаций и каталога сайта. Удаление не меняет сами документы."
         action={
           <Button variant="outline" onClick={() => syncMut.mutate()} disabled={syncMut.isPending}>

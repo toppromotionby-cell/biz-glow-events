@@ -14,6 +14,7 @@ import {
   Layers,
   Presentation,
   ShieldCheck,
+  BookOpen,
 
 } from "lucide-react";
 import {
@@ -50,7 +51,7 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/documents", label: "Все КП", icon: FileStack, exact: true, perm: "documents.manage" },
       { to: "/admin/documents/presentations", label: "Презентации", icon: Presentation, matchPrefix: "/admin/documents/presentations", perm: "documents.manage" },
       { to: "/admin/paperwork", label: "Документы и шаблоны", icon: FileSignature, matchPrefix: "/admin/paperwork", perm: "documents.manage" },
-      { to: "/admin/documents/knowledge", label: "База знаний", icon: Brain, perm: "documents.knowledge" },
+      { to: "/admin/documents/knowledge", label: "Информационная база", icon: Brain, perm: "documents.knowledge" },
       { to: "/admin/settings/documents", label: "Компании", icon: FileCog, perm: "documents.settings" },
 
     ],
@@ -90,6 +91,12 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/settings/social", label: "Соцсети", icon: Share2, perm: "system.manage" },
       { to: "/admin/settings/hygiene", label: "Гигиена данных", icon: ShieldCheck, perm: "system.manage" },
       { to: "/admin/audit", label: "Аудит", icon: FileText, perm: "audit.view" },
+    ],
+  },
+  {
+    label: "Помощь",
+    items: [
+      { to: "/admin/help", label: "Справка для сотрудников", icon: BookOpen, matchPrefix: "/admin/help" },
     ],
   },
 ];

@@ -721,7 +721,7 @@ function EditorPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/admin/documents/knowledge">
-                    <Brain className="mr-2 h-4 w-4" />База знаний подсказок
+                    <Brain className="mr-2 h-4 w-4" />Информационная база
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

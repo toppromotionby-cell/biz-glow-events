@@ -67,6 +67,7 @@ import { Route as AdminPromoRouteImport } from './routes/admin.promo'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMailAccountsRouteImport } from './routes/admin.mail-accounts'
+import { Route as AdminHelpRouteImport } from './routes/admin.help'
 import { Route as AdminCatalogStructureRouteImport } from './routes/admin.catalog-structure'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
@@ -76,6 +77,7 @@ import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwork.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
+import { Route as AdminHelpIndexRouteImport } from './routes/admin.help.index'
 import { Route as AdminDocumentsIndexRouteImport } from './routes/admin.documents.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -89,6 +91,7 @@ import { Route as AdminSettingsDocumentsRouteImport } from './routes/admin.setti
 import { Route as AdminPaperworkTemplatesRouteImport } from './routes/admin.paperwork.templates'
 import { Route as AdminPaperworkIdRouteImport } from './routes/admin.paperwork.$id'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as AdminHelpSlugRouteImport } from './routes/admin.help.$slug'
 import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
@@ -406,6 +409,11 @@ const AdminMailAccountsRoute = AdminMailAccountsRouteImport.update({
   path: '/mail-accounts',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHelpRoute = AdminHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogStructureRoute = AdminCatalogStructureRouteImport.update({
   id: '/catalog-structure',
   path: '/catalog-structure',
@@ -450,6 +458,11 @@ const AdminOrdersIndexRoute = AdminOrdersIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminOrdersRoute,
+} as any)
+const AdminHelpIndexRoute = AdminHelpIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminHelpRoute,
 } as any)
 const AdminDocumentsIndexRoute = AdminDocumentsIndexRouteImport.update({
   id: '/documents/',
@@ -516,6 +529,11 @@ const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AdminOrdersRoute,
+} as any)
+const AdminHelpSlugRoute = AdminHelpSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AdminHelpRoute,
 } as any)
 const AdminDocumentsKnowledgeRoute = AdminDocumentsKnowledgeRouteImport.update({
   id: '/documents/knowledge',
@@ -705,6 +723,7 @@ export interface FileRoutesByFullPath {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
+  '/admin/help': typeof AdminHelpRouteWithChildren
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
@@ -731,6 +750,7 @@ export interface FileRoutesByFullPath {
   '/catalog/': typeof CatalogIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
+  '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/paperwork/$id': typeof AdminPaperworkIdRouteWithChildren
   '/admin/paperwork/templates': typeof AdminPaperworkTemplatesRoute
@@ -744,6 +764,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
+  '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/paperwork/': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
@@ -837,6 +858,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
+  '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/paperwork/$id': typeof AdminPaperworkIdRouteWithChildren
   '/admin/paperwork/templates': typeof AdminPaperworkTemplatesRoute
@@ -850,6 +872,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents': typeof AdminDocumentsIndexRoute
+  '/admin/help': typeof AdminHelpIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
   '/admin/paperwork': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
@@ -920,6 +943,7 @@ export interface FileRoutesById {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
+  '/admin/help': typeof AdminHelpRouteWithChildren
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
@@ -946,6 +970,7 @@ export interface FileRoutesById {
   '/catalog/': typeof CatalogIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
+  '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
   '/admin/paperwork/$id': typeof AdminPaperworkIdRouteWithChildren
   '/admin/paperwork/templates': typeof AdminPaperworkTemplatesRoute
@@ -959,6 +984,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
+  '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/paperwork/': typeof AdminPaperworkIndexRoute
   '/admin/documents/presentations/templates': typeof AdminDocumentsPresentationsTemplatesRoute
@@ -1030,6 +1056,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/catalog-structure'
+    | '/admin/help'
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1056,6 +1083,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
+    | '/admin/help/$slug'
     | '/admin/orders/$id'
     | '/admin/paperwork/$id'
     | '/admin/paperwork/templates'
@@ -1069,6 +1097,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/documents/'
+    | '/admin/help/'
     | '/admin/orders/'
     | '/admin/paperwork/'
     | '/admin/documents/presentations/templates'
@@ -1162,6 +1191,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
+    | '/admin/help/$slug'
     | '/admin/orders/$id'
     | '/admin/paperwork/$id'
     | '/admin/paperwork/templates'
@@ -1175,6 +1205,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/documents'
+    | '/admin/help'
     | '/admin/orders'
     | '/admin/paperwork'
     | '/admin/documents/presentations/templates'
@@ -1244,6 +1275,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/catalog-structure'
+    | '/admin/help'
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
@@ -1270,6 +1302,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
+    | '/admin/help/$slug'
     | '/admin/orders/$id'
     | '/admin/paperwork/$id'
     | '/admin/paperwork/templates'
@@ -1283,6 +1316,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/order/success/$id'
     | '/admin/documents/'
+    | '/admin/help/'
     | '/admin/orders/'
     | '/admin/paperwork/'
     | '/admin/documents/presentations/templates'
@@ -1777,6 +1811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMailAccountsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/help': {
+      id: '/admin/help'
+      path: '/help'
+      fullPath: '/admin/help'
+      preLoaderRoute: typeof AdminHelpRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog-structure': {
       id: '/admin/catalog-structure'
       path: '/catalog-structure'
@@ -1839,6 +1880,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/orders/'
       preLoaderRoute: typeof AdminOrdersIndexRouteImport
       parentRoute: typeof AdminOrdersRoute
+    }
+    '/admin/help/': {
+      id: '/admin/help/'
+      path: '/'
+      fullPath: '/admin/help/'
+      preLoaderRoute: typeof AdminHelpIndexRouteImport
+      parentRoute: typeof AdminHelpRoute
     }
     '/admin/documents/': {
       id: '/admin/documents/'
@@ -1930,6 +1978,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/orders/$id'
       preLoaderRoute: typeof AdminOrdersIdRouteImport
       parentRoute: typeof AdminOrdersRoute
+    }
+    '/admin/help/$slug': {
+      id: '/admin/help/$slug'
+      path: '/$slug'
+      fullPath: '/admin/help/$slug'
+      preLoaderRoute: typeof AdminHelpSlugRouteImport
+      parentRoute: typeof AdminHelpRoute
     }
     '/admin/documents/knowledge': {
       id: '/admin/documents/knowledge'
@@ -2128,6 +2183,20 @@ const AdminCatalogRouteWithChildren = AdminCatalogRoute._addFileChildren(
   AdminCatalogRouteChildren,
 )
 
+interface AdminHelpRouteChildren {
+  AdminHelpSlugRoute: typeof AdminHelpSlugRoute
+  AdminHelpIndexRoute: typeof AdminHelpIndexRoute
+}
+
+const AdminHelpRouteChildren: AdminHelpRouteChildren = {
+  AdminHelpSlugRoute: AdminHelpSlugRoute,
+  AdminHelpIndexRoute: AdminHelpIndexRoute,
+}
+
+const AdminHelpRouteWithChildren = AdminHelpRoute._addFileChildren(
+  AdminHelpRouteChildren,
+)
+
 interface AdminOrdersIdRouteChildren {
   AdminOrdersIdActRoute: typeof AdminOrdersIdActRoute
   AdminOrdersIdContractRoute: typeof AdminOrdersIdContractRoute
@@ -2179,6 +2248,7 @@ interface AdminRouteChildren {
   AdminCasesRoute: typeof AdminCasesRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCatalogStructureRoute: typeof AdminCatalogStructureRoute
+  AdminHelpRoute: typeof AdminHelpRouteWithChildren
   AdminMailAccountsRoute: typeof AdminMailAccountsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
@@ -2218,6 +2288,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCasesRoute: AdminCasesRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCatalogStructureRoute: AdminCatalogStructureRoute,
+  AdminHelpRoute: AdminHelpRouteWithChildren,
   AdminMailAccountsRoute: AdminMailAccountsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,

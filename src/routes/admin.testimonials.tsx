@@ -87,6 +87,7 @@ function Page() {
     <div className="space-y-5">
       <AdminPageHeader
         title="Отзывы"
+        help="content-testimonials"
         subtitle={debouncedQuery ? `${visible.length} из ${items.length} записей` : `${items.length} записей`}
         action={<Button disabled={create.isPending} onClick={() => create.mutate()} className="btn-primary-gradient"><Plus className="h-4 w-4 mr-2" />Добавить</Button>}
       />
