@@ -247,14 +247,15 @@ export async function buildPaperworkDocx(opts: {
   const { doc, blocks, company } = opts;
   const blank = fittedBlank(opts.blocks, opts.blank);
 
-  // Факсимиле и печать грузим один раз: те же источники и высоты, что в PDF.
+  // Подпись и печать грузим один раз: те же источники и высоты, что в PDF.
   const needSign = blocks.some((b) => b.type === "signature" && (b.withSignature || b.withStamp));
   const signSrc = resolveSignature({
     companySignatureUrl: company?.signature_url ?? null,
     companyStampUrl: company?.stamp_url ?? null,
-    showSignature: needSign,
-    showStamp: needSign,
+    showSignature: blocks.some((b) => b.type === "signature" && b.withSignature),
+    showStamp: blocks.some((b) => b.type === "signature" && b.withStamp),
   });
+
   const [signature, stamp] = needSign
     ? await Promise.all([
         loadDocxImage(signSrc.signatureUrl, SIGN_MEDIA_MM.signatureH),
