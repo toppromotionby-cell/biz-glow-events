@@ -1,6 +1,7 @@
 // Модель промо-КП (раздел «Документы → КП промо»).
 // Browser-safe: используется формой, live-превью, PDF и XLSX — одна логика расчётов.
 import { z } from "zod";
+import { swapAt, canSwapAt } from "@/lib/array-move";
 import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
 import { normalizeIncludes, type QuoteItemInclude } from "@/lib/quotes-model";
 import { checkVatConfig, computeVat, vatConfig, normalizeVatMode, DEFAULT_VAT_RATE, type VatMode } from "@/lib/documents/vat";
@@ -593,12 +594,8 @@ export function renamePromoSection(items: PromoItem[], from: string, to: string)
 export function movePromoSection(items: PromoItem[], section: string, dir: -1 | 1): PromoItem[] {
   const order = listPromoSections(items);
   const i = order.indexOf(section);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= order.length) return items;
-  const next = [...order];
-  next[i] = order[j]!;
-  next[j] = order[i]!;
-  return orderPromoBySections(items, next);
+  if (!canSwapAt(order.length, i, dir)) return items;
+  return orderPromoBySections(items, swapAt(order, i, dir));
 }
 
 /** Удалить раздел: вместе с позициями или с переносом их в «без раздела». */

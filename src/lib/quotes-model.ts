@@ -2,6 +2,7 @@
 // расчёт итогов и валидация. Файл browser-safe — используется и в админке,
 // и на сервере при генерации документа.
 import { z } from "zod";
+import { swapAt, canSwapAt } from "@/lib/array-move";
 import { normalizeDocFontChoice, type DocFontChoice } from "@/lib/documents/doc-font";
 import {
   QUOTE_TEMPLATES,

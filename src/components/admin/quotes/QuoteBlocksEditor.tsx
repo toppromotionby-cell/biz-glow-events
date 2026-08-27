@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ArrowDown, ArrowUp, BookmarkPlus, GripVertical, Library, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { swapAt, canSwapAt } from "@/lib/array-move";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,13 +114,8 @@ export function QuoteBlocksEditor({ template, blocks, onChange, issues }: Props)
     onChange({ blocks: list.map((b) => (b.id === id ? { ...b, ...patch } : b)) });
 
   const move = (index: number, dir: -1 | 1) => {
-    const next = [...list];
-    const target = index + dir;
-    if (target < 0 || target >= next.length) return;
-    const a = next[index]!;
-    next[index] = next[target]!;
-    next[target] = a;
-    onChange({ blocks: next });
+    if (!canSwapAt(list.length, index, dir)) return;
+    onChange({ blocks: swapAt(list, index, dir) });
   };
 
   const add = (type: QuoteBlockType) => onChange({ blocks: [...list, newBlock(type)] });
