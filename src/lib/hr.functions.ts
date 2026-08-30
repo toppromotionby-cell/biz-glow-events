@@ -144,3 +144,47 @@ export const importHrEmployees = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { inserted: rows.length };
   });
+
+/** Разбор загруженного XLSX (штатное расписание / ведомость) в записи сотрудников. */
+export const parseHrXlsx = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ fileBase64: z.string().min(10).max(12_000_000) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertDocumentsStaff(context as never);
+    const [{ default: ExcelJS }, { rowsToEmployees }] = await Promise.all([
+      import("exceljs"),
+      import("@/lib/paperwork/hr/xlsx-map"),
+    ]);
+
+    const bytes = Uint8Array.from(atob(data.fileBase64), (c) => c.charCodeAt(0));
+    const wb = new ExcelJS.Workbook();
+    try {
+      await wb.xlsx.load(bytes.buffer as ArrayBuffer);
+    } catch {
+      throw new Error("Не удалось прочитать файл. Сохраните его в формате .xlsx и повторите.");
+    }
+
+    const sheet = wb.worksheets[0];
+    if (!sheet) throw new Error("В файле нет листов");
+
+    const matrix: (string | number | null)[][] = [];
+    sheet.eachRow({ includeEmpty: false }, (row) => {
+      const cells: (string | number | null)[] = [];
+      row.eachCell({ includeEmpty: true }, (cell, col) => {
+        const v = cell.value as unknown;
+        const plain =
+          v && typeof v === "object" && "result" in (v as Record<string, unknown>)
+            ? (v as { result?: unknown }).result
+            : v && typeof v === "object" && "richText" in (v as Record<string, unknown>)
+              ? (v as { richText: { text: string }[] }).richText.map((t) => t.text).join("")
+              : v;
+        cells[col - 1] = plain == null ? null : (plain as string | number);
+      });
+      matrix.push(cells);
+    });
+
+    const employees = rowsToEmployees(matrix);
+    return { employees, sheet: sheet.name, rows: employees.length };
+  });
