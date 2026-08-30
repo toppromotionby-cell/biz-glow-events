@@ -84,6 +84,9 @@ export const PW_DOC_TYPE_LABELS: Record<PwDocType, string> = {
 export const PW_TYPE_CATEGORY: Record<PwDocType, PwCategory> = {
   letter: "letters",
   order: "orders",
+  protocol: "protocols",
+  statement: "protocols",
+
   attorney: "attorney",
   certificate: "certificates",
   notice: "notices",
