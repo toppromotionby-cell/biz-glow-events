@@ -60,12 +60,13 @@ export const nextOrderNumber = createServerFn({ method: "GET" })
   });
 
 
-/** Создание приказа мастером: блоки берём из вида, значения — из формы. */
+/** Создание документа мастером: блоки берём из вида, значения — из формы. */
 export const createOrderDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
+        docType: DocTypeSchema,
         kind: z.string().min(1).max(40),
         docNumber: z.string().max(40).default(""),
         docDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -78,8 +79,10 @@ export const createOrderDocument = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     await assertDocumentsStaff(context as never);
-    const kind = ORDER_KIND_MAP[data.kind];
-    if (!kind) throw new Error("Неизвестный вид приказа");
+    const spec = registrySpec(data.docType);
+    const kind = spec?.kinds.find((k) => k.code === data.kind);
+    const blocks = spec?.blocksOf(data.kind);
+    if (!spec || !kind || !blocks) throw new Error("Неизвестный вид документа");
 
     let companyId = data.companyId ?? null;
     if (!companyId) {
@@ -93,19 +96,17 @@ export const createOrderDocument = createServerFn({ method: "POST" })
       companyId = firstCompany?.id ? String(firstCompany.id) : null;
     }
 
-    const title =
-      data.title.trim() ||
-      `Приказ №${data.docNumber} — ${kind.label.replace(/^О\s/, "о ")}`;
+    const title = data.title.trim() || spec.titleOf(data.kind, data.docNumber);
 
     const { data: row, error } = await context.supabase
       .from("paperwork_documents")
       .insert({
         company_profile_id: companyId,
-        doc_type: "order",
+        doc_type: data.docType,
         title,
         doc_number: data.docNumber,
         doc_date: data.docDate,
-        blocks: normalizeBlocks(orderBlocks(kind)),
+        blocks: normalizeBlocks(blocks),
         values: data.values,
         status: "draft",
         author_id: context.userId,
@@ -119,6 +120,7 @@ export const createOrderDocument = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { id: String((row as { id: string }).id) };
   });
+
 
 /** Реестр приказов с фильтрами по журналу, году, виду и работнику. */
 export const listOrderJournal = createServerFn({ method: "GET" })
