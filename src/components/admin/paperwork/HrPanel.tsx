@@ -1,9 +1,9 @@
 // Панель кадровых документов: период, реестр сотрудников, заполнение и пересчёт таблиц.
 // Показывается только для видов «Зарплатная ведомость», «Штатное расписание», «Табель».
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Calculator, RefreshCw, Users } from "lucide-react";
+import { Calculator, Loader2, RefreshCw, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { listHrEmployees } from "@/lib/hr.functions";
+import { importHrEmployees, listHrEmployees, parseHrXlsx } from "@/lib/hr.functions";
 import type { PwBlock, PwDocType } from "@/lib/paperwork/model";
 import {
   MONTHS_RU,
@@ -59,6 +59,10 @@ type Props = {
 export function HrPanel({ docType, companyId, blocks, onChange, period, onPeriodChange }: Props) {
   const kind = KIND_BY_TYPE[docType];
   const fetchEmployees = useServerFn(listHrEmployees);
+  const parseXlsx = useServerFn(parseHrXlsx);
+  const importEmployees = useServerFn(importHrEmployees);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
   const [advance, setAdvance] = useState(0);
 
   const employees = useQuery({
@@ -90,6 +94,31 @@ export function HrPanel({ docType, companyId, blocks, onChange, period, onPeriod
     }
     onChange(replaceHrTable(blocks, kind, table));
     toast.success(`Таблица заполнена: ${staff.length} сотр.`);
+  };
+
+  const onFile = async (file: File | null) => {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      for (const b of buf) bin += String.fromCharCode(b);
+      const parsed = await parseXlsx({ data: { fileBase64: btoa(bin) } });
+      if (!parsed.employees.length) {
+        toast.error("Не удалось распознать сотрудников — проверьте заголовки таблицы");
+        return;
+      }
+      await importEmployees({
+        data: { companyId: companyId ?? null, replace: false, employees: parsed.employees },
+      });
+      await employees.refetch();
+      toast.success(`Импортировано сотрудников: ${parsed.employees.length}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ошибка импорта");
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const recalc = () => {
@@ -155,6 +184,26 @@ export function HrPanel({ docType, companyId, blocks, onChange, period, onPeriod
         <Button variant="ghost" size="sm" onClick={() => employees.refetch()}>
           <RefreshCw className="mr-1 h-4 w-4" /> Обновить реестр
         </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => fileRef.current?.click()}
+          disabled={importing}
+        >
+          {importing ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="mr-1 h-4 w-4" />
+          )}
+          Импорт XLSX
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx"
+          className="hidden"
+          onChange={(e) => void onFile(e.target.files?.[0] ?? null)}
+        />
       </div>
 
       {kind === "payroll" && findHrTable(blocks, "timesheet") < 0 && (
