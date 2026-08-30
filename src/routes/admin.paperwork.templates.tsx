@@ -42,14 +42,22 @@ function Page() {
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.paperworkTemplates }),
   });
 
-  // Встроенные шаблоны ставятся сами при первом открытии каталога.
+  // Недостающие встроенные шаблоны доустанавливаются при открытии каталога.
   useEffect(() => {
     if (installed.current) return;
-    if (category !== "all" || templates.isLoading || !templates.data) return;
-    if (templates.data.length) return;
     installed.current = true;
     install.mutate();
-  }, [category, templates.data, templates.isLoading, install]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refreshPresets = useMutation({
+    mutationFn: () => installPresets({}),
+    onSuccess: ({ added, names }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.paperworkTemplates });
+      toast.success(added ? `Добавлено шаблонов: ${added} — ${names.join(", ")}` : "Все встроенные шаблоны уже установлены");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const create = useMutation({
     mutationFn: (templateId: string) => createDoc({ data: { templateId } }),
