@@ -26,6 +26,7 @@ import {
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { LoanLenderDialog } from "@/components/admin/paperwork/LoanLenderDialog";
+import { AttorneyKindDialog } from "@/components/admin/paperwork/AttorneyKindDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
@@ -61,7 +62,9 @@ function Page() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [lenderOpen, setLenderOpen] = useState(false);
+  const [attorneyOpen, setAttorneyOpen] = useState(false);
   const isLoan = docType === "loan";
+  const isAttorney = docType === "attorney";
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
@@ -99,6 +102,7 @@ function Page() {
     onSuccess: ({ id }) => {
       qc.invalidateQueries({ queryKey: adminKeys.paperwork });
       setLenderOpen(false);
+      setAttorneyOpen(false);
       open(id);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -134,6 +138,12 @@ function Page() {
         busy={createFromPreset.isPending}
         onPick={(presetId) => createFromPreset.mutate(presetId)}
       />
+      <AttorneyKindDialog
+        open={attorneyOpen}
+        onOpenChange={setAttorneyOpen}
+        busy={createFromPreset.isPending}
+        onPick={(presetId) => createFromPreset.mutate(presetId)}
+      />
       <Link
         to="/admin/paperwork"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
@@ -147,7 +157,13 @@ function Page() {
         subtitle={kind.description}
         action={
           <Button
-            onClick={() => (isLoan ? setLenderOpen(true) : create.mutate(undefined))}
+            onClick={() =>
+              isLoan
+                ? setLenderOpen(true)
+                : isAttorney
+                  ? setAttorneyOpen(true)
+                  : create.mutate(undefined)
+            }
             disabled={create.isPending}
           >
             {create.isPending ? (
