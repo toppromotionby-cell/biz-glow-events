@@ -63,8 +63,10 @@ function Page() {
   const [status, setStatus] = useState("all");
   const [lenderOpen, setLenderOpen] = useState(false);
   const [attorneyOpen, setAttorneyOpen] = useState(false);
+  const [workActOpen, setWorkActOpen] = useState(false);
   const isLoan = docType === "loan";
   const isAttorney = docType === "attorney";
+  const isWorkAct = docType === "workact";
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
