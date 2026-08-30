@@ -122,13 +122,14 @@ export const createOrderDocument = createServerFn({ method: "POST" })
   });
 
 
-/** Реестр приказов с фильтрами по журналу, году, виду и работнику. */
+/** Реестр документов с фильтрами по журналу, году, виду и работнику. */
 export const listOrderJournal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
-        journal: z.string().max(10).optional(),
+        docType: DocTypeSchema,
+        journal: z.string().max(20).optional(),
         year: z.number().int().min(2000).max(2100).nullable().optional(),
         kind: z.string().max(40).optional(),
         employeeId: z.string().uuid().nullable().optional(),
@@ -142,9 +143,10 @@ export const listOrderJournal = createServerFn({ method: "GET" })
     let q = context.supabase
       .from("paperwork_documents")
       .select("id,title,doc_number,doc_date,status,order_journal,order_kind,order_year,employee_id,updated_at")
-      .eq("doc_type", "order")
+      .eq("doc_type", data.docType)
       .order("doc_date", { ascending: false })
       .limit(1000);
+
 
     if (data.journal && data.journal !== "all") q = q.eq("order_journal", data.journal);
     if (data.year) q = q.eq("order_year", data.year);
