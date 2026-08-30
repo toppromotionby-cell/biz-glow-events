@@ -277,3 +277,39 @@ export function protocolBlocks(_kind: ProtocolKind): PwBlock[] {
     }),
   ];
 }
+
+/* --------------------- Общие поля и значения мастера --------------------- */
+
+/** Поля, одинаковые для всех протоколов (шапка, президиум, форма собрания). */
+export const PROTOCOL_COMMON_FIELDS: OrderField[] = [
+  {
+    key: "meetingKind",
+    label: "Вид собрания",
+    type: "text",
+    defaultValue: "Внеочередного Общего собрания участников",
+  },
+  { key: "participants", label: "Присутствовали участники", type: "multiline", required: true },
+  { key: "chairman", label: "Председатель собрания", type: "text", required: true },
+  { key: "secretary", label: "Секретарь собрания", type: "text", required: true },
+  { key: "Докладчик", label: "Докладчик", type: "text" },
+  { key: "meetingForm", label: "Форма проведения", type: "text", defaultValue: "очная" },
+  { key: "voteForm", label: "Форма голосования", type: "text", defaultValue: "открытая" },
+  { key: "vote", label: "Голосовали «За»", type: "text", defaultValue: "единогласно" },
+];
+
+/** Значения переменных протокола по данным мастера. */
+export function buildProtocolValues(kind: ProtocolKind, form: OrderForm): Record<string, string> {
+  const built = kind.build(form);
+  return {
+    "Вид собрания": s(form, "meetingKind") || "Внеочередного Общего собрания участников",
+    "Участники": s(form, "participants"),
+    "Председатель": s(form, "chairman"),
+    "Секретарь": s(form, "secretary"),
+    "Форма проведения": s(form, "meetingForm") || "очная",
+    "Форма голосования": s(form, "voteForm") || "открытая",
+    "Повестка": built.agenda,
+    "Слушали": built.heard,
+    "Решили": built.decided,
+    "Голосование": s(form, "vote") || "единогласно",
+  };
+}

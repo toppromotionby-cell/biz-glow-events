@@ -199,3 +199,13 @@ export function statementBlocks(_kind: StatementKind): PwBlock[] {
     p("{{Дата}} г.\t\t_______________\t\t{{Заявитель}}", "left"),
   ];
 }
+
+/** Значения переменных заявления по данным мастера. */
+export function buildStatementValues(kind: StatementKind, form: OrderForm): Record<string, string> {
+  const p = applicant(form);
+  return {
+    "Шапка заявления": statementHeader(form),
+    "Текст заявления": kind.buildText(form),
+    "Заявитель": p.fullName,
+  };
+}
