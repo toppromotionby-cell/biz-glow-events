@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertPermission, hasPermission } from "@/lib/authz";
+import { assertDocumentsStaff, assertPermission, hasPermission } from "@/lib/authz";
 import { normalizeCompanyProfile, type CompanyProfile } from "@/lib/documents/company-profile";
 import { normalizeLogoLayout } from "@/lib/documents/logo-layout";
 import { DEFAULT_VAT_RATE } from "@/lib/documents/vat";
