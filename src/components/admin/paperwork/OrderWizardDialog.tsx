@@ -26,15 +26,14 @@ import {
 import { adminKeys } from "@/lib/query-keys";
 import { listHrEmployees } from "@/lib/hr.functions";
 import { nextOrderNumber } from "@/lib/paperwork-orders.functions";
+import { listCompanyParticipants } from "@/lib/company-profiles.functions";
+import { participantLine } from "@/lib/paperwork/protocols/registry";
+import type { OrderForm, OrderPerson } from "@/lib/paperwork/orders/registry";
 import {
-  ORDER_JOURNALS,
-  ORDER_JOURNAL_LABELS,
-  orderKindsOf,
-  type OrderForm,
-  type OrderJournal,
-  type OrderKind,
-  type OrderPerson,
-} from "@/lib/paperwork/orders/registry";
+  registryKindsOf,
+  registrySpec,
+  type RegistryDocType,
+} from "@/lib/paperwork/registry-docs";
 
 export type OrderSubmit = {
   kind: string;
@@ -45,6 +44,8 @@ export type OrderSubmit = {
 };
 
 type Props = {
+  /** Тип реестрового документа: приказ, протокол или заявление. */
+  docType?: RegistryDocType;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   busy?: boolean;
@@ -55,16 +56,30 @@ type Props = {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank }: Props) {
-  const [journal, setJournal] = useState<OrderJournal>("k");
+export function OrderWizardDialog({
+  docType = "order",
+  open,
+  onOpenChange,
+  busy,
+  onSubmit,
+  onBlank,
+}: Props) {
+  const spec = registrySpec(docType)!;
+  const [journal, setJournal] = useState<string>(spec.journals[0]!.code);
   const [kindCode, setKindCode] = useState("");
   const [docDate, setDocDate] = useState(today());
   const [docNumber, setDocNumber] = useState("");
   const [numberTouched, setNumberTouched] = useState(false);
   const [form, setForm] = useState<OrderForm>({});
 
-  const kinds = useMemo(() => orderKindsOf(journal), [journal]);
-  const kind: OrderKind | undefined = kinds.find((k) => k.code === kindCode);
+  useEffect(() => {
+    setJournal(spec.journals[0]!.code);
+    setKindCode("");
+  }, [spec]);
+
+  const kinds = useMemo(() => registryKindsOf(spec, journal), [spec, journal]);
+  const kind = kinds.find((k) => k.code === kindCode);
+  const fields = useMemo(() => (kind ? spec.fieldsOf(kind.code) : []), [spec, kind]);
 
   // Список работников (реестр кадров) — источник ФИО и должностей.
   const listEmployees = useServerFn(listHrEmployees);
@@ -74,11 +89,19 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
     enabled: open,
   });
 
+  // Участники общества — подставляются в протоколы.
+  const loadParticipants = useServerFn(listCompanyParticipants);
+  const participants = useQuery({
+    queryKey: [...adminKeys.paperwork, "participants"],
+    queryFn: () => loadParticipants({ data: {} }),
+    enabled: open && docType === "protocol",
+  });
+
   const nextNumber = useServerFn(nextOrderNumber);
   const numberQuery = useQuery({
-    queryKey: [...adminKeys.paperwork, "orders", "next", journal, docDate.slice(0, 4)],
-    queryFn: () => nextNumber({ data: { journal, year: Number(docDate.slice(0, 4)) } }),
-    enabled: open,
+    queryKey: [...adminKeys.paperwork, docType, "next", journal, docDate.slice(0, 4)],
+    queryFn: () => nextNumber({ data: { docType, journal, year: Number(docDate.slice(0, 4)) } }),
+    enabled: open && spec.numbered,
   });
 
   useEffect(() => {
@@ -96,12 +119,16 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
   useEffect(() => {
     if (!kind) return;
     const init: OrderForm = {};
-    for (const f of kind.fields) {
+    for (const f of fields) {
       if (f.type === "employee" || f.type === "employees") init[f.key] = [] as OrderPerson[];
       else init[f.key] = f.defaultValue ?? "";
     }
+    const list = participants.data?.participants ?? [];
+    if (docType === "protocol" && list.length && "participants" in init) {
+      init["participants"] = list.map((p) => participantLine(p)).join("\n");
+    }
     setForm(init);
-  }, [kind]);
+  }, [kind, fields, docType, participants.data]);
 
   const setField = (key: string, value: OrderForm[string]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -112,7 +139,7 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
   };
 
   const missing = kind
-    ? kind.fields.filter((f) => {
+    ? fields.filter((f) => {
         if (!f.required) return false;
         const v = form[f.key];
         return Array.isArray(v) ? v.length === 0 : !String(v ?? "").trim();
@@ -134,7 +161,7 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
         "Номер документа": docNumber.trim(),
         "Дата": docDate,
         "Должность подписанта": "Директор",
-        ...kind.buildValues(form),
+        ...spec.valuesOf(kind.code, form),
       },
     });
   };
@@ -143,38 +170,38 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Новый приказ</DialogTitle>
-          <DialogDescription>
-            Выберите журнал регистрации и вид приказа — текст соберётся автоматически.
-          </DialogDescription>
+          <DialogTitle>{spec.wizardTitle}</DialogTitle>
+          <DialogDescription>{spec.wizardHint}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
+            {spec.journals.length > 1 && (
+              <div className="space-y-1.5">
+                <Label>Журнал регистрации</Label>
+                <Select
+                  value={journal}
+                  onValueChange={(v) => {
+                    setJournal(v);
+                    setKindCode("");
+                    setNumberTouched(false);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {spec.journals.map((j) => (
+                      <SelectItem key={j.code} value={j.code}>
+                        {j.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
-              <Label>Журнал регистрации</Label>
-              <Select
-                value={journal}
-                onValueChange={(v) => {
-                  setJournal(v as OrderJournal);
-                  setKindCode("");
-                  setNumberTouched(false);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ORDER_JOURNALS.map((j) => (
-                    <SelectItem key={j} value={j}>
-                      {ORDER_JOURNAL_LABELS[j]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Вид приказа</Label>
+              <Label>Вид документа</Label>
               <Select value={kindCode} onValueChange={setKindCode}>
                 <SelectTrigger>
                   <SelectValue placeholder="Выберите вид" />
@@ -188,25 +215,27 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
                 </SelectContent>
               </Select>
             </div>
+            {spec.numbered && (
+              <div className="space-y-1.5">
+                <Label>Номер документа</Label>
+                <Input
+                  value={docNumber}
+                  onChange={(e) => {
+                    setNumberTouched(true);
+                    setDocNumber(e.target.value);
+                  }}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
-              <Label>Номер приказа</Label>
-              <Input
-                value={docNumber}
-                onChange={(e) => {
-                  setNumberTouched(true);
-                  setDocNumber(e.target.value);
-                }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Дата приказа</Label>
+              <Label>Дата документа</Label>
               <Input type="date" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
             </div>
           </div>
 
           {kind && <p className="text-xs text-muted-foreground">{kind.description}</p>}
 
-          {kind?.fields.map((f) => {
+          {fields.map((f) => {
             if (f.type === "employee" || f.type === "employees") {
               const list = peopleOf(f.key);
               const multiple = f.type === "employees";
@@ -304,11 +333,11 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
 
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="ghost" onClick={onBlank} disabled={busy}>
-            Пустой приказ
+            Пустой документ
           </Button>
           <Button onClick={submit} disabled={busy || !kind || missing.length > 0}>
             {busy && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Создать приказ
+            {spec.createLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
