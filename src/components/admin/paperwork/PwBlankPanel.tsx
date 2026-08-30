@@ -1,4 +1,5 @@
 // Настройки фирменного бланка компании: шапка, поля, шрифт, подложка.
+import { DOC_FONTS, DOC_FONT_HINTS, DOC_FONT_LABELS } from "@/lib/documents/doc-font";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,10 +75,16 @@ export function PwBlankPanel({
           <Select value={blank.font} onValueChange={(v) => set("font", v as PwBlank["font"])}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="brand">Фирменный (Inter / Space Grotesk)</SelectItem>
-              <SelectItem value="ubuntu">Ubuntu</SelectItem>
+              {DOC_FONTS.map((f) => (
+                <SelectItem key={f} value={f}>
+                  {DOC_FONT_LABELS[f]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+          {DOC_FONT_HINTS[blank.font] ? (
+            <p className="text-[11px] leading-tight text-muted-foreground">{DOC_FONT_HINTS[blank.font]}</p>
+          ) : null}
         </div>
       </div>
 
