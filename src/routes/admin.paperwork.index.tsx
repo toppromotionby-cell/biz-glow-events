@@ -73,7 +73,7 @@ function Page() {
       {dialog}
       <AdminPageHeader
         icon={<FileSignature className="h-5 w-5" />}
-        title="Документы"
+        title="Документы компании"
         subtitle="Письма, приказы, доверенности, счета и акты на фирменных бланках компаний"
         action={
           <Button variant="outline" asChild>
