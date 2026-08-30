@@ -28,6 +28,9 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { LoanLenderDialog } from "@/components/admin/paperwork/LoanLenderDialog";
 import { AttorneyKindDialog } from "@/components/admin/paperwork/AttorneyKindDialog";
 import { WorkActDialog } from "@/components/admin/paperwork/WorkActDialog";
+import { OrderWizardDialog, type OrderSubmit } from "@/components/admin/paperwork/OrderWizardDialog";
+import { OrderJournalTable } from "@/components/admin/paperwork/OrderJournalTable";
+import { createOrderDocument } from "@/lib/paperwork-orders.functions";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
@@ -65,14 +68,17 @@ function Page() {
   const [lenderOpen, setLenderOpen] = useState(false);
   const [attorneyOpen, setAttorneyOpen] = useState(false);
   const [workActOpen, setWorkActOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
   const isLoan = docType === "loan";
   const isAttorney = docType === "attorney";
   const isWorkAct = docType === "workact";
+  const isOrder = docType === "order";
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
   const listTpl = useServerFn(listPaperworkTemplates);
   const createDoc = useServerFn(createDocumentFromTemplate);
+  const createOrder = useServerFn(createOrderDocument);
   const delDoc = useServerFn(deletePaperworkDocument);
   const delTpl = useServerFn(deletePaperworkTemplate);
 
@@ -115,6 +121,17 @@ function Page() {
   });
 
 
+  // Приказ: мастер сам собирает текст, номер и журнал регистрации.
+  const createOrderDoc = useMutation({
+    mutationFn: (args: OrderSubmit) => createOrder({ data: args }),
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.paperwork });
+      setOrderOpen(false);
+      open(id);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const removeDoc = useMutation({
     mutationFn: (id: string) => delDoc({ data: { id } }),
     onSuccess: () => {
@@ -151,6 +168,16 @@ function Page() {
         busy={createFromPreset.isPending}
         onPick={(presetId) => createFromPreset.mutate(presetId)}
       />
+      <OrderWizardDialog
+        open={orderOpen}
+        onOpenChange={setOrderOpen}
+        busy={createOrderDoc.isPending}
+        onSubmit={(args) => createOrderDoc.mutate(args)}
+        onBlank={() => {
+          setOrderOpen(false);
+          create.mutate(undefined);
+        }}
+      />
       <WorkActDialog
         open={workActOpen}
         onOpenChange={setWorkActOpen}
@@ -173,7 +200,9 @@ function Page() {
         action={
           <Button
             onClick={() =>
-              isLoan
+              isOrder
+                ? setOrderOpen(true)
+                : isLoan
                 ? setLenderOpen(true)
                 : isAttorney
                   ? setAttorneyOpen(true)
@@ -189,7 +218,7 @@ function Page() {
             ) : (
               <Plus className="mr-1 h-4 w-4" />
             )}
-            Создать документ
+            {isOrder ? "Создать приказ" : "Создать документ"}
           </Button>
         }
       />
