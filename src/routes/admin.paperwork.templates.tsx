@@ -87,17 +87,28 @@ function Page() {
       <AdminPageHeader
         icon={<LayoutTemplate className="h-5 w-5" />}
         title="Шаблоны документов"
-        subtitle="Готовые заготовки: письма, приказы, доверенности, справки и финансовые формы"
+        subtitle="Готовые заготовки: письма, приказы, доверенности, справки, кадровые и финансовые формы"
         action={
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все категории</SelectItem>
-              {PW_CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{PW_CATEGORY_LABELS[c]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refreshPresets.mutate()}
+              disabled={refreshPresets.isPending || install.isPending}
+            >
+              <RefreshCw className={`mr-1 h-4 w-4 ${refreshPresets.isPending ? "animate-spin" : ""}`} />
+              Обновить встроенные
+            </Button>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все категории</SelectItem>
+                {PW_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{PW_CATEGORY_LABELS[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 
