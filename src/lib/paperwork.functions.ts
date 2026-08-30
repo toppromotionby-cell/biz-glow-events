@@ -271,15 +271,16 @@ export const deletePaperworkTemplate = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Разовая установка встроенных пресетов (пропускает уже добавленные по имени). */
+/** Доустановка встроенных пресетов: добавляет только отсутствующие (сверка по имени). */
 export const installPaperworkPresets = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ added: number }> => {
+  .handler(async ({ context }): Promise<{ added: number; names: string[] }> => {
     await assertDocumentsStaff(context as never);
     const { data: rows } = await context.supabase.from("paperwork_templates").select("name");
     const existing = new Set(((rows ?? []) as Row[]).map((r) => String(r.name ?? "").trim().toLowerCase()));
 
-    const toAdd = PW_PRESETS.filter((p) => !existing.has(p.name.trim().toLowerCase())).map((p) => ({
+    const missing = PW_PRESETS.filter((p) => !existing.has(p.name.trim().toLowerCase()));
+    const toAdd = missing.map((p) => ({
       company_profile_id: null,
       category: p.category,
       doc_type: p.doc_type,
@@ -290,11 +291,11 @@ export const installPaperworkPresets = createServerFn({ method: "POST" })
       is_archived: false,
       is_favorite: false,
     }));
-    if (!toAdd.length) return { added: 0 };
+    if (!toAdd.length) return { added: 0, names: [] };
 
     const { error } = await context.supabase.from("paperwork_templates").insert(toAdd);
     if (error) throw new Error(error.message);
-    return { added: toAdd.length };
+    return { added: toAdd.length, names: missing.map((p) => p.name) };
   });
 
 /** Новый документ из шаблона (или пустой). */
