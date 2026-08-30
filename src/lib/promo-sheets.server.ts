@@ -14,7 +14,7 @@ import {
   sheetsGateway,
 } from "@/lib/sheets-gateway.server";
 import { buildDocLayout, type DocColumnKey } from "@/lib/documents/doc-layout";
-import { resolveDocFont } from "@/lib/documents/doc-font";
+import { DOC_FONT_DOCX_NAME, resolveDocFont } from "@/lib/documents/doc-font";
 import type { PromoItem, PromoQuote } from "@/lib/promo-quote-model";
 
 export { SheetSyncError } from "@/lib/sheets-gateway.server";
@@ -78,7 +78,7 @@ const ALIGN: Record<string, string> = { left: "LEFT", center: "CENTER", right: "
 /** Полное описание листа: значения, формулы и оформление. */
 function buildSheetGrid(quote: PromoQuote, items: PromoItem[], opts: { companyLine?: string } = {}) {
   const layout = buildDocLayout(quote, items, opts);
-  const font = resolveDocFont(quote.font_family) === "ubuntu" ? "Ubuntu" : "Inter";
+  const font = DOC_FONT_DOCX_NAME[resolveDocFont(quote.font_family)];
   const visible = layout.columns.map((c) => c.key);
   const keys: string[] = [...visible, ...SERVICE_KEYS];
   const colOf = (key: string) => keys.indexOf(key);
