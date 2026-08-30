@@ -1,5 +1,6 @@
 // Модель раздела «Документы и шаблоны»: блоки документа, типы, категории,
 // нормализация строк БД. Модуль клиент-безопасный (используется и в PDF).
+import { normalizeDocFont, type DocFont } from "@/lib/documents/doc-font";
 import {
   DEFAULT_LOGO_LAYOUT,
   normalizeLogoLayout,
@@ -285,7 +286,7 @@ export type PwBlank = {
   footer: boolean;
   footerText: string;
   accentColor: string;
-  font: "brand" | "ubuntu";
+  font: DocFont;
   fontSizePt: number;
   marginXMm: number;
   marginTopMm: number;
@@ -419,7 +420,7 @@ export function normalizeBlank(raw: unknown): PwBlank {
     footer: r.footer !== false,
     footerText: str(r.footerText),
     accentColor: /^#[0-9a-f]{6}$/i.test(str(r.accentColor)) ? str(r.accentColor) : DEFAULT_BLANK.accentColor,
-    font: oneOf(["brand", "ubuntu"] as const, r.font, "brand"),
+    font: normalizeDocFont(r.font, "brand"),
     fontSizePt: num(r.fontSizePt, DEFAULT_BLANK.fontSizePt, 8, 16),
     marginXMm: num(r.marginXMm, DEFAULT_BLANK.marginXMm, 8, 40),
     marginTopMm: num(r.marginTopMm, DEFAULT_BLANK.marginTopMm, 8, 60),

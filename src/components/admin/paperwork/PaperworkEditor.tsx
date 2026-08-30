@@ -361,8 +361,8 @@ export function PaperworkEditor({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,540px)]">
-        <div className="space-y-4">
+      <div className="grid w-full min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,540px)]">
+        <div className="min-w-0 space-y-4">
           <Collapsible>
             <div className="rounded-lg border border-border bg-card">
               <CollapsibleTrigger className="flex w-full items-center justify-between p-3 text-sm">
@@ -435,7 +435,7 @@ export function PaperworkEditor({
           )}
         </div>
 
-        <div className="xl:sticky xl:top-4 xl:self-start">
+        <div className="min-w-0 xl:sticky xl:top-4 xl:self-start">
           <PwPreviewFrame
             html={previewHtml}
             className="overflow-hidden rounded-lg border border-border bg-muted/30"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DOC_PAGE_H, DOC_PAGE_W, fitScale } from "../fit-scale";
+import { DOC_PAGE_H, DOC_PAGE_W, fitScale, visibleWidth } from "../fit-scale";
 
 describe("fitScale", () => {
   it("вписывает лист по ширине узкой панели — лист не обрезается", () => {
@@ -59,6 +59,38 @@ describe("fitScale — потолок увеличения (maxBase)", () => {
     const inflated = fitScale({ boxW: 540 * 3, boxH: 900, pad: 16, maxBase: 1 });
     expect(inflated.scale).toBeLessThanOrEqual(1);
     expect(DOC_PAGE_W * normal.scale).toBeLessThanOrEqual(540);
+  });
+});
+
+describe("visibleWidth — реально видимая ширина панели", () => {
+  it("обрезка родителем с overflow:hidden уменьшает измерение", () => {
+    // Панель «заявляет» 540 px, но родитель показывает только 350.
+    const w = visibleWidth({
+      clientWidth: 540,
+      left: 0,
+      right: 540,
+      viewportWidth: 1440,
+      clipLeft: 0,
+      clipRight: 350,
+    });
+    expect(w).toBe(350);
+    expect(DOC_PAGE_W * fitScale({ boxW: w, boxH: 800, pad: 16, maxBase: 1 }).scale).toBeLessThanOrEqual(w);
+  });
+
+  it("панель, вылезшая за окно, меряется по видимой части", () => {
+    expect(visibleWidth({ clientWidth: 800, left: 600, right: 1400, viewportWidth: 1000 })).toBe(400);
+  });
+
+  it("нормальный случай не меняет измерение", () => {
+    expect(visibleWidth({ clientWidth: 520, left: 40, right: 560, viewportWidth: 1440 })).toBe(520);
+  });
+
+  it("лист никогда не шире видимой области при любых расхождениях", () => {
+    for (const clip of [280, 350, 520, 900]) {
+      const w = visibleWidth({ clientWidth: 1200, left: 0, right: 1200, viewportWidth: 1440, clipRight: clip });
+      const { scale } = fitScale({ boxW: Math.max(220, w), boxH: 800, pad: 16, maxBase: 1 });
+      expect(DOC_PAGE_W * scale).toBeLessThanOrEqual(Math.max(220, w));
+    }
   });
 });
 

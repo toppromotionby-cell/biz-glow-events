@@ -12,7 +12,8 @@ import {
 } from "./permissions";
 
 /** Роуты, которым право не нужно: сам лейаут и общий дашборд. */
-const NO_PERMISSION_ROUTES = new Set(["/admin", "/admin/"]);
+// Справка для сотрудников доступна всем сотрудникам — отдельного права нет.
+const NO_PERMISSION_ROUTES = new Set(["/admin", "/admin/", "/admin/help", "/admin/help/id"]);
 
 function adminRoutePaths(): string[] {
   return readdirSync("src/routes")

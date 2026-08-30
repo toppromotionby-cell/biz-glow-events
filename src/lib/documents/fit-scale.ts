@@ -46,3 +46,29 @@ export function fitScale(opts: {
   return { base, scale: clampScale(base * zoom, 0.1, 4) };
 }
 
+/**
+ * Фактически видимая ширина элемента: `clientWidth` может быть больше того,
+ * что реально видно (элемент вылез за родителя с `overflow:hidden` или за
+ * границу окна). Берём минимум, иначе масштаб превью завышается и лист
+ * обрезается справа.
+ */
+export function visibleWidth(opts: {
+  /** Собственная ширина элемента (clientWidth), px. */
+  clientWidth: number;
+  /** Координаты элемента (getBoundingClientRect). */
+  left: number;
+  right: number;
+  /** Ширина окна, px. */
+  viewportWidth: number;
+  /** Границы ближайшего обрезающего родителя, px (если известны). */
+  clipLeft?: number;
+  clipRight?: number;
+}): number {
+  const { clientWidth, left, right, viewportWidth } = opts;
+  const clipL = Math.max(0, opts.clipLeft ?? 0);
+  const clipR = Math.min(viewportWidth, opts.clipRight ?? viewportWidth);
+  const visible = Math.min(right, clipR, viewportWidth) - Math.max(left, clipL, 0);
+  const candidates = [clientWidth, visible].filter((n) => Number.isFinite(n) && n > 0);
+  return candidates.length ? Math.min(...candidates) : Math.max(0, clientWidth);
+}
+
