@@ -154,11 +154,14 @@ export function statementKindLabel(code: string | null | undefined): string {
 export const statementPresetId = (code: string) => `statement-${code}`;
 
 /** Шапка заявления: кому и от кого. */
-export function statementHeader(form: OrderForm, addressee: string, addresseeTitle: string): string {
+/** Шапка заявления: кому и от кого. */
+export function statementHeader(form: OrderForm): string {
   const p = applicant(form);
+  const title = s(form, "addresseeTitle") || "Директору";
+  const company = s(form, "company");
   const lines = [
-    `${addresseeTitle} {{Компания}}`,
-    fioDative(addressee),
+    `${title}${company ? ` ${company}` : ""}`,
+    s(form, "addressee") ? fioDative(s(form, "addressee")) : "",
     p.position ? `от ${positionGenitive(p.position)}` : "",
     fioGenitive(p.fullName),
     s(form, "address"),
@@ -166,6 +169,16 @@ export function statementHeader(form: OrderForm, addressee: string, addresseeTit
   ];
   return lines.filter(Boolean).join("\n");
 }
+
+/** Общие поля шапки заявления (одинаковы для всех видов). */
+export const STATEMENT_COMMON_FIELDS: OrderField[] = [
+  { key: "addresseeTitle", label: "Кому (должность)", type: "text", defaultValue: "Директору" },
+  { key: "company", label: "Организация", type: "text", hint: "ООО «ТОП ПРОМОУШН»" },
+  { key: "addressee", label: "ФИО руководителя", type: "text", required: true },
+  { key: "address", label: "Адрес заявителя", type: "text" },
+  { key: "phone", label: "Телефон заявителя", type: "text" },
+];
+
 
 /* --------------------------- Блоки шаблона --------------------------- */
 
