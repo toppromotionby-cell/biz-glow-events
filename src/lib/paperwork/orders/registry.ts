@@ -128,6 +128,10 @@ export function daysBetween(fromIso: string, toIso: string): number {
   return Math.round((b - a) / 86_400_000) + 1;
 }
 
+/** Убираем двойные точки и пробелы после сборки предложения. */
+const tidy = (text: string): string =>
+  text.replace(/\s+([.,])/g, "$1").replace(/\.{2,}/g, ".").replace(/[ \t]{2,}/g, " ").trim();
+
 const first = (form: OrderForm): OrderPerson =>
   people(form)[0] ?? { fullName: s(form, "fullName"), position: s(form, "position") };
 
@@ -190,7 +194,7 @@ export const ORDER_KINDS: OrderKind[] = [
           : "") +
         ".";
       return {
-        "Текст приказа": text,
+        "Текст приказа": tidy(text),
         "Основание": s(form, "basis"),
         "Работник": p.fullName,
         "Ознакомлен": ackNames([p]),
