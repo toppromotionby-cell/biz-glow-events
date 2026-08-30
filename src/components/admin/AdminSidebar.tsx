@@ -7,15 +7,17 @@ import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
-  Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, FileCog, Share2,
+  Tag, ToggleRight, LogOut, ChevronDown, Mail, Bell, Building2, Share2,
   FileStack,
   FileSignature,
   Brain,
   Layers,
   Presentation,
   ShieldCheck,
-  BookOpen,
-
+  LayoutTemplate,
+  Users,
+  Inbox,
+  Send,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -38,10 +40,10 @@ type NavGroup = { label: string; items: NavItem[] };
 
 const GROUPS: NavGroup[] = [
   {
-    label: "Операции",
+    label: "Работа",
     items: [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
-      { to: "/admin/orders", label: "Заказы и запросы", icon: ShoppingCart, badgeKey: "newOrders", perm: "orders.manage" },
+      { to: "/admin/orders", label: "Заявки и заказы", icon: ShoppingCart, badgeKey: "newOrders", perm: "orders.manage" },
       { to: "/admin/calendar", label: "Календарь", icon: Calendar, perm: "orders.manage" },
     ],
   },
@@ -50,56 +52,50 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/documents", label: "Все КП", icon: FileStack, exact: true, perm: "documents.manage" },
       { to: "/admin/documents/presentations", label: "Презентации", icon: Presentation, matchPrefix: "/admin/documents/presentations", perm: "documents.manage" },
-      { to: "/admin/paperwork", label: "Документы и шаблоны", icon: FileSignature, matchPrefix: "/admin/paperwork", perm: "documents.manage" },
-      { to: "/admin/documents/knowledge", label: "Информационная база", icon: Brain, perm: "documents.knowledge" },
-      { to: "/admin/settings/documents", label: "Компании", icon: FileCog, perm: "documents.settings" },
-
     ],
   },
   {
-    label: "Каталог",
+    label: "Документы",
+    items: [
+      { to: "/admin/paperwork", label: "Документы компании", icon: FileSignature, exact: true, perm: "documents.manage" },
+      { to: "/admin/paperwork/type/payroll", label: "Кадровые документы", icon: Users, matchPrefix: "/admin/paperwork/type/payroll", perm: "documents.manage" },
+      { to: "/admin/paperwork/templates", label: "Шаблоны документов", icon: LayoutTemplate, perm: "documents.manage" },
+      { to: "/admin/documents/knowledge", label: "Информационная база", icon: Brain, perm: "documents.knowledge" },
+    ],
+  },
+  {
+    label: "Сайт",
     items: [
       { to: "/admin/catalog/zones", label: "Каталог", icon: Package, matchPrefix: "/admin/catalog/", perm: "content.manage" },
-      { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Layers, perm: "content.manage" },
-    ],
-  },
-  {
-    label: "Контент",
-    items: [
+      { to: "/admin/catalog-structure", label: "Структура каталога", icon: Layers, perm: "content.manage" },
       { to: "/admin/cases", label: "Кейсы", icon: Trophy, perm: "content.manage" },
       { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials", perm: "content.manage" },
       { to: "/admin/blog", label: "Блог", icon: Newspaper, perm: "content.manage" },
+      { to: "/admin/sections", label: "Блоки на сайте", icon: ToggleRight, perm: "system.manage" },
     ],
   },
-
-
   {
-    label: "Маркетинг",
+    label: "Почта и маркетинг",
     items: [
-      { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail, perm: "marketing.manage" },
-      { to: "/admin/mail-accounts", label: "Почтовые ящики", icon: Mail, perm: "marketing.manage" },
+      { to: "/admin/mail-accounts", label: "Почтовые ящики", icon: Inbox, perm: "marketing.manage" },
+      { to: "/admin/campaigns", label: "Email-рассылки", icon: Send, perm: "marketing.manage" },
+      { to: "/admin/settings/emails", label: "Шаблоны писем", icon: Mail, perm: "system.manage" },
       { to: "/admin/promo", label: "Промокоды", icon: Tag, perm: "marketing.manage" },
     ],
   },
   {
-    label: "Система",
+    label: "Настройки",
     items: [
+      { to: "/admin/settings/documents", label: "Компании и реквизиты", icon: Building2, perm: "documents.settings" },
       { to: "/admin/users", label: "Пользователи", icon: UserCog, perm: "users.manage" },
-      { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight, perm: "system.manage" },
       { to: "/admin/notifications", label: "Уведомления", icon: Bell, perm: "system.manage" },
-      { to: "/admin/settings/emails", label: "Шаблоны писем", icon: Mail, perm: "system.manage" },
       { to: "/admin/settings/social", label: "Соцсети", icon: Share2, perm: "system.manage" },
-      { to: "/admin/settings/hygiene", label: "Гигиена данных", icon: ShieldCheck, perm: "system.manage" },
+      { to: "/admin/settings/hygiene", label: "Чистка данных", icon: ShieldCheck, perm: "system.manage" },
       { to: "/admin/audit", label: "Аудит", icon: FileText, perm: "audit.view" },
     ],
   },
-  {
-    label: "Помощь",
-    items: [
-      { to: "/admin/help", label: "Справка для сотрудников", icon: BookOpen, matchPrefix: "/admin/help" },
-    ],
-  },
 ];
+
 
 function useSidebarBadges() {
   return useQuery({
