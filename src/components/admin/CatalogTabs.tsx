@@ -14,7 +14,7 @@ export function CatalogTabs() {
     })),
     {
       to: "/admin/catalog-structure",
-      label: "Разделы и направления",
+      label: "Структура каталога",
       active: pathname.startsWith("/admin/catalog-structure"),
     },
   ];

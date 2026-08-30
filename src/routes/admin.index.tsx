@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ShoppingCart, Users, CalendarDays, BadgeDollarSign, Newspaper, ArrowRight } from "lucide-react";
+import { ShoppingCart, Users, CalendarDays, BadgeDollarSign, Newspaper, ArrowRight, FileText, Presentation, FileSignature, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
@@ -30,6 +31,13 @@ const STATUS_LABEL: Record<string, string> = {
   paid: "Оплачено", completed: "Завершено", cancelled: "Отменено",
 };
 const PIE_COLORS = ["#7c3aed", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#3b82f6", "#84cc16"];
+
+const QUICK_ACTIONS = [
+  { to: "/admin/documents", label: "Создать КП", icon: FileText },
+  { to: "/admin/documents/presentations", label: "Создать презентацию", icon: Presentation },
+  { to: "/admin/paperwork", label: "Создать документ", icon: FileSignature },
+  { to: "/admin/orders", label: "Новая заявка", icon: Plus },
+] as const;
 
 function AdminDashboard() {
   // Этап 6: дашборд показывает операционные метрики только тем ролям, которым
@@ -113,6 +121,17 @@ function AdminDashboard() {
       </header>
 
       {DEV_OVERLAYS_ENABLED && <ProdHealthBanner />}
+
+      <div className="flex flex-wrap gap-2">
+        {QUICK_ACTIONS.map((a) => (
+          <Button key={a.label} asChild variant="outline" className="h-10">
+            <Link to={a.to}>
+              <a.icon className="mr-2 h-4 w-4" />
+              {a.label}
+            </Link>
+          </Button>
+        ))}
+      </div>
 
       {!canOrders && !rolesLoading && (
         <div className="glass rounded-2xl p-5 text-sm text-muted-foreground">

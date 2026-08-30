@@ -20,7 +20,7 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
-import { PW_DOC_TYPE_LABELS, PW_STATUS_LABELS } from "@/lib/paperwork/model";
+import { PW_CATEGORIES, PW_CATEGORY_LABELS, PW_DOC_TYPE_LABELS, PW_STATUS_LABELS } from "@/lib/paperwork/model";
 import { PW_KIND_LIST } from "@/lib/paperwork/kinds";
 import { deletePaperworkDocument, listPaperworkDocuments } from "@/lib/paperwork.functions";
 
@@ -73,7 +73,7 @@ function Page() {
       {dialog}
       <AdminPageHeader
         icon={<FileSignature className="h-5 w-5" />}
-        title="Документы"
+        title="Документы компании"
         subtitle="Письма, приказы, доверенности, счета и акты на фирменных бланках компаний"
         action={
           <Button variant="outline" asChild>
@@ -84,26 +84,30 @@ function Page() {
         }
       />
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Виды документов</h2>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {PW_KIND_LIST.map((k) => (
-            <Link
-              key={k.type}
-              to="/admin/paperwork/type/$type"
-              params={{ type: k.type }}
-              className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary hover:bg-muted/40"
-            >
-              <span className="flex items-center justify-between gap-2 text-sm font-medium">
-                {k.label}
-                <span className="text-xs text-muted-foreground">{counts[k.type] ?? 0}</span>
-              </span>
-              <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
-                {k.description}
-              </span>
-            </Link>
-          ))}
-        </div>
+      <section className="space-y-4">
+        {PW_CATEGORIES.filter((cat) => PW_KIND_LIST.some((k) => k.category === cat)).map((cat) => (
+          <div key={cat} className="space-y-2">
+            <h2 className="text-sm font-medium text-muted-foreground">{PW_CATEGORY_LABELS[cat]}</h2>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {PW_KIND_LIST.filter((k) => k.category === cat).map((k) => (
+                <Link
+                  key={k.type}
+                  to="/admin/paperwork/type/$type"
+                  params={{ type: k.type }}
+                  className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary hover:bg-muted/40"
+                >
+                  <span className="flex items-center justify-between gap-2 text-sm font-medium">
+                    {k.label}
+                    <span className="text-xs text-muted-foreground">{counts[k.type] ?? 0}</span>
+                  </span>
+                  <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
+                    {k.description}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="space-y-3">

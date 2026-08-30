@@ -1,6 +1,6 @@
 // Admin layout: доступ по правам роли (admin/manager/accountant/content_editor).
 // Сайдбар сворачивается (cookie от SidebarProvider), на мобильных — off-canvas.
-import { createFileRoute, Outlet, useNavigate, useLocation, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useLocation, redirect, Link } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { RolesProvider, useRoles } from "@/hooks/use-roles";
 import { useAuth } from "@/hooks/use-auth";
@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Sparkles } from "lucide-react";
+import { HelpCircle, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdminCommandPalette, CommandPaletteTrigger } from "@/components/admin/AdminCommandPalette";
 import { DocumentViewerProvider } from "@/hooks/use-document-viewer";
@@ -49,23 +50,30 @@ export const Route = createFileRoute("/admin")({
 
 const CRUMBS: { match: RegExp; label: string }[] = [
   { match: /^\/admin\/?$/, label: "Дашборд" },
-  { match: /^\/admin\/orders/, label: "Заказы" },
+  { match: /^\/admin\/orders/, label: "Заявки и заказы" },
   { match: /^\/admin\/calendar/, label: "Календарь" },
-  { match: /^\/admin\/catalog/, label: "Наполнение" },
-  { match: /^\/admin\/documents\/quotes/, label: "Коммерческие предложения" },
+  { match: /^\/admin\/catalog-structure/, label: "Структура каталога" },
+  { match: /^\/admin\/catalog/, label: "Каталог" },
+  { match: /^\/admin\/documents\/presentations/, label: "Презентации" },
+  { match: /^\/admin\/documents\/knowledge/, label: "Информационная база" },
   { match: /^\/admin\/documents/, label: "Коммерческие предложения" },
+  { match: /^\/admin\/paperwork\/templates/, label: "Шаблоны документов" },
+  { match: /^\/admin\/paperwork\/type\/(payroll|staffing|timesheet)/, label: "Кадровые документы" },
+  { match: /^\/admin\/paperwork/, label: "Документы компании" },
   { match: /^\/admin\/cases/, label: "Кейсы" },
   { match: /^\/admin\/testimonials/, label: "Отзывы" },
   { match: /^\/admin\/blog/, label: "Блог" },
-  
   { match: /^\/admin\/promo/, label: "Промокоды" },
   { match: /^\/admin\/campaigns/, label: "Email-рассылки" },
   { match: /^\/admin\/mail-accounts/, label: "Почтовые ящики" },
-  
-  
-  { match: /^\/admin\/users/, label: "Пользователи" },
-  { match: /^\/admin\/sections/, label: "Видимость секций" },
+  { match: /^\/admin\/settings\/documents/, label: "Компании и реквизиты" },
   { match: /^\/admin\/settings\/emails/, label: "Шаблоны писем" },
+  { match: /^\/admin\/settings\/social/, label: "Соцсети" },
+  { match: /^\/admin\/settings\/hygiene/, label: "Чистка данных" },
+  { match: /^\/admin\/notifications/, label: "Уведомления" },
+  { match: /^\/admin\/users/, label: "Пользователи" },
+  { match: /^\/admin\/sections/, label: "Блоки на сайте" },
+  { match: /^\/admin\/help/, label: "Справка" },
   { match: /^\/admin\/audit/, label: "Аудит" },
 ];
 
@@ -132,6 +140,11 @@ function AdminLayoutContent() {
             </div>
             <div className="ml-auto flex items-center gap-2">
               <CommandPaletteTrigger />
+              <Button asChild variant="ghost" size="icon" className="h-8 w-8" aria-label="Справка">
+                <Link to="/admin/help">
+                  <HelpCircle className="h-4 w-4" />
+                </Link>
+              </Button>
               <ThemeToggle />
             </div>
           </header>

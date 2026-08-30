@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/admin/sections")({
-  head: () => ({ meta: [{ title: "Видимость секций — admin" }] }),
+  head: () => ({ meta: [{ title: "Блоки на сайте — admin" }] }),
   component: SectionsAdmin,
 });
 
@@ -70,7 +70,7 @@ function SectionsAdmin() {
   return (
     <div className="max-w-3xl space-y-6">
       <header>
-        <h1 className="text-2xl font-display font-bold">Видимость секций</h1>
+        <h1 className="text-2xl font-display font-bold">Блоки на сайте</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Включайте и выключайте блоки сайта. Скрытые секции невидимы посетителям,
           но видны вам с пометкой и прозрачностью.
