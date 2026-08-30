@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
+import { LoanLenderDialog } from "@/components/admin/paperwork/LoanLenderDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
