@@ -127,6 +127,12 @@ function Page() {
   return (
     <div className="space-y-5">
       {dialog}
+      <LoanLenderDialog
+        open={lenderOpen}
+        onOpenChange={setLenderOpen}
+        busy={createFromPreset.isPending}
+        onPick={(presetId) => createFromPreset.mutate(presetId)}
+      />
       <Link
         to="/admin/paperwork"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
@@ -139,7 +145,10 @@ function Page() {
         title={kind.label}
         subtitle={kind.description}
         action={
-          <Button onClick={() => create.mutate(undefined)} disabled={create.isPending}>
+          <Button
+            onClick={() => (isLoan ? setLenderOpen(true) : create.mutate(undefined))}
+            disabled={create.isPending}
+          >
             {create.isPending ? (
               <Loader2 className="mr-1 h-4 w-4 animate-spin" />
             ) : (
