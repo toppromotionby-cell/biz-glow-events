@@ -9,6 +9,7 @@ import {
   HeadingLevel,
   LevelFormat,
   Packer,
+  PageOrientation,
   Paragraph,
   Table,
   TableCell,
@@ -259,7 +260,6 @@ export async function buildPaperworkDocx(opts: {
   const { doc, blocks, company } = opts;
   const landscape = opts.landscape === true;
   const pageWmm = landscape ? 297 : 210;
-  const pageHmm = landscape ? 210 : 297;
   const blank = fittedBlank(opts.blocks, opts.blank, landscape);
   // Шрифт документа: в DOCX пишем настоящее имя (Calibri / Times New Roman).
   const font = DOC_FONT_DOCX_NAME[blank.font];
@@ -364,8 +364,10 @@ export async function buildPaperworkDocx(opts: {
         properties: {
           page: {
             size: {
-              width: convertMillimetersToTwip(pageWmm),
-              height: convertMillimetersToTwip(pageHmm),
+              // docx-js сам меняет местами стороны при альбомной ориентации —
+              // передаём размеры портретного A4.
+              width: convertMillimetersToTwip(210),
+              height: convertMillimetersToTwip(297),
               orientation: landscape ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
             },
             margin: {

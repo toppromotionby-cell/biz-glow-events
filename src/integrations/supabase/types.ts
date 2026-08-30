@@ -1231,6 +1231,77 @@ export type Database = {
           },
         ]
       }
+      hr_employees: {
+        Row: {
+          company_profile_id: string | null
+          created_at: string
+          fired_on: string | null
+          full_name: string
+          hired_on: string | null
+          id: string
+          is_active: boolean
+          notes: string
+          position: string
+          position_code: string
+          raise_pct: number
+          rate: number
+          short_name: string
+          sort_order: number
+          tab_number: string
+          tariff: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          company_profile_id?: string | null
+          created_at?: string
+          fired_on?: string | null
+          full_name: string
+          hired_on?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string
+          position?: string
+          position_code?: string
+          raise_pct?: number
+          rate?: number
+          short_name?: string
+          sort_order?: number
+          tab_number?: string
+          tariff?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          company_profile_id?: string | null
+          created_at?: string
+          fired_on?: string | null
+          full_name?: string
+          hired_on?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string
+          position?: string
+          position_code?: string
+          raise_pct?: number
+          rate?: number
+          short_name?: string
+          sort_order?: number
+          tab_number?: string
+          tariff?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_employees_company_profile_id_fkey"
+            columns: ["company_profile_id"]
+            isOneToOne: false
+            referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mail_account_checks: {
         Row: {
           account_id: string
