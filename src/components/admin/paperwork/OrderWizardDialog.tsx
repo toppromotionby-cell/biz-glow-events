@@ -66,12 +66,6 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
   const kinds = useMemo(() => orderKindsOf(journal), [journal]);
   const kind: OrderKind | undefined = kinds.find((k) => k.code === kindCode);
 
-  const employees = useQuery({
-    queryKey: [...adminKeys.paperwork, "hr-employees"],
-    queryFn: () => useServerFnHrList(),
-    enabled: false,
-  });
-
   // Список работников (реестр кадров) — источник ФИО и должностей.
   const listEmployees = useServerFn(listHrEmployees);
   const emps = useQuery({
@@ -320,9 +314,4 @@ export function OrderWizardDialog({ open, onOpenChange, busy, onSubmit, onBlank 
       </DialogContent>
     </Dialog>
   );
-}
-
-/** Заглушка: список кадров грузится отдельным запросом ниже. */
-function useServerFnHrList() {
-  return [] as never[];
 }
