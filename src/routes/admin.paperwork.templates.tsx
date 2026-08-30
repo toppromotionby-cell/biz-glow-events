@@ -14,6 +14,10 @@ import { PW_CATEGORIES, PW_CATEGORY_LABELS } from "@/lib/paperwork/model";
 import {
   createDocumentFromTemplate, deletePaperworkTemplate, installPaperworkPresets, listPaperworkTemplates,
 } from "@/lib/paperwork.functions";
+import { PW_PRESETS } from "@/lib/paperwork/preset-templates";
+
+const BUILTIN_NAMES = new Set(PW_PRESETS.map((p) => p.name.trim().toLowerCase()));
+
 
 export const Route = createFileRoute("/admin/paperwork/templates")({
   head: () => ({ meta: [{ title: "Шаблоны документов — админка" }] }),
