@@ -255,6 +255,9 @@ export const PW_PRESETS: PwPreset[] = [
   ...ATTORNEY_PRESETS,
   ...WORKACT_PRESETS,
   ...ORDER_PRESETS,
+  ...PROTOCOL_PRESETS,
+  ...STATEMENT_PRESETS,
+
 ];
 
 export function presetById(id: string): PwPreset | null {
