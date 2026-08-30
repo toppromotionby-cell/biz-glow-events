@@ -10,6 +10,7 @@ import {
   LevelFormat,
   Packer,
   PageOrientation,
+  PageBreak,
   Paragraph,
   Table,
   TableCell,
@@ -244,6 +245,8 @@ function blockParagraphs(
     }
     case "spacer":
       return [new Paragraph({ spacing: { after: Math.round(b.size * 20) }, children: [] })];
+    case "pagebreak":
+      return [new Paragraph({ children: [new PageBreak()] })];
     default:
       return [textParagraph(b.text, { align: b.align, size: base, indent: b.indent })];
   }

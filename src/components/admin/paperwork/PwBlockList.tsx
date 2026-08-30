@@ -415,7 +415,7 @@ const BlockCard = memo(function BlockCard({
 const BLOCK_GROUPS: { label: string; types: PwBlockType[] }[] = [
   { label: "Текст", types: ["heading", "paragraph", "list", "note"] },
   { label: "Таблицы", types: ["table", "lineitems"] },
-  { label: "Реквизиты", types: ["recipient", "parties", "signature", "spacer"] },
+  { label: "Реквизиты", types: ["recipient", "parties", "signature", "spacer", "pagebreak"] },
 ];
 
 export function PwBlockList({

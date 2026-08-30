@@ -520,6 +520,9 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
       case "spacer":
         ctx.y -= b.size;
         break;
+      case "pagebreak":
+        newPage(ctx);
+        break;
       default:
         paragraph(ctx, b.text, { align: b.align, indent: b.indent });
         ctx.y -= 4;
