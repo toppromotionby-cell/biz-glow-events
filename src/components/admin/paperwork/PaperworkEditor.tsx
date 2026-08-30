@@ -435,7 +435,7 @@ export function PaperworkEditor({
           )}
         </div>
 
-        <div className="xl:sticky xl:top-4 xl:self-start">
+        <div className="min-w-0 xl:sticky xl:top-4 xl:self-start">
           <PwPreviewFrame
             html={previewHtml}
             className="overflow-hidden rounded-lg border border-border bg-muted/30"
