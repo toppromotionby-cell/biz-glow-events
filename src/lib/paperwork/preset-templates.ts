@@ -8,14 +8,10 @@ import {
   timesheetHeader,
 } from "@/lib/paperwork/hr/tables";
 
-export type PwPreset = {
-  id: string;
-  name: string;
-  description: string;
-  category: PwCategory;
-  doc_type: PwDocType;
-  blocks: PwBlock[];
-};
+import { LOAN_PRESETS } from "@/lib/paperwork/loan-presets";
+export type { PwPreset } from "@/lib/paperwork/preset-types";
+import type { PwPreset } from "@/lib/paperwork/preset-types";
+
 
 const B = {
   h: (text: string, align: "left" | "center" = "center") => normalizeBlock({ type: "heading", text, align }),
