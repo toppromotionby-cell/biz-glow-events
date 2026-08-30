@@ -10,6 +10,7 @@ import {
 
 import { LOAN_PRESETS } from "@/lib/paperwork/loan-presets";
 import { ATTORNEY_PRESETS } from "@/lib/paperwork/attorney-presets";
+import { WORKACT_PRESETS } from "@/lib/paperwork/workact-preset";
 export type { PwPreset } from "@/lib/paperwork/preset-types";
 import type { PwPreset } from "@/lib/paperwork/preset-types";
 
@@ -247,7 +248,9 @@ export const PW_PRESETS: PwPreset[] = [
     blocks: [B.h("{{Название документа}}"), B.p("{{Текст документа}}")],
   },
   ...LOAN_PRESETS,
+  ...LOAN_PRESETS,
   ...ATTORNEY_PRESETS,
+  ...WORKACT_PRESETS,
 ];
 
 export function presetById(id: string): PwPreset | null {
