@@ -11,26 +11,47 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Calendar, Package, FileText,
   Newspaper, UserCog, Trophy, MessageSquareQuote,
-  Tag, ToggleRight, Mail, Search, Box,
+  Tag, ToggleRight, Mail, Search, Box, Presentation, FileSignature,
+  Brain, Layers, Building2, Bell, Share2, ShieldCheck, LayoutTemplate,
+  Inbox, Send, BookOpen, Users, Plus,
   type LucideIcon,
 } from "lucide-react";
 
 const NAV: { to: string; label: string; icon: LucideIcon; hint?: string }[] = [
   { to: "/admin", label: "Дашборд", icon: LayoutDashboard, hint: "g d" },
-  { to: "/admin/orders", label: "Заказы и запросы", icon: ShoppingCart, hint: "g o" },
+  { to: "/admin/orders", label: "Заявки и заказы", icon: ShoppingCart, hint: "g o" },
   { to: "/admin/calendar", label: "Календарь", icon: Calendar },
-  { to: "/admin/documents", label: "Коммерческие предложения", icon: FileText },
+  { to: "/admin/documents", label: "Все КП", icon: FileText },
+  { to: "/admin/documents/presentations", label: "Презентации", icon: Presentation },
+  { to: "/admin/paperwork", label: "Документы компании", icon: FileSignature },
+  { to: "/admin/paperwork/type/payroll", label: "Кадровые документы", icon: Users },
+  { to: "/admin/paperwork/templates", label: "Шаблоны документов", icon: LayoutTemplate },
+  { to: "/admin/documents/knowledge", label: "Информационная база", icon: Brain },
   { to: "/admin/catalog/zones", label: "Каталог", icon: Package, hint: "g c" },
-  { to: "/admin/catalog-structure", label: "Разделы и направления", icon: Package },
+  { to: "/admin/catalog-structure", label: "Структура каталога", icon: Layers },
   { to: "/admin/cases", label: "Кейсы", icon: Trophy },
   { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote },
   { to: "/admin/blog", label: "Блог", icon: Newspaper },
-
-  { to: "/admin/campaigns", label: "Email-рассылки", icon: Mail },
+  { to: "/admin/sections", label: "Блоки на сайте", icon: ToggleRight },
+  { to: "/admin/mail-accounts", label: "Почтовые ящики", icon: Inbox },
+  { to: "/admin/campaigns", label: "Email-рассылки", icon: Send },
+  { to: "/admin/settings/emails", label: "Шаблоны писем", icon: Mail },
   { to: "/admin/promo", label: "Промокоды", icon: Tag },
+  { to: "/admin/settings/documents", label: "Компании и реквизиты", icon: Building2 },
   { to: "/admin/users", label: "Пользователи", icon: UserCog },
-  { to: "/admin/sections", label: "Видимость секций", icon: ToggleRight },
+  { to: "/admin/notifications", label: "Уведомления", icon: Bell },
+  { to: "/admin/settings/social", label: "Соцсети", icon: Share2 },
+  { to: "/admin/settings/hygiene", label: "Чистка данных", icon: ShieldCheck },
   { to: "/admin/audit", label: "Аудит", icon: FileText },
+  { to: "/admin/help", label: "Справка", icon: BookOpen },
+];
+
+// Быстрые действия — создание частых сущностей прямо из палитры.
+const ACTIONS: { to: string; label: string; icon: LucideIcon }[] = [
+  { to: "/admin/documents", label: "Создать КП", icon: FileText },
+  { to: "/admin/documents/presentations", label: "Создать презентацию", icon: Presentation },
+  { to: "/admin/paperwork", label: "Создать документ", icon: FileSignature },
+  { to: "/admin/orders", label: "Новая заявка", icon: Plus },
 ];
 
 
