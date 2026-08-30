@@ -119,7 +119,12 @@ function Page() {
               <LayoutTemplate className="mt-0.5 h-4 w-4 text-primary" />
               <div className="min-w-0">
                 <h3 className="truncate font-medium">{t.name}</h3>
-                <p className="text-xs text-muted-foreground">{PW_CATEGORY_LABELS[t.category]}</p>
+                <p className="text-xs text-muted-foreground">
+                  {PW_CATEGORY_LABELS[t.category]}
+                  {BUILTIN_NAMES.has(t.name.trim().toLowerCase()) && (
+                    <span className="ml-2 rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide">Встроенный</span>
+                  )}
+                </p>
               </div>
               {t.is_favorite && <Star className="ml-auto h-4 w-4 text-primary" />}
             </div>
