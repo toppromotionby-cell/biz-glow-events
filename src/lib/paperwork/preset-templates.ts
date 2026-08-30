@@ -12,6 +12,9 @@ import { LOAN_PRESETS } from "@/lib/paperwork/loan-presets";
 import { ATTORNEY_PRESETS } from "@/lib/paperwork/attorney-presets";
 import { WORKACT_PRESETS } from "@/lib/paperwork/workact-preset";
 import { ORDER_PRESETS } from "@/lib/paperwork/order-presets";
+import { PROTOCOL_PRESETS } from "@/lib/paperwork/protocol-presets";
+import { STATEMENT_PRESETS } from "@/lib/paperwork/statement-presets";
+
 export type { PwPreset } from "@/lib/paperwork/preset-types";
 import type { PwPreset } from "@/lib/paperwork/preset-types";
 
