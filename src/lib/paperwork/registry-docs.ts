@@ -63,6 +63,10 @@ export type RegistrySpec = {
   kindLabel: (code: string | null | undefined) => string;
   presetId: (code: string) => string;
   blocksOf: (code: string) => PwBlock[] | null;
+  /** Поля мастера для вида (общие + специфичные). */
+  fieldsOf: (code: string) => OrderField[];
+  /** Значения переменных документа по данным мастера. */
+  valuesOf: (code: string, form: OrderForm) => Record<string, string>;
   /** Нумеруется ли документ автоматически. */
   numbered: boolean;
   /** Название документа по виду и номеру. */
@@ -94,6 +98,8 @@ const ORDER_SPEC: RegistrySpec = {
     const kind = ORDER_KIND_MAP[code];
     return kind ? orderBlocks(kind) : null;
   },
+  fieldsOf: (code) => ORDER_KIND_MAP[code]?.fields ?? [],
+  valuesOf: (code, form) => ORDER_KIND_MAP[code]?.buildValues(form) ?? {},
   numbered: true,
   titleOf: (code, number) =>
     `Приказ №${number} — ${orderKindLabel(code).replace(/^О\s/, "о ")}`,
@@ -119,6 +125,11 @@ const PROTOCOL_SPEC: RegistrySpec = {
     const kind = PROTOCOL_KIND_MAP[code];
     return kind ? protocolBlocks(kind) : null;
   },
+  fieldsOf: (code) => [...PROTOCOL_COMMON_FIELDS, ...(PROTOCOL_KIND_MAP[code]?.fields ?? [])],
+  valuesOf: (code, form) => {
+    const kind = PROTOCOL_KIND_MAP[code];
+    return kind ? buildProtocolValues(kind, form) : {};
+  },
   numbered: true,
   titleOf: (code, number) => `Протокол №${number} — ${protocolKindLabel(code).replace(/^О\s/, "о ")}`,
 };
@@ -142,6 +153,11 @@ const STATEMENT_SPEC: RegistrySpec = {
   blocksOf: (code) => {
     const kind = STATEMENT_KIND_MAP[code];
     return kind ? statementBlocks(kind) : null;
+  },
+  fieldsOf: (code) => [...STATEMENT_COMMON_FIELDS, ...(STATEMENT_KIND_MAP[code]?.fields ?? [])],
+  valuesOf: (code, form) => {
+    const kind = STATEMENT_KIND_MAP[code];
+    return kind ? buildStatementValues(kind, form) : {};
   },
   numbered: false,
   titleOf: (code, _number) => `Заявление — ${statementKindLabel(code).replace(/^О\s/, "о ")}`,
