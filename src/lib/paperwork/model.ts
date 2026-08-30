@@ -1,6 +1,6 @@
 // Модель раздела «Документы и шаблоны»: блоки документа, типы, категории,
-import { normalizeDocFont, type DocFont } from "@/lib/documents/doc-font";
 // нормализация строк БД. Модуль клиент-безопасный (используется и в PDF).
+import { normalizeDocFont, type DocFont } from "@/lib/documents/doc-font";
 import {
   DEFAULT_LOGO_LAYOUT,
   normalizeLogoLayout,
