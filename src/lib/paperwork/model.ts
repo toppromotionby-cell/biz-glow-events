@@ -62,6 +62,9 @@ export type PwDocType = (typeof PW_DOC_TYPES)[number];
 export const PW_DOC_TYPE_LABELS: Record<PwDocType, string> = {
   letter: "Письмо",
   order: "Приказ",
+  protocol: "Протокол общего собрания",
+  statement: "Заявление работника",
+
   attorney: "Доверенность",
   certificate: "Справка",
   notice: "Уведомление",
