@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, LayoutTemplate, Sparkles, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, LayoutTemplate, RefreshCw, Sparkles, Star, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,14 +42,22 @@ function Page() {
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.paperworkTemplates }),
   });
 
-  // Встроенные шаблоны ставятся сами при первом открытии каталога.
+  // Недостающие встроенные шаблоны доустанавливаются при открытии каталога.
   useEffect(() => {
     if (installed.current) return;
-    if (category !== "all" || templates.isLoading || !templates.data) return;
-    if (templates.data.length) return;
     installed.current = true;
     install.mutate();
-  }, [category, templates.data, templates.isLoading, install]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refreshPresets = useMutation({
+    mutationFn: () => installPresets({}),
+    onSuccess: ({ added, names }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.paperworkTemplates });
+      toast.success(added ? `Добавлено шаблонов: ${added} — ${names.join(", ")}` : "Все встроенные шаблоны уже установлены");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const create = useMutation({
     mutationFn: (templateId: string) => createDoc({ data: { templateId } }),
@@ -79,17 +87,28 @@ function Page() {
       <AdminPageHeader
         icon={<LayoutTemplate className="h-5 w-5" />}
         title="Шаблоны документов"
-        subtitle="Готовые заготовки: письма, приказы, доверенности, справки и финансовые формы"
+        subtitle="Готовые заготовки: письма, приказы, доверенности, справки, кадровые и финансовые формы"
         action={
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все категории</SelectItem>
-              {PW_CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{PW_CATEGORY_LABELS[c]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refreshPresets.mutate()}
+              disabled={refreshPresets.isPending || install.isPending}
+            >
+              <RefreshCw className={`mr-1 h-4 w-4 ${refreshPresets.isPending ? "animate-spin" : ""}`} />
+              Обновить встроенные
+            </Button>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все категории</SelectItem>
+                {PW_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{PW_CATEGORY_LABELS[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 
@@ -100,7 +119,12 @@ function Page() {
               <LayoutTemplate className="mt-0.5 h-4 w-4 text-primary" />
               <div className="min-w-0">
                 <h3 className="truncate font-medium">{t.name}</h3>
-                <p className="text-xs text-muted-foreground">{PW_CATEGORY_LABELS[t.category]}</p>
+                <p className="text-xs text-muted-foreground">
+                  {PW_CATEGORY_LABELS[t.category]}
+                  {BUILTIN_NAMES.has(t.name.trim().toLowerCase()) && (
+                    <span className="ml-2 rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide">Встроенный</span>
+                  )}
+                </p>
               </div>
               {t.is_favorite && <Star className="ml-auto h-4 w-4 text-primary" />}
             </div>
