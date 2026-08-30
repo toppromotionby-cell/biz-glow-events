@@ -11,8 +11,12 @@ import {
   orderBlocks,
   orderKindLabel,
   orderPresetId,
+  type OrderField,
+  type OrderForm,
 } from "@/lib/paperwork/orders/registry";
 import {
+  buildProtocolValues,
+  PROTOCOL_COMMON_FIELDS,
   PROTOCOL_KINDS,
   PROTOCOL_KIND_MAP,
   protocolBlocks,
@@ -20,12 +24,15 @@ import {
   protocolPresetId,
 } from "@/lib/paperwork/protocols/registry";
 import {
+  buildStatementValues,
+  STATEMENT_COMMON_FIELDS,
   STATEMENT_KINDS,
   STATEMENT_KIND_MAP,
   statementBlocks,
   statementKindLabel,
   statementPresetId,
 } from "@/lib/paperwork/statements/registry";
+
 
 export const REGISTRY_DOC_TYPES = ["order", "protocol", "statement"] as const;
 export type RegistryDocType = (typeof REGISTRY_DOC_TYPES)[number];
