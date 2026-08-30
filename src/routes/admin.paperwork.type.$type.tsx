@@ -89,6 +89,18 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Договор займа: сначала спрашиваем, кто выдаёт заём, — от этого зависит шаблон.
+  const createFromPreset = useMutation({
+    mutationFn: (presetId: string | null) =>
+      createDoc({ data: presetId ? { presetId } : { kind: docType } }),
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.paperwork });
+      setLenderOpen(false);
+      open(id);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const removeDoc = useMutation({
     mutationFn: (id: string) => delDoc({ data: { id } }),
     onSuccess: () => {
