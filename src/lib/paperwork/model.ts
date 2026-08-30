@@ -10,6 +10,7 @@ import {
 export const PW_CATEGORIES = [
   "letters",
   "orders",
+  "protocols",
   "attorney",
   "certificates",
   "notices",
@@ -24,6 +25,7 @@ export type PwCategory = (typeof PW_CATEGORIES)[number];
 export const PW_CATEGORY_LABELS: Record<PwCategory, string> = {
   letters: "Письма",
   orders: "Приказы",
+  protocols: "Протоколы и заявления",
   attorney: "Доверенности",
   certificates: "Справки",
   notices: "Уведомления",
@@ -33,6 +35,7 @@ export const PW_CATEGORY_LABELS: Record<PwCategory, string> = {
   finance: "Счета и акты",
   custom: "Пользовательские",
 };
+
 
 export const PW_DOC_TYPES = [
   "letter",
