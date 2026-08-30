@@ -53,6 +53,14 @@ export const PW_KINDS: Record<PwDocType, PwKind> = {
   order: base("order", "Приказ по организации с распорядительной частью", {
     starterBlocks: ["heading", "paragraph", "list", "signature"],
   }),
+  protocol: base("protocol", "Протокол общего собрания участников общества", {
+    starterBlocks: ["heading", "paragraph", "signature"],
+  }),
+  statement: base("statement", "Заявление работника на имя руководителя", {
+    numbered: false,
+    starterBlocks: ["paragraph", "heading", "paragraph"],
+  }),
+
   attorney: base("attorney", "Доверенность на представление интересов", {
     starterBlocks: ["heading", "paragraph", "list", "signature"],
   }),
