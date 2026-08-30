@@ -59,6 +59,8 @@ function Page() {
   const { confirm, dialog } = useConfirm();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [lenderOpen, setLenderOpen] = useState(false);
+  const isLoan = docType === "loan";
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
