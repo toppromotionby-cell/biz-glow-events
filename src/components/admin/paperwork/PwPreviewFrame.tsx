@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Maximize2, Minus, Plus, Scan } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { DOC_PAGE_H, DOC_PAGE_W, fitScale, type DocFitMode } from "@/lib/documents/fit-scale";
+import { DOC_PAGE_H, DOC_PAGE_W, fitScale, visibleWidth, type DocFitMode } from "@/lib/documents/fit-scale";
 
 const PAD = 16;
 
