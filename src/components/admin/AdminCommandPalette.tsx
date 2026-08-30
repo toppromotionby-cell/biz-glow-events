@@ -153,6 +153,20 @@ export function AdminCommandPalette() {
       <CommandList>
         <CommandEmpty>Ничего не найдено</CommandEmpty>
 
+        {!term && (
+          <CommandGroup heading="Быстрые действия">
+            {ACTIONS.map((a) => {
+              const Icon = a.icon;
+              return (
+                <CommandItem key={a.label} value={`action ${a.label}`} onSelect={() => go(a.to)}>
+                  <Icon className="mr-2 h-4 w-4 opacity-70" />
+                  <span>{a.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
+
         {navFiltered.length > 0 && (
           <CommandGroup heading="Разделы">
             {navFiltered.map((n) => {
