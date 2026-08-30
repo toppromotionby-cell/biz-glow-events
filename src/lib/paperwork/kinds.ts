@@ -22,8 +22,11 @@ export type PwKind = {
   numbered: boolean;
   /** Финансовый документ: показываем суммы, НДС и сумму прописью. */
   financial: boolean;
+  /** Лист A4 в альбомной ориентации (широкие таблицы: ведомости, табель). */
+  landscape: boolean;
   /** Устаревший вид: остаётся для старых документов, но не предлагается в интерфейсе. */
   hidden?: boolean;
+
 };
 
 const base = (
@@ -39,6 +42,7 @@ const base = (
   starterBlocks: ["heading", "paragraph", "signature"],
   numbered: true,
   financial: false,
+  landscape: false,
   ...overrides,
 });
 
@@ -77,10 +81,17 @@ export const PW_KINDS: Record<PwDocType, PwKind> = {
   }),
   payroll: base("payroll", "Ведомость на выплату заработной платы", {
     financial: true,
+    landscape: true,
     requiredBlocks: ["heading", "table"],
     starterBlocks: ["heading", "table", "signature"],
   }),
   staffing: base("staffing", "Штатное расписание организации", {
+    landscape: true,
+    requiredBlocks: ["heading", "table"],
+    starterBlocks: ["heading", "table", "signature"],
+  }),
+  timesheet: base("timesheet", "Табель учёта рабочего времени сотрудников", {
+    landscape: true,
     requiredBlocks: ["heading", "table"],
     starterBlocks: ["heading", "table", "signature"],
   }),
@@ -112,4 +123,9 @@ export function pwKind(type: PwDocType): PwKind {
 export function missingBlocks(type: PwDocType, present: PwBlockType[]): PwBlockType[] {
   const set = new Set(present);
   return pwKind(type).requiredBlocks.filter((b) => !set.has(b));
+}
+
+/** Альбомная ориентация листа для вида документа. */
+export function isLandscapeType(type: PwDocType): boolean {
+  return pwKind(type).landscape;
 }

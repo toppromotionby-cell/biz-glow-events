@@ -160,10 +160,13 @@ export function paperworkHtml(opts: {
   blank: PwBlank;
   /** URL логотипа клиента (опционально). */
   clientLogoUrl?: string | null;
+  /** Альбомный лист A4 (ведомости, штатное расписание, табель). */
+  landscape?: boolean;
 }): string {
   const { doc, blocks, company } = opts;
   // Кегль и поля берём уже подогнанными: тот же расчёт применяется в PDF и DOCX.
-  const blank = fittedBlank(opts.blocks, opts.blank);
+  const landscape = opts.landscape === true;
+  const blank = fittedBlank(opts.blocks, opts.blank, landscape);
   const stacks = fontStacks(blank.font);
   const accent = blank.accentColor || "#FF7500";
   const dateLabel = (() => {
@@ -193,7 +196,8 @@ export function paperworkHtml(opts: {
   :root { --accent:${accent}; }
   * { box-sizing:border-box; }
   body { margin:0; background:#eef0f4; font-family:${stacks.body}; color:#1c1f24; overflow-x:hidden; }
-  .sheet { position:relative; width:210mm; max-width:210mm; min-height:297mm; margin:0 auto; background:#fff;
+  @page { size: A4 ${landscape ? "landscape" : "portrait"}; margin:0; }
+  .sheet { position:relative; width:${landscape ? "297mm" : "210mm"}; max-width:${landscape ? "297mm" : "210mm"}; min-height:${landscape ? "210mm" : "297mm"}; margin:0 auto; background:#fff;
     padding:${blank.marginTopMm}mm ${blank.marginXMm}mm ${blank.marginBottomMm}mm;
     font-size:${blank.fontSizePt}pt; line-height:1.45; overflow-wrap:anywhere; }
   .sheet img, .sheet table { max-width:100%; }

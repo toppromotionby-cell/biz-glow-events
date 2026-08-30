@@ -19,6 +19,9 @@ import { SIGN_MEDIA_MM } from "@/lib/documents/signature";
 const MM = 72 / 25.4;
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
+/** Размер листа с учётом ориентации (альбомный — для ведомостей и табеля). */
+const pageSize = (landscape: boolean) =>
+  landscape ? { w: PAGE_H, h: PAGE_W } : { w: PAGE_W, h: PAGE_H };
 
 const CYR = /[\u0400-\u04FF]/;
 
@@ -38,6 +41,8 @@ type Ctx = {
   accent: ReturnType<typeof rgb>;
   blank: PwBlank;
   pages: PDFPage[];
+  pageW: number;
+  pageH: number;
 };
 
 const TEXT = rgb(0.11, 0.12, 0.14);
@@ -54,11 +59,11 @@ function dispFont(ctx: Ctx, text: string): PDFFont {
 }
 
 function newPage(ctx: Ctx) {
-  ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
+  ctx.page = ctx.pdf.addPage([ctx.pageW, ctx.pageH]);
   ctx.pages.push(ctx.page);
-  ctx.y = PAGE_H - ctx.top;
+  ctx.y = ctx.pageH - ctx.top;
   if (ctx.blank.accentBar) {
-    ctx.page.drawRectangle({ x: 0, y: PAGE_H - 5, width: PAGE_W, height: 5, color: ctx.accent });
+    ctx.page.drawRectangle({ x: 0, y: ctx.pageH - 5, width: ctx.pageW, height: 5, color: ctx.accent });
   }
 }
 
@@ -299,6 +304,8 @@ type PwPdfOpts = {
   company: CompanyProfile | null;
   blank: PwBlank;
   clientLogoUrl?: string | null;
+  /** Альбомный лист A4. */
+  landscape?: boolean;
 };
 
 /**
@@ -314,6 +321,7 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
   const bold = await pdf.embedFont(set.bold, { subset: true });
   const display = await pdf.embedFont(set.display, { subset: true });
 
+  const pg = pageSize(opts.landscape === true);
   const a = hexToRgb01(blank.accentColor || "#FF7500");
   const ctx: Ctx = {
     pdf,
@@ -324,13 +332,15 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
     display,
     displayCyrillic: set.displayCyrillic,
     left: blank.marginXMm * MM,
-    right: PAGE_W - blank.marginXMm * MM,
+    right: pg.w - blank.marginXMm * MM,
     top: blank.marginTopMm * MM,
     bottom: blank.marginBottomMm * MM,
     base: blank.fontSizePt,
     accent: rgb(a.r, a.g, a.b),
     blank,
     pages: [],
+    pageW: pg.w,
+    pageH: pg.h,
   };
   newPage(ctx);
 
@@ -346,8 +356,8 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
     const w = 120 * MM;
     const h = (bg.height / bg.width) * w;
     ctx.page.drawImage(bg, {
-      x: (PAGE_W - w) / 2,
-      y: (PAGE_H - h) / 2,
+      x: (ctx.pageW - w) / 2,
+      y: (ctx.pageH - h) / 2,
       width: w,
       height: h,
       opacity: blank.backgroundOpacity,
@@ -529,12 +539,12 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
       const lines = wrapText(regular, clean(footerText), fSize, contentWidth(ctx));
       const line = lines[0] ?? "";
       const w = regular.widthOfTextAtSize(line, fSize);
-      page.drawText(line, { x: (PAGE_W - w) / 2, y, size: fSize, font: regular, color: MUTED });
+      page.drawText(line, { x: (ctx.pageW - w) / 2, y, size: fSize, font: regular, color: MUTED });
     }
     if (ctx.pages.length > 1) {
       const label = `${i + 1} / ${ctx.pages.length}`;
       const w = regular.widthOfTextAtSize(label, fSize);
-      page.drawText(label, { x: PAGE_W - ctx.blank.marginXMm * MM - w, y, size: fSize, font: regular, color: MUTED });
+      page.drawText(label, { x: ctx.pageW - ctx.blank.marginXMm * MM - w, y, size: fSize, font: regular, color: MUTED });
     }
   });
 
@@ -543,7 +553,7 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
 
 export async function buildPaperworkPdf(opts: PwPdfOpts): Promise<Uint8Array> {
   // Первый проход — с уже оценённой подгонкой (тот же расчёт, что в превью).
-  const fitted = fittedBlank(opts.blocks, opts.blank);
+  const fitted = fittedBlank(opts.blocks, opts.blank, opts.landscape === true);
   const first = await renderPaperworkPdf({ ...opts, blank: fitted });
   if (first.pages <= 1 || opts.blank.fitOnePage === false) return first.bytes;
   // Реальная вёрстка переполнилась на одну страницу — пробуем дожать.
