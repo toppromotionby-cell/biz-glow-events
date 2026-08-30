@@ -245,6 +245,7 @@ export const PW_PRESETS: PwPreset[] = [
     doc_type: "custom",
     blocks: [B.h("{{Название документа}}"), B.p("{{Текст документа}}")],
   },
+  ...LOAN_PRESETS,
 ];
 
 export function presetById(id: string): PwPreset | null {
