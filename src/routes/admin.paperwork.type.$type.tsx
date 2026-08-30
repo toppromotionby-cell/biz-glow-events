@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
+import { LoanLenderDialog } from "@/components/admin/paperwork/LoanLenderDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
@@ -59,6 +60,8 @@ function Page() {
   const { confirm, dialog } = useConfirm();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [lenderOpen, setLenderOpen] = useState(false);
+  const isLoan = docType === "loan";
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
@@ -89,6 +92,18 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Договор займа: сначала спрашиваем, кто выдаёт заём, — от этого зависит шаблон.
+  const createFromPreset = useMutation({
+    mutationFn: (presetId: string | null) =>
+      createDoc({ data: presetId ? { presetId } : { kind: docType } }),
+    onSuccess: ({ id }) => {
+      qc.invalidateQueries({ queryKey: adminKeys.paperwork });
+      setLenderOpen(false);
+      open(id);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const removeDoc = useMutation({
     mutationFn: (id: string) => delDoc({ data: { id } }),
     onSuccess: () => {
@@ -113,6 +128,12 @@ function Page() {
   return (
     <div className="space-y-5">
       {dialog}
+      <LoanLenderDialog
+        open={lenderOpen}
+        onOpenChange={setLenderOpen}
+        busy={createFromPreset.isPending}
+        onPick={(presetId) => createFromPreset.mutate(presetId)}
+      />
       <Link
         to="/admin/paperwork"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
@@ -125,7 +146,10 @@ function Page() {
         title={kind.label}
         subtitle={kind.description}
         action={
-          <Button onClick={() => create.mutate(undefined)} disabled={create.isPending}>
+          <Button
+            onClick={() => (isLoan ? setLenderOpen(true) : create.mutate(undefined))}
+            disabled={create.isPending}
+          >
             {create.isPending ? (
               <Loader2 className="mr-1 h-4 w-4 animate-spin" />
             ) : (
