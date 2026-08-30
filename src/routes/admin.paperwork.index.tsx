@@ -20,7 +20,7 @@ import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
-import { PW_DOC_TYPE_LABELS, PW_STATUS_LABELS } from "@/lib/paperwork/model";
+import { PW_CATEGORIES, PW_CATEGORY_LABELS, PW_DOC_TYPE_LABELS, PW_STATUS_LABELS } from "@/lib/paperwork/model";
 import { PW_KIND_LIST } from "@/lib/paperwork/kinds";
 import { deletePaperworkDocument, listPaperworkDocuments } from "@/lib/paperwork.functions";
 
