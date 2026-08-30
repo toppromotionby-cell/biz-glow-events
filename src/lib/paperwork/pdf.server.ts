@@ -321,7 +321,7 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
   const bold = await pdf.embedFont(set.bold, { subset: true });
   const display = await pdf.embedFont(set.display, { subset: true });
 
-  const size = pageSize(opts.landscape === true);
+  const pg = pageSize(opts.landscape === true);
   const a = hexToRgb01(blank.accentColor || "#FF7500");
   const ctx: Ctx = {
     pdf,
@@ -332,15 +332,15 @@ async function renderPaperworkPdf(opts: PwPdfOpts): Promise<{ bytes: Uint8Array;
     display,
     displayCyrillic: set.displayCyrillic,
     left: blank.marginXMm * MM,
-    right: size.w - blank.marginXMm * MM,
+    right: pg.w - blank.marginXMm * MM,
     top: blank.marginTopMm * MM,
     bottom: blank.marginBottomMm * MM,
     base: blank.fontSizePt,
     accent: rgb(a.r, a.g, a.b),
     blank,
     pages: [],
-    pageW: size.w,
-    pageH: size.h,
+    pageW: pg.w,
+    pageH: pg.h,
   };
   newPage(ctx);
 
