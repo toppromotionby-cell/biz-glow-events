@@ -32,6 +32,7 @@ import { SaveStatus } from "@/components/admin/SaveStatus";
 import { PwBlockList } from "@/components/admin/paperwork/PwBlockList";
 import { PwBlankPanel } from "@/components/admin/paperwork/PwBlankPanel";
 import { PwAiPanel } from "@/components/admin/paperwork/PwAiPanel";
+import { HrPanel, defaultHrPeriod, isHrDocType } from "@/components/admin/paperwork/HrPanel";
 import {
   getPaperworkBlank,
   savePaperworkBlank,
@@ -91,6 +92,7 @@ export function PaperworkEditor({
   const [status, setStatus] = useState<PwStatus>(detail.document.status);
   const [companyId, setCompanyId] = useState<string | null>(detail.document.company_profile_id);
   const [blocks, setBlocks] = useState<PwBlock[]>(detail.document.blocks);
+  const [hrPeriod, setHrPeriod] = useState(() => defaultHrPeriod());
   const [values, setValues] = useState<Record<string, string>>(detail.document.values);
   const [blank, setBlank] = useState<PwBlank>(detail.blank);
   const dirty = useRef(false);
@@ -408,6 +410,17 @@ export function PaperworkEditor({
               Для этого вида документа обычно нужны блоки:{" "}
               {missing.map((m) => PW_BLOCK_LABELS[m]).join(", ")}.
             </p>
+          )}
+
+          {isHrDocType(docType) && (
+            <HrPanel
+              docType={docType}
+              companyId={companyId || null}
+              blocks={blocks}
+              onChange={setBlocks}
+              period={hrPeriod}
+              onPeriodChange={setHrPeriod}
+            />
           )}
 
           <PwBlockList
