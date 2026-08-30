@@ -11,6 +11,7 @@ import {
 import { LOAN_PRESETS } from "@/lib/paperwork/loan-presets";
 import { ATTORNEY_PRESETS } from "@/lib/paperwork/attorney-presets";
 import { WORKACT_PRESETS } from "@/lib/paperwork/workact-preset";
+import { ORDER_PRESETS } from "@/lib/paperwork/order-presets";
 export type { PwPreset } from "@/lib/paperwork/preset-types";
 import type { PwPreset } from "@/lib/paperwork/preset-types";
 
@@ -250,6 +251,7 @@ export const PW_PRESETS: PwPreset[] = [
   ...LOAN_PRESETS,
   ...ATTORNEY_PRESETS,
   ...WORKACT_PRESETS,
+  ...ORDER_PRESETS,
 ];
 
 export function presetById(id: string): PwPreset | null {

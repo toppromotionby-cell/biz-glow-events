@@ -2050,7 +2050,13 @@ export type Database = {
           doc_date: string
           doc_number: string
           doc_type: string
+          employee_id: string | null
           id: string
+          order_journal: string | null
+          order_kind: string | null
+          order_year: number | null
+          source_file: string | null
+          source_path: string | null
           status: string
           template_id: string | null
           template_revision: number | null
@@ -2067,7 +2073,13 @@ export type Database = {
           doc_date?: string
           doc_number?: string
           doc_type?: string
+          employee_id?: string | null
           id?: string
+          order_journal?: string | null
+          order_kind?: string | null
+          order_year?: number | null
+          source_file?: string | null
+          source_path?: string | null
           status?: string
           template_id?: string | null
           template_revision?: number | null
@@ -2084,7 +2096,13 @@ export type Database = {
           doc_date?: string
           doc_number?: string
           doc_type?: string
+          employee_id?: string | null
           id?: string
+          order_journal?: string | null
+          order_kind?: string | null
+          order_year?: number | null
+          source_file?: string | null
+          source_path?: string | null
           status?: string
           template_id?: string | null
           template_revision?: number | null
@@ -2105,6 +2123,13 @@ export type Database = {
             columns: ["company_profile_id"]
             isOneToOne: false
             referencedRelation: "company_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paperwork_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "hr_employees"
             referencedColumns: ["id"]
           },
           {
