@@ -48,6 +48,7 @@ export const PW_DOC_TYPES = [
   "act",
   "payroll",
   "staffing",
+  "timesheet",
   "custom",
 ] as const;
 export type PwDocType = (typeof PW_DOC_TYPES)[number];
@@ -66,6 +67,7 @@ export const PW_DOC_TYPE_LABELS: Record<PwDocType, string> = {
   act: "Акт",
   payroll: "Зарплатная ведомость",
   staffing: "Штатное расписание",
+  timesheet: "Табель учёта рабочего времени",
   custom: "Произвольный документ",
 };
 
@@ -84,6 +86,7 @@ export const PW_TYPE_CATEGORY: Record<PwDocType, PwCategory> = {
   act: "finance",
   payroll: "hr",
   staffing: "hr",
+  timesheet: "hr",
   custom: "custom",
 };
 
