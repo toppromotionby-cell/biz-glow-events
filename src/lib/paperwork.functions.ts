@@ -309,6 +309,8 @@ export const createDocumentFromTemplate = createServerFn({ method: "POST" })
         kind: z.enum(PW_DOC_TYPES).nullable().optional(),
         companyId: z.string().uuid().nullable().optional(),
         title: z.string().max(300).optional(),
+        /** Стартовые значения переменных {{...}} (мастер создания документа). */
+        values: z.record(z.string().max(120), z.string().max(2000)).optional(),
       })
       .parse(d ?? {}),
   )
@@ -369,7 +371,7 @@ export const createDocumentFromTemplate = createServerFn({ method: "POST" })
         title,
         doc_date: new Date().toISOString().slice(0, 10),
         blocks,
-        values: {},
+        values: data.values ?? {},
         status: "draft",
         author_id: context.userId,
       })

@@ -106,6 +106,8 @@ function blockHtml(b: PwBlock, company: CompanyProfile | null): string {
     }
     case "spacer":
       return `<div style="height:${Math.round(b.size)}px"></div>`;
+    case "pagebreak":
+      return `<div class="pw-pagebreak" style="break-after:page;page-break-after:always;height:0"></div>`;
     case "lineitems": {
       const t = blockTotals(b);
       const rows = b.lines

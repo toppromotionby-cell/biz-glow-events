@@ -27,6 +27,7 @@ import { StatusPill } from "@/components/admin/StatusPill";
 import { useConfirm } from "@/components/admin/ConfirmDialog";
 import { LoanLenderDialog } from "@/components/admin/paperwork/LoanLenderDialog";
 import { AttorneyKindDialog } from "@/components/admin/paperwork/AttorneyKindDialog";
+import { WorkActDialog } from "@/components/admin/paperwork/WorkActDialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
@@ -63,8 +64,10 @@ function Page() {
   const [status, setStatus] = useState("all");
   const [lenderOpen, setLenderOpen] = useState(false);
   const [attorneyOpen, setAttorneyOpen] = useState(false);
+  const [workActOpen, setWorkActOpen] = useState(false);
   const isLoan = docType === "loan";
   const isAttorney = docType === "attorney";
+  const isWorkAct = docType === "workact";
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
@@ -97,16 +100,20 @@ function Page() {
 
   // Договор займа: сначала спрашиваем, кто выдаёт заём, — от этого зависит шаблон.
   const createFromPreset = useMutation({
-    mutationFn: (presetId: string | null) =>
-      createDoc({ data: presetId ? { presetId } : { kind: docType } }),
+    mutationFn: (args: string | null | { presetId: string; title: string; values: Record<string, string> }) =>
+      typeof args === "object" && args !== null
+        ? createDoc({ data: args })
+        : createDoc({ data: args ? { presetId: args } : { kind: docType } }),
     onSuccess: ({ id }) => {
       qc.invalidateQueries({ queryKey: adminKeys.paperwork });
       setLenderOpen(false);
       setAttorneyOpen(false);
+      setWorkActOpen(false);
       open(id);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const removeDoc = useMutation({
     mutationFn: (id: string) => delDoc({ data: { id } }),
@@ -144,6 +151,14 @@ function Page() {
         busy={createFromPreset.isPending}
         onPick={(presetId) => createFromPreset.mutate(presetId)}
       />
+      <WorkActDialog
+        open={workActOpen}
+        onOpenChange={setWorkActOpen}
+        busy={createFromPreset.isPending}
+        onSubmit={(args) => createFromPreset.mutate(args)}
+        onBlank={() => createFromPreset.mutate(null)}
+      />
+
       <Link
         to="/admin/paperwork"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
@@ -162,8 +177,11 @@ function Page() {
                 ? setLenderOpen(true)
                 : isAttorney
                   ? setAttorneyOpen(true)
-                  : create.mutate(undefined)
+                  : isWorkAct
+                    ? setWorkActOpen(true)
+                    : create.mutate(undefined)
             }
+
             disabled={create.isPending}
           >
             {create.isPending ? (
