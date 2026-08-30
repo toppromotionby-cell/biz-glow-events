@@ -19,15 +19,11 @@ import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
 import { PW_STATUS_LABELS, type PwStatus } from "@/lib/paperwork/model";
 import { listOrderJournal } from "@/lib/paperwork-orders.functions";
-import {
-  ORDER_JOURNALS,
-  ORDER_JOURNAL_LABELS,
-  ORDER_JOURNAL_SHORT,
-  ORDER_KINDS,
-  orderKindLabel,
-} from "@/lib/paperwork/orders/registry";
+import { registryKindsOf, registrySpec, type RegistryDocType } from "@/lib/paperwork/registry-docs";
 
 type Props = {
+  /** Тип реестрового документа: приказ, протокол или заявление. */
+  docType?: RegistryDocType;
   onOpen: (id: string) => void;
   onDelete: (id: string, title: string) => void;
 };
@@ -38,7 +34,8 @@ const TONE: Record<string, "muted" | "info" | "success"> = {
   archived: "info",
 };
 
-export function OrderJournalTable({ onOpen, onDelete }: Props) {
+export function OrderJournalTable({ docType = "order", onOpen, onDelete }: Props) {
+  const spec = registrySpec(docType)!;
   const [journal, setJournal] = useState("all");
   const [kind, setKind] = useState("all");
   const [year, setYear] = useState("all");
@@ -47,10 +44,11 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
 
   const list = useServerFn(listOrderJournal);
   const q = useQuery({
-    queryKey: [...adminKeys.paperwork, "orders", journal, kind, year, term],
+    queryKey: [...adminKeys.paperwork, docType, "journal", journal, kind, year, term],
     queryFn: () =>
       list({
         data: {
+          docType,
           journal,
           kind,
           year: year === "all" ? null : Number(year),
@@ -62,10 +60,7 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
   const rows = q.data?.rows ?? [];
   const years = q.data?.years ?? [];
 
-  const kinds = useMemo(
-    () => (journal === "all" ? ORDER_KINDS : ORDER_KINDS.filter((k) => k.journal === journal)),
-    [journal],
-  );
+  const kinds = useMemo(() => registryKindsOf(spec, journal), [spec, journal]);
 
   // Группировка по годам — так же, как хранятся бумажные журналы.
   const groups = useMemo(() => {
@@ -81,10 +76,10 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
     const head = ["Год", "Журнал", "Номер", "Дата", "Вид", "Работник", "Название", "Статус"];
     const body = rows.map((r) => [
       String(r.order_year ?? ""),
-      ORDER_JOURNAL_SHORT[r.order_journal as keyof typeof ORDER_JOURNAL_SHORT] ?? r.order_journal,
+      spec.journals.find((j) => j.code === r.order_journal)?.short ?? r.order_journal,
       r.doc_number,
       r.doc_date,
-      orderKindLabel(r.order_kind),
+      spec.kindLabel(r.order_kind),
       r.employee_name,
       r.title,
       PW_STATUS_LABELS[r.status as PwStatus] ?? r.status,
@@ -95,7 +90,7 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
     const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "журнал-приказов.csv";
+    a.download = `журнал-${spec.itemsLabel}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -112,25 +107,27 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
             className="pl-9"
           />
         </div>
-        <Select
-          value={journal}
-          onValueChange={(v) => {
-            setJournal(v);
-            setKind("all");
-          }}
-        >
-          <SelectTrigger className="w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все журналы</SelectItem>
-            {ORDER_JOURNALS.map((j) => (
-              <SelectItem key={j} value={j}>
-                {ORDER_JOURNAL_LABELS[j]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {spec.journals.length > 1 && (
+          <Select
+            value={journal}
+            onValueChange={(v) => {
+              setJournal(v);
+              setKind("all");
+            }}
+          >
+            <SelectTrigger className="w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все журналы</SelectItem>
+              {spec.journals.map((j) => (
+                <SelectItem key={j.code} value={j.code}>
+                  {j.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={kind} onValueChange={setKind}>
           <SelectTrigger className="w-60">
             <SelectValue />
@@ -166,7 +163,9 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
         <div key={y} className="overflow-hidden rounded-lg border border-border">
           <div className="flex items-center justify-between bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{y || "Без года"}</span>
-            <span>{list.length} приказов</span>
+            <span>
+              {list.length} {spec.itemsLabel}
+            </span>
           </div>
           <table className="w-full text-sm">
             <thead className="bg-muted/30 text-xs text-muted-foreground">
@@ -190,7 +189,7 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
                   <td className="p-3 text-muted-foreground">{fmtDate(r.doc_date)}</td>
                   <td className="p-3">
                     <button className="text-left hover:underline" onClick={() => onOpen(r.id)}>
-                      {orderKindLabel(r.order_kind) || r.title}
+                      {spec.kindLabel(r.order_kind) || r.title}
                     </button>
                   </td>
                   <td className="p-3 text-muted-foreground">{r.employee_name || "—"}</td>
@@ -218,7 +217,7 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
 
       {!q.isLoading && !rows.length && (
         <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          Приказов пока нет — нажмите «Создать приказ».
+          Пока пусто — нажмите «{spec.createLabel}».
         </p>
       )}
     </section>
