@@ -248,7 +248,6 @@ export const PW_PRESETS: PwPreset[] = [
     blocks: [B.h("{{Название документа}}"), B.p("{{Текст документа}}")],
   },
   ...LOAN_PRESETS,
-  ...LOAN_PRESETS,
   ...ATTORNEY_PRESETS,
   ...WORKACT_PRESETS,
 ];
