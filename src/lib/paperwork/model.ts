@@ -40,6 +40,9 @@ export const PW_CATEGORY_LABELS: Record<PwCategory, string> = {
 export const PW_DOC_TYPES = [
   "letter",
   "order",
+  "protocol",
+  "statement",
+
   "attorney",
   "certificate",
   "notice",
