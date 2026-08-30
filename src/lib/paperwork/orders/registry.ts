@@ -864,6 +864,16 @@ const h = (text: string, align: "left" | "center" = "center") =>
 const p = (text: string, indent = false) =>
   normalizeBlock({ type: "paragraph", text, align: "justify", indent });
 
+/** Виды приказов, у которых перед распорядительной частью печатается преамбула. */
+const PREAMBLE_KINDS = new Set([
+  "general",
+  "nda",
+  "accounting-policy",
+  "provisions",
+  "fuel-norms",
+  "supply-norms",
+]);
+
 /** Блоки заводского шаблона для вида приказа. */
 export function orderBlocks(kind: OrderKind): PwBlock[] {
   const blocks: PwBlock[] = [
