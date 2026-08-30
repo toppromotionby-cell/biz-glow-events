@@ -870,7 +870,7 @@ export function orderBlocks(kind: OrderKind): PwBlock[] {
     h(kind.code === "general" ? "{{Заголовок приказа}}" : kind.heading),
     normalizeBlock({ type: "spacer", size: 10 }),
   ];
-  if (kind.code === "general") blocks.push(p("{{Преамбула}}"));
+  if (PREAMBLE_KINDS.has(kind.code)) blocks.push(p("{{Преамбула}}"));
   blocks.push(p(kind.verb), p("{{Текст приказа}}"));
   blocks.push(normalizeBlock({ type: "spacer", size: 8 }));
   blocks.push(p("Основание: {{Основание}}"));
