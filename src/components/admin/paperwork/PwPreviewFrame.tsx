@@ -19,13 +19,27 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
   const [mode, setMode] = useState<DocFitMode>("width");
   const [zoom, setZoom] = useState(1);
 
-  // Ширину меряем по внешней (непрокручиваемой) обёртке: содержимое области
-  // просмотра не может раздуть измерение и загнать масштаб в петлю.
+  // Ширину меряем по внешней (непрокручиваемой) обёртке и дополнительно
+  // ограничиваем реально видимой областью: обёртка может быть шире того, что
+  // видно (родитель с overflow:hidden, узкое окно) — тогда масштаб завышается
+  // и лист обрезается справа.
   useEffect(() => {
     const shell = shellRef.current;
     const boxEl = boxRef.current;
     if (!shell || !boxEl || typeof ResizeObserver === "undefined") return;
-    const read = () => setBox({ w: shell.clientWidth, h: boxEl.clientHeight });
+    const read = () => {
+      const rect = shell.getBoundingClientRect();
+      const parent = shell.parentElement?.getBoundingClientRect();
+      const w = visibleWidth({
+        clientWidth: Math.min(shell.clientWidth, boxEl.clientWidth || shell.clientWidth),
+        left: rect.left,
+        right: rect.right,
+        viewportWidth: window.innerWidth || rect.width,
+        clipLeft: parent?.left,
+        clipRight: parent?.right,
+      });
+      setBox({ w: Math.max(220, w), h: boxEl.clientHeight });
+    };
     const ro = new ResizeObserver(read);
     ro.observe(shell);
     ro.observe(boxEl);
