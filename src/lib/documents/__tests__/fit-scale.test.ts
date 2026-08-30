@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DOC_PAGE_H, DOC_PAGE_W, fitScale } from "../fit-scale";
+import { DOC_PAGE_H, DOC_PAGE_W, fitScale, visibleWidth } from "../fit-scale";
 
 describe("fitScale", () => {
   it("вписывает лист по ширине узкой панели — лист не обрезается", () => {
