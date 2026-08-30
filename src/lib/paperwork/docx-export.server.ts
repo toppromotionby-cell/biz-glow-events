@@ -75,7 +75,12 @@ function textParagraph(
   });
 }
 
-function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxImage | null; stamp: DocxImage | null }): (Paragraph | Table)[] {
+function blockParagraphs(
+  b: PwBlock,
+  blank: PwBlank,
+  media?: { signature: DocxImage | null; stamp: DocxImage | null },
+  pageWmm = 210,
+): (Paragraph | Table)[] {
   const base = blank.fontSizePt;
   const font = DOC_FONT_DOCX_NAME[blank.font];
   switch (b.type) {
@@ -105,7 +110,7 @@ function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxIm
       );
     case "table": {
       const cols = Math.max(b.header.length, ...b.rows.map((r) => r.length), 1);
-      const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
+      const totalW = convertMillimetersToTwip(pageWmm - blank.marginXMm * 2);
       const widths = tableColFractions(b.header, b.rows, cols).map((f) => Math.floor(totalW * f));
       const cell = (text: string, head: boolean, i: number) =>
         new TableCell({
@@ -130,7 +135,7 @@ function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxIm
     }
     case "lineitems": {
       const t = blockTotals(b);
-      const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
+      const totalW = convertMillimetersToTwip(pageWmm - blank.marginXMm * 2);
       const ratios = lineItemColFractions(
         b.lines.map((l) => ({
           name: l.name,
@@ -184,7 +189,7 @@ function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxIm
       return out;
     }
     case "parties": {
-      const totalW = convertMillimetersToTwip(210 - blank.marginXMm * 2);
+      const totalW = convertMillimetersToTwip(pageWmm - blank.marginXMm * 2);
       const colW = Math.floor(totalW / 2);
       const side = (title: string, text: string) =>
         new TableCell({
@@ -248,9 +253,14 @@ export async function buildPaperworkDocx(opts: {
   blocks: PwBlock[];
   company: CompanyProfile | null;
   blank: PwBlank;
+  /** Альбомный лист A4. */
+  landscape?: boolean;
 }): Promise<Uint8Array> {
   const { doc, blocks, company } = opts;
-  const blank = fittedBlank(opts.blocks, opts.blank);
+  const landscape = opts.landscape === true;
+  const pageWmm = landscape ? 297 : 210;
+  const pageHmm = landscape ? 210 : 297;
+  const blank = fittedBlank(opts.blocks, opts.blank, landscape);
   // Шрифт документа: в DOCX пишем настоящее имя (Calibri / Times New Roman).
   const font = DOC_FONT_DOCX_NAME[blank.font];
 
@@ -353,7 +363,11 @@ export async function buildPaperworkDocx(opts: {
       {
         properties: {
           page: {
-            size: { width: convertMillimetersToTwip(210), height: convertMillimetersToTwip(297) },
+            size: {
+              width: convertMillimetersToTwip(pageWmm),
+              height: convertMillimetersToTwip(pageHmm),
+              orientation: landscape ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
+            },
             margin: {
               top: convertMillimetersToTwip(blank.marginTopMm),
               bottom: convertMillimetersToTwip(blank.marginBottomMm),
@@ -369,7 +383,7 @@ export async function buildPaperworkDocx(opts: {
               }),
             }
           : undefined,
-        children: [...header, meta, ...blocks.flatMap((b) => blockParagraphs(b, blank, media))],
+        children: [...header, meta, ...blocks.flatMap((b) => blockParagraphs(b, blank, media, pageWmm))],
       },
     ],
   });
