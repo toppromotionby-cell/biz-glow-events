@@ -1,4 +1,5 @@
 // Экспорт корпоративного документа в DOCX из тех же блоков, что PDF и превью.
+import { DOC_FONT_DOCX_NAME } from "@/lib/documents/doc-font";
 import { fittedBlank } from "./fit-page";
 import {
   AlignmentType,
@@ -53,9 +54,12 @@ const ALIGN: Record<string, (typeof AlignmentType)[keyof typeof AlignmentType]> 
   justify: AlignmentType.JUSTIFIED,
 };
 
-const FONT = "Arial";
-
-function textParagraph(text: string, opts: { align?: string; bold?: boolean; size?: number; indent?: boolean; color?: string } = {}) {
+function textParagraph(
+  text: string,
+  opts: { align?: string; bold?: boolean; size?: number; indent?: boolean; color?: string; font?: string } = {},
+) {
+  // Без явного шрифта абзац наследует шрифт документа (styles.default).
+  const font = opts.font;
   const size = Math.round((opts.size ?? 11) * 2); // half-points
   return new Paragraph({
     alignment: ALIGN[opts.align ?? "left"] ?? AlignmentType.LEFT,
@@ -65,14 +69,15 @@ function textParagraph(text: string, opts: { align?: string; bold?: boolean; siz
       .split("\n")
       .flatMap((line, i) =>
         i === 0
-          ? [new TextRun({ text: line, bold: opts.bold, size, font: FONT, color: opts.color })]
-          : [new TextRun({ text: line, bold: opts.bold, size, font: FONT, color: opts.color, break: 1 })],
+          ? [new TextRun({ text: line, bold: opts.bold, size, font, color: opts.color })]
+          : [new TextRun({ text: line, bold: opts.bold, size, font, color: opts.color, break: 1 })],
       ),
   });
 }
 
 function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxImage | null; stamp: DocxImage | null }): (Paragraph | Table)[] {
   const base = blank.fontSizePt;
+  const font = DOC_FONT_DOCX_NAME[blank.font];
   switch (b.type) {
     case "heading":
       return [
@@ -80,7 +85,7 @@ function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxIm
           alignment: ALIGN[b.align] ?? AlignmentType.CENTER,
           heading: HeadingLevel.HEADING_2,
           spacing: { before: 240, after: 160 },
-          children: [new TextRun({ text: b.text, bold: true, size: Math.round((base + 2.5) * 2), font: FONT })],
+          children: [new TextRun({ text: b.text, bold: true, size: Math.round((base + 2.5) * 2), font })],
         }),
       ];
     case "recipient":
@@ -94,7 +99,7 @@ function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxIm
             numbering: b.ordered ? { reference: "pw-numbers", level: 0 } : undefined,
             bullet: b.ordered ? undefined : { level: 0 },
             spacing: { after: 80 },
-            children: [new TextRun({ text: item, size: Math.round(base * 2), font: FONT })],
+            children: [new TextRun({ text: item, size: Math.round(base * 2), font })],
             ...(i === -1 ? {} : {}),
           }),
       );
@@ -225,8 +230,8 @@ function blockParagraphs(b: PwBlock, blank: PwBlank, media?: { signature: DocxIm
           spacing: { before: marks.length ? 0 : 320, after: 120 },
           tabStops: [{ type: "right" as never, position: 9000 }],
           children: [
-            new TextRun({ text: b.signerTitle, size: Math.round(base * 2), font: FONT }),
-            new TextRun({ text: `\t${b.signerName}`, size: Math.round(base * 2), font: FONT }),
+            new TextRun({ text: b.signerTitle, size: Math.round(base * 2), font }),
+            new TextRun({ text: `\t${b.signerName}`, size: Math.round(base * 2), font }),
           ],
         }),
       ];
@@ -246,6 +251,8 @@ export async function buildPaperworkDocx(opts: {
 }): Promise<Uint8Array> {
   const { doc, blocks, company } = opts;
   const blank = fittedBlank(opts.blocks, opts.blank);
+  // Шрифт документа: в DOCX пишем настоящее имя (Calibri / Times New Roman).
+  const font = DOC_FONT_DOCX_NAME[blank.font];
 
   // Подпись и печать грузим один раз: те же источники и высоты, что в PDF.
   const needSign = blocks.some((b) => b.type === "signature" && (b.withSignature || b.withStamp));
@@ -315,8 +322,8 @@ export async function buildPaperworkDocx(opts: {
     tabStops: [{ type: "right" as never, position: 9000 }],
     spacing: { after: 200 },
     children: [
-      new TextRun({ text: doc.doc_number ? `№ ${doc.doc_number}` : "", size: 19, font: FONT, color: "5B6270" }),
-      new TextRun({ text: `\t${dateLabel}`, size: 19, font: FONT, color: "5B6270" }),
+      new TextRun({ text: doc.doc_number ? `№ ${doc.doc_number}` : "", size: 19, font, color: "5B6270" }),
+      new TextRun({ text: `\t${dateLabel}`, size: 19, font, color: "5B6270" }),
     ],
   });
 
@@ -325,7 +332,7 @@ export async function buildPaperworkDocx(opts: {
     [company?.company_legal_name, company?.company_address, company?.company_phone].filter(Boolean).join(" · ");
 
   const document = new Document({
-    styles: { default: { document: { run: { font: FONT, size: Math.round(blank.fontSizePt * 2) } } } },
+    styles: { default: { document: { run: { font, size: Math.round(blank.fontSizePt * 2) } } } },
     numbering: {
       config: [
         {
