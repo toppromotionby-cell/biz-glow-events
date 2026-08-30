@@ -1,15 +1,11 @@
-// Серверные функции журнала приказов: нумерация, создание из мастера и выборка реестра.
+// Серверные функции реестровых документов (приказы, протоколы, заявления):
+// нумерация по журналам и годам, создание из мастера и выборка реестра.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertDocumentsStaff } from "@/lib/authz";
 import { normalizeBlocks } from "@/lib/paperwork/model";
-import {
-  ORDER_JOURNALS,
-  ORDER_JOURNAL_SUFFIX,
-  ORDER_KIND_MAP,
-  orderBlocks,
-} from "@/lib/paperwork/orders/registry";
+import { REGISTRY_DOC_TYPES, registrySpec } from "@/lib/paperwork/registry-docs";
 
 export type OrderJournalRow = {
   id: string;
@@ -25,18 +21,29 @@ export type OrderJournalRow = {
   updated_at: string;
 };
 
-/** Следующий свободный номер приказа в журнале за год: 05-к, 12-л, 7. */
+const DocTypeSchema = z.enum(REGISTRY_DOC_TYPES).default("order");
+
+/** Следующий свободный номер в журнале за год: 05-к, 12-л, 7. */
 export const nextOrderNumber = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ journal: z.enum(ORDER_JOURNALS), year: z.number().int().min(2000).max(2100) }).parse(d),
+    z
+      .object({
+        docType: DocTypeSchema,
+        journal: z.string().min(1).max(20),
+        year: z.number().int().min(2000).max(2100),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ number: string; seq: number }> => {
     await assertDocumentsStaff(context as never);
+    const spec = registrySpec(data.docType);
+    if (!spec) throw new Error("Неизвестный вид документа");
+
     const { data: rows, error } = await context.supabase
       .from("paperwork_documents")
       .select("doc_number")
-      .eq("doc_type", "order")
+      .eq("doc_type", data.docType)
       .eq("order_journal", data.journal)
       .eq("order_year", data.year);
     if (error) throw new Error(error.message);
@@ -47,9 +54,11 @@ export const nextOrderNumber = createServerFn({ method: "GET" })
         return Number.isFinite(n) && n > max ? n : max;
       }, 0) + 1;
 
-    const suffix = ORDER_JOURNAL_SUFFIX[data.journal];
-    return { seq, number: `${String(seq).padStart(2, "0")}${suffix}` };
+    const suffix = spec.journals.find((j) => j.code === data.journal)?.suffix ?? "";
+    const body = data.docType === "order" ? String(seq).padStart(2, "0") : String(seq);
+    return { seq, number: `${body}${suffix}` };
   });
+
 
 /** Создание приказа мастером: блоки берём из вида, значения — из формы. */
 export const createOrderDocument = createServerFn({ method: "POST" })
