@@ -45,9 +45,11 @@ export function PwPreviewFrame({ html, className }: { html: string; className?: 
     ro.observe(boxEl);
     read();
     window.addEventListener("orientationchange", read);
+    window.addEventListener("resize", read);
     return () => {
       ro.disconnect();
       window.removeEventListener("orientationchange", read);
+      window.removeEventListener("resize", read);
     };
   }, []);
 
