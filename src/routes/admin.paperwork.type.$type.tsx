@@ -274,6 +274,20 @@ function Page() {
         )}
       </section>
 
+      {isOrder ? (
+        <OrderJournalTable
+          onOpen={open}
+          onDelete={async (id, title) => {
+            const ok = await confirm({
+              title: "Удалить приказ?",
+              description: title,
+              confirmText: "Удалить",
+              destructive: true,
+            });
+            if (ok) removeDoc.mutate(id);
+          }}
+        />
+      ) : (
       <section className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-[220px] flex-1">
@@ -361,6 +375,7 @@ function Page() {
           </table>
         </div>
       </section>
+      )}
     </div>
   );
 }
