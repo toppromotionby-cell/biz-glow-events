@@ -693,6 +693,128 @@ export const ORDER_KINDS: OrderKind[] = [
     }),
   },
   {
+    code: "nda",
+    journal: "main",
+    label: "Об утверждении Положения о конфиденциальной информации",
+    description: "Утверждение NDA-политики и ознакомление работников под подпись.",
+    heading: "Об утверждении\nПоложения о конфиденциальной информации",
+    verb: "ПРИКАЗЫВАЮ:",
+    fields: [
+      { key: "startDate", label: "Дата введения в действие", type: "date", required: true },
+      { key: "docName", label: "Название положения", type: "text", defaultValue: "Положение о конфиденциальной информации" },
+      F.basis!,
+    ],
+    buildValues: (form) => ({
+      "Преамбула": "В целях обеспечения нормативной базы",
+      "Текст приказа": tidy(
+        `Утвердить и ввести в действие с ${ru(s(form, "startDate"))} г. ${s(form, "docName") || "Положение о конфиденциальной информации"}.\n` +
+          "Ознакомить с Положением, утверждённым настоящим приказом, под подпись работников, имеющих доступ к конфиденциальной информации.\n" +
+          "Контроль за исполнением настоящего приказа оставляю за собой.",
+      ),
+      "Основание": s(form, "basis"),
+      "Ознакомлен": "",
+    }),
+  },
+  {
+    code: "accounting-policy",
+    journal: "main",
+    label: "Об учётной политике",
+    description: "Утверждение учётной политики организации на календарный год.",
+    heading: "Об учётной политике",
+    verb: "ПРИКАЗЫВАЮ:",
+    fields: [
+      { key: "year", label: "Год", type: "number", required: true, defaultValue: String(new Date().getFullYear()) },
+      { key: "startDate", label: "Дата введения", type: "date", required: true },
+      F.basis!,
+    ],
+    buildValues: (form) => ({
+      "Преамбула":
+        "В соответствии с Законом Республики Беларусь «О бухгалтерском учёте и отчётности»",
+      "Текст приказа": tidy(
+        `Утвердить учётную политику организации на ${s(form, "year")} год и ввести её в действие с ${ru(s(form, "startDate"))} г.\n` +
+          "Ответственность за организацию бухгалтерского учёта возложить на директора.\n" +
+          "Контроль за исполнением настоящего приказа оставляю за собой.",
+      ),
+      "Основание": s(form, "basis"),
+      "Ознакомлен": "",
+    }),
+  },
+  {
+    code: "provisions",
+    journal: "main",
+    label: "Об утверждении положений и инструкций",
+    description: "Утверждение пакета локальных положений, инструкций и регламентов.",
+    heading: "Об утверждении положений и инструкций",
+    verb: "ПРИКАЗЫВАЮ:",
+    fields: [
+      { key: "docs", label: "Документы", type: "multiline", required: true, hint: "Каждый документ с новой строки" },
+      { key: "startDate", label: "Дата введения", type: "date", required: true },
+      F.basis!,
+    ],
+    buildValues: (form) => ({
+      "Преамбула": "В целях упорядочения работы организации",
+      "Текст приказа": tidy(
+        `Утвердить и ввести в действие с ${ru(s(form, "startDate"))} г. следующие документы:\n` +
+          s(form, "docs") +
+          "\nОзнакомить работников с утверждёнными документами под подпись.\n" +
+          "Контроль за исполнением настоящего приказа оставляю за собой.",
+      ),
+      "Основание": s(form, "basis"),
+      "Ознакомлен": "",
+    }),
+  },
+  {
+    code: "fuel-norms",
+    journal: "main",
+    label: "О нормах расхода топлива",
+    description: "Установление норм расхода топлива для автомобилей организации.",
+    heading: "Об утверждении норм расхода топлива",
+    verb: "ПРИКАЗЫВАЮ:",
+    fields: [
+      { key: "car", label: "Автомобиль", type: "text", required: true, hint: "Марка, модель, госномер" },
+      { key: "norm", label: "Норма расхода", type: "text", required: true, hint: "например: 8,5 л на 100 км" },
+      { key: "startDate", label: "Дата введения", type: "date", required: true },
+      { key: "winter", label: "Зимняя надбавка, %", type: "text", defaultValue: "10" },
+      F.basis!,
+    ],
+    buildValues: (form) => ({
+      "Преамбула": "В целях контроля расходования топлива",
+      "Текст приказа": tidy(
+        `Установить с ${ru(s(form, "startDate"))} г. норму расхода топлива для автомобиля ${s(form, "car")} в размере ${s(form, "norm")}.` +
+          (s(form, "winter")
+            ? `\nПрименять зимнюю надбавку к норме расхода топлива в размере ${s(form, "winter")}%.`
+            : "") +
+          "\nКонтроль за исполнением настоящего приказа оставляю за собой.",
+      ),
+      "Основание": s(form, "basis"),
+      "Ознакомлен": "",
+    }),
+  },
+  {
+    code: "supply-norms",
+    journal: "main",
+    label: "О нормах расхода хозяйственных товаров",
+    description: "Нормы расхода кофе, молока, воды и других хозяйственных товаров.",
+    heading: "Об утверждении норм расхода\nхозяйственных товаров",
+    verb: "ПРИКАЗЫВАЮ:",
+    fields: [
+      { key: "items", label: "Нормы", type: "multiline", required: true, hint: "Каждая позиция с новой строки: кофе — 0,5 кг в месяц" },
+      { key: "startDate", label: "Дата введения", type: "date", required: true },
+      F.basis!,
+    ],
+    buildValues: (form) => ({
+      "Преамбула": "В целях нормирования хозяйственных расходов",
+      "Текст приказа": tidy(
+        `Установить с ${ru(s(form, "startDate"))} г. следующие нормы расхода:\n` +
+          s(form, "items") +
+          "\nКонтроль за исполнением настоящего приказа оставляю за собой.",
+      ),
+      "Основание": s(form, "basis"),
+      "Ознакомлен": "",
+    }),
+  },
+  {
+
     code: "general",
     journal: "main",
     label: "Приказ по основной деятельности (произвольный)",
@@ -742,13 +864,23 @@ const h = (text: string, align: "left" | "center" = "center") =>
 const p = (text: string, indent = false) =>
   normalizeBlock({ type: "paragraph", text, align: "justify", indent });
 
+/** Виды приказов, у которых перед распорядительной частью печатается преамбула. */
+const PREAMBLE_KINDS = new Set([
+  "general",
+  "nda",
+  "accounting-policy",
+  "provisions",
+  "fuel-norms",
+  "supply-norms",
+]);
+
 /** Блоки заводского шаблона для вида приказа. */
 export function orderBlocks(kind: OrderKind): PwBlock[] {
   const blocks: PwBlock[] = [
     h(kind.code === "general" ? "{{Заголовок приказа}}" : kind.heading),
     normalizeBlock({ type: "spacer", size: 10 }),
   ];
-  if (kind.code === "general") blocks.push(p("{{Преамбула}}"));
+  if (PREAMBLE_KINDS.has(kind.code)) blocks.push(p("{{Преамбула}}"));
   blocks.push(p(kind.verb), p("{{Текст приказа}}"));
   blocks.push(normalizeBlock({ type: "spacer", size: 8 }));
   blocks.push(p("Основание: {{Основание}}"));

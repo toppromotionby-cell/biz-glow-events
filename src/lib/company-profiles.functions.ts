@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertPermission, hasPermission } from "@/lib/authz";
+import { assertDocumentsStaff, assertPermission, hasPermission } from "@/lib/authz";
 import { normalizeCompanyProfile, type CompanyProfile } from "@/lib/documents/company-profile";
 import { normalizeLogoLayout } from "@/lib/documents/logo-layout";
 import { DEFAULT_VAT_RATE } from "@/lib/documents/vat";
@@ -139,6 +139,66 @@ export const setDefaultCompanyProfile = createServerFn({ method: "POST" })
       .from("company_profiles")
       .update({ is_default: true })
       .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* --------------------- Участники общества (для протоколов) --------------------- */
+
+const ParticipantSchema = z.object({
+  fullName: z.string().trim().min(1).max(200),
+  birthDate: z.string().trim().max(20).default(""),
+  passport: z.string().trim().max(40).default(""),
+  passportIssued: z.string().trim().max(20).default(""),
+  passportAuthority: z.string().trim().max(200).default(""),
+  passportValid: z.string().trim().max(20).default(""),
+  personalNumber: z.string().trim().max(40).default(""),
+  address: z.string().trim().max(300).default(""),
+  share: z.string().trim().max(20).default(""),
+});
+export type CompanyParticipant = z.infer<typeof ParticipantSchema>;
+
+/** Участники (учредители) компании — источник блока «ПРИСУТСТВОВАЛИ» в протоколах. */
+export const listCompanyParticipants = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ companyId: z.string().uuid().nullable().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<{ companyId: string | null; participants: CompanyParticipant[] }> => {
+    await assertDocumentsStaff(context as never);
+    let q = context.supabase.from("company_profiles").select("id,participants");
+    q = data.companyId
+      ? q.eq("id", data.companyId)
+      : q.order("is_default", { ascending: false }).order("sort_order");
+    const { data: rows, error } = await q.limit(1);
+    if (error) throw new Error(error.message);
+    const row = (rows ?? [])[0] as { id?: string; participants?: unknown } | undefined;
+    const parsed = Array.isArray(row?.participants)
+      ? row!.participants.flatMap((p) => {
+          const r = ParticipantSchema.safeParse(p);
+          return r.success ? [r.data] : [];
+        })
+      : [];
+    return { companyId: row?.id ? String(row.id) : null, participants: parsed };
+  });
+
+/** Сохранение состава участников компании. */
+export const saveCompanyParticipants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        companyId: z.string().uuid(),
+        participants: z.array(ParticipantSchema).max(50),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await assertPermission(context as never, "documents.settings");
+    const { error } = await context.supabase
+      .from("company_profiles")
+      .update({ participants: data.participants as never })
+      .eq("id", data.companyId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

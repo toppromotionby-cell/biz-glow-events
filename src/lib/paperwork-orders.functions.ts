@@ -1,15 +1,11 @@
-// Серверные функции журнала приказов: нумерация, создание из мастера и выборка реестра.
+// Серверные функции реестровых документов (приказы, протоколы, заявления):
+// нумерация по журналам и годам, создание из мастера и выборка реестра.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertDocumentsStaff } from "@/lib/authz";
 import { normalizeBlocks } from "@/lib/paperwork/model";
-import {
-  ORDER_JOURNALS,
-  ORDER_JOURNAL_SUFFIX,
-  ORDER_KIND_MAP,
-  orderBlocks,
-} from "@/lib/paperwork/orders/registry";
+import { REGISTRY_DOC_TYPES, registrySpec } from "@/lib/paperwork/registry-docs";
 
 export type OrderJournalRow = {
   id: string;
@@ -25,18 +21,29 @@ export type OrderJournalRow = {
   updated_at: string;
 };
 
-/** Следующий свободный номер приказа в журнале за год: 05-к, 12-л, 7. */
+const DocTypeSchema = z.enum(REGISTRY_DOC_TYPES).default("order");
+
+/** Следующий свободный номер в журнале за год: 05-к, 12-л, 7. */
 export const nextOrderNumber = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ journal: z.enum(ORDER_JOURNALS), year: z.number().int().min(2000).max(2100) }).parse(d),
+    z
+      .object({
+        docType: DocTypeSchema,
+        journal: z.string().min(1).max(20),
+        year: z.number().int().min(2000).max(2100),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ number: string; seq: number }> => {
     await assertDocumentsStaff(context as never);
+    const spec = registrySpec(data.docType);
+    if (!spec) throw new Error("Неизвестный вид документа");
+
     const { data: rows, error } = await context.supabase
       .from("paperwork_documents")
       .select("doc_number")
-      .eq("doc_type", "order")
+      .eq("doc_type", data.docType)
       .eq("order_journal", data.journal)
       .eq("order_year", data.year);
     if (error) throw new Error(error.message);
@@ -47,16 +54,19 @@ export const nextOrderNumber = createServerFn({ method: "GET" })
         return Number.isFinite(n) && n > max ? n : max;
       }, 0) + 1;
 
-    const suffix = ORDER_JOURNAL_SUFFIX[data.journal];
-    return { seq, number: `${String(seq).padStart(2, "0")}${suffix}` };
+    const suffix = spec.journals.find((j) => j.code === data.journal)?.suffix ?? "";
+    const body = data.docType === "order" ? String(seq).padStart(2, "0") : String(seq);
+    return { seq, number: `${body}${suffix}` };
   });
 
-/** Создание приказа мастером: блоки берём из вида, значения — из формы. */
+
+/** Создание документа мастером: блоки берём из вида, значения — из формы. */
 export const createOrderDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
+        docType: DocTypeSchema,
         kind: z.string().min(1).max(40),
         docNumber: z.string().max(40).default(""),
         docDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -69,8 +79,10 @@ export const createOrderDocument = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     await assertDocumentsStaff(context as never);
-    const kind = ORDER_KIND_MAP[data.kind];
-    if (!kind) throw new Error("Неизвестный вид приказа");
+    const spec = registrySpec(data.docType);
+    const kind = spec?.kinds.find((k) => k.code === data.kind);
+    const blocks = spec?.blocksOf(data.kind);
+    if (!spec || !kind || !blocks) throw new Error("Неизвестный вид документа");
 
     let companyId = data.companyId ?? null;
     if (!companyId) {
@@ -84,19 +96,17 @@ export const createOrderDocument = createServerFn({ method: "POST" })
       companyId = firstCompany?.id ? String(firstCompany.id) : null;
     }
 
-    const title =
-      data.title.trim() ||
-      `Приказ №${data.docNumber} — ${kind.label.replace(/^О\s/, "о ")}`;
+    const title = data.title.trim() || spec.titleOf(data.kind, data.docNumber);
 
     const { data: row, error } = await context.supabase
       .from("paperwork_documents")
       .insert({
         company_profile_id: companyId,
-        doc_type: "order",
+        doc_type: data.docType,
         title,
         doc_number: data.docNumber,
         doc_date: data.docDate,
-        blocks: normalizeBlocks(orderBlocks(kind)),
+        blocks: normalizeBlocks(blocks),
         values: data.values,
         status: "draft",
         author_id: context.userId,
@@ -111,13 +121,15 @@ export const createOrderDocument = createServerFn({ method: "POST" })
     return { id: String((row as { id: string }).id) };
   });
 
-/** Реестр приказов с фильтрами по журналу, году, виду и работнику. */
+
+/** Реестр документов с фильтрами по журналу, году, виду и работнику. */
 export const listOrderJournal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
       .object({
-        journal: z.string().max(10).optional(),
+        docType: DocTypeSchema,
+        journal: z.string().max(20).optional(),
         year: z.number().int().min(2000).max(2100).nullable().optional(),
         kind: z.string().max(40).optional(),
         employeeId: z.string().uuid().nullable().optional(),
@@ -131,9 +143,10 @@ export const listOrderJournal = createServerFn({ method: "GET" })
     let q = context.supabase
       .from("paperwork_documents")
       .select("id,title,doc_number,doc_date,status,order_journal,order_kind,order_year,employee_id,updated_at")
-      .eq("doc_type", "order")
+      .eq("doc_type", data.docType)
       .order("doc_date", { ascending: false })
       .limit(1000);
+
 
     if (data.journal && data.journal !== "all") q = q.eq("order_journal", data.journal);
     if (data.year) q = q.eq("order_year", data.year);

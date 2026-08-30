@@ -440,6 +440,7 @@ export type Database = {
           logo_layout: Json
           logo_url: string | null
           name: string
+          participants: Json
           signature_url: string | null
           signer_basis: string
           signer_name: string
@@ -470,6 +471,7 @@ export type Database = {
           logo_layout?: Json
           logo_url?: string | null
           name?: string
+          participants?: Json
           signature_url?: string | null
           signer_basis?: string
           signer_name?: string
@@ -500,6 +502,7 @@ export type Database = {
           logo_layout?: Json
           logo_url?: string | null
           name?: string
+          participants?: Json
           signature_url?: string | null
           signer_basis?: string
           signer_name?: string

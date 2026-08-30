@@ -31,6 +31,7 @@ import { WorkActDialog } from "@/components/admin/paperwork/WorkActDialog";
 import { OrderWizardDialog, type OrderSubmit } from "@/components/admin/paperwork/OrderWizardDialog";
 import { OrderJournalTable } from "@/components/admin/paperwork/OrderJournalTable";
 import { createOrderDocument } from "@/lib/paperwork-orders.functions";
+import { registrySpec } from "@/lib/paperwork/registry-docs";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
@@ -72,7 +73,8 @@ function Page() {
   const isLoan = docType === "loan";
   const isAttorney = docType === "attorney";
   const isWorkAct = docType === "workact";
-  const isOrder = docType === "order";
+  const regSpec = registrySpec(docType);
+  const isOrder = Boolean(regSpec);
   const term = useDebouncedValue(search, 300);
 
   const listDocs = useServerFn(listPaperworkDocuments);
@@ -123,7 +125,8 @@ function Page() {
 
   // Приказ: мастер сам собирает текст, номер и журнал регистрации.
   const createOrderDoc = useMutation({
-    mutationFn: (args: OrderSubmit) => createOrder({ data: args }),
+    mutationFn: (args: OrderSubmit) =>
+      createOrder({ data: { ...args, docType: regSpec?.docType ?? "order" } }),
     onSuccess: ({ id }) => {
       qc.invalidateQueries({ queryKey: adminKeys.paperwork });
       setOrderOpen(false);
@@ -169,6 +172,7 @@ function Page() {
         onPick={(presetId) => createFromPreset.mutate(presetId)}
       />
       <OrderWizardDialog
+        docType={regSpec?.docType ?? "order"}
         open={orderOpen}
         onOpenChange={setOrderOpen}
         busy={createOrderDoc.isPending}
@@ -218,7 +222,7 @@ function Page() {
             ) : (
               <Plus className="mr-1 h-4 w-4" />
             )}
-            {isOrder ? "Создать приказ" : "Создать документ"}
+            {regSpec ? regSpec.createLabel : "Создать документ"}
           </Button>
         }
       />
@@ -276,6 +280,7 @@ function Page() {
 
       {isOrder ? (
         <OrderJournalTable
+          docType={regSpec?.docType ?? "order"}
           onOpen={open}
           onDelete={async (id, title) => {
             const ok = await confirm({
