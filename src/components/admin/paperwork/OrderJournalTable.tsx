@@ -17,7 +17,7 @@ import { StatusPill } from "@/components/admin/StatusPill";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { fmtDate } from "@/lib/formatters";
 import { adminKeys } from "@/lib/query-keys";
-import { PW_STATUS_LABELS } from "@/lib/paperwork/model";
+import { PW_STATUS_LABELS, type PwStatus } from "@/lib/paperwork/model";
 import { listOrderJournal } from "@/lib/paperwork-orders.functions";
 import {
   ORDER_JOURNALS,
@@ -87,7 +87,7 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
       orderKindLabel(r.order_kind),
       r.employee_name,
       r.title,
-      PW_STATUS_LABELS[r.status] ?? r.status,
+      PW_STATUS_LABELS[r.status as PwStatus] ?? r.status,
     ]);
     const csv = [head, ...body]
       .map((line) => line.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
@@ -196,7 +196,7 @@ export function OrderJournalTable({ onOpen, onDelete }: Props) {
                   <td className="p-3 text-muted-foreground">{r.employee_name || "—"}</td>
                   <td className="p-3">
                     <StatusPill tone={TONE[r.status] ?? "muted"}>
-                      {PW_STATUS_LABELS[r.status] ?? r.status}
+                      {PW_STATUS_LABELS[r.status as PwStatus] ?? r.status}
                     </StatusPill>
                   </td>
                   <td className="p-3 text-right">
