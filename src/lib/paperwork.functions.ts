@@ -371,7 +371,7 @@ export const createDocumentFromTemplate = createServerFn({ method: "POST" })
         title,
         doc_date: new Date().toISOString().slice(0, 10),
         blocks,
-        values: {},
+        values: data.values ?? {},
         status: "draft",
         author_id: context.userId,
       })
