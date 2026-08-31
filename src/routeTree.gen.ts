@@ -44,6 +44,7 @@ import { Route as AttractionsRouteImport } from './routes/attractions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DjIndexRouteImport } from './routes/dj.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
@@ -298,6 +299,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DjIndexRoute = DjIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DjRoute,
 } as any)
 const CatalogIndexRoute = CatalogIndexRouteImport.update({
   id: '/catalog/',
@@ -724,7 +730,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
-  '/dj': typeof DjRoute
+  '/dj': typeof DjRouteWithChildren
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -781,6 +787,7 @@ export interface FileRoutesByFullPath {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
+  '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -839,7 +846,6 @@ export interface FileRoutesByTo {
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
-  '/dj': typeof DjRoute
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -894,6 +900,7 @@ export interface FileRoutesByTo {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/catalog': typeof CatalogIndexRoute
+  '/dj': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -954,7 +961,7 @@ export interface FileRoutesById {
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
-  '/dj': typeof DjRoute
+  '/dj': typeof DjRouteWithChildren
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -1011,6 +1018,7 @@ export interface FileRoutesById {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
+  '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -1129,6 +1137,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/catalog/'
+    | '/dj/'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1187,7 +1196,6 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/cookies'
     | '/delivery'
-    | '/dj'
     | '/equipment'
     | '/faq'
     | '/forgot-password'
@@ -1242,6 +1250,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin'
     | '/catalog'
+    | '/dj'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1358,6 +1367,7 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/catalog/'
+    | '/dj/'
     | '/admin/catalog/$type'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1418,7 +1428,7 @@ export interface RootRouteChildren {
   ContactsRoute: typeof ContactsRoute
   CookiesRoute: typeof CookiesRoute
   DeliveryRoute: typeof DeliveryRoute
-  DjRoute: typeof DjRoute
+  DjRoute: typeof DjRouteWithChildren
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -1714,6 +1724,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dj/': {
+      id: '/dj/'
+      path: '/'
+      fullPath: '/dj/'
+      preLoaderRoute: typeof DjIndexRouteImport
+      parentRoute: typeof DjRoute
     }
     '/catalog/': {
       id: '/catalog/'
@@ -2459,6 +2476,16 @@ const CasesRouteChildren: CasesRouteChildren = {
 
 const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
 
+interface DjRouteChildren {
+  DjIndexRoute: typeof DjIndexRoute
+}
+
+const DjRouteChildren: DjRouteChildren = {
+  DjIndexRoute: DjIndexRoute,
+}
+
+const DjRouteWithChildren = DjRoute._addFileChildren(DjRouteChildren)
+
 interface EquipmentRouteChildren {
   EquipmentSlugRoute: typeof EquipmentSlugRoute
 }
@@ -2517,7 +2544,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactsRoute: ContactsRoute,
   CookiesRoute: CookiesRoute,
   DeliveryRoute: DeliveryRoute,
-  DjRoute: DjRoute,
+  DjRoute: DjRouteWithChildren,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
