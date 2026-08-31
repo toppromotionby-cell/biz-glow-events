@@ -20,6 +20,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SendToTelegramButton } from "@/components/admin/SendToTelegramButton";
 import { fmtDate, fmtMoney } from "@/lib/formatters";
 import { useDocumentViewer } from "@/hooks/use-document-viewer";
 import { listOrdersForQuote } from "@/lib/quotes.functions";
@@ -167,6 +168,8 @@ export function FinanceDocumentsPanel({ search }: { search: string }) {
                         <Button variant="ghost" size="icon" title="Действия"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <SendToTelegramButton kind="finance" id={r.id} asMenuItem />
+                        <DropdownMenuSeparator />
                         {FINANCE_STATUSES[r.kind]
                           .filter((s) => s.key !== r.status)
                           .map((s) => (

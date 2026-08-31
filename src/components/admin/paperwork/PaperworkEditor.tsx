@@ -32,6 +32,7 @@ import { SaveStatus } from "@/components/admin/SaveStatus";
 import { PwBlockList } from "@/components/admin/paperwork/PwBlockList";
 import { PwBlankPanel } from "@/components/admin/paperwork/PwBlankPanel";
 import { PwAiPanel } from "@/components/admin/paperwork/PwAiPanel";
+import { SendToTelegramButton } from "@/components/admin/SendToTelegramButton";
 import { HrPanel, defaultHrPeriod, isHrDocType } from "@/components/admin/paperwork/HrPanel";
 import {
   getPaperworkBlank,
@@ -349,6 +350,7 @@ export function PaperworkEditor({
           <Button variant="outline" onClick={() => download("pdf")}>
             <Download className="mr-1 h-4 w-4" /> PDF
           </Button>
+          <SendToTelegramButton kind="paperwork" id={detail.document.id} />
           <Button
             onClick={() => save.mutate()}
             disabled={save.isPending || autosave.state === "saving"}
