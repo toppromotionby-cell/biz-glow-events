@@ -100,7 +100,8 @@
 - Новый `src/lib/dj/branding.ts` — единые правила суффикса `event-hub.by` для имени файла, ID3-полей и `<title>`/OG-тегов страниц трека.
 - `src/components/dj/BulkUploadDialog.tsx` — очередь, прогресс, дубликаты, ретраи; заменяет `UploadTrackDialog.tsx`.
 - Серверная часть: `djBulkCreateTracks` / `djBulkCreateSoftware` принимают массив уже загруженных объектов, валидируют Zod-схемой, пишут в БД со статусом `published`, считают дубликаты, возвращают отчёт. Права по-прежнему через `guard.server.ts`.
-- Миграции: удаление таблиц обсуждений; в `dj_tracks` добавляем `album`, `bitrate_kbps`, `source_filename`, `content_hash` (защита от дублей), в `dj_software` — `build_name`, `arch`.
+- Миграции: удаление таблиц обсуждений; в `dj_tracks` добавляем `album`, `bitrate_kbps`, `source_filename`, `content_hash`, `dedupe_key`, `work_id`, `category_id`, `tags`; уникальные индексы на `content_hash` и `dedupe_key`; новая таблица `dj_categories` (раздел, название, слаг, иконка, цвет, порядок, видимость) с GRANT и RLS; в `dj_software` — `build_name`, `arch`, `category_id`.
+- Дедупликация: `src/lib/dj/dedupe.ts` — SHA-256 через WebCrypto, нормализация артиста/названия, вычисление `dedupe_key`; серверная функция `djCheckDuplicates` принимает массив хешей и ключей и возвращает, что уже есть, до загрузки файлов.
 - Скачивание отдаёт подписанную ссылку с `download=Artist - Title [event-hub.by].mp3`.
 - Тесты: парсер метаданных, генератор имён с брендом, дедупликация; смоук-проверка страниц `/dj`, `/dj/pool`, `/dj/software`.
 
