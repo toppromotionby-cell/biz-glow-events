@@ -4,6 +4,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "crypto";
 import { admin } from "@/lib/calendar/store.server";
 import { handleCallback, handleTelegramText, handleTelegramVoice } from "@/lib/calendar/agent.server";
+import { plannerTgKey, tgSend } from "@/lib/calendar/telegram.server";
+import { chatAllowed } from "@/lib/calendar/store.server";
 
 function deriveSecret(key: string): string {
   return createHash("sha256").update(`telegram-webhook:${key}`).digest("base64url");
