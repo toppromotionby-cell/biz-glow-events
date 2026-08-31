@@ -34,6 +34,7 @@ const COLOR_ALLOW = [
   "admin.settings.emails",
   "admin.documents.quotes",
   "LogoHeaderDesigner",
+  "HeroSection",
 ];
 
 describe("design mode: Ember Board", () => {
