@@ -1,6 +1,6 @@
 // Универсальная обёртка таблицы admin: glass-карточка, единый thead,
 // состояния «Загрузка/Ошибка/Пусто», горизонтальный скролл.
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { AdminErrorState } from "./StateViews";
 
 export interface AdminTableColumn {
@@ -66,7 +66,7 @@ export function AdminTable({
 
   return (
     <div className={`glass rounded-xl overflow-hidden ${className ?? ""}`}>
-      <div className="table-shell table-cards" style={labelVars as React.CSSProperties}>
+      <div className="table-shell table-cards" style={labelVars as CSSProperties}>
         <table className={`w-full text-${textSize}`}>
           <thead className="admin-table-head sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-background/70">
 
