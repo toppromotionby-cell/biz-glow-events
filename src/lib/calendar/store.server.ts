@@ -152,26 +152,50 @@ export async function syncCalendarId(db: Admin): Promise<string> {
   return ((data as { google_calendar_id?: string } | null)?.google_calendar_id) || "primary";
 }
 
-/** Выгрузка записи в Google. Ошибки не роняют сохранение — пишем в лог. */
-export async function pushToGoogle(db: Admin, item: CalItem): Promise<CalItem> {
-  if (!googleConfigured()) return item;
+/** Выгрузка записи в Google. Ошибки не роняют сохранение — возвращаем статус. */
+export async function pushToGoogle(db: Admin, item: CalItem, prefs?: AssistantPrefs): Promise<PushResult> {
+  if (!googleConfigured()) {
+    return { item, status: { target: "calendar", state: "skipped", detail: "Google не подключён" } };
+  }
   try {
     const calendarId = await syncCalendarId(db);
     const dirs = await getDirections(db);
     const dir = dirs.find((d) => d.id === item.direction_id) ?? null;
-    const body = itemToEvent(item, dir);
-    if (!body.start) return item; // без времени в Google не выгружаем
+    const mins = prefs
+      ? item.importance === "hard"
+        ? prefs.hard_reminder_minutes
+        : prefs.reminder_minutes
+      : [];
+    // Задача без времени уходит all-day событием на дату срока (или на сегодня).
+    let forGoogle = item;
+    if (!item.starts_at && !item.due_at) {
+      forGoogle = { ...item, all_day: true, due_at: new Date().toISOString() };
+    } else if (!item.starts_at && item.due_at && !item.all_day && item.kind === "task") {
+      forGoogle = { ...item, all_day: true };
+    }
+    const body = itemToEvent(forGoogle, dir, { reminderMinutes: mins });
     const ev = item.google_event_id
       ? await gcalPatch(calendarId, item.google_event_id, body)
       : await gcalInsert(calendarId, body);
     const patch = { google_event_id: ev.id, google_etag: ev.etag ?? null, google_updated_at: ev.updated ?? null };
     await db.from("calendar_items").update(patch).eq("id", item.id);
-    return { ...item, ...patch } as CalItem;
+    return {
+      item: { ...item, ...patch } as CalItem,
+      status: {
+        target: "calendar",
+        state: "ok",
+        reminderLabel: reminderLabel(mins),
+      },
+    };
   } catch (e) {
     console.error("[planner] push to google failed", e);
-    return item;
+    return {
+      item,
+      status: { target: "calendar", state: "failed", detail: (e as Error).message?.slice(0, 120) ?? "ошибка" },
+    };
   }
 }
+
 
 export async function removeFromGoogle(db: Admin, item: CalItem): Promise<void> {
   if (!googleConfigured() || !item.google_event_id) return;
