@@ -98,6 +98,10 @@ export type DjTrack = {
   duration_sec: number | null;
   tags: string[];
   artwork_url: string | null;
+  section?: string | null;
+  category_id?: string | null;
+  cover_palette?: string | null;
+  cover_spec_version?: number;
   status: DjContentStatus;
   reject_reason?: string | null;
   uploaded_by: string | null;
@@ -113,6 +117,12 @@ export type DjTrack = {
 
 export type DjTrackFilters = {
   q?: string;
+  /** Раздел библиотеки (music, jingles, host…). */
+  section?: string;
+  /** Подкатегория из dj_categories. */
+  categoryId?: string;
+  /** Мультивыбор жанров. */
+  genres?: string[];
   genre?: string;
   version?: string;
   language?: string;
@@ -156,6 +166,19 @@ export function formatBytes(bytes: number | null | undefined): string {
 export function trackFullTitle(t: Pick<DjTrack, "artist" | "title" | "version">): string {
   const v = TRACK_VERSION_LABEL[t.version as TrackVersion] ?? t.version;
   return `${t.artist} — ${t.title}${v && t.version !== "original" ? ` (${v})` : ""}`;
+}
+
+/** Соседние по Camelot тональности — гармонично сводятся. */
+export function compatibleKeys(key: string | null | undefined): string[] {
+  if (!key) return [];
+  const m = key.match(/^(\d{1,2})([AB])$/i);
+  if (!m) return [];
+  const n = Number(m[1]);
+  const letter = m[2]!.toUpperCase();
+  const prev = ((n + 10) % 12) + 1;
+  const next = (n % 12) + 1;
+  const other = letter === "A" ? "B" : "A";
+  return [`${prev}${letter}`, `${next}${letter}`, `${n}${other}`];
 }
 
 export const AUDIO_EXTENSIONS = [".mp3", ".wav", ".flac", ".aiff", ".aif", ".m4a"];

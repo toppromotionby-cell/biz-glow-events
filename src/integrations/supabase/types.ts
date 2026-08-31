@@ -1533,6 +1533,8 @@ export type Database = {
           bpm: number | null
           category_id: string | null
           content_hash: string | null
+          cover_palette: string | null
+          cover_spec_version: number
           created_at: string
           dedupe_key: string | null
           download_count: number
@@ -1570,6 +1572,8 @@ export type Database = {
           bpm?: number | null
           category_id?: string | null
           content_hash?: string | null
+          cover_palette?: string | null
+          cover_spec_version?: number
           created_at?: string
           dedupe_key?: string | null
           download_count?: number
@@ -1607,6 +1611,8 @@ export type Database = {
           bpm?: number | null
           category_id?: string | null
           content_hash?: string | null
+          cover_palette?: string | null
+          cover_spec_version?: number
           created_at?: string
           dedupe_key?: string | null
           download_count?: number

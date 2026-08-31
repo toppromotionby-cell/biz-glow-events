@@ -10,6 +10,8 @@ import {
   bumpCounter,
   listSoftware,
   softwareDownloadUrl,
+  listCategories,
+  loadShowcase,
 } from "@/lib/dj/library.server";
 import { rateTrack, toggleFavorite } from "@/lib/dj/social.server";
 import { applyForMembership } from "@/lib/dj/members.server";
@@ -19,6 +21,9 @@ import { TRACK_VERSIONS } from "@/lib/dj/types";
 
 const filtersSchema = z.object({
   q: z.string().max(120).optional(),
+  section: z.string().max(30).optional(),
+  categoryId: z.string().uuid().optional(),
+  genres: z.array(z.string().max(60)).max(30).optional(),
   genre: z.string().max(60).optional(),
   version: z.string().max(40).optional(),
   language: z.string().max(40).optional(),
@@ -162,3 +167,10 @@ export const djSubmitTrack = createServerFn({ method: "POST" })
     const status = access.isManager ? "published" : "pending";
     return { id: await insertTrack(access.userId, data, status), status };
   });
+
+
+/** Справочник разделов и категорий — публичный, без чувствительных данных. */
+export const djCategories = createServerFn({ method: "GET" }).handler(async () => listCategories());
+
+/** Витрина главной /dj — публичная, только карточки без ссылок на аудио. */
+export const djShowcase = createServerFn({ method: "GET" }).handler(async () => loadShowcase());

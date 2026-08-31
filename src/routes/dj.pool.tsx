@@ -2,10 +2,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, LayoutGrid, Rows3 } from "lucide-react";
 import { MemberGate, useDjAccess } from "@/components/dj/MemberGate";
 import { TrackFilters } from "@/components/dj/TrackFilters";
 import { TrackList } from "@/components/dj/TrackList";
+import { TrackGrid } from "@/components/dj/TrackGrid";
 import { UploadTrackDialog } from "@/components/dj/UploadTrackDialog";
 import { Button } from "@/components/ui/button";
 import { djListTracks } from "@/lib/dj/dj.functions";
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/dj/pool")({
 function PoolPage() {
   const { data: access } = useDjAccess();
   const [filters, setFilters] = useState<DjTrackFilters>({ sort: "new", page: 1, pageSize: 24 });
+  const [view, setView] = useState<"grid" | "list">("grid");
   const key = ["dj", "tracks", filters] as unknown[];
 
   const { data, isLoading, isFetching } = useQuery({
@@ -50,7 +52,23 @@ function PoolPage() {
             {isLoading ? "Загружаем…" : `Найдено ${total} ${plural(total)}`}
           </p>
         </div>
-        {access?.isTrusted && <UploadTrackDialog invalidateKey={["dj", "tracks"]} />}
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-border/70 p-0.5" role="group" aria-label="Вид библиотеки">
+            <Button
+              size="icon" variant={view === "grid" ? "secondary" : "ghost"} className="h-8 w-8"
+              onClick={() => setView("grid")} aria-label="Плитками" aria-pressed={view === "grid"}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon" variant={view === "list" ? "secondary" : "ghost"} className="h-8 w-8"
+              onClick={() => setView("list")} aria-label="Списком" aria-pressed={view === "list"}
+            >
+              <Rows3 className="h-4 w-4" />
+            </Button>
+          </div>
+          {access?.isTrusted && <UploadTrackDialog invalidateKey={["dj", "tracks"]} />}
+        </div>
       </header>
 
       <TrackFilters value={filters} onChange={setFilters} />
@@ -59,7 +77,11 @@ function PoolPage() {
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : (
-          <TrackList tracks={data?.items ?? []} invalidateKey={["dj", "tracks"]} />
+          view === "grid" ? (
+            <TrackGrid tracks={data?.items ?? []} invalidateKey={["dj", "tracks"]} />
+          ) : (
+            <TrackList tracks={data?.items ?? []} invalidateKey={["dj", "tracks"]} />
+          )
         )}
       </div>
 
