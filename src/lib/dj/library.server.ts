@@ -129,13 +129,41 @@ export async function getTrack(access: DjAccess, id: string): Promise<DjTrack | 
   };
 }
 
-/** Ссылка на аудио: короткоживущая, выдаётся только участнику. */
-export async function trackAudioUrl(access: DjAccess, id: string): Promise<string> {
-  const { data } = await supabaseAdmin.from("dj_tracks").select("audio_path, status, uploaded_by").eq("id", id).maybeSingle();
+/**
+ * Ссылка на аудио: короткоживущая, выдаётся только участнику.
+ * При скачивании файл всегда получает фирменное имя
+ * `Artist - Title (Оригинал|Dj Smash Remix) [event-hub.by].mp3`.
+ */
+export async function trackAudioUrl(access: DjAccess, id: string, download = false): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from("dj_tracks")
+    .select("audio_path, status, uploaded_by, artist, title, version, is_remix, remixer, format")
+    .eq("id", id)
+    .maybeSingle();
   if (!data) throw new Error("Трек не найден");
   if (!access.isManager && data.status !== "published" && data.uploaded_by !== access.userId) {
     throw new Error("Трек недоступен");
   }
+
+  if (download) {
+    const { brandedVersionFileName, versionLabel } = await import("./version-detect");
+    const name = brandedVersionFileName({
+      artist: data.artist as string,
+      title: data.title as string,
+      label: versionLabel({
+        isRemix: Boolean(data.is_remix),
+        remixer: (data.remixer as string | null) ?? null,
+        label: (data.remixer as string | null) ? `${data.remixer} Remix` : "",
+        version: (data.version as string) as never,
+      }),
+      ext: (data.format as string | null) || (data.audio_path as string).split(".").pop() || "mp3",
+    });
+    const { data: signed } = await supabaseAdmin.storage
+      .from("dj-audio")
+      .createSignedUrl(data.audio_path as string, 60 * 30, { download: name });
+    if (signed?.signedUrl) return signed.signedUrl;
+  }
+
   const url = await signPath("dj-audio", data.audio_path, 60 * 30);
   if (!url) throw new Error("Файл трека недоступен");
   return url;
