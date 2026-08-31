@@ -32,7 +32,34 @@ export async function getPrefs(db: Admin): Promise<AssistantPrefs> {
     followup_minutes: (row.followup_minutes as number) ?? 30,
     style_profile: (row.style_profile as string) ?? null,
     last_device_tz: (row.last_device_tz as string) ?? null,
+    tg_allowed_chat_ids: ((row.tg_allowed_chat_ids as number[]) ?? []).map(Number),
+    tg_bot_username: (row.tg_bot_username as string) ?? null,
   };
+}
+
+/**
+ * Доступ к боту-планеру: если список разрешённых пуст и чат ещё не привязан —
+ * пускаем (первичная привязка), иначе только свой chat_id и явный allow-list.
+ */
+export async function chatAllowed(db: Admin, chatId: number): Promise<boolean> {
+  const prefs = await getPrefs(db);
+  if (prefs.tg_allowed_chat_ids.length) return prefs.tg_allowed_chat_ids.includes(chatId);
+  if (prefs.tg_chat_id == null) return true;
+  return prefs.tg_chat_id === chatId;
+}
+
+/** Поиск записей по названию/заметкам (для команды /find в Telegram). */
+export async function searchItems(db: Admin, query: string, limit = 10): Promise<CalItem[]> {
+  const q = query.replace(/[%,()]/g, " ").trim();
+  if (!q) return [];
+  const { data } = await db
+    .from("calendar_items")
+    .select("*")
+    .neq("status", "canceled")
+    .or(`title.ilike.%${q}%,notes.ilike.%${q}%`)
+    .order("starts_at", { ascending: true })
+    .limit(limit);
+  return (data ?? []) as unknown as CalItem[];
 }
 
 export async function getDirections(db: Admin): Promise<CalDirection[]> {
