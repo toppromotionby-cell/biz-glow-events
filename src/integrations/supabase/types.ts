@@ -124,6 +124,66 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_plans: {
+        Row: {
+          chat_key: string | null
+          created_at: string
+          decided_at: string | null
+          expires_at: string
+          id: string
+          questions: Json
+          reminded_at: string | null
+          request: string | null
+          research: Json
+          result: string | null
+          status: string
+          steps: Json
+          summary: string | null
+          tg_chat_id: number | null
+          tg_message_id: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chat_key?: string | null
+          created_at?: string
+          decided_at?: string | null
+          expires_at?: string
+          id?: string
+          questions?: Json
+          reminded_at?: string | null
+          request?: string | null
+          research?: Json
+          result?: string | null
+          status?: string
+          steps?: Json
+          summary?: string | null
+          tg_chat_id?: number | null
+          tg_message_id?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chat_key?: string | null
+          created_at?: string
+          decided_at?: string | null
+          expires_at?: string
+          id?: string
+          questions?: Json
+          reminded_at?: string | null
+          request?: string | null
+          research?: Json
+          result?: string | null
+          status?: string
+          steps?: Json
+          summary?: string | null
+          tg_chat_id?: number | null
+          tg_message_id?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       assistant_prefs: {
         Row: {
           alice_link_code: string | null
