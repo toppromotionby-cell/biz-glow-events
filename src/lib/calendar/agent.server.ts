@@ -22,7 +22,13 @@ import {
 } from "@/lib/calendar/store.server";
 import { dayRange, parseDayToken } from "@/lib/calendar/when";
 import { pushOutbox } from "@/lib/calendar/outbox.server";
-import { wantsPlanMode } from "@/lib/calendar/persona";
+import { buildPersona, wantsPlanMode } from "@/lib/calendar/persona";
+import { cardButtons, renderCard } from "@/lib/botkit/cards";
+import { detectForget, detectTeaching } from "@/lib/botkit/learn";
+import { LEARNED_ACK, forgottenAck } from "@/lib/botkit/format";
+import { acceptsAttachment, analyzeAttachments, type Attachment } from "@/lib/botkit/vision.server";
+import { forgetByQuery, listMemory, memoryPrompt, rememberMemory } from "@/lib/calendar/memory.server";
+import { isToolName, type ToolName } from "@/lib/calendar/tools.server";
 import { portalsHtml } from "@/lib/calendar/ai-portals";
 import {
   approvePlan,
@@ -34,7 +40,10 @@ import {
   planButtons,
   rejectPlan,
   renderPlan,
+  savePlan,
   tickPlans,
+  PLAN_TOOLS,
+  type PlanStep,
   type PlanRow,
 } from "@/lib/calendar/plan.server";
 import type { AssistantResult } from "@/lib/calendar/assistant.server";
