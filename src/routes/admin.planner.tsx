@@ -36,7 +36,7 @@ import {
   type CalItem,
   type CalKind,
 } from "@/lib/calendar/model";
-import { CalendarClock, Check, RefreshCw, Trash2 } from "lucide-react";
+import { CalendarClock, Check, ListPlus, RefreshCw, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/planner")({
   head: () => ({
@@ -95,6 +95,7 @@ function PlannerPage() {
   const delFn = useServerFn(deletePlannerItem);
   const prefsFn = useServerFn(savePlannerPrefs);
   const syncFn = useServerFn(syncPlannerGoogle);
+  const splitFn = useServerFn(splitPlannerItem);
 
   const range = useMemo(() => {
     const from = new Date();
@@ -205,6 +206,24 @@ function PlannerPage() {
           </div>
         </div>
         <div className="flex shrink-0 gap-1">
+          {item.kind === "task" && item.status !== "done" ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              title="Разбить на шаги (ИИ)"
+              aria-label="Разбить задачу на шаги"
+              onClick={() =>
+                void splitFn({ data: { id: item.id } })
+                  .then((r) => {
+                    toast.success(`Создано шагов: ${r.created}`);
+                    invalidate();
+                  })
+                  .catch((e: Error) => toast.error(e.message))
+              }
+            >
+              <ListPlus className="size-4" />
+            </Button>
+          ) : null}
           <Button
             size="sm"
             variant="ghost"
@@ -314,6 +333,7 @@ function PlannerPage() {
           <TabsTrigger value="overdue">Просрочено ({overdue.length})</TabsTrigger>
           <TabsTrigger value="upcoming">Дальше ({upcoming.length})</TabsTrigger>
           <TabsTrigger value="priority">Приоритеты</TabsTrigger>
+          <TabsTrigger value="analytics">Аналитика</TabsTrigger>
           <TabsTrigger value="inbox">Входящие ({data?.inbox.length ?? 0})</TabsTrigger>
           <TabsTrigger value="settings">Настройки</TabsTrigger>
         </TabsList>
@@ -330,6 +350,10 @@ function PlannerPage() {
         <TabsContent value="priority" className="mt-4">
           <p className="mb-3 text-sm text-muted-foreground">Порядок по срочности, важности и числу переносов.</p>
           <List list={byPriority} empty="Всё закрыто." />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4">
+          <AnalyticsCard directions={directions} />
         </TabsContent>
 
         <TabsContent value="inbox" className="mt-4">
