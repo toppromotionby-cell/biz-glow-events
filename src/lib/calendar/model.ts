@@ -55,6 +55,9 @@ export interface AssistantPrefs {
   followup_minutes: number;
   style_profile: string | null;
   last_device_tz: string | null;
+  /** Разрешённые Telegram-чаты бота-планера (пусто — привяжется первый, кто напишет /start). */
+  tg_allowed_chat_ids: number[];
+  tg_bot_username: string | null;
 }
 
 export const KIND_LABEL: Record<CalKind, string> = { task: "Задача", meeting: "Встреча" };
