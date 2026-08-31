@@ -1,3 +1,4 @@
+import { sanitizeTgHtml } from "@/lib/calendar/tg-format";
 // Транспорт DJ-бота к Telegram Bot API через connector-gateway (только сервер).
 // У DJ-раздела собственный бот: ключ подключения отдельный от бота сайта и планера.
 const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
@@ -98,7 +99,7 @@ export async function tgSend(
   text: string,
   buttons?: TgButton[][],
 ): Promise<{ message_id: number } | null> {
-  const chunks = splitText(text);
+  const chunks = splitText(sanitizeTgHtml(text));
   let last: { message_id: number } | null = null;
   for (let i = 0; i < chunks.length; i += 1) {
     const isLast = i === chunks.length - 1;
