@@ -95,7 +95,10 @@ export function DjPlayerProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [current, toggle]);
 
-  const value = useMemo<PlayerState>(() => ({ current, playing, play, toggle, stop }), [current, playing, play, toggle, stop]);
+  const value = useMemo<PlayerState>(
+    () => ({ current, playing, queue, play, toggle, stop }),
+    [current, playing, queue, play, toggle, stop],
+  );
 
   return (
     <Ctx.Provider value={value}>
