@@ -24,6 +24,7 @@ const filtersSchema = z.object({
   section: z.string().max(30).optional(),
   categoryId: z.string().uuid().optional(),
   formatSlug: z.string().max(30).optional(),
+  remix: z.enum(["only", "exclude"]).optional(),
   genres: z.array(z.string().max(60)).max(30).optional(),
   genre: z.string().max(60).optional(),
   version: z.string().max(40).optional(),

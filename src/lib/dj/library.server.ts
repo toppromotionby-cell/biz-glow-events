@@ -58,6 +58,8 @@ export async function listTracks(access: DjAccess, filters: DjTrackFilters): Pro
   if (filters.genres?.length) q = q.in("genre", filters.genres);
   else if (filters.genre) q = q.eq("genre", filters.genre);
   if (filters.version) q = q.eq("version", filters.version);
+  if (filters.remix === "only") q = q.eq("is_remix", true);
+  else if (filters.remix === "exclude") q = q.eq("is_remix", false);
   if (filters.language) q = q.eq("language", filters.language);
   if (filters.key) q = q.eq("key_camelot", filters.key);
   if (typeof filters.bpmMin === "number") q = q.gte("bpm", filters.bpmMin);

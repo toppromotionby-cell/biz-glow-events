@@ -126,6 +126,8 @@ export type DjTrackFilters = {
   categoryId?: string;
   /** Формат мероприятия (wedding, corporate, newyear…). */
   formatSlug?: string;
+  /** Оригиналы или ремиксы. */
+  remix?: "only" | "exclude";
   /** Мультивыбор жанров. */
   genres?: string[];
   genre?: string;
