@@ -491,6 +491,7 @@ export type Database = {
           last_evening_on: string | null
           last_morning_on: string | null
           last_pull_at: string | null
+          last_weekly_on: string | null
           lease_until: string | null
           paused_at: string | null
           paused_reason: string | null
@@ -503,6 +504,7 @@ export type Database = {
           last_evening_on?: string | null
           last_morning_on?: string | null
           last_pull_at?: string | null
+          last_weekly_on?: string | null
           lease_until?: string | null
           paused_at?: string | null
           paused_reason?: string | null
@@ -515,6 +517,7 @@ export type Database = {
           last_evening_on?: string | null
           last_morning_on?: string | null
           last_pull_at?: string | null
+          last_weekly_on?: string | null
           lease_until?: string | null
           paused_at?: string | null
           paused_reason?: string | null

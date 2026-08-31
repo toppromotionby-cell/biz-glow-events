@@ -152,6 +152,33 @@ export async function parseIntent(
   };
 }
 
+/** Разбиение крупной задачи на шаги (по запросу пользователя). */
+export async function splitTaskIntoSteps(title: string, notes: string | null): Promise<string[]> {
+  const raw = await aiChat([
+    {
+      role: "system",
+      content:
+        "Ты — личный ассистент. Разбей задачу на 3–7 конкретных выполнимых шагов в правильном порядке. " +
+        "Верни ТОЛЬКО JSON-массив строк, без комментариев и без нумерации внутри строк.",
+    },
+    { role: "user", content: `Задача: ${title}${notes ? `\nДетали: ${notes}` : ""}` },
+  ]);
+  const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const pick = (text: string): string[] => {
+    try {
+      const arr = JSON.parse(text) as unknown;
+      if (Array.isArray(arr)) {
+        return arr.filter((s): s is string => typeof s === "string").map((s) => s.trim()).filter(Boolean).slice(0, 10);
+      }
+    } catch { /* не JSON */ }
+    return [];
+  };
+  const direct = pick(cleaned);
+  if (direct.length) return direct;
+  const m = cleaned.match(/\[[\s\S]*\]/);
+  return m ? pick(m[0]) : [];
+}
+
 /** Короткий совет по приоритетам дня в стиле пользователя. */
 export async function adviseDay(summary: string, style: string | null): Promise<string> {
   try {

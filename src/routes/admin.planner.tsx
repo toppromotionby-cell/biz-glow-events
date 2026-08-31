@@ -19,10 +19,12 @@ import { Switch } from "@/components/ui/switch";
 import {
   deletePlannerItem,
   listPlannerData,
+  plannerAnalytics,
   reschedulePlannerItem,
   savePlannerPrefs,
   savePlannerItem,
   setPlannerStatus,
+  splitPlannerItem,
   syncPlannerGoogle,
 } from "@/lib/calendar.functions";
 import {
@@ -34,7 +36,7 @@ import {
   type CalItem,
   type CalKind,
 } from "@/lib/calendar/model";
-import { CalendarClock, Check, RefreshCw, Trash2 } from "lucide-react";
+import { CalendarClock, Check, ListPlus, RefreshCw, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/planner")({
   head: () => ({
@@ -93,6 +95,7 @@ function PlannerPage() {
   const delFn = useServerFn(deletePlannerItem);
   const prefsFn = useServerFn(savePlannerPrefs);
   const syncFn = useServerFn(syncPlannerGoogle);
+  const splitFn = useServerFn(splitPlannerItem);
 
   const range = useMemo(() => {
     const from = new Date();
@@ -203,6 +206,24 @@ function PlannerPage() {
           </div>
         </div>
         <div className="flex shrink-0 gap-1">
+          {item.kind === "task" && item.status !== "done" ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              title="Разбить на шаги (ИИ)"
+              aria-label="Разбить задачу на шаги"
+              onClick={() =>
+                void splitFn({ data: { id: item.id } })
+                  .then((r) => {
+                    toast.success(`Создано шагов: ${r.created}`);
+                    invalidate();
+                  })
+                  .catch((e: Error) => toast.error(e.message))
+              }
+            >
+              <ListPlus className="size-4" />
+            </Button>
+          ) : null}
           <Button
             size="sm"
             variant="ghost"
@@ -312,6 +333,7 @@ function PlannerPage() {
           <TabsTrigger value="overdue">Просрочено ({overdue.length})</TabsTrigger>
           <TabsTrigger value="upcoming">Дальше ({upcoming.length})</TabsTrigger>
           <TabsTrigger value="priority">Приоритеты</TabsTrigger>
+          <TabsTrigger value="analytics">Аналитика</TabsTrigger>
           <TabsTrigger value="inbox">Входящие ({data?.inbox.length ?? 0})</TabsTrigger>
           <TabsTrigger value="settings">Настройки</TabsTrigger>
         </TabsList>
@@ -328,6 +350,10 @@ function PlannerPage() {
         <TabsContent value="priority" className="mt-4">
           <p className="mb-3 text-sm text-muted-foreground">Порядок по срочности, важности и числу переносов.</p>
           <List list={byPriority} empty="Всё закрыто." />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-4">
+          <AnalyticsCard directions={directions} />
         </TabsContent>
 
         <TabsContent value="inbox" className="mt-4">
@@ -463,6 +489,91 @@ function PlannerPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function AnalyticsCard({ directions }: { directions: CalDirection[] }) {
+  const fn = useServerFn(plannerAnalytics);
+  const { data, isLoading } = useQuery({
+    queryKey: ["planner-analytics"],
+    queryFn: () => fn({ data: { days: 30 } }),
+  });
+  if (isLoading || !data) return <p className="text-sm text-muted-foreground">Загрузка…</p>;
+
+  const dirMeta = (id: string | null) => directions.find((d) => d.id === id) ?? null;
+  const maxMinutes = Math.max(1, ...data.perDirection.map((s) => s.minutes));
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Card><CardContent className="pt-4">
+          <div className="text-2xl font-semibold">{data.total}</div>
+          <div className="text-xs text-muted-foreground">записей за {data.days} дн.</div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4">
+          <div className="text-2xl font-semibold">{data.doneRate}%</div>
+          <div className="text-xs text-muted-foreground">закрыто ({data.done} из {data.total})</div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4">
+          <div className="text-2xl font-semibold">{data.openNow}</div>
+          <div className="text-xs text-muted-foreground">в работе сейчас</div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4">
+          <div className={`text-2xl font-semibold ${data.overdueNow ? "text-destructive" : ""}`}>{data.overdueNow}</div>
+          <div className="text-xs text-muted-foreground">просрочено</div>
+        </CardContent></Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Время и записи по направлениям</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {data.perDirection.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Данных пока нет.</p>
+          ) : (
+            data.perDirection.map((s) => {
+              const d = dirMeta(s.direction_id);
+              const hours = Math.round((s.minutes / 60) * 10) / 10;
+              return (
+                <div key={s.direction_id ?? "none"} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="size-2 rounded-full" style={{ background: d?.color ?? "#94a3b8" }} />
+                      {d?.title ?? "Без направления"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {s.total} записей · {s.done} закрыто{hours ? ` · ~${hours} ч` : ""}{s.reschedules ? ` · переносов: ${s.reschedules}` : ""}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted">
+                    <div
+                      className="h-1.5 rounded-full"
+                      style={{ width: `${Math.max(4, Math.round((s.minutes / maxMinutes) * 100))}%`, background: d?.color ?? "#94a3b8" }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
+      {data.topRescheduled.length ? (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Часто откладывается</CardTitle></CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {data.topRescheduled.map((t) => (
+              <div key={t.id} className="flex items-center justify-between">
+                <span className="truncate">{t.title}</span>
+                <Badge variant="outline">переносов: {t.reschedule_count}</Badge>
+              </div>
+            ))}
+            <p className="pt-2 text-xs text-muted-foreground">
+              Если задача переносится 3+ раза — стоит разбить её на шаги (кнопка со списком у задачи) или отменить.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE public.calendar_sync_state ADD COLUMN IF NOT EXISTS last_weekly_on date;
