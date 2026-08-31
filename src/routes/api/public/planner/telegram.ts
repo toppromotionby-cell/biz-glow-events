@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/planner/telegram")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const tgKey = process.env.TELEGRAM_API_KEY;
+        const tgKey = plannerTgKey();
         if (!tgKey) return new Response("not configured", { status: 503 });
         const got = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
         if (!safeEqual(got, deriveSecret(tgKey))) return new Response("unauthorized", { status: 401 });
