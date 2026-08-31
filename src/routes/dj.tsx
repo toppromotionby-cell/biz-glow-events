@@ -18,7 +18,7 @@ function DjLayout() {
     <DjPlayerProvider>
       <div className="pb-28">
         <div className="border-b border-border/60">
-          <div className="container mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+          <div className="page-shell flex flex-wrap items-center gap-x-6 gap-y-2 py-3">
             <Link to="/dj" className="flex items-center gap-2 font-display text-lg font-bold">
               <Disc3 className="h-5 w-5 text-primary" /> DJ Hub
             </Link>
