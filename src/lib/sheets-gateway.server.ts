@@ -13,7 +13,11 @@ export class SheetSyncError extends Error {
 
 function keys() {
   const lovable = process.env["LOVABLE_API_KEY"];
-  const conn = process.env["GOOGLE_SHEETS_API_KEY"];
+  // Может быть несколько подключений: свежее получает суффикс _1, _2 и т.д.
+  const conn =
+    process.env["GOOGLE_SHEETS_API_KEY_1"] ??
+    process.env["GOOGLE_SHEETS_API_KEY_2"] ??
+    process.env["GOOGLE_SHEETS_API_KEY"];
   if (!lovable || !conn) {
     throw new SheetSyncError("Подключение к Google Таблицам не настроено", 400);
   }
