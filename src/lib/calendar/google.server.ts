@@ -20,7 +20,10 @@ export interface GEvent {
 
 function keys() {
   const lovable = process.env.LOVABLE_API_KEY;
-  const cal = process.env.GOOGLE_CALENDAR_API_KEY;
+  const cal =
+    process.env.GOOGLE_CALENDAR_API_KEY_1 ??
+    process.env.GOOGLE_CALENDAR_API_KEY_2 ??
+    process.env.GOOGLE_CALENDAR_API_KEY;
   if (!lovable || !cal) return null;
   return { lovable, cal };
 }
