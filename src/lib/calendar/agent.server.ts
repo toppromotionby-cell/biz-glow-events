@@ -492,6 +492,85 @@ export async function handleTelegramVoice(db: Db, chatId: number, fileId: string
   await handleTelegramText(db, chatId, text, { source: "voice" });
 }
 
+// ——— Скриншоты и PDF (общий «глаз» ботов) ———
+
+/** Подсказка модели: какие шаги планер умеет выполнять по скриншоту. */
+function plannerActionsPrompt(): string {
+  return [
+    "В поле \"action\" пиши ровно один из инструментов планера:",
+    PLAN_TOOLS.join(", "),
+    "Если по скриншоту действие в календаре не нужно — оставь список steps пустым и объясни всё в summary.",
+  ].join("\n");
+}
+
+/**
+ * Разбор картинок и PDF: тот же движок, что и у бота админки.
+ * Всегда отдаём карточку решения с кнопками — ничего не меняем без утверждения.
+ */
+export async function handleTelegramMedia(
+  db: Db,
+  chatId: number,
+  fileIds: string[],
+  caption?: string,
+): Promise<void> {
+  const prefs = await getPrefs(db);
+  const dirs = await getDirections(db);
+  const attachments: Attachment[] = [];
+  for (const fileId of fileIds.slice(0, 3)) {
+    const file = await tgDownloadFile(fileId);
+    if (!file) continue;
+    const bytes = Math.ceil((file.base64.length * 3) / 4);
+    const check = acceptsAttachment(file.mime, bytes);
+    if (!check.ok) {
+      await tgSend(chatId, check.reason ?? "Такой файл я не разбираю.");
+      return;
+    }
+    attachments.push({ fileId, mime: file.mime, base64: file.base64, bytes });
+  }
+  if (!attachments.length) {
+    await tgSend(chatId, "Не смог скачать файл — пришлите ещё раз.");
+    return;
+  }
+
+  await tgSend(chatId, "👀 Смотрю, что на скриншоте…");
+  const memory = memoryPrompt(await listMemory(db));
+  const outcome = await analyzeAttachments({
+    system: buildPersona({ prefs, dirs, now: new Date(), channel: "telegram", memory }),
+    attachments,
+    question: caption?.trim() || "Разбери скриншот: что видно и что предлагаешь сделать в календаре или задачах.",
+    actions: plannerActionsPrompt(),
+  });
+  if (!outcome.ok) {
+    await tgSend(chatId, outcome.message);
+    return;
+  }
+
+  const steps: PlanStep[] = outcome.result.steps
+    .map((s) => ({ label: s.label, tool: String(s.action) as ToolName, args: (s.args ?? {}) as Record<string, unknown> }))
+    .filter((s) => isToolName(s.tool) && PLAN_TOOLS.includes(s.tool));
+
+  const plan = await savePlan(db, {
+    chatKey: `tg:${chatId}`,
+    chatId,
+    title: outcome.result.title,
+    summary: outcome.result.summary,
+    request: caption?.trim() || "Разбор скриншота",
+    steps,
+    questions: outcome.result.questions,
+  });
+
+  const html = renderCard({
+    id: plan.id,
+    title: plan.title,
+    summary: plan.summary,
+    steps: steps.map((s) => ({ label: s.label || s.tool, action: String(s.tool), args: s.args })),
+    risk: outcome.result.risk ?? null,
+    questions: plan.questions,
+  });
+  const sent = await tgSend(chatId, html, cardButtons(plan.id));
+  if (sent?.message_id) await attachPlanMessage(db, plan.id, chatId, sent.message_id);
+}
+
 // ——— Кнопки ———
 
 export async function handleCallback(
