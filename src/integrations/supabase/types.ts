@@ -262,11 +262,13 @@ export type Database = {
       assistant_memory: {
         Row: {
           active: boolean
+          bot: string
           created_at: string
           id: string
           key: string
           kind: string
           last_used_at: string | null
+          scope: string
           source: string
           updated_at: string
           value: string
@@ -274,11 +276,13 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          bot?: string
           created_at?: string
           id?: string
           key: string
           kind?: string
           last_used_at?: string | null
+          scope?: string
           source?: string
           updated_at?: string
           value: string
@@ -286,11 +290,13 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          bot?: string
           created_at?: string
           id?: string
           key?: string
           kind?: string
           last_used_at?: string | null
+          scope?: string
           source?: string
           updated_at?: string
           value?: string
