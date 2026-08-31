@@ -100,6 +100,7 @@ import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminHelpSlugRouteImport } from './routes/admin.help.$slug'
 import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
 import { Route as AdminDjTracksRouteImport } from './routes/admin.dj.tracks'
+import { Route as AdminDjTelegramRouteImport } from './routes/admin.dj.telegram'
 import { Route as AdminDjMembersRouteImport } from './routes/admin.dj.members'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
@@ -588,6 +589,11 @@ const AdminDjTracksRoute = AdminDjTracksRouteImport.update({
   path: '/dj/tracks',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDjTelegramRoute = AdminDjTelegramRouteImport.update({
+  id: '/dj/telegram',
+  path: '/dj/telegram',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDjMembersRoute = AdminDjMembersRouteImport.update({
   id: '/dj/members',
   path: '/dj/members',
@@ -834,6 +840,7 @@ export interface FileRoutesByFullPath {
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/telegram': typeof AdminDjTelegramRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -954,6 +961,7 @@ export interface FileRoutesByTo {
   '/dj': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/telegram': typeof AdminDjTelegramRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -1079,6 +1087,7 @@ export interface FileRoutesById {
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/telegram': typeof AdminDjTelegramRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -1205,6 +1214,7 @@ export interface FileRouteTypes {
     | '/dj/'
     | '/admin/catalog/$type'
     | '/admin/dj/members'
+    | '/admin/dj/telegram'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1325,6 +1335,7 @@ export interface FileRouteTypes {
     | '/dj'
     | '/admin/catalog/$type'
     | '/admin/dj/members'
+    | '/admin/dj/telegram'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1449,6 +1460,7 @@ export interface FileRouteTypes {
     | '/dj/'
     | '/admin/catalog/$type'
     | '/admin/dj/members'
+    | '/admin/dj/telegram'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -2203,6 +2215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDjTracksRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dj/telegram': {
+      id: '/admin/dj/telegram'
+      path: '/dj/telegram'
+      fullPath: '/admin/dj/telegram'
+      preLoaderRoute: typeof AdminDjTelegramRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/dj/members': {
       id: '/admin/dj/members'
       path: '/dj/members'
@@ -2511,6 +2530,7 @@ interface AdminRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminDjMembersRoute: typeof AdminDjMembersRoute
+  AdminDjTelegramRoute: typeof AdminDjTelegramRoute
   AdminDjTracksRoute: typeof AdminDjTracksRoute
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminPaperworkIdRoute: typeof AdminPaperworkIdRouteWithChildren
@@ -2555,6 +2575,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminDjMembersRoute: AdminDjMembersRoute,
+  AdminDjTelegramRoute: AdminDjTelegramRoute,
   AdminDjTracksRoute: AdminDjTracksRoute,
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminPaperworkIdRoute: AdminPaperworkIdRouteWithChildren,
