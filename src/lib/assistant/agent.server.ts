@@ -438,12 +438,7 @@ async function freeform(
   settings: Awaited<ReturnType<typeof getSettings>>,
 ): Promise<void> {
   if (settings.plan_only || planWorthy(text)) {
-    const plan = await ask(
-      systemPrompt({ isAdmin: who.isAdmin, roles: who.roles, webSearch: settings.allow_web_search, planOnly: true }),
-      await recentDialog(who.chatId),
-      `Задача: ${text}\n\nЭто нестандартная или массовая операция. Собери план на утверждение, ничего не выполняй.`,
-    );
-    await reply(who.chatId, who, `🗂 <b>План на утверждение</b>\n\n${toTgHtml(plan)}`, PLAN_BUTTONS);
+    await sendPlanCard(who, { title: "План на утверждение", request: text, settings });
     return;
   }
 
