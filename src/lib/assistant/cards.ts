@@ -46,7 +46,7 @@ export function cardButtons(planId: string): CardButton[][] {
 export function stripFakeButtons(text: string): string {
   const labels = BUTTON_LABELS.join("|");
   const line = new RegExp(
-    `^\\s*(?:[•\\-–—*]\\s*)?(?:<b>)?(?:кнопк\\w*\\s*[:—-]\\s*)?(?:[^\\p{L}\\n]{0,3}\\s*(?:${labels})\\b[^\\n]*)$`,
+    `^\\s*(?:[•\\-–—*]\\s*)?(?:<b>)?(?:кнопк[\\p{L}]*\\s*[:—-]\\s*)?[^\\p{L}\\n]{0,3}\\s*(?:${labels})[^\\p{L}\\n]*$`,
     "iu",
   );
   const kept = text
