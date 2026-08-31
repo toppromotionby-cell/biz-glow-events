@@ -75,7 +75,7 @@ export async function handleTelegramText(
 
   const { data: inbox } = await db
     .from("calendar_inbox")
-    .insert({ chat_id: chatId, source: opts.source, raw_text: text, status: "parsing", payload: (opts.raw ?? {}) as never })
+    .insert({ tg_chat_id: chatId, source: opts.source, raw_text: text, status: "parsing" })
     .select("id")
     .maybeSingle();
   const inboxId = (inbox as { id?: string } | null)?.id ?? null;
@@ -85,7 +85,7 @@ export async function handleTelegramText(
     parsed = await parseIntent(text, { tz: prefs.tz, directions: dirs, style: prefs.style_profile });
   } catch (e) {
     const msg = e instanceof AiBlockedError ? "ИИ временно недоступен, попробуйте позже." : "Не смог разобрать сообщение.";
-    if (inboxId) await db.from("calendar_inbox").update({ status: "error", error: String(e) }).eq("id", inboxId);
+    if (inboxId) await db.from("calendar_inbox").update({ status: "error", question: String(e).slice(0, 300) }).eq("id", inboxId);
     await tgSend(chatId, msg);
     return;
   }
