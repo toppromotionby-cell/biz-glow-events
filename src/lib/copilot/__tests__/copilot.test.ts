@@ -132,3 +132,27 @@ describe("роль помощника", () => {
     expect(persona).not.toContain("catalog_delete");
   });
 });
+
+describe("персона: конкретика на реальных данных", () => {
+  const base = {
+    now: new Date("2026-08-31T08:00:00Z"),
+    context: null,
+    memory: "",
+    allowedTools: ["search_records"],
+    allowWebSearch: false,
+    maxRows: 50,
+    allowDestructive: false,
+  } as const;
+
+  it("требует опираться на реальные записи, а не общие советы", () => {
+    const p = buildCopilotPersona({ ...base });
+    expect(p).toContain("Правило конкретики");
+    expect(p).toMatch(/id\/номером/);
+  });
+
+  it("подмешивает фактическую сводку в промпт", () => {
+    const p = buildCopilotPersona({ ...base, briefing: "Заявки за 90 дн.: 12, средний чек 4200 BYN." });
+    expect(p).toContain("средний чек 4200 BYN");
+    expect(p).toContain("Фактическая картина");
+  });
+});
