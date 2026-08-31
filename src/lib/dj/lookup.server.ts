@@ -34,7 +34,7 @@ async function writeCache(provider: string, key: string, value: CatalogMatch | n
   await supabaseAdmin
     .from("dj_lookup_cache")
     .upsert(
-      { provider, query_key: key, response: value as unknown as Record<string, unknown> | null },
+      { provider, query_key: key, response: (value ? { ...value } : null) as never },
       { onConflict: "provider,query_key" },
     );
 }
