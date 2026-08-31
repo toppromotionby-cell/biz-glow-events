@@ -43,6 +43,11 @@ import {
 } from "@/lib/calendar/model";
 import { CalendarClock, Check, ListPlus, RefreshCw, Trash2 } from "lucide-react";
 import { PlannerCalendar } from "@/components/admin/planner/PlannerCalendar";
+import { PlannerBoard } from "@/components/admin/planner/PlannerBoard";
+import { PlannerStats } from "@/components/admin/planner/PlannerStats";
+import { QuickAdd } from "@/components/admin/planner/QuickAdd";
+import { TasksRoutingCard } from "@/components/admin/planner/TasksRoutingCard";
+import { routeTarget, targetLabel } from "@/lib/calendar/routing";
 
 export const Route = createFileRoute("/admin/planner")({
   head: () => ({
@@ -183,7 +188,7 @@ function PlannerPage() {
   function ItemRow({ item }: { item: CalItem }) {
     const dir = dirOf(item);
     return (
-      <div className="flex items-start gap-3 rounded-lg border p-3">
+      <div className="flex items-start gap-3 rounded-xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md">
         <button
           type="button"
           aria-label="Отметить сделанным"
@@ -208,7 +213,11 @@ function PlannerPage() {
             <span>{fmtWhen(item)}</span>
             {isOverdue(item, now) ? <Badge variant="destructive">Просрочено</Badge> : null}
             {item.reschedule_count > 0 ? <Badge variant="outline">переносов: {item.reschedule_count}</Badge> : null}
-            {item.google_event_id ? <Badge variant="secondary">Google</Badge> : null}
+            {item.google_event_id ? <Badge variant="secondary">Календарь</Badge> : null}
+            {item.google_task_id ? <Badge variant="secondary">Google Задачи</Badge> : null}
+            {!item.google_event_id && !item.google_task_id ? (
+              <Badge variant="outline">{targetLabel(routeTarget(item, data?.prefs.task_routing ?? "auto"))}</Badge>
+            ) : null}
           </div>
         </div>
         <div className="flex shrink-0 gap-1">
@@ -316,6 +325,9 @@ function PlannerPage() {
         </div>
       ) : null}
 
+      <PlannerStats items={items} />
+      <QuickAdd onCreated={invalidate} />
+
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant={dirFilter === "all" ? "default" : "outline"} onClick={() => setDirFilter("all")}>
           Все направления
@@ -336,6 +348,7 @@ function PlannerPage() {
       <Tabs defaultValue="calendar">
         <TabsList>
           <TabsTrigger value="calendar">Календарь</TabsTrigger>
+          <TabsTrigger value="board">Доска</TabsTrigger>
           <TabsTrigger value="today">Сегодня ({today.length})</TabsTrigger>
           <TabsTrigger value="overdue">Просрочено ({overdue.length})</TabsTrigger>
           <TabsTrigger value="upcoming">Дальше ({upcoming.length})</TabsTrigger>
@@ -380,6 +393,28 @@ function PlannerPage() {
           />
         </TabsContent>
 
+        <TabsContent value="board" className="mt-4">
+          <PlannerBoard
+            items={visible}
+            directions={directions}
+            onStatus={(item, status) => void setStatusFn({ data: { id: item.id, status } }).then(invalidate)}
+            onEdit={(item) =>
+              setDraft({
+                id: item.id,
+                kind: item.kind,
+                title: item.title,
+                notes: item.notes ?? "",
+                direction_id: item.direction_id,
+                starts_at: toLocalInput(item.starts_at),
+                ends_at: toLocalInput(item.ends_at),
+                due_at: toLocalInput(item.due_at),
+                importance: item.importance,
+                location: item.location ?? "",
+              })
+            }
+          />
+        </TabsContent>
+
         <TabsContent value="today" className="mt-4">
           {isLoading ? <p className="text-sm text-muted-foreground">Загрузка…</p> : <List list={today} empty="На сегодня записей нет." />}
         </TabsContent>
@@ -420,6 +455,11 @@ function PlannerPage() {
 
         <TabsContent value="settings" className="mt-4">
           <div className="space-y-4">
+            <TasksRoutingCard
+              prefs={data?.prefs}
+              directions={directions}
+              onSave={(patch) => void prefsFn({ data: patch }).then(() => { toast.success("Сохранено"); invalidate(); })}
+            />
             <BotCard />
             <AliceCard />
             <PrefsCard prefs={data?.prefs} onSave={(p) => prefsFn({ data: p }).then(() => { toast.success("Настройки сохранены"); invalidate(); })} />
