@@ -418,3 +418,40 @@ export const plannerQuickAdd = createServerFn({ method: "POST" })
     });
     return { item, question: parsed.question };
   });
+
+// ——— Планы ассистента (режим «сначала план») ———
+
+export const listAssistantPlans = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin } = await import("@/lib/calendar/store.server");
+    const { listPlans } = await import("@/lib/calendar/plan.server");
+    return { plans: await listPlans(await admin(), 20) };
+  });
+
+export const createAssistantPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ request: z.string().min(3).max(1000) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin } = await import("@/lib/calendar/store.server");
+    const { buildPlan } = await import("@/lib/calendar/plan.server");
+    return { plan: await buildPlan(await admin(), { request: data.request, chatKey: "web" }) };
+  });
+
+export const decideAssistantPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), approve: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin } = await import("@/lib/calendar/store.server");
+    const { approvePlan, rejectPlan } = await import("@/lib/calendar/plan.server");
+    const db = await admin();
+    if (!data.approve) {
+      await rejectPlan(db, data.id);
+      return { ok: 0, failed: 0, text: "План отклонён." };
+    }
+    const res = await approvePlan(db, data.id);
+    return { ok: res.ok, failed: res.failed, text: res.text };
+  });
