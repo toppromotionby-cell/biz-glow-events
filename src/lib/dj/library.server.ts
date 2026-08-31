@@ -128,10 +128,11 @@ export async function trackAudioUrl(access: DjAccess, id: string): Promise<strin
   return url;
 }
 
-export async function bumpCounter(table: "dj_tracks", id: string, column: "play_count" | "download_count") {
-  const { data } = await supabaseAdmin.from(table).select(column).eq("id", id).maybeSingle();
+export async function bumpCounter(id: string, column: "play_count" | "download_count") {
+  const { data } = await supabaseAdmin.from("dj_tracks").select(column).eq("id", id).maybeSingle();
   const current = (data as Record<string, number> | null)?.[column] ?? 0;
-  await supabaseAdmin.from(table).update({ [column]: current + 1 }).eq("id", id);
+  const patch = column === "play_count" ? { play_count: current + 1 } : { download_count: current + 1 };
+  await supabaseAdmin.from("dj_tracks").update(patch).eq("id", id);
 }
 
 export type DjSoftwareVersion = {
