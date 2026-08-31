@@ -136,6 +136,7 @@ export type Database = {
           digest_visual: boolean
           evening_time: string
           followup_minutes: number
+          gtasks_enabled: boolean
           hard_reminder_minutes: number[]
           id: number
           last_device_tz: string | null
@@ -145,6 +146,7 @@ export type Database = {
           quiet_start: string
           reminder_minutes: number[]
           style_profile: string | null
+          task_routing: string
           tg_allowed_chat_ids: number[]
           tg_bot_username: string | null
           tg_chat_id: number | null
@@ -166,6 +168,7 @@ export type Database = {
           digest_visual?: boolean
           evening_time?: string
           followup_minutes?: number
+          gtasks_enabled?: boolean
           hard_reminder_minutes?: number[]
           id?: number
           last_device_tz?: string | null
@@ -175,6 +178,7 @@ export type Database = {
           quiet_start?: string
           reminder_minutes?: number[]
           style_profile?: string | null
+          task_routing?: string
           tg_allowed_chat_ids?: number[]
           tg_bot_username?: string | null
           tg_chat_id?: number | null
@@ -196,6 +200,7 @@ export type Database = {
           digest_visual?: boolean
           evening_time?: string
           followup_minutes?: number
+          gtasks_enabled?: boolean
           hard_reminder_minutes?: number[]
           id?: number
           last_device_tz?: string | null
@@ -205,6 +210,7 @@ export type Database = {
           quiet_start?: string
           reminder_minutes?: number[]
           style_profile?: string | null
+          task_routing?: string
           tg_allowed_chat_ids?: number[]
           tg_bot_username?: string | null
           tg_chat_id?: number | null
@@ -418,6 +424,7 @@ export type Database = {
           created_at: string
           emoji: string | null
           google_color_id: string | null
+          google_tasklist_id: string | null
           id: string
           key: string
           keywords: string[]
@@ -433,6 +440,7 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           google_color_id?: string | null
+          google_tasklist_id?: string | null
           id?: string
           key: string
           keywords?: string[]
@@ -448,6 +456,7 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           google_color_id?: string | null
+          google_tasklist_id?: string | null
           id?: string
           key?: string
           keywords?: string[]
@@ -523,17 +532,24 @@ export type Database = {
           google_etag: string | null
           google_event_id: string | null
           google_task_id: string | null
+          google_tasklist_id: string | null
+          google_tasks_etag: string | null
+          google_tasks_updated_at: string | null
           google_updated_at: string | null
           id: string
           importance: string
           kind: string
           location: string | null
           notes: string | null
+          parent_id: string | null
           participants: string[]
+          priority: number
+          recurrence: string | null
           reschedule_count: number
           source: string
           starts_at: string | null
           status: string
+          tags: string[]
           title: string
           tz: string
           updated_at: string
@@ -548,17 +564,24 @@ export type Database = {
           google_etag?: string | null
           google_event_id?: string | null
           google_task_id?: string | null
+          google_tasklist_id?: string | null
+          google_tasks_etag?: string | null
+          google_tasks_updated_at?: string | null
           google_updated_at?: string | null
           id?: string
           importance?: string
           kind?: string
           location?: string | null
           notes?: string | null
+          parent_id?: string | null
           participants?: string[]
+          priority?: number
+          recurrence?: string | null
           reschedule_count?: number
           source?: string
           starts_at?: string | null
           status?: string
+          tags?: string[]
           title: string
           tz?: string
           updated_at?: string
@@ -573,17 +596,24 @@ export type Database = {
           google_etag?: string | null
           google_event_id?: string | null
           google_task_id?: string | null
+          google_tasklist_id?: string | null
+          google_tasks_etag?: string | null
+          google_tasks_updated_at?: string | null
           google_updated_at?: string | null
           id?: string
           importance?: string
           kind?: string
           location?: string | null
           notes?: string | null
+          parent_id?: string | null
           participants?: string[]
+          priority?: number
+          recurrence?: string | null
           reschedule_count?: number
           source?: string
           starts_at?: string | null
           status?: string
+          tags?: string[]
           title?: string
           tz?: string
           updated_at?: string
@@ -594,6 +624,13 @@ export type Database = {
             columns: ["direction_id"]
             isOneToOne: false
             referencedRelation: "calendar_directions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_items"
             referencedColumns: ["id"]
           },
         ]
