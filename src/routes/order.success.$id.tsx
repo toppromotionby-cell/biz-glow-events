@@ -34,7 +34,7 @@ function OrderSuccess() {
   });
   const label = displayOrderNumber(data ?? { id });
   return (
-    <div className="container mx-auto px-4 py-16 max-w-2xl">
+    <div className="page-shell section-y max-w-2xl">
       <div className="glass-strong rounded-2xl p-8 text-center space-y-6">
         <div className="mx-auto h-16 w-16 rounded-full bg-success/15 flex items-center justify-center">
           <CheckCircle2 className="h-9 w-9 text-success" aria-hidden="true" />

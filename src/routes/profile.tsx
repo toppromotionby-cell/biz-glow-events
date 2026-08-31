@@ -198,12 +198,12 @@ function ProfilePage() {
     navigate({ to: "/cart" });
   }
 
-  if (loading || !profile) return <div className="container mx-auto px-4 py-16">Загрузка...</div>;
+  if (loading || !profile) return <div className="page-shell section-y">Загрузка...</div>;
 
   // Временный пароль из письма — до смены кабинет закрыт.
   if (mustChangePassword) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-md space-y-4">
+      <div className="page-shell section-y max-w-md space-y-4">
         <div className="glass-strong rounded-2xl p-6 space-y-2">
           <h1 className="text-2xl font-display font-bold gradient-text">Задайте свой пароль</h1>
           <p className="text-sm text-muted-foreground">
@@ -220,7 +220,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl space-y-8">
+    <div className="page-shell py-12 max-w-4xl space-y-8">
       <div>
         <h1 className="text-3xl font-display font-bold mb-2">Здравствуйте, {profile.full_name}</h1>
         <p className="text-muted-foreground">{profile.email}{profile.company && ` · ${profile.company}`}</p>

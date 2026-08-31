@@ -25,7 +25,7 @@ function Page() {
   const { data } = useSuspenseQuery(q);
   const avg = data.length ? (data.reduce((s, t) => s + t.rating, 0) / data.length).toFixed(1) : "—";
   return (
-    <div className="container mx-auto px-4 py-12 max-w-6xl">
+    <div className="page-shell py-12 max-w-6xl">
       <header className="mb-10">
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Отзывы клиентов</h1>
         <p className="mt-3 text-muted-foreground max-w-2xl">

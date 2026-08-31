@@ -45,7 +45,7 @@ export const Route = createFileRoute("/cases/$slug")({
   },
   component: CasePage,
   notFoundComponent: () => (
-    <div className="container mx-auto px-4 py-24 text-center">
+    <div className="page-shell section-y text-center">
       <h1 className="text-2xl font-display font-semibold">Кейс не найден</h1>
       <Link to="/cases" className="mt-4 inline-block text-primary underline">Все кейсы</Link>
     </div>
@@ -59,7 +59,7 @@ function CasePage() {
   const metrics = c.metrics && typeof c.metrics === "object" ? Object.entries(c.metrics as Record<string, unknown>) : [];
 
   return (
-    <article className="container mx-auto px-4 py-10 max-w-5xl">
+    <article className="page-shell py-10 max-w-5xl">
       <Link to="/cases" className="text-sm text-muted-foreground hover:text-foreground">← Все кейсы</Link>
 
       <header className="mt-6">

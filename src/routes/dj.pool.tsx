@@ -98,7 +98,7 @@ function PoolPage() {
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
+    <div className="page-shell max-w-6xl py-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold gradient-text">Библиотека треков</h1>

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/contacts")({
 function ContactsPage() {
   const { instagram_url, tiktok_url } = useSiteSettings();
   return (
-    <div className="container mx-auto px-4 py-16 max-w-3xl">
+    <div className="page-shell section-y max-w-3xl">
       <h1 className="text-4xl font-display font-bold gradient-text">Контакты</h1>
       <p className="mt-4 text-muted-foreground">Мы на связи {CONTACT.hours.toLowerCase()}.</p>
       <div className="mt-10 grid sm:grid-cols-2 gap-4">

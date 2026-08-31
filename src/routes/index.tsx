@@ -94,7 +94,7 @@ function HomePage() {
 
 
       {/* DIRECTIONS */}
-      <Toggleable sectionKey="home.directions" as="section" className="container mx-auto px-4 pb-16 md:pb-20">
+      <Toggleable sectionKey="home.directions" as="section" className="page-shell pb-16 md:pb-20">
         <h2 className="text-3xl md:text-4xl font-display font-bold mb-12 text-center">Направления</h2>
         <div className="grid-tiles">
           {sections.map((section, i) => (
@@ -105,7 +105,7 @@ function HomePage() {
 
       {/* FEATURED CATALOG */}
       {featured.length > 0 && (
-        <Toggleable sectionKey="home.featured" as="section" className="container mx-auto px-4 pb-16 md:pb-20 border-t border-border/40 border-0">
+        <Toggleable sectionKey="home.featured" as="section" className="page-shell pb-16 md:pb-20 border-t border-border/40 border-0">
           <div className="mb-8 text-center">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
           </div>
@@ -137,7 +137,7 @@ function HomePage() {
       )}
 
       {/* VALUES */}
-      <Toggleable sectionKey="home.values" as="section" className="container mx-auto px-4 pb-16 md:pb-20 border-t border-border/40">
+      <Toggleable sectionKey="home.values" as="section" className="page-shell pb-16 md:pb-20 border-t border-border/40">
         <div className="grid md:grid-cols-3 gap-8">
           {VALUES.map((v) => (
             <div key={v.title} className="flex flex-col items-center text-center">
@@ -154,7 +154,7 @@ function HomePage() {
       {/* CASES — ленивый рендер при подходе к вьюпорту */}
       {cases.length > 0 && (
         <InView minHeight={420}>
-          <Toggleable sectionKey="home.cases" as="section" className="container mx-auto px-4 border-t border-border/40">
+          <Toggleable sectionKey="home.cases" as="section" className="page-shell border-t border-border/40">
             <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
               <div>
                 <h2 className="text-3xl md:text-4xl font-display font-bold">Наши кейсы</h2>
@@ -198,7 +198,7 @@ function HomePage() {
       {/* BLOG TEASER */}
       {posts.length > 0 && (
         <InView minHeight={420}>
-          <Toggleable sectionKey="home.blog" as="section" className="container mx-auto px-4 border-t border-border/40">
+          <Toggleable sectionKey="home.blog" as="section" className="page-shell border-t border-border/40">
             <div className="flex items-end justify-between mb-8 gap-4 flex-wrap">
               <h2 className="text-3xl md:text-4xl font-display font-bold">Из блога</h2>
               <Link to="/blog" className="text-sm text-primary hover:underline inline-flex items-center gap-1">
@@ -229,7 +229,7 @@ function HomePage() {
       )}
 
       {/* CTA */}
-      <Toggleable sectionKey="home.cta" as="section" className="container mx-auto px-4">
+      <Toggleable sectionKey="home.cta" as="section" className="page-shell">
         <div className="glass-strong rounded-3xl p-10 md:p-16 text-center bg-gradient-to-br from-primary/10 to-transparent">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Готовы обсудить ваше мероприятие?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
@@ -243,7 +243,7 @@ function HomePage() {
       </Toggleable>
 
       {/* ORDER SERVICES — перед подвалом */}
-      <Toggleable sectionKey="home.order" as="section" className="container mx-auto px-4">
+      <Toggleable sectionKey="home.order" as="section" className="page-shell">
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Заказ услуг</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">

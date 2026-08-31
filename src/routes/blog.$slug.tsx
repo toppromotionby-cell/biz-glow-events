@@ -49,7 +49,7 @@ export const Route = createFileRoute("/blog/$slug")({
   },
   component: BlogPostPage,
   notFoundComponent: () => (
-    <div className="container mx-auto px-4 py-20">
+    <div className="page-shell section-y">
       <div className="max-w-md mx-auto text-center border border-border rounded-2xl p-8">
         <h1 className="text-xl font-display font-semibold">Не найдено</h1>
         <Link to="/blog" className="mt-4 inline-block text-sm text-primary hover:underline">← Ко всем записям</Link>
@@ -57,7 +57,7 @@ export const Route = createFileRoute("/blog/$slug")({
     </div>
   ),
   errorComponent: ({ error }) => (
-    <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">
+    <div className="page-shell section-y text-center text-muted-foreground">
       Ошибка загрузки: {String(error?.message ?? error)}
     </div>
   ),
@@ -67,7 +67,7 @@ function BlogPostPage() {
   const { post } = Route.useLoaderData();
 
   return (
-    <article className="container mx-auto px-4 py-12 max-w-3xl">
+    <article className="page-shell py-12 max-w-3xl">
       <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground">← Ко всем записям</Link>
 
       <header className="mt-6 mb-8">

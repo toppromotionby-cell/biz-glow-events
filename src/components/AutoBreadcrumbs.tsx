@@ -51,7 +51,7 @@ export function AutoBreadcrumbs() {
   });
 
   return (
-    <div className="container mx-auto px-4 pt-3">
+    <div className="page-shell pt-3">
       <Breadcrumbs items={items} />
     </div>
   );

@@ -11,7 +11,7 @@ export function TestimonialsTeaser() {
   });
   if (data.length === 0) return null;
   return (
-    <section className="container mx-auto px-4 py-16 max-w-6xl">
+    <section className="page-shell section-y max-w-6xl">
       <div className="flex items-end justify-between mb-8 gap-4">
         <div>
           <h2 className="text-3xl md:text-4xl font-display font-bold gradient-text">Отзывы клиентов</h2>

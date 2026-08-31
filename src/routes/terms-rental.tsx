@@ -49,7 +49,7 @@ export const Route = createFileRoute("/terms-rental")({
 
 function Page() {
   return (
-    <div className="container mx-auto px-4 py-16 max-w-5xl">
+    <div className="page-shell section-y max-w-5xl">
       <header className="max-w-3xl">
         <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
           <FileSignature className="h-3.5 w-3.5" /> Документы

@@ -120,7 +120,7 @@ function DjLanding() {
   ];
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-12">
+    <div className="page-shell max-w-6xl py-12">
       {/* Хиро: тёмная сцена, янтарные засветы, винил и эквалайзер */}
       <section className="dj-stage dj-grain relative isolate overflow-hidden rounded-3xl border border-primary/20 p-8 md:p-14">
         <div className="dj-aurora pointer-events-none absolute inset-0 opacity-70" aria-hidden />

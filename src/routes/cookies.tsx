@@ -12,7 +12,7 @@ export const Route = createFileRoute("/cookies")({
     links: [{ rel: "canonical", href: "https://event-hub.by/cookies" }],
   }),
   component: () => (
-    <div className="container mx-auto px-4 py-16 max-w-3xl">
+    <div className="page-shell section-y max-w-3xl">
       <h1 className="text-3xl font-display font-bold gradient-text">Политика использования файлов cookie</h1>
       <p className="mt-4 text-muted-foreground">
         Настоящая Политика объясняет, какие файлы cookie и аналогичные технологии используются на сайте

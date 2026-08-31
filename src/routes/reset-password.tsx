@@ -33,7 +33,7 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-md">
+    <div className="page-shell section-y max-w-md">
       <h1 className="text-3xl font-display font-bold gradient-text mb-6">Новый пароль</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 glass rounded-xl p-6">
         <div>

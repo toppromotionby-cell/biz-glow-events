@@ -133,7 +133,7 @@ function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-5xl pb-28 lg:pb-12">
+    <div className="page-shell py-12 max-w-5xl pb-28 lg:pb-12">
       <header className="mb-8">
         <h1 className="text-4xl font-display font-bold gradient-text">Ваша корзина</h1>
         <p className="mt-2 text-muted-foreground">

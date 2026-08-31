@@ -47,7 +47,7 @@ function GuestOrderPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-3xl">
+      <div className="page-shell section-y max-w-3xl">
         <div className="h-40 rounded-2xl bg-muted/30 animate-pulse" />
       </div>
     );
@@ -55,7 +55,7 @@ function GuestOrderPage() {
 
   if (!data) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-xl text-center">
+      <div className="page-shell section-y max-w-xl text-center">
         <h1 className="text-2xl font-display font-bold">Ссылка недействительна</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Заказ не найден. Проверьте ссылку из письма или свяжитесь с нами: {CONTACT.phoneDisplay}.
@@ -70,7 +70,7 @@ function GuestOrderPage() {
   const label = displayOrderNumber({ id: data.id, order_number: data.orderNumber });
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-3xl space-y-5">
+    <div className="page-shell py-12 max-w-3xl space-y-5">
       <header className="glass-strong rounded-2xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

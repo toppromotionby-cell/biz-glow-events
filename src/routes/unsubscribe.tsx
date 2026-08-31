@@ -54,7 +54,7 @@ function UnsubscribePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-20 max-w-md">
+    <div className="page-shell section-y max-w-md">
       <div className="glass rounded-2xl p-8 text-center">
         <h1 className="text-2xl font-display font-bold gradient-text mb-4">Отписка от рассылки</h1>
         {state.kind === "loading" && <p className="text-muted-foreground">Проверяем ссылку…</p>}

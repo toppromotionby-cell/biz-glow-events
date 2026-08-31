@@ -98,7 +98,7 @@ function Page() {
   const active = INDUSTRIES.find((i) => i.slug === openSlug) ?? null;
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-6xl">
+    <div className="page-shell section-y max-w-6xl">
       <header className="max-w-3xl">
         <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
           <Briefcase className="h-3.5 w-3.5" /> Индустрии

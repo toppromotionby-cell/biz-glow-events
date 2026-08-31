@@ -31,7 +31,7 @@ function CasesPage() {
   useEffect(() => { setPage(1); }, [perPage]);
   const paged = cases.slice((page - 1) * perPage, page * perPage);
   return (
-    <div className="container mx-auto px-4 py-12 max-w-6xl">
+    <div className="page-shell py-12 max-w-6xl">
       <header className="mb-10">
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Кейсы и портфолио</h1>
         <p className="mt-3 text-muted-foreground max-w-2xl">Реальные мероприятия, реализованные командой event-hub.by — от корпоративов на 100 человек до фестивалей на 5000.</p>

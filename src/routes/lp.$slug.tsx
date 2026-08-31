@@ -121,7 +121,7 @@ function LandingPage() {
   return (
     <div className="bg-radial-glow">
       {/* Hero */}
-      <section className="container mx-auto px-4 py-12 md:py-20">
+      <section className="page-shell py-12 md:py-20">
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/50 px-3 py-1 text-xs text-muted-foreground">
@@ -157,7 +157,7 @@ function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="container mx-auto px-4 pb-16 md:pb-24">
+      <section className="page-shell pb-16 md:pb-24">
         <h2 className="text-2xl font-display font-bold md:text-3xl">Частые вопросы</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {lp.faq.map((f) => (

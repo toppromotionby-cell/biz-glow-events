@@ -83,7 +83,7 @@ export function SiteHeader() {
           transform: scrolling && scrolled ? "translateY(-100%)" : "translateY(0)",
         }}
       >
-        <div className={`container mx-auto px-4 flex items-center justify-between gap-2 md:gap-4 transition-all duration-200 ${scrolled ? "h-12 md:h-14" : "h-16"}`}>
+        <div className={`page-shell flex items-center justify-between gap-2 md:gap-4 transition-all duration-200 ${scrolled ? "h-12 md:h-14" : "h-16"}`}>
           <Toggleable sectionKey="header.brand" as="span">
             <Link to="/" aria-label="event-hub.by — на главную" className="flex items-center gap-2 font-display font-bold text-lg whitespace-nowrap shrink-0">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary glow-primary shrink-0" aria-hidden="true">
@@ -270,7 +270,7 @@ export function SiteFooter() {
   return (
     <Toggleable sectionKey="footer.root" as="div">
       <footer className="border-t border-border/50 mt-20">
-        <div className="container mx-auto px-4 py-10 text-sm">
+        <div className="page-shell py-10 text-sm">
           {/* Desktop layout */}
           <div className="hidden md:grid md:grid-cols-4 gap-8">
             <Toggleable sectionKey="footer.brand" as="div">

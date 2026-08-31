@@ -67,7 +67,7 @@ export const Route = createFileRoute("/faq")({
 
 function FaqPage() {
   return (
-    <div className="container mx-auto px-4 py-16 max-w-3xl">
+    <div className="page-shell section-y max-w-3xl">
       <div className="flex items-center gap-3">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary glow-primary">
           <HelpCircle className="h-5 w-5 text-primary-foreground" />
