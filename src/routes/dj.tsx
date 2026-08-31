@@ -11,7 +11,6 @@ const TABS = [
   { to: "/dj", label: "О клубе", exact: true },
   { to: "/dj/pool", label: "Библиотека" },
   { to: "/dj/software", label: "Софт" },
-  { to: "/dj/community", label: "Обсуждения" },
 ] as const;
 
 function DjLayout() {

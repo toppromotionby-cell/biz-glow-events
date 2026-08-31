@@ -55,8 +55,8 @@ export async function requireDjManager(userId: string): Promise<DjAccess> {
 
 /** Простой антифлуд: не больше `limit` записей в таблице за `windowMin` минут. */
 export async function assertRateLimit(
-  table: "dj_downloads" | "dj_comments",
-  userColumn: "user_id" | "author_id",
+  table: "dj_downloads",
+  userColumn: "user_id",
   userId: string,
   limit: number,
   windowMin: number,

@@ -42,11 +42,11 @@ function DjLanding() {
         <h1 className="mt-4 font-display text-4xl font-bold gradient-text md:text-5xl">DJ Hub event-hub.by</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
           Рабочее место event-диджея: чистая библиотека треков с версиями и метаданными, актуальный софт,
-          рейтинги коллег и обсуждения. Всё в одном месте и без лишнего шума.
+          рейтинги коллег. Всё в одном месте и без лишнего шума.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button asChild size="lg"><Link to="/dj/pool">Войти в библиотеку</Link></Button>
-          <Button asChild size="lg" variant="outline"><Link to="/dj/community">Посмотреть обсуждения</Link></Button>
+          <Button asChild size="lg" variant="outline"><Link to="/dj/software">Софт и плагины</Link></Button>
         </div>
       </section>
 

@@ -74,20 +74,13 @@ export async function deleteTrack(id: string) {
   await removeStoredFile("dj-artwork", data?.artwork_path);
 }
 
-export async function moderateComment(id: string, status: "published" | "hidden") {
-  const { error } = await supabaseAdmin.from("dj_comments").update({ status }).eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
 export async function pendingQueue() {
-  const [tracks, comments, software] = await Promise.all([
+  const [tracks, software] = await Promise.all([
     supabaseAdmin.from("dj_tracks").select("id, artist, title, version, created_at, uploaded_by").eq("status", "pending").order("created_at"),
-    supabaseAdmin.from("dj_comments").select("id, body, target_type, target_id, author_id, created_at").eq("status", "published").order("created_at", { ascending: false }).limit(50),
     supabaseAdmin.from("dj_software").select("id, name, vendor, created_at").eq("status", "pending").order("created_at"),
   ]);
   return {
     tracks: tracks.data ?? [],
-    recentComments: comments.data ?? [],
     software: software.data ?? [],
   };
 }

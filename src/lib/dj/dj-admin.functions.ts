@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireDjManager } from "@/lib/dj/guard.server";
 import { listMembers, setMemberStatus, djStats } from "@/lib/dj/members.server";
-import { moderateTrack, deleteTrack, updateTrack, moderateComment, pendingQueue } from "@/lib/dj/moderation.server";
+import { moderateTrack, deleteTrack, updateTrack, pendingQueue } from "@/lib/dj/moderation.server";
 import { listTracks } from "@/lib/dj/library.server";
 
 const memberStatus = z.enum(["pending", "approved", "trusted", "blocked", "rejected"]);
@@ -97,13 +97,3 @@ export const djAdminDeleteTrack = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const djAdminModerateComment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ id: z.string().uuid(), status: z.enum(["published", "hidden"]) }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    await requireDjManager(context.userId);
-    await moderateComment(data.id, data.status);
-    return { ok: true };
-  });
