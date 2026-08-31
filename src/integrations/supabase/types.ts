@@ -300,11 +300,13 @@ export type Database = {
       }
       assistant_plans: {
         Row: {
+          attachments: Json
           chat_key: string | null
           created_at: string
           decided_at: string | null
           expires_at: string
           id: string
+          kind: string
           questions: Json
           reminded_at: string | null
           request: string | null
@@ -319,11 +321,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachments?: Json
           chat_key?: string | null
           created_at?: string
           decided_at?: string | null
           expires_at?: string
           id?: string
+          kind?: string
           questions?: Json
           reminded_at?: string | null
           request?: string | null
@@ -338,11 +342,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachments?: Json
           chat_key?: string | null
           created_at?: string
           decided_at?: string | null
           expires_at?: string
           id?: string
+          kind?: string
           questions?: Json
           reminded_at?: string | null
           request?: string | null
