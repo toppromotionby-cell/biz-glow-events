@@ -8,6 +8,8 @@ import { addMessage, createRun, listMessages, renameSessionFromFirstMessage } fr
 import { maxRisk, type CopilotContext, type CopilotOp, type CopilotSource, type CopilotStep } from "@/lib/copilot/types";
 import { admin } from "@/lib/copilot/guard.server";
 import { sharedMemoryPrompt } from "@/lib/botkit/memory.server";
+import { buildBriefing } from "@/lib/copilot/briefing.server";
+
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3.7-flash";
@@ -67,6 +69,7 @@ export async function copilotTurn(input: {
   const tools = allowedTools(settings);
   const db = await admin();
   const memory = await sharedMemoryPrompt(db as never, "assistant").catch(() => "");
+  const briefing = await buildBriefing().catch(() => "");
 
   const history = await listMessages(input.sessionId, 20);
   const messages: ChatMessage[] = [
@@ -76,12 +79,14 @@ export async function copilotTurn(input: {
         now: new Date(),
         context: input.context,
         memory,
+        briefing,
         allowedTools: tools,
         allowWebSearch: settings.allow_web_search,
         maxRows: settings.max_rows_per_run,
         allowDestructive: settings.allow_destructive,
       }),
     },
+
     ...history
       .filter((m) => m.role !== "system")
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
