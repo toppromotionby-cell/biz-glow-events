@@ -18,6 +18,7 @@ import {
   Users,
   Inbox,
   Send,
+  Bot,
   Disc3,
   Music4,
   Headphones,
@@ -84,6 +85,7 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/dj", label: "Обзор и модерация", icon: Disc3, exact: true, perm: "dj.manage" },
       { to: "/admin/dj/tracks", label: "Библиотека треков", icon: Music4, perm: "dj.manage" },
       { to: "/admin/dj/members", label: "Участники клуба", icon: Headphones, perm: "dj.manage" },
+      { to: "/admin/dj/telegram", label: "Диджей-бот", icon: Bot, perm: "dj.manage" },
     ],
   },
   {
