@@ -32,11 +32,8 @@ export function parseDayToken(token: string, tz: string, now = new Date()): Date
 
   const wd = WEEKDAYS.findIndex((w) => t.startsWith(w));
   if (wd >= 0) {
-    const todayIdx = Number(
-      new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: tz })
-        .format(now)
-        .replace(/Sun|Mon|Tue|Wed|Thu|Fri|Sat/, (m) => String(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(m))),
-    );
+    const short = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: tz }).format(now);
+    const todayIdx = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(short);
     const diff = (wd - todayIdx + 7) % 7 || 7;
     return dayRange(now, tz, diff).from;
   }
