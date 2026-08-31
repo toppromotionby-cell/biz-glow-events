@@ -52,14 +52,14 @@ export function detectIntent(raw: string, tz: string, now = new Date()): Assista
   if (!t || HELP_RE.test(t)) return { type: "help" };
   if (NEWS_RE.test(t)) return { type: "news" };
 
-  if (/^(что|какие|какой|покажи|показать|список|план|расписание|дела|задачи)\b/.test(t) || /^(сегодня|завтра|послезавтра|неделя|на неделе|просроч|ближайш)/.test(t)) {
+  if (/^(что|какие|какой|покажи|показать|список|план|расписание|дела|задачи)(?![а-яё])/.test(t) || /^(сегодня|завтра|послезавтра|неделя|на неделе|просроч|ближайш)/.test(t)) {
     if (/просроч|горит|хвост/.test(t)) return { type: "list", scope: "overdue" };
     if (/недел/.test(t)) return { type: "list", scope: "week" };
     if (/послезавтра/.test(t)) return { type: "day", day: dayRange(now, tz, 2).from };
     if (/завтра/.test(t)) return { type: "list", scope: "tomorrow" };
     if (/сегодня|сейчас|день/.test(t)) return { type: "list", scope: "today" };
     if (/ближайш|дальше|потом/.test(t)) return { type: "list", scope: "next" };
-    const dayToken = t.replace(/^(что|какие|какой|покажи|показать|список|план|расписание|дела|задачи)\b/, "").replace(/\b(у меня|на|в|запланировано|дел[оа]?)\b/g, " ").trim();
+    const dayToken = t.replace(/^(что|какие|какой|покажи|показать|список|план|расписание|дела|задачи)(?![а-яё])/, "").replace(/(^|\s)(у меня|на|в|запланировано|дел[оа]?)(\s|$)/g, " ").trim();
     const day = parseDayToken(dayToken, tz, now);
     if (day) return { type: "day", day };
     return { type: "list", scope: "today" };

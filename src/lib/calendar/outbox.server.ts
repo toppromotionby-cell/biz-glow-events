@@ -29,7 +29,7 @@ export function plainText(html: string): string {
 /** Убираем эмодзи и служебные символы — Алиса не должна их проговаривать. */
 export function speechText(text: string): string {
   return plainText(text)
-    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}]/gu, " ")
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2300}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}]/gu, " ")
     .replace(/[•·]/g, ",")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\s+,/g, ",")
