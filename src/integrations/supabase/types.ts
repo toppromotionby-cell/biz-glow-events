@@ -1766,6 +1766,174 @@ export type Database = {
           },
         ]
       }
+      dj_tg_link_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dj_tg_links: {
+        Row: {
+          chat_id: number
+          created_at: string
+          id: string
+          muted_until: string | null
+          tg_first_name: string | null
+          tg_username: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          id?: string
+          muted_until?: string | null
+          tg_first_name?: string | null
+          tg_username?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          id?: string
+          muted_until?: string | null
+          tg_first_name?: string | null
+          tg_username?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dj_tg_outbox: {
+        Row: {
+          attempts: number
+          chat_id: number | null
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          payload: Json
+          send_after: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          chat_id?: number | null
+          created_at?: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          payload?: Json
+          send_after?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          chat_id?: number | null
+          created_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          payload?: Json
+          send_after?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dj_tg_settings: {
+        Row: {
+          admin_chat_id: number | null
+          announce_publications: boolean
+          created_at: string
+          daily_digest_hour: number
+          group_chat_id: number | null
+          id: number
+          last_daily_at: string | null
+          last_reject_digest_at: string | null
+          last_weekly_at: string | null
+          notify_applications: boolean
+          notify_digest: boolean
+          notify_rejects: boolean
+          notify_tracks: boolean
+          updated_at: string
+          weekly_digest_dow: number
+        }
+        Insert: {
+          admin_chat_id?: number | null
+          announce_publications?: boolean
+          created_at?: string
+          daily_digest_hour?: number
+          group_chat_id?: number | null
+          id?: number
+          last_daily_at?: string | null
+          last_reject_digest_at?: string | null
+          last_weekly_at?: string | null
+          notify_applications?: boolean
+          notify_digest?: boolean
+          notify_rejects?: boolean
+          notify_tracks?: boolean
+          updated_at?: string
+          weekly_digest_dow?: number
+        }
+        Update: {
+          admin_chat_id?: number | null
+          announce_publications?: boolean
+          created_at?: string
+          daily_digest_hour?: number
+          group_chat_id?: number | null
+          id?: number
+          last_daily_at?: string | null
+          last_reject_digest_at?: string | null
+          last_weekly_at?: string | null
+          notify_applications?: boolean
+          notify_digest?: boolean
+          notify_rejects?: boolean
+          notify_tracks?: boolean
+          updated_at?: string
+          weekly_digest_dow?: number
+        }
+        Relationships: []
+      }
+      dj_tg_updates: {
+        Row: {
+          created_at: string
+          update_id: number
+        }
+        Insert: {
+          created_at?: string
+          update_id: number
+        }
+        Update: {
+          created_at?: string
+          update_id?: number
+        }
+        Relationships: []
+      }
       dj_track_formats: {
         Row: {
           created_at: string
