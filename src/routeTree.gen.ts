@@ -100,6 +100,7 @@ import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminHelpSlugRouteImport } from './routes/admin.help.$slug'
 import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
 import { Route as AdminDjTracksRouteImport } from './routes/admin.dj.tracks'
+import { Route as AdminDjTelegramRouteImport } from './routes/admin.dj.telegram'
 import { Route as AdminDjMembersRouteImport } from './routes/admin.dj.members'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
@@ -115,6 +116,8 @@ import { Route as ApiPublicPlannerTelegramRouteImport } from './routes/api/publi
 import { Route as ApiPublicPlannerAliceRouteImport } from './routes/api/public/planner/alice'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
 import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
+import { Route as ApiPublicDjTickRouteImport } from './routes/api/public/dj/tick'
+import { Route as ApiPublicDjTelegramRouteImport } from './routes/api/public/dj/telegram'
 import { Route as AdminPaperworkTypeTypeRouteImport } from './routes/admin.paperwork.type.$type'
 import { Route as AdminPaperworkIdRenderRouteImport } from './routes/admin.paperwork.$id.render'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
@@ -586,6 +589,11 @@ const AdminDjTracksRoute = AdminDjTracksRouteImport.update({
   path: '/dj/tracks',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDjTelegramRoute = AdminDjTelegramRouteImport.update({
+  id: '/dj/telegram',
+  path: '/dj/telegram',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDjMembersRoute = AdminDjMembersRouteImport.update({
   id: '/dj/members',
   path: '/dj/members',
@@ -669,6 +677,16 @@ const ApiPublicHooksKnowledgeHygieneRoute =
     path: '/api/public/hooks/knowledge-hygiene',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDjTickRoute = ApiPublicDjTickRouteImport.update({
+  id: '/api/public/dj/tick',
+  path: '/api/public/dj/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDjTelegramRoute = ApiPublicDjTelegramRouteImport.update({
+  id: '/api/public/dj/telegram',
+  path: '/api/public/dj/telegram',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPaperworkTypeTypeRoute = AdminPaperworkTypeTypeRouteImport.update({
   id: '/paperwork/type/$type',
   path: '/paperwork/type/$type',
@@ -822,6 +840,7 @@ export interface FileRoutesByFullPath {
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/telegram': typeof AdminDjTelegramRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -849,6 +868,8 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
+  '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
+  '/api/public/dj/tick': typeof ApiPublicDjTickRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -940,6 +961,7 @@ export interface FileRoutesByTo {
   '/dj': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/telegram': typeof AdminDjTelegramRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -967,6 +989,8 @@ export interface FileRoutesByTo {
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
+  '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
+  '/api/public/dj/tick': typeof ApiPublicDjTickRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1063,6 +1087,7 @@ export interface FileRoutesById {
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
   '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/telegram': typeof AdminDjTelegramRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -1090,6 +1115,8 @@ export interface FileRoutesById {
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
+  '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
+  '/api/public/dj/tick': typeof ApiPublicDjTickRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1187,6 +1214,7 @@ export interface FileRouteTypes {
     | '/dj/'
     | '/admin/catalog/$type'
     | '/admin/dj/members'
+    | '/admin/dj/telegram'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1214,6 +1242,8 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
+    | '/api/public/dj/telegram'
+    | '/api/public/dj/tick'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1305,6 +1335,7 @@ export interface FileRouteTypes {
     | '/dj'
     | '/admin/catalog/$type'
     | '/admin/dj/members'
+    | '/admin/dj/telegram'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1332,6 +1363,8 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
+    | '/api/public/dj/telegram'
+    | '/api/public/dj/tick'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1427,6 +1460,7 @@ export interface FileRouteTypes {
     | '/dj/'
     | '/admin/catalog/$type'
     | '/admin/dj/members'
+    | '/admin/dj/telegram'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1454,6 +1488,8 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
+    | '/api/public/dj/telegram'
+    | '/api/public/dj/tick'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1526,6 +1562,8 @@ export interface RootRouteChildren {
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
+  ApiPublicDjTelegramRoute: typeof ApiPublicDjTelegramRoute
+  ApiPublicDjTickRoute: typeof ApiPublicDjTickRoute
   ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
   ApiPublicPlannerAliceRoute: typeof ApiPublicPlannerAliceRoute
@@ -2177,6 +2215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDjTracksRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dj/telegram': {
+      id: '/admin/dj/telegram'
+      path: '/dj/telegram'
+      fullPath: '/admin/dj/telegram'
+      preLoaderRoute: typeof AdminDjTelegramRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/dj/members': {
       id: '/admin/dj/members'
       path: '/dj/members'
@@ -2280,6 +2325,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/knowledge-hygiene'
       fullPath: '/api/public/hooks/knowledge-hygiene'
       preLoaderRoute: typeof ApiPublicHooksKnowledgeHygieneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/dj/tick': {
+      id: '/api/public/dj/tick'
+      path: '/api/public/dj/tick'
+      fullPath: '/api/public/dj/tick'
+      preLoaderRoute: typeof ApiPublicDjTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/dj/telegram': {
+      id: '/api/public/dj/telegram'
+      path: '/api/public/dj/telegram'
+      fullPath: '/api/public/dj/telegram'
+      preLoaderRoute: typeof ApiPublicDjTelegramRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/paperwork/type/$type': {
@@ -2471,6 +2530,7 @@ interface AdminRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminDjMembersRoute: typeof AdminDjMembersRoute
+  AdminDjTelegramRoute: typeof AdminDjTelegramRoute
   AdminDjTracksRoute: typeof AdminDjTracksRoute
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminPaperworkIdRoute: typeof AdminPaperworkIdRouteWithChildren
@@ -2515,6 +2575,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminDjMembersRoute: AdminDjMembersRoute,
+  AdminDjTelegramRoute: AdminDjTelegramRoute,
   AdminDjTracksRoute: AdminDjTracksRoute,
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminPaperworkIdRoute: AdminPaperworkIdRouteWithChildren,
@@ -2687,6 +2748,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
+  ApiPublicDjTelegramRoute: ApiPublicDjTelegramRoute,
+  ApiPublicDjTickRoute: ApiPublicDjTickRoute,
   ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
   ApiPublicPlannerAliceRoute: ApiPublicPlannerAliceRoute,
