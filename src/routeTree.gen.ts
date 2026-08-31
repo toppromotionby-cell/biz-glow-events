@@ -115,6 +115,7 @@ import { Route as ApiPublicPlannerTelegramRouteImport } from './routes/api/publi
 import { Route as ApiPublicPlannerAliceRouteImport } from './routes/api/public/planner/alice'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
 import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
+import { Route as ApiPublicDjTickRouteImport } from './routes/api/public/dj/tick'
 import { Route as ApiPublicDjTelegramRouteImport } from './routes/api/public/dj/telegram'
 import { Route as AdminPaperworkTypeTypeRouteImport } from './routes/admin.paperwork.type.$type'
 import { Route as AdminPaperworkIdRenderRouteImport } from './routes/admin.paperwork.$id.render'
@@ -670,6 +671,11 @@ const ApiPublicHooksKnowledgeHygieneRoute =
     path: '/api/public/hooks/knowledge-hygiene',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDjTickRoute = ApiPublicDjTickRouteImport.update({
+  id: '/api/public/dj/tick',
+  path: '/api/public/dj/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDjTelegramRoute = ApiPublicDjTelegramRouteImport.update({
   id: '/api/public/dj/telegram',
   path: '/api/public/dj/telegram',
@@ -856,6 +862,7 @@ export interface FileRoutesByFullPath {
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
+  '/api/public/dj/tick': typeof ApiPublicDjTickRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -975,6 +982,7 @@ export interface FileRoutesByTo {
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
+  '/api/public/dj/tick': typeof ApiPublicDjTickRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1099,6 +1107,7 @@ export interface FileRoutesById {
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
+  '/api/public/dj/tick': typeof ApiPublicDjTickRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1224,6 +1233,7 @@ export interface FileRouteTypes {
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
     | '/api/public/dj/telegram'
+    | '/api/public/dj/tick'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1343,6 +1353,7 @@ export interface FileRouteTypes {
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
     | '/api/public/dj/telegram'
+    | '/api/public/dj/tick'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1466,6 +1477,7 @@ export interface FileRouteTypes {
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
     | '/api/public/dj/telegram'
+    | '/api/public/dj/tick'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1539,6 +1551,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
   ApiPublicDjTelegramRoute: typeof ApiPublicDjTelegramRoute
+  ApiPublicDjTickRoute: typeof ApiPublicDjTickRoute
   ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
   ApiPublicPlannerAliceRoute: typeof ApiPublicPlannerAliceRoute
@@ -2295,6 +2308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksKnowledgeHygieneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/dj/tick': {
+      id: '/api/public/dj/tick'
+      path: '/api/public/dj/tick'
+      fullPath: '/api/public/dj/tick'
+      preLoaderRoute: typeof ApiPublicDjTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/dj/telegram': {
       id: '/api/public/dj/telegram'
       path: '/api/public/dj/telegram'
@@ -2708,6 +2728,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
   ApiPublicDjTelegramRoute: ApiPublicDjTelegramRoute,
+  ApiPublicDjTickRoute: ApiPublicDjTickRoute,
   ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
   ApiPublicPlannerAliceRoute: ApiPublicPlannerAliceRoute,
