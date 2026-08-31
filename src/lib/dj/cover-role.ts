@@ -53,16 +53,16 @@ export type CoverPalette = {
 // Единая фирменная гамма сайта: янтарь → оранж. Разделы различаются
 // оттенком внутри диапазона 18–58° и характером паттерна, а не чужими цветами.
 export const COVER_PALETTES: Record<DjSectionKey, CoverPalette> = {
-  music:    { id: "ember",     label: "Ember",     hue: 24, hueShift: 14,  saturation: 92, light: [58, 42, 12], pattern: "waves" },
-  jingles:  { id: "flare",     label: "Flare",     hue: 38, hueShift: -12, saturation: 94, light: [62, 45, 13], pattern: "bars"  },
-  host:     { id: "honey",     label: "Honey",     hue: 44, hueShift: 10,  saturation: 82, light: [60, 44, 13], pattern: "rings" },
-  samples:  { id: "copper",    label: "Copper",    hue: 18, hueShift: 16,  saturation: 78, light: [54, 39, 11], pattern: "grid"  },
-  inout:    { id: "sunburst",  label: "Sunburst",  hue: 32, hueShift: 20,  saturation: 96, light: [63, 45, 13], pattern: "beams" },
-  welcome:  { id: "amber",     label: "Amber",     hue: 48, hueShift: 10,  saturation: 84, light: [64, 47, 14], pattern: "orbit" },
-  family:   { id: "candle",    label: "Candle",    hue: 40, hueShift: 6,   saturation: 70, light: [66, 48, 15], pattern: "pulse" },
-  show:     { id: "magma",     label: "Magma",     hue: 14, hueShift: 22,  saturation: 90, light: [56, 40, 11], pattern: "pulse" },
-  club:     { id: "neon-gold", label: "Neon Gold", hue: 30, hueShift: 28,  saturation: 98, light: [59, 41, 10], pattern: "beams" },
-  software: { id: "bronze",    label: "Bronze",    hue: 34, hueShift: -8,  saturation: 38, light: [50, 34, 10], pattern: "stack" },
+  music:    { id: "ember",     label: "Ember",     hue: 24, hueShift: 8,   saturation: 92, light: [56, 40, 11], pattern: "waves" },
+  jingles:  { id: "flare",     label: "Flare",     hue: 36, hueShift: -12, saturation: 94, light: [60, 43, 12], pattern: "bars"  },
+  host:     { id: "honey",     label: "Honey",     hue: 42, hueShift: -14, saturation: 80, light: [58, 42, 12], pattern: "rings" },
+  samples:  { id: "copper",    label: "Copper",    hue: 18, hueShift: 10,  saturation: 76, light: [52, 37, 10], pattern: "grid"  },
+  inout:    { id: "sunburst",  label: "Sunburst",  hue: 32, hueShift: 6,   saturation: 96, light: [61, 43, 12], pattern: "beams" },
+  welcome:  { id: "amber",     label: "Amber",     hue: 44, hueShift: -10, saturation: 84, light: [62, 45, 13], pattern: "orbit" },
+  family:   { id: "candle",    label: "Candle",    hue: 38, hueShift: -8,  saturation: 66, light: [64, 46, 14], pattern: "pulse" },
+  show:     { id: "magma",     label: "Magma",     hue: 12, hueShift: 14,  saturation: 90, light: [54, 38, 10], pattern: "pulse" },
+  club:     { id: "neon-gold", label: "Neon Gold", hue: 28, hueShift: 12,  saturation: 98, light: [57, 40, 10], pattern: "beams" },
+  software: { id: "bronze",    label: "Bronze",    hue: 34, hueShift: -8,  saturation: 36, light: [48, 33, 9],  pattern: "stack" },
 };
 
 /** Геометрия и типографика — общие для всех форматов правила. */
