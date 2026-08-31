@@ -116,8 +116,9 @@ function Page() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Помощник"
-        description="Telegram-бот админ-панели: документы, база знаний, интернет-поиск и гигиена данных."
+        subtitle="Telegram-бот админ-панели: документы, база знаний, интернет-поиск и гигиена данных."
       />
+
 
       <Tabs defaultValue="bot" className="space-y-4">
         <TabsList>
