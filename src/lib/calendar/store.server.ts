@@ -404,6 +404,10 @@ export interface SaveInput {
   location?: string | null;
   participants?: string[];
   source?: string;
+  priority?: number;
+  tags?: string[];
+  parent_id?: string | null;
+  recurrence?: string | null;
 }
 
 export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
@@ -423,6 +427,10 @@ export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
     location: input.location ?? null,
     participants: input.participants ?? [],
     source: input.source ?? "web",
+    priority: input.priority ?? 3,
+    tags: input.tags ?? [],
+    parent_id: input.parent_id ?? null,
+    recurrence: input.recurrence ?? null,
   };
   const q = input.id
     ? db.from("calendar_items").update(payload).eq("id", input.id).select("*").single()
@@ -431,7 +439,7 @@ export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
   if (error) throw new Error(error.message);
   let item = data as unknown as CalItem;
   await scheduleReminders(db, item, prefs);
-  item = await pushToGoogle(db, item);
+  item = await syncTargets(db, item, prefs);
   return item;
 }
 
