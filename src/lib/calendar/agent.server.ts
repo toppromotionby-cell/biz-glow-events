@@ -22,6 +22,21 @@ import {
 } from "@/lib/calendar/store.server";
 import { dayRange, parseDayToken } from "@/lib/calendar/when";
 import { pushOutbox } from "@/lib/calendar/outbox.server";
+import { wantsPlanMode } from "@/lib/calendar/persona";
+import { portalsHtml } from "@/lib/calendar/ai-portals";
+import {
+  approvePlan,
+  attachPlanMessage,
+  buildPlan,
+  editingPlan,
+  getPlan,
+  markPlanEditing,
+  planButtons,
+  rejectPlan,
+  renderPlan,
+  tickPlans,
+  type PlanRow,
+} from "@/lib/calendar/plan.server";
 import type { AssistantResult } from "@/lib/calendar/assistant.server";
 import { sendAlicePush } from "@/lib/calendar/alice.server";
 import type { AssistantPrefs } from "@/lib/calendar/model";
@@ -228,6 +243,46 @@ async function handleQuery(db: Db, chatId: number, raw: string, tz: string, dirs
 
 // ——— Обработка входящего сообщения ———
 
+
+// ——— Режим «сначала план» ———
+
+/** Собирает план и присылает его с кнопками. Ничего не меняет в календаре. */
+async function sendPlan(db: Db, chatId: number, plan: PlanRow): Promise<void> {
+  const html = renderPlan(plan);
+  const sent = await tgSend(chatId, html, planButtons(plan));
+  if (sent?.message_id) await attachPlanMessage(db, plan.id, chatId, sent.message_id);
+  await pushOutbox(db, { text: html, kind: "plan" });
+}
+
+async function runPlanFlow(
+  db: Db,
+  chatId: number,
+  request: string,
+  prefs: AssistantPrefs,
+  dirs: CalDirection[],
+  previous: PlanRow | null,
+): Promise<void> {
+  await tgSend(chatId, "🧠 Собираю план, минуту…");
+  try {
+    const plan = await buildPlan(db, {
+      request,
+      chatKey: `tg:${chatId}`,
+      chatId,
+      prefs,
+      dirs,
+      previous,
+    });
+    await sendPlan(db, chatId, plan);
+  } catch (e) {
+    if (e instanceof AiBlockedError) {
+      await tgSend(chatId, "ИИ временно недоступен — план соберу позже.");
+      return;
+    }
+    console.error("[planner] plan build failed", e);
+    await tgSend(chatId, "Не получилось собрать план. Попробуйте сформулировать иначе.");
+  }
+}
+
 export async function handleTelegramText(
   db: Db,
   chatId: number,
@@ -256,6 +311,8 @@ export async function handleTelegramText(
         "/next — ближайшие 5 дел",
         "/find текст — поиск по записям",
         "/open — незакрытые хвосты",
+        "/plan текст — собрать план и прислать на утверждение",
+        "/ai — полезные нейросети и сервисы",
         "",
         "Можно и просто спросить: «что у меня завтра?», «когда встреча с подрядчиком?»",
         "",
@@ -264,10 +321,30 @@ export async function handleTelegramText(
         "• «перенеси её на пятницу в 11»",
         "• «сделано» под карточкой — закрывает запись",
         "• «запомни: планёрки по понедельникам в 10»",
+        "• «подумай, как распределить неделю по EventHub» — пришлю план с кнопкой «Утвердить»",
+        "• «поищи в интернете идеи для тимбилдинга и предложи план»",
       ].join("\n"),
     );
     return;
   }
+  if (cmd === "/ai" || /^(какие|что за)\b.*(нейросет|ии|искусственн)/i.test(cmd)) {
+    await tgSend(chatId, portalsHtml());
+    return;
+  }
+
+  // Владелец обещал правки к плану — следующее сообщение считаем уточнением.
+  const editing = await editingPlan(db, `tg:${chatId}`);
+  if (editing && !text.trim().startsWith("/")) {
+    await runPlanFlow(db, chatId, `${editing.request ?? editing.title}. Правки владельца: ${text}`, prefs, dirs, editing);
+    return;
+  }
+
+  if (wantsPlanMode(text)) {
+    const request = text.trim().replace(/^\/(plan|план)\s*/i, "").trim() || "Предложи план на ближайшую неделю";
+    await runPlanFlow(db, chatId, request, prefs, dirs, null);
+    return;
+  }
+
   // Быстрые слэш-команды идут мимо модели — они дешевле и мгновеннее.
   const isCommand = text.trim().startsWith("/");
   if (isCommand && (await handleQuery(db, chatId, text, prefs.tz, dirs))) return;
@@ -427,6 +504,36 @@ export async function handleCallback(
   const [action, id, extra] = data.split(":");
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);
+
+  // Кнопки плана: plan:ok|edit|no:<id>
+  if (action === "plan") {
+    const planId = extra ?? "";
+    const plan = planId ? await getPlan(db, planId) : null;
+    if (!plan) {
+      await tgAnswerCallback(callbackId, "План не найден");
+      return;
+    }
+    if (id === "ok") {
+      await tgAnswerCallback(callbackId, "Выполняю план");
+      const res = await approvePlan(db, plan.id, { prefs, dirs });
+      await tgEdit(chatId, messageId, `${renderPlan(plan)}\n\n✅ <b>Утверждён</b>`);
+      await tgSend(chatId, res.text);
+      await pushOutbox(db, { text: res.text, kind: "plan" });
+      return;
+    }
+    if (id === "no") {
+      await rejectPlan(db, plan.id);
+      await tgAnswerCallback(callbackId, "Отменил");
+      await tgEdit(chatId, messageId, `🚫 План «${tgEsc(plan.title)}» отменён — ничего не менял.`);
+      return;
+    }
+    if (id === "edit") {
+      await markPlanEditing(db, plan.id);
+      await tgAnswerCallback(callbackId, "Жду правки");
+      await tgSend(chatId, "✏️ Напишите, что поправить в плане — пересоберу и снова пришлю на утверждение.");
+      return;
+    }
+  }
   const item = id ? await getItem(db, id) : null;
   if (!item) {
     await tgAnswerCallback(callbackId, "Запись не найдена");
@@ -722,6 +829,17 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
     await sendDailyDigest(db, "evening");
     await db.from("calendar_sync_state").update({ last_evening_on: today }).eq("id", 1);
     digests.push("evening");
+  }
+
+  // 4. Планы на утверждении: напоминание через 3 часа, истечение через сутки.
+  try {
+    const plans = await tickPlans(db, now);
+    for (const p of plans.reminded) {
+      if (!cid) break;
+      await tgSend(cid, `⏳ План «${tgEsc(p.title)}» ждёт вашего решения.`, planButtons(p));
+    }
+  } catch (e) {
+    console.error("[planner] plans tick failed", e);
   }
 
   return { reminders: sent, digests, pulled };

@@ -46,6 +46,7 @@ import { PlannerCalendar } from "@/components/admin/planner/PlannerCalendar";
 import { PlannerBoard } from "@/components/admin/planner/PlannerBoard";
 import { PlannerStats } from "@/components/admin/planner/PlannerStats";
 import { QuickAdd } from "@/components/admin/planner/QuickAdd";
+import { PlansCard } from "@/components/admin/planner/PlansCard";
 import { TasksRoutingCard } from "@/components/admin/planner/TasksRoutingCard";
 import { routeTarget, targetLabel } from "@/lib/calendar/routing";
 
@@ -353,6 +354,7 @@ function PlannerPage() {
           <TabsTrigger value="overdue">Просрочено ({overdue.length})</TabsTrigger>
           <TabsTrigger value="upcoming">Дальше ({upcoming.length})</TabsTrigger>
           <TabsTrigger value="priority">Приоритеты</TabsTrigger>
+          <TabsTrigger value="plans">Планы</TabsTrigger>
           <TabsTrigger value="analytics">Аналитика</TabsTrigger>
           <TabsTrigger value="inbox">Входящие ({data?.inbox.length ?? 0})</TabsTrigger>
           <TabsTrigger value="settings">Настройки</TabsTrigger>
@@ -451,6 +453,10 @@ function PlannerPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="plans" className="mt-4">
+          <PlansCard />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">

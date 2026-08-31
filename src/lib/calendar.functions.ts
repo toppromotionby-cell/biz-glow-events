@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertPermission } from "@/lib/authz";
 import type { AssistantPrefs, CalDirection, CalItem } from "@/lib/calendar/model";
+import type { PlanDTO } from "@/lib/calendar/plan-dto";
 
 const iso = z.string().datetime({ offset: true }).nullable().optional();
 
@@ -417,4 +418,41 @@ export const plannerQuickAdd = createServerFn({ method: "POST" })
       source: "quick-add",
     });
     return { item, question: parsed.question };
+  });
+
+// ——— Планы ассистента (режим «сначала план») ———
+
+export const listAssistantPlans = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ plans: PlanDTO[] }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin } = await import("@/lib/calendar/store.server");
+    const { listPlans, toPlanDTO } = await import("@/lib/calendar/plan.server");
+    return { plans: (await listPlans(await admin(), 20)).map(toPlanDTO) };
+  });
+
+export const createAssistantPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ request: z.string().min(3).max(1000) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ plan: PlanDTO }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin } = await import("@/lib/calendar/store.server");
+    const { buildPlan, toPlanDTO } = await import("@/lib/calendar/plan.server");
+    return { plan: toPlanDTO(await buildPlan(await admin(), { request: data.request, chatKey: "web" })) };
+  });
+
+export const decideAssistantPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), approve: z.boolean() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: number; failed: number; text: string }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin } = await import("@/lib/calendar/store.server");
+    const { approvePlan, rejectPlan } = await import("@/lib/calendar/plan.server");
+    const db = await admin();
+    if (!data.approve) {
+      await rejectPlan(db, data.id);
+      return { ok: 0, failed: 0, text: "План отклонён." };
+    }
+    const res = await approvePlan(db, data.id);
+    return { ok: res.ok, failed: res.failed, text: res.text };
   });

@@ -140,6 +140,8 @@ export async function tgSetMyCommands(): Promise<boolean> {
       { command: "overdue", description: "Просроченное" },
       { command: "open", description: "Незакрытые хвосты" },
       { command: "find", description: "Поиск: /find подрядчик" },
+      { command: "plan", description: "Собрать план на утверждение" },
+      { command: "ai", description: "Полезные нейросети и сервисы" },
       { command: "help", description: "Что я умею" },
     ],
   });
