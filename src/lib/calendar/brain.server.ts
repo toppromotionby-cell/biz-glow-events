@@ -5,7 +5,6 @@ import { AiBlockedError } from "@/lib/calendar/parse.server";
 import { isToolName, runTool, toolSchemas, type ToolCtx, type ToolResult } from "@/lib/calendar/tools.server";
 import { listMemory, memoryPrompt } from "@/lib/calendar/memory.server";
 import { appendDialog, focusFromDialog, loadDialog } from "@/lib/calendar/dialog.server";
-import { esc } from "@/lib/calendar/render";
 import { buildPersona } from "@/lib/calendar/persona";
 import { toTgHtml } from "@/lib/calendar/tg-format";
 
