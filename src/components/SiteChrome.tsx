@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { useAuth } from "@/hooks/use-auth";
+import { DjEntryLink } from "@/components/dj/DjEntryLink";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, User, ShoppingCart, Menu, ShieldCheck, ChevronDown, Send } from "lucide-react";
@@ -155,6 +156,8 @@ export function SiteHeader() {
                   <Link to="/profile"><Button variant="ghost" size="sm"><User className="h-4 w-4 mr-1" />Кабинет</Button></Link>
                 </Toggleable>
 
+                <DjEntryLink />
+
                 <Toggleable sectionKey="header.logout" as="span">
                   <Button variant="ghost" size="sm" onClick={() => supabase.auth.signOut()}>Выйти</Button>
                 </Toggleable>
@@ -244,6 +247,9 @@ export function SiteHeader() {
                           <Link to="/profile"><Button variant="outline" className="w-full"><User className="h-4 w-4 mr-2" />Личный кабинет</Button></Link>
                         </SheetClose>
                       </Toggleable>
+                      <SheetClose asChild>
+                        <div><DjEntryLink variant="outline" full onNavigate={() => setOpen(false)} /></div>
+                      </SheetClose>
                       <Toggleable sectionKey="header.logout" as="div">
                         <Button variant="ghost" className="w-full" onClick={() => { supabase.auth.signOut(); setOpen(false); }}>Выйти</Button>
                       </Toggleable>

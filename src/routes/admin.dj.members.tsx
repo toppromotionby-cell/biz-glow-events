@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { MEMBER_STATUS_LABEL, type DjMemberStatus } from "@/lib/dj/types";
+import { OpenInNewTabButton } from "@/components/admin/OpenInNewTabButton";
+import { DJ_DEFAULT_RETURN } from "@/lib/dj/return-to";
 
 export const Route = createFileRoute("/admin/dj/members")({
   component: Page,
@@ -70,6 +72,8 @@ function Page() {
         title="Участники клуба"
         subtitle="Заявки, доступ к библиотеке и права на загрузку."
         action={
+          <div className="flex flex-wrap items-center gap-2">
+          <OpenInNewTabButton href={DJ_DEFAULT_RETURN} label="Раздел диджея" target="dj-pool" />
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setTempPassword(null); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-gradient-primary"><UserPlus className="mr-1.5 h-4 w-4" />Добавить участника</Button>
@@ -137,7 +141,9 @@ function Page() {
               )}
             </DialogContent>
           </Dialog>
+          </div>
         }
+
       />
 
       <div className="glass rounded-2xl p-4 sm:max-w-xs">

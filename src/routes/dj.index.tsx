@@ -325,7 +325,7 @@ function DjLanding() {
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link to="/login">Служебный вход</Link>
+            <Link to="/login" search={{ redirect: "/dj" }}>Служебный вход</Link>
           </Button>
         </div>
       </section>

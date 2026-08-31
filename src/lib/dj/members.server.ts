@@ -83,16 +83,28 @@ export async function setMemberStatus(
   adminNote?: string,
 ): Promise<void> {
   const approved = status === "approved" || status === "trusted";
-  const { error } = await supabaseAdmin
+  const { data: updated, error } = await supabaseAdmin
     .from("dj_members")
     .update({
       status,
       admin_note: adminNote ?? null,
       ...(approved ? { approved_at: new Date().toISOString() } : {}),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id, user_id, nickname")
+    .maybeSingle();
   if (error) throw new Error(error.message);
   void access;
+
+  // Диджею уходит письмо (и Telegram при привязке) со ссылкой сразу в раздел.
+  if (updated) {
+    try {
+      const { notifyMembershipDecision } = await import("./access-notify.server");
+      await notifyMembershipDecision(updated as { id: string; user_id: string; nickname?: string | null }, status);
+    } catch (e) {
+      console.error("[dj] membership decision notify failed", e);
+    }
+  }
 }
 
 export async function djStats(): Promise<{

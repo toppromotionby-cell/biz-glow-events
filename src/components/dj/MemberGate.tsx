@@ -1,6 +1,6 @@
 // Гейт доступа к закрытой части DJ-клуба: авторизация → заявка → модерация.
-import { useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Lock, Clock, ShieldX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { djApply, djMyAccess } from "@/lib/dj/dj.functions";
+import { djReturnTo } from "@/lib/dj/return-to";
 
 export const DJ_ACCESS_KEY = ["dj", "access"];
 
@@ -20,12 +21,36 @@ export function useDjAccess() {
     queryFn: () => djMyAccess(),
     enabled: isAuthenticated,
     staleTime: 60_000,
+    // Пока заявка на модерации — тихо опрашиваем статус, чтобы доступ
+    // открылся сам, без перезагрузки страницы.
+    refetchInterval: (q) => {
+      const st = (q.state.data as { status?: string; isMember?: boolean } | undefined) ?? undefined;
+      return st && !st.isMember && st.status === "pending" ? 25_000 : false;
+    },
+    refetchOnWindowFocus: true,
   });
   return { ...query, authLoading: loading, isAuthenticated };
 }
 
+/** Текущий DJ-путь для ?redirect= (белый список + сохранение query). */
+export function useDjReturnTo(): string {
+  return useRouterState({
+    select: (s) => djReturnTo(s.location.pathname, s.location.searchStr),
+  });
+}
+
 export function MemberGate({ children }: { children: ReactNode }) {
-  const { data, isLoading, authLoading, isAuthenticated } = useDjAccess();
+  const { data, isLoading, isFetching, refetch, authLoading, isAuthenticated } = useDjAccess();
+  const returnTo = useDjReturnTo();
+  const wasPending = useRef(false);
+
+  useEffect(() => {
+    if (data?.status === "pending" && !data.isMember) wasPending.current = true;
+    else if (wasPending.current && data?.isMember) {
+      wasPending.current = false;
+      toast.success("Доступ открыт — добро пожаловать в DJ-клуб");
+    }
+  }, [data?.isMember, data?.status]);
 
   if (authLoading || (isAuthenticated && isLoading)) {
     return <Centered><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></Centered>;
@@ -39,8 +64,8 @@ export function MemberGate({ children }: { children: ReactNode }) {
         text="Закрытая часть клуба доступна после входа в аккаунт. Регистрация занимает минуту."
       >
         <div className="flex flex-wrap justify-center gap-2">
-          <Button asChild><Link to="/register" search={{ redirect: "/dj/pool" }}>Создать аккаунт</Link></Button>
-          <Button asChild variant="outline"><Link to="/login" search={{ redirect: "/dj/pool" }}>У меня есть аккаунт</Link></Button>
+          <Button asChild><Link to="/register" search={{ redirect: returnTo }}>Создать аккаунт</Link></Button>
+          <Button asChild variant="outline"><Link to="/login" search={{ redirect: returnTo }}>У меня есть аккаунт</Link></Button>
         </div>
       </Card>
     );
@@ -50,8 +75,19 @@ export function MemberGate({ children }: { children: ReactNode }) {
 
   if (data?.status === "pending") {
     return (
-      <Card icon={<Clock className="h-6 w-6" />} title="Заявка на рассмотрении" text="Мы проверяем анкету — обычно это занимает до 24 часов. Как только доступ откроют, библиотека появится здесь.">
-        <Button asChild variant="outline"><Link to="/">На главную</Link></Button>
+      <Card
+        icon={<Clock className="h-6 w-6" />}
+        title="Заявка на рассмотрении"
+        text="Мы проверяем анкету — обычно это занимает до 24 часов. Страница обновится сама, как только доступ откроют: письмо со ссылкой на раздел тоже придёт на почту."
+      >
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button variant="outline" disabled={isFetching} onClick={() => void refetch()}>
+            {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Проверить статус
+          </Button>
+          <Button asChild variant="ghost"><Link to="/dj">О DJ-клубе</Link></Button>
+          <Button asChild variant="ghost"><Link to="/">На главную</Link></Button>
+        </div>
       </Card>
     );
   }
