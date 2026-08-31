@@ -22,7 +22,7 @@
 
 import type { DjSectionKey } from "./sections";
 
-export const COVER_SPEC_VERSION = 1;
+export const COVER_SPEC_VERSION = 2;
 
 /** Форматы, которые умеет рисовать роль. */
 export type CoverFormat = "square" | "wide" | "og";
