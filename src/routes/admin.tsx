@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdminCommandPalette, CommandPaletteTrigger } from "@/components/admin/AdminCommandPalette";
 import { DocumentViewerProvider } from "@/hooks/use-document-viewer";
+import { CopilotContextProvider } from "@/components/copilot/copilot-context";
+import { CopilotDock } from "@/components/copilot/CopilotDock";
 import { HelpDrawer } from "@/components/admin/help/HelpDrawer";
 import { isStaffRoles, permissionForPath, firstAllowedAdminPath, permissionsForRoles } from "@/lib/permissions";
 
@@ -127,6 +129,7 @@ function AdminLayoutContent() {
   return (
     <SidebarProvider>
       <DocumentViewerProvider>
+      <CopilotContextProvider>
       <div className="admin-shell flex w-full min-h-screen">
         <AdminSidebar />
         <div className="flex-1 min-w-0 flex flex-col">
@@ -154,8 +157,11 @@ function AdminLayoutContent() {
           <AdminCommandPalette />
           {/* Контекстная справка: открывается иконками «?» из любого места админки. */}
           <HelpDrawer />
+          {/* ИИ-управленец: доступен только главному администратору. */}
+          <CopilotDock />
         </div>
       </div>
+      </CopilotContextProvider>
       </DocumentViewerProvider>
     </SidebarProvider>
   );
