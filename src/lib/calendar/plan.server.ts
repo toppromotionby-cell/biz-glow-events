@@ -9,6 +9,7 @@ import { listMemory, memoryPrompt } from "@/lib/calendar/memory.server";
 import { esc } from "@/lib/calendar/render";
 import type { PlanDTO } from "@/lib/calendar/plan-dto";
 import { buildPersona, PLAN_MODE_RULES } from "@/lib/calendar/persona";
+import { cardButtons } from "@/lib/botkit/cards";
 import { portalsBlock } from "@/lib/calendar/ai-portals";
 import { researchBlock, wantsWeb, webSearch, type ResearchHit } from "@/lib/calendar/research.server";
 
