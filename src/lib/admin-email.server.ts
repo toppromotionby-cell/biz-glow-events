@@ -830,3 +830,63 @@ export async function sendAccountAccessEmail(
     messageId: `account-access-${p.orderId}`,
   });
 }
+
+// ===== Диджею: решение по заявке в DJ-клуб =====
+
+export type DjMembershipEmailPayload = {
+  to: string;
+  nickname?: string | null;
+  /** Куда вести из письма (уже проверенный путь вида /dj/pool). */
+  path?: string;
+  decision: "approved" | "rejected" | "blocked";
+};
+
+export async function sendDjMembershipEmail(
+  p: DjMembershipEmailPayload,
+): Promise<{ ok: boolean; error?: string }> {
+  const to = (p.to ?? "").trim();
+  if (!to) return { ok: false, error: "no email" };
+
+  const url = `https://${FROM_DOMAIN}${p.path && p.path.startsWith("/dj") ? p.path : "/dj/pool"}`;
+  const hello = p.nickname ? `, ${escapeHtml(p.nickname)}` : "";
+
+  if (p.decision !== "approved") {
+    const subject = "Заявка в DJ-клуб event-hub.by";
+    const body = `
+      ${sectionLabel("DJ-клуб")}
+      <div style="font-family:${FONT_DISPLAY};font-size:22px;font-weight:700;color:${BRAND.text};margin:0 0 12px">
+        Здравствуйте${hello}!
+      </div>
+      <div style="font-size:14px;color:${BRAND.textSoft};line-height:1.7">
+        Сейчас мы не можем открыть доступ к закрытому разделу. Если считаете, что это ошибка —
+        ответьте на это письмо, мы разберёмся.
+      </div>`;
+    return enqueue({
+      to,
+      subject,
+      html: brandShell({ title: subject, previewText: "Решение по заявке в DJ-клуб", body }),
+      label: "dj-membership",
+      messageId: `dj-membership-${p.decision}-${to}-${Date.now().toString(36)}`,
+    });
+  }
+
+  const subject = "Доступ в DJ-клуб открыт";
+  const body = `
+    ${sectionLabel("DJ-клуб")}
+    <div style="font-family:${FONT_DISPLAY};font-size:22px;font-weight:700;color:${BRAND.text};margin:0 0 12px">
+      Добро пожаловать${hello}!
+    </div>
+    <div style="font-size:14px;color:${BRAND.textSoft};line-height:1.7;margin:0 0 18px">
+      Заявка одобрена — библиотека треков, софт и загрузки уже доступны. Ссылка ведёт сразу в нужный раздел.
+    </div>
+    <a href="${url}" style="display:inline-block;background:${BRAND.accent};color:#16110a;text-decoration:none;padding:13px 26px;border-radius:12px;font-weight:700;font-size:14px;font-family:${FONT_DISPLAY}">Открыть библиотеку</a>
+    <div style="font-size:12px;color:${BRAND.muted};margin:16px 0 0;word-break:break-all">${url}</div>`;
+
+  return enqueue({
+    to,
+    subject,
+    html: brandShell({ title: subject, previewText: "Доступ к библиотеке треков открыт", body }),
+    label: "dj-membership",
+    messageId: `dj-membership-approved-${to}-${Date.now().toString(36)}`,
+  });
+}
