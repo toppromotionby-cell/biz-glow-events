@@ -109,7 +109,7 @@ function HomePage() {
           <div className="mb-8 text-center">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Наши рекомендации</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 [grid-auto-rows:1fr]">
+          <div className="grid-auto [grid-auto-rows:1fr]">
             {featured.map((f) => {
               const type = BASE_TO_TYPE[f.basePath] ?? "tech_equipment";
               return (

@@ -88,7 +88,7 @@ export function VariantPicker({
 }) {
   const list = SLIDE_VARIANTS[type] ?? [];
   return (
-    <div className="grid-tiles">
+    <div className="grid-swatches">
       {list.map((v) => {
         const active = v.id === value;
         return (

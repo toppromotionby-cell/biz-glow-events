@@ -290,7 +290,7 @@ function BackgroundField({
         </div>
       )}
 
-      <div className="grid-tiles">
+      <div className="grid-swatches">
         {BACKGROUND_PRESETS.map((p) => (
           <button
             key={p.id}
