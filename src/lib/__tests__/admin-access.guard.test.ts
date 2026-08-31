@@ -52,11 +52,14 @@ describe("админка: меню, маршруты и права", () => {
   });
 
   it("каждый защищённый раздел админки покрыт правилом доступа", () => {
+    // Справочный центр доступен любому сотруднику намеренно.
+    const openToAllStaff = /^\/admin\/help/;
     const unmatched = [...ROUTES]
-      .filter((r) => r.startsWith("/admin/"))
+      .filter((r) => r.startsWith("/admin/") && !openToAllStaff.test(r))
       .filter((r) => !permissionForPath(r));
     expect(unmatched).toEqual([]);
   });
+
 
   it("все права из правил маршрутов существуют в матрице ролей", () => {
     const all = new Set(Object.values(MATRIX).flat());
