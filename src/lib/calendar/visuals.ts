@@ -23,9 +23,14 @@ export function dayKey(iso: string, tz: string): string {
   return new Intl.DateTimeFormat("ru-RU", { timeZone: tz, day: "2-digit", month: "2-digit" }).format(new Date(iso));
 }
 
-function chartUrl(config: unknown, w = 900, h = 500): string {
-  return `${CHART}?w=${w}&h=${h}&bkg=white&f=png&c=${encodeURIComponent(JSON.stringify(config))}`;
+/** Лимит длины URL: длиннее Telegram/QuickChart не примут. */
+export const CHART_URL_LIMIT = 3800;
+
+function chartUrl(config: unknown, w = 900, h = 500): string | null {
+  const url = `${CHART}?w=${w}&h=${h}&bkg=white&f=png&c=${encodeURIComponent(JSON.stringify(config))}`;
+  return url.length > CHART_URL_LIMIT ? null : url;
 }
+
 
 function colorOf(item: CalItem, dirs: CalDirection[]): string {
   const dir = dirs.find((d) => d.id === item.direction_id);
