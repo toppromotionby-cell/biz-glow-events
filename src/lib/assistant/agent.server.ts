@@ -16,17 +16,38 @@ import { docButtons, renderDocList, searchDocs, sendDoc } from "@/lib/assistant/
 import { contextBlock, research, sourcesBlock } from "@/lib/assistant/research.server";
 import { knowledgeContext, searchFacts, setFactStatus, upsertFact } from "@/lib/knowledge/facts.server";
 import { decideFinding, openFindings, renderReport, runHygiene } from "@/lib/hygiene/engine.server";
-import { tgAnswerCallback, tgSend, type TgButton } from "@/lib/assistant/transport.server";
+import { tgAnswerCallback, tgEdit, tgFetchFile, tgSend, type TgButton } from "@/lib/assistant/transport.server";
 import { TG_DOC_KINDS, type TgDocKind } from "@/lib/telegram/doc-kinds";
+import { cardButtons, renderCard, renderDecided, stripFakeButtons, type AssistantPlanStep } from "@/lib/assistant/cards";
+import {
+  attachMessage,
+  checkPlan,
+  createPlan,
+  executePlan,
+  getPlan,
+  planAwaitingEdit,
+  setPlanStatus,
+} from "@/lib/assistant/plans.server";
+import { acceptsAttachment, analyzeAttachments, type Attachment } from "@/lib/assistant/vision.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3.7-flash";
+
+export interface TgPhotoSize {
+  file_id: string;
+  file_size?: number;
+  width?: number;
+  height?: number;
+}
 
 export interface TgMessage {
   message_id: number;
   chat: { id: number; username?: string; first_name?: string };
   text?: string;
+  caption?: string;
   voice?: { file_id: string };
+  photo?: TgPhotoSize[];
+  document?: { file_id: string; mime_type?: string; file_name?: string; file_size?: number };
   from?: { username?: string; first_name?: string };
 }
 
@@ -35,6 +56,12 @@ export interface TgUpdate {
   message?: TgMessage;
   edited_message?: TgMessage;
   callback_query?: { id: string; data?: string; message?: { chat: { id: number }; message_id: number } };
+}
+
+/** Крупнейшее из превью фото (Telegram присылает лестницу размеров). */
+export function largestPhoto(photos: TgPhotoSize[] | undefined): TgPhotoSize | null {
+  if (!photos?.length) return null;
+  return [...photos].sort((a, b) => (a.file_size ?? 0) - (b.file_size ?? 0)).at(-1) ?? null;
 }
 
 /* --------------------------------- модель --------------------------------- */
