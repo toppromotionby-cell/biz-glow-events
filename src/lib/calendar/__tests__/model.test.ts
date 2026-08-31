@@ -147,8 +147,8 @@ describe("накладки и свободные слоты", () => {
   });
   it("freeSlots не предлагает занятое время и держится рабочих часов", () => {
     const busy = [
-      item({ starts_at: "2026-09-01T09:00:00Z", ends_at: "2026-09-01T12:00:00Z" }),
-      item({ starts_at: "2026-09-01T14:00:00Z", ends_at: "2026-09-01T19:00:00Z" }),
+      item({ starts_at: "2026-09-01T09:00:00+03:00", ends_at: "2026-09-01T12:00:00+03:00" }),
+      item({ starts_at: "2026-09-01T14:00:00+03:00", ends_at: "2026-09-01T19:00:00+03:00" }),
     ];
     const slots = freeSlots(busy, {
       from: new Date("2026-09-01T06:00:00Z"), // 09:00 в Минске
@@ -169,7 +169,7 @@ describe("накладки и свободные слоты", () => {
     }
   });
   it("отменённые записи не блокируют слоты", () => {
-    const busy = [item({ starts_at: "2026-09-01T09:00:00Z", ends_at: "2026-09-01T19:00:00Z", status: "canceled" })];
+    const busy = [item({ starts_at: "2026-09-01T09:00:00+03:00", ends_at: "2026-09-01T19:00:00+03:00", status: "canceled" })];
     const slots = freeSlots(busy, {
       from: new Date("2026-09-01T06:00:00Z"),
       days: 1,
