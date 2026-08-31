@@ -46,13 +46,7 @@ import { asArray, type ExtraItem, type FeatureItem, type Row } from "./shared";
 
 type FormState = Partial<Row>;
 
-const PUBLIC_PATH: Record<CatalogTable, string> = {
-  zones: "/zones",
-  tech_equipment: "/equipment",
-  services: "/services",
-  production_items: "/production",
-  attractions: "/attractions",
-};
+
 
 export function CatalogEditor({
   table,
@@ -236,8 +230,7 @@ export function CatalogEditor({
   const extrasValue = asArray<ExtraItem>(form.extras);
   const minPrice = minPriceFromTiers(getTiers(form.pricing));
   const publicHref = useMemo(() => {
-    if (!form.published || !form.slug) return null;
-    return `${PUBLIC_PATH[table]}/${form.slug}`;
+    return publicHrefFor(table, { slug: form.slug as string | null, published: !!form.published });
   }, [form.published, form.slug, table]);
 
   return (
@@ -262,7 +255,7 @@ export function CatalogEditor({
               <DropdownMenuLabel>Действия</DropdownMenuLabel>
               <DropdownMenuItem
                 disabled={!publicHref}
-                onClick={() => { if (publicHref) window.open(publicHref, "_blank", "noopener"); }}
+                onClick={() => openInNewTab(publicHref)}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Открыть на сайте

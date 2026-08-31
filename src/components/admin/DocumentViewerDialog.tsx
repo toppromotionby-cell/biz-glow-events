@@ -4,6 +4,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { downloadBlob } from "@/lib/download";
+import { OpenInNewTabButton } from "@/components/admin/OpenInNewTabButton";
 import { PdfPreview } from "@/components/admin/PdfPreview";
 import { isPreviewableMime } from "@/lib/document-mime";
 
@@ -26,6 +27,7 @@ export function DocumentViewerDialog({
           <div className="flex items-center gap-2 pr-6">
             {doc && (
               <>
+                <OpenInNewTabButton href={doc.url} label="В новом окне" target="doc-viewer-tab" />
                 <Button size="sm" variant="outline" onClick={() => void downloadBlob(doc.blob, doc.name)}>
                   <Download className="mr-1.5 h-4 w-4" />Скачать
                 </Button>
@@ -55,7 +57,7 @@ export function DocumentViewerDialog({
         )}
 
         <p className="border-t border-border/60 px-5 py-2 text-[11px] text-muted-foreground">
-          Если скачивание заблокировано в окне предпросмотра — откройте документ в новой вкладке и сохраните оттуда.
+          Если скачивание заблокировано в окне предпросмотра — нажмите «В новом окне» и сохраните документ оттуда.
         </p>
       </DialogContent>
     </Dialog>
