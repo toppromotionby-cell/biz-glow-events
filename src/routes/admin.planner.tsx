@@ -380,7 +380,10 @@ function PlannerPage() {
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">
-          <PrefsCard prefs={data?.prefs} onSave={(p) => prefsFn({ data: p }).then(() => { toast.success("Настройки сохранены"); invalidate(); })} />
+          <div className="space-y-4">
+            <BotCard />
+            <PrefsCard prefs={data?.prefs} onSave={(p) => prefsFn({ data: p }).then(() => { toast.success("Настройки сохранены"); invalidate(); })} />
+          </div>
         </TabsContent>
       </Tabs>
 
