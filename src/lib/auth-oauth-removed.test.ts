@@ -16,7 +16,7 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-const files = walk(SRC);
+const files = walk(SRC).filter((f) => !f.endsWith("auth-oauth-removed.test.ts"));
 
 describe("вход через соцсети удалён", () => {
   it("нет вызовов signInWithOAuth в приложении", () => {
