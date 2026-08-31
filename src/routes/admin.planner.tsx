@@ -493,6 +493,91 @@ function PlannerPage() {
   );
 }
 
+function AnalyticsCard({ directions }: { directions: CalDirection[] }) {
+  const fn = useServerFn(plannerAnalytics);
+  const { data, isLoading } = useQuery({
+    queryKey: ["planner-analytics"],
+    queryFn: () => fn({ data: { days: 30 } }),
+  });
+  if (isLoading || !data) return <p className="text-sm text-muted-foreground">Загрузка…</p>;
+
+  const dirMeta = (id: string | null) => directions.find((d) => d.id === id) ?? null;
+  const maxMinutes = Math.max(1, ...data.perDirection.map((s) => s.minutes));
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Card><CardContent className="pt-4">
+          <div className="text-2xl font-semibold">{data.total}</div>
+          <div className="text-xs text-muted-foreground">записей за {data.days} дн.</div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4">
+          <div className="text-2xl font-semibold">{data.doneRate}%</div>
+          <div className="text-xs text-muted-foreground">закрыто ({data.done} из {data.total})</div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4">
+          <div className="text-2xl font-semibold">{data.openNow}</div>
+          <div className="text-xs text-muted-foreground">в работе сейчас</div>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4">
+          <div className={`text-2xl font-semibold ${data.overdueNow ? "text-destructive" : ""}`}>{data.overdueNow}</div>
+          <div className="text-xs text-muted-foreground">просрочено</div>
+        </CardContent></Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Время и записи по направлениям</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {data.perDirection.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Данных пока нет.</p>
+          ) : (
+            data.perDirection.map((s) => {
+              const d = dirMeta(s.direction_id);
+              const hours = Math.round((s.minutes / 60) * 10) / 10;
+              return (
+                <div key={s.direction_id ?? "none"} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="size-2 rounded-full" style={{ background: d?.color ?? "#94a3b8" }} />
+                      {d?.title ?? "Без направления"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {s.total} записей · {s.done} закрыто{hours ? ` · ~${hours} ч` : ""}{s.reschedules ? ` · переносов: ${s.reschedules}` : ""}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted">
+                    <div
+                      className="h-1.5 rounded-full"
+                      style={{ width: `${Math.max(4, Math.round((s.minutes / maxMinutes) * 100))}%`, background: d?.color ?? "#94a3b8" }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
+      {data.topRescheduled.length ? (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Часто откладывается</CardTitle></CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {data.topRescheduled.map((t) => (
+              <div key={t.id} className="flex items-center justify-between">
+                <span className="truncate">{t.title}</span>
+                <Badge variant="outline">переносов: {t.reschedule_count}</Badge>
+              </div>
+            ))}
+            <p className="pt-2 text-xs text-muted-foreground">
+              Если задача переносится 3+ раза — стоит разбить её на шаги (кнопка со списком у задачи) или отменить.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
 function PrefsCard({
   prefs,
   onSave,
