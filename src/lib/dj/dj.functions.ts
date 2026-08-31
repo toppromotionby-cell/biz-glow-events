@@ -160,6 +160,8 @@ export const djSubmitTrack = createServerFn({ method: "POST" })
       audio_path: z.string().min(1).max(400),
       artwork_path: z.string().max(400).nullish(),
       format: z.string().max(20).nullish(),
+      section: z.string().max(30).nullish(),
+      formats: z.array(z.string().max(30)).max(10).default([]),
       file_size: z.number().int().positive().nullish(),
     }).parse(d),
   )

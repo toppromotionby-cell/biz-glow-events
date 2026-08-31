@@ -18,6 +18,10 @@ export type TrackInput = {
   audio_path: string;
   artwork_path?: string | null;
   format?: string | null;
+  /** Раздел библиотеки (music, jingles, family, club…). */
+  section?: string | null;
+  /** Слаги форматов мероприятий — связь many-to-many. */
+  formats?: string[];
   file_size?: number | null;
 };
 
@@ -39,6 +43,7 @@ export async function insertTrack(userId: string, input: TrackInput, status: DjC
       audio_path: input.audio_path,
       artwork_path: input.artwork_path ?? null,
       format: input.format ?? null,
+      section: input.section ?? null,
       file_size: input.file_size ?? null,
       status,
       uploaded_by: userId,
@@ -47,7 +52,19 @@ export async function insertTrack(userId: string, input: TrackInput, status: DjC
     .select("id")
     .single();
   if (error) throw new Error(error.message);
-  return data.id as string;
+  const id = data.id as string;
+  await linkTrackFormats(id, input.formats ?? []);
+  return id;
+}
+
+/** Привязывает трек к форматам мероприятий по слагам. */
+export async function linkTrackFormats(trackId: string, slugs: string[]) {
+  if (!slugs.length) return;
+  const { data: rows } = await supabaseAdmin
+    .from("dj_event_formats").select("id, slug").in("slug", slugs);
+  const links = (rows ?? []).map((r) => ({ track_id: trackId, format_id: r.id }));
+  if (!links.length) return;
+  await supabaseAdmin.from("dj_track_formats").upsert(links, { onConflict: "track_id,format_id" });
 }
 
 export async function updateTrack(id: string, patch: Partial<TrackInput>) {
