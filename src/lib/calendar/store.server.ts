@@ -90,7 +90,7 @@ export async function scheduleReminders(db: Admin, item: CalItem, prefs: Assista
       rows.push({ item_id: item.id, kind: "followup", fire_at: new Date(endAt).toISOString(), payload: {} });
     }
   }
-  if (rows.length) await db.from("calendar_reminders").insert(rows);
+  if (rows.length) await db.from("calendar_reminders").insert(rows as never);
 }
 
 // ——— Google ———
