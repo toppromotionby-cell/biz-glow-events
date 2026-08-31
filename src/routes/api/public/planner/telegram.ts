@@ -3,7 +3,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "crypto";
 import { admin } from "@/lib/calendar/store.server";
-import { handleCallback, handleTelegramText, handleTelegramVoice } from "@/lib/calendar/agent.server";
+import { handleCallback, handleTelegramMedia, handleTelegramText, handleTelegramVoice } from "@/lib/calendar/agent.server";
 import { plannerTgKey, tgSend } from "@/lib/calendar/telegram.server";
 import { chatAllowed } from "@/lib/calendar/store.server";
 
@@ -20,8 +20,11 @@ interface TgUpdate {
   message?: {
     chat?: { id?: number };
     text?: string;
+    caption?: string;
     voice?: { file_id?: string };
     audio?: { file_id?: string };
+    photo?: Array<{ file_id?: string; file_size?: number }>;
+    document?: { file_id?: string; mime_type?: string };
   };
   callback_query?: {
     id?: string;
@@ -58,8 +61,12 @@ export const Route = createFileRoute("/api/public/planner/telegram")({
             return Response.json({ ok: true, denied: true });
           }
           const fileId = msg?.voice?.file_id ?? msg?.audio?.file_id;
+          const photo = msg?.photo?.length ? msg.photo[msg.photo.length - 1]?.file_id : undefined;
+          const doc = msg?.document?.file_id;
           if (fileId) {
             await handleTelegramVoice(db, chatId, fileId);
+          } else if (photo || doc) {
+            await handleTelegramMedia(db, chatId, [photo ?? doc!], msg?.caption);
           } else if (msg?.text) {
             await handleTelegramText(db, chatId, msg.text, { source: "telegram" });
           }
