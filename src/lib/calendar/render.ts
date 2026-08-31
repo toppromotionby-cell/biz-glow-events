@@ -2,6 +2,8 @@
 // Чистый модуль (без БД и сети) — легко тестировать.
 import type { CalDirection, CalItem } from "@/lib/calendar/model";
 import { fmtWhen, isOverdue, localHm, priorityScore } from "@/lib/calendar/model";
+import { syncFooter, type SyncStatus } from "@/lib/calendar/tg-format";
+
 
 export function esc(s: string | null | undefined): string {
   if (s == null) return "";
