@@ -18,6 +18,8 @@ export type ParsedTrack = {
   bitrateKbps: number | null;
   format: string;
   section: DjSectionKey;
+  /** Автоподбор форматов мероприятия. */
+  formats: string[];
   picture: { data: Uint8Array; mime: string } | null;
   sourceFilename: string;
 };

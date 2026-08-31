@@ -19,7 +19,7 @@ export type TrackInput = {
   artwork_path?: string | null;
   format?: string | null;
   /** Раздел библиотеки (music, jingles, family, club…). */
-  section?: string | null;
+  section?: string;
   /** Слаги форматов мероприятий — связь many-to-many. */
   formats?: string[];
   file_size?: number | null;
@@ -43,7 +43,7 @@ export async function insertTrack(userId: string, input: TrackInput, status: DjC
       audio_path: input.audio_path,
       artwork_path: input.artwork_path ?? null,
       format: input.format ?? null,
-      section: input.section ?? null,
+      ...(input.section ? { section: input.section } : {}),
       file_size: input.file_size ?? null,
       status,
       uploaded_by: userId,
@@ -68,7 +68,9 @@ export async function linkTrackFormats(trackId: string, slugs: string[]) {
 }
 
 export async function updateTrack(id: string, patch: Partial<TrackInput>) {
-  const { error } = await supabaseAdmin.from("dj_tracks").update(patch).eq("id", id);
+  const { formats, ...columns } = patch;
+  const { error } = await supabaseAdmin.from("dj_tracks").update(columns).eq("id", id);
+  if (formats) await linkTrackFormats(id, formats);
   if (error) throw new Error(error.message);
 }
 
