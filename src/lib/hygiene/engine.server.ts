@@ -152,7 +152,14 @@ export const RULES: HygieneRule[] = [
     area: "catalog",
     autoFixable: false,
     run: async () => {
-      const db = await admin();
+      // Таблицы перебираем динамически, поэтому обходим типизацию клиента.
+      const db = (await admin()) as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            eq: (c: string, v: unknown) => { limit: (n: number) => Promise<{ data: unknown[] | null }> };
+          };
+        };
+      };
       const out: RuleResult[] = [];
       for (const table of ["services", "zones", "tech_equipment", "production_items"]) {
         const { data } = await db
@@ -161,6 +168,7 @@ export const RULES: HygieneRule[] = [
           .eq("published", true)
           .limit(200);
         for (const raw of (data ?? []) as { id: string; title: string | null; description: string | null }[]) {
+
           if (!raw.description || raw.description.trim().length < 40) {
             out.push({
               title: `Пустое описание: ${raw.title ?? raw.id.slice(0, 8)}`,
