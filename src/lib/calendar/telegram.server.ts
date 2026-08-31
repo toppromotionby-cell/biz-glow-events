@@ -169,7 +169,21 @@ export async function tgAnswerCallback(id: string, text?: string): Promise<void>
   await call("answerCallbackQuery", { callback_query_id: id, text: text?.slice(0, 190) });
 }
 
-/** Скачивание голосового сообщения: getFile → /file/<path>. */
+/** Тип файла по расширению — нужен и для голоса, и для скриншотов с PDF. */
+export function tgMimeOf(path: string): string {
+  const p = path.toLowerCase();
+  if (p.endsWith(".png")) return "image/png";
+  if (p.endsWith(".jpg") || p.endsWith(".jpeg")) return "image/jpeg";
+  if (p.endsWith(".webp")) return "image/webp";
+  if (p.endsWith(".gif")) return "image/gif";
+  if (p.endsWith(".heic")) return "image/heic";
+  if (p.endsWith(".pdf")) return "application/pdf";
+  if (p.endsWith(".mp3")) return "audio/mpeg";
+  if (p.endsWith(".m4a") || p.endsWith(".mp4")) return "audio/mp4";
+  return "audio/ogg";
+}
+
+/** Скачивание файла из Telegram: getFile → /file/<path>. */
 export async function tgDownloadFile(fileId: string): Promise<{ base64: string; mime: string } | null> {
   const k = keys();
   if (!k) return null;
