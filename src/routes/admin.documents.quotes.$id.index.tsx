@@ -20,6 +20,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SendToTelegramButton } from "@/components/admin/SendToTelegramButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -949,6 +950,7 @@ function Page() {
               <Button variant="outline" size="sm"><MoreHorizontal className="h-4 w-4 mr-1.5" />Ещё</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
+              <SendToTelegramButton kind="quote" id={id} asMenuItem label="Отправить в Telegram" />
               <DropdownMenuItem onClick={onMarkSent}>
                 <Send className="mr-2 h-4 w-4" />Отметить «Отправлено»
               </DropdownMenuItem>
@@ -968,6 +970,9 @@ function Page() {
                 >
                   <Calculator className="mr-2 h-4 w-4" />Внутренний PDF (себестоимость)
                 </DropdownMenuItem>
+              )}
+              {canCost && (
+                <SendToTelegramButton kind="quote-internal" id={id} asMenuItem label="Внутренний PDF в Telegram" />
               )}
               <DropdownMenuItem
                 onClick={() => viewer.openDocument(`/admin/documents/quotes/${id}/render`, { name: "КП.html" })}

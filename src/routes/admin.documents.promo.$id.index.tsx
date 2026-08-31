@@ -40,6 +40,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SendToTelegramButton } from "@/components/admin/SendToTelegramButton";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { QuoteShareActions, QuoteShareStatus, type ShareState } from "@/components/admin/quotes/QuoteShareActions";
 import { PromoItemsTable } from "@/components/admin/promo/PromoItemsTable";
@@ -695,6 +696,7 @@ function EditorPage() {
                 <Button size="sm" variant="outline"><MoreHorizontal className="mr-1.5 h-4 w-4" />Ещё</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[260px]">
+                <SendToTelegramButton kind="promo" id={id} asMenuItem label="Отправить в Telegram" />
                 <DropdownMenuItem
                   onClick={async () => {
                     await markSent({ data: { id } });
@@ -717,6 +719,9 @@ function EditorPage() {
                   >
                     <Calculator className="mr-2 h-4 w-4" />Внутренний PDF (себестоимость)
                   </DropdownMenuItem>
+                )}
+                {canCost && (
+                  <SendToTelegramButton kind="promo-internal" id={id} asMenuItem label="Внутренний PDF в Telegram" />
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>

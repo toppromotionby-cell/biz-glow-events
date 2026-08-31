@@ -17,6 +17,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuRadioGroup, DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
+import { SendToTelegramButton } from "@/components/admin/SendToTelegramButton";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
@@ -265,6 +266,7 @@ function OrderDetail() {
               >
                 <Download className="h-4 w-4 mr-2" />Скачать КП
               </DropdownMenuItem>
+              <SendToTelegramButton kind="order" id={order.id} asMenuItem label="Отправить КП в Telegram" />
               <DropdownMenuSeparator />
               <AlertDialog>
                 <AlertDialogTrigger asChild>

@@ -39,6 +39,7 @@ import { BlockToolbar, BLOCK_LABELS, type BlockKind } from "@/components/admin/p
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SendToTelegramButton } from "@/components/admin/SendToTelegramButton";
 import { CatalogPickerDialog, type CatalogPickResult } from "@/components/admin/CatalogPickerDialog";
 import { pickToSlideDraft } from "@/lib/catalog-pick";
 import { StatusPill } from "@/components/admin/StatusPill";
@@ -831,6 +832,7 @@ function Page() {
           <Button variant="outline" size="sm" disabled={!slides.length || saver.state === "saving"} onClick={() => void exportPdf()}>
             <Download className="mr-1.5 h-4 w-4" />PDF
           </Button>
+          <SendToTelegramButton kind="presentation" id={id} />
         </div>
       </header>
 
