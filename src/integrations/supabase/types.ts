@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_prefs: {
+        Row: {
+          created_at: string
+          evening_time: string
+          followup_minutes: number
+          hard_reminder_minutes: number[]
+          id: number
+          last_device_tz: string | null
+          morning_time: string
+          quiet_end: string
+          quiet_start: string
+          reminder_minutes: number[]
+          style_profile: string | null
+          tg_chat_id: number | null
+          tz: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evening_time?: string
+          followup_minutes?: number
+          hard_reminder_minutes?: number[]
+          id?: number
+          last_device_tz?: string | null
+          morning_time?: string
+          quiet_end?: string
+          quiet_start?: string
+          reminder_minutes?: number[]
+          style_profile?: string | null
+          tg_chat_id?: number | null
+          tz?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evening_time?: string
+          followup_minutes?: number
+          hard_reminder_minutes?: number[]
+          id?: number
+          last_device_tz?: string | null
+          morning_time?: string
+          quiet_end?: string
+          quiet_start?: string
+          reminder_minutes?: number[]
+          style_profile?: string | null
+          tg_chat_id?: number | null
+          tz?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attractions: {
         Row: {
           category: string | null
@@ -204,6 +255,264 @@ export type Database = {
           sort_order?: number
           tags?: string[] | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      calendar_directions: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          emoji: string | null
+          google_color_id: string | null
+          id: string
+          key: string
+          keywords: string[]
+          sort: number
+          title: string
+          updated_at: string
+          work_end: string
+          work_start: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          google_color_id?: string | null
+          id?: string
+          key: string
+          keywords?: string[]
+          sort?: number
+          title: string
+          updated_at?: string
+          work_end?: string
+          work_start?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          google_color_id?: string | null
+          id?: string
+          key?: string
+          keywords?: string[]
+          sort?: number
+          title?: string
+          updated_at?: string
+          work_end?: string
+          work_start?: string
+        }
+        Relationships: []
+      }
+      calendar_inbox: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          parsed: Json | null
+          question: string | null
+          raw_text: string | null
+          source: string
+          status: string
+          tg_chat_id: number | null
+          tg_message_id: number | null
+          transcript: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          parsed?: Json | null
+          question?: string | null
+          raw_text?: string | null
+          source?: string
+          status?: string
+          tg_chat_id?: number | null
+          tg_message_id?: number | null
+          transcript?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          parsed?: Json | null
+          question?: string | null
+          raw_text?: string | null
+          source?: string
+          status?: string
+          tg_chat_id?: number | null
+          tg_message_id?: number | null
+          transcript?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_inbox_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_items: {
+        Row: {
+          all_day: boolean
+          completed_at: string | null
+          created_at: string
+          direction_id: string | null
+          due_at: string | null
+          ends_at: string | null
+          google_etag: string | null
+          google_event_id: string | null
+          google_task_id: string | null
+          google_updated_at: string | null
+          id: string
+          importance: string
+          kind: string
+          location: string | null
+          notes: string | null
+          participants: string[]
+          reschedule_count: number
+          source: string
+          starts_at: string | null
+          status: string
+          title: string
+          tz: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          completed_at?: string | null
+          created_at?: string
+          direction_id?: string | null
+          due_at?: string | null
+          ends_at?: string | null
+          google_etag?: string | null
+          google_event_id?: string | null
+          google_task_id?: string | null
+          google_updated_at?: string | null
+          id?: string
+          importance?: string
+          kind?: string
+          location?: string | null
+          notes?: string | null
+          participants?: string[]
+          reschedule_count?: number
+          source?: string
+          starts_at?: string | null
+          status?: string
+          title: string
+          tz?: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          completed_at?: string | null
+          created_at?: string
+          direction_id?: string | null
+          due_at?: string | null
+          ends_at?: string | null
+          google_etag?: string | null
+          google_event_id?: string | null
+          google_task_id?: string | null
+          google_updated_at?: string | null
+          id?: string
+          importance?: string
+          kind?: string
+          location?: string | null
+          notes?: string | null
+          participants?: string[]
+          reschedule_count?: number
+          source?: string
+          starts_at?: string | null
+          status?: string
+          title?: string
+          tz?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_items_direction_id_fkey"
+            columns: ["direction_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_directions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_reminders: {
+        Row: {
+          created_at: string
+          fire_at: string
+          id: string
+          item_id: string | null
+          kind: string
+          payload: Json
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          fire_at: string
+          id?: string
+          item_id?: string | null
+          kind: string
+          payload?: Json
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          fire_at?: string
+          id?: string
+          item_id?: string | null
+          kind?: string
+          payload?: Json
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_reminders_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_sync_state: {
+        Row: {
+          google_calendar_id: string
+          id: number
+          last_pull_at: string | null
+          lease_until: string | null
+          paused_at: string | null
+          paused_reason: string | null
+          sync_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          google_calendar_id?: string
+          id?: number
+          last_pull_at?: string | null
+          lease_until?: string | null
+          paused_at?: string | null
+          paused_reason?: string | null
+          sync_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          google_calendar_id?: string
+          id?: number
+          last_pull_at?: string | null
+          lease_until?: string | null
+          paused_at?: string | null
+          paused_reason?: string | null
+          sync_token?: string | null
           updated_at?: string
         }
         Relationships: []
