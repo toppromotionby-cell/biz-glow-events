@@ -75,7 +75,7 @@ export function dayTimelineUrl(title: string, items: CalItem[], dirs: CalDirecti
     },
     900,
     Math.max(260, 90 + labels.length * 34),
-  ).replace("%22__H__%22", encodeURIComponent("function(v){return v+':00'}"));
+  )?.replace("%22__H__%22", encodeURIComponent("function(v){return v+':00'}")) ?? null;
 }
 
 /** Загрузка недели: столбики «сколько записей в день», раскрашенные по направлениям. */
