@@ -1218,6 +1218,45 @@ export type Database = {
         }
         Relationships: []
       }
+      dj_event_formats: {
+        Row: {
+          created_at: string
+          hidden: boolean
+          hint: string | null
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          subtags: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hidden?: boolean
+          hint?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          subtags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hidden?: boolean
+          hint?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          subtags?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dj_favorites: {
         Row: {
           created_at: string
@@ -1246,6 +1285,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      dj_hygiene_log: {
+        Row: {
+          action: string
+          bytes_freed: number
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          to_status: string | null
+          track_id: string | null
+          track_label: string | null
+        }
+        Insert: {
+          action: string
+          bytes_freed?: number
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          to_status?: string | null
+          track_id?: string | null
+          track_label?: string | null
+        }
+        Update: {
+          action?: string
+          bytes_freed?: number
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          to_status?: string | null
+          track_id?: string | null
+          track_label?: string | null
+        }
+        Relationships: []
+      }
+      dj_hygiene_settings: {
+        Row: {
+          archive_after_days: number
+          block_fresh_days: number
+          dormant_after_days: number
+          enabled: boolean
+          id: number
+          min_tracks_per_block: number
+          notify_before_days: number
+          protect_recent_days: number
+          purge_after_days: number
+          updated_at: string
+        }
+        Insert: {
+          archive_after_days?: number
+          block_fresh_days?: number
+          dormant_after_days?: number
+          enabled?: boolean
+          id?: number
+          min_tracks_per_block?: number
+          notify_before_days?: number
+          protect_recent_days?: number
+          purge_after_days?: number
+          updated_at?: string
+        }
+        Update: {
+          archive_after_days?: number
+          block_fresh_days?: number
+          dormant_after_days?: number
+          enabled?: boolean
+          id?: number
+          min_tracks_per_block?: number
+          notify_before_days?: number
+          protect_recent_days?: number
+          purge_after_days?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       dj_members: {
         Row: {
@@ -1286,6 +1400,108 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      dj_pack_items: {
+        Row: {
+          created_at: string
+          downloads: number
+          id: string
+          label: string
+          pack_id: string
+          plays: number
+          position: number
+          score: number
+          track_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          downloads?: number
+          id?: string
+          label: string
+          pack_id: string
+          plays?: number
+          position: number
+          score?: number
+          track_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          downloads?: number
+          id?: string
+          label?: string
+          pack_id?: string
+          plays?: number
+          position?: number
+          score?: number
+          track_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dj_pack_items_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "dj_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dj_pack_items_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "dj_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dj_packs: {
+        Row: {
+          built_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          period_end: string
+          period_start: string
+          scope_key: string | null
+          scope_kind: string
+          size_bytes: number
+          status: string
+          storage_path: string | null
+          title: string
+          track_count: number
+          updated_at: string
+        }
+        Insert: {
+          built_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          scope_key?: string | null
+          scope_kind?: string
+          size_bytes?: number
+          status?: string
+          storage_path?: string | null
+          title: string
+          track_count?: number
+          updated_at?: string
+        }
+        Update: {
+          built_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          scope_key?: string | null
+          scope_kind?: string
+          size_bytes?: number
+          status?: string
+          storage_path?: string | null
+          title?: string
+          track_count?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1523,12 +1739,46 @@ export type Database = {
           },
         ]
       }
+      dj_track_formats: {
+        Row: {
+          created_at: string
+          format_id: string
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          format_id: string
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          format_id?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dj_track_formats_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "dj_event_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dj_track_formats_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "dj_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dj_tracks: {
         Row: {
           album: string | null
           artist: string
           artwork_path: string | null
           audio_path: string
+          audio_purged_at: string | null
           bitrate_kbps: number | null
           bpm: number | null
           category_id: string | null
@@ -1544,8 +1794,12 @@ export type Database = {
           format: string | null
           genre: string | null
           id: string
+          keep_forever: boolean
           key_camelot: string | null
           language: string | null
+          last_activity_at: string
+          lifecycle_changed_at: string
+          lifecycle_status: string
           play_count: number
           published_at: string | null
           rating_avg: number
@@ -1568,6 +1822,7 @@ export type Database = {
           artist: string
           artwork_path?: string | null
           audio_path: string
+          audio_purged_at?: string | null
           bitrate_kbps?: number | null
           bpm?: number | null
           category_id?: string | null
@@ -1583,8 +1838,12 @@ export type Database = {
           format?: string | null
           genre?: string | null
           id?: string
+          keep_forever?: boolean
           key_camelot?: string | null
           language?: string | null
+          last_activity_at?: string
+          lifecycle_changed_at?: string
+          lifecycle_status?: string
           play_count?: number
           published_at?: string | null
           rating_avg?: number
@@ -1607,6 +1866,7 @@ export type Database = {
           artist?: string
           artwork_path?: string | null
           audio_path?: string
+          audio_purged_at?: string | null
           bitrate_kbps?: number | null
           bpm?: number | null
           category_id?: string | null
@@ -1622,8 +1882,12 @@ export type Database = {
           format?: string | null
           genre?: string | null
           id?: string
+          keep_forever?: boolean
           key_camelot?: string | null
           language?: string | null
+          last_activity_at?: string
+          lifecycle_changed_at?: string
+          lifecycle_status?: string
           play_count?: number
           published_at?: string | null
           rating_avg?: number
