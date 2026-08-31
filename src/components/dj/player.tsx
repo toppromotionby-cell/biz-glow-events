@@ -1,11 +1,16 @@
-// Глобальный плеер DJ-раздела: очередь, прогресс, громкость. Только клиент.
+// Глобальный плеер DJ-раздела: очередь, волна, громкость. Только клиент.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ListMusic } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CoverArt } from "@/components/dj/CoverArt";
+import { Waveform } from "@/components/dj/Waveform";
+import { cn } from "@/lib/utils";
 import { djStreamUrl } from "@/lib/dj/dj.functions";
 import { formatDuration, trackFullTitle, type DjTrack } from "@/lib/dj/types";
 import { toast } from "sonner";
+
 
 type PlayerState = {
   current: DjTrack | null;
