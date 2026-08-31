@@ -5,6 +5,7 @@ import { adviseDay, AiBlockedError, parseIntent, transcribeVoice } from "@/lib/c
 import { tgAnswerCallback, tgDownloadFile, tgEdit, tgEsc, tgSend } from "@/lib/calendar/telegram.server";
 import {
   admin,
+  computeAnalytics,
   deleteItem,
   getDirections,
   getItem,
@@ -320,6 +321,44 @@ export async function sendWeek(db: Db): Promise<void> {
   );
 }
 
+/** Понедельничный обзор недели: загрузка по направлениям, просрочки, хронические переносы. */
+export async function sendWeeklyReview(db: Db): Promise<void> {
+  const cid = await chatId(db);
+  if (!cid) return;
+  const prefs = await getPrefs(db);
+  const dirs = await getDirections(db);
+  const stats = await computeAnalytics(db, 7);
+  const items = await listItemsBetween(db, new Date().toISOString(), new Date(Date.now() + 7 * 86_400_000).toISOString());
+  const load = stats.perDirection
+    .map((s) => {
+      const d = dirs.find((x) => x.id === s.direction_id);
+      const hours = Math.round(s.minutes / 60);
+      return `${d?.emoji ?? "•"} ${tgEsc(d?.title ?? "Без направления")}: ${s.total} записей${hours ? `, ~${hours} ч` : ""}`;
+    })
+    .join("\n");
+  const chronic = stats.topRescheduled.filter((t) => t.reschedule_count >= 2);
+  const advice = await adviseDay(
+    `Неделя: записей ${stats.total}, закрыто ${stats.done}, просрочено сейчас ${stats.overdueNow}. ` +
+      `Часто откладывается: ${chronic.map((c) => `${c.title} (${c.reschedule_count} переносов)`).join("; ") || "нет"}.`,
+    prefs.style_profile,
+  );
+  await tgSend(
+    cid,
+    [
+      "🗓 <b>Обзор недели</b>",
+      `За 7 дней: ${stats.total} записей, закрыто ${stats.done} (${stats.doneRate}%), просрочено сейчас: ${stats.overdueNow}.`,
+      load ? `\n<b>Загрузка по направлениям</b>\n${load}` : "",
+      chronic.length
+        ? `\n⚠️ <b>Часто откладывается</b>\n${chronic.map((c) => `• ${tgEsc(c.title)} — переносов: ${c.reschedule_count}`).join("\n")}`
+        : "",
+      `\n<b>Ближайшие 7 дней</b>\n${items.length ? groupByDirection(items, dirs, prefs.tz) : "пусто"}`,
+      advice ? `\n💡 ${tgEsc(advice)}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+}
+
 export async function sendOpenTail(db: Db): Promise<void> {
   const cid = await chatId(db);
   if (!cid) return;
@@ -397,11 +436,18 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
   // 3. Утренний и вечерний дайджест — по одному разу в день.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: prefs.tz }).format(now);
   const { data: st } = await db.from("calendar_sync_state").select("*").eq("id", 1).maybeSingle();
-  const state = (st ?? {}) as { last_morning_on?: string | null; last_evening_on?: string | null };
+  const state = (st ?? {}) as { last_morning_on?: string | null; last_evening_on?: string | null; last_weekly_on?: string | null };
   if (nowHm >= prefs.morning_time && state.last_morning_on !== today) {
     await sendDailyDigest(db, "morning");
     await db.from("calendar_sync_state").update({ last_morning_on: today }).eq("id", 1);
     digests.push("morning");
+  }
+  // Понедельник — обзор недели (один раз, после времени утреннего дайджеста).
+  const weekday = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: prefs.tz }).format(now);
+  if (weekday === "Mon" && nowHm >= prefs.morning_time && state.last_weekly_on !== today) {
+    await sendWeeklyReview(db);
+    await db.from("calendar_sync_state").update({ last_weekly_on: today }).eq("id", 1);
+    digests.push("weekly");
   }
   if (nowHm >= prefs.evening_time && state.last_evening_on !== today) {
     await sendDailyDigest(db, "evening");
