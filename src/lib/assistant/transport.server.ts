@@ -249,8 +249,26 @@ export async function tgSendDocument(
   }
 }
 
-/** Скачивание файла из Telegram (голосовые сообщения). */
-export async function tgDownloadFile(fileId: string): Promise<{ base64: string; mime: string } | null> {
+/** Тип файла по расширению из Telegram-пути. */
+export function mimeByPath(path: string, fallback = "application/octet-stream"): string {
+  const p = path.toLowerCase();
+  if (p.endsWith(".mp3")) return "audio/mpeg";
+  if (p.endsWith(".m4a")) return "audio/mp4";
+  if (p.endsWith(".oga") || p.endsWith(".ogg")) return "audio/ogg";
+  if (p.endsWith(".png")) return "image/png";
+  if (p.endsWith(".jpg") || p.endsWith(".jpeg")) return "image/jpeg";
+  if (p.endsWith(".webp")) return "image/webp";
+  if (p.endsWith(".gif")) return "image/gif";
+  if (p.endsWith(".heic")) return "image/heic";
+  if (p.endsWith(".pdf")) return "application/pdf";
+  return fallback;
+}
+
+/** Скачивание любого файла из Telegram: голосовые, скриншоты, документы. */
+export async function tgFetchFile(
+  fileId: string,
+  fallbackMime?: string,
+): Promise<{ base64: string; mime: string; bytes: number; path: string } | null> {
   const w = wire();
   if (!w) return null;
   const info = await call<{ file_path?: string }>("getFile", { file_id: fileId });
@@ -262,7 +280,18 @@ export async function tgDownloadFile(fileId: string): Promise<{ base64: string; 
     return null;
   }
   const buf = Buffer.from(await res.arrayBuffer());
-  const mime = path.endsWith(".mp3") ? "audio/mpeg" : path.endsWith(".m4a") ? "audio/mp4" : "audio/ogg";
-  return { base64: buf.toString("base64"), mime };
+  return {
+    base64: buf.toString("base64"),
+    mime: mimeByPath(path, fallbackMime ?? "application/octet-stream"),
+    bytes: buf.byteLength,
+    path,
+  };
+}
+
+/** Скачивание файла из Telegram (голосовые сообщения). */
+export async function tgDownloadFile(fileId: string): Promise<{ base64: string; mime: string } | null> {
+  const file = await tgFetchFile(fileId, "audio/ogg");
+  if (!file) return null;
+  return { base64: file.base64, mime: file.mime.startsWith("audio/") ? file.mime : "audio/ogg" };
 }
 
