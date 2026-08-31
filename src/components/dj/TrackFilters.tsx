@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { CamelotWheel } from "@/components/dj/CamelotWheel";
 import { djCategories } from "@/lib/dj/dj.functions";
-import { AUDIO_SECTIONS, SECTION_LABEL } from "@/lib/dj/sections";
+import { AUDIO_SECTIONS, DJ_FORMATS, FORMAT_LABEL, SECTION_LABEL } from "@/lib/dj/sections";
 import {
   GENRES, LANGUAGES, TRACK_SORTS, TRACK_VERSION_LABEL, type DjTrackFilters, type TrackVersion,
 } from "@/lib/dj/types";
@@ -89,6 +89,7 @@ export function TrackFilters({
     const c = data?.categories.find((x) => x.id === value.categoryId);
     activeChips.push({ label: c?.name ?? "Категория", clear: () => set({ categoryId: undefined }) });
   }
+  if (value.formatSlug) activeChips.push({ label: FORMAT_LABEL[value.formatSlug] ?? value.formatSlug, clear: () => set({ formatSlug: undefined }) });
   for (const g of genres) activeChips.push({ label: g, clear: () => toggleGenre(g) });
   if (value.version) activeChips.push({ label: TRACK_VERSION_LABEL[value.version as TrackVersion] ?? value.version, clear: () => set({ version: undefined }) });
   if (value.key) activeChips.push({ label: `Key ${value.key}`, clear: () => set({ key: undefined }) });
@@ -182,6 +183,21 @@ export function TrackFilters({
 
   return (
     <div className="space-y-4">
+      {/* Форматы мероприятий */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1" role="group" aria-label="Формат мероприятия">
+        <Chip active={!value.formatSlug} onClick={() => set({ formatSlug: undefined })}>Любой формат</Chip>
+        {DJ_FORMATS.map((f) => (
+          <Chip
+            key={f.key}
+            active={value.formatSlug === f.key}
+            onClick={() => set({ formatSlug: value.formatSlug === f.key ? undefined : f.key })}
+            className="whitespace-nowrap"
+          >
+            {f.label}
+          </Chip>
+        ))}
+      </div>
+
       {/* Разделы */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         <Chip active={!value.section} onClick={() => set({ section: undefined, categoryId: undefined })}>Все</Chip>
