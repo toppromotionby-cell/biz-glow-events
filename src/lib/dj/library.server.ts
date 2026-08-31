@@ -4,7 +4,7 @@ import type { DjAccess } from "./guard.server";
 import type { DjTrack, DjTrackFilters } from "./types";
 
 const TRACK_COLUMNS =
-  "id, artist, title, version, genre, bpm, key_camelot, year, language, energy, duration_sec, tags, artwork_path, status, reject_reason, uploaded_by, play_count, download_count, rating_avg, rating_count, published_at, created_at";
+  "id, artist, title, version, genre, bpm, key_camelot, year, language, energy, duration_sec, tags, artwork_path, section, category_id, cover_palette, cover_spec_version, status, reject_reason, uploaded_by, play_count, download_count, rating_avg, rating_count, published_at, created_at";
 
 export const SIGNED_TTL = 60 * 60; // 1 час
 
@@ -43,7 +43,10 @@ export async function listTracks(access: DjAccess, filters: DjTrackFilters): Pro
     const term = filters.q.trim().replace(/[%,()]/g, " ");
     q = q.or(`artist.ilike.%${term}%,title.ilike.%${term}%`);
   }
-  if (filters.genre) q = q.eq("genre", filters.genre);
+  if (filters.section) q = q.eq("section", filters.section);
+  if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
+  if (filters.genres?.length) q = q.in("genre", filters.genres);
+  else if (filters.genre) q = q.eq("genre", filters.genre);
   if (filters.version) q = q.eq("version", filters.version);
   if (filters.language) q = q.eq("language", filters.language);
   if (filters.key) q = q.eq("key_camelot", filters.key);
@@ -215,4 +218,97 @@ export async function softwareDownloadUrl(access: DjAccess, versionId: string): 
   const url = await signPath("dj-software", data.file_path, 60 * 15);
   if (!url) throw new Error("Файл недоступен");
   return url;
+}
+
+
+// ── Разделы, категории и витрина ────────────────────────────────────────────
+
+export type DjCategoryRow = {
+  id: string;
+  section: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  sort_order: number;
+};
+
+/** Категории библиотеки + количество опубликованных треков по разделам. */
+export async function listCategories(): Promise<{
+  categories: DjCategoryRow[];
+  sectionCounts: Record<string, number>;
+  total: number;
+}> {
+  const [cats, tracks] = await Promise.all([
+    supabaseAdmin
+      .from("dj_categories")
+      .select("id, section, slug, name, description, icon, color, sort_order")
+      .eq("hidden", false)
+      .order("sort_order"),
+    supabaseAdmin.from("dj_tracks").select("section").eq("status", "published"),
+  ]);
+  const sectionCounts: Record<string, number> = {};
+  for (const r of tracks.data ?? []) {
+    const key = (r as { section: string | null }).section ?? "music";
+    sectionCounts[key] = (sectionCounts[key] ?? 0) + 1;
+  }
+  return {
+    categories: (cats.data ?? []) as DjCategoryRow[],
+    sectionCounts,
+    total: (tracks.data ?? []).length,
+  };
+}
+
+export type ShowcaseTrack = {
+  id: string;
+  artist: string;
+  title: string;
+  version: string;
+  section: string | null;
+  genre: string | null;
+  bpm: number | null;
+  key_camelot: string | null;
+  duration_sec: number | null;
+  rating_avg: number;
+  download_count: number;
+  artwork_url: string | null;
+};
+
+const SHOWCASE_COLUMNS =
+  "id, artist, title, version, section, genre, bpm, key_camelot, duration_sec, rating_avg, download_count, artwork_path, created_at";
+
+async function showcaseRow(order: "new" | "popular" | "rating", limit: number): Promise<ShowcaseTrack[]> {
+  let q = supabaseAdmin.from("dj_tracks").select(SHOWCASE_COLUMNS).eq("status", "published");
+  if (order === "popular") q = q.order("download_count", { ascending: false });
+  else if (order === "rating") q = q.order("rating_avg", { ascending: false }).order("rating_count", { ascending: false });
+  else q = q.order("created_at", { ascending: false });
+  const { data } = await q.limit(limit);
+  const rows = (data ?? []) as unknown as (ShowcaseTrack & { artwork_path: string | null })[];
+  const art = await signArtworks(rows.map((r) => r.artwork_path));
+  return rows.map((r, i) => ({ ...r, artwork_url: art[i] ?? null }));
+}
+
+/** Публичная витрина /dj: без ссылок на аудио, только карточки. */
+export async function loadShowcase(): Promise<{
+  fresh: ShowcaseTrack[];
+  popular: ShowcaseTrack[];
+  rated: ShowcaseTrack[];
+  stats: { tracks: number; fresh7d: number; software: number };
+}> {
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const [fresh, popular, rated, total, week, software] = await Promise.all([
+    showcaseRow("new", 12),
+    showcaseRow("popular", 12),
+    showcaseRow("rating", 12),
+    supabaseAdmin.from("dj_tracks").select("id", { count: "exact", head: true }).eq("status", "published"),
+    supabaseAdmin.from("dj_tracks").select("id", { count: "exact", head: true }).eq("status", "published").gte("created_at", weekAgo),
+    supabaseAdmin.from("dj_software").select("id", { count: "exact", head: true }).eq("status", "published"),
+  ]);
+  return {
+    fresh,
+    popular,
+    rated,
+    stats: { tracks: total.count ?? 0, fresh7d: week.count ?? 0, software: software.count ?? 0 },
+  };
 }
