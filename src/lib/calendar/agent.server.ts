@@ -223,7 +223,48 @@ export async function handleTelegramText(
     );
     return;
   }
-  if (await handleQuery(db, chatId, text, prefs.tz, dirs)) return;
+  // Быстрые слэш-команды идут мимо модели — они дешевле и мгновеннее.
+  const isCommand = text.trim().startsWith("/");
+  if (isCommand && (await handleQuery(db, chatId, text, prefs.tz, dirs))) return;
+
+  // Основной путь: AI-мозг с инструментами (понимает свободную речь и контекст диалога).
+  if (prefs.brain_enabled) {
+    try {
+      const { runBrain } = await import("@/lib/calendar/brain.server");
+      const result = await runBrain(db, {
+        text,
+        chatKey: `tg:${chatId}`,
+        channel: "telegram",
+        prefs,
+        dirs,
+      });
+      if (result.blocks.length) {
+        for (const block of result.blocks) {
+          if (!block.text.trim()) continue;
+          await tgSend(chatId, block.text, block.item ? itemButtons(block.item) : undefined);
+        }
+        if (opts.source === "voice" || result.usedTools.length) {
+          await db.from("calendar_inbox").insert({
+            tg_chat_id: chatId,
+            source: opts.source,
+            raw_text: text,
+            status: result.usedTools.length ? "done" : "clarify",
+            parsed: { tools: result.usedTools } as never,
+            item_id: result.items[0]?.id ?? null,
+          });
+        }
+        return;
+      }
+    } catch (e) {
+      if (e instanceof AiBlockedError) {
+        await tgSend(chatId, "ИИ временно недоступен, попробуйте чуть позже.");
+        return;
+      }
+      console.error("[planner] brain failed, fallback to simple parser", e);
+    }
+  }
+
+  if (!isCommand && (await handleQuery(db, chatId, text, prefs.tz, dirs))) return;
 
   const { data: inbox } = await db
     .from("calendar_inbox")
