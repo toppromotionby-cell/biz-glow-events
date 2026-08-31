@@ -139,6 +139,14 @@ export async function moderateTrack(id: string, status: DjContentStatus, reason?
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  if (status === "published") {
+    try {
+      const notify = await import("./telegram/notify.server");
+      await notify.notifyTrackPublished(id);
+    } catch (e) {
+      console.error("[dj] telegram notify failed", e);
+    }
+  }
 }
 
 export async function deleteTrack(id: string) {
