@@ -4348,6 +4348,7 @@ export type Database = {
         | "content_editor"
         | "marketer"
         | "accountant"
+        | "dj_admin"
       availability_status: "available" | "booked" | "maintenance"
       order_status:
         | "new"
@@ -4493,6 +4494,7 @@ export const Constants = {
         "content_editor",
         "marketer",
         "accountant",
+        "dj_admin",
       ],
       availability_status: ["available", "booked", "maintenance"],
       order_status: [
