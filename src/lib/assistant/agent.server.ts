@@ -535,6 +535,63 @@ async function handleCallback(cb: NonNullable<TgUpdate["callback_query"]>): Prom
   await tgAnswerCallback(cb.id);
 }
 
+/** Решение по карточке: утвердить (и выполнить), отправить на правки или удалить. */
+async function handleCardDecision(
+  cb: NonNullable<TgUpdate["callback_query"]>,
+  who: Identity,
+  data: string,
+): Promise<void> {
+  const chatId = who.chatId;
+  const [, action, planId] = data.split(":");
+  if (!planId) {
+    await tgAnswerCallback(cb.id, "Карточка устарела — попросите собрать заново.");
+    return;
+  }
+  const guard = checkPlan(await getPlan(planId), chatId);
+  if (!guard.ok) {
+    await tgAnswerCallback(cb.id, guard.message);
+    return;
+  }
+  const plan = guard.plan;
+  const body = renderCard({
+    id: plan.id,
+    title: plan.title,
+    summary: plan.summary,
+    steps: plan.steps,
+    questions: plan.questions,
+  });
+  const messageId = plan.tg_message_id ?? cb.message?.message_id ?? null;
+
+  if (action === "edit") {
+    await setPlanStatus(plan.id, "editing");
+    await tgAnswerCallback(cb.id, "Жду правки");
+    if (messageId) await tgEdit(chatId, messageId, renderDecided(body, "editing"));
+    await reply(chatId, who, "✏️ Напишите, что поправить — пересоберу карточку.");
+    return;
+  }
+
+  if (action === "no") {
+    await setPlanStatus(plan.id, "rejected", "Удалено пользователем.");
+    await tgAnswerCallback(cb.id, "Удалено");
+    if (messageId) await tgEdit(chatId, messageId, renderDecided(body, "rejected"));
+    return;
+  }
+
+  await tgAnswerCallback(cb.id, "Выполняю…");
+  let report: string;
+  try {
+    report = await executePlan(who, plan);
+    await setPlanStatus(plan.id, "approved", report);
+  } catch (e) {
+    report = `🔴 Ошибка выполнения: ${e instanceof Error ? e.message : "неизвестная"}`;
+    await setPlanStatus(plan.id, "failed", report);
+  }
+  if (messageId) await tgEdit(chatId, messageId, renderDecided(body, "approved", report));
+  else await reply(chatId, who, renderDecided(body, "approved", report));
+}
+
+
+
 /* ---------------------------------- прочее ---------------------------------- */
 
 async function stats(period: string): Promise<string> {
