@@ -121,6 +121,8 @@ export type DjTrackFilters = {
   section?: string;
   /** Подкатегория из dj_categories. */
   categoryId?: string;
+  /** Формат мероприятия (wedding, corporate, newyear…). */
+  formatSlug?: string;
   /** Мультивыбор жанров. */
   genres?: string[];
   genre?: string;

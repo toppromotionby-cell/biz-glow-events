@@ -1,12 +1,12 @@
 // Публичная витрина DJ-клуба event-hub.by.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Disc3, Music4, Sparkles, Wrench, ShieldCheck, Headphones, Flame, Star, Clock } from "lucide-react";
+import { Disc3, Music4, Sparkles, Wrench, ShieldCheck, Headphones, Flame, Star, Clock, CalendarHeart, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoverArt } from "@/components/dj/CoverArt";
 import { djShowcase } from "@/lib/dj/dj.functions";
-import { AUDIO_SECTIONS } from "@/lib/dj/sections";
+import { AUDIO_SECTIONS, DJ_FORMATS } from "@/lib/dj/sections";
 import { coverCssGradient } from "@/lib/dj/cover-role";
 import { formatDuration, type DjTrackFilters } from "@/lib/dj/types";
 import type { ShowcaseTrack } from "@/lib/dj/library.server";
@@ -109,30 +109,74 @@ function DjLanding() {
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-12">
-      {/* Хиро */}
-      <section className="glass dj-grain relative isolate overflow-hidden rounded-3xl p-8 md:p-12">
-        <div className="dj-aurora" aria-hidden />
-        <div className="relative">
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
-            <Disc3 className="h-3.5 w-3.5 animate-spin [animation-duration:6s]" /> Закрытый клуб
+      {/* Хиро: тёмная сцена, янтарные засветы, винил и эквалайзер */}
+      <section className="dj-stage dj-grain relative isolate overflow-hidden rounded-3xl border border-primary/20 p-8 md:p-14">
+        <div className="dj-aurora pointer-events-none absolute inset-0 opacity-70" aria-hidden />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-primary/40 blur-3xl"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-32 left-1/4 h-72 w-72 rounded-full bg-accent/30 blur-3xl"
+        />
+
+        {/* Винил */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 top-1/2 hidden h-72 w-72 -translate-y-1/2 animate-spin rounded-full border-[14px] border-white/10 [animation-duration:14s] md:block"
+          style={{
+            background:
+              "repeating-radial-gradient(circle at center, hsl(var(--primary)/0.28) 0 2px, transparent 2px 9px)",
+          }}
+        >
+          <span className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-primary to-accent" />
+        </div>
+
+        <div className="relative max-w-2xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
+            <Disc3 className="h-3.5 w-3.5 animate-spin [animation-duration:6s]" /> Закрытый клуб event-диджеев
           </span>
-          <h1 className="mt-4 font-display text-4xl font-bold gradient-text md:text-6xl">DJ Hub event-hub.by</h1>
-          <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
-            Рабочее место event-диджея: музыка, отбивки, фоны ведущему, сэмплы, входы-выходы и welcome —
-            с BPM, тональностью Camelot и фирменными обложками. Без дублей и лишнего шума.
+          <h1 className="mt-5 font-display text-4xl font-black leading-[1.05] md:text-6xl">
+            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              DJ Hub
+            </span>{" "}
+            event-hub.by
+          </h1>
+          <p className="dj-stage-muted mt-4 text-base md:text-lg">
+            Рабочее место event-диджея: музыка, отбивки, фоны ведущему, сэмплы, входы-выходы, семейные
+            моменты, шоу и клубные сеты — с BPM, тональностью Camelot и фирменными обложками.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+
+          {/* Эквалайзер */}
+          <div className="mt-6 flex h-10 items-end gap-1" aria-hidden>
+            {Array.from({ length: 28 }).map((_, i) => (
+              <span
+                key={i}
+                className="w-1.5 rounded-full bg-gradient-to-t from-primary to-accent"
+                style={{
+                  height: `${20 + ((i * 37) % 80)}%`,
+                  animation: `dj-eq-bounce 1.${(i % 7) + 1}s ease-in-out ${i * 0.05}s infinite alternate`,
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-3">
             <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-glow hover:opacity-90">
               <Link to="/dj/pool">Войти в библиотеку</Link>
             </Button>
-            <Button asChild size="lg" variant="outline"><Link to="/dj/software">Софт и плагины</Link></Button>
+            <Button asChild size="lg" variant="outline" className="border-white/25 bg-transparent text-inherit hover:bg-white/10 hover:text-inherit">
+              <Link to="/dj/software">Софт и плагины</Link>
+            </Button>
           </div>
+
           <dl className="mt-8 grid max-w-lg grid-cols-3 gap-4">
             {stats.map((s) => (
               <div key={s.label}>
                 <dt className="sr-only">{s.label}</dt>
-                <dd className="font-display text-3xl font-bold tabular-nums gradient-text">{s.value}</dd>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+                <dd className="font-display text-3xl font-bold tabular-nums text-primary">{s.value}</dd>
+                <p className="dj-stage-dim text-xs">{s.label}</p>
               </div>
             ))}
           </dl>
@@ -154,6 +198,36 @@ function DjLanding() {
                 <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
                 <span className="relative text-base font-bold">{s.label}</span>
                 <span className="relative text-[0.7rem] text-white/75">{s.hint}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Форматы мероприятий */}
+      <section className="mt-12">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 font-display text-2xl font-bold">
+              <CalendarHeart className="h-5 w-5 text-primary" /> Форматы мероприятий
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Второй срез библиотеки: то же содержимое, но подобранное под повод.
+            </p>
+          </div>
+        </div>
+        <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {DJ_FORMATS.map((f) => (
+            <li key={f.key}>
+              <Link
+                to="/dj/pool"
+                search={poolSearch({ formatSlug: f.key })}
+                className="dj-ring group relative flex h-28 flex-col justify-end overflow-hidden rounded-2xl border border-primary/15 p-3 text-white transition-transform duration-300 hover:-translate-y-1"
+                style={{ backgroundImage: coverCssGradient({ artist: f.key, title: f.label, section: "welcome" }) }}
+              >
+                <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <span className="relative text-sm font-bold leading-tight">{f.label}</span>
+                <span className="relative text-[0.68rem] text-white/75">{f.hint}</span>
               </Link>
             </li>
           ))}
@@ -195,6 +269,22 @@ function DjLanding() {
         <div className="mt-6">
           <Button asChild className="bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-glow hover:opacity-90">
             <Link to="/dj/pool">Подать заявку</Link>
+          </Button>
+        </div>
+      </section>
+      {/* Вход для сотрудников */}
+      <section className="mt-16 border-t border-border/60 pt-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-muted/30 p-5">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <LogIn className="h-4 w-4 text-muted-foreground" /> Вход для сотрудников
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Модерация треков, софта и участников клуба — в административной панели event-hub.by.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/login">Служебный вход</Link>
           </Button>
         </div>
       </section>

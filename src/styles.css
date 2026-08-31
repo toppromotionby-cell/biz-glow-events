@@ -1283,6 +1283,16 @@ a[href],
   100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
 }
 
+/* Тёмная «сцена» для хиро DJ Hub: работает в обеих темах. */
+@utility dj-stage {
+  background:
+    radial-gradient(120% 100% at 80% 0%, color-mix(in oklab, var(--primary) 26%, transparent), transparent 62%),
+    linear-gradient(160deg, oklch(0.16 0.03 45) 0%, oklch(0.09 0.02 40) 55%, oklch(0.06 0.01 30) 100%);
+  color: oklch(0.98 0 0);
+}
+.dj-stage-muted { color: oklch(0.98 0 0 / 0.72); }
+.dj-stage-dim { color: oklch(0.98 0 0 / 0.6); }
+
 /* Полоски эквалайзера у играющего трека. */
 @utility dj-eq {
   display: inline-flex;

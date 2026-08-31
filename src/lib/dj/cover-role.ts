@@ -22,7 +22,7 @@
 
 import type { DjSectionKey } from "./sections";
 
-export const COVER_SPEC_VERSION = 1;
+export const COVER_SPEC_VERSION = 2;
 
 /** Форматы, которые умеет рисовать роль. */
 export type CoverFormat = "square" | "wide" | "og";
@@ -50,15 +50,19 @@ export type CoverPalette = {
 };
 
 /** Закрытый набор фирменных палитр — по одной на раздел библиотеки. */
+// Единая фирменная гамма сайта: янтарь → оранж. Разделы различаются
+// оттенком внутри диапазона 18–58° и характером паттерна, а не чужими цветами.
 export const COVER_PALETTES: Record<DjSectionKey, CoverPalette> = {
-  music:    { id: "ember",   label: "Ember",    hue: 24,  hueShift: -18, saturation: 88, light: [58, 42, 12], pattern: "waves" },
-  jingles:  { id: "electric",label: "Electric", hue: 268, hueShift: 42,  saturation: 82, light: [60, 44, 13], pattern: "bars"  },
-  host:     { id: "emerald", label: "Emerald",  hue: 158, hueShift: 30,  saturation: 68, light: [52, 38, 11], pattern: "rings" },
-  samples:  { id: "cyan",    label: "Cyan",     hue: 192, hueShift: 34,  saturation: 78, light: [56, 40, 12], pattern: "grid"  },
-  inout:    { id: "magenta", label: "Magenta",  hue: 330, hueShift: -30, saturation: 80, light: [58, 40, 12], pattern: "beams" },
-  welcome:  { id: "amber",   label: "Amber",    hue: 42,  hueShift: 22,  saturation: 84, light: [62, 46, 14], pattern: "orbit" },
-  show:     { id: "violet",  label: "Violet",   hue: 292, hueShift: -34, saturation: 76, light: [56, 40, 12], pattern: "pulse" },
-  software: { id: "steel",   label: "Steel",    hue: 214, hueShift: 18,  saturation: 42, light: [50, 34, 10], pattern: "stack" },
+  music:    { id: "ember",     label: "Ember",     hue: 24, hueShift: 8,   saturation: 92, light: [56, 40, 11], pattern: "waves" },
+  jingles:  { id: "flare",     label: "Flare",     hue: 36, hueShift: -12, saturation: 94, light: [60, 43, 12], pattern: "bars"  },
+  host:     { id: "honey",     label: "Honey",     hue: 38, hueShift: -12, saturation: 78, light: [58, 42, 12], pattern: "rings" },
+  samples:  { id: "copper",    label: "Copper",    hue: 18, hueShift: 10,  saturation: 76, light: [52, 37, 10], pattern: "grid"  },
+  inout:    { id: "sunburst",  label: "Sunburst",  hue: 32, hueShift: 6,   saturation: 96, light: [61, 43, 12], pattern: "beams" },
+  welcome:  { id: "amber",     label: "Amber",     hue: 40, hueShift: -10, saturation: 82, light: [62, 45, 13], pattern: "orbit" },
+  family:   { id: "candle",    label: "Candle",    hue: 38, hueShift: -8,  saturation: 66, light: [64, 46, 14], pattern: "pulse" },
+  show:     { id: "magma",     label: "Magma",     hue: 12, hueShift: 14,  saturation: 90, light: [54, 38, 10], pattern: "pulse" },
+  club:     { id: "neon-gold", label: "Neon Gold", hue: 28, hueShift: 12,  saturation: 98, light: [57, 40, 10], pattern: "beams" },
+  software: { id: "bronze",    label: "Bronze",    hue: 34, hueShift: -8,  saturation: 36, light: [48, 33, 9],  pattern: "stack" },
 };
 
 /** Геометрия и типографика — общие для всех форматов правила. */
@@ -156,10 +160,13 @@ export function buildCoverSpec(subject: CoverSubject): CoverSpec {
   const palette = paletteForSection(subject.section);
   const seed = coverSeed(`${subject.artist}|${subject.title}|${palette.id}`);
 
-  // Сдвиг ±14° внутри семейства раздела: обложки различимы, но родственны.
-  const drift = ((seed % 29) - 14) * 1;
-  const h0 = palette.hue + drift;
-  const h1 = palette.hue + palette.hueShift + drift;
+  // Сдвиг ±7° внутри семейства раздела: обложки различимы, но родственны.
+  // Тон жёстко удерживаем в фирменном янтарно-оранжевом коридоре 8–46°,
+  // иначе высокая насыщенность уводит плашки в салатовый.
+  const clampHue = (h: number) => Math.min(43, Math.max(8, h));
+  const drift = ((seed % 15) - 7) * 1;
+  const h0 = clampHue(palette.hue + drift);
+  const h1 = clampHue(palette.hue + palette.hueShift + drift);
 
   return {
     version: COVER_SPEC_VERSION,

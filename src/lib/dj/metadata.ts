@@ -1,7 +1,7 @@
 // Разбор метаданных аудиофайла: ID3 + имя файла. Работает в браузере.
 import type { TrackVersion } from "./types";
 import { stripBrand } from "./branding";
-import { guessSection, type DjSectionKey } from "./sections";
+import { guessSection, guessFormats, type DjSectionKey } from "./sections";
 
 export type ParsedTrack = {
   artist: string;
@@ -18,6 +18,8 @@ export type ParsedTrack = {
   bitrateKbps: number | null;
   format: string;
   section: DjSectionKey;
+  /** Автоподбор форматов мероприятия. */
+  formats: string[];
   picture: { data: Uint8Array; mime: string } | null;
   sourceFilename: string;
 };
@@ -162,6 +164,7 @@ export async function parseAudioFile(file: File): Promise<ParsedTrack> {
     bitrateKbps: bitrate,
     format,
     section: guessSection(relPath, durationSec),
+    formats: guessFormats(`${relPath} ${artist} ${title}`),
     picture,
     sourceFilename: file.name,
   };

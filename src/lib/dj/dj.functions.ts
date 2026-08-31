@@ -23,6 +23,7 @@ const filtersSchema = z.object({
   q: z.string().max(120).optional(),
   section: z.string().max(30).optional(),
   categoryId: z.string().uuid().optional(),
+  formatSlug: z.string().max(30).optional(),
   genres: z.array(z.string().max(60)).max(30).optional(),
   genre: z.string().max(60).optional(),
   version: z.string().max(40).optional(),
@@ -159,6 +160,8 @@ export const djSubmitTrack = createServerFn({ method: "POST" })
       audio_path: z.string().min(1).max(400),
       artwork_path: z.string().max(400).nullish(),
       format: z.string().max(20).nullish(),
+      section: z.string().max(30).optional(),
+      formats: z.array(z.string().max(30)).max(10).default([]),
       file_size: z.number().int().positive().nullish(),
     }).parse(d),
   )
