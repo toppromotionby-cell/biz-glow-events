@@ -32,6 +32,7 @@ import { Route as IndustriesRouteImport } from './routes/industries'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as EquipmentRouteImport } from './routes/equipment'
+import { Route as DjRouteImport } from './routes/dj'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactsRouteImport } from './routes/contacts'
@@ -43,6 +44,7 @@ import { Route as AttractionsRouteImport } from './routes/attractions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DjIndexRouteImport } from './routes/dj.index'
 import { Route as CatalogIndexRouteImport } from './routes/catalog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ZonesSlugRouteImport } from './routes/zones.$slug'
@@ -56,6 +58,9 @@ import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as GeoCityRouteImport } from './routes/geo.$city'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as DjSoftwareRouteImport } from './routes/dj.software'
+import { Route as DjPoolRouteImport } from './routes/dj.pool'
+import { Route as DjCommunityRouteImport } from './routes/dj.community'
 import { Route as CatalogSlugRouteImport } from './routes/catalog.$slug'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -80,6 +85,7 @@ import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwor
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as AdminHelpIndexRouteImport } from './routes/admin.help.index'
 import { Route as AdminDocumentsIndexRouteImport } from './routes/admin.documents.index'
+import { Route as AdminDjIndexRouteImport } from './routes/admin.dj.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
@@ -94,6 +100,8 @@ import { Route as AdminPaperworkIdRouteImport } from './routes/admin.paperwork.$
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminHelpSlugRouteImport } from './routes/admin.help.$slug'
 import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
+import { Route as AdminDjTracksRouteImport } from './routes/admin.dj.tracks'
+import { Route as AdminDjMembersRouteImport } from './routes/admin.dj.members'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as AdminDocumentsPromoIndexRouteImport } from './routes/admin.documents.promo.index'
@@ -238,6 +246,11 @@ const EquipmentRoute = EquipmentRouteImport.update({
   path: '/equipment',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DjRoute = DjRouteImport.update({
+  id: '/dj',
+  path: '/dj',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeliveryRoute = DeliveryRouteImport.update({
   id: '/delivery',
   path: '/delivery',
@@ -292,6 +305,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DjIndexRoute = DjIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DjRoute,
 } as any)
 const CatalogIndexRoute = CatalogIndexRouteImport.update({
   id: '/catalog/',
@@ -357,6 +375,21 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DjSoftwareRoute = DjSoftwareRouteImport.update({
+  id: '/software',
+  path: '/software',
+  getParentRoute: () => DjRoute,
+} as any)
+const DjPoolRoute = DjPoolRouteImport.update({
+  id: '/pool',
+  path: '/pool',
+  getParentRoute: () => DjRoute,
+} as any)
+const DjCommunityRoute = DjCommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => DjRoute,
 } as any)
 const CatalogSlugRoute = CatalogSlugRouteImport.update({
   id: '/catalog/$slug',
@@ -478,6 +511,11 @@ const AdminDocumentsIndexRoute = AdminDocumentsIndexRouteImport.update({
   path: '/documents/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDjIndexRoute = AdminDjIndexRouteImport.update({
+  id: '/dj/',
+  path: '/dj/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const OrderSuccessIdRoute = OrderSuccessIdRouteImport.update({
   id: '/order/success/$id',
   path: '/order/success/$id',
@@ -547,6 +585,16 @@ const AdminHelpSlugRoute = AdminHelpSlugRouteImport.update({
 const AdminDocumentsKnowledgeRoute = AdminDocumentsKnowledgeRouteImport.update({
   id: '/documents/knowledge',
   path: '/documents/knowledge',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDjTracksRoute = AdminDjTracksRouteImport.update({
+  id: '/dj/tracks',
+  path: '/dj/tracks',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDjMembersRoute = AdminDjMembersRouteImport.update({
+  id: '/dj/members',
+  path: '/dj/members',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
@@ -718,6 +766,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
+  '/dj': typeof DjRouteWithChildren
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -761,6 +810,9 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
+  '/dj/community': typeof DjCommunityRoute
+  '/dj/pool': typeof DjPoolRoute
+  '/dj/software': typeof DjSoftwareRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -774,7 +826,10 @@ export interface FileRoutesByFullPath {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
+  '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -789,6 +844,7 @@ export interface FileRoutesByFullPath {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/dj/': typeof AdminDjIndexRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
@@ -873,6 +929,9 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
+  '/dj/community': typeof DjCommunityRoute
+  '/dj/pool': typeof DjPoolRoute
+  '/dj/software': typeof DjSoftwareRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -886,7 +945,10 @@ export interface FileRoutesByTo {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin': typeof AdminIndexRoute
   '/catalog': typeof CatalogIndexRoute
+  '/dj': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -901,6 +963,7 @@ export interface FileRoutesByTo {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/dj': typeof AdminDjIndexRoute
   '/admin/documents': typeof AdminDocumentsIndexRoute
   '/admin/help': typeof AdminHelpIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
@@ -946,6 +1009,7 @@ export interface FileRoutesById {
   '/contacts': typeof ContactsRoute
   '/cookies': typeof CookiesRoute
   '/delivery': typeof DeliveryRoute
+  '/dj': typeof DjRouteWithChildren
   '/equipment': typeof EquipmentRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -989,6 +1053,9 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
+  '/dj/community': typeof DjCommunityRoute
+  '/dj/pool': typeof DjPoolRoute
+  '/dj/software': typeof DjSoftwareRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -1002,7 +1069,10 @@ export interface FileRoutesById {
   '/zones/$slug': typeof ZonesSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/catalog/': typeof CatalogIndexRoute
+  '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/members': typeof AdminDjMembersRoute
+  '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -1017,6 +1087,7 @@ export interface FileRoutesById {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/dj/': typeof AdminDjIndexRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
@@ -1063,6 +1134,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/cookies'
     | '/delivery'
+    | '/dj'
     | '/equipment'
     | '/faq'
     | '/forgot-password'
@@ -1106,6 +1178,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/cases/$slug'
     | '/catalog/$slug'
+    | '/dj/community'
+    | '/dj/pool'
+    | '/dj/software'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1119,7 +1194,10 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/catalog/'
+    | '/dj/'
     | '/admin/catalog/$type'
+    | '/admin/dj/members'
+    | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
     | '/admin/orders/$id'
@@ -1134,6 +1212,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/dj/'
     | '/admin/documents/'
     | '/admin/help/'
     | '/admin/orders/'
@@ -1218,6 +1297,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/cases/$slug'
     | '/catalog/$slug'
+    | '/dj/community'
+    | '/dj/pool'
+    | '/dj/software'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1231,7 +1313,10 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin'
     | '/catalog'
+    | '/dj'
     | '/admin/catalog/$type'
+    | '/admin/dj/members'
+    | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
     | '/admin/orders/$id'
@@ -1246,6 +1331,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/dj'
     | '/admin/documents'
     | '/admin/help'
     | '/admin/orders'
@@ -1290,6 +1376,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/cookies'
     | '/delivery'
+    | '/dj'
     | '/equipment'
     | '/faq'
     | '/forgot-password'
@@ -1333,6 +1420,9 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/cases/$slug'
     | '/catalog/$slug'
+    | '/dj/community'
+    | '/dj/pool'
+    | '/dj/software'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1346,7 +1436,10 @@ export interface FileRouteTypes {
     | '/zones/$slug'
     | '/admin/'
     | '/catalog/'
+    | '/dj/'
     | '/admin/catalog/$type'
+    | '/admin/dj/members'
+    | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
     | '/admin/orders/$id'
@@ -1361,6 +1454,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/dj/'
     | '/admin/documents/'
     | '/admin/help/'
     | '/admin/orders/'
@@ -1406,6 +1500,7 @@ export interface RootRouteChildren {
   ContactsRoute: typeof ContactsRoute
   CookiesRoute: typeof CookiesRoute
   DeliveryRoute: typeof DeliveryRoute
+  DjRoute: typeof DjRouteWithChildren
   EquipmentRoute: typeof EquipmentRouteWithChildren
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -1618,6 +1713,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EquipmentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dj': {
+      id: '/dj'
+      path: '/dj'
+      fullPath: '/dj'
+      preLoaderRoute: typeof DjRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/delivery': {
       id: '/delivery'
       path: '/delivery'
@@ -1694,6 +1796,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dj/': {
+      id: '/dj/'
+      path: '/'
+      fullPath: '/dj/'
+      preLoaderRoute: typeof DjIndexRouteImport
+      parentRoute: typeof DjRoute
     }
     '/catalog/': {
       id: '/catalog/'
@@ -1785,6 +1894,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dj/software': {
+      id: '/dj/software'
+      path: '/software'
+      fullPath: '/dj/software'
+      preLoaderRoute: typeof DjSoftwareRouteImport
+      parentRoute: typeof DjRoute
+    }
+    '/dj/pool': {
+      id: '/dj/pool'
+      path: '/pool'
+      fullPath: '/dj/pool'
+      preLoaderRoute: typeof DjPoolRouteImport
+      parentRoute: typeof DjRoute
+    }
+    '/dj/community': {
+      id: '/dj/community'
+      path: '/community'
+      fullPath: '/dj/community'
+      preLoaderRoute: typeof DjCommunityRouteImport
+      parentRoute: typeof DjRoute
     }
     '/catalog/$slug': {
       id: '/catalog/$slug'
@@ -1954,6 +2084,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dj/': {
+      id: '/admin/dj/'
+      path: '/dj'
+      fullPath: '/admin/dj/'
+      preLoaderRoute: typeof AdminDjIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/order/success/$id': {
       id: '/order/success/$id'
       path: '/order/success/$id'
@@ -2050,6 +2187,20 @@ declare module '@tanstack/react-router' {
       path: '/documents/knowledge'
       fullPath: '/admin/documents/knowledge'
       preLoaderRoute: typeof AdminDocumentsKnowledgeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dj/tracks': {
+      id: '/admin/dj/tracks'
+      path: '/dj/tracks'
+      fullPath: '/admin/dj/tracks'
+      preLoaderRoute: typeof AdminDjTracksRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dj/members': {
+      id: '/admin/dj/members'
+      path: '/dj/members'
+      fullPath: '/admin/dj/members'
+      preLoaderRoute: typeof AdminDjMembersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/catalog/$type': {
@@ -2338,6 +2489,8 @@ interface AdminRouteChildren {
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminDjMembersRoute: typeof AdminDjMembersRoute
+  AdminDjTracksRoute: typeof AdminDjTracksRoute
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminPaperworkIdRoute: typeof AdminPaperworkIdRouteWithChildren
   AdminPaperworkTemplatesRoute: typeof AdminPaperworkTemplatesRoute
@@ -2345,6 +2498,7 @@ interface AdminRouteChildren {
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsHygieneRoute: typeof AdminSettingsHygieneRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
+  AdminDjIndexRoute: typeof AdminDjIndexRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
   AdminPaperworkIndexRoute: typeof AdminPaperworkIndexRoute
   AdminDocumentsPresentationsTemplatesRoute: typeof AdminDocumentsPresentationsTemplatesRoute
@@ -2379,6 +2533,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminDjMembersRoute: AdminDjMembersRoute,
+  AdminDjTracksRoute: AdminDjTracksRoute,
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminPaperworkIdRoute: AdminPaperworkIdRouteWithChildren,
   AdminPaperworkTemplatesRoute: AdminPaperworkTemplatesRoute,
@@ -2386,6 +2542,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsHygieneRoute: AdminSettingsHygieneRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
+  AdminDjIndexRoute: AdminDjIndexRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
   AdminPaperworkIndexRoute: AdminPaperworkIndexRoute,
   AdminDocumentsPresentationsTemplatesRoute:
@@ -2438,6 +2595,22 @@ const CasesRouteChildren: CasesRouteChildren = {
 }
 
 const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
+
+interface DjRouteChildren {
+  DjCommunityRoute: typeof DjCommunityRoute
+  DjPoolRoute: typeof DjPoolRoute
+  DjSoftwareRoute: typeof DjSoftwareRoute
+  DjIndexRoute: typeof DjIndexRoute
+}
+
+const DjRouteChildren: DjRouteChildren = {
+  DjCommunityRoute: DjCommunityRoute,
+  DjPoolRoute: DjPoolRoute,
+  DjSoftwareRoute: DjSoftwareRoute,
+  DjIndexRoute: DjIndexRoute,
+}
+
+const DjRouteWithChildren = DjRoute._addFileChildren(DjRouteChildren)
 
 interface EquipmentRouteChildren {
   EquipmentSlugRoute: typeof EquipmentSlugRoute
@@ -2497,6 +2670,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactsRoute: ContactsRoute,
   CookiesRoute: CookiesRoute,
   DeliveryRoute: DeliveryRoute,
+  DjRoute: DjRouteWithChildren,
   EquipmentRoute: EquipmentRouteWithChildren,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

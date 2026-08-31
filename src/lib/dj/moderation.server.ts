@@ -1,0 +1,93 @@
+// Модерация и редактирование библиотеки DJ-раздела. Только сервер.
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { removeStoredFile } from "./upload.server";
+import type { DjContentStatus } from "./types";
+
+export type TrackInput = {
+  artist: string;
+  title: string;
+  version: string;
+  genre?: string | null;
+  bpm?: number | null;
+  key_camelot?: string | null;
+  year?: number | null;
+  language?: string | null;
+  energy?: number | null;
+  duration_sec?: number | null;
+  tags?: string[];
+  audio_path: string;
+  artwork_path?: string | null;
+  format?: string | null;
+  file_size?: number | null;
+};
+
+export async function insertTrack(userId: string, input: TrackInput, status: DjContentStatus) {
+  const { data, error } = await supabaseAdmin
+    .from("dj_tracks")
+    .insert({
+      artist: input.artist.trim(),
+      title: input.title.trim(),
+      version: input.version,
+      genre: input.genre ?? null,
+      bpm: input.bpm ?? null,
+      key_camelot: input.key_camelot ?? null,
+      year: input.year ?? null,
+      language: input.language ?? null,
+      energy: input.energy ?? null,
+      duration_sec: input.duration_sec ?? null,
+      tags: input.tags ?? [],
+      audio_path: input.audio_path,
+      artwork_path: input.artwork_path ?? null,
+      format: input.format ?? null,
+      file_size: input.file_size ?? null,
+      status,
+      uploaded_by: userId,
+      published_at: status === "published" ? new Date().toISOString() : null,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id as string;
+}
+
+export async function updateTrack(id: string, patch: Partial<TrackInput>) {
+  const { error } = await supabaseAdmin.from("dj_tracks").update(patch).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function moderateTrack(id: string, status: DjContentStatus, reason?: string) {
+  const { error } = await supabaseAdmin
+    .from("dj_tracks")
+    .update({
+      status,
+      reject_reason: status === "rejected" ? reason ?? null : null,
+      published_at: status === "published" ? new Date().toISOString() : null,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteTrack(id: string) {
+  const { data } = await supabaseAdmin.from("dj_tracks").select("audio_path, artwork_path").eq("id", id).maybeSingle();
+  await supabaseAdmin.from("dj_tracks").delete().eq("id", id);
+  await removeStoredFile("dj-audio", data?.audio_path);
+  await removeStoredFile("dj-artwork", data?.artwork_path);
+}
+
+export async function moderateComment(id: string, status: "published" | "hidden") {
+  const { error } = await supabaseAdmin.from("dj_comments").update({ status }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function pendingQueue() {
+  const [tracks, comments, software] = await Promise.all([
+    supabaseAdmin.from("dj_tracks").select("id, artist, title, version, created_at, uploaded_by").eq("status", "pending").order("created_at"),
+    supabaseAdmin.from("dj_comments").select("id, body, target_type, target_id, author_id, created_at").eq("status", "published").order("created_at", { ascending: false }).limit(50),
+    supabaseAdmin.from("dj_software").select("id, name, vendor, created_at").eq("status", "pending").order("created_at"),
+  ]);
+  return {
+    tracks: tracks.data ?? [],
+    recentComments: comments.data ?? [],
+    software: software.data ?? [],
+  };
+}

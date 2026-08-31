@@ -1152,6 +1152,491 @@ export type Database = {
         }
         Relationships: []
       }
+      dj_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          status: string
+          target_id: string
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          status?: string
+          target_id: string
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          status?: string
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dj_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "dj_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dj_downloads: {
+        Row: {
+          created_at: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dj_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dj_favorites_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "dj_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dj_members: {
+        Row: {
+          admin_note: string | null
+          approved_at: string | null
+          bio: string | null
+          city: string | null
+          contact: string | null
+          created_at: string
+          id: string
+          nickname: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          approved_at?: string | null
+          bio?: string | null
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          id?: string
+          nickname: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          approved_at?: string | null
+          bio?: string | null
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          id?: string
+          nickname?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dj_playlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          playlist_id: string
+          position: number
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          playlist_id: string
+          position?: number
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          playlist_id?: string
+          position?: number
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dj_playlist_items_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "dj_playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dj_playlist_items_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "dj_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dj_playlists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dj_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          track_id: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          track_id: string
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          track_id?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dj_ratings_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "dj_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dj_software: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon_path: string | null
+          id: string
+          instructions: string | null
+          name: string
+          platforms: string[]
+          slug: string
+          status: string
+          updated_at: string
+          vendor: string | null
+          website: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon_path?: string | null
+          id?: string
+          instructions?: string | null
+          name: string
+          platforms?: string[]
+          slug: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+          website?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon_path?: string | null
+          id?: string
+          instructions?: string | null
+          name?: string
+          platforms?: string[]
+          slug?: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      dj_software_versions: {
+        Row: {
+          changelog: string | null
+          created_at: string
+          created_by: string | null
+          download_count: number
+          external_url: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          platform: string
+          release_date: string | null
+          software_id: string
+          status: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          changelog?: string | null
+          created_at?: string
+          created_by?: string | null
+          download_count?: number
+          external_url?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          platform?: string
+          release_date?: string | null
+          software_id: string
+          status?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          changelog?: string | null
+          created_at?: string
+          created_by?: string | null
+          download_count?: number
+          external_url?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          platform?: string
+          release_date?: string | null
+          software_id?: string
+          status?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dj_software_versions_software_id_fkey"
+            columns: ["software_id"]
+            isOneToOne: false
+            referencedRelation: "dj_software"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dj_threads: {
+        Row: {
+          author_id: string
+          body: string
+          category: string
+          created_at: string
+          id: string
+          locked: boolean
+          pinned: boolean
+          status: string
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          author_id: string
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          locked?: boolean
+          pinned?: boolean
+          status?: string
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          locked?: boolean
+          pinned?: boolean
+          status?: string
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
+      dj_tracks: {
+        Row: {
+          artist: string
+          artwork_path: string | null
+          audio_path: string
+          bpm: number | null
+          created_at: string
+          download_count: number
+          duration_sec: number | null
+          energy: number | null
+          file_size: number | null
+          format: string | null
+          genre: string | null
+          id: string
+          key_camelot: string | null
+          language: string | null
+          play_count: number
+          published_at: string | null
+          rating_avg: number
+          rating_count: number
+          reject_reason: string | null
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: string
+          waveform: Json | null
+          year: number | null
+        }
+        Insert: {
+          artist: string
+          artwork_path?: string | null
+          audio_path: string
+          bpm?: number | null
+          created_at?: string
+          download_count?: number
+          duration_sec?: number | null
+          energy?: number | null
+          file_size?: number | null
+          format?: string | null
+          genre?: string | null
+          id?: string
+          key_camelot?: string | null
+          language?: string | null
+          play_count?: number
+          published_at?: string | null
+          rating_avg?: number
+          rating_count?: number
+          reject_reason?: string | null
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string
+          waveform?: Json | null
+          year?: number | null
+        }
+        Update: {
+          artist?: string
+          artwork_path?: string | null
+          audio_path?: string
+          bpm?: number | null
+          created_at?: string
+          download_count?: number
+          duration_sec?: number | null
+          energy?: number | null
+          file_size?: number | null
+          format?: string | null
+          genre?: string | null
+          id?: string
+          key_camelot?: string | null
+          language?: string | null
+          play_count?: number
+          published_at?: string | null
+          rating_avg?: number
+          rating_count?: number
+          reject_reason?: string | null
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string
+          waveform?: Json | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       doc_contacts: {
         Row: {
           address: string
@@ -4304,6 +4789,10 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      dj_can_manage: { Args: { _uid: string }; Returns: boolean }
+      dj_is_member: { Args: { _uid: string }; Returns: boolean }
+      dj_is_trusted: { Args: { _uid: string }; Returns: boolean }
+      dj_member_status: { Args: { _uid: string }; Returns: string }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
@@ -4348,6 +4837,7 @@ export type Database = {
         | "content_editor"
         | "marketer"
         | "accountant"
+        | "dj_admin"
       availability_status: "available" | "booked" | "maintenance"
       order_status:
         | "new"
@@ -4493,6 +4983,7 @@ export const Constants = {
         "content_editor",
         "marketer",
         "accountant",
+        "dj_admin",
       ],
       availability_status: ["available", "booked", "maintenance"],
       order_status: [
