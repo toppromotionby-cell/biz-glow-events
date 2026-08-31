@@ -97,6 +97,7 @@ export const ROUTE_PERMISSIONS: { match: RegExp; perm: Permission }[] = [
   { match: /^\/admin\/planner/, perm: "orders.manage" },
   { match: /^\/admin\/assistant/, perm: "system.manage" },
   { match: /^\/admin\/copilot/, perm: "system.manage" },
+  { match: /^\/admin\/ai-providers/, perm: "system.manage" },
   { match: /^\/admin\/(catalog|catalog-structure|cases|testimonials|blog)/, perm: "content.manage" },
   { match: /^\/admin\/(campaigns|mail-accounts|promo)/, perm: "marketing.manage" },
 ];

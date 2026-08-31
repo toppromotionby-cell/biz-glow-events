@@ -7,17 +7,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GoogleButton } from "@/components/auth/GoogleButton";
-import { AppleButton } from "@/components/auth/AppleButton";
 import { toast } from "sonner";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { safeRedirect } from "@/lib/auth-redirect";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   // ?redirect=/path — куда вернуть пользователя после входа (только внутренние пути).
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
-    const r = typeof search.redirect === "string" ? search.redirect : "";
-    return r.startsWith("/") && !r.startsWith("//") ? { redirect: r } : {};
+    const r = safeRedirect(search.redirect);
+    return r ? { redirect: r } : {};
   },
   head: () => ({
     meta: [
@@ -79,16 +78,14 @@ function LoginPage() {
   return (
     <div className="page-shell section-y max-w-md">
       <div className="glass-strong rounded-2xl p-8">
-        <h1 className="text-3xl font-display font-bold mb-6">Вход</h1>
-        <div className="space-y-2">
-          <GoogleButton />
-          <AppleButton />
-        </div>
-        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="h-px flex-1 bg-border" />
-          или через email
-          <div className="h-px flex-1 bg-border" />
-        </div>
+        <h1 className="text-3xl font-display font-bold mb-2">Вход</h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          Вход по email и паролю. Нет аккаунта?{" "}
+          <Link to="/register" search={redirect ? { redirect } : {}} className="text-accent hover:underline">
+            Зарегистрируйтесь за минуту
+          </Link>
+          .
+        </p>
         {formError && (
           <p role="alert" className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {formError}
@@ -112,7 +109,14 @@ function LoginPage() {
           </Button>
         </form>
         <p className="text-sm text-center mt-6 text-muted-foreground">
-          Личный кабинет создаётся автоматически после первого заказа — доступ придёт на вашу почту.
+          Нет аккаунта?{" "}
+          <Link to="/register" search={redirect ? { redirect } : {}} className="text-accent hover:underline">
+            Создать кабинет
+          </Link>
+          <br />
+          <span className="text-xs">
+            Если вы уже делали заказ — кабинет создан автоматически, воспользуйтесь ссылкой «Забыли пароль?».
+          </span>
         </p>
       </div>
     </div>

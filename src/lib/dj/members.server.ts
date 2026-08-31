@@ -127,3 +127,67 @@ export async function djStats(): Promise<{
     topTracks: (top.data ?? []) as never,
   };
 }
+
+/**
+ * Создание участника клуба администратором: заводит (или находит) пользователя
+ * по email и сразу присваивает статус в DJ-разделе.
+ */
+export async function createMemberByAdmin(input: {
+  email: string;
+  nickname: string;
+  status: DjMemberStatus;
+  city?: string;
+  contact?: string;
+  note?: string;
+  password?: string;
+}): Promise<{ member: DjMemberRow; created: boolean; tempPassword?: string }> {
+  const email = input.email.trim().toLowerCase();
+  const { data: existingProfile } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+  let userId = existingProfile?.id ?? null;
+  let created = false;
+  let tempPassword: string | undefined;
+
+  if (!userId) {
+    const { generatePassword } = await import("@/lib/password-policy");
+    tempPassword = input.password?.trim() || generatePassword(16);
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { full_name: input.nickname.trim(), must_change_password: true },
+    });
+    if (error || !data.user) throw new Error(error?.message ?? "Не удалось создать пользователя");
+    userId = data.user.id;
+    created = true;
+  }
+
+  const { data: existingMember } = await supabaseAdmin
+    .from("dj_members")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const patch = {
+    nickname: input.nickname.trim(),
+    city: input.city?.trim() || null,
+    contact: input.contact?.trim() || null,
+    admin_note: input.note?.trim() || null,
+    status: input.status,
+    ...(input.status === "approved" || input.status === "trusted"
+      ? { approved_at: new Date().toISOString() }
+      : {}),
+  };
+
+  const q = existingMember
+    ? supabaseAdmin.from("dj_members").update(patch).eq("id", existingMember.id)
+    : supabaseAdmin.from("dj_members").insert({ user_id: userId, ...patch });
+  const { data: member, error: memberError } = await q.select("*").single();
+  if (memberError) throw new Error(memberError.message);
+
+  return { member: { ...(member as DjMemberRow), email }, created, ...(tempPassword ? { tempPassword } : {}) };
+}

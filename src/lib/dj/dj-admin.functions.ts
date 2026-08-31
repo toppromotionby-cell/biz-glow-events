@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireDjManager } from "@/lib/dj/guard.server";
-import { listMembers, setMemberStatus, djStats } from "@/lib/dj/members.server";
+import { listMembers, setMemberStatus, djStats, createMemberByAdmin } from "@/lib/dj/members.server";
 import { moderateTrack, deleteTrack, updateTrack, pendingQueue } from "@/lib/dj/moderation.server";
 import { listTracks } from "@/lib/dj/library.server";
 
@@ -34,6 +34,26 @@ export const djAdminSetMemberStatus = createServerFn({ method: "POST" })
     const access = await requireDjManager(context.userId);
     await setMemberStatus(access, data.id, data.status, data.note);
     return { ok: true };
+  });
+
+export const djAdminCreateMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        email: z.string().trim().email().max(255),
+        nickname: z.string().trim().min(2).max(80),
+        status: memberStatus,
+        city: z.string().trim().max(80).optional(),
+        contact: z.string().trim().max(160).optional(),
+        note: z.string().trim().max(500).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await requireDjManager(context.userId);
+    const res = await createMemberByAdmin(data);
+    return { ok: true, created: res.created, tempPassword: res.tempPassword ?? null };
   });
 
 export const djAdminQueue = createServerFn({ method: "GET" })

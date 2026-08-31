@@ -21,6 +21,7 @@ import { Route as SitemapBlogDotxmlRouteImport } from './routes/sitemap-blog[.]x
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductionRouteImport } from './routes/production'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -82,6 +83,7 @@ import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAssistantRouteImport } from './routes/admin.assistant'
+import { Route as AdminAiProvidersRouteImport } from './routes/admin.ai-providers'
 import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwork.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as AdminHelpIndexRouteImport } from './routes/admin.help.index'
@@ -195,6 +197,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -500,6 +507,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
 const AdminAssistantRoute = AdminAssistantRouteImport.update({
   id: '/assistant',
   path: '/assistant',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAiProvidersRoute = AdminAiProvidersRouteImport.update({
+  id: '/ai-providers',
+  path: '/ai-providers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPaperworkIndexRoute = AdminPaperworkIndexRouteImport.update({
@@ -816,6 +828,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
@@ -828,6 +841,7 @@ export interface FileRoutesByFullPath {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/ai-providers': typeof AdminAiProvidersRoute
   '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -943,6 +957,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
@@ -955,6 +970,7 @@ export interface FileRoutesByTo {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/ai-providers': typeof AdminAiProvidersRoute
   '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -1071,6 +1087,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
@@ -1083,6 +1100,7 @@ export interface FileRoutesById {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/ai-providers': typeof AdminAiProvidersRoute
   '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -1202,6 +1220,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/production'
     | '/profile'
+    | '/register'
     | '/reset-password'
     | '/robots.txt'
     | '/services'
@@ -1214,6 +1233,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/ai-providers'
     | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
@@ -1329,6 +1349,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/production'
     | '/profile'
+    | '/register'
     | '/reset-password'
     | '/robots.txt'
     | '/services'
@@ -1341,6 +1362,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/ai-providers'
     | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
@@ -1456,6 +1478,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/production'
     | '/profile'
+    | '/register'
     | '/reset-password'
     | '/robots.txt'
     | '/services'
@@ -1468,6 +1491,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/ai-providers'
     | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
@@ -1586,6 +1610,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProductionRoute: typeof ProductionRouteWithChildren
   ProfileRoute: typeof ProfileRoute
+  RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ServicesRoute: typeof ServicesRouteWithChildren
@@ -1712,6 +1737,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -2139,6 +2171,13 @@ declare module '@tanstack/react-router' {
       path: '/assistant'
       fullPath: '/admin/assistant'
       preLoaderRoute: typeof AdminAssistantRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ai-providers': {
+      id: '/admin/ai-providers'
+      path: '/ai-providers'
+      fullPath: '/admin/ai-providers'
+      preLoaderRoute: typeof AdminAiProvidersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/paperwork/': {
@@ -2592,6 +2631,7 @@ const AdminPaperworkIdRouteWithChildren =
   AdminPaperworkIdRoute._addFileChildren(AdminPaperworkIdRouteChildren)
 
 interface AdminRouteChildren {
+  AdminAiProvidersRoute: typeof AdminAiProvidersRoute
   AdminAssistantRoute: typeof AdminAssistantRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBlogRoute: typeof AdminBlogRoute
@@ -2639,6 +2679,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAiProvidersRoute: AdminAiProvidersRoute,
   AdminAssistantRoute: AdminAssistantRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminBlogRoute: AdminBlogRoute,
@@ -2806,6 +2847,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProductionRoute: ProductionRouteWithChildren,
   ProfileRoute: ProfileRoute,
+  RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   ServicesRoute: ServicesRouteWithChildren,

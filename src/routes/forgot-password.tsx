@@ -46,24 +46,28 @@ function ForgotPasswordPage() {
     <div className="page-shell section-y max-w-md">
       <div className="glass-strong rounded-2xl p-8">
         <h1 className="text-3xl font-display font-bold mb-2">Восстановление пароля</h1>
-        <p className="text-sm text-muted-foreground mb-6">Введите email — мы вышлем ссылку для сброса пароля.</p>
+        <p className="text-sm text-muted-foreground mb-6">Введите email — мы вышлем ссылку для сброса пароля. Ссылка действует 60 минут и срабатывает один раз.</p>
         {sent ? (
           <div className="space-y-4">
             <p className="text-sm">Если такой email зарегистрирован, на него отправлена ссылка для восстановления пароля. Проверьте почту, в том числе папку «Спам».</p>
+            <p className="text-xs text-muted-foreground">Письмо не пришло за 5 минут? Проверьте адрес и отправьте запрос ещё раз или напишите нам через раздел «Контакты».</p>
+            <Button variant="outline" className="w-full" onClick={() => setSent(false)}>Отправить ещё раз</Button>
             <Button asChild variant="outline" className="w-full"><Link to="/login">Вернуться ко входу</Link></Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" autoComplete="email" {...register("email")} />
+              <Input id="email" type="email" autoComplete="email" placeholder="name@company.by" {...register("email")} />
+              <p className="text-xs text-muted-foreground">Тот адрес, на который вы оформляли заявку или регистрировались.</p>
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-gradient-primary glow-primary">
               {loading ? "Отправляем..." : "Отправить ссылку"}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Вспомнили пароль? <Link to="/login" className="text-accent">Войти</Link>
+              Вспомнили пароль? <Link to="/login" className="text-accent">Войти</Link> · Нет аккаунта?{" "}
+              <Link to="/register" className="text-accent">Регистрация</Link>
             </p>
           </form>
         )}
