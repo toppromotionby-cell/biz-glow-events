@@ -127,7 +127,7 @@ export async function tgSend(
   text: string,
   buttons?: TgButton[][],
 ): Promise<{ message_id: number } | null> {
-  const chunks = splitText(text);
+  const chunks = splitText(sanitizeTgHtml(text));
   let last: { message_id: number } | null = null;
   for (let i = 0; i < chunks.length; i += 1) {
     const isLast = i === chunks.length - 1;
