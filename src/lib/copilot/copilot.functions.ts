@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { CopilotContext, CopilotMessage, CopilotRun, CopilotSession, CopilotSettings } from "@/lib/copilot/types";
+import type { TeachCandidate, TeachPreview } from "@/lib/copilot/teach";
 
 export interface CopilotSendResult {
   sessionId: string;
@@ -177,3 +178,57 @@ export const copilotSaveSettings = createServerFn({ method: "POST" })
     return patchCopilotSettings(data);
   });
 
+
+/** Ручное обучение: разбор загруженного документа в кандидаты для базы знаний (превью). */
+export const copilotTeachPreview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { filename: string; mime: string; bytes: number; base64?: string; text?: string; hint?: string }) => {
+    const filename = (input?.filename ?? "").trim().slice(0, 200);
+    if (!filename) throw new Error("Не указан файл");
+    return {
+      filename,
+      mime: (input.mime ?? "application/octet-stream").toLowerCase(),
+      bytes: Number(input.bytes) || 0,
+      base64: input.base64 ?? undefined,
+      text: input.text ?? undefined,
+      hint: (input.hint ?? "").trim().slice(0, 500) || undefined,
+    };
+  })
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message?: string; preview?: TeachPreview }> => {
+    const { assertCopilotAccess } = await import("@/lib/copilot/guard.server");
+    await assertCopilotAccess({ supabase: context.supabase as never, userId: context.userId });
+    const { teachPreviewFromSource } = await import("@/lib/copilot/teach.server");
+    const outcome = await teachPreviewFromSource(
+      { filename: data.filename, mime: data.mime, bytes: data.bytes, base64: data.base64, text: data.text },
+      data.hint,
+    );
+    return outcome.ok ? { ok: true, preview: outcome.preview } : { ok: false, message: outcome.message };
+  });
+
+/** Ручное обучение: сохранение утверждённых фактов в базу знаний. */
+export const copilotTeachApprove = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { title: string; filename: string; candidates: TeachCandidate[] }) => {
+    const candidates = Array.isArray(input?.candidates) ? input.candidates : [];
+    if (!candidates.length) throw new Error("Не выбрано ни одного факта");
+    return {
+      title: (input.title ?? "Обучение").slice(0, 200),
+      filename: (input.filename ?? "документ").slice(0, 200),
+      candidates: candidates.slice(0, 40),
+    };
+  })
+  .handler(async ({ data, context }): Promise<{ saved: number; created: number; message: string }> => {
+    const { assertCopilotAccess } = await import("@/lib/copilot/guard.server");
+    await assertCopilotAccess({ supabase: context.supabase as never, userId: context.userId });
+    const { saveTeachCandidates } = await import("@/lib/copilot/teach.server");
+    const r = await saveTeachCandidates({
+      candidates: data.candidates,
+      filename: data.filename,
+      title: data.title,
+      authorId: context.userId,
+    });
+    return {
+      ...r,
+      message: `В базу знаний записано ${r.saved} фактов (новых — ${r.created}).`,
+    };
+  });
