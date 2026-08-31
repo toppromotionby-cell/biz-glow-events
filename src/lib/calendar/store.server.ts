@@ -454,8 +454,12 @@ export async function setStatus(db: Admin, id: string, status: CalItem["status"]
   if (!item) return null;
   const prefs = await getPrefs(db);
   await scheduleReminders(db, item, prefs);
-  if (status === "canceled") await removeFromGoogle(db, item);
-  else await pushToGoogle(db, item);
+  if (status === "canceled") {
+    await removeFromGoogle(db, item);
+    await removeFromTasks(db, item);
+  } else {
+    await syncTargets(db, item, prefs);
+  }
   return item;
 }
 
@@ -479,7 +483,7 @@ export async function rescheduleItem(db: Admin, id: string, startsAtIso: string)
   if (!updated) return null;
   const prefs = await getPrefs(db);
   await scheduleReminders(db, updated, prefs);
-  await pushToGoogle(db, updated);
+  await syncTargets(db, updated, prefs);
   return updated;
 }
 
@@ -487,6 +491,7 @@ export async function deleteItem(db: Admin, id: string): Promise<void> {
   const item = await getItem(db, id);
   if (!item) return;
   await removeFromGoogle(db, item);
+  await removeFromTasks(db, item);
   await db.from("calendar_items").delete().eq("id", id);
 }
 
