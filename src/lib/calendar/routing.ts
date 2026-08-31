@@ -1,4 +1,4 @@
-// Куда уходит запись: Google Календарь, Google Задачи или оба.
+// Куда уходит запись: основной Google Календарь, календарь задач или оба.
 // Клиент-безопасный модуль: одна и та же логика в UI, боте и на сервере.
 import type { CalItem } from "@/lib/calendar/model";
 
@@ -36,8 +36,8 @@ export function targetLabel(t: RouteTarget): string {
   return t === "calendar"
     ? "Google Календарь"
     : t === "tasks"
-      ? "Google Задачи"
+      ? "Календарь задач"
       : t === "both"
-        ? "Календарь + Задачи"
+        ? "Календарь + задачи"
         : "только в планере";
 }

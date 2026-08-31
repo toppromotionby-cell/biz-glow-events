@@ -215,7 +215,7 @@ function PlannerPage() {
             {isOverdue(item, now) ? <Badge variant="destructive">Просрочено</Badge> : null}
             {item.reschedule_count > 0 ? <Badge variant="outline">переносов: {item.reschedule_count}</Badge> : null}
             {item.google_event_id ? <Badge variant="secondary">Календарь</Badge> : null}
-            {item.google_task_id ? <Badge variant="secondary">Google Задачи</Badge> : null}
+            {item.google_task_id ? <Badge variant="secondary">Календарь задач</Badge> : null}
             {!item.google_event_id && !item.google_task_id ? (
               <Badge variant="outline">{targetLabel(routeTarget(item, data?.prefs.task_routing ?? "auto"))}</Badge>
             ) : null}
