@@ -87,7 +87,25 @@ export interface AssistantPrefs {
   visual_mode: "image" | "text";
   /** Показывать визуал в утреннем/вечернем дайджесте и обзоре недели. */
   digest_visual: boolean;
+  /** Правило маршрутизации задач между Календарём и Google Задачами. */
+  task_routing: "auto" | "calendar" | "tasks" | "both";
+  /** Синхронизировать задачи с Google Tasks. */
+  gtasks_enabled: boolean;
 }
+
+export const PRIORITY_LABEL: Record<number, string> = {
+  1: "P1 — срочно",
+  2: "P2 — важно",
+  3: "P3 — обычно",
+  4: "P4 — потом",
+};
+
+export const PRIORITY_COLOR: Record<number, string> = {
+  1: "text-destructive",
+  2: "text-amber-600 dark:text-amber-400",
+  3: "text-muted-foreground",
+  4: "text-muted-foreground/70",
+};
 
 export const KIND_LABEL: Record<CalKind, string> = { task: "Задача", meeting: "Встреча" };
 export const STATUS_LABEL: Record<CalStatus, string> = {
