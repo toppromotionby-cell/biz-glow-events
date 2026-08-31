@@ -105,3 +105,4 @@
 - Расширение `src/lib/auth-errors.ts`; серверная функция отправки тестовых писем.
 - Самообучение: `src/lib/botkit/roles.ts` (структура роли), `src/lib/botkit/consensus.server.ts` (мульти-модельный опрос через AI-шлюз), запись в `assistant_memory` со `scope='shared'` и `kind='rule'`; интеграция в `assistant/agent.server.ts` и `calendar` агента.
 - Тесты в `src/lib/__tests__` и `src/routes/__tests__`, плюс Playwright-сценарий авторизации.
+- Бесплатные провайдеры: `src/lib/ai/providers.ts` (описание источников), `src/lib/ai/router.server.ts` (перебор, лимиты, кэш, метрики), таблица `ai_providers` со статусом и приоритетом; все агенты (`assistant`, `calendar`, `copilot`, `dj`) переводятся на этот роутер, платный шлюз остаётся отключаемым фолбэком.
