@@ -33,7 +33,7 @@ function Page() {
     <div className="space-y-6">
       <AdminPageHeader
         title="DJ Хаб"
-        description="Модерация загрузок, участники клуба и статистика закрытого раздела."
+        subtitle="Модерация загрузок, участники клуба и статистика закрытого раздела."
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

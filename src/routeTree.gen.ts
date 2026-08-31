@@ -85,6 +85,7 @@ import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwor
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as AdminHelpIndexRouteImport } from './routes/admin.help.index'
 import { Route as AdminDocumentsIndexRouteImport } from './routes/admin.documents.index'
+import { Route as AdminDjIndexRouteImport } from './routes/admin.dj.index'
 import { Route as OrderSuccessIdRouteImport } from './routes/order.success.$id'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicTelegramSupportRouteImport } from './routes/api/public/telegram-support'
@@ -508,6 +509,11 @@ const AdminDocumentsIndexRoute = AdminDocumentsIndexRouteImport.update({
   path: '/documents/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDjIndexRoute = AdminDjIndexRouteImport.update({
+  id: '/dj/',
+  path: '/dj/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const OrderSuccessIdRoute = OrderSuccessIdRouteImport.update({
   id: '/order/success/$id',
   path: '/order/success/$id',
@@ -824,6 +830,7 @@ export interface FileRoutesByFullPath {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/dj/': typeof AdminDjIndexRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
@@ -940,6 +947,7 @@ export interface FileRoutesByTo {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/dj': typeof AdminDjIndexRoute
   '/admin/documents': typeof AdminDocumentsIndexRoute
   '/admin/help': typeof AdminHelpIndexRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
@@ -1061,6 +1069,7 @@ export interface FileRoutesById {
   '/api/public/telegram-support': typeof ApiPublicTelegramSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/order/success/$id': typeof OrderSuccessIdRoute
+  '/admin/dj/': typeof AdminDjIndexRoute
   '/admin/documents/': typeof AdminDocumentsIndexRoute
   '/admin/help/': typeof AdminHelpIndexRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
@@ -1183,6 +1192,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/dj/'
     | '/admin/documents/'
     | '/admin/help/'
     | '/admin/orders/'
@@ -1299,6 +1309,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/dj'
     | '/admin/documents'
     | '/admin/help'
     | '/admin/orders'
@@ -1419,6 +1430,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram-support'
     | '/lovable/email/suppression'
     | '/order/success/$id'
+    | '/admin/dj/'
     | '/admin/documents/'
     | '/admin/help/'
     | '/admin/orders/'
@@ -2048,6 +2060,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dj/': {
+      id: '/admin/dj/'
+      path: '/dj'
+      fullPath: '/admin/dj/'
+      preLoaderRoute: typeof AdminDjIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/order/success/$id': {
       id: '/order/success/$id'
       path: '/order/success/$id'
@@ -2439,6 +2458,7 @@ interface AdminRouteChildren {
   AdminSettingsEmailsRoute: typeof AdminSettingsEmailsRoute
   AdminSettingsHygieneRoute: typeof AdminSettingsHygieneRoute
   AdminSettingsSocialRoute: typeof AdminSettingsSocialRoute
+  AdminDjIndexRoute: typeof AdminDjIndexRoute
   AdminDocumentsIndexRoute: typeof AdminDocumentsIndexRoute
   AdminPaperworkIndexRoute: typeof AdminPaperworkIndexRoute
   AdminDocumentsPresentationsTemplatesRoute: typeof AdminDocumentsPresentationsTemplatesRoute
@@ -2480,6 +2500,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsEmailsRoute: AdminSettingsEmailsRoute,
   AdminSettingsHygieneRoute: AdminSettingsHygieneRoute,
   AdminSettingsSocialRoute: AdminSettingsSocialRoute,
+  AdminDjIndexRoute: AdminDjIndexRoute,
   AdminDocumentsIndexRoute: AdminDocumentsIndexRoute,
   AdminPaperworkIndexRoute: AdminPaperworkIndexRoute,
   AdminDocumentsPresentationsTemplatesRoute:
