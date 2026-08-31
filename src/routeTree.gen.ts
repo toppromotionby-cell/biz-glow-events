@@ -83,6 +83,7 @@ import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAssistantRouteImport } from './routes/admin.assistant'
+import { Route as AdminAiProvidersRouteImport } from './routes/admin.ai-providers'
 import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwork.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as AdminHelpIndexRouteImport } from './routes/admin.help.index'
@@ -508,6 +509,11 @@ const AdminAssistantRoute = AdminAssistantRouteImport.update({
   path: '/assistant',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAiProvidersRoute = AdminAiProvidersRouteImport.update({
+  id: '/ai-providers',
+  path: '/ai-providers',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPaperworkIndexRoute = AdminPaperworkIndexRouteImport.update({
   id: '/paperwork/',
   path: '/paperwork/',
@@ -835,6 +841,7 @@ export interface FileRoutesByFullPath {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/ai-providers': typeof AdminAiProvidersRoute
   '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -963,6 +970,7 @@ export interface FileRoutesByTo {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/ai-providers': typeof AdminAiProvidersRoute
   '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -1092,6 +1100,7 @@ export interface FileRoutesById {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/ai-providers': typeof AdminAiProvidersRoute
   '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
@@ -1224,6 +1233,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/ai-providers'
     | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
@@ -1352,6 +1362,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/ai-providers'
     | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
@@ -1480,6 +1491,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/ai-providers'
     | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
@@ -2161,6 +2173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAssistantRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ai-providers': {
+      id: '/admin/ai-providers'
+      path: '/ai-providers'
+      fullPath: '/admin/ai-providers'
+      preLoaderRoute: typeof AdminAiProvidersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/paperwork/': {
       id: '/admin/paperwork/'
       path: '/paperwork'
@@ -2612,6 +2631,7 @@ const AdminPaperworkIdRouteWithChildren =
   AdminPaperworkIdRoute._addFileChildren(AdminPaperworkIdRouteChildren)
 
 interface AdminRouteChildren {
+  AdminAiProvidersRoute: typeof AdminAiProvidersRoute
   AdminAssistantRoute: typeof AdminAssistantRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBlogRoute: typeof AdminBlogRoute
@@ -2659,6 +2679,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAiProvidersRoute: AdminAiProvidersRoute,
   AdminAssistantRoute: AdminAssistantRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminBlogRoute: AdminBlogRoute,
