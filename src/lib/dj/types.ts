@@ -89,6 +89,9 @@ export type DjTrack = {
   artist: string;
   title: string;
   version: string;
+  is_remix?: boolean | null;
+  remixer?: string | null;
+  original_track_id?: string | null;
   genre: string | null;
   bpm: number | null;
   key_camelot: string | null;
@@ -165,9 +168,19 @@ export function formatBytes(bytes: number | null | undefined): string {
   return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-export function trackFullTitle(t: Pick<DjTrack, "artist" | "title" | "version">): string {
-  const v = TRACK_VERSION_LABEL[t.version as TrackVersion] ?? t.version;
-  return `${t.artist} — ${t.title}${v && t.version !== "original" ? ` (${v})` : ""}`;
+export function trackFullTitle(
+  t: Pick<DjTrack, "artist" | "title" | "version"> & { is_remix?: boolean | null; remixer?: string | null },
+): string {
+  return `${t.artist} — ${t.title} (${trackVersionLabel(t)})`;
+}
+
+/** Подпись версии в скобках: «Оригинал» или «Dj Smash Remix». */
+export function trackVersionLabel(
+  t: Pick<DjTrack, "version"> & { is_remix?: boolean | null; remixer?: string | null },
+): string {
+  if (t.is_remix && t.remixer) return `${t.remixer} Remix`;
+  if (t.version === "original") return "Оригинал";
+  return TRACK_VERSION_LABEL[t.version as TrackVersion] ?? t.version;
 }
 
 /** Соседние по Camelot тональности — гармонично сводятся. */
