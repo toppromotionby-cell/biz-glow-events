@@ -140,11 +140,9 @@ export interface CopilotAuditRow {
   id: string;
   run_id: string | null;
   tool: string;
-  table_name: string | null;
-  record_id: string | null;
-  label: string | null;
-  status: string;
-  error: string | null;
+  target_table: string | null;
+  target_id: string | null;
+  action: string;
   created_at: string;
 }
 
@@ -160,7 +158,7 @@ export const copilotJournal = createServerFn({ method: "POST" })
     const db = await admin();
     const { data: audit } = await db
       .from("copilot_audit")
-      .select("id, run_id, tool, table_name, record_id, label, status, error, created_at")
+      .select("id, run_id, tool, target_table, target_id, action, created_at")
       .order("created_at", { ascending: false })
       .limit(data.limit);
     return {
