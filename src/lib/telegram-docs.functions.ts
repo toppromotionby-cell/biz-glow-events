@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertStaffRole } from "@/lib/authz";
-import { TG_DOC_KINDS } from "@/lib/telegram/doc-export.server";
+import { TG_DOC_KINDS } from "@/lib/telegram/doc-kinds";
 
 export type SendDocResult = { ok: boolean; error?: string };
 

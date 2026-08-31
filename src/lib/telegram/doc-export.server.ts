@@ -3,18 +3,8 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loadDocumentSettings } from "@/lib/documents/render.server";
 
-export const TG_DOC_KINDS = [
-  "quote",
-  "quote-internal",
-  "promo",
-  "promo-internal",
-  "finance",
-  "paperwork",
-  "presentation",
-  "order",
-] as const;
-
-export type TgDocKind = (typeof TG_DOC_KINDS)[number];
+export { TG_DOC_KINDS, type TgDocKind } from "@/lib/telegram/doc-kinds";
+import type { TgDocKind } from "@/lib/telegram/doc-kinds";
 
 export interface TgDocExport {
   filename: string;
