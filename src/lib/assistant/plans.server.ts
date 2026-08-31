@@ -179,8 +179,8 @@ async function runStep(who: Identity, step: AssistantPlanStep): Promise<StepResu
         const id = str("id");
         if (!id) return { label: step.label, ok: false, note: "не указан факт" };
         const { setFactStatus } = await import("@/lib/knowledge/facts.server");
-        await setFactStatus(id, "archived");
-        return { label: step.label, ok: true, note: "факт убран в архив" };
+        await setFactStatus(id, "stale");
+        return { label: step.label, ok: true, note: "факт помечен устаревшим" };
       }
       case "hygiene_fix":
       case "hygiene_dismiss": {
