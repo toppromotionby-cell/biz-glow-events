@@ -116,6 +116,7 @@ import { Route as ApiPublicPlannerTelegramRouteImport } from './routes/api/publi
 import { Route as ApiPublicPlannerAliceRouteImport } from './routes/api/public/planner/alice'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
 import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
+import { Route as ApiPublicHooksAssistantHygieneRouteImport } from './routes/api/public/hooks/assistant-hygiene'
 import { Route as ApiPublicDjTickRouteImport } from './routes/api/public/dj/tick'
 import { Route as ApiPublicDjTelegramRouteImport } from './routes/api/public/dj/telegram'
 import { Route as ApiPublicAssistantWebhookRouteImport } from './routes/api/public/assistant/webhook'
@@ -678,6 +679,12 @@ const ApiPublicHooksKnowledgeHygieneRoute =
     path: '/api/public/hooks/knowledge-hygiene',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAssistantHygieneRoute =
+  ApiPublicHooksAssistantHygieneRouteImport.update({
+    id: '/api/public/hooks/assistant-hygiene',
+    path: '/api/public/hooks/assistant-hygiene',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicDjTickRoute = ApiPublicDjTickRouteImport.update({
   id: '/api/public/dj/tick',
   path: '/api/public/dj/tick',
@@ -878,6 +885,7 @@ export interface FileRoutesByFullPath {
   '/api/public/assistant/webhook': typeof ApiPublicAssistantWebhookRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
   '/api/public/dj/tick': typeof ApiPublicDjTickRoute
+  '/api/public/hooks/assistant-hygiene': typeof ApiPublicHooksAssistantHygieneRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1000,6 +1008,7 @@ export interface FileRoutesByTo {
   '/api/public/assistant/webhook': typeof ApiPublicAssistantWebhookRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
   '/api/public/dj/tick': typeof ApiPublicDjTickRoute
+  '/api/public/hooks/assistant-hygiene': typeof ApiPublicHooksAssistantHygieneRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1127,6 +1136,7 @@ export interface FileRoutesById {
   '/api/public/assistant/webhook': typeof ApiPublicAssistantWebhookRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
   '/api/public/dj/tick': typeof ApiPublicDjTickRoute
+  '/api/public/hooks/assistant-hygiene': typeof ApiPublicHooksAssistantHygieneRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1255,6 +1265,7 @@ export interface FileRouteTypes {
     | '/api/public/assistant/webhook'
     | '/api/public/dj/telegram'
     | '/api/public/dj/tick'
+    | '/api/public/hooks/assistant-hygiene'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1377,6 +1388,7 @@ export interface FileRouteTypes {
     | '/api/public/assistant/webhook'
     | '/api/public/dj/telegram'
     | '/api/public/dj/tick'
+    | '/api/public/hooks/assistant-hygiene'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1503,6 +1515,7 @@ export interface FileRouteTypes {
     | '/api/public/assistant/webhook'
     | '/api/public/dj/telegram'
     | '/api/public/dj/tick'
+    | '/api/public/hooks/assistant-hygiene'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1578,6 +1591,7 @@ export interface RootRouteChildren {
   ApiPublicAssistantWebhookRoute: typeof ApiPublicAssistantWebhookRoute
   ApiPublicDjTelegramRoute: typeof ApiPublicDjTelegramRoute
   ApiPublicDjTickRoute: typeof ApiPublicDjTickRoute
+  ApiPublicHooksAssistantHygieneRoute: typeof ApiPublicHooksAssistantHygieneRoute
   ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
   ApiPublicPlannerAliceRoute: typeof ApiPublicPlannerAliceRoute
@@ -2341,6 +2355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksKnowledgeHygieneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/assistant-hygiene': {
+      id: '/api/public/hooks/assistant-hygiene'
+      path: '/api/public/hooks/assistant-hygiene'
+      fullPath: '/api/public/hooks/assistant-hygiene'
+      preLoaderRoute: typeof ApiPublicHooksAssistantHygieneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/dj/tick': {
       id: '/api/public/dj/tick'
       path: '/api/public/dj/tick'
@@ -2772,6 +2793,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAssistantWebhookRoute: ApiPublicAssistantWebhookRoute,
   ApiPublicDjTelegramRoute: ApiPublicDjTelegramRoute,
   ApiPublicDjTickRoute: ApiPublicDjTickRoute,
+  ApiPublicHooksAssistantHygieneRoute: ApiPublicHooksAssistantHygieneRoute,
   ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
   ApiPublicPlannerAliceRoute: ApiPublicPlannerAliceRoute,
