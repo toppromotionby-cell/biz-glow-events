@@ -19,7 +19,9 @@
     "baseline:update:clean": "bun run baseline:check-deps && rm -rf tests/visual/centering.spec.ts-snapshots/ && playwright uninstall --all && playwright install --with-deps chromium && playwright test --update-snapshots",
     "baseline:ci": "bun run baseline:check-deps && playwright install --with-deps chromium && playwright test --update-snapshots=missing",
     "test:e2e": "playwright test --config=playwright.e2e.config.ts",
-    "test:e2e:admin": "playwright test --config=playwright.e2e.config.ts tests/e2e/admin-smoke.spec.ts tests/e2e/admin-lists.spec.ts"
+    "test:e2e:admin": "playwright test --config=playwright.e2e.config.ts tests/e2e/admin-smoke.spec.ts tests/e2e/admin-lists.spec.ts",
+    "verify:guards": "vitest run src/lib/__tests__/routes.guard.test.ts src/lib/__tests__/admin-access.guard.test.ts src/lib/__tests__/telegram-format.guard.test.ts src/lib/__tests__/search-params.guard.test.ts",
+    "verify": "tsgo --noEmit && vitest run"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

@@ -39,7 +39,7 @@ export const ROLE_DESCRIPTION: Record<string, string> = {
   client: "Обычный пользователь сайта, доступа к админке нет.",
 };
 
-const MATRIX: Record<AppRole, Permission[]> = {
+export const MATRIX: Record<AppRole, Permission[]> = {
   admin: [
     "orders.manage", "orders.view_all", "orders.payments",
     "documents.manage", "documents.finance", "documents.settings", "documents.knowledge", "documents.cost_margin",
@@ -95,7 +95,7 @@ export const ROUTE_PERMISSIONS: { match: RegExp; perm: Permission }[] = [
   { match: /^\/admin\/orders/, perm: "orders.manage" },
   { match: /^\/admin\/calendar/, perm: "orders.manage" },
   { match: /^\/admin\/planner/, perm: "orders.manage" },
-  { match: /^\/admin\/assistant/, perm: "settings.manage" },
+  { match: /^\/admin\/assistant/, perm: "system.manage" },
   { match: /^\/admin\/(catalog|catalog-structure|cases|testimonials|blog)/, perm: "content.manage" },
   { match: /^\/admin\/(campaigns|mail-accounts|promo)/, perm: "marketing.manage" },
 ];

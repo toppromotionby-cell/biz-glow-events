@@ -133,7 +133,7 @@ export async function tgEdit(
   await call("editMessageText", {
     chat_id: chatId,
     message_id: messageId,
-    text: splitText(text)[0],
+    text: splitText(sanitizeTgHtml(text))[0],
     parse_mode: "HTML",
     disable_web_page_preview: true,
     reply_markup: keyboard(buttons),
@@ -149,7 +149,7 @@ export async function tgEditCaption(
   await call("editMessageCaption", {
     chat_id: chatId,
     message_id: messageId,
-    caption: caption.slice(0, 1000),
+    caption: sanitizeTgHtml(caption).slice(0, 1000),
     parse_mode: "HTML",
     reply_markup: keyboard(buttons),
   });
@@ -168,7 +168,7 @@ export async function tgSendPhoto(
   const sent = await call<{ message_id: number }>("sendPhoto", {
     chat_id: chatId,
     photo: photoUrl,
-    caption: caption ? caption.slice(0, 1000) : undefined,
+    caption: caption ? sanitizeTgHtml(caption).slice(0, 1000) : undefined,
     parse_mode: "HTML",
     reply_markup: keyboard(buttons),
   });
@@ -189,7 +189,7 @@ export async function tgSendAudio(
     title: opts.title?.slice(0, 64),
     performer: opts.performer?.slice(0, 64),
     duration: opts.duration,
-    caption: opts.caption ? opts.caption.slice(0, 1000) : undefined,
+    caption: opts.caption ? sanitizeTgHtml(opts.caption).slice(0, 1000) : undefined,
     parse_mode: "HTML",
     reply_markup: keyboard(opts.buttons),
   });

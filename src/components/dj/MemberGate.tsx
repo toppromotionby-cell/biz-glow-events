@@ -82,9 +82,9 @@ function ApplyForm({ rejected }: { rejected: boolean }) {
     <div className="mx-auto max-w-lg">
       <div className="glass space-y-4 rounded-2xl p-6">
         <div>
-          <h2 className="font-display text-2xl font-bold">
+          <h1 className="font-display text-2xl font-bold">
             {rejected ? "Отправить заявку повторно" : "Заявка в DJ-клуб"}
-          </h2>
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Расскажите о себе — после одобрения откроется библиотека треков, софт и обсуждения.
           </p>
@@ -124,7 +124,7 @@ function Card({ icon, title, text, children }: { icon: ReactNode; title: string;
   return (
     <div className="glass mx-auto max-w-lg space-y-4 rounded-2xl p-8 text-center">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">{icon}</div>
-      <h2 className="font-display text-2xl font-bold">{title}</h2>
+      <h1 className="font-display text-2xl font-bold">{title}</h1>
       <p className="text-sm text-muted-foreground">{text}</p>
       {children}
     </div>
