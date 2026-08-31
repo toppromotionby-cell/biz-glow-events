@@ -1361,6 +1361,33 @@ export type Database = {
         }
         Relationships: []
       }
+      dj_lookup_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          provider: string
+          query_key: string
+          response: Json | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          provider: string
+          query_key: string
+          response?: Json | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          provider?: string
+          query_key?: string
+          response?: Json | null
+        }
+        Relationships: []
+      }
       dj_members: {
         Row: {
           admin_note: string | null
@@ -1794,17 +1821,20 @@ export type Database = {
           format: string | null
           genre: string | null
           id: string
+          is_remix: boolean
           keep_forever: boolean
           key_camelot: string | null
           language: string | null
           last_activity_at: string
           lifecycle_changed_at: string
           lifecycle_status: string
+          original_track_id: string | null
           play_count: number
           published_at: string | null
           rating_avg: number
           rating_count: number
           reject_reason: string | null
+          remixer: string | null
           section: string
           source_filename: string | null
           status: string
@@ -1813,6 +1843,7 @@ export type Database = {
           updated_at: string
           uploaded_by: string | null
           version: string
+          version_source: string | null
           waveform: Json | null
           work_key: string | null
           year: number | null
@@ -1838,17 +1869,20 @@ export type Database = {
           format?: string | null
           genre?: string | null
           id?: string
+          is_remix?: boolean
           keep_forever?: boolean
           key_camelot?: string | null
           language?: string | null
           last_activity_at?: string
           lifecycle_changed_at?: string
           lifecycle_status?: string
+          original_track_id?: string | null
           play_count?: number
           published_at?: string | null
           rating_avg?: number
           rating_count?: number
           reject_reason?: string | null
+          remixer?: string | null
           section?: string
           source_filename?: string | null
           status?: string
@@ -1857,6 +1891,7 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string | null
           version?: string
+          version_source?: string | null
           waveform?: Json | null
           work_key?: string | null
           year?: number | null
@@ -1882,17 +1917,20 @@ export type Database = {
           format?: string | null
           genre?: string | null
           id?: string
+          is_remix?: boolean
           keep_forever?: boolean
           key_camelot?: string | null
           language?: string | null
           last_activity_at?: string
           lifecycle_changed_at?: string
           lifecycle_status?: string
+          original_track_id?: string | null
           play_count?: number
           published_at?: string | null
           rating_avg?: number
           rating_count?: number
           reject_reason?: string | null
+          remixer?: string | null
           section?: string
           source_filename?: string | null
           status?: string
@@ -1901,6 +1939,7 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string | null
           version?: string
+          version_source?: string | null
           waveform?: Json | null
           work_key?: string | null
           year?: number | null
@@ -1911,6 +1950,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "dj_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dj_tracks_original_track_id_fkey"
+            columns: ["original_track_id"]
+            isOneToOne: false
+            referencedRelation: "dj_tracks"
             referencedColumns: ["id"]
           },
         ]
