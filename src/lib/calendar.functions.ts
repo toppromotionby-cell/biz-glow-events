@@ -389,3 +389,32 @@ export const saveAlicePrefs = createServerFn({ method: "POST" })
     const prefs = await getPrefs(db);
     return { linkCode: prefs.alice_link_code, linkedCount: prefs.alice_user_ids.length };
   });
+
+/** Быстрый ввод обычной фразой: «завтра в 15 встреча с подрядчиком по EventHub». */
+export const plannerQuickAdd = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ text: z.string().min(2).max(500) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ item: CalItem | null; question: string | null }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, getDirections, getPrefs, saveItem } = await import("@/lib/calendar/store.server");
+    const { parseIntent } = await import("@/lib/calendar/parse.server");
+    const db = await admin();
+    const [dirs, prefs] = await Promise.all([getDirections(db), getPrefs(db)]);
+    const parsed = await parseIntent(data.text, { tz: prefs.tz, directions: dirs, style: prefs.style_profile });
+    const dir = dirs.find((x) => x.key === parsed.direction_key) ?? null;
+    const item = await saveItem(db, {
+      kind: parsed.kind,
+      title: parsed.title,
+      notes: parsed.notes,
+      direction_id: dir?.id ?? null,
+      starts_at: parsed.starts_at,
+      ends_at: parsed.ends_at,
+      due_at: parsed.due_at,
+      all_day: parsed.all_day,
+      importance: parsed.importance,
+      location: parsed.location,
+      participants: parsed.participants,
+      source: "quick-add",
+    });
+    return { item, question: parsed.question };
+  });
