@@ -100,6 +100,7 @@ const GROUPS: NavGroup[] = [
   {
     label: "Настройки",
     items: [
+      { to: "/admin/copilot", label: "ИИ-управленец", icon: Flame, perm: "system.manage" },
       { to: "/admin/assistant", label: "Помощник", icon: Bot, perm: "system.manage" },
       { to: "/admin/settings/documents", label: "Компании и реквизиты", icon: Building2, perm: "documents.settings" },
 

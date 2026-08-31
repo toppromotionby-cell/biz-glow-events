@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCopilot } from "@/components/copilot/copilot-context";
 import { copilotJournal, copilotSaveSettings } from "@/lib/copilot/copilot.functions";
-import { MODULE_TITLES, type CopilotModule, type CopilotSettings } from "@/lib/copilot/types";
+import { MODULE_LABEL, type CopilotModule, type CopilotSettings } from "@/lib/copilot/types";
 
 export const Route = createFileRoute("/admin/copilot")({
   component: Page,
@@ -54,14 +54,14 @@ function Page() {
   });
 
   const s = journal.data?.settings;
-  const modules = Object.keys(MODULE_TITLES) as CopilotModule[];
+  const modules = Object.keys(MODULE_LABEL) as CopilotModule[];
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="ИИ-управленец Ember"
-        description="Помощник работает по всей админке: предлагает план, показывает «было → стало» и меняет данные только после вашего утверждения."
-        actions={
+        subtitle="Помощник работает по всей админке: предлагает план, показывает «было → стало» и меняет данные только после вашего утверждения."
+        action={
           <Button onClick={() => setOpen(true)} className="gap-2">
             <Flame className="h-4 w-4" /> Открыть помощника
           </Button>
@@ -220,7 +220,7 @@ function Page() {
                             })
                           }
                         />
-                        <span className="text-sm">{MODULE_TITLES[m]}</span>
+                        <span className="text-sm">{MODULE_LABEL[m]}</span>
                       </label>
                     );
                   })}
