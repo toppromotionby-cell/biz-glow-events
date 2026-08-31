@@ -173,7 +173,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             </div>
           )}
           {photos.length > 1 && (
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid-tiles">
               {photos.slice(0, 10).map((p, i) => (
                 <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
                   aria-label={`Фото ${i + 1}`}

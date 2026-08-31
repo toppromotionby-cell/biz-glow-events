@@ -62,7 +62,7 @@ export function CatalogQuickView({
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="aspect-[4/3] rounded-2xl bg-muted/40 animate-pulse" />
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid-tiles">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="aspect-square rounded-md bg-muted/30 animate-pulse" />
                   ))}

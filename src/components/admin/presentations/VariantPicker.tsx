@@ -88,7 +88,7 @@ export function VariantPicker({
 }) {
   const list = SLIDE_VARIANTS[type] ?? [];
   return (
-    <div className="grid grid-cols-3 gap-1.5">
+    <div className="grid-tiles">
       {list.map((v) => {
         const active = v.id === value;
         return (
