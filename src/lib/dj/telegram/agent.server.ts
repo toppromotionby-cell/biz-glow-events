@@ -13,6 +13,7 @@ import {
   trackCard,
   trackTitle,
   SITE,
+  type TrackCard,
 } from "./cards";
 import {
   BotForbidden,
@@ -165,8 +166,8 @@ async function sendQueue(who: BotIdentity, limit: number) {
   for (const t of items) await sendTrackCard(who.chatId, t);
 }
 
-export async function sendTrackCard(chatId: number, t: { id: string; status?: string | null } & Record<string, unknown>) {
-  const card = trackCard(t as never);
+export async function sendTrackCard(chatId: number, t: TrackCard) {
+  const card = trackCard(t);
   const buttons = trackButtons(t.id, t.status ?? null);
   const art = await trackArtworkUrl(t.id);
   if (art) await tgSendPhoto(chatId, art, card, buttons);
