@@ -224,21 +224,21 @@ export async function tgSendDocument(
   caption?: string,
   mime = "application/pdf",
 ): Promise<{ ok: boolean; error?: string }> {
-  const k = keys();
-  if (!k) return { ok: false, error: "Telegram не подключён: нет ключа бота" };
+  const w = wire();
+  if (!w) return { ok: false, error: "Telegram не подключён: нет ключа бота" };
   if (!bytes?.byteLength) return { ok: false, error: "Пустой файл" };
   if (bytes.byteLength > TG_MAX_FILE_BYTES) return { ok: false, error: "Файл больше 45 МБ — Telegram такой не примет" };
 
   const form = new FormData();
   form.append("chat_id", String(chatId));
-  if (caption) form.append("caption", caption.slice(0, 1000));
+  if (caption) form.append("caption", sanitizeTgHtml(caption).slice(0, 1000));
   form.append("parse_mode", "HTML");
   form.append("document", new Blob([bytes.slice()], { type: mime }), filename);
 
   try {
-    const res = await fetch(`${GATEWAY}/sendDocument`, {
+    const res = await fetch(`${w.base}/sendDocument`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${k.lovable}`, "X-Connection-Api-Key": k.tg },
+      headers: { ...w.headers },
       body: form,
     });
     const json = (await res.json().catch(() => null)) as { ok?: boolean; description?: string } | null;
@@ -251,14 +251,12 @@ export async function tgSendDocument(
 
 /** Скачивание файла из Telegram (голосовые сообщения). */
 export async function tgDownloadFile(fileId: string): Promise<{ base64: string; mime: string } | null> {
-  const k = keys();
-  if (!k) return null;
+  const w = wire();
+  if (!w) return null;
   const info = await call<{ file_path?: string }>("getFile", { file_id: fileId });
   const path = info?.file_path;
   if (!path) return null;
-  const res = await fetch(`${GATEWAY}/file/${path}`, {
-    headers: { Authorization: `Bearer ${k.lovable}`, "X-Connection-Api-Key": k.tg },
-  });
+  const res = await fetch(`${w.fileBase}/${path}`, { headers: { ...w.headers } });
   if (!res.ok) {
     console.error(`[assistant-tg] file download failed [${res.status}]`);
     return null;
@@ -267,3 +265,4 @@ export async function tgDownloadFile(fileId: string): Promise<{ base64: string; 
   const mime = path.endsWith(".mp3") ? "audio/mpeg" : path.endsWith(".m4a") ? "audio/mp4" : "audio/ogg";
   return { base64: buf.toString("base64"), mime };
 }
+
