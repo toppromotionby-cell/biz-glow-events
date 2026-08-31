@@ -34,7 +34,7 @@ export interface PlanStep {
   args: Record<string, unknown>;
 }
 
-export type PlanStatus = "pending" | "approved" | "rejected" | "expired" | "failed";
+export type PlanStatus = "pending" | "editing" | "approved" | "rejected" | "expired" | "failed";
 
 export interface PlanRow {
   id: string;
@@ -205,6 +205,13 @@ export async function buildPlan(db: Db, input: BuildPlanInput): Promise<PlanRow>
 
   const parsed = parsePlan(await askModel(system, user));
 
+  if (input.previous) {
+    await db
+      .from("assistant_plans")
+      .update({ status: "rejected", result: "Заменён новой версией", decided_at: now.toISOString() })
+      .eq("id", input.previous.id);
+  }
+
   const { data, error } = await db
     .from("assistant_plans")
     .insert({
@@ -274,9 +281,22 @@ export async function attachPlanMessage(db: Db, id: string, chatId: number, mess
   await db.from("assistant_plans").update({ tg_chat_id: chatId, tg_message_id: messageId }).eq("id", id);
 }
 
-/** Плана ждут правки: помечаем последний pending как «в переделке». */
+/** Плана ждут правки: ждём следующего сообщения владельца с уточнением. */
 export async function markPlanEditing(db: Db, id: string): Promise<void> {
-  await db.from("assistant_plans").update({ status: "rejected", result: "Отправлен на переделку", decided_at: new Date().toISOString() }).eq("id", id);
+  await db.from("assistant_plans").update({ status: "editing", result: "Ждёт правок владельца" }).eq("id", id);
+}
+
+/** План, по которому владелец обещал прислать правки. */
+export async function editingPlan(db: Db, chatKey: string): Promise<PlanRow | null> {
+  const { data } = await db
+    .from("assistant_plans")
+    .select("*")
+    .eq("chat_key", chatKey)
+    .eq("status", "editing")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? rowToPlan(data as Record<string, unknown>) : null;
 }
 
 export async function rejectPlan(db: Db, id: string): Promise<void> {
