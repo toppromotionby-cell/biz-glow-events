@@ -11,6 +11,18 @@ export type ToolResult =
   | { kind: "data"; data: unknown; sources?: CopilotSource[] }
   | { kind: "ops"; ops: CopilotOp[]; note?: string; sources?: CopilotSource[] };
 
+/* Динамические имена таблиц не выражаются в сгенерированных типах Supabase —
+   для них используем нетипизированный вид клиента. */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type LooseDb = {
+  from: (table: string) => any;
+  storage: { from: (bucket: string) => any };
+};
+
+async function looseDb(): Promise<LooseDb> {
+  return (await admin()) as unknown as LooseDb;
+}
+
 type Args = Record<string, unknown>;
 
 const str = (v: unknown): string | undefined => (typeof v === "string" && v.trim() ? v.trim() : undefined);
@@ -80,7 +92,7 @@ function patchOf(args: Args, fields: string[]): Record<string, unknown> {
 }
 
 async function rowsByIds(table: string, list: string[], pk = "id") {
-  const db = await admin();
+  const db = await looseDb();
   const { data, error } = await db.from(table).select("*").in(pk, list);
   if (error) throw new Error(`Не удалось прочитать ${table}: ${error.message}`);
   return (data ?? []) as Record<string, unknown>[];
@@ -105,7 +117,7 @@ export async function runTool(
   args: Args,
   settings: CopilotSettings,
 ): Promise<ToolResult> {
-  const db = await admin();
+  const db = await looseDb();
 
   switch (name) {
     case "search_records": {
@@ -420,7 +432,7 @@ export interface ApplyOutcome {
 
 /** Применяет утверждённые операции и пишет журнал. Возвращает фактически применённые (с id). */
 export async function applyOps(ops: readonly CopilotOp[], meta: { runId: string; userId: string; tool?: string }): Promise<ApplyOutcome> {
-  const db = await admin();
+  const db = await looseDb();
   const applied: CopilotOp[] = [];
   const failed: { op: CopilotOp; error: string }[] = [];
 
