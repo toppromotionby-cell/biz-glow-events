@@ -11,8 +11,13 @@ export interface CalDirection {
   title: string;
   color: string;
   google_color_id: string | null;
-  /** Список Google Tasks, куда уходят задачи этого направления. */
+  /** Legacy-поле Google Tasks (не используется). */
   google_tasklist_id: string | null;
+  /** Отдельный календарь «Задачи · <направление>». */
+  google_calendar_id?: string | null;
+  /** Токен инкрементальной синхронизации календаря задач. */
+  google_sync_token?: string | null;
+
   emoji: string | null;
   keywords: string[];
   work_start: string;
