@@ -77,6 +77,10 @@ export const savePlannerItem = createServerFn({ method: "POST" })
         importance: z.enum(["normal", "hard"]).optional(),
         location: z.string().max(300).nullable().optional(),
         participants: z.array(z.string().max(120)).max(30).optional(),
+        priority: z.number().int().min(1).max(4).optional(),
+        tags: z.array(z.string().max(40)).max(20).optional(),
+        parent_id: z.string().uuid().nullable().optional(),
+        recurrence: z.string().max(200).nullable().optional(),
       })
       .parse(d),
   )
@@ -126,6 +130,7 @@ export const savePlannerDirection = createServerFn({ method: "POST" })
         title: z.string().min(1).max(80),
         color: z.string().max(20).default("#6366f1"),
         google_color_id: z.string().max(5).nullable().optional(),
+        google_tasklist_id: z.string().max(200).nullable().optional(),
         emoji: z.string().max(8).nullable().optional(),
         keywords: z.array(z.string().max(60)).max(40).default([]),
         work_start: z.string().max(8).default("09:00"),
@@ -170,6 +175,8 @@ export const savePlannerPrefs = createServerFn({ method: "POST" })
         visuals_enabled: z.boolean().optional(),
         visual_mode: z.enum(["image", "text"]).optional(),
         digest_visual: z.boolean().optional(),
+        task_routing: z.enum(["auto", "calendar", "tasks", "both"]).optional(),
+        gtasks_enabled: z.boolean().optional(),
       })
       .parse(d ?? {}),
   )
@@ -240,11 +247,29 @@ export const syncPlannerGoogle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ applied: number; configured: boolean }> => {
     await assertPermission(context as never, "orders.manage");
-    const { admin, pullFromGoogle } = await import("@/lib/calendar/store.server");
+    const { admin, pullFromGoogle, pullFromTasks } = await import("@/lib/calendar/store.server");
     const { googleConfigured } = await import("@/lib/calendar/google.server");
     if (!googleConfigured()) return { applied: 0, configured: false };
-    const res = await pullFromGoogle(await admin());
-    return { applied: res.applied, configured: true };
+    const db = await admin();
+    const res = await pullFromGoogle(db);
+    const tasks = await pullFromTasks(db);
+    return { applied: res.applied + tasks.applied, configured: true };
+  });
+
+/** Google Задачи: доступен ли модуль и какие списки привязаны к направлениям. */
+export const plannerTasksStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ configured: boolean; scopeOk: boolean; lists: Array<{ id: string; title: string }> }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { gtasksConfigured, listTaskLists, GTasksScopeError } = await import("@/lib/calendar/gtasks.server");
+    if (!gtasksConfigured()) return { configured: false, scopeOk: false, lists: [] };
+    try {
+      const lists = await listTaskLists();
+      return { configured: true, scopeOk: true, lists: lists.map((l) => ({ id: l.id, title: l.title })) };
+    } catch (e) {
+      if (e instanceof GTasksScopeError) return { configured: true, scopeOk: false, lists: [] };
+      throw e;
+    }
   });
 
 /** Статус отдельного Telegram-бота планера: кто подключён и жив ли вебхук. */
@@ -363,4 +388,33 @@ export const saveAlicePrefs = createServerFn({ method: "POST" })
     if (Object.keys(patch).length) await db.from("assistant_prefs").update(patch as never).eq("id", 1);
     const prefs = await getPrefs(db);
     return { linkCode: prefs.alice_link_code, linkedCount: prefs.alice_user_ids.length };
+  });
+
+/** Быстрый ввод обычной фразой: «завтра в 15 встреча с подрядчиком по EventHub». */
+export const plannerQuickAdd = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ text: z.string().min(2).max(500) }).parse(d))
+  .handler(async ({ data, context }): Promise<{ item: CalItem | null; question: string | null }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, getDirections, getPrefs, saveItem } = await import("@/lib/calendar/store.server");
+    const { parseIntent } = await import("@/lib/calendar/parse.server");
+    const db = await admin();
+    const [dirs, prefs] = await Promise.all([getDirections(db), getPrefs(db)]);
+    const parsed = await parseIntent(data.text, { tz: prefs.tz, directions: dirs, style: prefs.style_profile });
+    const dir = dirs.find((x) => x.key === parsed.direction_key) ?? null;
+    const item = await saveItem(db, {
+      kind: parsed.kind,
+      title: parsed.title,
+      notes: parsed.notes,
+      direction_id: dir?.id ?? null,
+      starts_at: parsed.starts_at,
+      ends_at: parsed.ends_at,
+      due_at: parsed.due_at,
+      all_day: parsed.all_day,
+      importance: parsed.importance,
+      location: parsed.location,
+      participants: parsed.participants,
+      source: "quick-add",
+    });
+    return { item, question: parsed.question };
   });

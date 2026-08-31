@@ -9,6 +9,17 @@ import {
   googleConfigured,
   itemToEvent,
 } from "@/lib/calendar/google.server";
+import {
+  deleteTask,
+  ensureTaskList,
+  gtasksConfigured,
+  GTasksScopeError,
+  insertTask,
+  itemToTask,
+  listTasks,
+  patchTask,
+} from "@/lib/calendar/gtasks.server";
+import { routeTarget } from "@/lib/calendar/routing";
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
@@ -46,6 +57,8 @@ export async function getPrefs(db: Admin): Promise<AssistantPrefs> {
     visuals_enabled: row.visuals_enabled == null ? true : Boolean(row.visuals_enabled),
     visual_mode: row.visual_mode === "text" ? "text" : "image",
     digest_visual: row.digest_visual == null ? true : Boolean(row.digest_visual),
+    task_routing: ((row.task_routing as string) ?? "auto") as AssistantPrefs["task_routing"],
+    gtasks_enabled: row.gtasks_enabled == null ? true : Boolean(row.gtasks_enabled),
   };
 }
 
@@ -170,6 +183,127 @@ export async function removeFromGoogle(db: Admin, item: CalItem): Promise<void> 
   }
 }
 
+// ——— Google Задачи ———
+
+/** Список Google Tasks для направления (создаётся при первой выгрузке). */
+export async function taskListForDirection(db: Admin, item: CalItem): Promise<string | null> {
+  const dirs = await getDirections(db);
+  const dir = dirs.find((d) => d.id === item.direction_id) ?? null;
+  const title = dir?.title ?? "Личное";
+  if (dir?.google_tasklist_id) return dir.google_tasklist_id;
+  const list = await ensureTaskList(title);
+  if (dir) await db.from("calendar_directions").update({ google_tasklist_id: list.id }).eq("id", dir.id);
+  return list.id;
+}
+
+/** Выгрузка задачи в Google Tasks. Ошибки не роняют сохранение. */
+export async function pushToTasks(db: Admin, item: CalItem): Promise<CalItem> {
+  if (!gtasksConfigured()) return item;
+  try {
+    const listId = (await taskListForDirection(db, item)) ?? "@default";
+    const body = itemToTask(item);
+    let task;
+    if (item.google_task_id && item.google_tasklist_id && item.google_tasklist_id !== listId) {
+      // Сменилось направление — переносим задачу в другой список.
+      await deleteTask(item.google_tasklist_id, item.google_task_id);
+      task = await insertTask(listId, body);
+    } else if (item.google_task_id) {
+      task = await patchTask(listId, item.google_task_id, body);
+    } else {
+      task = await insertTask(listId, body);
+    }
+    const patch = {
+      google_task_id: task.id,
+      google_tasklist_id: listId,
+      google_tasks_etag: task.etag ?? null,
+      google_tasks_updated_at: task.updated ?? null,
+    };
+    await db.from("calendar_items").update(patch).eq("id", item.id);
+    return { ...item, ...patch } as CalItem;
+  } catch (e) {
+    if (e instanceof GTasksScopeError) console.warn("[planner] google tasks scope missing — пропускаем выгрузку");
+    else console.error("[planner] push to google tasks failed", e);
+    return item;
+  }
+}
+
+export async function removeFromTasks(db: Admin, item: CalItem): Promise<void> {
+  if (!gtasksConfigured() || !item.google_task_id) return;
+  try {
+    await deleteTask(item.google_tasklist_id ?? "@default", item.google_task_id);
+  } catch (e) {
+    console.error("[planner] delete google task failed", e);
+  }
+}
+
+/** Единая точка выгрузки: решает, куда именно уходит запись. */
+export async function syncTargets(db: Admin, item: CalItem, prefs: AssistantPrefs): Promise<CalItem> {
+  const target = routeTarget(item, prefs.task_routing);
+  let out = item;
+  if (target === "calendar" || target === "both") out = await pushToGoogle(db, out);
+  else if (out.google_event_id) await removeFromGoogle(db, out);
+  if (prefs.gtasks_enabled && (target === "tasks" || target === "both")) out = await pushToTasks(db, out);
+  else if (out.google_task_id && target !== "both") await removeFromTasks(db, out);
+  return out;
+}
+
+/** Импорт изменений из Google Tasks (статусы, названия, дедлайны). */
+export async function pullFromTasks(db: Admin): Promise<{ applied: number }> {
+  if (!gtasksConfigured()) return { applied: 0 };
+  const prefs = await getPrefs(db);
+  if (!prefs.gtasks_enabled) return { applied: 0 };
+  const dirs = await getDirections(db);
+  let applied = 0;
+  try {
+    for (const dir of dirs) {
+      if (!dir.active) continue;
+      const listId = dir.google_tasklist_id ?? (await ensureTaskList(dir.title)).id;
+      if (!dir.google_tasklist_id) {
+        await db.from("calendar_directions").update({ google_tasklist_id: listId }).eq("id", dir.id);
+      }
+      const tasks = await listTasks(listId, { updatedMin: new Date(Date.now() - 14 * 86_400_000).toISOString() });
+      for (const t of tasks) {
+        const { data: found } = await db.from("calendar_items").select("*").eq("google_task_id", t.id).maybeSingle();
+        const local = (found as unknown as CalItem) ?? null;
+        if (t.deleted) {
+          if (local) await db.from("calendar_items").delete().eq("id", local.id);
+          applied += local ? 1 : 0;
+          continue;
+        }
+        const patch = {
+          title: t.title || local?.title || "Без названия",
+          due_at: t.due ? new Date(t.due).toISOString() : null,
+          status: t.status === "completed" ? "done" : local?.status === "done" ? "planned" : (local?.status ?? "planned"),
+          completed_at: t.completed ?? null,
+          google_task_id: t.id,
+          google_tasklist_id: listId,
+          google_tasks_updated_at: t.updated ?? null,
+        };
+        if (local) {
+          const localNewer =
+            local.updated_at && t.updated && new Date(local.updated_at).getTime() > new Date(t.updated).getTime();
+          if (localNewer) continue;
+          await db.from("calendar_items").update(patch).eq("id", local.id);
+        } else {
+          if (!t.title) continue;
+          await db.from("calendar_items").insert({
+            ...patch,
+            kind: "task",
+            direction_id: dir.id,
+            tz: prefs.tz,
+            source: "google_tasks",
+          });
+        }
+        applied += 1;
+      }
+    }
+  } catch (e) {
+    if (e instanceof GTasksScopeError) return { applied: 0 };
+    console.error("[planner] pull google tasks failed", e);
+  }
+  return { applied };
+}
+
 /** Импорт изменений из Google. Возвращает список изменившихся записей. */
 export async function pullFromGoogle(db: Admin): Promise<{ applied: number; conflicts: CalItem[] }> {
   if (!googleConfigured()) return { applied: 0, conflicts: [] };
@@ -270,6 +404,10 @@ export interface SaveInput {
   location?: string | null;
   participants?: string[];
   source?: string;
+  priority?: number;
+  tags?: string[];
+  parent_id?: string | null;
+  recurrence?: string | null;
 }
 
 export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
@@ -289,6 +427,10 @@ export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
     location: input.location ?? null,
     participants: input.participants ?? [],
     source: input.source ?? "web",
+    priority: input.priority ?? 3,
+    tags: input.tags ?? [],
+    parent_id: input.parent_id ?? null,
+    recurrence: input.recurrence ?? null,
   };
   const q = input.id
     ? db.from("calendar_items").update(payload).eq("id", input.id).select("*").single()
@@ -297,7 +439,7 @@ export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
   if (error) throw new Error(error.message);
   let item = data as unknown as CalItem;
   await scheduleReminders(db, item, prefs);
-  item = await pushToGoogle(db, item);
+  item = await syncTargets(db, item, prefs);
   return item;
 }
 
@@ -312,8 +454,12 @@ export async function setStatus(db: Admin, id: string, status: CalItem["status"]
   if (!item) return null;
   const prefs = await getPrefs(db);
   await scheduleReminders(db, item, prefs);
-  if (status === "canceled") await removeFromGoogle(db, item);
-  else await pushToGoogle(db, item);
+  if (status === "canceled") {
+    await removeFromGoogle(db, item);
+    await removeFromTasks(db, item);
+  } else {
+    await syncTargets(db, item, prefs);
+  }
   return item;
 }
 
@@ -337,7 +483,7 @@ export async function rescheduleItem(db: Admin, id: string, startsAtIso: string)
   if (!updated) return null;
   const prefs = await getPrefs(db);
   await scheduleReminders(db, updated, prefs);
-  await pushToGoogle(db, updated);
+  await syncTargets(db, updated, prefs);
   return updated;
 }
 
@@ -345,6 +491,7 @@ export async function deleteItem(db: Admin, id: string): Promise<void> {
   const item = await getItem(db, id);
   if (!item) return;
   await removeFromGoogle(db, item);
+  await removeFromTasks(db, item);
   await db.from("calendar_items").delete().eq("id", id);
 }
 

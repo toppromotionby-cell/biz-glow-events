@@ -11,6 +11,8 @@ export interface CalDirection {
   title: string;
   color: string;
   google_color_id: string | null;
+  /** Список Google Tasks, куда уходят задачи этого направления. */
+  google_tasklist_id: string | null;
   emoji: string | null;
   keywords: string[];
   work_start: string;
@@ -37,6 +39,13 @@ export interface CalItem {
   source: string;
   google_event_id: string | null;
   google_task_id: string | null;
+  google_tasklist_id: string | null;
+  /** 1 — самый высокий, 4 — самый низкий (как P1–P4 в Todoist). */
+  priority: number;
+  tags: string[];
+  parent_id: string | null;
+  /** Правило повтора: daily | weekly:1,3 | monthly:15 | RRULE. */
+  recurrence: string | null;
   reschedule_count: number;
   completed_at: string | null;
   created_at: string;
@@ -80,7 +89,25 @@ export interface AssistantPrefs {
   visual_mode: "image" | "text";
   /** Показывать визуал в утреннем/вечернем дайджесте и обзоре недели. */
   digest_visual: boolean;
+  /** Правило маршрутизации задач между Календарём и Google Задачами. */
+  task_routing: "auto" | "calendar" | "tasks" | "both";
+  /** Синхронизировать задачи с Google Tasks. */
+  gtasks_enabled: boolean;
 }
+
+export const PRIORITY_LABEL: Record<number, string> = {
+  1: "P1 — срочно",
+  2: "P2 — важно",
+  3: "P3 — обычно",
+  4: "P4 — потом",
+};
+
+export const PRIORITY_COLOR: Record<number, string> = {
+  1: "text-destructive",
+  2: "text-amber-600 dark:text-amber-400",
+  3: "text-muted-foreground",
+  4: "text-muted-foreground/70",
+};
 
 export const KIND_LABEL: Record<CalKind, string> = { task: "Задача", meeting: "Встреча" };
 export const STATUS_LABEL: Record<CalStatus, string> = {
