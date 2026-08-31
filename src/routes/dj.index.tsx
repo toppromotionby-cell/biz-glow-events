@@ -284,7 +284,7 @@ function DjLanding() {
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link to="/auth">Служебный вход</Link>
+            <Link to="/login">Служебный вход</Link>
           </Button>
         </div>
       </section>
