@@ -385,12 +385,14 @@ export async function handleTelegramText(
     chatId,
     [
       `Записал: ${line(item, dirs, prefs.tz)}`,
+      item.sync ? syncFooter(item.sync) : "",
       clash ? `\n⚠️ Рядом уже стоит: <b>${tgEsc(clash.title)}</b> (${tgEsc(fmtWhen(clash, prefs.tz))})` : "",
     ]
       .filter(Boolean)
       .join("\n"),
     itemButtons(item),
   );
+
 }
 
 export async function handleTelegramVoice(db: Db, chatId: number, fileId: string): Promise<void> {
