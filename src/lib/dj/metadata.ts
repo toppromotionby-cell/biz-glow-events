@@ -2,12 +2,18 @@
 import type { TrackVersion } from "./types";
 import { stripBrand } from "./branding";
 import { guessSection, guessFormats, type DjSectionKey } from "./sections";
+import { detectVersionFromText, versionLabel } from "./version-detect";
 
 export type ParsedTrack = {
   artist: string;
   title: string;
   version: TrackVersion;
   versionRaw: string | null;
+  /** Ремикс ли это и чей. */
+  isRemix: boolean;
+  remixer: string | null;
+  /** Что печатаем в скобках: «Оригинал» или «Dj Smash Remix». */
+  versionLabel: string;
   album: string | null;
   genre: string | null;
   year: number | null;
@@ -23,22 +29,6 @@ export type ParsedTrack = {
   picture: { data: Uint8Array; mime: string } | null;
   sourceFilename: string;
 };
-
-const VERSION_PATTERNS: [RegExp, TrackVersion][] = [
-  [/extended|ext\.? ?mix|long ?version/i, "extended"],
-  [/radio ?(edit|mix|version)/i, "radio"],
-  [/\bclean\b/i, "clean"],
-  [/\bdirty\b|explicit/i, "dirty"],
-  [/\bintro\b|starter/i, "intro"],
-  [/\boutro\b|ending/i, "outro"],
-  [/acapella|a ?capella|vocal only/i, "acapella"],
-  [/instrumental|\binstr\b|minus/i, "instrumental"],
-  [/mash ?up/i, "mashup"],
-  [/transition|trans\b/i, "transition"],
-  [/quick ?hit|short ?edit/i, "quick_hit"],
-  [/segue/i, "segue"],
-  [/remix|rmx|\bmix\b|bootleg|rework|edit\b/i, "remix"],
-];
 
 const CAMELOT_RE = /\b(1[0-2]|[1-9])\s?([ABab])\b/;
 const MUSICAL_TO_CAMELOT: Record<string, string> = {
@@ -61,14 +51,8 @@ export function toCamelot(raw: string | null | undefined): string | null {
 }
 
 export function detectVersion(source: string): { version: TrackVersion; raw: string | null } {
-  const brackets = [...source.matchAll(/[([]([^)\]]{2,60})[)\]]/g)].map((m) => m[1]!.trim());
-  for (const chunk of brackets) {
-    for (const [re, v] of VERSION_PATTERNS) if (re.test(chunk)) return { version: v, raw: chunk };
-  }
-  for (const [re, v] of VERSION_PATTERNS) {
-    if (re.test(source)) return { version: v, raw: null };
-  }
-  return { version: "original", raw: null };
+  const v = detectVersionFromText(source);
+  return { version: v.version, raw: v.raw };
 }
 
 /** Чистим название от служебных скобок (BPM, ключ, бренд, качество). */
@@ -132,7 +116,7 @@ export async function parseAudioFile(file: File): Promise<ParsedTrack> {
   const title = cleanTitle(rawTitle) || fromName.title || "Untitled";
 
   const versionSource = `${rawTitle} ${file.name}`;
-  const ver = detectVersion(versionSource);
+  const verdict = detectVersionFromText(versionSource);
 
   const nativeKey = native.find((t) => /INITIALKEY|TKEY|KEY/i.test(t.id))?.value;
   const nativeBpm = native.find((t) => /BPM|TBPM/i.test(t.id))?.value;
@@ -152,8 +136,11 @@ export async function parseAudioFile(file: File): Promise<ParsedTrack> {
   return {
     artist,
     title,
-    version: ver.version,
-    versionRaw: ver.raw,
+    version: verdict.version,
+    versionRaw: verdict.raw,
+    isRemix: verdict.isRemix,
+    remixer: verdict.remixer,
+    versionLabel: versionLabel(verdict),
     album: (common['album'] as string) ?? null,
     genre: genreList?.[0] ?? null,
     year: typeof common['year'] === "number" ? (common['year'] as number) : null,

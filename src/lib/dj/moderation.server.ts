@@ -31,6 +31,11 @@ export type TrackInput = {
   work_key?: string | null;
   cover_palette?: string | null;
   cover_spec_version?: number | null;
+  /** Определение версии: оригинал или чей-то ремикс. */
+  is_remix?: boolean;
+  remixer?: string | null;
+  original_track_id?: string | null;
+  version_source?: string | null;
 };
 
 /**
@@ -76,6 +81,10 @@ export async function insertTrack(userId: string, input: TrackInput, status: DjC
       content_hash: input.content_hash ?? null,
       dedupe_key: input.dedupe_key ?? null,
       work_key: input.work_key ?? null,
+      is_remix: input.is_remix ?? false,
+      remixer: input.remixer ?? null,
+      original_track_id: input.original_track_id ?? null,
+      version_source: input.version_source ?? null,
       ...(input.cover_palette ? { cover_palette: input.cover_palette } : {}),
       ...(input.cover_spec_version ? { cover_spec_version: input.cover_spec_version } : {}),
       status,

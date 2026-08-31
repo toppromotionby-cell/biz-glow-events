@@ -24,6 +24,7 @@ const filtersSchema = z.object({
   section: z.string().max(30).optional(),
   categoryId: z.string().uuid().optional(),
   formatSlug: z.string().max(30).optional(),
+  remix: z.enum(["only", "exclude"]).optional(),
   genres: z.array(z.string().max(60)).max(30).optional(),
   genre: z.string().max(60).optional(),
   version: z.string().max(40).optional(),
@@ -83,7 +84,7 @@ export const djDownloadTrack = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await requireMember(context.userId);
     await assertRateLimit("dj_downloads", "user_id", access.userId, 120, 60);
-    const url = await trackAudioUrl(access, data.id);
+    const url = await trackAudioUrl(access, data.id, true);
     await bumpCounter(data.id, "download_count");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("dj_downloads").insert({ user_id: access.userId, target_type: "track", target_id: data.id });
@@ -176,7 +177,27 @@ export const djSubmitTrack = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const access = await requireTrusted(context.userId);
     const status = access.isManager ? "published" : "pending";
-    return { id: await insertTrack(access.userId, data, status), status };
+    // Определяем оригинал/ремикс: скобки → музыкальный каталог → наша библиотека.
+    const { resolveTrackVersion } = await import("@/lib/dj/lookup.server");
+    const verdict = await resolveTrackVersion({
+      artist: data.artist,
+      title: data.title,
+      sourceFilename: data.source_filename ?? null,
+      workKey: data.work_key ?? null,
+    });
+    const id = await insertTrack(
+      access.userId,
+      {
+        ...data,
+        version: verdict.version,
+        is_remix: verdict.is_remix,
+        remixer: verdict.remixer,
+        original_track_id: verdict.original_track_id,
+        version_source: verdict.version_source,
+      },
+      status,
+    );
+    return { id, status, versionLabel: verdict.version_label };
   });
 
 

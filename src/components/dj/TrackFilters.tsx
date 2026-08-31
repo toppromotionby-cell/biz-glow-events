@@ -94,6 +94,7 @@ export function TrackFilters({
   if (value.version) activeChips.push({ label: TRACK_VERSION_LABEL[value.version as TrackVersion] ?? value.version, clear: () => set({ version: undefined }) });
   if (value.key) activeChips.push({ label: `Key ${value.key}`, clear: () => set({ key: undefined }) });
   if (value.language) activeChips.push({ label: value.language, clear: () => set({ language: undefined }) });
+  if (value.remix) activeChips.push({ label: value.remix === "only" ? "Только ремиксы" : "Только оригиналы", clear: () => set({ remix: undefined }) });
   if (value.freshDays) activeChips.push({ label: "Новинки 7 дней", clear: () => set({ freshDays: undefined }) });
   if (value.favoritesOnly) activeChips.push({ label: "Избранное", clear: () => set({ favoritesOnly: undefined }) });
   if (value.bpmMin || value.bpmMax) activeChips.push({ label: `${bpm[0]}–${bpm[1]} BPM`, clear: () => set({ bpmMin: undefined, bpmMax: undefined }) });
@@ -279,6 +280,12 @@ export function TrackFilters({
               Избранное
             </Chip>
           )}
+          <Chip active={value.remix === "exclude"} onClick={() => set({ remix: value.remix === "exclude" ? undefined : "exclude" })}>
+            Оригиналы
+          </Chip>
+          <Chip active={value.remix === "only"} onClick={() => set({ remix: value.remix === "only" ? undefined : "only" })}>
+            Ремиксы
+          </Chip>
           {QUICK_VERSIONS.map((v) => (
             <Chip key={v} active={value.version === v} onClick={() => set({ version: value.version === v ? undefined : v })}>
               {TRACK_VERSION_LABEL[v]}

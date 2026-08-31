@@ -28,6 +28,9 @@ export type IngestPayload = {
   artist: string;
   title: string;
   version: TrackVersion;
+  is_remix: boolean;
+  remixer: string | null;
+  version_label: string;
   genre: string | null;
   bpm: number | null;
   key_camelot: string | null;
@@ -92,6 +95,9 @@ export function evaluateIngest(
     artist,
     title,
     version: parsed.version,
+    is_remix: parsed.isRemix,
+    remixer: parsed.remixer,
+    version_label: parsed.versionLabel,
     genre: parsed.genre,
     bpm,
     key_camelot: parsed.key_camelot,
@@ -112,7 +118,7 @@ export function evaluateIngest(
   };
 
   const metaParts = [
-    parsed.version !== "original" ? TRACK_VERSION_LABEL[parsed.version] : null,
+    parsed.isRemix ? parsed.versionLabel : (parsed.version !== "original" ? TRACK_VERSION_LABEL[parsed.version] : null),
     bpm ? `${bpm} BPM` : null,
     parsed.key_camelot,
   ].filter(Boolean) as string[];
