@@ -210,12 +210,15 @@ export async function runTool(
       const limit = Math.min(num(args.limit) ?? 20, 50);
       const { data, error } = await db.storage.from(bucket).list("", { limit: 200, sortBy: { column: "created_at", order: "desc" } });
       if (error) return { kind: "data", data: { error: error.message } };
-      const files = (data ?? []).filter((f) => !q || f.name.toLowerCase().includes(q)).slice(0, limit);
+      type StorageFile = { name: string; created_at?: string; metadata?: { size?: number } };
+      const files = ((data ?? []) as StorageFile[])
+        .filter((f) => !q || f.name.toLowerCase().includes(q))
+        .slice(0, limit);
       return {
         kind: "data",
         data: {
           bucket,
-          files: files.map((f) => ({ name: f.name, size: f.metadata?.size ?? null, created_at: f.created_at })),
+          files: files.map((f) => ({ name: f.name, size: f.metadata?.size ?? null, created_at: f.created_at ?? null })),
         },
       };
     }
