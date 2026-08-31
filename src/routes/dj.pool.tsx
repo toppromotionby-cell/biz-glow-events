@@ -23,7 +23,7 @@ const poolSearchSchema = z.object({
   version: z.string().optional(),
   key: z.string().optional(),
   remix: z.enum(["only", "exclude"]).optional(),
-  sort: z.enum(["new", "popular", "rating", "bpm", "az"]).optional(),
+  sort: z.enum(["new", "popular", "rating", "bpm", "artist"]).optional(),
   page: z.coerce.number().int().min(1).optional(),
 });
 export type DjPoolSearch = z.infer<typeof poolSearchSchema>;
