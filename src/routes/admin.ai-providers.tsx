@@ -10,9 +10,19 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ApiKeysGuide } from "@/components/admin/ApiKeysGuide";
 import { aiProvidersStatus, aiRolesList, aiLearnRole } from "@/lib/ai/ai.functions";
 
-export const Route = createFileRoute("/admin/ai-providers")({ component: Page });
+export const Route = createFileRoute("/admin/ai-providers")({
+  component: Page,
+  head: () => ({
+    meta: [
+      { title: "ИИ-провайдеры и роли · Админка Event-Hub" },
+      { name: "description", content: "Бесплатные нейросети помощника, инструкция по API-ключам и выученные роли." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
+});
 
 function Page() {
   const qc = useQueryClient();
@@ -67,9 +77,11 @@ function Page() {
         )}
         <p className="mt-3 text-xs text-muted-foreground">
           Чтобы подключить источник, добавьте соответствующий ключ в секреты проекта — он бесплатный и выдаётся в
-          личном кабинете сервиса.
+          личном кабинете сервиса. Пошаговая инструкция — в блоке ниже.
         </p>
       </section>
+
+      <ApiKeysGuide />
 
       <section className="glass rounded-2xl p-4">
         <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
