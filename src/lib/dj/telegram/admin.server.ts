@@ -38,7 +38,7 @@ export async function botStatus(userId: string) {
       kind: o.kind as string,
       status: o.status as string,
       attempts: o.attempts,
-      error: o.error ?? null,
+      error: o.last_error ?? null,
       created_at: o.created_at,
     })),
   };
