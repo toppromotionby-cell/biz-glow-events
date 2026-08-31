@@ -210,7 +210,6 @@ export const submitOrder = createServerFn({ method: "POST" })
         client_company: data.client_company ?? data.company_legal_name ?? null,
         event_date: data.event_date ?? null,
         notes: data.notes?.trim() ? data.notes.trim() : null,
-        internal_notes: internalNotes,
         source: data.source ?? "cart",
         utm_source: data.utm_source ?? null,
         utm_medium: data.utm_medium ?? null,
@@ -227,6 +226,13 @@ export const submitOrder = createServerFn({ method: "POST" })
     if (error || !order) {
       console.error("[submitOrder] DB error:", error);
       throw new Error("Не удалось создать заявку. Попробуйте ещё раз.");
+    }
+
+    // 2b. Внутренние заметки — staff-only таблица, клиенту недоступна.
+    if (internalNotes) {
+      await supabaseAdmin
+        .from("order_internal_notes")
+        .upsert({ order_id: order.id, notes: internalNotes }, { onConflict: "order_id" });
     }
 
     // 3. Позиции — если упало, откатываем заказ, чтобы не оставлять «голый» order.
@@ -280,12 +286,11 @@ export const submitOrder = createServerFn({ method: "POST" })
         promoApplied = code;
         // Дописываем промокод во внутренние заметки.
         await supabaseAdmin
-          .from("orders")
-          .update({
-            internal_notes: [internalNotes, `Промокод: ${promoApplied}`]
-              .filter(Boolean).join("\n\n"),
-          })
-          .eq("id", order.id);
+          .from("order_internal_notes")
+          .upsert({
+            order_id: order.id,
+            notes: [internalNotes, `Промокод: ${promoApplied}`].filter(Boolean).join("\n\n"),
+          }, { onConflict: "order_id" });
       }
     }
 

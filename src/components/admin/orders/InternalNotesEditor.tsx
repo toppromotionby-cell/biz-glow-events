@@ -1,30 +1,40 @@
 // Внутренние заметки с автосохранением (debounce). Виден индикатор статуса.
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchInternalNotes, saveInternalNotes } from "@/lib/orders/internal-notes";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { notify } from "@/lib/notify";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-export function InternalNotesEditor({ orderId, initial }: { orderId: string; initial: string }) {
-  const [value, setValue] = useState(initial);
+export function InternalNotesEditor({ orderId }: { orderId: string }) {
+  const [value, setValue] = useState("");
   const [state, setState] = useState<SaveState>("idle");
-  const lastSaved = useRef(initial);
+  const lastSaved = useRef("");
 
   useEffect(() => {
-    setValue(initial);
-    lastSaved.current = initial;
+    let alive = true;
     setState("idle");
-  }, [orderId, initial]);
+    fetchInternalNotes(orderId)
+      .then((notes) => {
+        if (!alive) return;
+        setValue(notes);
+        lastSaved.current = notes;
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [orderId]);
 
   const persist = useDebouncedCallback(async (next: string) => {
     if (next === lastSaved.current) return;
     setState("saving");
-    const { error } = await supabase.from("orders").update({ internal_notes: next }).eq("id", orderId);
-    if (error) {
+    try {
+      await saveInternalNotes(orderId, next);
+    } catch (e) {
       setState("error");
-      notify.error("Не удалось сохранить заметку", { description: error.message });
+      notify.error("Не удалось сохранить заметку", { description: e instanceof Error ? e.message : undefined });
       return;
     }
     lastSaved.current = next;

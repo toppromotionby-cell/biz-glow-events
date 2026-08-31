@@ -685,12 +685,17 @@ export const createOrderFromQuote = createServerFn({ method: "POST" })
         source: "quote",
         manager_id: context.userId,
         notes: quote.event_notes || null,
-        internal_notes: `Создан из КП ${quote.quote_number ?? quote.id.slice(0, 8)}`,
       })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
     const orderId = (order as { id: string }).id;
+
+    // Внутренние заметки хранятся в staff-only таблице — клиент их не видит.
+    await context.supabase.from("order_internal_notes").upsert(
+      { order_id: orderId, notes: `Создан из КП ${quote.quote_number ?? quote.id.slice(0, 8)}` },
+      { onConflict: "order_id" },
+    );
 
     if (items.length) {
       const rows = items.map((it) => ({

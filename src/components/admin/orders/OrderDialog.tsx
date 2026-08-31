@@ -261,7 +261,7 @@ export function OrderDialog({ id, onClose }: OrderDialogProps) {
                 </Card>
               )}
               <Card title="Внутренние заметки" className={order.notes ? "" : "md:col-span-2"}>
-                <InternalNotesEditor orderId={order.id} initial={order.internal_notes ?? ""} />
+                <InternalNotesEditor orderId={order.id} />
               </Card>
             </div>
 

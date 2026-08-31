@@ -231,8 +231,12 @@ export async function adminChats(): Promise<number[]> {
   const out: number[] = [];
   for (const r of rows) {
     if (r.muted_until && new Date(r.muted_until).getTime() > now) continue;
-    const { data: can } = await db.rpc("dj_can_manage", { _uid: r.user_id });
-    if (can) out.push(r.chat_id);
+    const { data: roles } = await db
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", r.user_id)
+      .in("role", ["admin", "dj_admin"]);
+    if ((roles ?? []).length) out.push(r.chat_id);
   }
   if (!out.length) {
     const s = await getSettings();

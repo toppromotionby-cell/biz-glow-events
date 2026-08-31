@@ -3719,6 +3719,38 @@ export type Database = {
           },
         ]
       }
+      order_internal_notes: {
+        Row: {
+          created_at: string
+          notes: string
+          order_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          notes?: string
+          order_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          notes?: string
+          order_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_internal_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -3814,7 +3846,6 @@ export type Database = {
           created_at: string
           event_date: string | null
           id: string
-          internal_notes: string | null
           manager_id: string | null
           notes: string | null
           order_number: string | null
@@ -3839,7 +3870,6 @@ export type Database = {
           created_at?: string
           event_date?: string | null
           id?: string
-          internal_notes?: string | null
           manager_id?: string | null
           notes?: string | null
           order_number?: string | null
@@ -3864,7 +3894,6 @@ export type Database = {
           created_at?: string
           event_date?: string | null
           id?: string
-          internal_notes?: string | null
           manager_id?: string | null
           notes?: string | null
           order_number?: string | null
@@ -5605,9 +5634,6 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
-      dj_can_manage: { Args: { _uid: string }; Returns: boolean }
-      dj_is_member: { Args: { _uid: string }; Returns: boolean }
-      dj_is_trusted: { Args: { _uid: string }; Returns: boolean }
       dj_member_status: { Args: { _uid: string }; Returns: string }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {

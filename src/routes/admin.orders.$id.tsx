@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { fetchInternalNotes, internalNotesKey, saveInternalNotes as persistInternalNotes } from "@/lib/orders/internal-notes";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminKeys, invalidateOrder } from "@/lib/query-keys";
@@ -124,13 +125,14 @@ function OrderDetail() {
     queryFn: async () => (await supabase.from("order_attachments").select("kind").eq("order_id", id)).data ?? [],
   });
 
+  const { data: internalNotesValue = "" } = useQuery({
+    queryKey: internalNotesKey(id),
+    queryFn: () => fetchInternalNotes(id),
+  });
+
   useEffect(() => {
-    if (order && typeof order.internal_notes === "string") {
-      setInternalNotes(order.internal_notes ?? "");
-    } else if (order) {
-      setInternalNotes("");
-    }
-  }, [order?.internal_notes]);
+    setInternalNotes(internalNotesValue);
+  }, [internalNotesValue]);
 
   const notifyStatusFn = useServerFn(notifyOrderStatus);
   const updateStatus = useMutation({
@@ -161,9 +163,13 @@ function OrderDetail() {
   });
 
   const saveInternalNotes = async () => {
-    const { error } = await supabase.from("orders").update({ internal_notes: internalNotes }).eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await persistInternalNotes(id, internalNotes);
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Не удалось сохранить");
+    }
     toast.success("Сохранено");
+    qc.invalidateQueries({ queryKey: internalNotesKey(id) });
     invalidateOrder(qc, id);
   };
 
