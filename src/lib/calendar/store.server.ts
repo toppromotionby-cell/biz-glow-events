@@ -498,7 +498,7 @@ export async function saveItem(db: Admin, input: SaveInput): Promise<SyncedItem>
   return await syncTargets(db, saved, prefs);
 }
 
-export async function setStatus(db: Admin, id: string, status: CalItem["status"]): Promise<CalItem | null> {
+export async function setStatus(db: Admin, id: string, status: CalItem["status"]): Promise<SyncedItem | null> {
   const { data } = await db
     .from("calendar_items")
     .update({ status, completed_at: status === "done" ? new Date().toISOString() : null })
@@ -512,14 +512,13 @@ export async function setStatus(db: Admin, id: string, status: CalItem["status"]
   if (status === "canceled") {
     await removeFromGoogle(db, item);
     await removeFromTasks(db, item);
-  } else {
-    await syncTargets(db, item, prefs);
+    return item;
   }
-  return item;
+  return await syncTargets(db, item, prefs);
 }
 
 /** Перенос — только по явной команде пользователя. */
-export async function rescheduleItem(db: Admin, id: string, startsAtIso: string): Promise<CalItem | null> {
+export async function rescheduleItem(db: Admin, id: string, startsAtIso: string): Promise<SyncedItem | null> {
   const item = await getItem(db, id);
   if (!item) return null;
   const durationMs = item.starts_at && item.ends_at
@@ -538,8 +537,7 @@ export async function rescheduleItem(db: Admin, id: string, startsAtIso: string)
   if (!updated) return null;
   const prefs = await getPrefs(db);
   await scheduleReminders(db, updated, prefs);
-  await syncTargets(db, updated, prefs);
-  return updated;
+  return await syncTargets(db, updated, prefs);
 }
 
 export async function deleteItem(db: Admin, id: string): Promise<void> {
