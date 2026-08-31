@@ -37,6 +37,13 @@ export interface CalItem {
   source: string;
   google_event_id: string | null;
   google_task_id: string | null;
+  google_tasklist_id: string | null;
+  /** 1 — самый высокий, 4 — самый низкий (как P1–P4 в Todoist). */
+  priority: number;
+  tags: string[];
+  parent_id: string | null;
+  /** Правило повтора: daily | weekly:1,3 | monthly:15 | RRULE. */
+  recurrence: string | null;
   reschedule_count: number;
   completed_at: string | null;
   created_at: string;
