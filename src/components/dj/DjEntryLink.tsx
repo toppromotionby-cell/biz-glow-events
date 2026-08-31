@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDjAccess } from "@/components/dj/MemberGate";
 import { DJ_DEFAULT_RETURN } from "@/lib/dj/return-to";
-import { DJ_MEMBER_STATUS_LABEL } from "@/lib/dj/types";
+import { MEMBER_STATUS_LABEL } from "@/lib/dj/types";
 
 export type DjEntry = { href: string; label: string; status: string | null; isMember: boolean };
 
@@ -64,7 +64,7 @@ export function DjProfileCard() {
         <div className="flex items-center gap-2">
           {status && (
             <Badge variant={data.isMember ? "default" : "outline"}>
-              {DJ_MEMBER_STATUS_LABEL[status as keyof typeof DJ_MEMBER_STATUS_LABEL] ?? status}
+              {MEMBER_STATUS_LABEL[status as keyof typeof MEMBER_STATUS_LABEL] ?? status}
             </Badge>
           )}
           {entry && (
