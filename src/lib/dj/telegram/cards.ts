@@ -132,7 +132,7 @@ export interface TrackCard {
 }
 
 export function trackTitle(t: TrackCard): string {
-  const version = trackVersionLabel({ is_remix: !!t.is_remix, remixer: t.remixer ?? null, version: t.version ?? null });
+  const version = trackVersionLabel({ is_remix: !!t.is_remix, remixer: t.remixer ?? null, version: t.version ?? "" });
   return version ? `${t.artist} — ${t.title} (${version})` : `${t.artist} — ${t.title}`;
 }
 
