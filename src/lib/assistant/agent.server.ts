@@ -110,14 +110,6 @@ function planWorthy(text: string): boolean {
   return /(перенеси все|массово|удали все|разошли|обнови все|переделай|пересчитай все|мигрируй|автоматизируй)/i.test(text);
 }
 
-const PLAN_BUTTONS: TgButton[][] = [
-  [
-    { text: "✅ Утвердить", data: "plan:ok" },
-    { text: "✏️ Правки", data: "plan:edit" },
-    { text: "🚫 Отменить", data: "plan:no" },
-  ],
-];
-
 /* ------------------------------ обработка апдейта ------------------------------ */
 
 export async function handleUpdate(update: TgUpdate): Promise<void> {
@@ -129,7 +121,9 @@ export async function handleUpdate(update: TgUpdate): Promise<void> {
   const who = await identify(chatId);
   const settings = await getSettings();
 
-  let text = (msg.text ?? "").trim();
+  let text = (msg.text ?? msg.caption ?? "").trim();
+  const photo = largestPhoto(msg.photo);
+  const hasAttachment = Boolean(photo || msg.document);
 
   // Голос → текст (транскрипция уже реализована для планера, переиспользуем модель).
   if (!text && msg.voice) {
@@ -139,9 +133,9 @@ export async function handleUpdate(update: TgUpdate): Promise<void> {
       return;
     }
   }
-  if (!text) return;
+  if (!text && !hasAttachment) return;
 
-  await logMessage({ chatId, userId: who.userId, direction: "in", text });
+  await logMessage({ chatId, userId: who.userId, direction: "in", text: text || "[вложение]" });
 
   // Привязка чата к сотруднику по коду.
   if (!who.userId) {
