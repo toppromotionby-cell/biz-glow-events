@@ -101,8 +101,13 @@ export async function linkTrackFormats(trackId: string, slugs: string[]) {
 }
 
 export async function updateTrack(id: string, patch: Partial<TrackInput>) {
-  const { formats, ...columns } = patch;
+  const { formats, cover_spec_version, ...rest } = patch;
+  const columns = {
+    ...rest,
+    ...(typeof cover_spec_version === "number" ? { cover_spec_version } : {}),
+  };
   const { error } = await supabaseAdmin.from("dj_tracks").update(columns).eq("id", id);
+
   if (formats) await linkTrackFormats(id, formats);
   if (error) throw new Error(error.message);
 }
