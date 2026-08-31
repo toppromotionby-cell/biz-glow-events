@@ -110,7 +110,7 @@ function DjLanding() {
   return (
     <div className="container mx-auto max-w-6xl px-4 py-12">
       {/* Хиро: тёмная сцена, янтарные засветы, винил и эквалайзер */}
-      <section className="dj-grain relative isolate overflow-hidden rounded-3xl border border-primary/20 bg-[hsl(var(--foreground)/0.96)] p-8 text-background md:p-14">
+      <section className="dj-stage dj-grain relative isolate overflow-hidden rounded-3xl border border-primary/20 p-8 md:p-14">
         <div className="dj-aurora pointer-events-none absolute inset-0 opacity-70" aria-hidden />
         <span
           aria-hidden
@@ -124,7 +124,7 @@ function DjLanding() {
         {/* Винил */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 top-1/2 hidden h-72 w-72 -translate-y-1/2 animate-spin rounded-full border-[14px] border-background/10 [animation-duration:14s] md:block"
+          className="pointer-events-none absolute -right-10 top-1/2 hidden h-72 w-72 -translate-y-1/2 animate-spin rounded-full border-[14px] border-white/10 [animation-duration:14s] md:block"
           style={{
             background:
               "repeating-radial-gradient(circle at center, hsl(var(--primary)/0.28) 0 2px, transparent 2px 9px)",
@@ -143,7 +143,7 @@ function DjLanding() {
             </span>{" "}
             event-hub.by
           </h1>
-          <p className="mt-4 text-base text-background/70 md:text-lg">
+          <p className="dj-stage-muted mt-4 text-base md:text-lg">
             Рабочее место event-диджея: музыка, отбивки, фоны ведущему, сэмплы, входы-выходы, семейные
             моменты, шоу и клубные сеты — с BPM, тональностью Camelot и фирменными обложками.
           </p>
@@ -166,7 +166,7 @@ function DjLanding() {
             <Button asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-glow hover:opacity-90">
               <Link to="/dj/pool">Войти в библиотеку</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-background/30 bg-transparent text-background hover:bg-background/10 hover:text-background">
+            <Button asChild size="lg" variant="outline" className="border-white/25 bg-transparent text-inherit hover:bg-white/10 hover:text-inherit">
               <Link to="/dj/software">Софт и плагины</Link>
             </Button>
           </div>
@@ -176,7 +176,7 @@ function DjLanding() {
               <div key={s.label}>
                 <dt className="sr-only">{s.label}</dt>
                 <dd className="font-display text-3xl font-bold tabular-nums text-primary">{s.value}</dd>
-                <p className="text-xs text-background/60">{s.label}</p>
+                <p className="dj-stage-dim text-xs">{s.label}</p>
               </div>
             ))}
           </dl>
