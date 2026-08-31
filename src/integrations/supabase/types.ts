@@ -196,6 +196,8 @@ export type Database = {
           digest_visual: boolean
           evening_time: string
           followup_minutes: number
+          google_health_alert_at: string | null
+          google_health_state: string | null
           gtasks_enabled: boolean
           hard_reminder_minutes: number[]
           id: number
@@ -228,6 +230,8 @@ export type Database = {
           digest_visual?: boolean
           evening_time?: string
           followup_minutes?: number
+          google_health_alert_at?: string | null
+          google_health_state?: string | null
           gtasks_enabled?: boolean
           hard_reminder_minutes?: number[]
           id?: number
@@ -260,6 +264,8 @@ export type Database = {
           digest_visual?: boolean
           evening_time?: string
           followup_minutes?: number
+          google_health_alert_at?: string | null
+          google_health_state?: string | null
           gtasks_enabled?: boolean
           hard_reminder_minutes?: number[]
           id?: number
@@ -483,7 +489,9 @@ export type Database = {
           color: string
           created_at: string
           emoji: string | null
+          google_calendar_id: string | null
           google_color_id: string | null
+          google_sync_token: string | null
           google_tasklist_id: string | null
           id: string
           key: string
@@ -499,7 +507,9 @@ export type Database = {
           color?: string
           created_at?: string
           emoji?: string | null
+          google_calendar_id?: string | null
           google_color_id?: string | null
+          google_sync_token?: string | null
           google_tasklist_id?: string | null
           id?: string
           key: string
@@ -515,7 +525,9 @@ export type Database = {
           color?: string
           created_at?: string
           emoji?: string | null
+          google_calendar_id?: string | null
           google_color_id?: string | null
+          google_sync_token?: string | null
           google_tasklist_id?: string | null
           id?: string
           key?: string
