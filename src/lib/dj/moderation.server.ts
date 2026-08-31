@@ -96,6 +96,14 @@ export async function insertTrack(userId: string, input: TrackInput, status: DjC
   if (error) throw new Error(error.message);
   const id = data.id as string;
   await linkTrackFormats(id, input.formats ?? []);
+  // Уведомление диджей-бота — не должно ломать загрузку.
+  try {
+    const notify = await import("./telegram/notify.server");
+    if (status === "pending") await notify.notifyTrackPending(id);
+    if (status === "published") await notify.notifyTrackPublished(id);
+  } catch (e) {
+    console.error("[dj] telegram notify failed", e);
+  }
   return id;
 }
 

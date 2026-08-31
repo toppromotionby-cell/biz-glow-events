@@ -53,6 +53,12 @@ export async function applyForMembership(
     .select("*")
     .single();
   if (error) throw new Error(error.message);
+  try {
+    const notify = await import("./telegram/notify.server");
+    await notify.notifyApplication((data as DjMemberRow).id);
+  } catch (e) {
+    console.error("[dj] telegram notify failed", e);
+  }
   return data as DjMemberRow;
 }
 
