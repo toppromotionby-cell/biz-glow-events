@@ -34,6 +34,11 @@ export async function getPrefs(db: Admin): Promise<AssistantPrefs> {
     last_device_tz: (row.last_device_tz as string) ?? null,
     tg_allowed_chat_ids: ((row.tg_allowed_chat_ids as number[]) ?? []).map(Number),
     tg_bot_username: (row.tg_bot_username as string) ?? null,
+    alice_user_ids: ((row.alice_user_ids as string[]) ?? []).map(String),
+    alice_skill_id: (row.alice_skill_id as string) ?? null,
+    alice_link_code: (row.alice_link_code as string) ?? null,
+    alice_push_enabled: Boolean(row.alice_push_enabled),
+    alice_mirror_tg: row.alice_mirror_tg == null ? true : Boolean(row.alice_mirror_tg),
   };
 }
 
