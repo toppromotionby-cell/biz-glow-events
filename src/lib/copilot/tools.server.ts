@@ -333,9 +333,11 @@ export async function runTool(
       const note = str(args.note);
       if (!orderId || !note) throw new Error("Нужны id заявки и текст заметки");
       const { data } = await db.from("order_internal_notes").select("*").eq("order_id", orderId).maybeSingle();
-      const prev = (data as Record<string, unknown> | null)?.notes;
+      const prev = typeof (data as Record<string, unknown> | null)?.notes === "string"
+        ? String((data as Record<string, unknown>).notes)
+        : null;
       const stamp = new Date().toLocaleString("ru-RU", { timeZone: "Europe/Minsk" });
-      const next = `${prev ? `${String(prev)}\n\n` : ""}[${stamp}, Ember] ${note}`;
+      const next = `${prev ? `${prev}\n\n` : ""}[${stamp}, Ember] ${note}`;
       return {
         kind: "ops",
         ops: [
@@ -344,7 +346,7 @@ export async function runTool(
             table: "order_internal_notes",
             id: orderId,
             label: `Внутренняя заметка к заявке`,
-            before: data ? { notes: prev ?? null } : null,
+            before: data ? { notes: prev } : null,
             after: { order_id: orderId, notes: next },
           },
         ],
