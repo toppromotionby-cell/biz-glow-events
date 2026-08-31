@@ -44,7 +44,8 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
       { to: "/admin/orders", label: "Заявки и заказы", icon: ShoppingCart, badgeKey: "newOrders", perm: "orders.manage" },
-      { to: "/admin/calendar", label: "Календарь", icon: Calendar, perm: "orders.manage" },
+      { to: "/admin/calendar", label: "Календарь мероприятий", icon: Calendar, perm: "orders.manage" },
+      { to: "/admin/planner", label: "Планер и ассистент", icon: CalendarClock, perm: "orders.manage" },
     ],
   },
   {
