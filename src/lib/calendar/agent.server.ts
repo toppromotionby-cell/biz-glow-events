@@ -15,6 +15,7 @@ import {
   pullFromGoogle,
   rescheduleItem,
   saveItem,
+  searchItems,
   setStatus,
 } from "@/lib/calendar/store.server";
 
@@ -478,8 +479,8 @@ export async function sendDailyDigest(db: Db, mode: "morning" | "evening"): Prom
   );
 }
 
-export async function sendWeek(db: Db): Promise<void> {
-  const cid = await chatId(db);
+export async function sendWeek(db: Db, to?: number): Promise<void> {
+  const cid = to ?? (await chatId(db));
   if (!cid) return;
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);
@@ -528,8 +529,8 @@ export async function sendWeeklyReview(db: Db): Promise<void> {
   );
 }
 
-export async function sendOpenTail(db: Db): Promise<void> {
-  const cid = await chatId(db);
+export async function sendOpenTail(db: Db, to?: number): Promise<void> {
+  const cid = to ?? (await chatId(db));
   if (!cid) return;
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);
