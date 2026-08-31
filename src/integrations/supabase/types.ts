@@ -16,6 +16,11 @@ export type Database = {
     Tables: {
       assistant_prefs: {
         Row: {
+          alice_link_code: string | null
+          alice_mirror_tg: boolean
+          alice_push_enabled: boolean
+          alice_skill_id: string | null
+          alice_user_ids: string[]
           created_at: string
           evening_time: string
           followup_minutes: number
@@ -34,6 +39,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alice_link_code?: string | null
+          alice_mirror_tg?: boolean
+          alice_push_enabled?: boolean
+          alice_skill_id?: string | null
+          alice_user_ids?: string[]
           created_at?: string
           evening_time?: string
           followup_minutes?: number
@@ -52,6 +62,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alice_link_code?: string | null
+          alice_mirror_tg?: boolean
+          alice_push_enabled?: boolean
+          alice_skill_id?: string | null
+          alice_user_ids?: string[]
           created_at?: string
           evening_time?: string
           followup_minutes?: number
@@ -448,6 +463,47 @@ export type Database = {
             columns: ["direction_id"]
             isOneToOne: false
             referencedRelation: "calendar_directions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_outbox: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          item_id: string | null
+          kind: string
+          pushed_at: string | null
+          spoken_at: string | null
+          text: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          kind?: string
+          pushed_at?: string | null
+          spoken_at?: string | null
+          text: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          kind?: string
+          pushed_at?: string | null
+          spoken_at?: string | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_outbox_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_items"
             referencedColumns: ["id"]
           },
         ]

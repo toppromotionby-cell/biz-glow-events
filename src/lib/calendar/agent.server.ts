@@ -18,6 +18,11 @@ import {
   searchItems,
   setStatus,
 } from "@/lib/calendar/store.server";
+import { dayRange, parseDayToken } from "@/lib/calendar/when";
+import { pushOutbox } from "@/lib/calendar/outbox.server";
+import type { AssistantResult } from "@/lib/calendar/assistant.server";
+import { sendAlicePush } from "@/lib/calendar/alice.server";
+import type { AssistantPrefs } from "@/lib/calendar/model";
 
 type Db = Awaited<ReturnType<typeof admin>>;
 
@@ -44,30 +49,6 @@ function itemButtons(item: CalItem) {
 }
 
 // ——— Чтение календаря из Telegram (команды и вопросы) ———
-
-/** Начало суток по локальной таймзоне, смещённое на offsetDays. */
-function dayRange(base: Date, tz: string, offsetDays = 0): { from: Date; to: Date } {
-  const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(base);
-  const start = new Date(`${ymd}T00:00:00Z`);
-  const local = new Date(start.getTime());
-  // Смещение таймзоны в минутах для этой даты.
-  const off = (new Date(base.toLocaleString("en-US", { timeZone: tz })).getTime() - new Date(base.toLocaleString("en-US", { timeZone: "UTC" })).getTime()) / 60000;
-  const from = new Date(local.getTime() - off * 60000 + offsetDays * 86_400_000);
-  return { from, to: new Date(from.getTime() + 86_400_000) };
-}
-
-function parseDayToken(token: string, tz: string): Date | null {
-  const t = token.trim().toLowerCase();
-  const now = new Date();
-  if (t === "сегодня") return dayRange(now, tz, 0).from;
-  if (t === "завтра") return dayRange(now, tz, 1).from;
-  if (t === "послезавтра") return dayRange(now, tz, 2).from;
-  const m = t.match(/^(\d{1,2})[.\-/](\d{1,2})(?:[.\-/](\d{2,4}))?$/);
-  if (!m) return null;
-  const year = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : new Date().getFullYear();
-  const base = new Date(Date.UTC(year, Number(m[2]) - 1, Number(m[1]), 12, 0, 0));
-  return dayRange(base, tz, 0).from;
-}
 
 /** Отправка списка записей с кнопками действий (двусторонняя работа прямо из чата). */
 async function sendList(
@@ -432,6 +413,18 @@ function groupByDirection(items: CalItem[], dirs: CalDirection[], tz: string): s
     .join("\n");
 }
 
+/** Push-напоминание в Алису (работает только для опубликованного навыка). */
+async function pushAliceReminder(_db: Db, prefs: AssistantPrefs, text: string): Promise<void> {
+  if (!prefs.alice_push_enabled || !prefs.alice_skill_id) return;
+  for (const uid of prefs.alice_user_ids) {
+    try {
+      await sendAlicePush(prefs.alice_skill_id, uid, text);
+    } catch (e) {
+      console.error("[planner] alice push failed", e);
+    }
+  }
+}
+
 async function chatId(db: Db): Promise<number | null> {
   const prefs = await getPrefs(db);
   return prefs.tg_chat_id ?? (process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null);
@@ -459,24 +452,25 @@ export async function sendDailyDigest(db: Db, mode: "morning" | "evening"): Prom
       `Сегодня: ${items.map((i) => `${i.title} (${fmtWhen(i, prefs.tz)}, ${i.importance})`).join("; ") || "пусто"}. Просрочено: ${overdue.map((i) => i.title).join("; ") || "нет"}.`,
       prefs.style_profile,
     );
-    await tgSend(cid, [head, body, tail, advice ? `\n💡 ${tgEsc(advice)}` : ""].filter(Boolean).join("\n"));
+    const morning = [head, body, tail, advice ? `\n💡 ${tgEsc(advice)}` : ""].filter(Boolean).join("\n");
+    await tgSend(cid, morning);
+    await pushOutbox(db, { text: morning, kind: "digest" });
     return;
   }
 
   const done = items.filter((i) => i.status === "done");
   const left = items.filter((i) => i.status !== "done" && i.status !== "canceled");
-  await tgSend(
-    cid,
-    [
+  const evening = [
       `🌙 <b>Итоги дня</b>`,
       `Сделано: ${done.length} · Осталось: ${left.length}`,
       done.length ? `\n<b>Закрыто</b>\n${done.map((i) => `✅ ${tgEsc(i.title)}`).join("\n")}` : "",
       left.length ? `\n<b>Не закрыто</b>\n${left.map((i) => line(i, dirs, prefs.tz)).join("\n")}` : "",
       left.length ? "\nЧто из этого переносим? Нажмите «Перенести» у нужной записи в /open." : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
+  ]
+    .filter(Boolean)
+    .join("\n");
+  await tgSend(cid, evening);
+  await pushOutbox(db, { text: evening, kind: "digest" });
 }
 
 export async function sendWeek(db: Db, to?: number): Promise<void> {
@@ -585,12 +579,16 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
       await db.from("calendar_reminders").update({ sent_at: now.toISOString() }).eq("id", r.id);
       continue;
     }
-    if (cid) {
-      if (r.kind === "before") {
-        const mins = r.payload?.minutes ?? 60;
-        await tgSend(cid, `⏰ Через ${mins} мин:\n${line(item, dirs, prefs.tz)}`, itemButtons(item));
-      } else if (r.kind === "followup" && item.status !== "done") {
-        await tgSend(cid, `Как прошло: <b>${tgEsc(item.title)}</b>?`, [
+    if (r.kind === "before") {
+      const mins = r.payload?.minutes ?? 60;
+      const text = `⏰ Через ${mins} мин:\n${line(item, dirs, prefs.tz)}`;
+      if (cid) await tgSend(cid, text, itemButtons(item));
+      await pushOutbox(db, { text, kind: "reminder", item_id: item.id });
+      await pushAliceReminder(db, prefs, `Через ${mins} минут: ${item.title}`);
+    } else if (r.kind === "followup" && item.status !== "done") {
+      const text = `Как прошло: <b>${tgEsc(item.title)}</b>?`;
+      if (cid) {
+        await tgSend(cid, text, [
           [
             { text: "✅ Сделано", data: `done:${item.id}` },
             { text: "🕒 Перенести", data: `move:${item.id}` },
@@ -598,6 +596,7 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
           [{ text: "Оставить как есть", data: `keep:${item.id}` }],
         ]);
       }
+      await pushOutbox(db, { text, kind: "followup", item_id: item.id });
     }
     await db.from("calendar_reminders").update({ sent_at: now.toISOString() }).eq("id", r.id);
     sent += 1;
@@ -626,4 +625,29 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
   }
 
   return { reminders: sent, digests, pulled };
+}
+
+/**
+ * Зеркалирование действий из других каналов (Алиса) в Telegram-чат владельца,
+ * чтобы вся история ассистента оставалась в одном месте.
+ */
+export async function mirrorAssistantToTelegram(
+  db: Db,
+  result: AssistantResult,
+  utterance: string,
+): Promise<void> {
+  const cid = await chatId(db);
+  if (!cid) return;
+  const prefs = await getPrefs(db);
+  const dirs = await getDirections(db);
+  const head = `🗣 <b>Алиса</b>: «${tgEsc(utterance)}»`;
+  if (result.items.length && (result.intent === "create" || result.intent === "done")) {
+    await tgSend(cid, head);
+    for (const item of result.items.slice(0, 5)) {
+      await tgSend(cid, line(item, dirs, prefs.tz), itemButtons(item));
+    }
+  } else {
+    await tgSend(cid, `${head}\n${tgEsc(result.text)}`);
+  }
+  await pushOutbox(db, { text: `Алиса: ${result.text}`, kind: "alice", channel: "alice" });
 }

@@ -58,6 +58,14 @@ export interface AssistantPrefs {
   /** Разрешённые Telegram-чаты бота-планера (пусто — привяжется первый, кто напишет /start). */
   tg_allowed_chat_ids: number[];
   tg_bot_username: string | null;
+  /** Привязанные аккаунты Яндекса, которым разрешён голосовой навык. */
+  alice_user_ids: string[];
+  alice_skill_id: string | null;
+  /** Одноразовый код привязки, который нужно продиктовать Алисе. */
+  alice_link_code: string | null;
+  alice_push_enabled: boolean;
+  /** Дублировать действия из Алисы карточками в Telegram. */
+  alice_mirror_tg: boolean;
 }
 
 export const KIND_LABEL: Record<CalKind, string> = { task: "Задача", meeting: "Встреча" };

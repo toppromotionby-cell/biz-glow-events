@@ -21,6 +21,8 @@ import {
   listPlannerData,
   plannerAnalytics,
   plannerBotRegisterWebhook,
+  alicePrefs,
+  saveAlicePrefs,
   plannerBotStatus,
   plannerBotTest,
   reschedulePlannerItem,
@@ -382,6 +384,7 @@ function PlannerPage() {
         <TabsContent value="settings" className="mt-4">
           <div className="space-y-4">
             <BotCard />
+            <AliceCard />
             <PrefsCard prefs={data?.prefs} onSave={(p) => prefsFn({ data: p }).then(() => { toast.success("Настройки сохранены"); invalidate(); })} />
           </div>
         </TabsContent>
@@ -729,6 +732,110 @@ function BotCard() {
             Проверить связь
           </Button>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Голосовой навык Алисы: привязка аккаунта, зеркало в Telegram, push-напоминания. */
+function AliceCard() {
+  const loadFn = useServerFn(alicePrefs);
+  const saveFn = useServerFn(saveAlicePrefs);
+  const { data, refetch, isFetching } = useQuery({
+    queryKey: ["planner", "alice"],
+    queryFn: () => loadFn({}),
+  });
+  const [skillId, setSkillId] = useState("");
+  useEffect(() => {
+    if (data) setSkillId(data.skillId ?? "");
+  }, [data]);
+
+  const save = (patch: Record<string, unknown>) =>
+    saveFn({ data: patch })
+      .then(() => {
+        void refetch();
+        toast.success("Сохранено");
+      })
+      .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Не удалось"));
+
+  const webhookUrl = typeof window === "undefined" ? "" : `${window.location.origin}${data?.webhookPath ?? ""}`;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Голосовой помощник (Алиса)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {!data ? (
+          <p className="text-muted-foreground">Загрузка…</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={data.linkedCount > 0 ? "default" : "secondary"}>
+                {data.linkedCount > 0 ? `Привязано аккаунтов: ${data.linkedCount}` : "Аккаунт не привязан"}
+              </Badge>
+              {data.linkCode ? <Badge variant="outline">Код привязки: {data.linkCode}</Badge> : null}
+            </div>
+            <p className="text-muted-foreground">
+              В «Диалогах Яндекса» создайте приватный навык типа Webhook и укажите адрес:
+            </p>
+            <code className="block break-all rounded bg-muted px-2 py-1">{webhookUrl}</code>
+            <p className="text-muted-foreground">
+              Затем скажите Алисе код привязки — после этого можно диктовать задачи и спрашивать «что сегодня», «что нового».
+            </p>
+
+            <div className="space-y-2">
+              <Label htmlFor="alice-skill">ID навыка (необязательно, ограничивает доступ)</Label>
+              <Input
+                id="alice-skill"
+                value={skillId}
+                onChange={(e) => setSkillId(e.target.value)}
+                placeholder="например, 8f0c…"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-medium">Дублировать в Telegram</p>
+                <p className="text-muted-foreground">Всё сказанное Алисе появится карточкой в чате планера.</p>
+              </div>
+              <Switch checked={data.mirrorTg} onCheckedChange={(v) => void save({ mirrorTg: v })} />
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-medium">Push-напоминания через Алису</p>
+                <p className="text-muted-foreground">
+                  {data.pushConfigured
+                    ? "Работает только для опубликованного навыка с разрешением на уведомления."
+                    : "Нужен OAuth-токен Яндекс.Диалогов — пока недоступно."}
+                </p>
+              </div>
+              <Switch
+                checked={data.pushEnabled}
+                disabled={!data.pushConfigured}
+                onCheckedChange={(v) => void save({ pushEnabled: v })}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+                <RefreshCw className="mr-2 size-4" /> Обновить
+              </Button>
+              <Button size="sm" onClick={() => void save({ generateCode: true })}>
+                Новый код привязки
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => void save({ skillId })}>
+                Сохранить ID навыка
+              </Button>
+              {data.linkedCount > 0 ? (
+                <Button size="sm" variant="ghost" onClick={() => void save({ unlinkAll: true })}>
+                  Отвязать аккаунты
+                </Button>
+              ) : null}
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
