@@ -162,7 +162,7 @@ export const savePlannerPrefs = createServerFn({ method: "POST" })
       patch.last_device_tz = device_tz;
       if (!rest.tz) patch.tz = device_tz;
     }
-    if (Object.keys(patch).length) await db.from("assistant_prefs").update(patch).eq("id", 1);
+    if (Object.keys(patch).length) await db.from("assistant_prefs").update(patch as never).eq("id", 1);
     return getPrefs(db);
   });
 
