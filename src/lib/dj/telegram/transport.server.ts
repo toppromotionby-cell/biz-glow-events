@@ -1,6 +1,7 @@
-import { sanitizeTgHtml } from "@/lib/calendar/tg-format";
 // Транспорт DJ-бота к Telegram Bot API через connector-gateway (только сервер).
 // У DJ-раздела собственный бот: ключ подключения отдельный от бота сайта и планера.
+import { sanitizeTgHtml } from "@/lib/calendar/tg-format";
+
 const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
 
 export interface TgButton {
