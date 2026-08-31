@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCopilot } from "@/components/copilot/copilot-context";
+import { TeachPanel } from "@/components/copilot/TeachPanel";
 import { copilotJournal, copilotSaveSettings } from "@/lib/copilot/copilot.functions";
 import { MODULE_LABEL, type CopilotModule, type CopilotSettings } from "@/lib/copilot/types";
 
@@ -77,6 +78,7 @@ function Page() {
       <Tabs defaultValue="runs">
         <TabsList>
           <TabsTrigger value="runs">Планы</TabsTrigger>
+          <TabsTrigger value="teach">Обучение</TabsTrigger>
           <TabsTrigger value="audit">Аудит изменений</TabsTrigger>
           <TabsTrigger value="settings">Настройки</TabsTrigger>
         </TabsList>
@@ -106,6 +108,10 @@ function Page() {
               </Card>
             );
           })}
+        </TabsContent>
+
+        <TabsContent value="teach" className="mt-4">
+          <TeachPanel />
         </TabsContent>
 
         <TabsContent value="audit" className="mt-4">
