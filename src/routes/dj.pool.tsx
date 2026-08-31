@@ -1,6 +1,7 @@
 // Закрытая библиотека треков DJ-клуба.
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
+import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, LayoutGrid, Rows3 } from "lucide-react";
 import { MemberGate, useDjAccess } from "@/components/dj/MemberGate";
@@ -12,8 +13,24 @@ import { Button } from "@/components/ui/button";
 import { djListTracks } from "@/lib/dj/dj.functions";
 import type { DjTrackFilters } from "@/lib/dj/types";
 
+/** URL — единственный источник правды для фильтров: ссылками можно делиться. */
+const poolSearchSchema = z.object({
+  section: z.string().optional(),
+  category: z.string().optional(),
+  format: z.string().optional(),
+  q: z.string().optional(),
+  genre: z.string().optional(),
+  version: z.string().optional(),
+  key: z.string().optional(),
+  remix: z.enum(["only", "exclude"]).optional(),
+  sort: z.enum(["new", "popular", "rating", "bpm", "az"]).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+});
+export type DjPoolSearch = z.infer<typeof poolSearchSchema>;
+
 export const Route = createFileRoute("/dj/pool")({
   ssr: false,
+  validateSearch: poolSearchSchema,
   head: () => ({
     meta: [
       { title: "Библиотека треков — DJ Hub event-hub.by" },
@@ -28,7 +45,44 @@ export const Route = createFileRoute("/dj/pool")({
 
 function PoolPage() {
   const { data: access } = useDjAccess();
-  const [filters, setFilters] = useState<DjTrackFilters>({ sort: "new", page: 1, pageSize: 24 });
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/dj/pool" });
+
+  const filters: DjTrackFilters = {
+    section: search.section as DjTrackFilters["section"],
+    categoryId: search.category,
+    formatSlug: search.format,
+    q: search.q,
+    genres: search.genre ? search.genre.split(",").filter(Boolean) : undefined,
+    version: search.version,
+    key: search.key,
+    remix: search.remix,
+    sort: search.sort ?? "new",
+    page: search.page ?? 1,
+    pageSize: 24,
+  };
+
+  // Двусторонняя синхронизация: любое изменение фильтра пишется в URL.
+  const setFilters = useCallback(
+    (next: DjTrackFilters) => {
+      void navigate({
+        search: {
+          section: next.section || undefined,
+          category: next.categoryId || undefined,
+          format: next.formatSlug || undefined,
+          q: next.q || undefined,
+          genre: next.genres?.length ? next.genres.join(",") : undefined,
+          version: next.version || undefined,
+          key: next.key || undefined,
+          remix: next.remix,
+          sort: next.sort && next.sort !== "new" ? next.sort : undefined,
+          page: next.page && next.page > 1 ? next.page : undefined,
+        } satisfies DjPoolSearch,
+        replace: true,
+      });
+    },
+    [navigate],
+  );
   const [view, setView] = useState<"grid" | "list">("grid");
   const key = ["dj", "tracks", filters] as unknown[];
 
