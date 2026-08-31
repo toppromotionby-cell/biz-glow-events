@@ -32,7 +32,7 @@ export type TrackInput = {
   cover_palette?: string | null;
   cover_spec_version?: number | null;
   /** Определение версии: оригинал или чей-то ремикс. */
-  is_remix?: boolean | null;
+  is_remix?: boolean;
   remixer?: string | null;
   original_track_id?: string | null;
   version_source?: string | null;
