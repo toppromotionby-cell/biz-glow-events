@@ -7,17 +7,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GoogleButton } from "@/components/auth/GoogleButton";
-import { AppleButton } from "@/components/auth/AppleButton";
 import { toast } from "sonner";
 import { authErrorMessage } from "@/lib/auth-errors";
+import { safeRedirect } from "@/lib/auth-redirect";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   // ?redirect=/path — куда вернуть пользователя после входа (только внутренние пути).
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
-    const r = typeof search.redirect === "string" ? search.redirect : "";
-    return r.startsWith("/") && !r.startsWith("//") ? { redirect: r } : {};
+    const r = safeRedirect(search.redirect);
+    return r ? { redirect: r } : {};
   },
   head: () => ({
     meta: [
