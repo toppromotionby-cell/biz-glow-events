@@ -1,7 +1,7 @@
 // Админка DJ Хаба: сводка и очередь модерации.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, X, Disc3, Users, Download, MessageSquare } from "lucide-react";
+import { Check, Loader2, X, Disc3, Users, Download } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +40,6 @@ function Page() {
         <StatCard icon={Users} label="Участники" value={sum(s?.members)} hint={`на модерации: ${s?.members?.["pending"] ?? 0}`} />
         <StatCard icon={Disc3} label="Треки" value={sum(s?.tracks)} hint={`ждут проверки: ${s?.tracks?.["pending"] ?? 0}`} />
         <StatCard icon={Download} label="Скачиваний за 7 дней" value={s?.downloads7d ?? 0} />
-        <StatCard icon={MessageSquare} label="Комментарии" value={s?.comments ?? 0} />
       </div>
 
       <section className="glass rounded-2xl p-5">

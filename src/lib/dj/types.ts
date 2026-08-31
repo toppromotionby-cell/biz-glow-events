@@ -84,14 +84,6 @@ export const PLATFORMS = [
   { value: "android", label: "Android" },
 ] as const;
 
-export const THREAD_CATEGORIES = [
-  { value: "general", label: "Общее" },
-  { value: "request", label: "Ищу трек" },
-  { value: "gear", label: "Оборудование и софт" },
-  { value: "gigs", label: "Площадки и заказы" },
-  { value: "feedback", label: "Идеи и баги" },
-] as const;
-
 export type DjTrack = {
   id: string;
   artist: string;
