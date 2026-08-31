@@ -1,7 +1,7 @@
 // Единая матрица прав админки. Используется и на клиенте (меню, гейты страниц),
 // и на сервере (assertPermission) — файл не должен импортировать серверный код.
 
-export type AppRole = "admin" | "manager" | "accountant" | "content_editor" | "client";
+export type AppRole = "admin" | "manager" | "accountant" | "content_editor" | "dj_admin" | "client";
 
 export type Permission =
   | "orders.manage"        // раздел заказов/CRM
@@ -18,13 +18,14 @@ export type Permission =
   | "users.manage"         // пользователи и роли
   | "audit.view";          // журнал аудита
 
-export const STAFF_ROLES: AppRole[] = ["admin", "manager", "accountant", "content_editor"];
+export const STAFF_ROLES: AppRole[] = ["admin", "manager", "accountant", "content_editor", "dj_admin"];
 
 export const ROLE_LABEL: Record<string, string> = {
   admin: "Администратор",
   manager: "Менеджер",
   accountant: "Бухгалтер",
   content_editor: "Контент-редактор",
+  dj_admin: "Администратор DJ-раздела",
   client: "Клиент",
 };
 
@@ -33,6 +34,7 @@ export const ROLE_DESCRIPTION: Record<string, string> = {
   manager: "Продажи: заказы и заявки, КП, счета, рассылки и промокоды. Без себестоимости/маржи, пользователей и системных настроек.",
   accountant: "Финансы: все документы, счета, договоры, акты, оплаты и реквизиты. Без каталога и системных настроек.",
   content_editor: "Наполнение сайта: каталог, разделы, кейсы, отзывы, блог. Без заказов, документов и настроек.",
+  dj_admin: "Только закрытый DJ-раздел: участники, библиотека треков, софт, модерация и обсуждения. Других разделов админки не видит.",
   client: "Обычный пользователь сайта, доступа к админке нет.",
 };
 
@@ -40,7 +42,7 @@ const MATRIX: Record<AppRole, Permission[]> = {
   admin: [
     "orders.manage", "orders.view_all", "orders.payments",
     "documents.manage", "documents.finance", "documents.settings", "documents.knowledge", "documents.cost_margin",
-    "content.manage", "marketing.manage", "system.manage", "users.manage", "audit.view",
+    "content.manage", "marketing.manage", "system.manage", "users.manage", "audit.view", "dj.manage",
   ],
   manager: [
     "orders.manage", "orders.view_all", "orders.payments",
@@ -53,6 +55,7 @@ const MATRIX: Record<AppRole, Permission[]> = {
     "documents.manage", "documents.finance", "documents.settings", "documents.knowledge", "documents.cost_margin",
   ],
   content_editor: ["content.manage"],
+  dj_admin: ["dj.manage"],
   client: [],
 };
 
@@ -75,6 +78,7 @@ export function isStaffRoles(roles: readonly string[]): boolean {
 
 /** Правила доступа к маршрутам админки: первый совпавший префикс определяет право. */
 export const ROUTE_PERMISSIONS: { match: RegExp; perm: Permission }[] = [
+  { match: /^\/admin\/dj/, perm: "dj.manage" },
   { match: /^\/admin\/users/, perm: "users.manage" },
   { match: /^\/admin\/audit/, perm: "audit.view" },
   { match: /^\/admin\/sections/, perm: "system.manage" },
@@ -104,5 +108,6 @@ export function firstAllowedAdminPath(perms: Set<Permission>): string {
   if (perms.has("content.manage")) return "/admin/catalog-structure";
   if (perms.has("marketing.manage")) return "/admin/campaigns";
   if (perms.has("users.manage")) return "/admin/users";
+  if (perms.has("dj.manage")) return "/admin/dj";
   return "/profile";
 }
