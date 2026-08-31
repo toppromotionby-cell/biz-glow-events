@@ -1346,3 +1346,228 @@ a[href],
   .dj-aurora { animation: none; }
   .dj-eq > i { animation: none; }
 }
+
+/* =====================================================================
+   «Ember Board» — единый дизайн-мод сайта и админки
+   Токены пространства, оболочки страниц, авто-сетки, карточки, таблицы.
+   Всё построено на clamp() и container queries: блоки реагируют на ширину
+   своего контейнера, а не только окна.
+===================================================================== */
+:root {
+  /* Fluid-шкала отступов: 360px → 1600px */
+  --space-1: clamp(0.25rem, 0.22rem + 0.12vw, 0.375rem);
+  --space-2: clamp(0.5rem, 0.44rem + 0.25vw, 0.75rem);
+  --space-3: clamp(0.75rem, 0.65rem + 0.4vw, 1.125rem);
+  --space-4: clamp(1rem, 0.85rem + 0.6vw, 1.5rem);
+  --space-5: clamp(1.25rem, 1rem + 1vw, 2rem);
+  --space-6: clamp(1.5rem, 1.15rem + 1.4vw, 2.5rem);
+  --space-8: clamp(2rem, 1.5rem + 2vw, 3.5rem);
+  --space-10: clamp(2.5rem, 1.8rem + 3vw, 5rem);
+  --space-12: clamp(3rem, 2rem + 4.5vw, 7rem);
+
+  --container-pad: clamp(1rem, 0.5rem + 2.2vw, 2.5rem);
+  --container-max: 88rem;
+  --section-y: var(--space-10);
+
+  /* Размеры карточек в авто-сетках — можно переопределить локально */
+  --card-min: 17rem;
+  --tile-min: 14rem;
+  --field-min: 15rem;
+}
+
+/* ── Оболочка страницы: центровка + текучие поля ─────────────────────── */
+@utility page-shell {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+  min-width: 0;
+}
+
+@utility page-shell-wide {
+  width: 100%;
+  max-width: 110rem;
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+  min-width: 0;
+}
+
+/* Единый вертикальный ритм секций */
+@utility section-y {
+  padding-block: var(--section-y);
+}
+@utility section-y-sm {
+  padding-block: var(--space-6);
+}
+
+/* Вертикальные наборы с одинаковыми интервалами */
+@utility stack-sm { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+@utility stack-md { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+@utility stack-lg { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
+
+/* ── Шапка страницы/панели: заголовок слева, действия справа ─────────── */
+@utility page-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.page-head > * { min-width: 0; }
+@container (max-width: 34rem) {
+  .page-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Авто-сетки: колонки решаются шириной контейнера ─────────────────── */
+@utility grid-auto {
+  display: grid;
+  align-items: stretch;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min)), 1fr));
+  min-width: 0;
+}
+
+/* Поля форм: 1/2/3 колонки по ширине контейнера, а не окна */
+@utility grid-fields {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--field-min)), 1fr));
+  min-width: 0;
+}
+.grid-fields > * { min-width: 0; }
+
+/* Метрики/статистика — плотные ячейки, не разъезжаются на мобильных */
+@utility grid-stats {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  min-width: 0;
+}
+
+/* ── Карточки ────────────────────────────────────────────────────────── */
+@utility card-surface {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  min-width: 0;
+  container-type: inline-size;
+}
+
+@utility card-interactive {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.card-interactive:hover {
+  border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+  box-shadow: 0 10px 40px -20px color-mix(in oklch, var(--primary) 60%, transparent);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .card-interactive:hover { transform: translateY(-2px); }
+}
+
+@utility card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.card-media > :where(img, video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@utility card-media-portrait {
+  aspect-ratio: 4 / 5;
+}
+
+/* ── Иконки и тулбары ────────────────────────────────────────────────── */
+@utility icon-box {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: clamp(2rem, 1.7rem + 1vw, 2.75rem);
+  height: clamp(2rem, 1.7rem + 1vw, 2.75rem);
+  border-radius: var(--radius-md);
+}
+.icon-box > svg { width: 55%; height: 55%; }
+
+@utility toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.toolbar-row > * { min-width: 0; }
+
+/* Текстовые блоки в строках с иконками/кнопками не должны распирать макет */
+@utility text-min {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ── Таблицы ─────────────────────────────────────────────────────────── */
+@utility table-shell {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  container-type: inline-size;
+  -webkit-overflow-scrolling: touch;
+}
+.table-shell table { width: 100%; }
+.table-shell thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-2);
+}
+.table-shell :where(td, th).num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Второстепенные колонки прячутся первыми, ключевые остаются всегда. */
+@container (max-width: 60rem) {
+  .table-shell :where(td, th).col-low { display: none; }
+}
+@container (max-width: 44rem) {
+  .table-shell :where(td, th).col-mid { display: none; }
+}
+
+/* Карточный режим таблицы на узких контейнерах: строка → карточка,
+   подписи берутся из data-label. Включается классом table-cards. */
+@container (max-width: 34rem) {
+  .table-cards table,
+  .table-cards thead,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards td { display: block; width: 100%; }
+  .table-cards thead { display: none; }
+  .table-cards tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+    background: var(--card);
+  }
+  .table-cards td {
+    display: grid;
+    grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+    gap: var(--space-2);
+    border: 0;
+    padding: 0.35rem 0;
+  }
+  .table-cards td::before {
+    content: attr(data-label);
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+  }
+  .table-cards td:not([data-label]) { grid-template-columns: minmax(0, 1fr); }
+  .table-cards td:not([data-label])::before { content: none; }
+  .table-cards :where(td).num { text-align: left; }
+}
