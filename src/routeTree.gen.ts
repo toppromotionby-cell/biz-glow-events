@@ -102,6 +102,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicPlannerTickRouteImport } from './routes/api/public/planner/tick'
 import { Route as ApiPublicPlannerTelegramRouteImport } from './routes/api/public/planner/telegram'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
 import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
@@ -592,6 +593,11 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPlannerTickRoute = ApiPublicPlannerTickRouteImport.update({
+  id: '/api/public/planner/tick',
+  path: '/api/public/planner/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPlannerTelegramRoute =
   ApiPublicPlannerTelegramRouteImport.update({
     id: '/api/public/planner/telegram',
@@ -784,6 +790,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/telegram': typeof ApiPublicPlannerTelegramRoute
+  '/api/public/planner/tick': typeof ApiPublicPlannerTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -893,6 +900,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/telegram': typeof ApiPublicPlannerTelegramRoute
+  '/api/public/planner/tick': typeof ApiPublicPlannerTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1006,6 +1014,7 @@ export interface FileRoutesById {
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/telegram': typeof ApiPublicPlannerTelegramRoute
+  '/api/public/planner/tick': typeof ApiPublicPlannerTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1120,6 +1129,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/telegram'
+    | '/api/public/planner/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1229,6 +1239,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/telegram'
+    | '/api/public/planner/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1341,6 +1352,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/telegram'
+    | '/api/public/planner/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1410,6 +1422,7 @@ export interface RootRouteChildren {
   ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
   ApiPublicPlannerTelegramRoute: typeof ApiPublicPlannerTelegramRoute
+  ApiPublicPlannerTickRoute: typeof ApiPublicPlannerTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -2070,6 +2083,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/planner/tick': {
+      id: '/api/public/planner/tick'
+      path: '/api/public/planner/tick'
+      fullPath: '/api/public/planner/tick'
+      preLoaderRoute: typeof ApiPublicPlannerTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/planner/telegram': {
       id: '/api/public/planner/telegram'
       path: '/api/public/planner/telegram'
@@ -2476,6 +2496,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
   ApiPublicPlannerTelegramRoute: ApiPublicPlannerTelegramRoute,
+  ApiPublicPlannerTickRoute: ApiPublicPlannerTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
