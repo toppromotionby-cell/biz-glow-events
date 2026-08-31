@@ -76,9 +76,15 @@ export async function setMemberStatus(
   status: DjMemberStatus,
   adminNote?: string,
 ): Promise<void> {
-  const patch: Record<string, unknown> = { status, admin_note: adminNote ?? null };
-  if (status === "approved" || status === "trusted") patch.approved_at = new Date().toISOString();
-  const { error } = await supabaseAdmin.from("dj_members").update(patch).eq("id", id);
+  const approved = status === "approved" || status === "trusted";
+  const { error } = await supabaseAdmin
+    .from("dj_members")
+    .update({
+      status,
+      admin_note: adminNote ?? null,
+      ...(approved ? { approved_at: new Date().toISOString() } : {}),
+    })
+    .eq("id", id);
   if (error) throw new Error(error.message);
   void access;
 }
