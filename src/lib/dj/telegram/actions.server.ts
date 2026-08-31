@@ -171,7 +171,7 @@ export async function packByName(who: BotIdentity, name: string) {
   const db = await admin();
   const { data: pack } = await db
     .from("dj_packs")
-    .select("id, title, description")
+    .select("id, title, track_count, size_bytes, status")
     .ilike("title", `%${name.trim()}%`)
     .limit(1)
     .maybeSingle();
