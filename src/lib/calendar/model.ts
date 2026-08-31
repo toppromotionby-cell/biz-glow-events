@@ -74,6 +74,12 @@ export interface AssistantPrefs {
   voice_reply: boolean;
   /** Использовать AI-мозг с инструментами вместо простых команд. */
   brain_enabled: boolean;
+  /** Присылать в Telegram картинки (таймлайны, таблицы, графики). */
+  visuals_enabled: boolean;
+  /** Режим ответа: картинка с подписью или только текст. */
+  visual_mode: "image" | "text";
+  /** Показывать визуал в утреннем/вечернем дайджесте и обзоре недели. */
+  digest_visual: boolean;
 }
 
 export const KIND_LABEL: Record<CalKind, string> = { task: "Задача", meeting: "Встреча" };

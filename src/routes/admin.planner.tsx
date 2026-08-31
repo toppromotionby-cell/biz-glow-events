@@ -42,6 +42,7 @@ import {
   type CalKind,
 } from "@/lib/calendar/model";
 import { CalendarClock, Check, ListPlus, RefreshCw, Trash2 } from "lucide-react";
+import { PlannerCalendar } from "@/components/admin/planner/PlannerCalendar";
 
 export const Route = createFileRoute("/admin/planner")({
   head: () => ({
@@ -332,8 +333,9 @@ function PlannerPage() {
         ))}
       </div>
 
-      <Tabs defaultValue="today">
+      <Tabs defaultValue="calendar">
         <TabsList>
+          <TabsTrigger value="calendar">Календарь</TabsTrigger>
           <TabsTrigger value="today">Сегодня ({today.length})</TabsTrigger>
           <TabsTrigger value="overdue">Просрочено ({overdue.length})</TabsTrigger>
           <TabsTrigger value="upcoming">Дальше ({upcoming.length})</TabsTrigger>
@@ -342,6 +344,41 @@ function PlannerPage() {
           <TabsTrigger value="inbox">Входящие ({data?.inbox.length ?? 0})</TabsTrigger>
           <TabsTrigger value="settings">Настройки</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="calendar" className="mt-4">
+          <PlannerCalendar
+            directions={directions}
+            onEdit={(item) =>
+              setDraft({
+                id: item.id,
+                kind: item.kind,
+                title: item.title,
+                notes: item.notes ?? "",
+                direction_id: item.direction_id,
+                starts_at: toLocalInput(item.starts_at),
+                ends_at: toLocalInput(item.ends_at),
+                due_at: toLocalInput(item.due_at),
+                importance: item.importance,
+                location: item.location ?? "",
+              })
+            }
+            onCreate={(startIso, endIso) =>
+              setDraft({ ...emptyDraft, starts_at: toLocalInput(startIso), ends_at: endIso ? toLocalInput(endIso) : "" })
+            }
+            onMove={(item, whenIso) =>
+              moveFn({ data: { id: item.id, starts_at: whenIso } })
+                .then(() => {
+                  toast.success("Перенесено");
+                  qc.invalidateQueries({ queryKey: ["planner-range"] });
+                  invalidate();
+                })
+                .catch((e: Error) => {
+                  toast.error(e.message);
+                  throw e;
+                })
+            }
+          />
+        </TabsContent>
 
         <TabsContent value="today" className="mt-4">
           {isLoading ? <p className="text-sm text-muted-foreground">Загрузка…</p> : <List list={today} empty="На сегодня записей нет." />}
@@ -591,7 +628,17 @@ function PrefsCard({
   prefs,
   onSave,
 }: {
-  prefs?: { morning_time: string; evening_time: string; followup_minutes: number; reminder_minutes: number[]; style_profile: string | null; tz: string };
+  prefs?: {
+    morning_time: string;
+    evening_time: string;
+    followup_minutes: number;
+    reminder_minutes: number[];
+    style_profile: string | null;
+    tz: string;
+    visuals_enabled: boolean;
+    visual_mode: "image" | "text";
+    digest_visual: boolean;
+  };
   onSave: (p: Record<string, unknown>) => void;
 }) {
   const [morning, setMorning] = useState(prefs?.morning_time ?? "08:00");
@@ -599,6 +646,9 @@ function PrefsCard({
   const [followup, setFollowup] = useState(String(prefs?.followup_minutes ?? 30));
   const [reminders, setReminders] = useState((prefs?.reminder_minutes ?? [60, 15]).join(", "));
   const [style, setStyle] = useState(prefs?.style_profile ?? "");
+  const [visuals, setVisuals] = useState(prefs?.visuals_enabled ?? true);
+  const [visualMode, setVisualMode] = useState<"image" | "text">(prefs?.visual_mode ?? "image");
+  const [digestVisual, setDigestVisual] = useState(prefs?.digest_visual ?? true);
 
   useEffect(() => {
     if (!prefs) return;
@@ -607,6 +657,9 @@ function PrefsCard({
     setFollowup(String(prefs.followup_minutes));
     setReminders(prefs.reminder_minutes.join(", "));
     setStyle(prefs.style_profile ?? "");
+    setVisuals(prefs.visuals_enabled);
+    setVisualMode(prefs.visual_mode);
+    setDigestVisual(prefs.digest_visual);
   }, [prefs]);
 
   return (
@@ -638,9 +691,39 @@ function PrefsCard({
           <Label>Мой стиль общения</Label>
           <Textarea rows={3} value={style} onChange={(e) => setStyle(e.target.value)} placeholder="Коротко, по делу, на «ты»" />
         </div>
+        <div className="space-y-3 rounded-lg border p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label>Визуальные ответы в Telegram</Label>
+              <p className="text-xs text-muted-foreground">Таймлайны дня, графики загрузки и таблицы вместо «сухого» текста.</p>
+            </div>
+            <Switch checked={visuals} onCheckedChange={setVisuals} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Формат</Label>
+              <Select value={visualMode} onValueChange={(v) => setVisualMode(v as "image" | "text")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="image">Картинки (графики)</SelectItem>
+                  <SelectItem value="text">Таблицы текстом</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between gap-3 pt-6">
+              <Label>Визуал в дайджестах</Label>
+              <Switch checked={digestVisual} onCheckedChange={setDigestVisual} />
+            </div>
+          </div>
+        </div>
         <Button
           onClick={() =>
             onSave({
+              visuals_enabled: visuals,
+              visual_mode: visualMode,
+              digest_visual: digestVisual,
               morning_time: morning,
               evening_time: evening,
               followup_minutes: Number(followup) || 30,

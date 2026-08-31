@@ -133,6 +133,7 @@ export type Database = {
           alice_user_ids: string[]
           brain_enabled: boolean
           created_at: string
+          digest_visual: boolean
           evening_time: string
           followup_minutes: number
           hard_reminder_minutes: number[]
@@ -150,6 +151,8 @@ export type Database = {
           tone: string
           tz: string
           updated_at: string
+          visual_mode: string
+          visuals_enabled: boolean
           voice_reply: boolean
         }
         Insert: {
@@ -160,6 +163,7 @@ export type Database = {
           alice_user_ids?: string[]
           brain_enabled?: boolean
           created_at?: string
+          digest_visual?: boolean
           evening_time?: string
           followup_minutes?: number
           hard_reminder_minutes?: number[]
@@ -177,6 +181,8 @@ export type Database = {
           tone?: string
           tz?: string
           updated_at?: string
+          visual_mode?: string
+          visuals_enabled?: boolean
           voice_reply?: boolean
         }
         Update: {
@@ -187,6 +193,7 @@ export type Database = {
           alice_user_ids?: string[]
           brain_enabled?: boolean
           created_at?: string
+          digest_visual?: boolean
           evening_time?: string
           followup_minutes?: number
           hard_reminder_minutes?: number[]
@@ -204,6 +211,8 @@ export type Database = {
           tone?: string
           tz?: string
           updated_at?: string
+          visual_mode?: string
+          visuals_enabled?: boolean
           voice_reply?: boolean
         }
         Relationships: []

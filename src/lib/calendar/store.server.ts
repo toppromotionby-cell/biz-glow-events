@@ -43,6 +43,9 @@ export async function getPrefs(db: Admin): Promise<AssistantPrefs> {
     tone: ((row.tone as string) ?? "friendly") as AssistantPrefs["tone"],
     voice_reply: Boolean(row.voice_reply),
     brain_enabled: row.brain_enabled == null ? true : Boolean(row.brain_enabled),
+    visuals_enabled: row.visuals_enabled == null ? true : Boolean(row.visuals_enabled),
+    visual_mode: row.visual_mode === "text" ? "text" : "image",
+    digest_visual: row.digest_visual == null ? true : Boolean(row.digest_visual),
   };
 }
 

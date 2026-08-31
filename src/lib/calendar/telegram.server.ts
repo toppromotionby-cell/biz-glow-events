@@ -133,3 +133,19 @@ export async function tgDownloadFile(fileId: string): Promise<{ base64: string; 
   const mime = path.endsWith(".mp3") ? "audio/mpeg" : path.endsWith(".m4a") ? "audio/mp4" : "audio/ogg";
   return { base64: buf.toString("base64"), mime };
 }
+
+/** Отправка картинки по URL (Telegram скачивает файл сам) с подписью в HTML. */
+export async function tgSendPhoto(
+  chatId: number | string,
+  photoUrl: string,
+  caption?: string,
+  buttons?: TgButton[][],
+): Promise<{ message_id: number } | null> {
+  return call<{ message_id: number }>("sendPhoto", {
+    chat_id: chatId,
+    photo: photoUrl,
+    caption: caption ? caption.slice(0, 1000) : undefined,
+    parse_mode: "HTML",
+    reply_markup: keyboard(buttons),
+  });
+}
