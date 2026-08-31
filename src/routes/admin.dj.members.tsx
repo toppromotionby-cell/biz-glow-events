@@ -141,7 +141,9 @@ function Page() {
               )}
             </DialogContent>
           </Dialog>
+          </div>
         }
+
       />
 
       <div className="glass rounded-2xl p-4 sm:max-w-xs">
