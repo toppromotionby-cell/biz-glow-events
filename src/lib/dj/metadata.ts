@@ -30,22 +30,6 @@ export type ParsedTrack = {
   sourceFilename: string;
 };
 
-const VERSION_PATTERNS: [RegExp, TrackVersion][] = [
-  [/extended|ext\.? ?mix|long ?version/i, "extended"],
-  [/radio ?(edit|mix|version)/i, "radio"],
-  [/\bclean\b/i, "clean"],
-  [/\bdirty\b|explicit/i, "dirty"],
-  [/\bintro\b|starter/i, "intro"],
-  [/\boutro\b|ending/i, "outro"],
-  [/acapella|a ?capella|vocal only/i, "acapella"],
-  [/instrumental|\binstr\b|minus/i, "instrumental"],
-  [/mash ?up/i, "mashup"],
-  [/transition|trans\b/i, "transition"],
-  [/quick ?hit|short ?edit/i, "quick_hit"],
-  [/segue/i, "segue"],
-  [/remix|rmx|\bmix\b|bootleg|rework|edit\b/i, "remix"],
-];
-
 const CAMELOT_RE = /\b(1[0-2]|[1-9])\s?([ABab])\b/;
 const MUSICAL_TO_CAMELOT: Record<string, string> = {
   "Abm": "1A", "G#m": "1A", "Ebm": "2A", "D#m": "2A", "Bbm": "3A", "A#m": "3A",
