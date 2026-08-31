@@ -18,6 +18,9 @@ import {
   searchItems,
   setStatus,
 } from "@/lib/calendar/store.server";
+import { dayRange, parseDayToken } from "@/lib/calendar/when";
+import { pushOutbox } from "@/lib/calendar/outbox.server";
+import type { AssistantResult } from "@/lib/calendar/assistant.server";
 
 type Db = Awaited<ReturnType<typeof admin>>;
 
@@ -44,30 +47,6 @@ function itemButtons(item: CalItem) {
 }
 
 // ——— Чтение календаря из Telegram (команды и вопросы) ———
-
-/** Начало суток по локальной таймзоне, смещённое на offsetDays. */
-function dayRange(base: Date, tz: string, offsetDays = 0): { from: Date; to: Date } {
-  const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(base);
-  const start = new Date(`${ymd}T00:00:00Z`);
-  const local = new Date(start.getTime());
-  // Смещение таймзоны в минутах для этой даты.
-  const off = (new Date(base.toLocaleString("en-US", { timeZone: tz })).getTime() - new Date(base.toLocaleString("en-US", { timeZone: "UTC" })).getTime()) / 60000;
-  const from = new Date(local.getTime() - off * 60000 + offsetDays * 86_400_000);
-  return { from, to: new Date(from.getTime() + 86_400_000) };
-}
-
-function parseDayToken(token: string, tz: string): Date | null {
-  const t = token.trim().toLowerCase();
-  const now = new Date();
-  if (t === "сегодня") return dayRange(now, tz, 0).from;
-  if (t === "завтра") return dayRange(now, tz, 1).from;
-  if (t === "послезавтра") return dayRange(now, tz, 2).from;
-  const m = t.match(/^(\d{1,2})[.\-/](\d{1,2})(?:[.\-/](\d{2,4}))?$/);
-  if (!m) return null;
-  const year = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : new Date().getFullYear();
-  const base = new Date(Date.UTC(year, Number(m[2]) - 1, Number(m[1]), 12, 0, 0));
-  return dayRange(base, tz, 0).from;
-}
 
 /** Отправка списка записей с кнопками действий (двусторонняя работа прямо из чата). */
 async function sendList(
@@ -626,4 +605,29 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
   }
 
   return { reminders: sent, digests, pulled };
+}
+
+/**
+ * Зеркалирование действий из других каналов (Алиса) в Telegram-чат владельца,
+ * чтобы вся история ассистента оставалась в одном месте.
+ */
+export async function mirrorAssistantToTelegram(
+  db: Db,
+  result: AssistantResult,
+  utterance: string,
+): Promise<void> {
+  const cid = await chatId(db);
+  if (!cid) return;
+  const prefs = await getPrefs(db);
+  const dirs = await getDirections(db);
+  const head = `🗣 <b>Алиса</b>: «${tgEsc(utterance)}»`;
+  if (result.items.length && (result.intent === "create" || result.intent === "done")) {
+    await tgSend(cid, head);
+    for (const item of result.items.slice(0, 5)) {
+      await tgSend(cid, line(item, dirs, prefs.tz), itemButtons(item));
+    }
+  } else {
+    await tgSend(cid, `${head}\n${tgEsc(result.text)}`);
+  }
+  await pushOutbox(db, { text: `Алиса: ${result.text}`, kind: "alice", channel: "alice" });
 }
