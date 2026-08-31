@@ -64,15 +64,20 @@ export async function handleTelegramText(
         "",
         "Команды:",
         "/today — план на сегодня",
-        "/week — план на неделю",
+        "/tomorrow — план на завтра",
+        "/week — ближайшие 7 дней",
+        "/day 5.09 — план на конкретный день",
+        "/overdue — просроченное",
+        "/next — ближайшие 5 дел",
+        "/find текст — поиск по записям",
         "/open — незакрытые хвосты",
+        "",
+        "Можно и просто спросить: «что у меня завтра?», «когда встреча с подрядчиком?»",
       ].join("\n"),
     );
     return;
   }
-  if (cmd === "/today" || cmd === "сегодня") return void (await sendDailyDigest(db, "morning"));
-  if (cmd === "/week" || cmd === "неделя") return void (await sendWeek(db));
-  if (cmd === "/open") return void (await sendOpenTail(db));
+  if (await handleQuery(db, chatId, text, prefs.tz, dirs)) return;
 
   const { data: inbox } = await db
     .from("calendar_inbox")
