@@ -9,6 +9,7 @@ import { listMemory, memoryPrompt } from "@/lib/calendar/memory.server";
 import { esc } from "@/lib/calendar/render";
 import type { PlanDTO } from "@/lib/calendar/plan-dto";
 import { buildPersona, PLAN_MODE_RULES } from "@/lib/calendar/persona";
+import { cardButtons } from "@/lib/botkit/cards";
 import { portalsBlock } from "@/lib/calendar/ai-portals";
 import { researchBlock, wantsWeb, webSearch, type ResearchHit } from "@/lib/calendar/research.server";
 
@@ -272,14 +273,43 @@ export function renderPlan(plan: PlanRow): string {
   return parts.filter((p) => p !== "").join("\n");
 }
 
+/** Кнопки решения — общие для всех ботов портала (botkit). */
 export function planButtons(plan: PlanRow) {
-  return [
-    [
-      { text: "✅ Утвердить", data: `plan:ok:${plan.id}` },
-      { text: "✏️ Переделать", data: `plan:edit:${plan.id}` },
-    ],
-    [{ text: "🚫 Отменить", data: `plan:no:${plan.id}` }],
-  ];
+  return cardButtons(plan.id);
+}
+
+/** Сохраняет готовый план (например, собранный по скриншоту) в статусе pending. */
+export async function savePlan(
+  db: Db,
+  input: {
+    chatKey: string;
+    chatId?: number | null;
+    title: string;
+    summary?: string;
+    request?: string;
+    steps?: PlanStep[];
+    questions?: string[];
+  },
+): Promise<PlanRow> {
+  const steps = (input.steps ?? []).filter((s) => isToolName(s.tool) && PLAN_TOOLS.includes(s.tool)).slice(0, 15);
+  const { data, error } = await db
+    .from("assistant_plans")
+    .insert({
+      chat_key: input.chatKey,
+      status: "pending",
+      title: input.title.slice(0, 200),
+      summary: input.summary ?? "",
+      request: input.request ?? null,
+      steps: steps as never,
+      research: [] as never,
+      questions: (input.questions ?? []).slice(0, 3) as never,
+      tg_chat_id: input.chatId ?? null,
+      expires_at: new Date(Date.now() + 24 * 3_600_000).toISOString(),
+    })
+    .select("*")
+    .single();
+  if (error) throw new Error(error.message);
+  return rowToPlan(data as Record<string, unknown>);
 }
 
 // ——— Хранилище ———

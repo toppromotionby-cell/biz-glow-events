@@ -1,6 +1,7 @@
 // Единый источник правды о роли ассистента-планера.
 // Клиент-безопасный модуль: без сети и серверных зависимостей.
 import type { AssistantPrefs, CalDirection } from "@/lib/calendar/model";
+import { commonRules } from "@/lib/botkit/format";
 
 export type AssistantChannel = "telegram" | "voice" | "web";
 
@@ -105,6 +106,7 @@ export function buildPersona(opts: {
     "",
     "Как отвечать:",
     ...OUTPUT_CONTRACT.map((r) => `- ${r}`),
+    channel === "telegram" ? `\n${commonRules()}` : "",
     opts.focusTitle ? `\nЗапись в фокусе: «${opts.focusTitle}».` : "",
     opts.memory ? `\n${opts.memory}` : "",
   ]

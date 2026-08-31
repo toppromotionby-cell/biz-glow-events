@@ -22,7 +22,13 @@ import {
 } from "@/lib/calendar/store.server";
 import { dayRange, parseDayToken } from "@/lib/calendar/when";
 import { pushOutbox } from "@/lib/calendar/outbox.server";
-import { wantsPlanMode } from "@/lib/calendar/persona";
+import { buildPersona, wantsPlanMode } from "@/lib/calendar/persona";
+import { cardButtons, renderCard } from "@/lib/botkit/cards";
+import { detectForget, detectTeaching } from "@/lib/botkit/learn";
+import { LEARNED_ACK, forgottenAck } from "@/lib/botkit/format";
+import { acceptsAttachment, analyzeAttachments, type Attachment } from "@/lib/botkit/vision.server";
+import { forgetByQuery, listMemory, memoryPrompt, rememberMemory } from "@/lib/calendar/memory.server";
+import { isToolName, type ToolName } from "@/lib/calendar/tools.server";
 import { portalsHtml } from "@/lib/calendar/ai-portals";
 import {
   approvePlan,
@@ -34,7 +40,10 @@ import {
   planButtons,
   rejectPlan,
   renderPlan,
+  savePlan,
   tickPlans,
+  PLAN_TOOLS,
+  type PlanStep,
   type PlanRow,
 } from "@/lib/calendar/plan.server";
 import type { AssistantResult } from "@/lib/calendar/assistant.server";
@@ -323,6 +332,9 @@ export async function handleTelegramText(
         "• «запомни: планёрки по понедельникам в 10»",
         "• «подумай, как распределить неделю по EventHub» — пришлю план с кнопкой «Утвердить»",
         "• «поищи в интернете идеи для тимбилдинга и предложи план»",
+        "• пришлите скриншот или PDF — разберу и пришлю карточку решения с кнопками",
+        "",
+        "🧠 Память общая с ботом админки: чему научите здесь — знает и он.",
       ].join("\n"),
     );
     return;
@@ -330,6 +342,22 @@ export async function handleTelegramText(
   if (cmd === "/ai" || /^(какие|что за)\b.*(нейросет|ии|искусственн)/i.test(cmd)) {
     await tgSend(chatId, portalsHtml());
     return;
+  }
+
+  // Общее обучение: правило, сказанное любому боту, сохраняем в общую память.
+  const forget = detectForget(text);
+  if (forget) {
+    const n = await forgetByQuery(db, forget);
+    await tgSend(chatId, forgottenAck(n));
+    return;
+  }
+  const learn = detectTeaching(text);
+  if (learn) {
+    const saved = await rememberMemory(db, { ...learn, source: "telegram" });
+    if (saved) {
+      await tgSend(chatId, `${LEARNED_ACK}\n• <b>${tgEsc(saved.key)}</b>: ${tgEsc(saved.value)}`);
+      return;
+    }
   }
 
   // Владелец обещал правки к плану — следующее сообщение считаем уточнением.
@@ -492,6 +520,85 @@ export async function handleTelegramVoice(db: Db, chatId: number, fileId: string
   await handleTelegramText(db, chatId, text, { source: "voice" });
 }
 
+// ——— Скриншоты и PDF (общий «глаз» ботов) ———
+
+/** Подсказка модели: какие шаги планер умеет выполнять по скриншоту. */
+function plannerActionsPrompt(): string {
+  return [
+    "В поле \"action\" пиши ровно один из инструментов планера:",
+    PLAN_TOOLS.join(", "),
+    "Если по скриншоту действие в календаре не нужно — оставь список steps пустым и объясни всё в summary.",
+  ].join("\n");
+}
+
+/**
+ * Разбор картинок и PDF: тот же движок, что и у бота админки.
+ * Всегда отдаём карточку решения с кнопками — ничего не меняем без утверждения.
+ */
+export async function handleTelegramMedia(
+  db: Db,
+  chatId: number,
+  fileIds: string[],
+  caption?: string,
+): Promise<void> {
+  const prefs = await getPrefs(db);
+  const dirs = await getDirections(db);
+  const attachments: Attachment[] = [];
+  for (const fileId of fileIds.slice(0, 3)) {
+    const file = await tgDownloadFile(fileId);
+    if (!file) continue;
+    const bytes = Math.ceil((file.base64.length * 3) / 4);
+    const check = acceptsAttachment(file.mime, bytes);
+    if (!check.ok) {
+      await tgSend(chatId, check.reason ?? "Такой файл я не разбираю.");
+      return;
+    }
+    attachments.push({ fileId, mime: file.mime, base64: file.base64, bytes });
+  }
+  if (!attachments.length) {
+    await tgSend(chatId, "Не смог скачать файл — пришлите ещё раз.");
+    return;
+  }
+
+  await tgSend(chatId, "👀 Смотрю, что на скриншоте…");
+  const memory = memoryPrompt(await listMemory(db));
+  const outcome = await analyzeAttachments({
+    system: buildPersona({ prefs, dirs, now: new Date(), channel: "telegram", memory }),
+    attachments,
+    question: caption?.trim() || "Разбери скриншот: что видно и что предлагаешь сделать в календаре или задачах.",
+    actions: plannerActionsPrompt(),
+  });
+  if (!outcome.ok) {
+    await tgSend(chatId, outcome.message);
+    return;
+  }
+
+  const steps: PlanStep[] = outcome.result.steps
+    .map((s) => ({ label: s.label, tool: String(s.action) as ToolName, args: (s.args ?? {}) as Record<string, unknown> }))
+    .filter((s) => isToolName(s.tool) && PLAN_TOOLS.includes(s.tool));
+
+  const plan = await savePlan(db, {
+    chatKey: `tg:${chatId}`,
+    chatId,
+    title: outcome.result.title,
+    summary: outcome.result.summary,
+    request: caption?.trim() || "Разбор скриншота",
+    steps,
+    questions: outcome.result.questions,
+  });
+
+  const html = renderCard({
+    id: plan.id,
+    title: plan.title,
+    summary: plan.summary,
+    steps: steps.map((s) => ({ label: s.label || s.tool, action: String(s.tool), args: s.args })),
+    risk: outcome.result.risk ?? null,
+    questions: plan.questions,
+  });
+  const sent = await tgSend(chatId, html, cardButtons(plan.id));
+  if (sent?.message_id) await attachPlanMessage(db, plan.id, chatId, sent.message_id);
+}
+
 // ——— Кнопки ———
 
 export async function handleCallback(
@@ -505,8 +612,8 @@ export async function handleCallback(
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);
 
-  // Кнопки плана: plan:ok|edit|no:<id>
-  if (action === "plan") {
+  // Кнопки плана и карточек решений: plan:*|ap:* — общий вид у всех ботов.
+  if (action === "plan" || action === "ap") {
     const planId = extra ?? "";
     const plan = planId ? await getPlan(db, planId) : null;
     if (!plan) {
