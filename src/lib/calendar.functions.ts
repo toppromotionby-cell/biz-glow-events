@@ -77,6 +77,10 @@ export const savePlannerItem = createServerFn({ method: "POST" })
         importance: z.enum(["normal", "hard"]).optional(),
         location: z.string().max(300).nullable().optional(),
         participants: z.array(z.string().max(120)).max(30).optional(),
+        priority: z.number().int().min(1).max(4).optional(),
+        tags: z.array(z.string().max(40)).max(20).optional(),
+        parent_id: z.string().uuid().nullable().optional(),
+        recurrence: z.string().max(200).nullable().optional(),
       })
       .parse(d),
   )
@@ -126,6 +130,7 @@ export const savePlannerDirection = createServerFn({ method: "POST" })
         title: z.string().min(1).max(80),
         color: z.string().max(20).default("#6366f1"),
         google_color_id: z.string().max(5).nullable().optional(),
+        google_tasklist_id: z.string().max(200).nullable().optional(),
         emoji: z.string().max(8).nullable().optional(),
         keywords: z.array(z.string().max(60)).max(40).default([]),
         work_start: z.string().max(8).default("09:00"),
@@ -170,6 +175,8 @@ export const savePlannerPrefs = createServerFn({ method: "POST" })
         visuals_enabled: z.boolean().optional(),
         visual_mode: z.enum(["image", "text"]).optional(),
         digest_visual: z.boolean().optional(),
+        task_routing: z.enum(["auto", "calendar", "tasks", "both"]).optional(),
+        gtasks_enabled: z.boolean().optional(),
       })
       .parse(d ?? {}),
   )
@@ -240,11 +247,29 @@ export const syncPlannerGoogle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ applied: number; configured: boolean }> => {
     await assertPermission(context as never, "orders.manage");
-    const { admin, pullFromGoogle } = await import("@/lib/calendar/store.server");
+    const { admin, pullFromGoogle, pullFromTasks } = await import("@/lib/calendar/store.server");
     const { googleConfigured } = await import("@/lib/calendar/google.server");
     if (!googleConfigured()) return { applied: 0, configured: false };
-    const res = await pullFromGoogle(await admin());
-    return { applied: res.applied, configured: true };
+    const db = await admin();
+    const res = await pullFromGoogle(db);
+    const tasks = await pullFromTasks(db);
+    return { applied: res.applied + tasks.applied, configured: true };
+  });
+
+/** Google Задачи: доступен ли модуль и какие списки привязаны к направлениям. */
+export const plannerTasksStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ configured: boolean; scopeOk: boolean; lists: Array<{ id: string; title: string }> }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { gtasksConfigured, listTaskLists, GTasksScopeError } = await import("@/lib/calendar/gtasks.server");
+    if (!gtasksConfigured()) return { configured: false, scopeOk: false, lists: [] };
+    try {
+      const lists = await listTaskLists();
+      return { configured: true, scopeOk: true, lists: lists.map((l) => ({ id: l.id, title: l.title })) };
+    } catch (e) {
+      if (e instanceof GTasksScopeError) return { configured: true, scopeOk: false, lists: [] };
+      throw e;
+    }
   });
 
 /** Статус отдельного Telegram-бота планера: кто подключён и жив ли вебхук. */
