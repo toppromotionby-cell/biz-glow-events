@@ -1,4 +1,4 @@
-// Куда уходит запись: Google Календарь, Google Задачи или оба.
+// Куда уходит запись: основной Google Календарь, календарь задач или оба.
 // Клиент-безопасный модуль: одна и та же логика в UI, боте и на сервере.
 import type { CalItem } from "@/lib/calendar/model";
 
@@ -6,11 +6,12 @@ export type TaskRouting = "auto" | "calendar" | "tasks" | "both";
 export type RouteTarget = "calendar" | "tasks" | "both" | "none";
 
 export const ROUTING_LABEL: Record<TaskRouting, string> = {
-  auto: "Автоматически (встречи — в Календарь, задачи — в Задачи)",
-  calendar: "Всё в Google Календарь",
-  tasks: "Задачи всегда в Google Задачи",
+  auto: "Автоматически (встречи — в общий календарь, задачи — в календарь задач)",
+  calendar: "Всё в основной Google Календарь",
+  tasks: "Задачи всегда в календарь задач направления",
   both: "Задачи со временем — и туда, и туда",
 };
+
 
 /**
  * Правило маршрутизации:
@@ -35,8 +36,8 @@ export function targetLabel(t: RouteTarget): string {
   return t === "calendar"
     ? "Google Календарь"
     : t === "tasks"
-      ? "Google Задачи"
+      ? "Календарь задач"
       : t === "both"
-        ? "Календарь + Задачи"
+        ? "Календарь + задачи"
         : "только в планере";
 }

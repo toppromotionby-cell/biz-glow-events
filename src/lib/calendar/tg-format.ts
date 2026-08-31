@@ -108,7 +108,7 @@ export function reminderLabel(minutes: number[]): string | null {
 export function syncFooter(statuses: SyncStatus[]): string {
   if (!statuses.length) return "⚠️ Только в планере — Google не подключён";
   const parts = statuses.map((s) => {
-    const name = s.target === "calendar" ? "Google Календарь" : "Google Задачи";
+    const name = s.target === "calendar" ? "Google Календарь" : "Календарь задач";
     if (s.state === "ok") {
       const extra = [s.detail, s.reminderLabel].filter(Boolean).join(" · ");
       return `${s.target === "calendar" ? "📅" : "✅"} ${name}${extra ? ` · ${extra}` : ""}`;

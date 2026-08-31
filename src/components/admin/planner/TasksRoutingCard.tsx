@@ -23,20 +23,25 @@ export function TasksRoutingCard({ prefs, directions, onSave }: TasksRoutingCard
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Google Задачи</CardTitle>
+        <CardTitle className="text-base">Задачи в Google</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
-        {status && !status.scopeOk ? (
+        {status && status.configured && !status.scopeOk ? (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-            Доступ к Google Задачам пока не выдан: у подключения Google нет разрешения на список задач. Пока задачи
-            хранятся в планере и уходят в Календарь, когда у них есть время.
+            Google отклонил запрос: подключение потеряло доступ. Переподключите Google в настройках подключений —
+            задачи пока остаются только в планере.
           </div>
         ) : null}
+
+        <p className="text-xs text-muted-foreground">
+          Задачи уходят в отдельные календари «Задачи · Направление» событиями на весь день. Отметка ✅ в начале
+          названия события вернётся в планер как выполненная задача.
+        </p>
 
         <div className="flex items-center justify-between gap-4">
           <div>
             <Label>Синхронизировать задачи</Label>
-            <p className="text-xs text-muted-foreground">Дела без времени попадают в Google Задачи по направлениям.</p>
+            <p className="text-xs text-muted-foreground">Дела без времени попадают в календарь задач по направлению.</p>
           </div>
           <Switch
             checked={prefs?.gtasks_enabled ?? true}
@@ -64,22 +69,26 @@ export function TasksRoutingCard({ prefs, directions, onSave }: TasksRoutingCard
         </div>
 
         <div>
-          <Label>Списки задач по направлениям</Label>
+          <Label>Календари задач по направлениям</Label>
           <div className="mt-2 space-y-1">
-            {directions.map((d) => (
-              <div key={d.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                <span className="inline-flex items-center gap-2">
-                  <span className="size-2 rounded-full" style={{ background: d.color }} />
-                  {d.title}
-                </span>
-                <Badge variant={d.google_tasklist_id ? "secondary" : "outline"}>
-                  {d.google_tasklist_id ? "список привязан" : "создастся при первой задаче"}
-                </Badge>
-              </div>
-            ))}
+            {directions.map((d) => {
+              const linked = Boolean((d as { google_calendar_id?: string | null }).google_calendar_id);
+              return (
+                <div key={d.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="size-2 rounded-full" style={{ background: d.color }} />
+                    {d.title}
+                  </span>
+                  <Badge variant={linked ? "secondary" : "outline"}>
+                    {linked ? "календарь создан" : "создастся при первой задаче"}
+                  </Badge>
+                </div>
+              );
+            })}
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+
