@@ -18,6 +18,9 @@ import {
   Users,
   Inbox,
   Send,
+  Disc3,
+  Music4,
+  Headphones,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -73,6 +76,14 @@ const GROUPS: NavGroup[] = [
       { to: "/admin/testimonials", label: "Отзывы", icon: MessageSquareQuote, badgeKey: "pendingTestimonials", perm: "content.manage" },
       { to: "/admin/blog", label: "Блог", icon: Newspaper, perm: "content.manage" },
       { to: "/admin/sections", label: "Блоки на сайте", icon: ToggleRight, perm: "system.manage" },
+    ],
+  },
+  {
+    label: "DJ Хаб",
+    items: [
+      { to: "/admin/dj", label: "Обзор и модерация", icon: Disc3, exact: true, perm: "dj.manage" },
+      { to: "/admin/dj/tracks", label: "Библиотека треков", icon: Music4, perm: "dj.manage" },
+      { to: "/admin/dj/members", label: "Участники клуба", icon: Headphones, perm: "dj.manage" },
     ],
   },
   {
