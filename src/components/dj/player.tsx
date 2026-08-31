@@ -15,6 +15,7 @@ import { toast } from "sonner";
 type PlayerState = {
   current: DjTrack | null;
   playing: boolean;
+  queue: DjTrack[];
   play: (track: DjTrack, queue?: DjTrack[]) => void;
   toggle: () => void;
   stop: () => void;
