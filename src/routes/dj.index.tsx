@@ -198,20 +198,35 @@ function DjLanding() {
       <section className="mt-12">
         <h2 className="font-display text-2xl font-bold">Разделы библиотеки</h2>
         <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {AUDIO_SECTIONS.map((s) => (
-            <li key={s.key}>
-              <Link
-                to="/dj/pool"
-                search={poolSearch({ section: s.key })}
-                className="dj-ring dj-grain group relative flex h-32 flex-col justify-end overflow-hidden rounded-2xl p-4 text-white transition-transform duration-300 hover:-translate-y-1"
-                style={{ backgroundImage: coverCssGradient({ artist: s.key, title: s.label, section: s.key }) }}
-              >
-                <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-                <span className="relative text-base font-bold">{s.label}</span>
-                <span className="relative text-[0.7rem] text-white/75">{s.hint}</span>
-              </Link>
-            </li>
-          ))}
+          {AUDIO_SECTIONS.map((s) => {
+            const art = sectionArt(s.key);
+            return (
+              <li key={s.key}>
+                <Link
+                  to="/dj/pool"
+                  search={poolSearch({ section: s.key })}
+                  className="dj-ring dj-grain group relative flex h-32 flex-col justify-end overflow-hidden rounded-2xl p-4 text-white transition-transform duration-300 hover:-translate-y-1"
+                  style={{ backgroundImage: coverCssGradient({ artist: s.key, title: s.label, section: s.key }) }}
+                >
+                  {art ? (
+                    <img
+                      src={art}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      width={1024}
+                      height={640}
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : null}
+                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
+                  <span className="relative text-base font-bold drop-shadow">{s.label}</span>
+                  <span className="relative text-[0.7rem] text-white/80">{s.hint}</span>
+                </Link>
+              </li>
+            );
+          })}
+
         </ul>
       </section>
 
