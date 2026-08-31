@@ -47,6 +47,147 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_bot_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      assistant_bot_links: {
+        Row: {
+          chat_id: number
+          created_at: string
+          id: string
+          muted_until: string | null
+          tg_first_name: string | null
+          tg_username: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          id?: string
+          muted_until?: string | null
+          tg_first_name?: string | null
+          tg_username?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          id?: string
+          muted_until?: string | null
+          tg_first_name?: string | null
+          tg_username?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      assistant_bot_messages: {
+        Row: {
+          chat_id: number
+          created_at: string
+          direction: string
+          id: string
+          kind: string
+          meta: Json
+          text: string | null
+          user_id: string | null
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          direction: string
+          id?: string
+          kind?: string
+          meta?: Json
+          text?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          direction?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          text?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      assistant_bot_settings: {
+        Row: {
+          admin_chat_id: number | null
+          allow_web_search: boolean
+          daily_limit: number
+          hygiene_enabled: boolean
+          hygiene_hour: number
+          hygiene_notify: boolean
+          id: number
+          last_hygiene_at: string | null
+          plan_only: boolean
+          updated_at: string
+        }
+        Insert: {
+          admin_chat_id?: number | null
+          allow_web_search?: boolean
+          daily_limit?: number
+          hygiene_enabled?: boolean
+          hygiene_hour?: number
+          hygiene_notify?: boolean
+          id?: number
+          last_hygiene_at?: string | null
+          plan_only?: boolean
+          updated_at?: string
+        }
+        Update: {
+          admin_chat_id?: number | null
+          allow_web_search?: boolean
+          daily_limit?: number
+          hygiene_enabled?: boolean
+          hygiene_hour?: number
+          hygiene_notify?: boolean
+          id?: number
+          last_hygiene_at?: string | null
+          plan_only?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assistant_bot_updates: {
+        Row: {
+          created_at: string
+          update_id: number
+        }
+        Insert: {
+          created_at?: string
+          update_id: number
+        }
+        Update: {
+          created_at?: string
+          update_id?: number
+        }
+        Relationships: []
+      }
       assistant_dialog: {
         Row: {
           channel: string
@@ -84,6 +225,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      assistant_file_grants: {
+        Row: {
+          chat_id: number | null
+          created_at: string
+          doc_id: string | null
+          filename: string | null
+          id: string
+          internal: boolean
+          kind: string
+          user_id: string | null
+        }
+        Insert: {
+          chat_id?: number | null
+          created_at?: string
+          doc_id?: string | null
+          filename?: string | null
+          id?: string
+          internal?: boolean
+          kind: string
+          user_id?: string | null
+        }
+        Update: {
+          chat_id?: number | null
+          created_at?: string
+          doc_id?: string | null
+          filename?: string | null
+          id?: string
+          internal?: boolean
+          kind?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       assistant_memory: {
         Row: {
@@ -2901,6 +3075,144 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hygiene_findings: {
+        Row: {
+          area: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          details: Json
+          entity_id: string | null
+          entity_table: string | null
+          id: string
+          rule_key: string
+          severity: string
+          status: string
+          title: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          details?: Json
+          entity_id?: string | null
+          entity_table?: string | null
+          id?: string
+          rule_key: string
+          severity?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          details?: Json
+          entity_id?: string | null
+          entity_table?: string | null
+          id?: string
+          rule_key?: string
+          severity?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      hygiene_rules: {
+        Row: {
+          area: string
+          auto_fix: boolean
+          enabled: boolean
+          key: string
+          last_run_at: string | null
+          params: Json
+          schedule: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          area: string
+          auto_fix?: boolean
+          enabled?: boolean
+          key: string
+          last_run_at?: string | null
+          params?: Json
+          schedule?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          auto_fix?: boolean
+          enabled?: boolean
+          key?: string
+          last_run_at?: string | null
+          params?: Json
+          schedule?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      knowledge_facts: {
+        Row: {
+          author_id: string | null
+          confidence: number
+          created_at: string
+          fact: string
+          hits: number
+          id: string
+          scope: string
+          source_id: string | null
+          source_kind: string
+          source_table: string | null
+          source_url: string | null
+          status: string
+          subject: string
+          tags: string[]
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          confidence?: number
+          created_at?: string
+          fact: string
+          hits?: number
+          id?: string
+          scope?: string
+          source_id?: string | null
+          source_kind?: string
+          source_table?: string | null
+          source_url?: string | null
+          status?: string
+          subject: string
+          tags?: string[]
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          confidence?: number
+          created_at?: string
+          fact?: string
+          hits?: number
+          id?: string
+          scope?: string
+          source_id?: string | null
+          source_kind?: string
+          source_table?: string | null
+          source_url?: string | null
+          status?: string
+          subject?: string
+          tags?: string[]
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: []
       }
       mail_account_checks: {
         Row: {
