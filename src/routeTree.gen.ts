@@ -100,6 +100,7 @@ import { Route as AdminPaperworkIdRouteImport } from './routes/admin.paperwork.$
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminHelpSlugRouteImport } from './routes/admin.help.$slug'
 import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
+import { Route as AdminDjTracksRouteImport } from './routes/admin.dj.tracks'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as AdminDocumentsPromoIndexRouteImport } from './routes/admin.documents.promo.index'
@@ -585,6 +586,11 @@ const AdminDocumentsKnowledgeRoute = AdminDocumentsKnowledgeRouteImport.update({
   path: '/documents/knowledge',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDjTracksRoute = AdminDjTracksRouteImport.update({
+  id: '/dj/tracks',
+  path: '/dj/tracks',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   id: '/$type',
   path: '/$type',
@@ -816,6 +822,7 @@ export interface FileRoutesByFullPath {
   '/catalog/': typeof CatalogIndexRoute
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -933,6 +940,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogIndexRoute
   '/dj': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -1055,6 +1063,7 @@ export interface FileRoutesById {
   '/catalog/': typeof CatalogIndexRoute
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
   '/admin/orders/$id': typeof AdminOrdersIdRouteWithChildren
@@ -1178,6 +1187,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/dj/'
     | '/admin/catalog/$type'
+    | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
     | '/admin/orders/$id'
@@ -1295,6 +1305,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/dj'
     | '/admin/catalog/$type'
+    | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
     | '/admin/orders/$id'
@@ -1416,6 +1427,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/dj/'
     | '/admin/catalog/$type'
+    | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
     | '/admin/orders/$id'
@@ -2165,6 +2177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsKnowledgeRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dj/tracks': {
+      id: '/admin/dj/tracks'
+      path: '/dj/tracks'
+      fullPath: '/admin/dj/tracks'
+      preLoaderRoute: typeof AdminDjTracksRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog/$type': {
       id: '/admin/catalog/$type'
       path: '/$type'
@@ -2451,6 +2470,7 @@ interface AdminRouteChildren {
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminDjTracksRoute: typeof AdminDjTracksRoute
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminPaperworkIdRoute: typeof AdminPaperworkIdRouteWithChildren
   AdminPaperworkTemplatesRoute: typeof AdminPaperworkTemplatesRoute
@@ -2493,6 +2513,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminDjTracksRoute: AdminDjTracksRoute,
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminPaperworkIdRoute: AdminPaperworkIdRouteWithChildren,
   AdminPaperworkTemplatesRoute: AdminPaperworkTemplatesRoute,
