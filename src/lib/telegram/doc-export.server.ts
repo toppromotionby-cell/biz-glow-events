@@ -152,7 +152,7 @@ async function buildPromo(id: string, internal: boolean): Promise<TgDocExport> {
   return {
     filename: promoFileName(quote, "pdf"),
     bytes: await buildPromoQuotePdf(quote, items, settings),
-    caption: caption([label, client, money(totals.total)]),
+    caption: caption([label, client, money(totals.totalWithVat || totals.net)]),
   };
 }
 
