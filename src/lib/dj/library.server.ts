@@ -4,7 +4,7 @@ import type { DjAccess } from "./guard.server";
 import type { DjTrack, DjTrackFilters } from "./types";
 
 const TRACK_COLUMNS =
-  "id, artist, title, version, genre, bpm, key_camelot, year, language, energy, duration_sec, tags, artwork_path, section, category_id, cover_palette, cover_spec_version, status, reject_reason, uploaded_by, play_count, download_count, rating_avg, rating_count, published_at, created_at";
+  "id, artist, title, version, is_remix, remixer, original_track_id, genre, bpm, key_camelot, year, language, energy, duration_sec, tags, artwork_path, section, category_id, cover_palette, cover_spec_version, status, reject_reason, uploaded_by, play_count, download_count, rating_avg, rating_count, published_at, created_at";
 
 export const SIGNED_TTL = 60 * 60; // 1 час
 
