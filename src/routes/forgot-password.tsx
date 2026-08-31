@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -36,7 +37,7 @@ function ForgotPasswordPage() {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(authErrorMessage(error)); return; }
     setSent(true);
     toast.success("Письмо отправлено");
   };

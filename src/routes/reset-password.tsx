@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Сброс пароля — event-hub.by" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -26,7 +27,7 @@ function ResetPasswordPage() {
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(authErrorMessage(error)); return; }
     toast.success("Пароль обновлён");
     navigate({ to: "/profile" });
   };

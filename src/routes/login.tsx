@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { AppleButton } from "@/components/auth/AppleButton";
 import { toast } from "sonner";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -32,14 +33,22 @@ const schema = z.object({
 function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     setLoading(true);
+    setFormError(null);
     const { data: signIn, error } = await supabase.auth.signInWithPassword(data);
-    if (error) { setLoading(false); toast.error(error.message); return; }
+    if (error) {
+      setLoading(false);
+      const msg = authErrorMessage(error);
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
     toast.success("Добро пожаловать!");
 
     // Если есть ?redirect=... — туда. Иначе проверяем роль: персонал → /admin, остальные → /profile.
@@ -49,11 +58,12 @@ function LoginPage() {
     if (redirect && redirect.startsWith("/")) {
       target = redirect;
     } else if (signIn.user) {
-      const { data: roles } = await supabase
+      const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", signIn.user.id);
       const staffRoles = ["admin", "manager", "accountant", "content_editor"];
+      if (rolesError) console.error("[login] не удалось прочитать роли", rolesError.message);
       if ((roles ?? []).some((r) => staffRoles.includes(r.role))) {
         target = "/admin";
       }
@@ -75,6 +85,11 @@ function LoginPage() {
           или через email
           <div className="h-px flex-1 bg-border" />
         </div>
+        {formError && (
+          <p role="alert" className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {formError}
+          </p>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <Label>Email</Label>
