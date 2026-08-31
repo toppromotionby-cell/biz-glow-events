@@ -64,6 +64,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminSectionsRouteImport } from './routes/admin.sections'
 import { Route as AdminPromoRouteImport } from './routes/admin.promo'
+import { Route as AdminPlannerRouteImport } from './routes/admin.planner'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMailAccountsRouteImport } from './routes/admin.mail-accounts'
@@ -102,6 +103,8 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicPlannerTickRouteImport } from './routes/api/public/planner/tick'
+import { Route as ApiPublicPlannerTelegramRouteImport } from './routes/api/public/planner/telegram'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
 import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
 import { Route as AdminPaperworkTypeTypeRouteImport } from './routes/admin.paperwork.type.$type'
@@ -394,6 +397,11 @@ const AdminPromoRoute = AdminPromoRouteImport.update({
   path: '/promo',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPlannerRoute = AdminPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -591,6 +599,17 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPlannerTickRoute = ApiPublicPlannerTickRouteImport.update({
+  id: '/api/public/planner/tick',
+  path: '/api/public/planner/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPlannerTelegramRoute =
+  ApiPublicPlannerTelegramRouteImport.update({
+    id: '/api/public/planner/telegram',
+    path: '/api/public/planner/telegram',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSlaOrdersRoute = ApiPublicHooksSlaOrdersRouteImport.update({
   id: '/api/public/hooks/sla-orders',
   path: '/api/public/hooks/sla-orders',
@@ -727,6 +746,7 @@ export interface FileRoutesByFullPath {
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/planner': typeof AdminPlannerRoute
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
@@ -776,6 +796,8 @@ export interface FileRoutesByFullPath {
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
+  '/api/public/planner/telegram': typeof ApiPublicPlannerTelegramRoute
+  '/api/public/planner/tick': typeof ApiPublicPlannerTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -835,6 +857,7 @@ export interface FileRoutesByTo {
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/planner': typeof AdminPlannerRoute
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
@@ -884,6 +907,8 @@ export interface FileRoutesByTo {
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
+  '/api/public/planner/telegram': typeof ApiPublicPlannerTelegramRoute
+  '/api/public/planner/tick': typeof ApiPublicPlannerTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -947,6 +972,7 @@ export interface FileRoutesById {
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/planner': typeof AdminPlannerRoute
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
@@ -996,6 +1022,8 @@ export interface FileRoutesById {
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
+  '/api/public/planner/telegram': typeof ApiPublicPlannerTelegramRoute
+  '/api/public/planner/tick': typeof ApiPublicPlannerTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1060,6 +1088,7 @@ export interface FileRouteTypes {
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/planner'
     | '/admin/promo'
     | '/admin/sections'
     | '/admin/testimonials'
@@ -1109,6 +1138,8 @@ export interface FileRouteTypes {
     | '/admin/paperwork/type/$type'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
+    | '/api/public/planner/telegram'
+    | '/api/public/planner/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1168,6 +1199,7 @@ export interface FileRouteTypes {
     | '/admin/catalog-structure'
     | '/admin/mail-accounts'
     | '/admin/notifications'
+    | '/admin/planner'
     | '/admin/promo'
     | '/admin/sections'
     | '/admin/testimonials'
@@ -1217,6 +1249,8 @@ export interface FileRouteTypes {
     | '/admin/paperwork/type/$type'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
+    | '/api/public/planner/telegram'
+    | '/api/public/planner/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1279,6 +1313,7 @@ export interface FileRouteTypes {
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/planner'
     | '/admin/promo'
     | '/admin/sections'
     | '/admin/testimonials'
@@ -1328,6 +1363,8 @@ export interface FileRouteTypes {
     | '/admin/paperwork/type/$type'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
+    | '/api/public/planner/telegram'
+    | '/api/public/planner/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1396,6 +1433,8 @@ export interface RootRouteChildren {
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
   ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
+  ApiPublicPlannerTelegramRoute: typeof ApiPublicPlannerTelegramRoute
+  ApiPublicPlannerTickRoute: typeof ApiPublicPlannerTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1790,6 +1829,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPromoRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/planner': {
+      id: '/admin/planner'
+      path: '/planner'
+      fullPath: '/admin/planner'
+      preLoaderRoute: typeof AdminPlannerRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -2056,6 +2102,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/planner/tick': {
+      id: '/api/public/planner/tick'
+      path: '/api/public/planner/tick'
+      fullPath: '/api/public/planner/tick'
+      preLoaderRoute: typeof ApiPublicPlannerTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/planner/telegram': {
+      id: '/api/public/planner/telegram'
+      path: '/api/public/planner/telegram'
+      fullPath: '/api/public/planner/telegram'
+      preLoaderRoute: typeof ApiPublicPlannerTelegramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sla-orders': {
       id: '/api/public/hooks/sla-orders'
       path: '/api/public/hooks/sla-orders'
@@ -2252,6 +2312,7 @@ interface AdminRouteChildren {
   AdminMailAccountsRoute: typeof AdminMailAccountsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
+  AdminPlannerRoute: typeof AdminPlannerRoute
   AdminPromoRoute: typeof AdminPromoRoute
   AdminSectionsRoute: typeof AdminSectionsRoute
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
@@ -2292,6 +2353,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMailAccountsRoute: AdminMailAccountsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
+  AdminPlannerRoute: AdminPlannerRoute,
   AdminPromoRoute: AdminPromoRoute,
   AdminSectionsRoute: AdminSectionsRoute,
   AdminTestimonialsRoute: AdminTestimonialsRoute,
@@ -2454,6 +2516,8 @@ const rootRouteChildren: RootRouteChildren = {
   OrderSuccessIdRoute: OrderSuccessIdRoute,
   ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
+  ApiPublicPlannerTelegramRoute: ApiPublicPlannerTelegramRoute,
+  ApiPublicPlannerTickRoute: ApiPublicPlannerTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,

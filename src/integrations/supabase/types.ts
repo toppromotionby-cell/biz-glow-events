@@ -488,6 +488,8 @@ export type Database = {
         Row: {
           google_calendar_id: string
           id: number
+          last_evening_on: string | null
+          last_morning_on: string | null
           last_pull_at: string | null
           lease_until: string | null
           paused_at: string | null
@@ -498,6 +500,8 @@ export type Database = {
         Insert: {
           google_calendar_id?: string
           id?: number
+          last_evening_on?: string | null
+          last_morning_on?: string | null
           last_pull_at?: string | null
           lease_until?: string | null
           paused_at?: string | null
@@ -508,6 +512,8 @@ export type Database = {
         Update: {
           google_calendar_id?: string
           id?: number
+          last_evening_on?: string | null
+          last_morning_on?: string | null
           last_pull_at?: string | null
           lease_until?: string | null
           paused_at?: string | null

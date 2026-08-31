@@ -25,12 +25,46 @@ export const Route = createFileRoute("/api/public/telegram-support")({
         if (!safeEqual(got, expected)) return new Response("unauthorized", { status: 401 });
 
         const update = await request.json().catch(() => null) as
-          | { message?: { text?: string; reply_to_message?: { message_id?: number } } }
+          | {
+              message?: {
+                text?: string;
+                chat?: { id?: number };
+                voice?: { file_id?: string };
+                audio?: { file_id?: string };
+                reply_to_message?: { message_id?: number };
+              };
+              callback_query?: { id?: string; data?: string; message?: { message_id?: number; chat?: { id?: number } } };
+            }
           | null;
         const msg = update?.message;
         const text = msg?.text?.trim();
         const replyToId = msg?.reply_to_message?.message_id;
-        if (!text || !replyToId) return Response.json({ ok: true, ignored: true });
+
+        // Не ответ на уведомление поддержки — отдаём планеру-ассистенту.
+        if (!replyToId) {
+          try {
+            const { handleCallback, handleTelegramText, handleTelegramVoice } = await import("@/lib/calendar/agent.server");
+            const cb = update?.callback_query;
+            if (cb?.id && cb.data && cb.message?.chat?.id && cb.message.message_id) {
+              await handleCallback(supabaseAdmin as never, cb.message.chat.id, cb.message.message_id, cb.id, cb.data);
+              return Response.json({ ok: true, planner: true });
+            }
+            const chatId = msg?.chat?.id;
+            const fileId = msg?.voice?.file_id ?? msg?.audio?.file_id;
+            if (chatId && fileId) {
+              await handleTelegramVoice(supabaseAdmin as never, chatId, fileId);
+              return Response.json({ ok: true, planner: true });
+            }
+            if (chatId && text) {
+              await handleTelegramText(supabaseAdmin as never, chatId, text, { source: "telegram" });
+              return Response.json({ ok: true, planner: true });
+            }
+          } catch (e) {
+            console.error("[planner-webhook] failed", e);
+          }
+          return Response.json({ ok: true, ignored: true });
+        }
+        if (!text) return Response.json({ ok: true, ignored: true });
 
         // find thread by the original telegram_message_id
         const { data: orig } = await supabaseAdmin
