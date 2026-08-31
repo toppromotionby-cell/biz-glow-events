@@ -40,8 +40,19 @@ const STEPS = [
   { n: 3, title: "Работа", text: "Доступ к библиотеке, софту и загрузкам. Проверенные DJ могут пополнять пул." },
 ];
 
+/** Приводим фильтры к короткому виду URL страницы /dj/pool. */
 function poolSearch(filters: Partial<DjTrackFilters>) {
-  return filters as Record<string, unknown>;
+  return {
+    section: filters.section || undefined,
+    category: filters.categoryId || undefined,
+    format: filters.formatSlug || undefined,
+    q: filters.q || undefined,
+    genre: filters.genres?.length ? filters.genres.join(",") : undefined,
+    version: filters.version || undefined,
+    key: filters.key || undefined,
+    remix: filters.remix,
+    sort: filters.sort && filters.sort !== "new" ? filters.sort : undefined,
+  } as Record<string, unknown>;
 }
 
 function RailCard({ track }: { track: ShowcaseTrack }) {
