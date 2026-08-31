@@ -135,7 +135,7 @@ function Page() {
                 <li key={l.chat_id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 p-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm">
-                      {l.username ? `@${l.username}` : l.first_name || `chat ${l.chat_id}`}
+                      {l.tg_username ? `@${l.tg_username}` : l.tg_first_name || `chat ${l.chat_id}`}
                     </p>
                     <p className="text-xs text-muted-foreground">ID: {l.chat_id}</p>
                   </div>

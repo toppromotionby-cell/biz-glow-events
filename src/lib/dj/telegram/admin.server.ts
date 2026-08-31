@@ -20,7 +20,7 @@ export async function botStatus(userId: string) {
   const db = await admin();
   const { data: allLinks } = await db
     .from("dj_tg_links")
-    .select("chat_id, username, first_name, created_at, muted_until")
+    .select("id, user_id, chat_id, tg_username, tg_first_name, muted_until, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
   const me = configured ? await tgGetMe() : null;
