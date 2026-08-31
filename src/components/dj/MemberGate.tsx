@@ -38,7 +38,7 @@ export function MemberGate({ children }: { children: ReactNode }) {
         title="Вход для DJ"
         text="Закрытая часть клуба доступна после входа в аккаунт. Регистрация занимает минуту."
       >
-        <Button asChild><Link to="/auth">Войти или зарегистрироваться</Link></Button>
+        <Button asChild><Link to="/login">Войти или зарегистрироваться</Link></Button>
       </Card>
     );
   }
