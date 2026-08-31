@@ -292,7 +292,7 @@ function AdminOrders() {
                       <AlertDialogAction
                         disabled={deleteOrder.isPending}
                         onClick={() => deleteOrder.mutate(o.id)}
-                        className="bg-rose-600 hover:bg-rose-700 text-white"
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Удалить
                       </AlertDialogAction>
@@ -535,7 +535,7 @@ function DesktopOrdersTable({
                             <AlertDialogAction
                               disabled={deleteOrder.isPending}
                               onClick={() => deleteOrder.mutate(o.id)}
-                              className="bg-rose-600 hover:bg-rose-700 text-white"
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Удалить
                             </AlertDialogAction>
