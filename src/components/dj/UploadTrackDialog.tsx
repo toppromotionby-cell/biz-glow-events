@@ -269,7 +269,7 @@ export function UploadTrackDialog({ invalidateKey }: { invalidateKey: unknown[] 
 function PreviewRow({ item }: { item: QueueItem }) {
   const p = item.payload;
   const meta = [
-    p.version !== "original" ? TRACK_VERSION_LABEL[p.version] : null,
+    p.version_label || (p.version !== "original" ? TRACK_VERSION_LABEL[p.version] : null),
     p.bpm ? `${p.bpm} BPM` : null,
     p.key_camelot,
     SECTION_LABEL[p.section] ?? p.section,
