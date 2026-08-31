@@ -21,6 +21,8 @@ import {
 import { dayRange, parseDayToken } from "@/lib/calendar/when";
 import { pushOutbox } from "@/lib/calendar/outbox.server";
 import type { AssistantResult } from "@/lib/calendar/assistant.server";
+import { sendAlicePush } from "@/lib/calendar/alice.server";
+import type { AssistantPrefs } from "@/lib/calendar/model";
 
 type Db = Awaited<ReturnType<typeof admin>>;
 
@@ -409,6 +411,18 @@ function groupByDirection(items: CalItem[], dirs: CalDirection[], tz: string): s
   return [...buckets.entries()]
     .map(([title, list]) => `\n<b>${tgEsc(title)}</b>\n` + list.map((i) => line(i, dirs, tz)).join("\n"))
     .join("\n");
+}
+
+/** Push-напоминание в Алису (работает только для опубликованного навыка). */
+async function pushAliceReminder(_db: Db, prefs: AssistantPrefs, text: string): Promise<void> {
+  if (!prefs.alice_push_enabled || !prefs.alice_skill_id) return;
+  for (const uid of prefs.alice_user_ids) {
+    try {
+      await sendAlicePush(prefs.alice_skill_id, uid, text);
+    } catch (e) {
+      console.error("[planner] alice push failed", e);
+    }
+  }
 }
 
 async function chatId(db: Db): Promise<number | null> {
