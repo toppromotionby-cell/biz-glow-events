@@ -33,7 +33,14 @@ export async function botStatus(userId: string) {
     settings,
     myLinks,
     links: (allLinks ?? []) as unknown as DjTgLink[],
-    outbox,
+    outbox: outbox.map((o) => ({
+      id: o.id,
+      kind: o.kind as string,
+      status: o.status as string,
+      attempts: o.attempts,
+      error: o.error ?? null,
+      created_at: o.created_at,
+    })),
   };
 }
 
