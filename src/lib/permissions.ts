@@ -39,7 +39,7 @@ export const ROLE_DESCRIPTION: Record<string, string> = {
   client: "Обычный пользователь сайта, доступа к админке нет.",
 };
 
-const MATRIX: Record<AppRole, Permission[]> = {
+export const MATRIX: Record<AppRole, Permission[]> = {
   admin: [
     "orders.manage", "orders.view_all", "orders.payments",
     "documents.manage", "documents.finance", "documents.settings", "documents.knowledge", "documents.cost_margin",
