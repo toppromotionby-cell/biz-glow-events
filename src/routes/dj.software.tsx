@@ -1,6 +1,6 @@
 // Каталог DJ-софта с версиями и загрузкой для участников клуба.
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2, Search, Wrench } from "lucide-react";
 import { MemberGate } from "@/components/dj/MemberGate";
@@ -18,6 +18,12 @@ const ANY = "__any__";
 
 export const Route = createFileRoute("/dj/software")({
   ssr: false,
+  // Фильтры живут в URL: ссылку на подборку можно переслать и обновить страницу.
+  validateSearch: (search: Record<string, unknown>): { q?: string; category?: string; platform?: string } => ({
+    q: typeof search.q === "string" && search.q ? search.q : undefined,
+    category: typeof search.category === "string" && search.category ? search.category : undefined,
+    platform: typeof search.platform === "string" && search.platform ? search.platform : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "DJ-софт и плагины — DJ Hub event-hub.by" },
@@ -31,10 +37,30 @@ export const Route = createFileRoute("/dj/software")({
 });
 
 function SoftwarePage() {
-  const [q, setQ] = useState("");
-  const [category, setCategory] = useState<string>(ANY);
-  const [platform, setPlatform] = useState<string>(ANY);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/dj/software" });
+  const q = search.q ?? "";
+  const category = search.category ?? ANY;
+  const platform = search.platform ?? ANY;
   const [busy, setBusy] = useState<string | null>(null);
+
+  const patch = useCallback(
+    (next: Partial<{ q: string; category: string; platform: string }>) => {
+      void navigate({
+        to: ".",
+        search: (prev) => {
+          const merged = { ...prev, ...next };
+          return {
+            q: merged.q || undefined,
+            category: merged.category && merged.category !== ANY ? merged.category : undefined,
+            platform: merged.platform && merged.platform !== ANY ? merged.platform : undefined,
+          };
+        },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
   const params = {
     q: q || undefined,
@@ -70,16 +96,16 @@ function SoftwarePage() {
       <div className="glass grid gap-3 rounded-2xl p-4 sm:grid-cols-3">
         <div className="relative sm:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по названию" className="pl-9" aria-label="Поиск софта" />
+          <Input value={q} onChange={(e) => patch({ q: e.target.value })} placeholder="Поиск по названию" className="pl-9" aria-label="Поиск софта" />
         </div>
-        <Select value={category} onValueChange={setCategory}>
+        <Select value={category} onValueChange={(v) => patch({ category: v })}>
           <SelectTrigger aria-label="Категория"><SelectValue placeholder="Категория" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY}>Все категории</SelectItem>
             {SOFTWARE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={platform} onValueChange={setPlatform}>
+        <Select value={platform} onValueChange={(v) => patch({ platform: v })}>
           <SelectTrigger aria-label="Платформа"><SelectValue placeholder="Платформа" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY}>Все платформы</SelectItem>
