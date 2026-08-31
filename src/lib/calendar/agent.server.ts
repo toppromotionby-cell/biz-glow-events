@@ -438,24 +438,25 @@ export async function sendDailyDigest(db: Db, mode: "morning" | "evening"): Prom
       `Сегодня: ${items.map((i) => `${i.title} (${fmtWhen(i, prefs.tz)}, ${i.importance})`).join("; ") || "пусто"}. Просрочено: ${overdue.map((i) => i.title).join("; ") || "нет"}.`,
       prefs.style_profile,
     );
-    await tgSend(cid, [head, body, tail, advice ? `\n💡 ${tgEsc(advice)}` : ""].filter(Boolean).join("\n"));
+    const morning = [head, body, tail, advice ? `\n💡 ${tgEsc(advice)}` : ""].filter(Boolean).join("\n");
+    await tgSend(cid, morning);
+    await pushOutbox(db, { text: morning, kind: "digest" });
     return;
   }
 
   const done = items.filter((i) => i.status === "done");
   const left = items.filter((i) => i.status !== "done" && i.status !== "canceled");
-  await tgSend(
-    cid,
-    [
+  const evening = [
       `🌙 <b>Итоги дня</b>`,
       `Сделано: ${done.length} · Осталось: ${left.length}`,
       done.length ? `\n<b>Закрыто</b>\n${done.map((i) => `✅ ${tgEsc(i.title)}`).join("\n")}` : "",
       left.length ? `\n<b>Не закрыто</b>\n${left.map((i) => line(i, dirs, prefs.tz)).join("\n")}` : "",
       left.length ? "\nЧто из этого переносим? Нажмите «Перенести» у нужной записи в /open." : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
+  ]
+    .filter(Boolean)
+    .join("\n");
+  await tgSend(cid, evening);
+  await pushOutbox(db, { text: evening, kind: "digest" });
 }
 
 export async function sendWeek(db: Db, to?: number): Promise<void> {
