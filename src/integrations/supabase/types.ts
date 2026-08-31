@@ -1152,49 +1152,47 @@ export type Database = {
         }
         Relationships: []
       }
-      dj_comments: {
+      dj_categories: {
         Row: {
-          author_id: string
-          body: string
+          color: string | null
           created_at: string
+          description: string | null
+          hidden: boolean
+          icon: string | null
           id: string
-          parent_id: string | null
-          status: string
-          target_id: string
-          target_type: string
+          name: string
+          section: string
+          slug: string
+          sort_order: number
           updated_at: string
         }
         Insert: {
-          author_id: string
-          body: string
+          color?: string | null
           created_at?: string
+          description?: string | null
+          hidden?: boolean
+          icon?: string | null
           id?: string
-          parent_id?: string | null
-          status?: string
-          target_id: string
-          target_type: string
+          name: string
+          section: string
+          slug: string
+          sort_order?: number
           updated_at?: string
         }
         Update: {
-          author_id?: string
-          body?: string
+          color?: string | null
           created_at?: string
+          description?: string | null
+          hidden?: boolean
+          icon?: string | null
           id?: string
-          parent_id?: string | null
-          status?: string
-          target_id?: string
-          target_type?: string
+          name?: string
+          section?: string
+          slug?: string
+          sort_order?: number
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "dj_comments_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "dj_comments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       dj_downloads: {
         Row: {
@@ -1398,6 +1396,7 @@ export type Database = {
       dj_software: {
         Row: {
           category: string
+          category_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -1414,6 +1413,7 @@ export type Database = {
         }
         Insert: {
           category?: string
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1430,6 +1430,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1444,11 +1445,22 @@ export type Database = {
           vendor?: string | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dj_software_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "dj_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dj_software_versions: {
         Row: {
+          arch: string | null
+          build_name: string | null
           changelog: string | null
+          content_hash: string | null
           created_at: string
           created_by: string | null
           download_count: number
@@ -1464,7 +1476,10 @@ export type Database = {
           version: string
         }
         Insert: {
+          arch?: string | null
+          build_name?: string | null
           changelog?: string | null
+          content_hash?: string | null
           created_at?: string
           created_by?: string | null
           download_count?: number
@@ -1480,7 +1495,10 @@ export type Database = {
           version: string
         }
         Update: {
+          arch?: string | null
+          build_name?: string | null
           changelog?: string | null
+          content_hash?: string | null
           created_at?: string
           created_by?: string | null
           download_count?: number
@@ -1505,55 +1523,18 @@ export type Database = {
           },
         ]
       }
-      dj_threads: {
-        Row: {
-          author_id: string
-          body: string
-          category: string
-          created_at: string
-          id: string
-          locked: boolean
-          pinned: boolean
-          status: string
-          title: string
-          updated_at: string
-          views: number
-        }
-        Insert: {
-          author_id: string
-          body?: string
-          category?: string
-          created_at?: string
-          id?: string
-          locked?: boolean
-          pinned?: boolean
-          status?: string
-          title: string
-          updated_at?: string
-          views?: number
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          category?: string
-          created_at?: string
-          id?: string
-          locked?: boolean
-          pinned?: boolean
-          status?: string
-          title?: string
-          updated_at?: string
-          views?: number
-        }
-        Relationships: []
-      }
       dj_tracks: {
         Row: {
+          album: string | null
           artist: string
           artwork_path: string | null
           audio_path: string
+          bitrate_kbps: number | null
           bpm: number | null
+          category_id: string | null
+          content_hash: string | null
           created_at: string
+          dedupe_key: string | null
           download_count: number
           duration_sec: number | null
           energy: number | null
@@ -1568,6 +1549,8 @@ export type Database = {
           rating_avg: number
           rating_count: number
           reject_reason: string | null
+          section: string
+          source_filename: string | null
           status: string
           tags: string[]
           title: string
@@ -1575,14 +1558,20 @@ export type Database = {
           uploaded_by: string | null
           version: string
           waveform: Json | null
+          work_key: string | null
           year: number | null
         }
         Insert: {
+          album?: string | null
           artist: string
           artwork_path?: string | null
           audio_path: string
+          bitrate_kbps?: number | null
           bpm?: number | null
+          category_id?: string | null
+          content_hash?: string | null
           created_at?: string
+          dedupe_key?: string | null
           download_count?: number
           duration_sec?: number | null
           energy?: number | null
@@ -1597,6 +1586,8 @@ export type Database = {
           rating_avg?: number
           rating_count?: number
           reject_reason?: string | null
+          section?: string
+          source_filename?: string | null
           status?: string
           tags?: string[]
           title: string
@@ -1604,14 +1595,20 @@ export type Database = {
           uploaded_by?: string | null
           version?: string
           waveform?: Json | null
+          work_key?: string | null
           year?: number | null
         }
         Update: {
+          album?: string | null
           artist?: string
           artwork_path?: string | null
           audio_path?: string
+          bitrate_kbps?: number | null
           bpm?: number | null
+          category_id?: string | null
+          content_hash?: string | null
           created_at?: string
+          dedupe_key?: string | null
           download_count?: number
           duration_sec?: number | null
           energy?: number | null
@@ -1626,6 +1623,8 @@ export type Database = {
           rating_avg?: number
           rating_count?: number
           reject_reason?: string | null
+          section?: string
+          source_filename?: string | null
           status?: string
           tags?: string[]
           title?: string
@@ -1633,9 +1632,18 @@ export type Database = {
           uploaded_by?: string | null
           version?: string
           waveform?: Json | null
+          work_key?: string | null
           year?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dj_tracks_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "dj_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       doc_contacts: {
         Row: {
