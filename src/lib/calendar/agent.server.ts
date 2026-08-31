@@ -565,12 +565,16 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
       await db.from("calendar_reminders").update({ sent_at: now.toISOString() }).eq("id", r.id);
       continue;
     }
-    if (cid) {
-      if (r.kind === "before") {
-        const mins = r.payload?.minutes ?? 60;
-        await tgSend(cid, `⏰ Через ${mins} мин:\n${line(item, dirs, prefs.tz)}`, itemButtons(item));
-      } else if (r.kind === "followup" && item.status !== "done") {
-        await tgSend(cid, `Как прошло: <b>${tgEsc(item.title)}</b>?`, [
+    if (r.kind === "before") {
+      const mins = r.payload?.minutes ?? 60;
+      const text = `⏰ Через ${mins} мин:\n${line(item, dirs, prefs.tz)}`;
+      if (cid) await tgSend(cid, text, itemButtons(item));
+      await pushOutbox(db, { text, kind: "reminder", item_id: item.id });
+      await pushAliceReminder(db, prefs, `Через ${mins} минут: ${item.title}`);
+    } else if (r.kind === "followup" && item.status !== "done") {
+      const text = `Как прошло: <b>${tgEsc(item.title)}</b>?`;
+      if (cid) {
+        await tgSend(cid, text, [
           [
             { text: "✅ Сделано", data: `done:${item.id}` },
             { text: "🕒 Перенести", data: `move:${item.id}` },
@@ -578,6 +582,7 @@ export async function runTick(db: Db): Promise<{ reminders: number; digests: str
           [{ text: "Оставить как есть", data: `keep:${item.id}` }],
         ]);
       }
+      await pushOutbox(db, { text, kind: "followup", item_id: item.id });
     }
     await db.from("calendar_reminders").update({ sent_at: now.toISOString() }).eq("id", r.id);
     sent += 1;
