@@ -69,7 +69,7 @@ function Page() {
       <AdminPageHeader
         title="Участники клуба"
         subtitle="Заявки, доступ к библиотеке и права на загрузку."
-        actions={
+        action={
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setTempPassword(null); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-gradient-primary"><UserPlus className="mr-1.5 h-4 w-4" />Добавить участника</Button>
