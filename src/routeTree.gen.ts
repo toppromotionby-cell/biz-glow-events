@@ -73,6 +73,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMailAccountsRouteImport } from './routes/admin.mail-accounts'
 import { Route as AdminHelpRouteImport } from './routes/admin.help'
+import { Route as AdminCopilotRouteImport } from './routes/admin.copilot'
 import { Route as AdminCatalogStructureRouteImport } from './routes/admin.catalog-structure'
 import { Route as AdminCatalogRouteImport } from './routes/admin.catalog'
 import { Route as AdminCasesRouteImport } from './routes/admin.cases'
@@ -456,6 +457,11 @@ const AdminHelpRoute = AdminHelpRouteImport.update({
   path: '/help',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCopilotRoute = AdminCopilotRouteImport.update({
+  id: '/copilot',
+  path: '/copilot',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogStructureRoute = AdminCatalogStructureRouteImport.update({
   id: '/catalog-structure',
   path: '/catalog-structure',
@@ -830,6 +836,7 @@ export interface FileRoutesByFullPath {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
+  '/admin/copilot': typeof AdminCopilotRoute
   '/admin/help': typeof AdminHelpRouteWithChildren
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -956,6 +963,7 @@ export interface FileRoutesByTo {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
+  '/admin/copilot': typeof AdminCopilotRoute
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/planner': typeof AdminPlannerRoute
@@ -1083,6 +1091,7 @@ export interface FileRoutesById {
   '/admin/cases': typeof AdminCasesRoute
   '/admin/catalog': typeof AdminCatalogRouteWithChildren
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
+  '/admin/copilot': typeof AdminCopilotRoute
   '/admin/help': typeof AdminHelpRouteWithChildren
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -1213,6 +1222,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/catalog-structure'
+    | '/admin/copilot'
     | '/admin/help'
     | '/admin/mail-accounts'
     | '/admin/notifications'
@@ -1339,6 +1349,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/catalog-structure'
+    | '/admin/copilot'
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/planner'
@@ -1465,6 +1476,7 @@ export interface FileRouteTypes {
     | '/admin/cases'
     | '/admin/catalog'
     | '/admin/catalog-structure'
+    | '/admin/copilot'
     | '/admin/help'
     | '/admin/mail-accounts'
     | '/admin/notifications'
@@ -2066,6 +2078,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHelpRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/copilot': {
+      id: '/admin/copilot'
+      path: '/copilot'
+      fullPath: '/admin/copilot'
+      preLoaderRoute: typeof AdminCopilotRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog-structure': {
       id: '/admin/catalog-structure'
       path: '/catalog-structure'
@@ -2581,6 +2600,7 @@ interface AdminRouteChildren {
   AdminCasesRoute: typeof AdminCasesRoute
   AdminCatalogRoute: typeof AdminCatalogRouteWithChildren
   AdminCatalogStructureRoute: typeof AdminCatalogStructureRoute
+  AdminCopilotRoute: typeof AdminCopilotRoute
   AdminHelpRoute: typeof AdminHelpRouteWithChildren
   AdminMailAccountsRoute: typeof AdminMailAccountsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -2627,6 +2647,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCasesRoute: AdminCasesRoute,
   AdminCatalogRoute: AdminCatalogRouteWithChildren,
   AdminCatalogStructureRoute: AdminCatalogStructureRoute,
+  AdminCopilotRoute: AdminCopilotRoute,
   AdminHelpRoute: AdminHelpRouteWithChildren,
   AdminMailAccountsRoute: AdminMailAccountsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
