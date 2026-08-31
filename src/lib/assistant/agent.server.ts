@@ -1,4 +1,5 @@
 // Мозг бота-помощника: команды, свободный диалог, план-режим, знания, файлы, гигиена.
+import { toTgHtml } from "@/lib/calendar/tg-format";
 import { helpText, refusal, systemPrompt } from "@/lib/assistant/persona";
 import {
   getSettings,
@@ -282,7 +283,7 @@ async function freeform(
       await recentDialog(who.chatId),
       `Задача: ${text}\n\nЭто нестандартная или массовая операция. Собери план на утверждение, ничего не выполняй.`,
     );
-    await reply(who.chatId, who, `🗂 <b>План на утверждение</b>\n\n${plan}`, PLAN_BUTTONS);
+    await reply(who.chatId, who, `🗂 <b>План на утверждение</b>\n\n${toTgHtml(plan)}`, PLAN_BUTTONS);
     return;
   }
 
@@ -312,7 +313,7 @@ async function freeform(
   const memorable = /(реквизит|всегда|правило|договорились|запомни|по умолчанию|тариф|скидка)/i.test(text);
   if (memorable) buttons.push([{ text: "🧠 Записать в базу знаний", data: "kb:save" }]);
 
-  await reply(who.chatId, who, answer + sourcesBlock(web), buttons.length ? buttons : undefined);
+  await reply(who.chatId, who, toTgHtml(answer) + sourcesBlock(web), buttons.length ? buttons : undefined);
 }
 
 /* --------------------------------- callbacks --------------------------------- */

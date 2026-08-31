@@ -1,5 +1,7 @@
-// Транспорт бота-помощника к Telegram Bot API через connector-gateway (только сервер).
-// У помощника собственный бот: ключ подключения отдельный от бота сайта, планера и DJ-бота.
+// Транспорт бота-помощника к Telegram Bot API (только сервер).
+// Два режима: connector-gateway (ключ подключения) и direct (сырой токен BotFather).
+import { sanitizeTgHtml } from "@/lib/calendar/tg-format";
+
 const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
 
 export interface TgButton {
@@ -17,16 +19,46 @@ export function assistantTgKey(): string | null {
   );
 }
 
-/** Подключён ли помощнику собственный бот. */
-export function assistantBotConfigured(): boolean {
-  return Boolean(assistantTgKey() && process.env.LOVABLE_API_KEY);
+/** Сырой токен бота (BotFather) — используется, когда коннектор не подключён. */
+export function assistantBotToken(): string | null {
+  return process.env.ASSISTANT_TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || null;
 }
 
-function keys(): { lovable: string; tg: string } | null {
+type Wire =
+  | { mode: "gateway"; base: string; fileBase: string; headers: Record<string, string> }
+  | { mode: "direct"; base: string; fileBase: string; headers: Record<string, string> };
+
+function wire(): Wire | null {
   const lovable = process.env.LOVABLE_API_KEY;
   const tg = assistantTgKey();
-  if (!lovable || !tg) return null;
-  return { lovable, tg };
+  if (lovable && tg) {
+    return {
+      mode: "gateway",
+      base: GATEWAY,
+      fileBase: `${GATEWAY}/file`,
+      headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": tg },
+    };
+  }
+  const token = assistantBotToken();
+  if (token) {
+    return {
+      mode: "direct",
+      base: `https://api.telegram.org/bot${token}`,
+      fileBase: `https://api.telegram.org/file/bot${token}`,
+      headers: {},
+    };
+  }
+  return null;
+}
+
+/** Как именно подключён помощник (для админки). */
+export function assistantTransportMode(): "gateway" | "direct" | "none" {
+  return wire()?.mode ?? "none";
+}
+
+/** Подключён ли помощнику собственный бот. */
+export function assistantBotConfigured(): boolean {
+  return wire() !== null;
 }
 
 export function esc(s: string | null | undefined): string {
@@ -42,19 +74,15 @@ function keyboard(rows: TgButton[][] | undefined) {
 }
 
 async function call<T = unknown>(method: string, body: unknown): Promise<T | null> {
-  const k = keys();
-  if (!k) {
-    console.error(`[assistant-tg] ${method}: бот не настроен (нет ключа подключения)`);
+  const w = wire();
+  if (!w) {
+    console.error(`[assistant-tg] ${method}: бот не настроен (нет ни ключа подключения, ни токена)`);
     return null;
   }
   try {
-    const res = await fetch(`${GATEWAY}/${method}`, {
+    const res = await fetch(`${w.base}/${method}`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${k.lovable}`,
-        "X-Connection-Api-Key": k.tg,
-        "Content-Type": "application/json",
-      },
+      headers: { ...w.headers, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     const json = (await res.json().catch(() => null)) as
@@ -70,6 +98,7 @@ async function call<T = unknown>(method: string, body: unknown): Promise<T | nul
     return null;
   }
 }
+
 
 function stripTags(s: string): string {
   return s
@@ -98,7 +127,7 @@ export async function tgSend(
   text: string,
   buttons?: TgButton[][],
 ): Promise<{ message_id: number } | null> {
-  const chunks = splitText(text);
+  const chunks = splitText(sanitizeTgHtml(text));
   let last: { message_id: number } | null = null;
   for (let i = 0; i < chunks.length; i += 1) {
     const isLast = i === chunks.length - 1;
@@ -195,21 +224,21 @@ export async function tgSendDocument(
   caption?: string,
   mime = "application/pdf",
 ): Promise<{ ok: boolean; error?: string }> {
-  const k = keys();
-  if (!k) return { ok: false, error: "Telegram не подключён: нет ключа бота" };
+  const w = wire();
+  if (!w) return { ok: false, error: "Telegram не подключён: нет ключа бота" };
   if (!bytes?.byteLength) return { ok: false, error: "Пустой файл" };
   if (bytes.byteLength > TG_MAX_FILE_BYTES) return { ok: false, error: "Файл больше 45 МБ — Telegram такой не примет" };
 
   const form = new FormData();
   form.append("chat_id", String(chatId));
-  if (caption) form.append("caption", caption.slice(0, 1000));
+  if (caption) form.append("caption", sanitizeTgHtml(caption).slice(0, 1000));
   form.append("parse_mode", "HTML");
   form.append("document", new Blob([bytes.slice()], { type: mime }), filename);
 
   try {
-    const res = await fetch(`${GATEWAY}/sendDocument`, {
+    const res = await fetch(`${w.base}/sendDocument`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${k.lovable}`, "X-Connection-Api-Key": k.tg },
+      headers: { ...w.headers },
       body: form,
     });
     const json = (await res.json().catch(() => null)) as { ok?: boolean; description?: string } | null;
@@ -222,14 +251,12 @@ export async function tgSendDocument(
 
 /** Скачивание файла из Telegram (голосовые сообщения). */
 export async function tgDownloadFile(fileId: string): Promise<{ base64: string; mime: string } | null> {
-  const k = keys();
-  if (!k) return null;
+  const w = wire();
+  if (!w) return null;
   const info = await call<{ file_path?: string }>("getFile", { file_id: fileId });
   const path = info?.file_path;
   if (!path) return null;
-  const res = await fetch(`${GATEWAY}/file/${path}`, {
-    headers: { Authorization: `Bearer ${k.lovable}`, "X-Connection-Api-Key": k.tg },
-  });
+  const res = await fetch(`${w.fileBase}/${path}`, { headers: { ...w.headers } });
   if (!res.ok) {
     console.error(`[assistant-tg] file download failed [${res.status}]`);
     return null;
@@ -238,3 +265,4 @@ export async function tgDownloadFile(fileId: string): Promise<{ base64: string; 
   const mime = path.endsWith(".mp3") ? "audio/mpeg" : path.endsWith(".m4a") ? "audio/mp4" : "audio/ogg";
   return { base64: buf.toString("base64"), mime };
 }
+

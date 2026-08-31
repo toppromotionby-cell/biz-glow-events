@@ -11,11 +11,38 @@ function esc(s: string): string {
 }
 
 /**
- * Текст модели (обычно с Markdown) → HTML, который принимает Telegram.
- * Всё, что не является поддерживаемой разметкой, экранируется.
+ * Модель нередко отдаёт готовые Telegram-теги (<b>…</b>). Их нужно сохранить
+ * как разметку, а всё остальное — экранировать. Поэтому разрешённые теги
+ * временно заменяются на плейсхолдеры, которые не переживают esc().
+ */
+const TAG_RE = /<\/?([a-zA-Z][a-zA-Z0-9]*)((?:\s[^<>]*)?)\/?>/g;
+const PH_OPEN = "\u0001";
+const PH_CLOSE = "\u0002";
+
+function protectAllowedTags(input: string): { text: string; tags: string[] } {
+  const tags: string[] = [];
+  const text = input.replace(TAG_RE, (match, rawName: string) => {
+    if (!ALLOWED.has(String(rawName).toLowerCase())) return match;
+    tags.push(match);
+    return `${PH_OPEN}${tags.length - 1}${PH_CLOSE}`;
+  });
+  return { text, tags };
+}
+
+function restoreAllowedTags(input: string, tags: string[]): string {
+  return input.replace(
+    new RegExp(`${PH_OPEN}(\\d+)${PH_CLOSE}`, "g"),
+    (_m, idx: string) => tags[Number(idx)] ?? "",
+  );
+}
+
+/**
+ * Текст модели (обычно с Markdown, иногда с готовыми тегами) → HTML,
+ * который принимает Telegram. Всё лишнее экранируется.
  */
 export function mdToTgHtml(input: string): string {
-  let out = esc(input.replace(/\r\n/g, "\n"));
+  const { text, tags } = protectAllowedTags(input.replace(/\r\n/g, "\n"));
+  let out = esc(text);
   // Код в обратных кавычках — раньше остальных правил.
   out = out.replace(/```([\s\S]*?)```/g, (_m, code: string) => `<pre>${code.trim()}</pre>`);
   out = out.replace(/`([^`\n]+)`/g, "<code>$1</code>");
@@ -31,8 +58,15 @@ export function mdToTgHtml(input: string): string {
   out = out.replace(/^\s*[-*+]\s+/gm, "• ");
   out = out.replace(/^\s*(---|\*\*\*|___)\s*$/gm, "");
   // Не больше одной пустой строки подряд
-  return out.replace(/\n{3,}/g, "\n\n").trim();
+  out = out.replace(/\n{3,}/g, "\n\n").trim();
+  return restoreAllowedTags(out, tags);
 }
+
+/** Есть ли в готовом тексте видимые (экранированные) теги — признак поломки. */
+export function hasVisibleTgTags(text: string): boolean {
+  return /&lt;\/?(b|strong|i|em|u|s|code|pre|a)(\s|&gt;)/i.test(text);
+}
+
 
 /**
  * Убирает недопустимые и незакрытые теги: такое сообщение Telegram отклоняет целиком.

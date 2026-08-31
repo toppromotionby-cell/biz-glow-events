@@ -14,15 +14,18 @@ export const assistantStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context as never);
-    const { assistantBotConfigured, tgGetMe, tgWebhookInfo } = await import("@/lib/assistant/transport.server");
+    const { assistantBotConfigured, assistantTransportMode, tgGetMe, tgWebhookInfo } = await import(
+      "@/lib/assistant/transport.server"
+    );
     const { getSettings, allLinks } = await import("@/lib/assistant/store.server");
     const settings = await getSettings();
     const links = await allLinks();
+    const mode = assistantTransportMode();
     if (!assistantBotConfigured()) {
-      return { configured: false, bot: null, webhook: null, settings, links };
+      return { configured: false, mode, bot: null, webhook: null, settings, links };
     }
     const [bot, webhook] = await Promise.all([tgGetMe(), tgWebhookInfo()]);
-    return { configured: true, bot, webhook, settings, links };
+    return { configured: true, mode, bot, webhook, settings, links };
   });
 
 export const assistantRegisterWebhook = createServerFn({ method: "POST" })
@@ -33,11 +36,14 @@ export const assistantRegisterWebhook = createServerFn({ method: "POST" })
   })
   .handler(async ({ context, data }) => {
     await assertAdmin(context as never);
-    const { assistantTgKey, tgSetWebhook, tgSetMyCommands } = await import("@/lib/assistant/transport.server");
-    const key = assistantTgKey();
-    if (!key) throw new Error("Бот не подключён: нет ключа подключения Telegram");
+    const { assistantTgKey, assistantBotToken, tgSetWebhook, tgSetMyCommands } = await import(
+      "@/lib/assistant/transport.server"
+    );
+    const key = assistantTgKey() ?? assistantBotToken();
+    if (!key) throw new Error("Бот не подключён: нет ни ключа подключения, ни токена бота");
     const { assistantWebhookSecret } = await import("@/routes/api/public/assistant/webhook");
     const ok = await tgSetWebhook(`${data.baseUrl}/api/public/assistant/webhook`, assistantWebhookSecret(key));
+
     await tgSetMyCommands();
     if (!ok) throw new Error("Telegram отклонил регистрацию вебхука");
     return { ok: true };
