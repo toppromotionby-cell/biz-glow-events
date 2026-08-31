@@ -46,12 +46,17 @@ export const Route = createFileRoute("/api/public/planner/telegram")({
           const db = await admin();
           const cb = update.callback_query;
           if (cb?.id && cb.data && cb.message?.chat?.id && cb.message.message_id) {
+            if (!(await chatAllowed(db, cb.message.chat.id))) return Response.json({ ok: true, denied: true });
             await handleCallback(db, cb.message.chat.id, cb.message.message_id, cb.id, cb.data);
             return Response.json({ ok: true });
           }
           const msg = update.message;
           const chatId = msg?.chat?.id;
           if (!chatId) return Response.json({ ok: true, ignored: true });
+          if (!(await chatAllowed(db, chatId))) {
+            await tgSend(chatId, "Этот бот — личный планер владельца. Доступ ограничен.");
+            return Response.json({ ok: true, denied: true });
+          }
           const fileId = msg?.voice?.file_id ?? msg?.audio?.file_id;
           if (fileId) {
             await handleTelegramVoice(db, chatId, fileId);
