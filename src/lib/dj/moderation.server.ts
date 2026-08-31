@@ -23,7 +23,32 @@ export type TrackInput = {
   /** Слаги форматов мероприятий — связь many-to-many. */
   formats?: string[];
   file_size?: number | null;
+  bitrate_kbps?: number | null;
+  album?: string | null;
+  source_filename?: string | null;
+  content_hash?: string | null;
+  dedupe_key?: string | null;
+  work_key?: string | null;
+  cover_palette?: string | null;
+  cover_spec_version?: number | null;
 };
+
+/**
+ * Проверка дубликатов перед загрузкой: по SHA-256 содержимого и по
+ * нормализованному ключу «артист|название|версия|длительность».
+ */
+export async function findExistingDuplicates(hashes: string[], keys: string[]) {
+  const taken = { hashes: new Set<string>(), keys: new Set<string>() };
+  if (hashes.length) {
+    const { data } = await supabaseAdmin.from("dj_tracks").select("content_hash").in("content_hash", hashes);
+    for (const r of data ?? []) if (r.content_hash) taken.hashes.add(r.content_hash);
+  }
+  if (keys.length) {
+    const { data } = await supabaseAdmin.from("dj_tracks").select("dedupe_key").in("dedupe_key", keys);
+    for (const r of data ?? []) if (r.dedupe_key) taken.keys.add(r.dedupe_key);
+  }
+  return { hashes: [...taken.hashes], keys: [...taken.keys] };
+}
 
 export async function insertTrack(userId: string, input: TrackInput, status: DjContentStatus) {
   const { data, error } = await supabaseAdmin
@@ -45,6 +70,14 @@ export async function insertTrack(userId: string, input: TrackInput, status: DjC
       format: input.format ?? null,
       ...(input.section ? { section: input.section } : {}),
       file_size: input.file_size ?? null,
+      bitrate_kbps: input.bitrate_kbps ?? null,
+      album: input.album ?? null,
+      source_filename: input.source_filename ?? null,
+      content_hash: input.content_hash ?? null,
+      dedupe_key: input.dedupe_key ?? null,
+      work_key: input.work_key ?? null,
+      ...(input.cover_palette ? { cover_palette: input.cover_palette } : {}),
+      ...(input.cover_spec_version ? { cover_spec_version: input.cover_spec_version } : {}),
       status,
       uploaded_by: userId,
       published_at: status === "published" ? new Date().toISOString() : null,
