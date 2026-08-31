@@ -1,5 +1,6 @@
 // Роль бота-помощника: кто он, что делает, чего не делает и как отвечает.
 // Клиентобезопасный модуль: используется и в тестах, и в админке.
+import { SHARED_LEARNING_RULES } from "@/lib/botkit/format";
 
 export const ASSISTANT_NAME = "Помощник Event-Hub";
 export const SITE = "https://event-hub.by";
@@ -98,6 +99,7 @@ export function systemPrompt(ctx: {
     BOUNDARY_RULES,
     PLAN_RULES,
     SCREENSHOT_RULES,
+    SHARED_LEARNING_RULES,
     KNOWLEDGE_RULES,
     HYGIENE_RULES,
     FALLBACK_RULES,
