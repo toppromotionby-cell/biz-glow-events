@@ -7,9 +7,10 @@ describe("tg-format", () => {
     expect(toTgHtml("5 < 7 & 8 > 2")).not.toContain("<7");
   });
 
-  it("вырезает неподдерживаемые теги", () => {
-    expect(sanitizeTgHtml("<div><b>ок</b></div>")).toBe("<b>ок</b>");
+  it("экранирует неподдерживаемые теги, сохраняя разрешённые", () => {
+    expect(sanitizeTgHtml("<div><b>ок</b></div>")).toBe("&lt;div&gt;<b>ок</b>&lt;/div&gt;");
   });
+
 
   it("делит длинный текст на части", () => {
     const parts = splitTgText("строка\n".repeat(2000));
