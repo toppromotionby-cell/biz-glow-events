@@ -2,7 +2,8 @@
 import type { CalDirection, CalItem } from "@/lib/calendar/model";
 import { fmtWhen, freeSlots, isOverdue, localHm, priorityScore, STATUS_LABEL } from "@/lib/calendar/model";
 import { adviseDay, AiBlockedError, parseIntent, transcribeVoice } from "@/lib/calendar/parse.server";
-import { tgAnswerCallback, tgDownloadFile, tgEdit, tgEsc, tgSend, tgSendPhoto } from "@/lib/calendar/telegram.server";
+import { tgAnswerCallback, tgDownloadFile, tgEdit, tgEsc, tgSend, tgSendPhoto, tgSetMyCommands } from "@/lib/calendar/telegram.server";
+import { syncFooter } from "@/lib/calendar/tg-format";
 import { dayTimelineUrl, directionPieUrl, itemsTable, weekLoadUrl } from "@/lib/calendar/visuals";
 import {
   admin,
@@ -239,6 +240,7 @@ export async function handleTelegramText(
   const cmd = text.trim().toLowerCase();
   if (cmd === "/start" || cmd === "/help" || cmd === "помощь") {
     await db.from("assistant_prefs").update({ tg_chat_id: chatId }).eq("id", 1);
+    await tgSetMyCommands();
     await tgSend(
       chatId,
       [
@@ -256,6 +258,12 @@ export async function handleTelegramText(
         "/open — незакрытые хвосты",
         "",
         "Можно и просто спросить: «что у меня завтра?», «когда встреча с подрядчиком?»",
+        "",
+        "Примеры фраз:",
+        "• «завтра в 15 встреча с подрядчиком на объекте»",
+        "• «перенеси её на пятницу в 11»",
+        "• «сделано» под карточкой — закрывает запись",
+        "• «запомни: планёрки по понедельникам в 10»",
       ].join("\n"),
     );
     return;
@@ -377,12 +385,14 @@ export async function handleTelegramText(
     chatId,
     [
       `Записал: ${line(item, dirs, prefs.tz)}`,
+      item.sync ? syncFooter(item.sync) : "",
       clash ? `\n⚠️ Рядом уже стоит: <b>${tgEsc(clash.title)}</b> (${tgEsc(fmtWhen(clash, prefs.tz))})` : "",
     ]
       .filter(Boolean)
       .join("\n"),
     itemButtons(item),
   );
+
 }
 
 export async function handleTelegramVoice(db: Db, chatId: number, fileId: string): Promise<void> {

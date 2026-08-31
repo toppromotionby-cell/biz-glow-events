@@ -1,5 +1,8 @@
 // Транспорт к Telegram Bot API через connector-gateway (только сервер).
+import { sanitizeTgHtml, splitTgText } from "@/lib/calendar/tg-format";
+
 const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
+
 
 export interface TgButton {
   text: string;
@@ -81,19 +84,68 @@ function keyboard(rows: TgButton[][] | undefined) {
   return { inline_keyboard: rows.map((r) => r.map((b) => ({ text: b.text, callback_data: b.data.slice(0, 60) }))) };
 }
 
+/**
+ * Отправка сообщения: длинный текст режется на части, а если Telegram
+ * отклонил HTML-разметку — повторяем без parse_mode, чтобы текст всё же дошёл.
+ */
 export async function tgSend(
   chatId: number | string,
   text: string,
   buttons?: TgButton[][],
 ): Promise<{ message_id: number } | null> {
-  return call<{ message_id: number }>("sendMessage", {
-    chat_id: chatId,
-    text,
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-    reply_markup: keyboard(buttons),
-  });
+  const safe = sanitizeTgHtml(text);
+  const chunks = splitTgText(safe);
+  if (!chunks.length) return null;
+  let last: { message_id: number } | null = null;
+  for (let i = 0; i < chunks.length; i += 1) {
+    const isLast = i === chunks.length - 1;
+    const payload = {
+      chat_id: chatId,
+      text: chunks[i],
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+      reply_markup: isLast ? keyboard(buttons) : undefined,
+    };
+    let sent = await call<{ message_id: number }>("sendMessage", payload);
+    if (!sent) {
+      // Чаще всего причина — разметка: пробуем ещё раз чистым текстом.
+      sent = await call<{ message_id: number }>("sendMessage", {
+        ...payload,
+        parse_mode: undefined,
+        text: stripTags(chunks[i] as string),
+      });
+    }
+    if (sent) last = sent;
+  }
+  return last;
 }
+
+function stripTags(s: string): string {
+  return s
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
+/** Регистрация меню команд бота (видно по кнопке «/» в Telegram). */
+export async function tgSetMyCommands(): Promise<boolean> {
+  const res = await call<boolean>("setMyCommands", {
+    commands: [
+      { command: "today", description: "План на сегодня" },
+      { command: "tomorrow", description: "План на завтра" },
+      { command: "week", description: "Ближайшие 7 дней" },
+      { command: "day", description: "План на дату: /day 5.09" },
+      { command: "next", description: "Ближайшие дела" },
+      { command: "overdue", description: "Просроченное" },
+      { command: "open", description: "Незакрытые хвосты" },
+      { command: "find", description: "Поиск: /find подрядчик" },
+      { command: "help", description: "Что я умею" },
+    ],
+  });
+  return res === true;
+}
+
 
 export async function tgEdit(
   chatId: number | string,

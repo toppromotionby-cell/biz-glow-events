@@ -2,6 +2,8 @@
 // Чистый модуль (без БД и сети) — легко тестировать.
 import type { CalDirection, CalItem } from "@/lib/calendar/model";
 import { fmtWhen, isOverdue, localHm, priorityScore } from "@/lib/calendar/model";
+import { syncFooter, type SyncStatus } from "@/lib/calendar/tg-format";
+
 
 export function esc(s: string | null | undefined): string {
   if (s == null) return "";
@@ -103,12 +105,19 @@ export function renderRange(title: string, items: CalItem[], dirs: CalDirection[
   return `📅 <b>${esc(title)}</b> — ${items.length} ${plural(items.length, "запись", "записи", "записей")}${body}`;
 }
 
-/** Компактная карточка записи (для подтверждений). */
-export function renderItemCard(item: CalItem, dirs: CalDirection[], tz: string, prefix = ""): string {
+/** Компактная карточка записи (для подтверждений) со строкой синхронизации. */
+export function renderItemCard(
+  item: CalItem & { sync?: SyncStatus[] },
+  dirs: CalDirection[],
+  tz: string,
+  prefix = "",
+): string {
   const notes = item.notes ? `\n   📝 ${esc(item.notes)}` : "";
   const people = item.participants?.length ? `\n   👥 ${esc(item.participants.join(", "))}` : "";
-  return `${prefix}${itemLine(item, dirs, tz)}${notes}${people}`;
+  const footer = item.sync ? `\n   ${syncFooter(item.sync).replace(/\n/g, "\n   ")}` : "";
+  return `${prefix}${itemLine(item, dirs, tz)}${notes}${people}${footer}`;
 }
+
 
 /** Кнопки под записью. */
 export function itemButtons(item: CalItem): Array<Array<{ text: string; data: string }>> {

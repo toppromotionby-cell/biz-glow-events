@@ -61,28 +61,96 @@ export function eventSummary(item: Pick<CalItem, "title" | "kind">, dir: CalDire
   return [prefix, kindMark, item.title].filter(Boolean).join(" ");
 }
 
-export function itemToEvent(item: CalItem, dir: CalDirection | null): Record<string, unknown> {
+const PLANNER_URL = "https://event-hub.by/admin/planner";
+
+/** Дата в формате YYYY-MM-DD в часовом поясе записи. */
+export function ymdIn(iso: string, tz: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+  return parts;
+}
+
+function addDays(ymd: string, days: number): string {
+  const d = new Date(`${ymd}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+const PRIORITY_TEXT: Record<number, string> = { 1: "P1 — срочно", 2: "P2 — важно", 3: "P3 — обычно", 4: "P4 — потом" };
+const STATUS_TEXT: Record<string, string> = {
+  planned: "Запланировано",
+  in_progress: "В работе",
+  done: "Сделано",
+  canceled: "Отменено",
+};
+
+export interface EventBuildOpts {
+  /** Минуты «до начала» для напоминаний Google. */
+  reminderMinutes?: number[];
+  appUrl?: string;
+}
+
+export function itemToEvent(
+  item: CalItem,
+  dir: CalDirection | null,
+  opts: EventBuildOpts = {},
+): Record<string, unknown> {
   const start = item.starts_at ?? item.due_at;
   const end = item.ends_at ?? (start ? new Date(new Date(start).getTime() + 30 * 60_000).toISOString() : null);
+  const emails = item.participants.filter((p) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p));
+  const names = item.participants.filter((p) => !emails.includes(p));
+
+  const description = [
+    item.notes,
+    dir ? `Направление: ${dir.title}` : null,
+    `Тип: ${item.kind === "task" ? "Задача" : "Встреча"}`,
+    `Приоритет: ${PRIORITY_TEXT[item.priority] ?? `P${item.priority}`}`,
+    `Статус: ${STATUS_TEXT[item.status] ?? item.status}`,
+    item.importance === "hard" ? "⚠️ Жёсткая — не переносить" : null,
+    item.tags.length ? `Метки: ${item.tags.join(", ")}` : null,
+    names.length ? `Участники: ${names.join(", ")}` : null,
+    `Карточка в планере: ${opts.appUrl ?? PLANNER_URL}?item=${item.id}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const mins = (opts.reminderMinutes ?? []).filter((m) => m > 0 && m <= 40_320).slice(0, 5);
+
   const body: Record<string, unknown> = {
     summary: eventSummary(item, dir),
-    description: [item.notes, item.importance === "hard" ? "⚠️ Жёсткая — не переносить" : null]
-      .filter(Boolean)
-      .join("\n\n"),
+    description,
     location: item.location ?? undefined,
     colorId: dir?.google_color_id ?? undefined,
-    extendedProperties: { private: { planner_id: item.id, planner_kind: item.kind } },
+    extendedProperties: {
+      private: {
+        planner_id: item.id,
+        planner_kind: item.kind,
+        planner_direction: dir?.key ?? "",
+        planner_priority: String(item.priority),
+      },
+    },
+    reminders: mins.length
+      ? { useDefault: false, overrides: mins.map((m) => ({ method: "popup", minutes: m })) }
+      : { useDefault: true },
   };
+  if (emails.length) body.attendees = emails.map((email) => ({ email }));
+
   if (item.all_day && start) {
-    const d = new Date(start).toISOString().slice(0, 10);
+    const d = ymdIn(start, item.tz);
     body.start = { date: d };
-    body.end = { date: d };
+    // В Google конец all-day события исключающий — иначе день «съезжает».
+    body.end = { date: addDays(d, 1) };
   } else if (start) {
     body.start = { dateTime: new Date(start).toISOString(), timeZone: item.tz };
     body.end = { dateTime: new Date(end as string).toISOString(), timeZone: item.tz };
   }
   return body;
 }
+
 
 export async function gcalInsert(calendarId: string, body: Record<string, unknown>): Promise<GEvent> {
   return gcal<GEvent>(`/calendars/${encodeURIComponent(calendarId)}/events`, { method: "POST", body });

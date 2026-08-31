@@ -23,9 +23,14 @@ export function dayKey(iso: string, tz: string): string {
   return new Intl.DateTimeFormat("ru-RU", { timeZone: tz, day: "2-digit", month: "2-digit" }).format(new Date(iso));
 }
 
-function chartUrl(config: unknown, w = 900, h = 500): string {
-  return `${CHART}?w=${w}&h=${h}&bkg=white&f=png&c=${encodeURIComponent(JSON.stringify(config))}`;
+/** Лимит длины URL: длиннее Telegram/QuickChart не примут. */
+export const CHART_URL_LIMIT = 3800;
+
+function chartUrl(config: unknown, w = 900, h = 500): string | null {
+  const url = `${CHART}?w=${w}&h=${h}&bkg=white&f=png&c=${encodeURIComponent(JSON.stringify(config))}`;
+  return url.length > CHART_URL_LIMIT ? null : url;
 }
+
 
 function colorOf(item: CalItem, dirs: CalDirection[]): string {
   const dir = dirs.find((d) => d.id === item.direction_id);
@@ -70,7 +75,7 @@ export function dayTimelineUrl(title: string, items: CalItem[], dirs: CalDirecti
     },
     900,
     Math.max(260, 90 + labels.length * 34),
-  ).replace("%22__H__%22", encodeURIComponent("function(v){return v+':00'}"));
+  )?.replace("%22__H__%22", encodeURIComponent("function(v){return v+':00'}")) ?? null;
 }
 
 /** Загрузка недели: столбики «сколько записей в день», раскрашенные по направлениям. */

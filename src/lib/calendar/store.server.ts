@@ -20,6 +20,16 @@ import {
   patchTask,
 } from "@/lib/calendar/gtasks.server";
 import { routeTarget } from "@/lib/calendar/routing";
+import { reminderLabel, type SyncStatus } from "@/lib/calendar/tg-format";
+
+export interface PushResult {
+  item: CalItem;
+  status: SyncStatus;
+}
+
+/** Запись вместе со статусами выгрузки в Google (для ответа ассистента). */
+export type SyncedItem = CalItem & { sync?: SyncStatus[] };
+
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
@@ -152,26 +162,50 @@ export async function syncCalendarId(db: Admin): Promise<string> {
   return ((data as { google_calendar_id?: string } | null)?.google_calendar_id) || "primary";
 }
 
-/** Выгрузка записи в Google. Ошибки не роняют сохранение — пишем в лог. */
-export async function pushToGoogle(db: Admin, item: CalItem): Promise<CalItem> {
-  if (!googleConfigured()) return item;
+/** Выгрузка записи в Google. Ошибки не роняют сохранение — возвращаем статус. */
+export async function pushToGoogle(db: Admin, item: CalItem, prefs?: AssistantPrefs): Promise<PushResult> {
+  if (!googleConfigured()) {
+    return { item, status: { target: "calendar", state: "skipped", detail: "Google не подключён" } };
+  }
   try {
     const calendarId = await syncCalendarId(db);
     const dirs = await getDirections(db);
     const dir = dirs.find((d) => d.id === item.direction_id) ?? null;
-    const body = itemToEvent(item, dir);
-    if (!body.start) return item; // без времени в Google не выгружаем
+    const mins = prefs
+      ? item.importance === "hard"
+        ? prefs.hard_reminder_minutes
+        : prefs.reminder_minutes
+      : [];
+    // Задача без времени уходит all-day событием на дату срока (или на сегодня).
+    let forGoogle = item;
+    if (!item.starts_at && !item.due_at) {
+      forGoogle = { ...item, all_day: true, due_at: new Date().toISOString() };
+    } else if (!item.starts_at && item.due_at && !item.all_day && item.kind === "task") {
+      forGoogle = { ...item, all_day: true };
+    }
+    const body = itemToEvent(forGoogle, dir, { reminderMinutes: mins });
     const ev = item.google_event_id
       ? await gcalPatch(calendarId, item.google_event_id, body)
       : await gcalInsert(calendarId, body);
     const patch = { google_event_id: ev.id, google_etag: ev.etag ?? null, google_updated_at: ev.updated ?? null };
     await db.from("calendar_items").update(patch).eq("id", item.id);
-    return { ...item, ...patch } as CalItem;
+    return {
+      item: { ...item, ...patch } as CalItem,
+      status: {
+        target: "calendar",
+        state: "ok",
+        reminderLabel: reminderLabel(mins),
+      },
+    };
   } catch (e) {
     console.error("[planner] push to google failed", e);
-    return item;
+    return {
+      item,
+      status: { target: "calendar", state: "failed", detail: (e as Error).message?.slice(0, 120) ?? "ошибка" },
+    };
   }
 }
+
 
 export async function removeFromGoogle(db: Admin, item: CalItem): Promise<void> {
   if (!googleConfigured() || !item.google_event_id) return;
@@ -197,8 +231,10 @@ export async function taskListForDirection(db: Admin, item: CalItem): Promise<st
 }
 
 /** Выгрузка задачи в Google Tasks. Ошибки не роняют сохранение. */
-export async function pushToTasks(db: Admin, item: CalItem): Promise<CalItem> {
-  if (!gtasksConfigured()) return item;
+export async function pushToTasks(db: Admin, item: CalItem): Promise<PushResult> {
+  if (!gtasksConfigured()) {
+    return { item, status: { target: "tasks", state: "skipped", detail: "Google Задачи не подключены" } };
+  }
   try {
     const listId = (await taskListForDirection(db, item)) ?? "@default";
     const body = itemToTask(item);
@@ -219,11 +255,19 @@ export async function pushToTasks(db: Admin, item: CalItem): Promise<CalItem> {
       google_tasks_updated_at: task.updated ?? null,
     };
     await db.from("calendar_items").update(patch).eq("id", item.id);
-    return { ...item, ...patch } as CalItem;
+    const dirs = await getDirections(db);
+    const dirTitle = dirs.find((d) => d.id === item.direction_id)?.title ?? null;
+    return {
+      item: { ...item, ...patch } as CalItem,
+      status: { target: "tasks", state: "ok", detail: dirTitle },
+    };
   } catch (e) {
-    if (e instanceof GTasksScopeError) console.warn("[planner] google tasks scope missing — пропускаем выгрузку");
-    else console.error("[planner] push to google tasks failed", e);
-    return item;
+    if (e instanceof GTasksScopeError) {
+      console.warn("[planner] google tasks scope missing — пропускаем выгрузку");
+      return { item, status: { target: "tasks", state: "skipped", detail: "нет доступа к Google Задачам" } };
+    }
+    console.error("[planner] push to google tasks failed", e);
+    return { item, status: { target: "tasks", state: "failed", detail: (e as Error).message?.slice(0, 120) } };
   }
 }
 
@@ -236,16 +280,28 @@ export async function removeFromTasks(db: Admin, item: CalItem): Promise<void> {
   }
 }
 
-/** Единая точка выгрузки: решает, куда именно уходит запись. */
-export async function syncTargets(db: Admin, item: CalItem, prefs: AssistantPrefs): Promise<CalItem> {
+/** Единая точка выгрузки: решает, куда именно уходит запись, и отдаёт статусы. */
+export async function syncTargets(db: Admin, item: CalItem, prefs: AssistantPrefs): Promise<SyncedItem> {
   const target = routeTarget(item, prefs.task_routing);
-  let out = item;
-  if (target === "calendar" || target === "both") out = await pushToGoogle(db, out);
-  else if (out.google_event_id) await removeFromGoogle(db, out);
-  if (prefs.gtasks_enabled && (target === "tasks" || target === "both")) out = await pushToTasks(db, out);
-  else if (out.google_task_id && target !== "both") await removeFromTasks(db, out);
-  return out;
+  let out: CalItem = item;
+  const sync: SyncStatus[] = [];
+  if (target === "calendar" || target === "both") {
+    const res = await pushToGoogle(db, out, prefs);
+    out = res.item;
+    sync.push(res.status);
+  } else if (out.google_event_id) {
+    await removeFromGoogle(db, out);
+  }
+  if (prefs.gtasks_enabled && (target === "tasks" || target === "both")) {
+    const res = await pushToTasks(db, out);
+    out = res.item;
+    sync.push(res.status);
+  } else if (out.google_task_id && target !== "both") {
+    await removeFromTasks(db, out);
+  }
+  return { ...out, sync };
 }
+
 
 /** Импорт изменений из Google Tasks (статусы, названия, дедлайны). */
 export async function pullFromTasks(db: Admin): Promise<{ applied: number }> {
@@ -410,7 +466,7 @@ export interface SaveInput {
   recurrence?: string | null;
 }
 
-export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
+export async function saveItem(db: Admin, input: SaveInput): Promise<SyncedItem> {
   const prefs = await getPrefs(db);
   const payload = {
     kind: input.kind,
@@ -437,13 +493,12 @@ export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
     : db.from("calendar_items").insert(payload).select("*").single();
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  let item = data as unknown as CalItem;
-  await scheduleReminders(db, item, prefs);
-  item = await syncTargets(db, item, prefs);
-  return item;
+  const saved = data as unknown as CalItem;
+  await scheduleReminders(db, saved, prefs);
+  return await syncTargets(db, saved, prefs);
 }
 
-export async function setStatus(db: Admin, id: string, status: CalItem["status"]): Promise<CalItem | null> {
+export async function setStatus(db: Admin, id: string, status: CalItem["status"]): Promise<SyncedItem | null> {
   const { data } = await db
     .from("calendar_items")
     .update({ status, completed_at: status === "done" ? new Date().toISOString() : null })
@@ -457,14 +512,13 @@ export async function setStatus(db: Admin, id: string, status: CalItem["status"]
   if (status === "canceled") {
     await removeFromGoogle(db, item);
     await removeFromTasks(db, item);
-  } else {
-    await syncTargets(db, item, prefs);
+    return item;
   }
-  return item;
+  return await syncTargets(db, item, prefs);
 }
 
 /** Перенос — только по явной команде пользователя. */
-export async function rescheduleItem(db: Admin, id: string, startsAtIso: string): Promise<CalItem | null> {
+export async function rescheduleItem(db: Admin, id: string, startsAtIso: string): Promise<SyncedItem | null> {
   const item = await getItem(db, id);
   if (!item) return null;
   const durationMs = item.starts_at && item.ends_at
@@ -483,8 +537,7 @@ export async function rescheduleItem(db: Admin, id: string, startsAtIso: string)
   if (!updated) return null;
   const prefs = await getPrefs(db);
   await scheduleReminders(db, updated, prefs);
-  await syncTargets(db, updated, prefs);
-  return updated;
+  return await syncTargets(db, updated, prefs);
 }
 
 export async function deleteItem(db: Admin, id: string): Promise<void> {
