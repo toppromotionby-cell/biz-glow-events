@@ -526,18 +526,9 @@ async function handleCallback(cb: NonNullable<TgUpdate["callback_query"]>): Prom
     return;
   }
 
-  if (data.startsWith("plan:")) {
-    const action = data.split(":")[1];
-    if (action === "ok") {
-      await tgAnswerCallback(cb.id, "План утверждён");
-      await reply(chatId, who, "✅ План утверждён. Напишите, с какого шага начинаем.");
-    } else if (action === "edit") {
-      await tgAnswerCallback(cb.id, "Жду правки");
-      await reply(chatId, who, "✏️ Напишите, что поправить в плане.");
-    } else {
-      await tgAnswerCallback(cb.id, "Отменено");
-      await reply(chatId, who, "🚫 План отменён.");
-    }
+  // Живые кнопки карточек решений: ap:<ok|edit|no>:<planId>
+  if (data.startsWith("ap:") || data.startsWith("plan:")) {
+    await handleCardDecision(cb, who, data);
     return;
   }
 
