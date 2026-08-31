@@ -17,7 +17,7 @@ describe("botkit: единые правила", () => {
     expect(rules).toContain("Telegram-HTML");
     expect(rules).toContain("План-режим");
     expect(rules).toContain("Скриншоты");
-    expect(rules).toContain("общая память");
+    expect(rules).toContain("одна память");
   });
 
   it("оба бота получают правило общего обучения", () => {
