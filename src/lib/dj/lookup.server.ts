@@ -138,3 +138,41 @@ export async function findOriginalTrackId(workKeyValue: string, excludeId?: stri
   const { data } = await q;
   return data?.[0]?.id ?? null;
 }
+
+/**
+ * Полный каскад определения версии для одного трека.
+ * 1) скобки в названии/имени файла → 2) сверка с каталогом →
+ * 3) поиск оригинала в нашей библиотеке.
+ */
+export async function resolveTrackVersion(input: {
+  artist: string;
+  title: string;
+  sourceFilename?: string | null;
+  workKey?: string | null;
+}) {
+  const { detectVersionFromText, reconcileWithCatalog, versionLabel } = await import("./version-detect");
+  const text = [input.title, input.sourceFilename ?? ""].filter(Boolean).join(" ");
+  const local = detectVersionFromText(text);
+
+  let match: CatalogMatch | null = null;
+  try {
+    match = await lookupCatalog(input.artist, input.title);
+  } catch {
+    // Каталог недоступен — остаёмся на разборе скобок.
+  }
+  const verdict = reconcileWithCatalog(local, match);
+  const label = versionLabel(verdict);
+
+  const originalId = verdict.isRemix && input.workKey
+    ? await findOriginalTrackId(input.workKey)
+    : null;
+
+  return {
+    version: verdict.version,
+    is_remix: verdict.isRemix,
+    remixer: verdict.remixer,
+    version_label: label,
+    version_source: verdict.source,
+    original_track_id: originalId,
+  };
+}
