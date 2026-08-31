@@ -198,7 +198,7 @@ export async function tgDownloadFile(fileId: string): Promise<{ base64: string; 
     return null;
   }
   const buf = Buffer.from(await res.arrayBuffer());
-  const mime = path.endsWith(".mp3") ? "audio/mpeg" : path.endsWith(".m4a") ? "audio/mp4" : "audio/ogg";
+  const mime = tgMimeOf(path);
   return { base64: buf.toString("base64"), mime };
 }
 
