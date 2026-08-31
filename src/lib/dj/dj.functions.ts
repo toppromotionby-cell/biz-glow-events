@@ -16,7 +16,7 @@ import {
 import { rateTrack, toggleFavorite } from "@/lib/dj/social.server";
 import { applyForMembership } from "@/lib/dj/members.server";
 import { createUploadTicket } from "@/lib/dj/upload.server";
-import { insertTrack } from "@/lib/dj/moderation.server";
+import { insertTrack, findExistingDuplicates } from "@/lib/dj/moderation.server";
 import { TRACK_VERSIONS } from "@/lib/dj/types";
 
 const filtersSchema = z.object({
@@ -163,6 +163,14 @@ export const djSubmitTrack = createServerFn({ method: "POST" })
       section: z.string().max(30).optional(),
       formats: z.array(z.string().max(30)).max(10).default([]),
       file_size: z.number().int().positive().nullish(),
+      bitrate_kbps: z.number().int().positive().max(5000).nullish(),
+      album: z.string().max(200).nullish(),
+      source_filename: z.string().max(300).nullish(),
+      content_hash: z.string().length(64).nullish(),
+      dedupe_key: z.string().max(400).nullish(),
+      work_key: z.string().max(400).nullish(),
+      cover_palette: z.string().max(40).nullish(),
+      cover_spec_version: z.number().int().min(1).max(99).nullish(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -171,6 +179,20 @@ export const djSubmitTrack = createServerFn({ method: "POST" })
     return { id: await insertTrack(access.userId, data, status), status };
   });
 
+
+/** Проверка дубликатов перед загрузкой — возвращает уже занятые хэши и ключи. */
+export const djCheckDuplicates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      hashes: z.array(z.string().length(64)).max(200).default([]),
+      keys: z.array(z.string().max(400)).max(200).default([]),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await requireTrusted(context.userId);
+    return findExistingDuplicates(data.hashes, data.keys);
+  });
 
 /** Справочник разделов и категорий — публичный, без чувствительных данных. */
 export const djCategories = createServerFn({ method: "GET" }).handler(async () => listCategories());

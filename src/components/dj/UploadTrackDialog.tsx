@@ -1,207 +1,295 @@
-// Загрузка трека участником клуба: файл идёт в приватный бакет по одноразовой ссылке.
-import { useRef, useState } from "react";
+// Массовая загрузка треков: только зона выбора файлов и превью очереди.
+// Все метаданные, раздел, форматы и обложка определяются автоматически.
+// Непонятный системе материал молча исчезает из очереди — без уведомлений.
+import { useCallback, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud, Check } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { djSubmitTrack, djUploadTicket } from "@/lib/dj/dj.functions";
-import {
-  AUDIO_EXTENSIONS, CAMELOT_KEYS, GENRES, LANGUAGES, TRACK_VERSIONS, TRACK_VERSION_LABEL,
-  hasAllowedExtension,
-} from "@/lib/dj/types";
+import { djSubmitTrack, djUploadTicket, djCheckDuplicates } from "@/lib/dj/dj.functions";
+import { AUDIO_EXTENSIONS, TRACK_VERSION_LABEL, hasAllowedExtension } from "@/lib/dj/types";
+import { parseAudioFile } from "@/lib/dj/metadata";
+import { analyzeAudio } from "@/lib/dj/analyze";
+import { evaluateIngest, type IngestPayload } from "@/lib/dj/ingest-role";
+import { hashFile } from "@/lib/dj/dedupe";
+import { buildTrackCover } from "@/lib/dj/artwork";
+import { coverCssGradient } from "@/lib/dj/cover-role";
+import { SECTION_LABEL } from "@/lib/dj/sections";
 
-const NONE = "__none__";
+type QueueItem = {
+  id: string;
+  file: File;
+  payload: IngestPayload;
+  cover: Blob | null;
+  coverUrl: string | null;
+  coverPalette: string | null;
+  coverSpecVersion: number | null;
+  state: "ready" | "uploading" | "done";
+};
+
+const CONCURRENCY = 2;
 
 export function UploadTrackDialog({ invalidateKey }: { invalidateKey: unknown[] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<QueueItem[]>([]);
+  const [analyzing, setAnalyzing] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [stage, setStage] = useState<string>("");
-  const fileRef = useRef<HTMLInputElement | null>(null);
-  const artRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const seen = useRef<{ hashes: Set<string>; keys: Set<string> }>({ hashes: new Set(), keys: new Set() });
 
-  const [form, setForm] = useState({
-    artist: "", title: "", version: "original",
-    genre: "", key_camelot: "", language: "",
-    bpm: "", year: "",
-  });
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-
-  async function readDuration(file: File): Promise<number | null> {
-    return new Promise((resolve) => {
-      const url = URL.createObjectURL(file);
-      const audio = new Audio();
-      audio.preload = "metadata";
-      audio.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(Math.round(audio.duration) || null); };
-      audio.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-      audio.src = url;
+  const reset = useCallback(() => {
+    setItems((prev) => {
+      for (const i of prev) if (i.coverUrl) URL.revokeObjectURL(i.coverUrl);
+      return [];
     });
-  }
+    seen.current = { hashes: new Set(), keys: new Set() };
+    if (inputRef.current) inputRef.current.value = "";
+  }, []);
 
-  async function uploadFile(kind: "audio" | "artwork", file: File): Promise<string> {
-    const ticket = await djUploadTicket({ data: { kind, fileName: file.name, fileSize: file.size } });
-    const { error } = await supabase.storage.from(ticket.bucket).uploadToSignedUrl(ticket.path, ticket.token, file);
-    if (error) throw new Error(error.message);
-    return ticket.path;
-  }
+  /** Разбор партии файлов. Всё, что не проходит роль приёма, отбрасывается тихо. */
+  const ingest = useCallback(async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter((f) => hasAllowedExtension(f.name, AUDIO_EXTENSIONS));
+    if (!files.length) return;
+    setAnalyzing((n) => n + files.length);
 
-  async function submit() {
-    const file = fileRef.current?.files?.[0];
-    if (!file) { toast.error("Выберите аудиофайл"); return; }
-    if (!hasAllowedExtension(file.name, AUDIO_EXTENSIONS)) {
-      toast.error(`Допустимые форматы: ${AUDIO_EXTENSIONS.join(", ")}`);
-      return;
-    }
-    if (!form.artist.trim() || !form.title.trim()) { toast.error("Заполните артиста и название"); return; }
+    const accepted: QueueItem[] = [];
+    for (const file of files) {
+      try {
+        const parsed = await parseAudioFile(file);
+        const needBpm = !parsed.bpm;
+        const [hash, acoustic] = await Promise.all([
+          hashFile(file),
+          analyzeAudio(file, { needBpm }),
+        ]);
+        const result = evaluateIngest(parsed, {
+          contentHash: hash,
+          energy: acoustic.energy,
+          bpmFallback: acoustic.bpm,
+        });
+        if (!result.accept) continue;
+        const { payload } = result;
+        if (seen.current.hashes.has(payload.content_hash) || seen.current.keys.has(payload.dedupe_key)) continue;
+        seen.current.hashes.add(payload.content_hash);
+        seen.current.keys.add(payload.dedupe_key);
 
-    setBusy(true);
-    try {
-      setStage("Загружаем аудио…");
-      const audioPath = await uploadFile("audio", file);
+        let cover: Blob | null = null;
+        let coverUrl: string | null = null;
+        let coverPalette: string | null = null;
+        let coverSpecVersion: number | null = null;
+        try {
+          const built = await buildTrackCover({
+            artist: payload.artist,
+            title: payload.title,
+            section: payload.section,
+            meta: result.coverMeta,
+          });
+          cover = built.blob;
+          coverUrl = URL.createObjectURL(built.blob);
+          coverPalette = built.paletteId;
+          coverSpecVersion = built.specVersion;
+        } catch {
+          // Без обложки трек всё равно валиден — она догенерится на витрине.
+        }
 
-      let artworkPath: string | null = null;
-      const art = artRef.current?.files?.[0];
-      if (art) {
-        setStage("Загружаем обложку…");
-        artworkPath = await uploadFile("artwork", art);
+        accepted.push({
+          id: `${payload.content_hash}-${accepted.length}`,
+          file,
+          payload,
+          cover,
+          coverUrl,
+          coverPalette,
+          coverSpecVersion,
+          state: "ready",
+        });
+      } catch {
+        // Нечитаемый файл — молча пропускаем.
+      } finally {
+        setAnalyzing((n) => Math.max(0, n - 1));
       }
+    }
 
-      setStage("Сохраняем карточку…");
-      const duration = await readDuration(file);
-      const res = await djSubmitTrack({
+    if (!accepted.length) return;
+
+    // Дубликаты, уже лежащие в библиотеке, снимаем так же тихо.
+    let taken = { hashes: [] as string[], keys: [] as string[] };
+    try {
+      taken = await djCheckDuplicates({
         data: {
-          artist: form.artist,
-          title: form.title,
-          version: form.version as (typeof TRACK_VERSIONS)[number],
-          genre: form.genre || null,
-          key_camelot: form.key_camelot || null,
-          language: form.language || null,
-          bpm: form.bpm ? Number(form.bpm) : null,
-          year: form.year ? Number(form.year) : null,
-          duration_sec: duration,
-          tags: [],
-          audio_path: audioPath,
-          artwork_path: artworkPath,
-          format: file.name.split(".").pop()?.toLowerCase() ?? null,
-          file_size: file.size,
+          hashes: accepted.map((i) => i.payload.content_hash),
+          keys: accepted.map((i) => i.payload.dedupe_key),
         },
       });
-      toast.success(res.status === "published" ? "Трек опубликован" : "Трек отправлен на модерацию");
-      setOpen(false);
-      setForm({ artist: "", title: "", version: "original", genre: "", key_camelot: "", language: "", bpm: "", year: "" });
-      if (fileRef.current) fileRef.current.value = "";
-      if (artRef.current) artRef.current.value = "";
-      void qc.invalidateQueries({ queryKey: invalidateKey });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Не удалось загрузить трек");
-    } finally {
-      setBusy(false);
-      setStage("");
+    } catch {
+      // Проверка недоступна — полагаемся на уникальные индексы БД.
     }
+    const hashSet = new Set(taken.hashes);
+    const keySet = new Set(taken.keys);
+    const fresh = accepted.filter((i) => {
+      const dup = hashSet.has(i.payload.content_hash) || keySet.has(i.payload.dedupe_key);
+      if (dup && i.coverUrl) URL.revokeObjectURL(i.coverUrl);
+      return !dup;
+    });
+    if (fresh.length) setItems((prev) => [...prev, ...fresh]);
+  }, []);
+
+  async function uploadOne(item: QueueItem) {
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, state: "uploading" } : i)));
+    const audioTicket = await djUploadTicket({
+      data: { kind: "audio", fileName: item.file.name, fileSize: item.file.size },
+    });
+    const audioRes = await supabase.storage
+      .from(audioTicket.bucket)
+      .uploadToSignedUrl(audioTicket.path, audioTicket.token, item.file);
+    if (audioRes.error) throw new Error(audioRes.error.message);
+
+    let artworkPath: string | null = null;
+    if (item.cover) {
+      try {
+        const artTicket = await djUploadTicket({
+          data: { kind: "artwork", fileName: `${item.payload.content_hash}.jpg`, fileSize: item.cover.size },
+        });
+        const artRes = await supabase.storage
+          .from(artTicket.bucket)
+          .uploadToSignedUrl(artTicket.path, artTicket.token, item.cover);
+        if (!artRes.error) artworkPath = artTicket.path;
+      } catch {
+        // Обложка необязательна.
+      }
+    }
+
+    await djSubmitTrack({
+      data: {
+        ...item.payload,
+        audio_path: audioTicket.path,
+        artwork_path: artworkPath,
+        file_size: item.file.size,
+        cover_palette: item.coverPalette,
+        cover_spec_version: item.coverSpecVersion,
+      },
+    });
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, state: "done" } : i)));
   }
 
+  async function uploadAll() {
+    const queue = items.filter((i) => i.state === "ready");
+    if (!queue.length) return;
+    setBusy(true);
+    let ok = 0;
+    let failed = 0;
+    const cursor = { index: 0 };
+    const worker = async () => {
+      while (cursor.index < queue.length) {
+        const item = queue[cursor.index++];
+        if (!item) break;
+        try { await uploadOne(item); ok += 1; } catch { failed += 1; }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker));
+    setBusy(false);
+    if (ok) toast.success(`Загружено треков: ${ok}`);
+    if (failed) toast.error(`Не удалось загрузить: ${failed}`);
+    void qc.invalidateQueries({ queryKey: invalidateKey });
+    if (!failed) { reset(); setOpen(false); }
+  }
+
+  const readyCount = items.filter((i) => i.state === "ready").length;
+
   return (
-    <Dialog open={open} onOpenChange={(o) => !busy && setOpen(o)}>
+    <Dialog open={open} onOpenChange={(o) => { if (busy) return; setOpen(o); if (!o) reset(); }}>
       <DialogTrigger asChild>
-        <Button><UploadCloud className="mr-2 h-4 w-4" /> Загрузить трек</Button>
+        <Button><UploadCloud className="mr-2 h-4 w-4" /> Загрузить треки</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Загрузка трека</DialogTitle>
-          <DialogDescription>Файл увидят только участники клуба. Новые загрузки проходят модерацию.</DialogDescription>
+          <DialogTitle>Загрузка треков</DialogTitle>
+          <DialogDescription>
+            Просто выберите файлы или папку. Артист, название, версия, BPM, тональность,
+            раздел и обложка определяются автоматически.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="dj-file">Аудиофайл *</Label>
-            <Input id="dj-file" ref={fileRef} type="file" accept={AUDIO_EXTENSIONS.join(",")} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="dj-artist">Артист *</Label>
-            <Input id="dj-artist" value={form.artist} onChange={(e) => set("artist", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="dj-title">Название *</Label>
-            <Input id="dj-title" value={form.title} onChange={(e) => set("title", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Версия</Label>
-            <Select value={form.version} onValueChange={(v) => set("version", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent className="max-h-64">
-                {TRACK_VERSIONS.map((v) => <SelectItem key={v} value={v}>{TRACK_VERSION_LABEL[v]}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Жанр</Label>
-            <Select value={form.genre || NONE} onValueChange={(v) => set("genre", v === NONE ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Не указан" /></SelectTrigger>
-              <SelectContent className="max-h-64">
-                <SelectItem value={NONE}>Не указан</SelectItem>
-                {GENRES.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="dj-bpm">BPM</Label>
-            <Input id="dj-bpm" type="number" min={40} max={300} value={form.bpm} onChange={(e) => set("bpm", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Тональность</Label>
-            <Select value={form.key_camelot || NONE} onValueChange={(v) => set("key_camelot", v === NONE ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Не указана" /></SelectTrigger>
-              <SelectContent className="max-h-64">
-                <SelectItem value={NONE}>Не указана</SelectItem>
-                {CAMELOT_KEYS.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="dj-year">Год</Label>
-            <Input id="dj-year" type="number" min={1900} max={2100} value={form.year} onChange={(e) => set("year", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Язык</Label>
-            <Select value={form.language || NONE} onValueChange={(v) => set("language", v === NONE ? "" : v)}>
-              <SelectTrigger><SelectValue placeholder="Не указан" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>Не указан</SelectItem>
-                {LANGUAGES.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="dj-art">Обложка (необязательно)</Label>
-            <Input id="dj-art" ref={artRef} type="file" accept="image/*" />
-          </div>
-        </div>
+        <label
+          className={cn(
+            "glass block cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition",
+            busy ? "pointer-events-none opacity-50" : "hover:border-primary/60",
+          )}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); if (!busy) void ingest(e.dataTransfer.files); }}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            accept={AUDIO_EXTENSIONS.join(",")}
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => { if (e.target.files) void ingest(e.target.files); }}
+          />
+          <UploadCloud className="mx-auto mb-2 h-9 w-9 text-muted-foreground" />
+          <p className="text-sm font-medium">Перетащите файлы или нажмите</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            MP3 · WAV · FLAC · AIFF · M4A — можно сразу папкой
+          </p>
+        </label>
 
-        {busy && (
+        {analyzing > 0 && (
           <div className="space-y-2">
             <Progress value={undefined} />
-            <p className="text-xs text-muted-foreground">{stage}</p>
+            <p className="text-xs text-muted-foreground">Анализируем метаданные… осталось {analyzing}</p>
+          </div>
+        )}
+
+        {items.length > 0 && (
+          <div className="max-h-[46vh] space-y-2 overflow-y-auto pr-1">
+            {items.map((i) => (
+              <PreviewRow key={i.id} item={i} />
+            ))}
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Отмена</Button>
-          <Button onClick={() => void submit()} disabled={busy}>
+          <Button variant="outline" onClick={() => { reset(); setOpen(false); }} disabled={busy}>Отмена</Button>
+          <Button onClick={() => void uploadAll()} disabled={busy || readyCount === 0}>
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-            Отправить
+            Загрузить{readyCount ? ` (${readyCount})` : ""}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PreviewRow({ item }: { item: QueueItem }) {
+  const p = item.payload;
+  const meta = [
+    p.version !== "original" ? TRACK_VERSION_LABEL[p.version] : null,
+    p.bpm ? `${p.bpm} BPM` : null,
+    p.key_camelot,
+    SECTION_LABEL[p.section] ?? p.section,
+    p.formats.length ? `${p.formats.length} формат(а)` : null,
+  ].filter(Boolean).join(" · ");
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border/60 p-2">
+      <div
+        className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted"
+        style={item.coverUrl ? undefined : { backgroundImage: coverCssGradient({ artist: p.artist, title: p.title, section: p.section }) }}
+      >
+        {item.coverUrl && <img src={item.coverUrl} alt="" className="h-full w-full object-cover" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{p.artist} — {p.title}</p>
+        <p className="truncate text-xs text-muted-foreground">{meta}</p>
+      </div>
+      {item.state === "uploading" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+      {item.state === "done" && <Check className="h-4 w-4 text-primary" />}
+    </div>
   );
 }
