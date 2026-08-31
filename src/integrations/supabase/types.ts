@@ -1323,6 +1323,240 @@ export type Database = {
         }
         Relationships: []
       }
+      copilot_audit: {
+        Row: {
+          action: string
+          after: Json | null
+          before: Json | null
+          created_at: string
+          id: string
+          run_id: string | null
+          target_id: string | null
+          target_table: string | null
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          run_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          tool: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          id?: string
+          run_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          tool?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_audit_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_messages: {
+        Row: {
+          attachments: Json
+          content: string
+          created_at: string
+          id: string
+          role: string
+          run_id: string | null
+          session_id: string
+          sources: Json
+        }
+        Insert: {
+          attachments?: Json
+          content?: string
+          created_at?: string
+          id?: string
+          role: string
+          run_id?: string | null
+          session_id: string
+          sources?: Json
+        }
+        Update: {
+          attachments?: Json
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          run_id?: string | null
+          session_id?: string
+          sources?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_runs: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          decided_at: string | null
+          error: string | null
+          id: string
+          preview: Json
+          questions: Json
+          request: string | null
+          result: string | null
+          risk: string
+          session_id: string | null
+          snapshot: Json
+          sources: Json
+          status: string
+          steps: Json
+          summary: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          decided_at?: string | null
+          error?: string | null
+          id?: string
+          preview?: Json
+          questions?: Json
+          request?: string | null
+          result?: string | null
+          risk?: string
+          session_id?: string | null
+          snapshot?: Json
+          sources?: Json
+          status?: string
+          steps?: Json
+          summary?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          decided_at?: string | null
+          error?: string | null
+          id?: string
+          preview?: Json
+          questions?: Json
+          request?: string | null
+          result?: string | null
+          risk?: string
+          session_id?: string | null
+          snapshot?: Json
+          sources?: Json
+          status?: string
+          steps?: Json
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_runs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_sessions: {
+        Row: {
+          context: Json
+          created_at: string
+          id: string
+          last_message_at: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      copilot_settings: {
+        Row: {
+          allow_destructive: boolean
+          allow_web_search: boolean
+          enabled_modules: Json
+          hands_free: boolean
+          id: number
+          max_emails_per_run: number
+          max_rows_per_run: number
+          operators: Json
+          speak_replies: boolean
+          updated_at: string
+          voice_rate: number
+        }
+        Insert: {
+          allow_destructive?: boolean
+          allow_web_search?: boolean
+          enabled_modules?: Json
+          hands_free?: boolean
+          id?: number
+          max_emails_per_run?: number
+          max_rows_per_run?: number
+          operators?: Json
+          speak_replies?: boolean
+          updated_at?: string
+          voice_rate?: number
+        }
+        Update: {
+          allow_destructive?: boolean
+          allow_web_search?: boolean
+          enabled_modules?: Json
+          hands_free?: boolean
+          id?: number
+          max_emails_per_run?: number
+          max_rows_per_run?: number
+          operators?: Json
+          speak_replies?: boolean
+          updated_at?: string
+          voice_rate?: number
+        }
+        Relationships: []
+      }
       demand_events: {
         Row: {
           created_at: string
