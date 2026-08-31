@@ -43,6 +43,11 @@ export const MODULE_LABEL: Record<CopilotModule, string> = {
   web: "Интернет",
 };
 
+/** Значение, которое можно передать через границу сервер→клиент. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+export type JsonRecord = { [key: string]: JsonValue };
+
 /** Одно конкретное изменение строки: основа превью «было → стало» и отката. */
 export interface CopilotOp {
   op: "update" | "insert" | "delete";
@@ -52,9 +57,9 @@ export interface CopilotOp {
   /** Человекочитаемое название записи. */
   label: string;
   /** Значения до изменения (только затронутые поля). */
-  before: Record<string, unknown> | null;
+  before: JsonRecord | null;
   /** Значения после изменения (только затронутые поля). */
-  after: Record<string, unknown> | null;
+  after: JsonRecord | null;
 }
 
 /** Шаг плана — что помощник собирается сделать. */

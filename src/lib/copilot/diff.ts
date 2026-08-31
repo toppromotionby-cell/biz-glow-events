@@ -1,5 +1,5 @@
 // Чистые функции превью «было → стало». Клиентобезопасно, покрыто тестами.
-import type { CopilotOp } from "@/lib/copilot/types";
+import type { CopilotOp, JsonValue } from "@/lib/copilot/types";
 
 export const FIELD_LABEL: Record<string, string> = {
   title: "Название",
@@ -41,7 +41,7 @@ export function fieldLabel(key: string): string {
 }
 
 /** Значение поля в виде короткой строки для таблицы превью. */
-export function formatValue(value: unknown): string {
+export function formatValue(value: JsonValue | unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "да" : "нет";
   if (typeof value === "number") return String(value);

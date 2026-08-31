@@ -2,7 +2,7 @@
 // Реальное применение — отдельно, в applyOps(), после утверждения человеком.
 import { admin } from "@/lib/copilot/guard.server";
 import { CATALOG_TABLES, CONTENT_TABLES, type ToolName } from "@/lib/copilot/registry";
-import type { CopilotOp, CopilotSettings, CopilotSource } from "@/lib/copilot/types";
+import type { CopilotOp, CopilotSettings, CopilotSource, JsonRecord } from "@/lib/copilot/types";
 import { research } from "@/lib/assistant/research.server";
 import { searchFacts, upsertFact } from "@/lib/knowledge/facts.server";
 import { runHygiene, renderReport } from "@/lib/hygiene/engine.server";
@@ -74,19 +74,19 @@ function labelOf(table: string, row: Record<string, unknown>): string {
   return String(row[field] ?? row.title ?? row.name ?? row.id ?? "запись");
 }
 
-function pick(row: Record<string, unknown>, keys: string[]): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const k of keys) out[k] = row[k] ?? null;
+function pick(row: Record<string, unknown>, keys: string[]): JsonRecord {
+  const out: JsonRecord = {};
+  for (const k of keys) out[k] = (row[k] ?? null) as JsonRecord[string];
   return out;
 }
 
-function patchOf(args: Args, fields: string[]): Record<string, unknown> {
-  const patch: Record<string, unknown> = {};
+function patchOf(args: Args, fields: string[]): JsonRecord {
+  const patch: JsonRecord = {};
   for (const f of fields) {
     const v = args[f];
     if (v === undefined || v === null) continue;
     if (typeof v === "string" && !v.trim()) continue;
-    patch[f] = v;
+    patch[f] = v as JsonRecord[string];
   }
   return patch;
 }
@@ -98,7 +98,7 @@ async function rowsByIds(table: string, list: string[], pk = "id") {
   return (data ?? []) as Record<string, unknown>[];
 }
 
-function updateOps(table: string, rows: Record<string, unknown>[], patch: Record<string, unknown>, pk = "id"): CopilotOp[] {
+function updateOps(table: string, rows: Record<string, unknown>[], patch: JsonRecord, pk = "id"): CopilotOp[] {
   const keys = Object.keys(patch);
   return rows.map((row) => ({
     op: "update" as const,
@@ -270,7 +270,7 @@ export async function runTool(
 
       const ops: CopilotOp[] = [];
       for (const row of rows) {
-        const pricing = (row.pricing ?? {}) as Record<string, unknown>;
+        const pricing = (row.pricing ?? {}) as JsonRecord;
         const from = Number(pricing.from ?? 0);
         let next = setTo !== undefined ? setTo : from * (1 + (percent ?? 0) / 100);
         if (round > 0) next = Math.round(next / round) * round;
@@ -415,7 +415,7 @@ export async function runTool(
           table,
           id: String(row.id),
           label: labelOf(table, row),
-          before: row,
+          before: row as JsonRecord,
           after: null,
         })),
       };
