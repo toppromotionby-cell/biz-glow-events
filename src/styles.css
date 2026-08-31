@@ -1230,3 +1230,109 @@ a[href],
   background: color-mix(in srgb, var(--foreground) 40%, transparent);
   background-clip: padding-box;
 }
+
+/* ── DJ Hub: яркая витрина ───────────────────────────────────────────────────
+   Эффекты собраны здесь, чтобы компоненты оставались на семантических токенах. */
+
+@utility dj-neon {
+  box-shadow: 0 18px 50px -18px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+/* Анимированная градиентная рамка карточки. */
+@utility dj-ring {
+  position: relative;
+  isolation: isolate;
+}
+.dj-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    130deg,
+    color-mix(in oklab, var(--primary) 70%, transparent),
+    transparent 42%,
+    color-mix(in oklab, var(--accent) 60%, transparent)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.dj-ring:hover::after { opacity: 1; }
+
+/* Живые размытые пятна в хиро-блоке. */
+@utility dj-aurora {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 18% 22%, color-mix(in oklab, var(--primary) 55%, transparent), transparent 70%),
+    radial-gradient(34% 30% at 82% 18%, color-mix(in oklab, var(--accent) 50%, transparent), transparent 70%),
+    radial-gradient(46% 40% at 55% 88%, color-mix(in oklab, var(--primary) 32%, transparent), transparent 72%);
+  filter: blur(48px);
+  opacity: 0.55;
+  animation: dj-aurora-drift 22s ease-in-out infinite alternate;
+}
+@keyframes dj-aurora-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -2%, 0) scale(1.06); }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
+}
+
+/* Полоски эквалайзера у играющего трека. */
+@utility dj-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 0.9rem;
+}
+.dj-eq > i {
+  display: block;
+  width: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: dj-eq-bounce 900ms ease-in-out infinite;
+}
+.dj-eq > i:nth-child(1) { height: 40%; animation-delay: -200ms; }
+.dj-eq > i:nth-child(2) { height: 90%; animation-delay: -520ms; }
+.dj-eq > i:nth-child(3) { height: 60%; animation-delay: -80ms; }
+.dj-eq > i:nth-child(4) { height: 100%; animation-delay: -340ms; }
+@keyframes dj-eq-bounce {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+
+/* Горизонтальные ленты витрины. */
+@utility dj-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(11rem, 13rem);
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.5rem;
+}
+.dj-rail > * { scroll-snap-align: start; }
+
+/* Шумовая текстура поверх крупных блоков. */
+@utility dj-grain {
+  position: relative;
+}
+.dj-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: radial-gradient(currentColor 0.5px, transparent 0.5px);
+  background-size: 3px 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dj-aurora { animation: none; }
+  .dj-eq > i { animation: none; }
+}
