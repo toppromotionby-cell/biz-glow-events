@@ -89,10 +89,15 @@ describe("навигация: ссылки ведут на существующ�
       const src = readFileSync(f, "utf8");
       for (const m of src.matchAll(/\bhref=\{?["`](\/[^"`]*)["`]/g)) {
         const raw = m[1] as string;
-        // Шаблонные строки с подстановкой проверяем только по статическому префиксу.
+        const interpolated = raw.includes("${");
+        // Шаблонные строки проверяем по статическому префиксу.
         const p = (raw.split(/[$?#]/)[0] ?? "").replace(/\/$/, "") || "/";
-        if (!known(p)) bad.push(`${f}: href="${raw}"`);
+        const ok = interpolated
+          ? [...ROUTES].some((r) => r === p || r.startsWith(`${p}/`))
+          : known(p);
+        if (!ok) bad.push(`${f}: href="${raw}"`);
       }
+
 
     }
     expect(bad).toEqual([]);
