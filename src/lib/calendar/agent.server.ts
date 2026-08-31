@@ -341,6 +341,22 @@ export async function handleTelegramText(
     return;
   }
 
+  // Общее обучение: правило, сказанное любому боту, сохраняем в общую память.
+  const forget = detectForget(text);
+  if (forget) {
+    const n = await forgetByQuery(db, forget);
+    await tgSend(chatId, forgottenAck(n));
+    return;
+  }
+  const learn = detectTeaching(text);
+  if (learn) {
+    const saved = await rememberMemory(db, { ...learn, source: "telegram" });
+    if (saved) {
+      await tgSend(chatId, `${LEARNED_ACK}\n• <b>${tgEsc(saved.key)}</b>: ${tgEsc(saved.value)}`);
+      return;
+    }
+  }
+
   // Владелец обещал правки к плану — следующее сообщение считаем уточнением.
   const editing = await editingPlan(db, `tg:${chatId}`);
   if (editing && !text.trim().startsWith("/")) {
@@ -593,8 +609,8 @@ export async function handleCallback(
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);
 
-  // Кнопки плана: plan:ok|edit|no:<id>
-  if (action === "plan") {
+  // Кнопки плана и карточек решений: plan:*|ap:* — общий вид у всех ботов.
+  if (action === "plan" || action === "ap") {
     const planId = extra ?? "";
     const plan = planId ? await getPlan(db, planId) : null;
     if (!plan) {
