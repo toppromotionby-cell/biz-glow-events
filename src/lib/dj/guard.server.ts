@@ -62,12 +62,14 @@ export async function assertRateLimit(
   windowMin: number,
 ): Promise<void> {
   const since = new Date(Date.now() - windowMin * 60_000).toISOString();
-  const { count } = await supabaseAdmin
-    .from(table)
-    .select("id", { count: "exact", head: true })
+  const query = supabaseAdmin.from(table).select("id", { count: "exact", head: true });
+  const { count } = await (query as unknown as {
+    eq: (c: string, v: string) => { gte: (c: string, v: string) => Promise<{ count: number | null }> };
+  })
     .eq(userColumn, userId)
     .gte("created_at", since);
   if ((count ?? 0) >= limit) {
     throw new Error("Слишком много действий подряд — попробуйте немного позже");
   }
 }
+
