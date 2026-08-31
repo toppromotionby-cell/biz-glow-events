@@ -102,19 +102,19 @@ export const Route = createFileRoute("/geo/$city")({
   },
   component: GeoCityPage,
   notFoundComponent: () => (
-    <div className="container mx-auto px-4 py-20 text-center">
+    <div className="page-shell section-y text-center">
       <h1 className="text-3xl font-display font-bold gradient-text">Город не найден</h1>
       <p className="mt-3 text-muted-foreground">Мы работаем в крупнейших городах Беларуси.</p>
       <Link to="/" className="mt-6 inline-block underline">На главную</Link>
     </div>
   ),
-  errorComponent: () => <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">Ошибка загрузки</div>,
+  errorComponent: () => <div className="page-shell section-y text-center text-muted-foreground">Ошибка загрузки</div>,
 });
 
 function GeoCityPage() {
   const { city } = Route.useLoaderData();
   return (
-    <main className="container mx-auto px-4 py-12 max-w-5xl">
+    <main className="page-shell py-12 max-w-5xl">
       <nav className="text-xs text-muted-foreground"><Link to="/">Главная</Link> / География / <span>{city.name}</span></nav>
       <h1 className="mt-3 font-display font-bold gradient-text">Event-услуги {city.inLocative}</h1>
       <p className="mt-4 text-lg text-foreground/90 max-w-3xl">{city.intro}</p>

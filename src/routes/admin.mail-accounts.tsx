@@ -544,7 +544,7 @@ function AccountDialog({
           <Field label="Хост" error={errors.imap_host}>
             <Input value={form.imap_host} onChange={(e) => update("imap_host", e.target.value.trim())} placeholder="imap.example.com" />
           </Field>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid-fields">
             <Field label="Порт" error={errors.imap_port}>
               <Input
                 type="number"
@@ -565,7 +565,7 @@ function AccountDialog({
           <Field label="Хост" error={errors.smtp_host}>
             <Input value={form.smtp_host} onChange={(e) => update("smtp_host", e.target.value.trim())} placeholder="smtp.example.com" />
           </Field>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid-fields">
             <Field label="Порт" error={errors.smtp_port}>
               <Input
                 type="number"

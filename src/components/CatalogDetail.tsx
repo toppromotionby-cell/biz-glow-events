@@ -148,7 +148,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
 
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-6xl pb-24 lg:pb-10">
+    <div className="page-shell py-10 max-w-6xl pb-24 lg:pb-10">
       <Link to={backHref} className="text-sm text-muted-foreground hover:text-foreground">← {backLabel}</Link>
 
       <div className="mt-6 grid lg:grid-cols-5 gap-8">
@@ -173,7 +173,7 @@ export function CatalogDetail({ item, backHref, backLabel, entityType }: {
             </div>
           )}
           {photos.length > 1 && (
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid-swatches">
               {photos.slice(0, 10).map((p, i) => (
                 <button key={p + i} onClick={() => { setActive(i); openLightbox(i); }}
                   aria-label={`Фото ${i + 1}`}

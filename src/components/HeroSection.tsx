@@ -85,7 +85,7 @@ export function HeroSection({ onOpenCatalog, onOpenHelp }: HeroSectionProps) {
       <div className="hidden md:block absolute bottom-1/4 -left-20 h-64 w-64 rounded-full bg-accent/8 blur-[80px] pointer-events-none" aria-hidden="true" />
 
       {/* Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 relative z-10">
+      <div className="page-shell py-12 md:py-24 relative z-10">
         <div className="max-w-3xl text-center md:text-left">
           {/* Badge */}
           <div

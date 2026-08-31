@@ -61,7 +61,7 @@ function SoftwarePage() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
+    <div className="page-shell max-w-6xl py-8">
       <header className="mb-6">
         <h1 className="font-display text-3xl font-bold gradient-text">DJ-софт</h1>
         <p className="mt-1 text-sm text-muted-foreground">Программы, плагины и утилиты с историей версий.</p>

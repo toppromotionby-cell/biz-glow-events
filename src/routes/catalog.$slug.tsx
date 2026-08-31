@@ -33,13 +33,13 @@ export const Route = createFileRoute("/catalog/$slug")({
   },
   component: VirtualSectionPage,
   errorComponent: () => (
-    <div className="container mx-auto px-4 py-16" role="alert">
+    <div className="page-shell section-y" role="alert">
       <h1 className="text-3xl font-display font-bold">Раздел временно недоступен</h1>
       <p className="mt-3 text-muted-foreground">Обновите страницу — мы уже чиним.</p>
     </div>
   ),
   notFoundComponent: () => (
-    <div className="container mx-auto px-4 py-16">
+    <div className="page-shell section-y">
       <h1 className="text-3xl font-display font-bold">Раздел не найден</h1>
       <p className="mt-3 text-muted-foreground">Возможно, он был удалён или пока пуст.</p>
     </div>
@@ -50,7 +50,7 @@ function VirtualSectionPage() {
   const data = Route.useLoaderData() as { title: string; description: string; groups: Group[] };
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <div className="page-shell section-y">
       <header className="max-w-2xl mb-12">
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">{data.title}</h1>
         {data.description && <p className="mt-4 text-muted-foreground">{data.description}</p>}

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/privacy")({
     links: [{ rel: "canonical", href: "https://event-hub.by/privacy" }],
   }),
   component: () => (
-    <div className="container mx-auto px-4 py-16 max-w-3xl prose prose-invert">
+    <div className="page-shell section-y max-w-3xl prose prose-invert">
       <h1 className="text-3xl font-display font-bold gradient-text">Политика конфиденциальности</h1>
       <p className="mt-4 text-muted-foreground">Мы обрабатываем персональные данные в соответствии с законодательством Республики Беларусь (Закон № 99-З «О защите персональных данных»).</p>
     </div>

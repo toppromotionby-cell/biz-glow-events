@@ -90,7 +90,7 @@ export function GuestEstimator() {
   }, [guests, hours, picked, modules]);
 
   return (
-    <section className="container mx-auto px-4 py-16 border-t border-border/40">
+    <section className="page-shell section-y border-t border-border/40">
       <div className="grid lg:grid-cols-[1.1fr_1fr] gap-8 items-start">
         <div>
           <div className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs mb-4">
@@ -193,7 +193,7 @@ export function GuestEstimator() {
             </>
           )}
 
-          <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+          <div className="mt-6 grid-stats text-center">
             <div className="glass rounded-lg p-3">
               <div className="text-xs text-muted-foreground">Гостей</div>
               <div className="font-semibold mt-1">{guests}</div>

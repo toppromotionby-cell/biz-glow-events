@@ -306,7 +306,7 @@ function EmailTemplatesAdmin() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            <div className="grid-fields">
               <div className="space-y-1.5">
                 <Label htmlFor="html">HTML тело письма</Label>
                 <Textarea

@@ -73,7 +73,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-md">
+    <div className="page-shell section-y max-w-md">
       <div className="glass-strong rounded-2xl p-8">
         <h1 className="text-3xl font-display font-bold mb-6">Вход</h1>
         <div className="space-y-2">

@@ -83,7 +83,7 @@ export function catalogSlugRouteOptions(basePath: CatalogBasePath) {
       );
     },
     notFoundComponent: () => (
-      <div className="container mx-auto px-4 py-24 text-center">
+      <div className="page-shell section-y text-center">
         <h1 className="text-2xl font-display font-semibold">{config.detail.notFoundTitle}</h1>
         <Link to={config.basePath} className="mt-4 inline-block text-primary underline">
           Вернуться к каталогу

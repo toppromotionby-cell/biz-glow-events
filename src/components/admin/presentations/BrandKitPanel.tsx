@@ -97,7 +97,7 @@ export function BrandKitPanel({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid-fields">
         {BRAND_KIT_PRESETS.map((k) => (
           <Swatch key={k.id} kit={k} active={value?.id === k.id} onClick={() => onChange(k)} />
         ))}
@@ -106,7 +106,7 @@ export function BrandKitPanel({
       {!!kits.data?.length && (
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-muted-foreground">Сохранённые наборы</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid-fields">
             {kits.data.map((k) => (
               <div key={k.id} className="relative">
                 <Swatch kit={k} active={value?.id === k.id} onClick={() => onChange(k)} />

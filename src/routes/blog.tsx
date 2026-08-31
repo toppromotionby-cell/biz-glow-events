@@ -56,7 +56,7 @@ function BlogIndex() {
   const paged = posts.slice((page - 1) * perPage, page * perPage);
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-5xl">
+    <div className="page-shell section-y max-w-5xl">
       <header className="mb-10">
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Блог</h1>
         <p className="mt-3 text-muted-foreground max-w-2xl">

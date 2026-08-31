@@ -526,7 +526,7 @@ function Page() {
       Icon: User,
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid-fields">
 
 
                 <Field label="Компания">
@@ -578,7 +578,7 @@ function Page() {
                 <Field label="E-mail"><Input value={quote.client_email ?? ""} onChange={(e) => patch({ client_email: e.target.value })} /></Field>
                 <Field label="Адрес"><Input value={quote.client_address ?? ""} onChange={(e) => patch({ client_address: e.target.value })} /></Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid-fields">
                 <Field label="Дата мероприятия"><Input type="date" value={quote.event_date ?? ""} onChange={(e) => patch({ event_date: e.target.value || null })} /></Field>
                 <Field label="Гостей">
                   <Input type="number" min={0} value={quote.guests_count ?? ""} onChange={(e) => patch({ guests_count: e.target.value === "" ? null : Math.trunc(num(e.target.value)) })} />
@@ -632,7 +632,7 @@ function Page() {
       Icon: Wallet,
       content: (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid-fields">
 
                 <Field label="Тип скидки">
                   <Select value={quote.discount_type} onValueChange={(v) => patch({ discount_type: v as Quote["discount_type"] })}>
@@ -763,7 +763,7 @@ function Page() {
                           onClick={() => patch({ quote_number: "" })}>Автономер</Button>
                       </div>
                     </Field>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid-fields">
                       <Field label="Дата документа">
                         <Input type="date" value={quote.doc_date ?? ""} onChange={(e) => patch({ doc_date: e.target.value })} />
                       </Field>

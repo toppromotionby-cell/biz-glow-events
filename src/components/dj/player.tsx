@@ -115,7 +115,7 @@ export function DjPlayerProvider({ children }: { children: React.ReactNode }) {
       {current && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-primary/25 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <div className="h-0.5 w-full bg-gradient-to-r from-primary via-accent to-primary opacity-70" />
-          <div className="container mx-auto flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:gap-4">
+          <div className="page-shell flex flex-col gap-2 py-3 md:flex-row md:items-center md:gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg">
                 <CoverArt track={current} rounded="rounded-lg" showFallbackText={false} />

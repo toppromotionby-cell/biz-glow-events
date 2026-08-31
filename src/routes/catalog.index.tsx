@@ -16,13 +16,13 @@ export const Route = createFileRoute("/catalog/")({
   }),
   component: CatalogPage,
   errorComponent: () => (
-    <div className="container mx-auto px-4 py-16" role="alert">
+    <div className="page-shell section-y" role="alert">
       <h1 className="text-3xl font-display font-bold">Каталог временно недоступен</h1>
       <p className="mt-3 text-muted-foreground">Обновите страницу — мы уже чиним.</p>
     </div>
   ),
   notFoundComponent: () => (
-    <div className="container mx-auto px-4 py-16">Разделы каталога не найдены.</div>
+    <div className="page-shell section-y">Разделы каталога не найдены.</div>
   ),
 });
 
@@ -31,7 +31,7 @@ function CatalogPage() {
   const sections = data && data.length ? data : FALLBACK_NAV;
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <div className="page-shell section-y">
       <header className="max-w-2xl mb-12">
         <h1 className="text-4xl md:text-5xl font-display font-bold gradient-text">Каталог</h1>
         <p className="mt-4 text-muted-foreground">

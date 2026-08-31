@@ -52,7 +52,7 @@ function InquiryClarificationPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-2xl">
+    <div className="page-shell section-y max-w-2xl">
       <h1 className="text-3xl font-display font-bold gradient-text">Уточните детали запроса</h1>
       <p className="mt-3 text-muted-foreground">
         Чем подробнее опишете задачу — тем точнее менеджер подготовит варианты. Все поля по желанию.
