@@ -11,6 +11,8 @@ export interface CalDirection {
   title: string;
   color: string;
   google_color_id: string | null;
+  /** Список Google Tasks, куда уходят задачи этого направления. */
+  google_tasklist_id: string | null;
   emoji: string | null;
   keywords: string[];
   work_start: string;
