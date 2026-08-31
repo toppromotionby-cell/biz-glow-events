@@ -103,12 +103,19 @@ export function renderRange(title: string, items: CalItem[], dirs: CalDirection[
   return `📅 <b>${esc(title)}</b> — ${items.length} ${plural(items.length, "запись", "записи", "записей")}${body}`;
 }
 
-/** Компактная карточка записи (для подтверждений). */
-export function renderItemCard(item: CalItem, dirs: CalDirection[], tz: string, prefix = ""): string {
+/** Компактная карточка записи (для подтверждений) со строкой синхронизации. */
+export function renderItemCard(
+  item: CalItem & { sync?: SyncStatus[] },
+  dirs: CalDirection[],
+  tz: string,
+  prefix = "",
+): string {
   const notes = item.notes ? `\n   📝 ${esc(item.notes)}` : "";
   const people = item.participants?.length ? `\n   👥 ${esc(item.participants.join(", "))}` : "";
-  return `${prefix}${itemLine(item, dirs, tz)}${notes}${people}`;
+  const footer = item.sync ? `\n   ${syncFooter(item.sync).replace(/\n/g, "\n   ")}` : "";
+  return `${prefix}${itemLine(item, dirs, tz)}${notes}${people}${footer}`;
 }
+
 
 /** Кнопки под записью. */
 export function itemButtons(item: CalItem): Array<Array<{ text: string; data: string }>> {
