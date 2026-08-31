@@ -58,6 +58,7 @@ import { Route as InquiryTokenRouteImport } from './routes/inquiry.$token'
 import { Route as GeoCityRouteImport } from './routes/geo.$city'
 import { Route as EquipmentSlugRouteImport } from './routes/equipment.$slug'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as DjSoftwareRouteImport } from './routes/dj.software'
 import { Route as DjPoolRouteImport } from './routes/dj.pool'
 import { Route as CatalogSlugRouteImport } from './routes/catalog.$slug'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
@@ -370,6 +371,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DjSoftwareRoute = DjSoftwareRouteImport.update({
+  id: '/software',
+  path: '/software',
+  getParentRoute: () => DjRoute,
 } as any)
 const DjPoolRoute = DjPoolRouteImport.update({
   id: '/pool',
@@ -781,6 +787,7 @@ export interface FileRoutesByFullPath {
   '/cases/$slug': typeof CasesSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
   '/dj/pool': typeof DjPoolRoute
+  '/dj/software': typeof DjSoftwareRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -895,6 +902,7 @@ export interface FileRoutesByTo {
   '/cases/$slug': typeof CasesSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
   '/dj/pool': typeof DjPoolRoute
+  '/dj/software': typeof DjSoftwareRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -1014,6 +1022,7 @@ export interface FileRoutesById {
   '/cases/$slug': typeof CasesSlugRoute
   '/catalog/$slug': typeof CatalogSlugRoute
   '/dj/pool': typeof DjPoolRoute
+  '/dj/software': typeof DjSoftwareRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/equipment/$slug': typeof EquipmentSlugRoute
   '/geo/$city': typeof GeoCityRoute
@@ -1134,6 +1143,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/catalog/$slug'
     | '/dj/pool'
+    | '/dj/software'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1248,6 +1258,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/catalog/$slug'
     | '/dj/pool'
+    | '/dj/software'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1366,6 +1377,7 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/catalog/$slug'
     | '/dj/pool'
+    | '/dj/software'
     | '/email/unsubscribe'
     | '/equipment/$slug'
     | '/geo/$city'
@@ -1834,6 +1846,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dj/software': {
+      id: '/dj/software'
+      path: '/software'
+      fullPath: '/dj/software'
+      preLoaderRoute: typeof DjSoftwareRouteImport
+      parentRoute: typeof DjRoute
     }
     '/dj/pool': {
       id: '/dj/pool'
@@ -2497,11 +2516,13 @@ const CasesRouteWithChildren = CasesRoute._addFileChildren(CasesRouteChildren)
 
 interface DjRouteChildren {
   DjPoolRoute: typeof DjPoolRoute
+  DjSoftwareRoute: typeof DjSoftwareRoute
   DjIndexRoute: typeof DjIndexRoute
 }
 
 const DjRouteChildren: DjRouteChildren = {
   DjPoolRoute: DjPoolRoute,
+  DjSoftwareRoute: DjSoftwareRoute,
   DjIndexRoute: DjIndexRoute,
 }
 

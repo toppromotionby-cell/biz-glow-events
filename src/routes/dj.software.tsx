@@ -118,7 +118,7 @@ function SoftwarePage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">v{v.version}</p>
                       <p className="text-xs text-muted-foreground">
-                        {v.released_at ? new Date(v.released_at).toLocaleDateString("ru-RU") : "дата не указана"} · {formatBytes(v.file_size)}
+                        {v.release_date ? new Date(v.release_date).toLocaleDateString("ru-RU") : "дата не указана"} · {formatBytes(v.file_size)}
                       </p>
                     </div>
                     <Button size="sm" variant="outline" disabled={busy === v.id} onClick={() => void download(v.id)}>
