@@ -29,6 +29,10 @@ import {
   setPlanStatus,
 } from "@/lib/assistant/plans.server";
 import { acceptsAttachment, analyzeAttachments, type Attachment } from "@/lib/assistant/vision.server";
+import { detectForget, detectTeaching } from "@/lib/botkit/learn";
+import { LEARNED_ACK, forgottenAck } from "@/lib/botkit/format";
+import { forgetByQuery, listMemory, memoryPrompt, rememberMemory } from "@/lib/botkit/memory.server";
+import { admin as adminDb } from "@/lib/assistant/store.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-3.7-flash";
@@ -442,11 +446,29 @@ async function freeform(
     return;
   }
 
+  // Общее обучение: то, чему учат этого бота, знает и планер.
+  const forget = detectForget(text);
+  if (forget) {
+    const n = await forgetByQuery(await adminDb(), forget);
+    await reply(who.chatId, who, forgottenAck(n));
+    return;
+  }
+  const learn = detectTeaching(text);
+  if (learn) {
+    const saved = await rememberMemory(await adminDb(), { ...learn, source: "telegram", bot: "assistant" });
+    if (saved) {
+      await reply(who.chatId, who, `${LEARNED_ACK}\n• <b>${saved.key}</b>: ${saved.value}`);
+      return;
+    }
+  }
+
+  const memory = memoryPrompt(await listMemory(await adminDb(), { bot: "assistant" }));
   const kb = await knowledgeContext(text);
   const docs = /(кп|документ|презентац|счет|счёт|акт|договор|заявк)/i.test(text) ? await searchDocs(text, 5) : [];
   const web = settings.allow_web_search && wantsWeb(text) ? await research(text, 4) : [];
 
   const parts = [
+    memory,
     kb,
     docs.length ? `Документы портала по запросу:\n${renderDocList(docs)}` : "",
     web.length ? contextBlock(web) : "",
