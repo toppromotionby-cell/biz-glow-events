@@ -53,8 +53,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://blevlkoetlbhtzhakqsi.supabase.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://blevlkoetlbhtzhakqsi.supabase.co" },
       // Шрифты грузим неблокирующе: link.media="print" → меняем на "all" после load.
-      { rel: "preload", as: "style", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap", media: "print", id: "google-fonts" },
+      { rel: "preload", as: "style", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap", media: "print", id: "google-fonts" },
     ],
     scripts: [
       {

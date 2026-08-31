@@ -21,17 +21,17 @@
   line-gap-override: 0%;
 }
 @font-face {
-  font-family: "Inter Fallback";
+  font-family: "DM Sans Fallback";
   src: local("Arial");
-  size-adjust: 107.4%;
-  ascent-override: 90.2%;
-  descent-override: 22.48%;
+  size-adjust: 103.6%;
+  ascent-override: 96.2%;
+  descent-override: 30.1%;
   line-gap-override: 0%;
 }
 
 @theme inline {
   --font-display: "Space Grotesk", "Space Grotesk Fallback", system-ui, sans-serif;
-  --font-body: "Inter", "Inter Fallback", system-ui, sans-serif;
+  --font-body: "DM Sans", "DM Sans Fallback", system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
