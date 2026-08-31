@@ -224,3 +224,65 @@ export const syncPlannerGoogle = createServerFn({ method: "POST" })
     const res = await pullFromGoogle(await admin());
     return { applied: res.applied, configured: true };
   });
+
+/** Статус отдельного Telegram-бота планера: кто подключён и жив ли вебхук. */
+export const plannerBotStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{
+    configured: boolean;
+    ownBot: boolean;
+    username: string | null;
+    webhookUrl: string | null;
+    pending: number;
+    lastError: string | null;
+    chatId: number | null;
+    allowedChatIds: number[];
+  }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, getPrefs } = await import("@/lib/calendar/store.server");
+    const { plannerHasOwnBot, plannerTgKey, tgGetMe, tgWebhookInfo } = await import("@/lib/calendar/telegram.server");
+    const prefs = await getPrefs(await admin());
+    if (!plannerTgKey()) {
+      return { configured: false, ownBot: false, username: null, webhookUrl: null, pending: 0, lastError: null, chatId: prefs.tg_chat_id, allowedChatIds: prefs.tg_allowed_chat_ids };
+    }
+    const [me, hook] = await Promise.all([tgGetMe(), tgWebhookInfo()]);
+    return {
+      configured: true,
+      ownBot: plannerHasOwnBot(),
+      username: me?.username ?? null,
+      webhookUrl: hook?.url ?? null,
+      pending: hook?.pending_update_count ?? 0,
+      lastError: hook?.last_error_message ?? null,
+      chatId: prefs.tg_chat_id,
+      allowedChatIds: prefs.tg_allowed_chat_ids,
+    };
+  });
+
+/** Тестовое сообщение от бота планера — проверка связи из админки. */
+export const plannerBotTest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ sent: boolean; reason: string | null }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, getPrefs } = await import("@/lib/calendar/store.server");
+    const { tgSend } = await import("@/lib/calendar/telegram.server");
+    const prefs = await getPrefs(await admin());
+    if (!prefs.tg_chat_id) return { sent: false, reason: "Чат не привязан — напишите боту /start" };
+    const res = await tgSend(prefs.tg_chat_id, "✅ Связь с планером работает. Напишите /today, чтобы получить план на сегодня.");
+    return { sent: Boolean(res), reason: res ? null : "Telegram не принял сообщение — проверьте подключение" };
+  });
+
+/** Перерегистрация вебхука бота планера на публичный адрес проекта. */
+export const plannerBotRegisterWebhook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ origin: z.string().url() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ ok: boolean; url: string }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { createHash } = await import("crypto");
+    const { plannerTgKey, tgSetWebhook } = await import("@/lib/calendar/telegram.server");
+    const key = plannerTgKey();
+    if (!key) throw new Error("Бот планера не подключён");
+    const url = `${data.origin.replace(/\/$/, "")}/api/public/planner/telegram`;
+    const secret = createHash("sha256").update(`telegram-webhook:${key}`).digest("base64url");
+    const ok = await tgSetWebhook(url, secret);
+    return { ok, url };
+  });
