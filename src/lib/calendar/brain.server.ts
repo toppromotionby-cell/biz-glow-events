@@ -6,6 +6,8 @@ import { isToolName, runTool, toolSchemas, type ToolCtx, type ToolResult } from 
 import { listMemory, memoryPrompt } from "@/lib/calendar/memory.server";
 import { appendDialog, focusFromDialog, loadDialog } from "@/lib/calendar/dialog.server";
 import { esc } from "@/lib/calendar/render";
+import { buildPersona } from "@/lib/calendar/persona";
+import { toTgHtml } from "@/lib/calendar/tg-format";
 
 type Db = Awaited<ReturnType<typeof import("@/lib/calendar/store.server").admin>>;
 
@@ -30,12 +32,6 @@ export interface BrainResult {
   usedTools: string[];
 }
 
-const TONE_HINT: Record<string, string> = {
-  dry: "Отвечай сухо и по делу, без эмодзи и лишних слов.",
-  friendly: "Отвечай коротко, по-человечески и дружелюбно, максимум один эмодзи.",
-  fun: "Отвечай коротко, живо, с лёгким юмором, но по делу.",
-};
-
 function systemPrompt(opts: {
   prefs: AssistantPrefs;
   dirs: CalDirection[];
@@ -44,40 +40,17 @@ function systemPrompt(opts: {
   focusItemId: string | null;
   focusTitle: string | null;
 }): string {
-  const { prefs, dirs, now } = opts;
-  const dirList = dirs.map((d) => `- ${d.key}: ${d.title} (${d.keywords.join(", ")}), рабочие часы ${d.work_start}–${d.work_end}`).join("\n");
-  const localNow = new Intl.DateTimeFormat("ru-RU", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: prefs.tz,
-  }).format(now);
-
   return [
-    `Ты — личный планер-ассистент${prefs.owner_name ? ` (владелец: ${prefs.owner_name})` : ""}. Общаешься на русском.`,
-    `Сейчас: ${localNow} (${prefs.tz}). Машинное время: ${now.toISOString()}.`,
-    TONE_HINT[prefs.tone] ?? TONE_HINT.friendly,
-    "",
-    "Направления:",
-    dirList || "(направлений нет)",
-    "",
-    "Как работать:",
-    "- Всегда сначала пойми: пользователь ПРОСИТ показать/найти, ПРОСИТ изменить или ДИКТУЕТ новое дело.",
-    "- Для любого действия вызывай инструмент. Без инструмента ничего не «делай на словах».",
-    "- В одном сообщении может быть несколько дел — вызови create_item столько раз, сколько нужно.",
-    "- Относительные даты («завтра в 15», «в пятницу», «через час») считай от текущего времени в поясе пользователя и передавай ISO8601 с офсетом.",
-    "- Встреча без длительности = 1 час. Задача без времени — ставь due_at, если срок назван; иначе создавай без времени и мягко спроси срок ПОСЛЕ создания.",
-    "- Не выдумывай данные. Если непонятно только время — всё равно создай запись без времени и уточни одним коротким вопросом.",
-    "- Если пользователь говорит «она/эта/её/эту» — речь о записи в фокусе, передавай её item_id.",
-    "- Если пользователь просит что-то запомнить или поправляет тебя («не так», «называй меня…», «всегда ставь…») — вызови remember.",
-    "- «Отмени» / «верни как было» — undo_last.",
-    "- Финальный ответ: одна-две короткие строки. Списки уже отрисованы инструментом — НЕ повторяй их содержимое, только короткий комментарий, если он полезен.",
-    opts.focusItemId ? `\nЗапись в фокусе: ${opts.focusItemId}${opts.focusTitle ? ` («${opts.focusTitle}»)` : ""}` : "",
-    opts.memory ? `\n${opts.memory}` : "",
+    buildPersona({
+      prefs: opts.prefs,
+      dirs: opts.dirs,
+      now: opts.now,
+      channel: "telegram",
+      memory: opts.memory,
+      focusTitle: opts.focusTitle,
+    }),
+    opts.focusItemId ? `id записи в фокусе: ${opts.focusItemId}` : "",
+    "«Отмени» / «верни как было» — undo_last.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -139,7 +112,7 @@ export async function runBrain(
     const calls = msg.tool_calls ?? [];
     if (!calls.length) {
       const finalText = (msg.content ?? "").trim();
-      if (finalText) blocks.push({ text: esc(finalText) });
+      if (finalText) blocks.push({ text: toTgHtml(finalText) });
       break;
     }
 
