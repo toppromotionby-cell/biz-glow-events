@@ -39,6 +39,10 @@ export async function getPrefs(db: Admin): Promise<AssistantPrefs> {
     alice_link_code: (row.alice_link_code as string) ?? null,
     alice_push_enabled: Boolean(row.alice_push_enabled),
     alice_mirror_tg: row.alice_mirror_tg == null ? true : Boolean(row.alice_mirror_tg),
+    owner_name: (row.owner_name as string) ?? null,
+    tone: ((row.tone as string) ?? "friendly") as AssistantPrefs["tone"],
+    voice_reply: Boolean(row.voice_reply),
+    brain_enabled: row.brain_enabled == null ? true : Boolean(row.brain_enabled),
   };
 }
 
