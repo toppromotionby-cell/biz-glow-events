@@ -158,7 +158,7 @@ export async function tgEdit(
   await call("editMessageText", {
     chat_id: chatId,
     message_id: messageId,
-    text,
+    text: sanitizeTgHtml(text),
     parse_mode: "HTML",
     disable_web_page_preview: true,
     reply_markup: keyboard(buttons),
@@ -198,7 +198,7 @@ export async function tgSendPhoto(
   return call<{ message_id: number }>("sendPhoto", {
     chat_id: chatId,
     photo: photoUrl,
-    caption: caption ? caption.slice(0, 1000) : undefined,
+    caption: caption ? sanitizeTgHtml(caption).slice(0, 1000) : undefined,
     parse_mode: "HTML",
     reply_markup: keyboard(buttons),
   });
