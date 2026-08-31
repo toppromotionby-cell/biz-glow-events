@@ -10,15 +10,18 @@ import {
   itemToEvent,
 } from "@/lib/calendar/google.server";
 import {
-  deleteTask,
-  ensureTaskList,
-  gtasksConfigured,
-  GTasksScopeError,
-  insertTask,
-  itemToTask,
-  listTasks,
-  patchTask,
-} from "@/lib/calendar/gtasks.server";
+  deleteTaskEvent,
+  ensureTaskCalendar,
+  eventToTaskPatch,
+  insertTaskEvent,
+  isScopeError,
+  isTaskEvent,
+  patchTaskEvent,
+  taskCalendarChanges,
+  taskCalendarsConfigured,
+  taskToEvent,
+} from "@/lib/calendar/task-events.server";
+
 import { routeTarget } from "@/lib/calendar/routing";
 import { reminderLabel, type SyncStatus } from "@/lib/calendar/tg-format";
 
