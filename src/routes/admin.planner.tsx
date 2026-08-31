@@ -262,8 +262,8 @@ function PlannerPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Планер и ассистент"
-        description="Задачи и встречи по направлениям. Ассистент напоминает в Telegram и синхронизирует Google Календарь."
-        actions={
+        subtitle="Задачи и встречи по направлениям. Ассистент напоминает в Telegram и синхронизирует Google Календарь."
+        action={
           <div className="flex gap-2">
             <Button
               variant="outline"

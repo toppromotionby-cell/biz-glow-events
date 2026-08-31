@@ -64,6 +64,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminSectionsRouteImport } from './routes/admin.sections'
 import { Route as AdminPromoRouteImport } from './routes/admin.promo'
+import { Route as AdminPlannerRouteImport } from './routes/admin.planner'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMailAccountsRouteImport } from './routes/admin.mail-accounts'
@@ -394,6 +395,11 @@ const AdminSectionsRoute = AdminSectionsRouteImport.update({
 const AdminPromoRoute = AdminPromoRouteImport.update({
   id: '/promo',
   path: '/promo',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlannerRoute = AdminPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -740,6 +746,7 @@ export interface FileRoutesByFullPath {
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/planner': typeof AdminPlannerRoute
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
@@ -850,6 +857,7 @@ export interface FileRoutesByTo {
   '/admin/catalog-structure': typeof AdminCatalogStructureRoute
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/planner': typeof AdminPlannerRoute
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
@@ -964,6 +972,7 @@ export interface FileRoutesById {
   '/admin/mail-accounts': typeof AdminMailAccountsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/planner': typeof AdminPlannerRoute
   '/admin/promo': typeof AdminPromoRoute
   '/admin/sections': typeof AdminSectionsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
@@ -1079,6 +1088,7 @@ export interface FileRouteTypes {
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/planner'
     | '/admin/promo'
     | '/admin/sections'
     | '/admin/testimonials'
@@ -1189,6 +1199,7 @@ export interface FileRouteTypes {
     | '/admin/catalog-structure'
     | '/admin/mail-accounts'
     | '/admin/notifications'
+    | '/admin/planner'
     | '/admin/promo'
     | '/admin/sections'
     | '/admin/testimonials'
@@ -1302,6 +1313,7 @@ export interface FileRouteTypes {
     | '/admin/mail-accounts'
     | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/planner'
     | '/admin/promo'
     | '/admin/sections'
     | '/admin/testimonials'
@@ -1817,6 +1829,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPromoRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/planner': {
+      id: '/admin/planner'
+      path: '/planner'
+      fullPath: '/admin/planner'
+      preLoaderRoute: typeof AdminPlannerRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -2293,6 +2312,7 @@ interface AdminRouteChildren {
   AdminMailAccountsRoute: typeof AdminMailAccountsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
+  AdminPlannerRoute: typeof AdminPlannerRoute
   AdminPromoRoute: typeof AdminPromoRoute
   AdminSectionsRoute: typeof AdminSectionsRoute
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
@@ -2333,6 +2353,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMailAccountsRoute: AdminMailAccountsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRouteWithChildren,
+  AdminPlannerRoute: AdminPlannerRoute,
   AdminPromoRoute: AdminPromoRoute,
   AdminSectionsRoute: AdminSectionsRoute,
   AdminTestimonialsRoute: AdminTestimonialsRoute,
