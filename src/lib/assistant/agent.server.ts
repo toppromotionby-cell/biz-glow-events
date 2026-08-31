@@ -166,13 +166,157 @@ export async function handleUpdate(update: TgUpdate): Promise<void> {
     return;
   }
 
+  // Скриншот / PDF → разбор и карточка решения.
+  if (hasAttachment) {
+    await handleAttachment(who, msg, text, settings);
+    return;
+  }
+
   const c = isCommand(text);
   if (c) {
     await handleCommand(who, c.cmd, c.arg, settings);
     return;
   }
 
+  // Ждём правки к ранее отправленной карточке.
+  const editing = await planAwaitingEdit(chatId);
+  if (editing) {
+    await setPlanStatus(editing.id, "rejected", "Заменён уточнённым планом.");
+    await reply(chatId, who, "✏️ Принял правки, пересобираю карточку…");
+    await sendPlanCard(who, {
+      title: editing.title,
+      request: `${editing.request ?? ""}\n\nПравки: ${text}`.trim(),
+      settings,
+    });
+    return;
+  }
+
   await freeform(who, text, settings);
+}
+
+/* ------------------------------ вложения (скриншоты) ------------------------------ */
+
+async function handleAttachment(
+  who: Identity,
+  msg: TgMessage,
+  caption: string,
+  settings: Awaited<ReturnType<typeof getSettings>>,
+): Promise<void> {
+  const chatId = who.chatId;
+  const photo = largestPhoto(msg.photo);
+  const source = photo
+    ? { fileId: photo.file_id, mime: "image/jpeg", size: photo.file_size ?? 0, name: "screenshot.jpg" }
+    : {
+        fileId: msg.document?.file_id ?? "",
+        mime: msg.document?.mime_type ?? "application/octet-stream",
+        size: msg.document?.file_size ?? 0,
+        name: msg.document?.file_name ?? "file",
+      };
+  if (!source.fileId) return;
+
+  const pre = acceptsAttachment(source.mime, source.size || 1);
+  if (!pre.ok) {
+    await reply(chatId, who, `📎 ${pre.reason}`);
+    return;
+  }
+
+  await tgSend(chatId, "👀 Смотрю, что на скриншоте…");
+  const file = await tgFetchFile(source.fileId, source.mime);
+  if (!file) {
+    await reply(chatId, who, "⚠️ Не удалось скачать файл из Telegram. Пришлите ещё раз.");
+    return;
+  }
+  const check = acceptsAttachment(file.mime, file.bytes);
+  if (!check.ok) {
+    await reply(chatId, who, `📎 ${check.reason}`);
+    return;
+  }
+
+  const attachment: Attachment = {
+    fileId: source.fileId,
+    mime: file.mime,
+    base64: file.base64,
+    bytes: file.bytes,
+    filename: source.name,
+  };
+
+  const out = await analyzeAttachments({
+    system: systemPrompt({
+      isAdmin: who.isAdmin,
+      roles: who.roles,
+      webSearch: settings.allow_web_search,
+      planOnly: true,
+    }),
+    attachments: [attachment],
+    question: caption || "Разбери скриншот: что не так и что предлагаешь сделать.",
+    context: await knowledgeContext(caption || "ошибка админки"),
+  });
+
+  if (!out.ok) {
+    await reply(chatId, who, out.message);
+    return;
+  }
+
+  const plan = await createPlan({
+    chatId,
+    title: out.result.title,
+    summary: out.result.summary,
+    request: caption || "Разбор скриншота",
+    steps: out.result.steps,
+    questions: out.result.questions,
+    attachments: [{ file_id: source.fileId, mime: file.mime, kind: photo ? "photo" : "document" }],
+  });
+
+  if (!plan) {
+    await reply(chatId, who, toTgHtml(stripFakeButtons(out.result.summary)));
+    return;
+  }
+
+  const body = renderCard({
+    id: plan.id,
+    title: out.result.title,
+    summary: out.result.summary,
+    steps: out.result.steps,
+    risk: out.result.risk,
+    questions: out.result.questions,
+  });
+  const sent = await tgSend(chatId, body, cardButtons(plan.id));
+  if (sent) await attachMessage(plan.id, sent.message_id);
+  await logMessage({ chatId, userId: who.userId, direction: "out", text: body });
+}
+
+/** Собирает план по задаче и отправляет карточкой с живыми кнопками. */
+async function sendPlanCard(
+  who: Identity,
+  opts: { title: string; request: string; settings: Awaited<ReturnType<typeof getSettings>> },
+): Promise<void> {
+  const raw = await ask(
+    systemPrompt({
+      isAdmin: who.isAdmin,
+      roles: who.roles,
+      webSearch: opts.settings.allow_web_search,
+      planOnly: true,
+    }),
+    await recentDialog(who.chatId),
+    `Задача: ${opts.request}\n\nСобери план: цель, шаги 3–7, что изменится, риски. Ничего не выполняй. Подписи кнопок не пиши.`,
+  );
+  const summary = toTgHtml(stripFakeButtons(raw));
+  const steps: AssistantPlanStep[] = [];
+  const plan = await createPlan({
+    chatId: who.chatId,
+    title: opts.title.slice(0, 120),
+    summary,
+    request: opts.request,
+    steps,
+  });
+  if (!plan) {
+    await reply(who.chatId, who, summary);
+    return;
+  }
+  const body = renderCard({ id: plan.id, title: "План на утверждение", summary, steps });
+  const sent = await tgSend(who.chatId, body, cardButtons(plan.id));
+  if (sent) await attachMessage(plan.id, sent.message_id);
+  await logMessage({ chatId: who.chatId, userId: who.userId, direction: "out", text: body });
 }
 
 async function reply(chatId: number, who: Identity, text: string, buttons?: TgButton[][]): Promise<void> {
