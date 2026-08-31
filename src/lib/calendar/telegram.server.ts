@@ -1,5 +1,8 @@
 // Транспорт к Telegram Bot API через connector-gateway (только сервер).
+import { sanitizeTgHtml, splitTgText } from "@/lib/calendar/tg-format";
+
 const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
+
 
 export interface TgButton {
   text: string;
