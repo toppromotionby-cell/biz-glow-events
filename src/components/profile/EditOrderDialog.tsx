@@ -33,7 +33,7 @@ export function EditOrderDialog({
             <Label htmlFor="ed-name">Имя</Label>
             <Input id="ed-name" value={form.client_name} onChange={(e) => patch({ client_name: e.target.value })} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid-fields">
             <div className="grid gap-1.5">
               <Label htmlFor="ed-phone">Телефон</Label>
               <Input id="ed-phone" value={form.client_phone} onChange={(e) => patch({ client_phone: e.target.value })} />
@@ -43,7 +43,7 @@ export function EditOrderDialog({
               <Input id="ed-email" type="email" value={form.client_email} onChange={(e) => patch({ client_email: e.target.value })} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid-fields">
             <div className="grid gap-1.5">
               <Label htmlFor="ed-company">Компания</Label>
               <Input id="ed-company" value={form.client_company} onChange={(e) => patch({ client_company: e.target.value })} />

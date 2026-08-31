@@ -183,7 +183,7 @@ function DjLanding() {
             </Button>
           </div>
 
-          <dl className="mt-8 grid max-w-lg grid-cols-3 gap-4">
+          <dl className="mt-8 grid-stats max-w-lg">
             {stats.map((s) => (
               <div key={s.label}>
                 <dt className="sr-only">{s.label}</dt>

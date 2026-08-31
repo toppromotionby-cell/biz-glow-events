@@ -105,7 +105,7 @@ export function CreatePresentationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid-fields">
           <ModeCard
             active={mode === "blank"}
             icon={<Sparkles className="h-4 w-4" />}

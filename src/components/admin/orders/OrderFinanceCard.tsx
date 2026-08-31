@@ -28,7 +28,7 @@ export function OrderFinanceCard({ total, paid, onAddPayment, onSetPaid, busy }:
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2 text-sm">
+      <div className="grid-stats text-sm">
         <Stat label="Сумма" value={fmtMoney(total)} />
         <Stat label="Оплачено" value={fmtMoney(paid)} tone="success" />
         <Stat label="Долг" value={fmtMoney(debt)} tone={debt > 0 ? "warning" : "muted"} />

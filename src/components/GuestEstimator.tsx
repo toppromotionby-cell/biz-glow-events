@@ -193,7 +193,7 @@ export function GuestEstimator() {
             </>
           )}
 
-          <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+          <div className="mt-6 grid-stats text-center">
             <div className="glass rounded-lg p-3">
               <div className="text-xs text-muted-foreground">Гостей</div>
               <div className="font-semibold mt-1">{guests}</div>

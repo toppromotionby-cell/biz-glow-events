@@ -480,7 +480,7 @@ function PlannerPage() {
           </DialogHeader>
           {draft ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid-fields">
                 <div>
                   <Label>Тип</Label>
                   <Select value={draft.kind} onValueChange={(v) => setDraft({ ...draft, kind: v as CalKind })}>
@@ -511,7 +511,7 @@ function PlannerPage() {
                 <Label>Название</Label>
                 <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid-fields">
                 <div>
                   <Label>{draft.kind === "meeting" ? "Начало" : "Начало (необязательно)"}</Label>
                   <Input type="datetime-local" value={draft.starts_at} onChange={(e) => setDraft({ ...draft, starts_at: e.target.value })} />
