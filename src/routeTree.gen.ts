@@ -101,6 +101,7 @@ import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 import { Route as AdminHelpSlugRouteImport } from './routes/admin.help.$slug'
 import { Route as AdminDocumentsKnowledgeRouteImport } from './routes/admin.documents.knowledge'
 import { Route as AdminDjTracksRouteImport } from './routes/admin.dj.tracks'
+import { Route as AdminDjMembersRouteImport } from './routes/admin.dj.members'
 import { Route as AdminCatalogTypeRouteImport } from './routes/admin.catalog.$type'
 import { Route as AdminDocumentsQuotesIndexRouteImport } from './routes/admin.documents.quotes.index'
 import { Route as AdminDocumentsPromoIndexRouteImport } from './routes/admin.documents.promo.index'
@@ -591,6 +592,11 @@ const AdminDjTracksRoute = AdminDjTracksRouteImport.update({
   path: '/dj/tracks',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDjMembersRoute = AdminDjMembersRouteImport.update({
+  id: '/dj/members',
+  path: '/dj/members',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCatalogTypeRoute = AdminCatalogTypeRouteImport.update({
   id: '/$type',
   path: '/$type',
@@ -822,6 +828,7 @@ export interface FileRoutesByFullPath {
   '/catalog/': typeof CatalogIndexRoute
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/members': typeof AdminDjMembersRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -940,6 +947,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogIndexRoute
   '/dj': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/members': typeof AdminDjMembersRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -1063,6 +1071,7 @@ export interface FileRoutesById {
   '/catalog/': typeof CatalogIndexRoute
   '/dj/': typeof DjIndexRoute
   '/admin/catalog/$type': typeof AdminCatalogTypeRoute
+  '/admin/dj/members': typeof AdminDjMembersRoute
   '/admin/dj/tracks': typeof AdminDjTracksRoute
   '/admin/documents/knowledge': typeof AdminDocumentsKnowledgeRoute
   '/admin/help/$slug': typeof AdminHelpSlugRoute
@@ -1187,6 +1196,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/dj/'
     | '/admin/catalog/$type'
+    | '/admin/dj/members'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1305,6 +1315,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/dj'
     | '/admin/catalog/$type'
+    | '/admin/dj/members'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -1427,6 +1438,7 @@ export interface FileRouteTypes {
     | '/catalog/'
     | '/dj/'
     | '/admin/catalog/$type'
+    | '/admin/dj/members'
     | '/admin/dj/tracks'
     | '/admin/documents/knowledge'
     | '/admin/help/$slug'
@@ -2184,6 +2196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDjTracksRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/dj/members': {
+      id: '/admin/dj/members'
+      path: '/dj/members'
+      fullPath: '/admin/dj/members'
+      preLoaderRoute: typeof AdminDjMembersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/catalog/$type': {
       id: '/admin/catalog/$type'
       path: '/$type'
@@ -2470,6 +2489,7 @@ interface AdminRouteChildren {
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminDjMembersRoute: typeof AdminDjMembersRoute
   AdminDjTracksRoute: typeof AdminDjTracksRoute
   AdminDocumentsKnowledgeRoute: typeof AdminDocumentsKnowledgeRoute
   AdminPaperworkIdRoute: typeof AdminPaperworkIdRouteWithChildren
@@ -2513,6 +2533,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminDjMembersRoute: AdminDjMembersRoute,
   AdminDjTracksRoute: AdminDjTracksRoute,
   AdminDocumentsKnowledgeRoute: AdminDocumentsKnowledgeRoute,
   AdminPaperworkIdRoute: AdminPaperworkIdRouteWithChildren,
