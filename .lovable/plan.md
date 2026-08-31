@@ -128,3 +128,6 @@ purged      — запись удаляется полностью
 - Компоненты: `Breadcrumbs`, обновлённый `TrackFilters` (ряды разделов и форматов, чипы), плитки разделов/форматов, липкая панель.
 - `src/styles.css`: утилиты сцены hero, плиток и вуали на семантических токенах, без хардкода цветов.
 - Проверка: типы, тесты классификации, ручной проход `/dj` → раздел → категория → назад, светлая и тёмная темы, мобильная ширина.
+- Гигиена: в `dj_tracks` — `lifecycle_status`, `last_activity_at`, `status_changed_at`, `keep_forever`, `audio_purged_at` (хеш и ключ сохраняются после удаления файла); таблица `dj_hygiene_settings` (пороги) и `dj_hygiene_log`; в `dj_categories`/форматах — вычисляемые `visible_on_site`, `track_count`, `last_added_at`.
+- Ежедневный запуск через pg_cron → публичный endpoint `src/routes/api/public/dj-hygiene.ts` с проверкой `CRON_SECRET`; логика в `src/lib/dj/hygiene.server.ts`, удаление файлов из бакетов `dj-audio`/`dj-artwork` сервисным клиентом.
+- Витрина и фильтры читают только видимые блоки и треки в статусах `active`/`dormant`-с-иммунитетом; админка видит всё.
