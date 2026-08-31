@@ -1,20 +1,18 @@
-// Список треков библиотеки: воспроизведение, рейтинг, избранное, скачивание, комментарии.
+// Список треков библиотеки: воспроизведение, рейтинг, избранное, скачивание.
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Play, Pause, Download, Heart, Star, MessageSquare, Loader2 } from "lucide-react";
+import { Play, Pause, Download, Heart, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useDjPlayer } from "@/components/dj/player";
-import { CommentsDialog } from "@/components/dj/CommentsDialog";
 import { djDownloadTrack, djRate, djToggleFavorite } from "@/lib/dj/dj.functions";
 import { formatDuration, TRACK_VERSION_LABEL, type DjTrack, type TrackVersion } from "@/lib/dj/types";
 
 export function TrackList({ tracks, invalidateKey }: { tracks: DjTrack[]; invalidateKey: unknown[] }) {
   const { current, playing, play, toggle } = useDjPlayer();
   const qc = useQueryClient();
-  const [commentsFor, setCommentsFor] = useState<DjTrack | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const refresh = () => qc.invalidateQueries({ queryKey: invalidateKey });
@@ -122,9 +120,6 @@ export function TrackList({ tracks, invalidateKey }: { tracks: DjTrack[]; invali
                 <Button size="icon" variant="ghost" onClick={() => favorite.mutate(t.id)} aria-label="В избранное">
                   <Heart className={cn("h-4 w-4", t.is_favorite && "fill-destructive text-destructive")} />
                 </Button>
-                <Button size="icon" variant="ghost" onClick={() => setCommentsFor(t)} aria-label="Комментарии">
-                  <MessageSquare className="h-4 w-4" />
-                </Button>
                 <Button size="icon" variant="ghost" disabled={busy === t.id} onClick={() => void download(t)} aria-label="Скачать">
                   {busy === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 </Button>
@@ -134,15 +129,6 @@ export function TrackList({ tracks, invalidateKey }: { tracks: DjTrack[]; invali
         })}
       </ul>
 
-      {commentsFor && (
-        <CommentsDialog
-          open
-          onOpenChange={(o) => !o && setCommentsFor(null)}
-          targetType="track"
-          targetId={commentsFor.id}
-          title={`${commentsFor.artist} — ${commentsFor.title}`}
-        />
-      )}
     </>
   );
 }

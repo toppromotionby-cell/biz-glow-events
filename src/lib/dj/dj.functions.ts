@@ -11,7 +11,7 @@ import {
   listSoftware,
   softwareDownloadUrl,
 } from "@/lib/dj/library.server";
-import { listComments, addComment, listThreads, createThread, rateTrack, toggleFavorite } from "@/lib/dj/community.server";
+import { rateTrack, toggleFavorite } from "@/lib/dj/social.server";
 import { applyForMembership } from "@/lib/dj/members.server";
 import { createUploadTicket } from "@/lib/dj/upload.server";
 import { insertTrack } from "@/lib/dj/moderation.server";
@@ -121,47 +121,6 @@ export const djSoftwareDownload = createServerFn({ method: "POST" })
     await supabaseAdmin.from("dj_downloads").insert({ user_id: access.userId, target_type: "software", target_id: data.versionId });
     return { url };
   });
-
-export const djListComments = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ targetType: z.enum(["track", "software", "thread"]), targetId: z.string().uuid() }).parse(d),
-  )
-  .handler(async ({ data, context }) =>
-    listComments(await requireMember(context.userId), data.targetType, data.targetId),
-  );
-
-export const djAddComment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({
-      targetType: z.enum(["track", "software", "thread"]),
-      targetId: z.string().uuid(),
-      body: z.string().trim().min(1).max(4000),
-      parentId: z.string().uuid().nullable().optional(),
-    }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const access = await requireMember(context.userId);
-    await assertRateLimit("dj_comments", "author_id", access.userId, 20, 10);
-    return addComment(access, data);
-  });
-
-export const djListThreads = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ category: z.string().max(40).optional() }).parse(d ?? {}))
-  .handler(async ({ data, context }) => listThreads(await requireMember(context.userId), data.category));
-
-export const djCreateThread = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({
-      title: z.string().trim().min(3).max(160),
-      body: z.string().trim().max(8000).default(""),
-      category: z.string().max(40).default("general"),
-    }).parse(d),
-  )
-  .handler(async ({ data, context }) => ({ id: await createThread(await requireMember(context.userId), data) }));
 
 export const djUploadTicket = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

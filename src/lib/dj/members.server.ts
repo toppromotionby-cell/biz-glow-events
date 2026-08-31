@@ -93,17 +93,15 @@ export async function djStats(): Promise<{
   members: Record<string, number>;
   tracks: Record<string, number>;
   downloads7d: number;
-  comments: number;
   topTracks: { id: string; artist: string; title: string; download_count: number; rating_avg: number }[];
 }> {
-  const [members, tracks, downloads, comments, top] = await Promise.all([
+  const [members, tracks, downloads, top] = await Promise.all([
     supabaseAdmin.from("dj_members").select("status"),
     supabaseAdmin.from("dj_tracks").select("status"),
     supabaseAdmin
       .from("dj_downloads")
       .select("id", { count: "exact", head: true })
       .gte("created_at", new Date(Date.now() - 7 * 86_400_000).toISOString()),
-    supabaseAdmin.from("dj_comments").select("id", { count: "exact", head: true }),
     supabaseAdmin
       .from("dj_tracks")
       .select("id, artist, title, download_count, rating_avg")
@@ -120,7 +118,6 @@ export async function djStats(): Promise<{
     members: tally(members.data),
     tracks: tally(tracks.data),
     downloads7d: downloads.count ?? 0,
-    comments: comments.count ?? 0,
     topTracks: (top.data ?? []) as never,
   };
 }
