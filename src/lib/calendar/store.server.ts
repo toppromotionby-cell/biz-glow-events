@@ -9,6 +9,17 @@ import {
   googleConfigured,
   itemToEvent,
 } from "@/lib/calendar/google.server";
+import {
+  deleteTask,
+  ensureTaskList,
+  gtasksConfigured,
+  GTasksScopeError,
+  insertTask,
+  itemToTask,
+  listTasks,
+  patchTask,
+} from "@/lib/calendar/gtasks.server";
+import { routeTarget } from "@/lib/calendar/routing";
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
