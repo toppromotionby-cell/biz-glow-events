@@ -160,10 +160,13 @@ export function buildCoverSpec(subject: CoverSubject): CoverSpec {
   const palette = paletteForSection(subject.section);
   const seed = coverSeed(`${subject.artist}|${subject.title}|${palette.id}`);
 
-  // Сдвиг ±14° внутри семейства раздела: обложки различимы, но родственны.
-  const drift = ((seed % 29) - 14) * 1;
-  const h0 = palette.hue + drift;
-  const h1 = palette.hue + palette.hueShift + drift;
+  // Сдвиг ±7° внутри семейства раздела: обложки различимы, но родственны.
+  // Тон жёстко удерживаем в фирменном янтарно-оранжевом коридоре 8–46°,
+  // иначе высокая насыщенность уводит плашки в салатовый.
+  const clampHue = (h: number) => Math.min(46, Math.max(8, h));
+  const drift = ((seed % 15) - 7) * 1;
+  const h0 = clampHue(palette.hue + drift);
+  const h1 = clampHue(palette.hue + palette.hueShift + drift);
 
   return {
     version: COVER_SPEC_VERSION,
