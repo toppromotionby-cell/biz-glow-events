@@ -20,6 +20,16 @@ import {
   patchTask,
 } from "@/lib/calendar/gtasks.server";
 import { routeTarget } from "@/lib/calendar/routing";
+import { reminderLabel, type SyncStatus } from "@/lib/calendar/tg-format";
+
+export interface PushResult {
+  item: CalItem;
+  status: SyncStatus;
+}
+
+/** Запись вместе со статусами выгрузки в Google (для ответа ассистента). */
+export type SyncedItem = CalItem & { sync?: SyncStatus[] };
+
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
