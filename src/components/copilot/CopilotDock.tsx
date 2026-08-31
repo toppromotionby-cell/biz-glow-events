@@ -23,7 +23,7 @@ const QUICK = [
 ];
 
 /** Распознавание речи браузера, если доступно. */
-type SpeechCtor = new () => {
+interface SpeechRec {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
@@ -32,7 +32,9 @@ type SpeechCtor = new () => {
   onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
   onend: (() => void) | null;
   onerror: (() => void) | null;
-};
+}
+
+type SpeechCtor = new () => SpeechRec;
 
 function speechCtor(): SpeechCtor | null {
   if (typeof window === "undefined") return null;
@@ -53,7 +55,7 @@ export function CopilotDock() {
   const [text, setText] = useState("");
   const [speak, setSpeak] = useState(false);
   const [listening, setListening] = useState(false);
-  const recRef = useRef<ReturnType<SpeechCtor> | null>(null);
+  const recRef = useRef<SpeechRec | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const isAdmin = has("admin");
