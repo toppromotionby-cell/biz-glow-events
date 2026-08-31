@@ -80,6 +80,7 @@ import { Route as AdminCampaignsRouteImport } from './routes/admin.campaigns'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminAssistantRouteImport } from './routes/admin.assistant'
 import { Route as AdminPaperworkIndexRouteImport } from './routes/admin.paperwork.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
 import { Route as AdminHelpIndexRouteImport } from './routes/admin.help.index'
@@ -116,8 +117,10 @@ import { Route as ApiPublicPlannerTelegramRouteImport } from './routes/api/publi
 import { Route as ApiPublicPlannerAliceRouteImport } from './routes/api/public/planner/alice'
 import { Route as ApiPublicHooksSlaOrdersRouteImport } from './routes/api/public/hooks/sla-orders'
 import { Route as ApiPublicHooksKnowledgeHygieneRouteImport } from './routes/api/public/hooks/knowledge-hygiene'
+import { Route as ApiPublicHooksAssistantHygieneRouteImport } from './routes/api/public/hooks/assistant-hygiene'
 import { Route as ApiPublicDjTickRouteImport } from './routes/api/public/dj/tick'
 import { Route as ApiPublicDjTelegramRouteImport } from './routes/api/public/dj/telegram'
+import { Route as ApiPublicAssistantWebhookRouteImport } from './routes/api/public/assistant/webhook'
 import { Route as AdminPaperworkTypeTypeRouteImport } from './routes/admin.paperwork.type.$type'
 import { Route as AdminPaperworkIdRenderRouteImport } from './routes/admin.paperwork.$id.render'
 import { Route as AdminOrdersIdQuoteRouteImport } from './routes/admin.orders.$id.quote'
@@ -488,6 +491,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAssistantRoute = AdminAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPaperworkIndexRoute = AdminPaperworkIndexRouteImport.update({
   id: '/paperwork/',
   path: '/paperwork/',
@@ -677,6 +685,12 @@ const ApiPublicHooksKnowledgeHygieneRoute =
     path: '/api/public/hooks/knowledge-hygiene',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAssistantHygieneRoute =
+  ApiPublicHooksAssistantHygieneRouteImport.update({
+    id: '/api/public/hooks/assistant-hygiene',
+    path: '/api/public/hooks/assistant-hygiene',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicDjTickRoute = ApiPublicDjTickRouteImport.update({
   id: '/api/public/dj/tick',
   path: '/api/public/dj/tick',
@@ -687,6 +701,12 @@ const ApiPublicDjTelegramRoute = ApiPublicDjTelegramRouteImport.update({
   path: '/api/public/dj/telegram',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAssistantWebhookRoute =
+  ApiPublicAssistantWebhookRouteImport.update({
+    id: '/api/public/assistant/webhook',
+    path: '/api/public/assistant/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminPaperworkTypeTypeRoute = AdminPaperworkTypeTypeRouteImport.update({
   id: '/paperwork/type/$type',
   path: '/paperwork/type/$type',
@@ -802,6 +822,7 @@ export interface FileRoutesByFullPath {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
@@ -868,8 +889,10 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
+  '/api/public/assistant/webhook': typeof ApiPublicAssistantWebhookRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
   '/api/public/dj/tick': typeof ApiPublicDjTickRoute
+  '/api/public/hooks/assistant-hygiene': typeof ApiPublicHooksAssistantHygieneRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -925,6 +948,7 @@ export interface FileRoutesByTo {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
@@ -989,8 +1013,10 @@ export interface FileRoutesByTo {
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
+  '/api/public/assistant/webhook': typeof ApiPublicAssistantWebhookRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
   '/api/public/dj/tick': typeof ApiPublicDjTickRoute
+  '/api/public/hooks/assistant-hygiene': typeof ApiPublicHooksAssistantHygieneRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1049,6 +1075,7 @@ export interface FileRoutesById {
   '/testimonials': typeof TestimonialsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/zones': typeof ZonesRouteWithChildren
+  '/admin/assistant': typeof AdminAssistantRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/blog': typeof AdminBlogRoute
   '/admin/calendar': typeof AdminCalendarRoute
@@ -1115,8 +1142,10 @@ export interface FileRoutesById {
   '/admin/orders/$id/quote': typeof AdminOrdersIdQuoteRoute
   '/admin/paperwork/$id/render': typeof AdminPaperworkIdRenderRoute
   '/admin/paperwork/type/$type': typeof AdminPaperworkTypeTypeRoute
+  '/api/public/assistant/webhook': typeof ApiPublicAssistantWebhookRoute
   '/api/public/dj/telegram': typeof ApiPublicDjTelegramRoute
   '/api/public/dj/tick': typeof ApiPublicDjTickRoute
+  '/api/public/hooks/assistant-hygiene': typeof ApiPublicHooksAssistantHygieneRoute
   '/api/public/hooks/knowledge-hygiene': typeof ApiPublicHooksKnowledgeHygieneRoute
   '/api/public/hooks/sla-orders': typeof ApiPublicHooksSlaOrdersRoute
   '/api/public/planner/alice': typeof ApiPublicPlannerAliceRoute
@@ -1176,6 +1205,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
     | '/admin/calendar'
@@ -1242,8 +1272,10 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
+    | '/api/public/assistant/webhook'
     | '/api/public/dj/telegram'
     | '/api/public/dj/tick'
+    | '/api/public/hooks/assistant-hygiene'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1299,6 +1331,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
     | '/admin/calendar'
@@ -1363,8 +1396,10 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
+    | '/api/public/assistant/webhook'
     | '/api/public/dj/telegram'
     | '/api/public/dj/tick'
+    | '/api/public/hooks/assistant-hygiene'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1422,6 +1457,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/unsubscribe'
     | '/zones'
+    | '/admin/assistant'
     | '/admin/audit'
     | '/admin/blog'
     | '/admin/calendar'
@@ -1488,8 +1524,10 @@ export interface FileRouteTypes {
     | '/admin/orders/$id/quote'
     | '/admin/paperwork/$id/render'
     | '/admin/paperwork/type/$type'
+    | '/api/public/assistant/webhook'
     | '/api/public/dj/telegram'
     | '/api/public/dj/tick'
+    | '/api/public/hooks/assistant-hygiene'
     | '/api/public/hooks/knowledge-hygiene'
     | '/api/public/hooks/sla-orders'
     | '/api/public/planner/alice'
@@ -1562,8 +1600,10 @@ export interface RootRouteChildren {
   ApiPublicTelegramSupportRoute: typeof ApiPublicTelegramSupportRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OrderSuccessIdRoute: typeof OrderSuccessIdRoute
+  ApiPublicAssistantWebhookRoute: typeof ApiPublicAssistantWebhookRoute
   ApiPublicDjTelegramRoute: typeof ApiPublicDjTelegramRoute
   ApiPublicDjTickRoute: typeof ApiPublicDjTickRoute
+  ApiPublicHooksAssistantHygieneRoute: typeof ApiPublicHooksAssistantHygieneRoute
   ApiPublicHooksKnowledgeHygieneRoute: typeof ApiPublicHooksKnowledgeHygieneRoute
   ApiPublicHooksSlaOrdersRoute: typeof ApiPublicHooksSlaOrdersRoute
   ApiPublicPlannerAliceRoute: typeof ApiPublicPlannerAliceRoute
@@ -2075,6 +2115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/assistant': {
+      id: '/admin/assistant'
+      path: '/assistant'
+      fullPath: '/admin/assistant'
+      preLoaderRoute: typeof AdminAssistantRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/paperwork/': {
       id: '/admin/paperwork/'
       path: '/paperwork'
@@ -2327,6 +2374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksKnowledgeHygieneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/assistant-hygiene': {
+      id: '/api/public/hooks/assistant-hygiene'
+      path: '/api/public/hooks/assistant-hygiene'
+      fullPath: '/api/public/hooks/assistant-hygiene'
+      preLoaderRoute: typeof ApiPublicHooksAssistantHygieneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/dj/tick': {
       id: '/api/public/dj/tick'
       path: '/api/public/dj/tick'
@@ -2339,6 +2393,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/dj/telegram'
       fullPath: '/api/public/dj/telegram'
       preLoaderRoute: typeof ApiPublicDjTelegramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/assistant/webhook': {
+      id: '/api/public/assistant/webhook'
+      path: '/api/public/assistant/webhook'
+      fullPath: '/api/public/assistant/webhook'
+      preLoaderRoute: typeof ApiPublicAssistantWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/paperwork/type/$type': {
@@ -2512,6 +2573,7 @@ const AdminPaperworkIdRouteWithChildren =
   AdminPaperworkIdRoute._addFileChildren(AdminPaperworkIdRouteChildren)
 
 interface AdminRouteChildren {
+  AdminAssistantRoute: typeof AdminAssistantRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBlogRoute: typeof AdminBlogRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
@@ -2557,6 +2619,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAssistantRoute: AdminAssistantRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminBlogRoute: AdminBlogRoute,
   AdminCalendarRoute: AdminCalendarRoute,
@@ -2748,8 +2811,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTelegramSupportRoute: ApiPublicTelegramSupportRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OrderSuccessIdRoute: OrderSuccessIdRoute,
+  ApiPublicAssistantWebhookRoute: ApiPublicAssistantWebhookRoute,
   ApiPublicDjTelegramRoute: ApiPublicDjTelegramRoute,
   ApiPublicDjTickRoute: ApiPublicDjTickRoute,
+  ApiPublicHooksAssistantHygieneRoute: ApiPublicHooksAssistantHygieneRoute,
   ApiPublicHooksKnowledgeHygieneRoute: ApiPublicHooksKnowledgeHygieneRoute,
   ApiPublicHooksSlaOrdersRoute: ApiPublicHooksSlaOrdersRoute,
   ApiPublicPlannerAliceRoute: ApiPublicPlannerAliceRoute,
