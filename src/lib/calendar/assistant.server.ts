@@ -52,7 +52,7 @@ export function detectIntent(raw: string, tz: string, now = new Date()): Assista
   if (!t || HELP_RE.test(t)) return { type: "help" };
   if (NEWS_RE.test(t)) return { type: "news" };
 
-  if (/^(что|какие|какой|покажи|показать|список|план|расписание|дела|задачи)(?![а-яё])/.test(t) || /^(сегодня|завтра|послезавтра|неделя|на неделе|просроч|ближайш)/.test(t)) {
+  if (/^(что|какие|какой|покажи|показать|список|план|расписание|дела|задачи)(?![а-яё])/.test(t) || /^(сегодня|завтра|послезавтра|неделя|на неделе|просроч\w*|ближайшее)\s*$/.test(t)) {
     if (/просроч|горит|хвост/.test(t)) return { type: "list", scope: "overdue" };
     if (/недел/.test(t)) return { type: "list", scope: "week" };
     if (/послезавтра/.test(t)) return { type: "day", day: dayRange(now, tz, 2).from };
