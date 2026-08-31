@@ -109,11 +109,64 @@ export const copilotDecide = createServerFn({ method: "POST" })
       result: `Применено ${outcome.applied.length} из ${run.preview.length}`,
       error: outcome.failed.length ? outcome.failed.map((f) => `${f.op.label}: ${f.error}`).join("; ") : null,
     });
+    // Утверждённые изменения попадают в общую базу знаний — ими пользуются боты и коллеги.
+    try {
+      const { upsertFact } = await import("@/lib/knowledge/facts.server");
+      const { summarizeOps } = await import("@/lib/copilot/diff");
+      await upsertFact({
+        scope: "shared",
+        subject: `Копилот · ${run.title}`.slice(0, 200),
+        fact: `${new Date().toLocaleDateString("ru-RU")}: ${run.title}. ${summarizeOps(outcome.applied)}. ${
+          outcome.applied.map((o) => `${o.table}/${o.label}`).slice(0, 10).join(", ")
+        }`,
+        sourceKind: "system",
+        sourceTable: "copilot_runs",
+        sourceId: run.id,
+        authorId: context.userId,
+      });
+    } catch {
+      // База знаний не должна ломать применение плана.
+    }
+
     return {
       run: updated,
       message: outcome.failed.length
         ? `Применено ${outcome.applied.length}, с ошибкой ${outcome.failed.length}.`
         : `Готово: применено ${outcome.applied.length} изменений.`,
+    };
+  });
+
+export interface CopilotAuditRow {
+  id: string;
+  run_id: string | null;
+  tool: string;
+  table_name: string | null;
+  record_id: string | null;
+  label: string | null;
+  status: string;
+  error: string | null;
+  created_at: string;
+}
+
+/** Журнал: планы и построчный аудит применённых операций. */
+export const copilotJournal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input?: { limit?: number }) => ({ limit: Math.min(Math.max(input?.limit ?? 50, 1), 200) }))
+  .handler(async ({ data, context }): Promise<{ runs: CopilotRun[]; audit: CopilotAuditRow[]; settings: CopilotSettings }> => {
+    const { assertCopilotAccess, getCopilotSettings } = await import("@/lib/copilot/guard.server");
+    await assertCopilotAccess({ supabase: context.supabase as never, userId: context.userId });
+    const { listRuns } = await import("@/lib/copilot/store.server");
+    const { admin } = await import("@/lib/assistant/store.server");
+    const db = await admin();
+    const { data: audit } = await db
+      .from("copilot_audit")
+      .select("id, run_id, tool, table_name, record_id, label, status, error, created_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    return {
+      runs: await listRuns(context.userId, data.limit),
+      audit: (audit ?? []) as CopilotAuditRow[],
+      settings: await getCopilotSettings(),
     };
   });
 
@@ -125,3 +178,4 @@ export const copilotSaveSettings = createServerFn({ method: "POST" })
     await assertCopilotAccess({ supabase: context.supabase as never, userId: context.userId });
     return patchCopilotSettings(data);
   });
+
