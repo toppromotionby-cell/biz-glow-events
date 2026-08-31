@@ -156,7 +156,7 @@ function DjLanding() {
                 className="w-1.5 rounded-full bg-gradient-to-t from-primary to-accent"
                 style={{
                   height: `${20 + ((i * 37) % 80)}%`,
-                  animation: `dj-eq-bar 1.${(i % 7) + 1}s ease-in-out ${i * 0.05}s infinite alternate`,
+                  animation: `dj-eq-bounce 1.${(i % 7) + 1}s ease-in-out ${i * 0.05}s infinite alternate`,
                 }}
               />
             ))}
