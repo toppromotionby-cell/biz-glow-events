@@ -413,12 +413,7 @@ async function handleCommand(
 
     case "plan": {
       if (!arg) return reply(who.chatId, who, "Опишите задачу: /plan перенести все КП сентября в архив");
-      const answer = await ask(
-        systemPrompt({ isAdmin: who.isAdmin, roles: who.roles, webSearch: settings.allow_web_search, planOnly: true }),
-        [],
-        `Задача: ${arg}\n\nСобери план: цель, шаги 3–7, что изменится, риски. Ничего не выполняй.`,
-      );
-      return reply(who.chatId, who, `🗂 <b>План на утверждение</b>\n\n${answer}`, PLAN_BUTTONS);
+      return sendPlanCard(who, { title: "План на утверждение", request: arg, settings });
     }
 
     case "stats":
