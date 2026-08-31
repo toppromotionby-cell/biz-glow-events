@@ -16,6 +16,7 @@ export type Permission =
   | "marketing.manage"     // рассылки, промокоды, почтовые ящики
   | "system.manage"        // системные настройки, шаблоны писем, соцсети, уведомления
   | "users.manage"         // пользователи и роли
+  | "dj.manage"            // закрытый DJ-раздел: треки, софт, участники, модерация
   | "audit.view";          // журнал аудита
 
 export const STAFF_ROLES: AppRole[] = ["admin", "manager", "accountant", "content_editor", "dj_admin"];
