@@ -1,6 +1,6 @@
 // Хранилище планера: чтение/запись записей, напоминания, выгрузка в Google.
 // Только серверный код (service-role клиент).
-import type { AssistantPrefs, CalDirection, CalItem, CalKind } from "@/lib/calendar/model";
+import { isOverdue, type AssistantPrefs, type CalDirection, type CalItem, type CalKind } from "@/lib/calendar/model";
 import {
   gcalChanges,
   gcalDelete,
@@ -307,4 +307,62 @@ export async function deleteItem(db: Admin, id: string): Promise<void> {
   if (!item) return;
   await removeFromGoogle(db, item);
   await db.from("calendar_items").delete().eq("id", id);
+}
+
+// ——— Аналитика ———
+
+export interface DirectionStat {
+  direction_id: string | null;
+  total: number;
+  done: number;
+  minutes: number;
+  reschedules: number;
+}
+
+export interface PlannerAnalytics {
+  days: number;
+  total: number;
+  done: number;
+  doneRate: number;
+  openNow: number;
+  overdueNow: number;
+  perDirection: DirectionStat[];
+  topRescheduled: Array<{ id: string; title: string; reschedule_count: number }>;
+}
+
+/** Аналитика за N дней: время и записи по направлениям, доля просрочек, хронические переносы. */
+export async function computeAnalytics(db: Admin, days = 30): Promise<PlannerAnalytics> {
+  const from = new Date(Date.now() - days * 86_400_000).toISOString();
+  const { data } = await db.from("calendar_items").select("*").gte("created_at", from);
+  const items = (data ?? []) as unknown as CalItem[];
+  const now = new Date();
+  const tail = await listOpenTail(db, now.toISOString());
+  const done = items.filter((i) => i.status === "done").length;
+
+  const per = new Map<string | null, DirectionStat>();
+  for (const i of items) {
+    const s = per.get(i.direction_id) ?? { direction_id: i.direction_id, total: 0, done: 0, minutes: 0, reschedules: 0 };
+    s.total += 1;
+    if (i.status === "done") s.done += 1;
+    if (i.starts_at && i.ends_at) {
+      s.minutes += Math.max(0, (new Date(i.ends_at).getTime() - new Date(i.starts_at).getTime()) / 60_000);
+    }
+    s.reschedules += i.reschedule_count;
+    per.set(i.direction_id, s);
+  }
+
+  return {
+    days,
+    total: items.length,
+    done,
+    doneRate: items.length ? Math.round((done / items.length) * 100) : 0,
+    openNow: tail.filter((i) => !isOverdue(i, now)).length,
+    overdueNow: tail.filter((i) => isOverdue(i, now)).length,
+    perDirection: [...per.values()].sort((a, b) => b.minutes - a.minutes || b.total - a.total),
+    topRescheduled: items
+      .filter((i) => i.reschedule_count > 0 && i.status !== "done" && i.status !== "canceled")
+      .sort((a, b) => b.reschedule_count - a.reschedule_count)
+      .slice(0, 5)
+      .map((i) => ({ id: i.id, title: i.title, reschedule_count: i.reschedule_count })),
+  };
 }
