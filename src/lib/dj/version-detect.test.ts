@@ -3,7 +3,7 @@ import {
   detectVersionFromText,
   reconcileWithCatalog,
   versionLabel,
-  brandedVersionTitle,
+  brandedDisplayTitle,
   brandedVersionFileName,
 } from "./version-detect";
 
@@ -29,7 +29,7 @@ describe("detectVersionFromText", () => {
 
 describe("брендирование", () => {
   it("подписывает оригинал", () => {
-    expect(brandedVersionTitle({ artist: "Imagine Dragons", title: "Believer", label: "Оригинал" }))
+    expect(brandedDisplayTitle({ artist: "Imagine Dragons", title: "Believer", label: "Оригинал" }))
       .toBe("Imagine Dragons - Believer (Оригинал) [event-hub.by]");
   });
 
@@ -57,7 +57,7 @@ describe("reconcileWithCatalog", () => {
 
   it("помечает оригинал по каталогу", () => {
     const local = detectVersionFromText("Believer");
-    const r = reconcileWithCatalog(local, { isRemix: false, remixer: null, source: "deezer" });
+    const r = reconcileWithCatalog(local, { artist: "Imagine Dragons", title: "Believer", fullTitle: "Believer", durationSec: 204, provider: "deezer" });
     expect(r.isRemix).toBe(false);
   });
 });
