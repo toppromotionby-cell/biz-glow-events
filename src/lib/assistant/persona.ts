@@ -97,6 +97,7 @@ export function systemPrompt(ctx: {
     FORMAT_RULES,
     BOUNDARY_RULES,
     PLAN_RULES,
+    SCREENSHOT_RULES,
     KNOWLEDGE_RULES,
     HYGIENE_RULES,
     FALLBACK_RULES,
