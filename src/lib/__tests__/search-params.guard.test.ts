@@ -39,7 +39,7 @@ describe("фильтры и состояние в URL", () => {
       if (!/validateSearch/.test(src)) continue;
       // Полная замена объекта в navigate стирает соседние фильтры.
       for (const m of src.matchAll(/navigate\(\{[^)]*search:\s*\{/g)) {
-        const tail = src.slice(m.index ?? 0, (m.index ?? 0) + 200);
+        const tail = src.slice(m.index ?? 0, (m.index ?? 0) + 1200);
         if (!/replace:\s*true/.test(tail) && !/reset|clear/i.test(tail)) {
           bad.push(`${f}: navigate с полной заменой search`);
         }

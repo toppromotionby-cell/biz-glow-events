@@ -14,6 +14,11 @@ import { authErrorMessage } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  // ?redirect=/path — куда вернуть пользователя после входа (только внутренние пути).
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const r = typeof search.redirect === "string" ? search.redirect : "";
+    return r.startsWith("/") && !r.startsWith("//") ? { redirect: r } : {};
+  },
   head: () => ({
     meta: [
       { title: "Вход — event-hub.by" },
@@ -32,6 +37,7 @@ const schema = z.object({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors } } = useForm<z.infer<typeof schema>>({
@@ -52,10 +58,8 @@ function LoginPage() {
     toast.success("Добро пожаловать!");
 
     // Если есть ?redirect=... — туда. Иначе проверяем роль: персонал → /admin, остальные → /profile.
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get("redirect");
     let target = "/profile";
-    if (redirect && redirect.startsWith("/")) {
+    if (redirect) {
       target = redirect;
     } else if (signIn.user) {
       const { data: roles, error: rolesError } = await supabase
