@@ -2,7 +2,8 @@
 import type { CalDirection, CalItem } from "@/lib/calendar/model";
 import { fmtWhen, freeSlots, isOverdue, localHm, priorityScore, STATUS_LABEL } from "@/lib/calendar/model";
 import { adviseDay, AiBlockedError, parseIntent, transcribeVoice } from "@/lib/calendar/parse.server";
-import { tgAnswerCallback, tgDownloadFile, tgEdit, tgEsc, tgSend } from "@/lib/calendar/telegram.server";
+import { tgAnswerCallback, tgDownloadFile, tgEdit, tgEsc, tgSend, tgSendPhoto } from "@/lib/calendar/telegram.server";
+import { dayTimelineUrl, directionPieUrl, itemsTable, weekLoadUrl } from "@/lib/calendar/visuals";
 import {
   admin,
   computeAnalytics,
@@ -50,6 +51,36 @@ function itemButtons(item: CalItem) {
 
 // ——— Чтение календаря из Telegram (команды и вопросы) ———
 
+/**
+ * Визуальная «шапка» списка: картинка (таймлайн/загрузка) либо таблица.
+ * Никогда не роняет ответ — при любой ошибке просто отдаём текст дальше.
+ */
+async function sendVisual(
+  chatId: number,
+  title: string,
+  items: CalItem[],
+  dirs: CalDirection[],
+  prefs: AssistantPrefs,
+  shape: "day" | "week",
+): Promise<void> {
+  if (!prefs.visuals_enabled || !items.length) return;
+  try {
+    if (prefs.visual_mode === "image") {
+      const url =
+        shape === "day"
+          ? dayTimelineUrl(title.replace(/<[^>]+>/g, ""), items, dirs, prefs.tz)
+          : weekLoadUrl(title.replace(/<[^>]+>/g, ""), items, dirs, prefs.tz);
+      if (url) {
+        const sent = await tgSendPhoto(chatId, url, title);
+        if (sent) return;
+      }
+    }
+    await tgSend(chatId, itemsTable(items, dirs, prefs.tz));
+  } catch (e) {
+    console.error("[planner] visual failed", e);
+  }
+}
+
 /** Отправка списка записей с кнопками действий (двусторонняя работа прямо из чата). */
 async function sendList(
   chatId: number,
@@ -58,12 +89,14 @@ async function sendList(
   dirs: CalDirection[],
   tz: string,
   empty = "Ничего не нашёл.",
+  visual?: { prefs: AssistantPrefs; shape: "day" | "week" },
 ): Promise<void> {
   if (!items.length) {
     await tgSend(chatId, `${title}\n${empty}`);
     return;
   }
   await tgSend(chatId, title);
+  if (visual) await sendVisual(chatId, title, items, dirs, visual.prefs, visual.shape);
   for (const item of items.slice(0, 12)) {
     await tgSend(chatId, line(item, dirs, tz), itemButtons(item));
   }
@@ -92,10 +125,11 @@ async function handleQuery(db: Db, chatId: number, raw: string, tz: string, dirs
 
   const listDay = async (from: Date, label: string) => {
     await withFreshGoogle();
+    const prefs = await getPrefs(db);
     const items = (await listItemsBetween(db, from.toISOString(), new Date(from.getTime() + 86_400_000).toISOString())).sort(
       (a, b) => priorityScore(b, now) - priorityScore(a, now),
     );
-    await sendList(chatId, `📅 <b>${label}</b>`, items, dirs, tz, "На этот день пусто.");
+    await sendList(chatId, `📅 <b>${label}</b>`, items, dirs, tz, "На этот день пусто.", { prefs, shape: "day" });
   };
 
   if (isCommand || /^(сегодня|завтра|неделя|просроч|ближайшие)/i.test(lower)) {
@@ -124,7 +158,10 @@ async function handleQuery(db: Db, chatId: number, raw: string, tz: string, dirs
     if (lower.startsWith("/next") || lower.startsWith("ближайшие")) {
       await withFreshGoogle();
       const items = (await listItemsBetween(db, now.toISOString(), new Date(now.getTime() + 14 * 86_400_000).toISOString())).slice(0, 5);
-      await sendList(chatId, "⏭ <b>Ближайшее</b>", items, dirs, tz, "Ближайших дел нет.");
+      await sendList(chatId, "⏭ <b>Ближайшее</b>", items, dirs, tz, "Ближайших дел нет.", {
+        prefs: await getPrefs(db),
+        shape: "week",
+      });
       return true;
     }
     if (lower.startsWith("/day")) {
@@ -494,6 +531,7 @@ export async function sendDailyDigest(db: Db, mode: "morning" | "evening"): Prom
       prefs.style_profile,
     );
     const morning = [head, body, tail, advice ? `\n💡 ${tgEsc(advice)}` : ""].filter(Boolean).join("\n");
+    if (prefs.digest_visual) await sendVisual(cid, "План на сегодня", items, dirs, prefs, "day");
     await tgSend(cid, morning);
     await pushOutbox(db, { text: morning, kind: "digest" });
     return;
@@ -520,6 +558,7 @@ export async function sendWeek(db: Db, to?: number): Promise<void> {
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);
   const items = await listItemsBetween(db, new Date().toISOString(), new Date(Date.now() + 7 * 86_400_000).toISOString());
+  if (items.length) await sendVisual(cid, "Ближайшие 7 дней", items, dirs, prefs, "week");
   await tgSend(
     cid,
     items.length ? `📅 <b>Ближайшие 7 дней</b>\n${groupByDirection(items, dirs, prefs.tz)}` : "На неделе пусто.",
@@ -547,6 +586,16 @@ export async function sendWeeklyReview(db: Db): Promise<void> {
       `Часто откладывается: ${chronic.map((c) => `${c.title} (${c.reschedule_count} переносов)`).join("; ") || "нет"}.`,
     prefs.style_profile,
   );
+  if (prefs.visuals_enabled && prefs.digest_visual && prefs.visual_mode === "image") {
+    const pie = directionPieUrl(
+      "Загрузка по направлениям за 7 дней",
+      stats.perDirection.map((s) => {
+        const d = dirs.find((x) => x.id === s.direction_id);
+        return { label: d?.title ?? "Без направления", value: s.total, color: d?.color ?? "#cbd5e1" };
+      }),
+    );
+    if (pie) await tgSendPhoto(cid, pie, "🗓 Обзор недели");
+  }
   await tgSend(
     cid,
     [

@@ -43,6 +43,21 @@ export const listPlannerData = createServerFn({ method: "GET" })
     };
   });
 
+/** Записи за произвольный диапазон — источник данных для календаря (день/неделя/месяц/год). */
+export const listPlannerRange = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ from: z.string().min(4), to: z.string().min(4) }).parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<{ items: CalItem[] }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, listItemsBetween } = await import("@/lib/calendar/store.server");
+    const items = await listItemsBetween(
+      await admin(),
+      new Date(data.from).toISOString(),
+      new Date(data.to).toISOString(),
+    );
+    return { items };
+  });
+
 export const savePlannerItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -148,6 +163,13 @@ export const savePlannerPrefs = createServerFn({ method: "POST" })
         followup_minutes: z.number().int().min(0).max(1440).optional(),
         style_profile: z.string().max(1000).nullable().optional(),
         device_tz: z.string().max(60).nullable().optional(),
+        owner_name: z.string().max(80).nullable().optional(),
+        tone: z.enum(["dry", "friendly", "fun"]).optional(),
+        voice_reply: z.boolean().optional(),
+        brain_enabled: z.boolean().optional(),
+        visuals_enabled: z.boolean().optional(),
+        visual_mode: z.enum(["image", "text"]).optional(),
+        digest_visual: z.boolean().optional(),
       })
       .parse(d ?? {}),
   )
