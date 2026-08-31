@@ -113,36 +113,84 @@ export function DjPlayerProvider({ children }: { children: React.ReactNode }) {
         onPlay={() => setPlaying(true)}
       />
       {current && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-primary/25 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div className="h-0.5 w-full bg-gradient-to-r from-primary via-accent to-primary opacity-70" />
           <div className="container mx-auto flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{trackFullTitle(current)}</p>
-              <p className="text-xs text-muted-foreground">
-                {current.genre ?? "—"} · {current.bpm ? `${current.bpm} BPM` : "BPM —"} · {current.key_camelot ?? "—"}
-              </p>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg">
+                <CoverArt track={current} rounded="rounded-lg" showFallbackText={false} />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{trackFullTitle(current)}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {current.genre ?? "—"} · {current.bpm ? `${current.bpm} BPM` : "BPM —"} · {current.key_camelot ?? "—"}
+                </p>
+              </div>
+              {playing && (
+                <span className="dj-eq ml-1 hidden text-primary sm:inline-flex" aria-hidden><i /><i /><i /><i /></span>
+              )}
             </div>
+
             <div className="flex items-center gap-2">
               <Button size="icon" variant="ghost" onClick={() => step(-1)} aria-label="Предыдущий трек"><SkipBack className="h-4 w-4" /></Button>
-              <Button size="icon" onClick={toggle} aria-label={playing ? "Пауза" : "Играть"}>
-                {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              <Button
+                size="icon"
+                onClick={toggle}
+                aria-label={playing ? "Пауза" : "Играть"}
+                className="h-11 w-11 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-glow hover:opacity-90"
+              >
+                {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 translate-x-0.5" />}
               </Button>
               <Button size="icon" variant="ghost" onClick={() => step(1)} aria-label="Следующий трек"><SkipForward className="h-4 w-4" /></Button>
             </div>
-            <div className="flex flex-1 items-center gap-3">
+
+            <div className="flex flex-[1.4] items-center gap-3">
               <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">{formatDuration(progress)}</span>
-              <Slider
-                value={[duration ? (progress / duration) * 100 : 0]}
-                max={100}
-                step={0.1}
-                onValueChange={([v]) => {
+              <Waveform
+                seedKey={current.id}
+                progress={duration ? progress / duration : 0}
+                onSeek={(ratio) => {
                   const audio = audioRef.current;
-                  if (audio && duration) audio.currentTime = (Number(v) / 100) * duration;
+                  if (audio && duration) audio.currentTime = ratio * duration;
                 }}
-                aria-label="Позиция воспроизведения"
+                height={36}
               />
               <span className="w-10 text-xs tabular-nums text-muted-foreground">{formatDuration(duration)}</span>
             </div>
+
             <div className="hidden items-center gap-2 md:flex">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="icon" variant="ghost" aria-label="Очередь воспроизведения">
+                    <ListMusic className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 p-0">
+                  <p className="border-b border-border/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Очередь · {queue.length}
+                  </p>
+                  <ul className="max-h-72 overflow-y-auto py-1">
+                    {queue.length === 0 && <li className="px-3 py-4 text-sm text-muted-foreground">Очередь пуста</li>}
+                    {queue.map((t) => (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          onClick={() => play(t, queue)}
+                          className={cn(
+                            "flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60",
+                            t.id === current.id && "bg-primary/10 text-primary",
+                          )}
+                        >
+                          <span className="truncate">{trackFullTitle(t)}</span>
+                          <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
+                            {formatDuration(t.duration_sec)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </PopoverContent>
+              </Popover>
               <Button size="icon" variant="ghost" onClick={() => setMuted((m) => !m)} aria-label="Звук">
                 {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </Button>
@@ -154,6 +202,7 @@ export function DjPlayerProvider({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
+
     </Ctx.Provider>
   );
 }
