@@ -10,6 +10,7 @@ import { updateOwnOrder, deleteOwnOrder } from "@/lib/orders.functions";
 import { maxQtyForItem } from "@/lib/pricing";
 import { addToCart, clearCart, type CartEntityType } from "@/lib/cart";
 import { ProfileSummary } from "@/components/profile/ProfileSummary";
+import { DjProfileCard } from "@/components/dj/DjEntryLink";
 import { OrderHistoryList } from "@/components/profile/OrderHistoryList";
 import { EditOrderDialog } from "@/components/profile/EditOrderDialog";
 import { DeleteOrderDialog } from "@/components/profile/DeleteOrderDialog";
@@ -227,6 +228,8 @@ function ProfilePage() {
       </div>
 
       <ProfileSummary profile={profile} orders={orders} />
+
+      <DjProfileCard />
 
       <div>
         <ChangePasswordCard />
