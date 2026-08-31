@@ -166,6 +166,53 @@ export const savePlannerPrefs = createServerFn({ method: "POST" })
     return getPrefs(db);
   });
 
+/** Аналитика планера за N дней: нагрузка по направлениям, просрочки, переносы. */
+export const plannerAnalytics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ days: z.number().int().min(7).max(365).default(30) }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, computeAnalytics } = await import("@/lib/calendar/store.server");
+    return computeAnalytics(await admin(), data.days);
+  });
+
+/** Разбить крупную задачу на шаги через ИИ — создаются подзадачи с тем же дедлайном. */
+export const splitPlannerItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ created: number }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, getItem, saveItem } = await import("@/lib/calendar/store.server");
+    const { splitTaskIntoSteps } = await import("@/lib/calendar/parse.server");
+    const db = await admin();
+    const item = await getItem(db, data.id);
+    if (!item) throw new Error("Запись не найдена");
+    const steps = await splitTaskIntoSteps(item.title, item.notes);
+    if (!steps.length) throw new Error("Не удалось разбить задачу на шаги");
+    const due = item.due_at ?? item.starts_at;
+    const nowMs = Date.now();
+    const dueMs = due ? new Date(due).getTime() : null;
+    for (let idx = 0; idx < steps.length; idx++) {
+      // Шаги разносим равномерно от сейчас до дедлайна (последний — к дедлайну).
+      const stepDue =
+        dueMs && dueMs > nowMs
+          ? new Date(nowMs + ((dueMs - nowMs) * (idx + 1)) / steps.length).toISOString()
+          : null;
+      await saveItem(db, {
+        kind: "task",
+        title: steps[idx]!,
+        notes: `Шаг ${idx + 1}/${steps.length} задачи «${item.title}»`,
+        direction_id: item.direction_id,
+        due_at: stepDue,
+        importance: item.importance,
+        source: "split",
+      });
+    }
+    return { created: steps.length };
+  });
+
 /** Ручная синхронизация с Google из интерфейса. */
 export const syncPlannerGoogle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
