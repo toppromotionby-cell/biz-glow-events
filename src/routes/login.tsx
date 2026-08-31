@@ -109,7 +109,14 @@ function LoginPage() {
           </Button>
         </form>
         <p className="text-sm text-center mt-6 text-muted-foreground">
-          Личный кабинет создаётся автоматически после первого заказа — доступ придёт на вашу почту.
+          Нет аккаунта?{" "}
+          <Link to="/register" search={redirect ? { redirect } : {}} className="text-accent hover:underline">
+            Создать кабинет
+          </Link>
+          <br />
+          <span className="text-xs">
+            Если вы уже делали заказ — кабинет создан автоматически, воспользуйтесь ссылкой «Забыли пароль?».
+          </span>
         </p>
       </div>
     </div>
