@@ -220,66 +220,70 @@ export async function removeFromGoogle(db: Admin, item: CalItem): Promise<void> 
   }
 }
 
-// ——— Google Задачи ———
+// ——— Задачи в Google Календаре ———
+//
+// Google Tasks недоступны (у подключения нет права tasks.googleapis.com),
+// поэтому задачи живут отдельными календарями «Задачи · <Направление>».
+// В БД переиспользуем поля: google_task_id — id события, google_tasklist_id —
+// id календаря задач.
 
-/** Список Google Tasks для направления (создаётся при первой выгрузке). */
-export async function taskListForDirection(db: Admin, item: CalItem): Promise<string | null> {
+/** Календарь задач для направления записи (создаётся при первой выгрузке). */
+export async function taskCalendarForItem(db: Admin, item: CalItem): Promise<{ calendarId: string; dir: CalDirection | null }> {
   const dirs = await getDirections(db);
   const dir = dirs.find((d) => d.id === item.direction_id) ?? null;
-  const title = dir?.title ?? "Личное";
-  if (dir?.google_tasklist_id) return dir.google_tasklist_id;
-  const list = await ensureTaskList(title);
-  if (dir) await db.from("calendar_directions").update({ google_tasklist_id: list.id }).eq("id", dir.id);
-  return list.id;
+  const known = (dir as (CalDirection & { google_calendar_id?: string | null }) | null)?.google_calendar_id;
+  if (known) return { calendarId: known, dir };
+  const calendarId = await ensureTaskCalendar(dir);
+  if (dir) await db.from("calendar_directions").update({ google_calendar_id: calendarId } as never).eq("id", dir.id);
+  return { calendarId, dir };
 }
 
-/** Выгрузка задачи в Google Tasks. Ошибки не роняют сохранение. */
+/** Выгрузка задачи событием на весь день. Ошибки не роняют сохранение. */
 export async function pushToTasks(db: Admin, item: CalItem): Promise<PushResult> {
-  if (!gtasksConfigured()) {
-    return { item, status: { target: "tasks", state: "skipped", detail: "Google Задачи не подключены" } };
+  if (!taskCalendarsConfigured()) {
+    return { item, status: { target: "tasks", state: "skipped", detail: "Google не подключён" } };
   }
   try {
-    const listId = (await taskListForDirection(db, item)) ?? "@default";
-    const body = itemToTask(item);
-    let task;
-    if (item.google_task_id && item.google_tasklist_id && item.google_tasklist_id !== listId) {
-      // Сменилось направление — переносим задачу в другой список.
-      await deleteTask(item.google_tasklist_id, item.google_task_id);
-      task = await insertTask(listId, body);
+    const { calendarId, dir } = await taskCalendarForItem(db, item);
+    const body = taskToEvent(item, dir);
+    let ev;
+    if (item.google_task_id && item.google_tasklist_id && item.google_tasklist_id !== calendarId) {
+      // Сменилось направление — переносим задачу в другой календарь.
+      await deleteTaskEvent(item.google_tasklist_id, item.google_task_id);
+      ev = await insertTaskEvent(calendarId, body);
     } else if (item.google_task_id) {
-      task = await patchTask(listId, item.google_task_id, body);
+      ev = await patchTaskEvent(calendarId, item.google_task_id, body);
     } else {
-      task = await insertTask(listId, body);
+      ev = await insertTaskEvent(calendarId, body);
     }
     const patch = {
-      google_task_id: task.id,
-      google_tasklist_id: listId,
-      google_tasks_etag: task.etag ?? null,
-      google_tasks_updated_at: task.updated ?? null,
+      google_task_id: ev.id,
+      google_tasklist_id: calendarId,
+      google_tasks_etag: ev.etag ?? null,
+      google_tasks_updated_at: ev.updated ?? null,
     };
     await db.from("calendar_items").update(patch).eq("id", item.id);
-    const dirs = await getDirections(db);
-    const dirTitle = dirs.find((d) => d.id === item.direction_id)?.title ?? null;
     return {
       item: { ...item, ...patch } as CalItem,
-      status: { target: "tasks", state: "ok", detail: dirTitle },
+      status: { target: "tasks", state: "ok", detail: dir?.title ?? null },
     };
   } catch (e) {
-    if (e instanceof GTasksScopeError) {
-      console.warn("[planner] google tasks scope missing — пропускаем выгрузку");
-      return { item, status: { target: "tasks", state: "skipped", detail: "нет доступа к Google Задачам" } };
+    if (isScopeError(e)) {
+      const { reportGoogleIssue } = await import("@/lib/calendar/health.server");
+      await reportGoogleIssue(db, e.detail);
+      return { item, status: { target: "tasks", state: "skipped", detail: "нет доступа к Google" } };
     }
-    console.error("[planner] push to google tasks failed", e);
+    console.error("[planner] push task event failed", e);
     return { item, status: { target: "tasks", state: "failed", detail: (e as Error).message?.slice(0, 120) } };
   }
 }
 
 export async function removeFromTasks(db: Admin, item: CalItem): Promise<void> {
-  if (!gtasksConfigured() || !item.google_task_id) return;
+  if (!taskCalendarsConfigured() || !item.google_task_id || !item.google_tasklist_id) return;
   try {
-    await deleteTask(item.google_tasklist_id ?? "@default", item.google_task_id);
+    await deleteTaskEvent(item.google_tasklist_id, item.google_task_id);
   } catch (e) {
-    console.error("[planner] delete google task failed", e);
+    console.error("[planner] delete task event failed", e);
   }
 }
 
@@ -305,63 +309,74 @@ export async function syncTargets(db: Admin, item: CalItem, prefs: AssistantPref
   return { ...out, sync };
 }
 
-
-/** Импорт изменений из Google Tasks (статусы, названия, дедлайны). */
+/** Импорт изменений из календарей задач (названия, даты, отметка ✅). */
 export async function pullFromTasks(db: Admin): Promise<{ applied: number }> {
-  if (!gtasksConfigured()) return { applied: 0 };
+  if (!taskCalendarsConfigured()) return { applied: 0 };
   const prefs = await getPrefs(db);
   if (!prefs.gtasks_enabled) return { applied: 0 };
-  const dirs = await getDirections(db);
+  const dirs = (await getDirections(db)) as Array<CalDirection & { google_calendar_id?: string | null; google_sync_token?: string | null }>;
   let applied = 0;
   try {
     for (const dir of dirs) {
-      if (!dir.active) continue;
-      const listId = dir.google_tasklist_id ?? (await ensureTaskList(dir.title)).id;
-      if (!dir.google_tasklist_id) {
-        await db.from("calendar_directions").update({ google_tasklist_id: listId }).eq("id", dir.id);
-      }
-      const tasks = await listTasks(listId, { updatedMin: new Date(Date.now() - 14 * 86_400_000).toISOString() });
-      for (const t of tasks) {
-        const { data: found } = await db.from("calendar_items").select("*").eq("google_task_id", t.id).maybeSingle();
+      if (!dir.active || !dir.google_calendar_id) continue;
+      const { events, syncToken } = await taskCalendarChanges(dir.google_calendar_id, dir.google_sync_token ?? null);
+      for (const ev of events) {
+        const { data: found } = await db.from("calendar_items").select("*").eq("google_task_id", ev.id).maybeSingle();
         const local = (found as unknown as CalItem) ?? null;
-        if (t.deleted) {
-          if (local) await db.from("calendar_items").delete().eq("id", local.id);
-          applied += local ? 1 : 0;
+        if (ev.status === "cancelled") {
+          if (local && local.status !== "canceled") {
+            await db.from("calendar_items").update({ status: "canceled" }).eq("id", local.id);
+            applied += 1;
+          }
           continue;
         }
+        // Чужие события в календаре задач не трогаем — только свои и вручную созданные задачи.
+        const mine = isTaskEvent(ev) || Boolean(local);
+        if (!mine && !ev.start?.date) continue;
+        const parsed = eventToTaskPatch(ev);
         const patch = {
-          title: t.title || local?.title || "Без названия",
-          due_at: t.due ? new Date(t.due).toISOString() : null,
-          status: t.status === "completed" ? "done" : local?.status === "done" ? "planned" : (local?.status ?? "planned"),
-          completed_at: t.completed ?? null,
-          google_task_id: t.id,
-          google_tasklist_id: listId,
-          google_tasks_updated_at: t.updated ?? null,
+          title: parsed.title,
+          due_at: parsed.due_at,
+          status: parsed.done ? "done" : local?.status === "done" ? "planned" : (local?.status ?? "planned"),
+          completed_at: parsed.done ? (local?.completed_at ?? new Date().toISOString()) : null,
+          google_task_id: ev.id,
+          google_tasklist_id: dir.google_calendar_id,
+          google_tasks_updated_at: ev.updated ?? null,
         };
         if (local) {
           const localNewer =
-            local.updated_at && t.updated && new Date(local.updated_at).getTime() > new Date(t.updated).getTime();
+            local.updated_at && ev.updated && new Date(local.updated_at).getTime() > new Date(ev.updated).getTime();
           if (localNewer) continue;
           await db.from("calendar_items").update(patch).eq("id", local.id);
         } else {
-          if (!t.title) continue;
           await db.from("calendar_items").insert({
             ...patch,
             kind: "task",
+            all_day: true,
             direction_id: dir.id,
             tz: prefs.tz,
-            source: "google_tasks",
-          });
+            source: "google_calendar_tasks",
+          } as never);
         }
         applied += 1;
       }
+      if (syncToken && syncToken !== dir.google_sync_token) {
+        await db.from("calendar_directions").update({ google_sync_token: syncToken } as never).eq("id", dir.id);
+      }
     }
+    const { reportGoogleOk } = await import("@/lib/calendar/health.server");
+    await reportGoogleOk(db);
   } catch (e) {
-    if (e instanceof GTasksScopeError) return { applied: 0 };
-    console.error("[planner] pull google tasks failed", e);
+    if (isScopeError(e)) {
+      const { reportGoogleIssue } = await import("@/lib/calendar/health.server");
+      await reportGoogleIssue(db, e.detail);
+      return { applied };
+    }
+    console.error("[planner] pull task events failed", e);
   }
   return { applied };
 }
+
 
 /** Импорт изменений из Google. Возвращает список изменившихся записей. */
 export async function pullFromGoogle(db: Admin): Promise<{ applied: number; conflicts: CalItem[] }> {
