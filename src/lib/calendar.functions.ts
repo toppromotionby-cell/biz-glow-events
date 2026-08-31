@@ -257,21 +257,28 @@ export const syncPlannerGoogle = createServerFn({ method: "POST" })
     return { applied: res.applied + tasks.applied, configured: true };
   });
 
-/** Google Задачи: доступен ли модуль и какие списки привязаны к направлениям. */
+/** Задачи в Google: подключён ли Google, есть ли доступ и какие календари задач заведены. */
 export const plannerTasksStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ configured: boolean; scopeOk: boolean; lists: Array<{ id: string; title: string }> }> => {
+  .handler(async ({ context }): Promise<{
+    configured: boolean;
+    scopeOk: boolean;
+    detail: string | null;
+    lists: Array<{ id: string; title: string }>;
+  }> => {
     await assertPermission(context as never, "orders.manage");
-    const { gtasksConfigured, listTaskLists, GTasksScopeError } = await import("@/lib/calendar/gtasks.server");
-    if (!gtasksConfigured()) return { configured: false, scopeOk: false, lists: [] };
-    try {
-      const lists = await listTaskLists();
-      return { configured: true, scopeOk: true, lists: lists.map((l) => ({ id: l.id, title: l.title })) };
-    } catch (e) {
-      if (e instanceof GTasksScopeError) return { configured: true, scopeOk: false, lists: [] };
-      throw e;
-    }
+    const { taskCalendarsConfigured, taskCalendarTitle } = await import("@/lib/calendar/task-events.server");
+    if (!taskCalendarsConfigured()) return { configured: false, scopeOk: false, detail: null, lists: [] };
+    const { admin, getDirections } = await import("@/lib/calendar/store.server");
+    const { getGoogleHealth } = await import("@/lib/calendar/health.server");
+    const db = await admin();
+    const [dirs, health] = await Promise.all([getDirections(db), getGoogleHealth(db)]);
+    const lists = dirs
+      .map((d) => ({ id: (d as { google_calendar_id?: string | null }).google_calendar_id ?? "", title: taskCalendarTitle(d) }))
+      .filter((l) => l.id);
+    return { configured: true, scopeOk: health.state !== "scope", detail: health.detail, lists };
   });
+
 
 /** Статус отдельного Telegram-бота планера: кто подключён и жив ли вебхук. */
 export const plannerBotStatus = createServerFn({ method: "GET" })
