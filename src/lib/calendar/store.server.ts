@@ -46,6 +46,8 @@ export async function getPrefs(db: Admin): Promise<AssistantPrefs> {
     visuals_enabled: row.visuals_enabled == null ? true : Boolean(row.visuals_enabled),
     visual_mode: row.visual_mode === "text" ? "text" : "image",
     digest_visual: row.digest_visual == null ? true : Boolean(row.digest_visual),
+    task_routing: ((row.task_routing as string) ?? "auto") as AssistantPrefs["task_routing"],
+    gtasks_enabled: row.gtasks_enabled == null ? true : Boolean(row.gtasks_enabled),
   };
 }
 
