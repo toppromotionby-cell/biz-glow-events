@@ -45,6 +45,16 @@ export async function listTracks(access: DjAccess, filters: DjTrackFilters): Pro
   }
   if (filters.section) q = q.eq("section", filters.section);
   if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
+  if (filters.formatSlug) {
+    const { data: fmt } = await supabaseAdmin
+      .from("dj_event_formats").select("id").eq("slug", filters.formatSlug).maybeSingle();
+    if (!fmt) return { items: [], total: 0, page, pageSize };
+    const { data: links } = await supabaseAdmin
+      .from("dj_track_formats").select("track_id").eq("format_id", fmt.id).limit(5000);
+    const ids = (links ?? []).map((l) => l.track_id);
+    if (ids.length === 0) return { items: [], total: 0, page, pageSize };
+    q = q.in("id", ids);
+  }
   if (filters.genres?.length) q = q.in("genre", filters.genres);
   else if (filters.genre) q = q.eq("genre", filters.genre);
   if (filters.version) q = q.eq("version", filters.version);
