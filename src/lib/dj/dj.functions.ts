@@ -1,0 +1,205 @@
+// Серверные функции DJ-клуба. Файл — только тонкие обёртки (правило splitting).
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { loadDjAccess, requireMember, requireTrusted, assertRateLimit } from "@/lib/dj/guard.server";
+import {
+  listTracks,
+  getTrack,
+  trackAudioUrl,
+  bumpCounter,
+  listSoftware,
+  softwareDownloadUrl,
+} from "@/lib/dj/library.server";
+import { listComments, addComment, listThreads, createThread, rateTrack, toggleFavorite } from "@/lib/dj/community.server";
+import { applyForMembership } from "@/lib/dj/members.server";
+import { createUploadTicket } from "@/lib/dj/upload.server";
+import { insertTrack } from "@/lib/dj/moderation.server";
+import { TRACK_VERSIONS } from "@/lib/dj/types";
+
+const filtersSchema = z.object({
+  q: z.string().max(120).optional(),
+  genre: z.string().max(60).optional(),
+  version: z.string().max(40).optional(),
+  language: z.string().max(40).optional(),
+  bpmMin: z.number().int().min(40).max(300).optional(),
+  bpmMax: z.number().int().min(40).max(300).optional(),
+  key: z.string().max(4).optional(),
+  yearMin: z.number().int().min(1900).max(2200).optional(),
+  yearMax: z.number().int().min(1900).max(2200).optional(),
+  freshDays: z.number().int().min(1).max(365).optional(),
+  favoritesOnly: z.boolean().optional(),
+  sort: z.enum(["new", "rating", "popular", "artist", "bpm"]).optional(),
+  page: z.number().int().min(1).max(500).optional(),
+  pageSize: z.number().int().min(6).max(100).optional(),
+  status: z.enum(["draft", "pending", "published", "rejected", "all"]).optional(),
+});
+
+export const djMyAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => loadDjAccess(context.userId));
+
+export const djApply = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      nickname: z.string().trim().min(2).max(60),
+      city: z.string().trim().max(80).optional(),
+      bio: z.string().trim().max(1000).optional(),
+      contact: z.string().trim().max(200).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => applyForMembership(context.userId, data));
+
+export const djListTracks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => filtersSchema.parse(d ?? {}))
+  .handler(async ({ data, context }) => listTracks(await requireMember(context.userId), data));
+
+export const djGetTrack = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => getTrack(await requireMember(context.userId), data.id));
+
+export const djStreamUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const access = await requireMember(context.userId);
+    const url = await trackAudioUrl(access, data.id);
+    await bumpCounter(data.id, "play_count");
+    return { url };
+  });
+
+export const djDownloadTrack = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const access = await requireMember(context.userId);
+    await assertRateLimit("dj_downloads", "user_id", access.userId, 120, 60);
+    const url = await trackAudioUrl(access, data.id);
+    await bumpCounter(data.id, "download_count");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("dj_downloads").insert({ user_id: access.userId, target_type: "track", target_id: data.id });
+    return { url };
+  });
+
+export const djRate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), value: z.number().int().min(1).max(5) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await rateTrack(await requireMember(context.userId), data.id, data.value);
+    return { ok: true };
+  });
+
+export const djToggleFavorite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => ({
+    favorite: await toggleFavorite(await requireMember(context.userId), data.id),
+  }));
+
+export const djListSoftware = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      q: z.string().max(120).optional(),
+      category: z.string().max(40).optional(),
+      platform: z.string().max(40).optional(),
+    }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => listSoftware(await requireMember(context.userId), data));
+
+export const djSoftwareDownload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ versionId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const access = await requireMember(context.userId);
+    await assertRateLimit("dj_downloads", "user_id", access.userId, 120, 60);
+    const url = await softwareDownloadUrl(access, data.versionId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("dj_downloads").insert({ user_id: access.userId, target_type: "software", target_id: data.versionId });
+    return { url };
+  });
+
+export const djListComments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ targetType: z.enum(["track", "software", "thread"]), targetId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) =>
+    listComments(await requireMember(context.userId), data.targetType, data.targetId),
+  );
+
+export const djAddComment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      targetType: z.enum(["track", "software", "thread"]),
+      targetId: z.string().uuid(),
+      body: z.string().trim().min(1).max(4000),
+      parentId: z.string().uuid().nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await requireMember(context.userId);
+    await assertRateLimit("dj_comments", "author_id", access.userId, 20, 10);
+    return addComment(access, data);
+  });
+
+export const djListThreads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ category: z.string().max(40).optional() }).parse(d ?? {}))
+  .handler(async ({ data, context }) => listThreads(await requireMember(context.userId), data.category));
+
+export const djCreateThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      title: z.string().trim().min(3).max(160),
+      body: z.string().trim().max(8000).default(""),
+      category: z.string().max(40).default("general"),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => ({ id: await createThread(await requireMember(context.userId), data) }));
+
+export const djUploadTicket = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      kind: z.enum(["audio", "software", "artwork"]),
+      fileName: z.string().min(1).max(200),
+      fileSize: z.number().int().positive(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await requireTrusted(context.userId);
+    return createUploadTicket(access.userId, data.kind, data.fileName, data.fileSize);
+  });
+
+export const djSubmitTrack = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      artist: z.string().trim().min(1).max(160),
+      title: z.string().trim().min(1).max(200),
+      version: z.enum(TRACK_VERSIONS).default("original"),
+      genre: z.string().max(60).nullish(),
+      bpm: z.number().int().min(40).max(300).nullish(),
+      key_camelot: z.string().max(4).nullish(),
+      year: z.number().int().min(1900).max(2200).nullish(),
+      language: z.string().max(40).nullish(),
+      energy: z.number().int().min(1).max(10).nullish(),
+      duration_sec: z.number().int().min(1).max(36000).nullish(),
+      tags: z.array(z.string().max(40)).max(20).default([]),
+      audio_path: z.string().min(1).max(400),
+      artwork_path: z.string().max(400).nullish(),
+      format: z.string().max(20).nullish(),
+      file_size: z.number().int().positive().nullish(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const access = await requireTrusted(context.userId);
+    const status = access.isManager ? "published" : "pending";
+    return { id: await insertTrack(access.userId, data, status), status };
+  });
