@@ -21,6 +21,7 @@ import { Route as SitemapBlogDotxmlRouteImport } from './routes/sitemap-blog[.]x
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductionRouteImport } from './routes/production'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -195,6 +196,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -816,6 +822,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
@@ -943,6 +950,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
@@ -1071,6 +1079,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/production': typeof ProductionRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/services': typeof ServicesRouteWithChildren
@@ -1202,6 +1211,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/production'
     | '/profile'
+    | '/register'
     | '/reset-password'
     | '/robots.txt'
     | '/services'
@@ -1329,6 +1339,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/production'
     | '/profile'
+    | '/register'
     | '/reset-password'
     | '/robots.txt'
     | '/services'
@@ -1456,6 +1467,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/production'
     | '/profile'
+    | '/register'
     | '/reset-password'
     | '/robots.txt'
     | '/services'
@@ -1586,6 +1598,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProductionRoute: typeof ProductionRouteWithChildren
   ProfileRoute: typeof ProfileRoute
+  RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   ServicesRoute: typeof ServicesRouteWithChildren
@@ -1712,6 +1725,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -2806,6 +2826,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProductionRoute: ProductionRouteWithChildren,
   ProfileRoute: ProfileRoute,
+  RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   ServicesRoute: ServicesRouteWithChildren,
