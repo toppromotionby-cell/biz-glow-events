@@ -8,6 +8,7 @@ import { CoverArt } from "@/components/dj/CoverArt";
 import { djShowcase } from "@/lib/dj/dj.functions";
 import { AUDIO_SECTIONS, DJ_FORMATS } from "@/lib/dj/sections";
 import { coverCssGradient } from "@/lib/dj/cover-role";
+import { formatArt, sectionArt } from "@/lib/dj/tile-art";
 import { formatDuration, type DjTrackFilters } from "@/lib/dj/types";
 import type { ShowcaseTrack } from "@/lib/dj/library.server";
 
@@ -243,20 +244,34 @@ function DjLanding() {
           </div>
         </div>
         <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {DJ_FORMATS.map((f) => (
-            <li key={f.key}>
-              <Link
-                to="/dj/pool"
-                search={poolSearch({ formatSlug: f.key })}
-                className="dj-ring group relative flex h-28 flex-col justify-end overflow-hidden rounded-2xl border border-primary/15 p-3 text-white transition-transform duration-300 hover:-translate-y-1"
-                style={{ backgroundImage: coverCssGradient({ artist: f.key, title: f.label, section: "welcome" }) }}
-              >
-                <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-                <span className="relative text-sm font-bold leading-tight">{f.label}</span>
-                <span className="relative text-[0.68rem] text-white/75">{f.hint}</span>
-              </Link>
-            </li>
-          ))}
+          {DJ_FORMATS.map((f) => {
+            const art = formatArt(f.key);
+            return (
+              <li key={f.key}>
+                <Link
+                  to="/dj/pool"
+                  search={poolSearch({ formatSlug: f.key })}
+                  className="dj-ring group relative flex h-28 flex-col justify-end overflow-hidden rounded-2xl border border-primary/15 p-3 text-white transition-transform duration-300 hover:-translate-y-1"
+                  style={{ backgroundImage: coverCssGradient({ artist: f.key, title: f.label, section: "welcome" }) }}
+                >
+                  {art ? (
+                    <img
+                      src={art}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      width={1024}
+                      height={640}
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : null}
+                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
+                  <span className="relative text-sm font-bold leading-tight drop-shadow">{f.label}</span>
+                  <span className="relative text-[0.68rem] text-white/80">{f.hint}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
