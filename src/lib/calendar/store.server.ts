@@ -231,8 +231,10 @@ export async function taskListForDirection(db: Admin, item: CalItem): Promise<st
 }
 
 /** Выгрузка задачи в Google Tasks. Ошибки не роняют сохранение. */
-export async function pushToTasks(db: Admin, item: CalItem): Promise<CalItem> {
-  if (!gtasksConfigured()) return item;
+export async function pushToTasks(db: Admin, item: CalItem): Promise<PushResult> {
+  if (!gtasksConfigured()) {
+    return { item, status: { target: "tasks", state: "skipped", detail: "Google Задачи не подключены" } };
+  }
   try {
     const listId = (await taskListForDirection(db, item)) ?? "@default";
     const body = itemToTask(item);
@@ -253,11 +255,19 @@ export async function pushToTasks(db: Admin, item: CalItem): Promise<CalItem> {
       google_tasks_updated_at: task.updated ?? null,
     };
     await db.from("calendar_items").update(patch).eq("id", item.id);
-    return { ...item, ...patch } as CalItem;
+    const dirs = await getDirections(db);
+    const dirTitle = dirs.find((d) => d.id === item.direction_id)?.title ?? null;
+    return {
+      item: { ...item, ...patch } as CalItem,
+      status: { target: "tasks", state: "ok", detail: dirTitle },
+    };
   } catch (e) {
-    if (e instanceof GTasksScopeError) console.warn("[planner] google tasks scope missing — пропускаем выгрузку");
-    else console.error("[planner] push to google tasks failed", e);
-    return item;
+    if (e instanceof GTasksScopeError) {
+      console.warn("[planner] google tasks scope missing — пропускаем выгрузку");
+      return { item, status: { target: "tasks", state: "skipped", detail: "нет доступа к Google Задачам" } };
+    }
+    console.error("[planner] push to google tasks failed", e);
+    return { item, status: { target: "tasks", state: "failed", detail: (e as Error).message?.slice(0, 120) } };
   }
 }
 
@@ -270,16 +280,28 @@ export async function removeFromTasks(db: Admin, item: CalItem): Promise<void> {
   }
 }
 
-/** Единая точка выгрузки: решает, куда именно уходит запись. */
-export async function syncTargets(db: Admin, item: CalItem, prefs: AssistantPrefs): Promise<CalItem> {
+/** Единая точка выгрузки: решает, куда именно уходит запись, и отдаёт статусы. */
+export async function syncTargets(db: Admin, item: CalItem, prefs: AssistantPrefs): Promise<SyncedItem> {
   const target = routeTarget(item, prefs.task_routing);
-  let out = item;
-  if (target === "calendar" || target === "both") out = await pushToGoogle(db, out);
-  else if (out.google_event_id) await removeFromGoogle(db, out);
-  if (prefs.gtasks_enabled && (target === "tasks" || target === "both")) out = await pushToTasks(db, out);
-  else if (out.google_task_id && target !== "both") await removeFromTasks(db, out);
-  return out;
+  let out: CalItem = item;
+  const sync: SyncStatus[] = [];
+  if (target === "calendar" || target === "both") {
+    const res = await pushToGoogle(db, out, prefs);
+    out = res.item;
+    sync.push(res.status);
+  } else if (out.google_event_id) {
+    await removeFromGoogle(db, out);
+  }
+  if (prefs.gtasks_enabled && (target === "tasks" || target === "both")) {
+    const res = await pushToTasks(db, out);
+    out = res.item;
+    sync.push(res.status);
+  } else if (out.google_task_id && target !== "both") {
+    await removeFromTasks(db, out);
+  }
+  return { ...out, sync };
 }
+
 
 /** Импорт изменений из Google Tasks (статусы, названия, дедлайны). */
 export async function pullFromTasks(db: Admin): Promise<{ applied: number }> {
