@@ -15,6 +15,7 @@ import {
   pullFromGoogle,
   rescheduleItem,
   saveItem,
+  searchItems,
   setStatus,
 } from "@/lib/calendar/store.server";
 
@@ -42,6 +43,170 @@ function itemButtons(item: CalItem) {
   ];
 }
 
+// ——— Чтение календаря из Telegram (команды и вопросы) ———
+
+/** Начало суток по локальной таймзоне, смещённое на offsetDays. */
+function dayRange(base: Date, tz: string, offsetDays = 0): { from: Date; to: Date } {
+  const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(base);
+  const start = new Date(`${ymd}T00:00:00Z`);
+  const local = new Date(start.getTime());
+  // Смещение таймзоны в минутах для этой даты.
+  const off = (new Date(base.toLocaleString("en-US", { timeZone: tz })).getTime() - new Date(base.toLocaleString("en-US", { timeZone: "UTC" })).getTime()) / 60000;
+  const from = new Date(local.getTime() - off * 60000 + offsetDays * 86_400_000);
+  return { from, to: new Date(from.getTime() + 86_400_000) };
+}
+
+function parseDayToken(token: string, tz: string): Date | null {
+  const t = token.trim().toLowerCase();
+  const now = new Date();
+  if (t === "сегодня") return dayRange(now, tz, 0).from;
+  if (t === "завтра") return dayRange(now, tz, 1).from;
+  if (t === "послезавтра") return dayRange(now, tz, 2).from;
+  const m = t.match(/^(\d{1,2})[.\-/](\d{1,2})(?:[.\-/](\d{2,4}))?$/);
+  if (!m) return null;
+  const year = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : new Date().getFullYear();
+  const base = new Date(Date.UTC(year, Number(m[2]) - 1, Number(m[1]), 12, 0, 0));
+  return dayRange(base, tz, 0).from;
+}
+
+/** Отправка списка записей с кнопками действий (двусторонняя работа прямо из чата). */
+async function sendList(
+  chatId: number,
+  title: string,
+  items: CalItem[],
+  dirs: CalDirection[],
+  tz: string,
+  empty = "Ничего не нашёл.",
+): Promise<void> {
+  if (!items.length) {
+    await tgSend(chatId, `${title}\n${empty}`);
+    return;
+  }
+  await tgSend(chatId, title);
+  for (const item of items.slice(0, 12)) {
+    await tgSend(chatId, line(item, dirs, tz), itemButtons(item));
+  }
+}
+
+const QUESTION_RE =
+  /^(что|какие|какой|когда|где|сколько|покажи|показать|список|есть ли|во сколько|напомни что)\b/i;
+
+/**
+ * Команды и вопросы «на чтение». Возвращает true, если сообщение обработано
+ * как запрос (и не должно создавать новую запись).
+ */
+async function handleQuery(db: Db, chatId: number, raw: string, tz: string, dirs: CalDirection[]): Promise<boolean> {
+  const text = raw.trim();
+  const lower = text.toLowerCase();
+  const now = new Date();
+  const isCommand = lower.startsWith("/");
+
+  const withFreshGoogle = async () => {
+    try {
+      await pullFromGoogle(db);
+    } catch (e) {
+      console.error("[planner] pull before query failed", e);
+    }
+  };
+
+  const listDay = async (from: Date, label: string) => {
+    await withFreshGoogle();
+    const items = (await listItemsBetween(db, from.toISOString(), new Date(from.getTime() + 86_400_000).toISOString())).sort(
+      (a, b) => priorityScore(b, now) - priorityScore(a, now),
+    );
+    await sendList(chatId, `📅 <b>${label}</b>`, items, dirs, tz, "На этот день пусто.");
+  };
+
+  if (isCommand || /^(сегодня|завтра|неделя|просроч|ближайшие)/i.test(lower)) {
+    if (lower === "/today" || lower === "сегодня") {
+      await listDay(dayRange(now, tz, 0).from, "Сегодня");
+      return true;
+    }
+    if (lower === "/tomorrow" || lower === "завтра") {
+      await listDay(dayRange(now, tz, 1).from, "Завтра");
+      return true;
+    }
+    if (lower === "/week" || lower === "неделя") {
+      await withFreshGoogle();
+      await sendWeek(db, chatId);
+      return true;
+    }
+    if (lower === "/open") {
+      await sendOpenTail(db, chatId);
+      return true;
+    }
+    if (lower.startsWith("/overdue") || lower.startsWith("просроч")) {
+      const tail = (await listOpenTail(db, now.toISOString())).filter((i) => isOverdue(i, now));
+      await sendList(chatId, "⚠️ <b>Просрочено</b>", tail, dirs, tz, "Просрочек нет 👌");
+      return true;
+    }
+    if (lower.startsWith("/next") || lower.startsWith("ближайшие")) {
+      await withFreshGoogle();
+      const items = (await listItemsBetween(db, now.toISOString(), new Date(now.getTime() + 14 * 86_400_000).toISOString())).slice(0, 5);
+      await sendList(chatId, "⏭ <b>Ближайшее</b>", items, dirs, tz, "Ближайших дел нет.");
+      return true;
+    }
+    if (lower.startsWith("/day")) {
+      const token = text.slice(4).trim();
+      const from = parseDayToken(token, tz);
+      if (!from) {
+        await tgSend(chatId, "Формат: <code>/day 5.09</code> или <code>/day завтра</code>");
+        return true;
+      }
+      await listDay(from, new Intl.DateTimeFormat("ru-RU", { weekday: "long", day: "2-digit", month: "long", timeZone: tz }).format(from));
+      return true;
+    }
+    if (lower.startsWith("/find") || lower.startsWith("/search")) {
+      const q = text.replace(/^\/\w+/, "").trim();
+      if (!q) {
+        await tgSend(chatId, "Формат: <code>/find подрядчик</code>");
+        return true;
+      }
+      const found = await searchItems(db, q, 10);
+      await sendList(chatId, `🔎 <b>Найдено по «${tgEsc(q)}»</b>`, found, dirs, tz, "Ничего не нашёл.");
+      return true;
+    }
+    if (isCommand) return false;
+  }
+
+  // Вопрос обычным текстом — отвечаем выпиской, а не создаём задачу.
+  if (QUESTION_RE.test(lower) || (lower.endsWith("?") && lower.length < 120)) {
+    if (/завтра/.test(lower)) {
+      await listDay(dayRange(now, tz, 1).from, "Завтра");
+      return true;
+    }
+    if (/сегодня/.test(lower)) {
+      await listDay(dayRange(now, tz, 0).from, "Сегодня");
+      return true;
+    }
+    if (/недел/.test(lower)) {
+      await withFreshGoogle();
+      await sendWeek(db, chatId);
+      return true;
+    }
+    if (/просроч|горит|хвост/.test(lower)) {
+      const tail = (await listOpenTail(db, now.toISOString())).sort((a, b) => priorityScore(b, now) - priorityScore(a, now));
+      await sendList(chatId, "📌 <b>Незакрытое</b>", tail.slice(0, 10), dirs, tz, "Хвостов нет 👌");
+      return true;
+    }
+    // «когда встреча с подрядчиком?» — ищем по ключевым словам вопроса.
+    const q = lower
+      .replace(/[?!.,]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 4 && !/^(когда|какие|какой|сколько|покажи|показать|список|встреч[аи]?|задач[аи]?)$/.test(w))
+      .slice(0, 3)
+      .join(" ");
+    if (q) {
+      const found = await searchItems(db, q, 10);
+      if (found.length) {
+        await sendList(chatId, `🔎 <b>Нашёл по «${tgEsc(q)}»</b>`, found, dirs, tz);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // ——— Обработка входящего сообщения ———
 
 export async function handleTelegramText(
@@ -64,15 +229,20 @@ export async function handleTelegramText(
         "",
         "Команды:",
         "/today — план на сегодня",
-        "/week — план на неделю",
+        "/tomorrow — план на завтра",
+        "/week — ближайшие 7 дней",
+        "/day 5.09 — план на конкретный день",
+        "/overdue — просроченное",
+        "/next — ближайшие 5 дел",
+        "/find текст — поиск по записям",
         "/open — незакрытые хвосты",
+        "",
+        "Можно и просто спросить: «что у меня завтра?», «когда встреча с подрядчиком?»",
       ].join("\n"),
     );
     return;
   }
-  if (cmd === "/today" || cmd === "сегодня") return void (await sendDailyDigest(db, "morning"));
-  if (cmd === "/week" || cmd === "неделя") return void (await sendWeek(db));
-  if (cmd === "/open") return void (await sendOpenTail(db));
+  if (await handleQuery(db, chatId, text, prefs.tz, dirs)) return;
 
   const { data: inbox } = await db
     .from("calendar_inbox")
@@ -309,8 +479,8 @@ export async function sendDailyDigest(db: Db, mode: "morning" | "evening"): Prom
   );
 }
 
-export async function sendWeek(db: Db): Promise<void> {
-  const cid = await chatId(db);
+export async function sendWeek(db: Db, to?: number): Promise<void> {
+  const cid = to ?? (await chatId(db));
   if (!cid) return;
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);
@@ -359,8 +529,8 @@ export async function sendWeeklyReview(db: Db): Promise<void> {
   );
 }
 
-export async function sendOpenTail(db: Db): Promise<void> {
-  const cid = await chatId(db);
+export async function sendOpenTail(db: Db, to?: number): Promise<void> {
+  const cid = to ?? (await chatId(db));
   if (!cid) return;
   const prefs = await getPrefs(db);
   const dirs = await getDirections(db);

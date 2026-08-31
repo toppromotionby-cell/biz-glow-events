@@ -27,6 +27,8 @@ export type Database = {
           quiet_start: string
           reminder_minutes: number[]
           style_profile: string | null
+          tg_allowed_chat_ids: number[]
+          tg_bot_username: string | null
           tg_chat_id: number | null
           tz: string
           updated_at: string
@@ -43,6 +45,8 @@ export type Database = {
           quiet_start?: string
           reminder_minutes?: number[]
           style_profile?: string | null
+          tg_allowed_chat_ids?: number[]
+          tg_bot_username?: string | null
           tg_chat_id?: number | null
           tz?: string
           updated_at?: string
@@ -59,6 +63,8 @@ export type Database = {
           quiet_start?: string
           reminder_minutes?: number[]
           style_profile?: string | null
+          tg_allowed_chat_ids?: number[]
+          tg_bot_username?: string | null
           tg_chat_id?: number | null
           tz?: string
           updated_at?: string

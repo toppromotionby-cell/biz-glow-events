@@ -6,11 +6,49 @@ export interface TgButton {
   data: string;
 }
 
+/**
+ * Ключ отдельного бота-планера. Порядок: явный planner-ключ → второе подключение
+ * Telegram-коннектора → общий ключ сайта (фолбэк, пока отдельный бот не подключён).
+ */
+export function plannerTgKey(): string | null {
+  return (
+    process.env.TELEGRAM_PLANNER_API_KEY ||
+    process.env.TELEGRAM_API_KEY_1 ||
+    process.env.TELEGRAM_API_KEY_2 ||
+    process.env.TELEGRAM_API_KEY ||
+    null
+  );
+}
+
+/** Подключён ли планеру собственный бот (а не общий бот сайта). */
+export function plannerHasOwnBot(): boolean {
+  return Boolean(
+    process.env.TELEGRAM_PLANNER_API_KEY || process.env.TELEGRAM_API_KEY_1 || process.env.TELEGRAM_API_KEY_2,
+  );
+}
+
 function keys() {
   const lovable = process.env.LOVABLE_API_KEY;
-  const tg = process.env.TELEGRAM_API_KEY;
+  const tg = plannerTgKey();
   if (!lovable || !tg) return null;
   return { lovable, tg };
+}
+
+export async function tgGetMe(): Promise<{ id: number; username?: string; first_name?: string } | null> {
+  return call<{ id: number; username?: string; first_name?: string }>("getMe", {});
+}
+
+export async function tgWebhookInfo(): Promise<{ url?: string; last_error_message?: string; pending_update_count?: number } | null> {
+  return call<{ url?: string; last_error_message?: string; pending_update_count?: number }>("getWebhookInfo", {});
+}
+
+export async function tgSetWebhook(url: string, secret: string): Promise<boolean> {
+  const res = await call<boolean>("setWebhook", {
+    url,
+    secret_token: secret,
+    allowed_updates: ["message", "edited_message", "callback_query"],
+  });
+  return res === true;
 }
 
 export function tgEsc(s: string | null | undefined): string {

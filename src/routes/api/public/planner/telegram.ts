@@ -4,6 +4,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "crypto";
 import { admin } from "@/lib/calendar/store.server";
 import { handleCallback, handleTelegramText, handleTelegramVoice } from "@/lib/calendar/agent.server";
+import { plannerTgKey, tgSend } from "@/lib/calendar/telegram.server";
+import { chatAllowed } from "@/lib/calendar/store.server";
 
 function deriveSecret(key: string): string {
   return createHash("sha256").update(`telegram-webhook:${key}`).digest("base64url");
@@ -32,7 +34,7 @@ export const Route = createFileRoute("/api/public/planner/telegram")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const tgKey = process.env.TELEGRAM_API_KEY;
+        const tgKey = plannerTgKey();
         if (!tgKey) return new Response("not configured", { status: 503 });
         const got = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
         if (!safeEqual(got, deriveSecret(tgKey))) return new Response("unauthorized", { status: 401 });
@@ -44,12 +46,17 @@ export const Route = createFileRoute("/api/public/planner/telegram")({
           const db = await admin();
           const cb = update.callback_query;
           if (cb?.id && cb.data && cb.message?.chat?.id && cb.message.message_id) {
+            if (!(await chatAllowed(db, cb.message.chat.id))) return Response.json({ ok: true, denied: true });
             await handleCallback(db, cb.message.chat.id, cb.message.message_id, cb.id, cb.data);
             return Response.json({ ok: true });
           }
           const msg = update.message;
           const chatId = msg?.chat?.id;
           if (!chatId) return Response.json({ ok: true, ignored: true });
+          if (!(await chatAllowed(db, chatId))) {
+            await tgSend(chatId, "Этот бот — личный планер владельца. Доступ ограничен.");
+            return Response.json({ ok: true, denied: true });
+          }
           const fileId = msg?.voice?.file_id ?? msg?.audio?.file_id;
           if (fileId) {
             await handleTelegramVoice(db, chatId, fileId);

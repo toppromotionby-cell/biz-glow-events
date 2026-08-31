@@ -20,6 +20,9 @@ import {
   deletePlannerItem,
   listPlannerData,
   plannerAnalytics,
+  plannerBotRegisterWebhook,
+  plannerBotStatus,
+  plannerBotTest,
   reschedulePlannerItem,
   savePlannerPrefs,
   savePlannerItem,
@@ -377,7 +380,10 @@ function PlannerPage() {
         </TabsContent>
 
         <TabsContent value="settings" className="mt-4">
-          <PrefsCard prefs={data?.prefs} onSave={(p) => prefsFn({ data: p }).then(() => { toast.success("Настройки сохранены"); invalidate(); })} />
+          <div className="space-y-4">
+            <BotCard />
+            <PrefsCard prefs={data?.prefs} onSave={(p) => prefsFn({ data: p }).then(() => { toast.success("Настройки сохранены"); invalidate(); })} />
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -645,6 +651,84 @@ function PrefsCard({
         >
           Сохранить настройки
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Отдельный Telegram-бот планера: статус, вебхук, проверка связи. */
+function BotCard() {
+  const statusFn = useServerFn(plannerBotStatus);
+  const testFn = useServerFn(plannerBotTest);
+  const hookFn = useServerFn(plannerBotRegisterWebhook);
+  const { data, refetch, isFetching } = useQuery({
+    queryKey: ["planner", "bot"],
+    queryFn: () => statusFn({}),
+  });
+
+  const ok = data?.configured && Boolean(data.webhookUrl) && !data.lastError;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Telegram-бот планера</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {!data ? (
+          <p className="text-muted-foreground">Загрузка…</p>
+        ) : !data.configured ? (
+          <p className="text-muted-foreground">Бот не подключён. Подключите отдельного Telegram-бота для планера.</p>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={ok ? "default" : "secondary"}>{ok ? "Работает" : "Требует внимания"}</Badge>
+              {data.username ? <span className="font-medium">@{data.username}</span> : null}
+              {data.ownBot ? (
+                <Badge variant="outline">Отдельный бот</Badge>
+              ) : (
+                <Badge variant="destructive">Используется бот сайта</Badge>
+              )}
+            </div>
+            <p className="break-all text-muted-foreground">Вебхук: {data.webhookUrl ?? "не установлен"}</p>
+            {data.pending > 0 ? <p className="text-muted-foreground">В очереди обновлений: {data.pending}</p> : null}
+            {data.lastError ? <p className="text-destructive">Ошибка Telegram: {data.lastError}</p> : null}
+            <p className="text-muted-foreground">
+              {data.chatId ? `Чат привязан (ID ${data.chatId})` : "Чат не привязан — напишите боту /start"}
+            </p>
+            <p className="text-muted-foreground">
+              Команды: /today, /tomorrow, /week, /overdue, /next, /day 5.09, /find текст — бот отвечает выпиской из календаря.
+            </p>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+            <RefreshCw className="mr-2 size-4" /> Обновить
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              hookFn({ data: { origin: window.location.origin } })
+                .then((r) => {
+                  toast[r.ok ? "success" : "error"](r.ok ? "Вебхук зарегистрирован" : "Telegram отклонил вебхук");
+                  void refetch();
+                })
+                .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Не удалось"))
+            }
+          >
+            Переустановить вебхук
+          </Button>
+          <Button
+            size="sm"
+            onClick={() =>
+              testFn({})
+                .then((r) => (r.sent ? toast.success("Сообщение отправлено в Telegram") : toast.error(r.reason ?? "Не отправлено")))
+                .catch((e: unknown) => toast.error(e instanceof Error ? e.message : "Не удалось"))
+            }
+          >
+            Проверить связь
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
