@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import type { PlanDTO } from "@/lib/calendar/plan-dto";
 import { createAssistantPlan, decideAssistantPlan, listAssistantPlans } from "@/lib/calendar.functions";
 
 const STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -47,7 +48,7 @@ export function PlansCard() {
     onError: (e: Error) => toast.error(e.message || "Не получилось"),
   });
 
-  const plans = data?.plans ?? [];
+  const plans: PlanDTO[] = data?.plans ?? [];
 
   return (
     <Card>

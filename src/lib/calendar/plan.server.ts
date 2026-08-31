@@ -7,6 +7,7 @@ import { isToolName, runTool, type ToolCtx, type ToolName } from "@/lib/calendar
 import { getDirections, getPrefs, listItemsBetween, listOpenTail } from "@/lib/calendar/store.server";
 import { listMemory, memoryPrompt } from "@/lib/calendar/memory.server";
 import { esc } from "@/lib/calendar/render";
+import type { PlanDTO } from "@/lib/calendar/plan-dto";
 import { buildPersona, PLAN_MODE_RULES } from "@/lib/calendar/persona";
 import { portalsBlock } from "@/lib/calendar/ai-portals";
 import { researchBlock, wantsWeb, webSearch, type ResearchHit } from "@/lib/calendar/research.server";
@@ -230,6 +231,22 @@ export async function buildPlan(db: Db, input: BuildPlanInput): Promise<PlanRow>
     .single();
   if (error) throw new Error(error.message);
   return rowToPlan(data as Record<string, unknown>);
+}
+
+/** Клиент-безопасное представление (без аргументов инструментов). */
+export function toPlanDTO(p: PlanRow): PlanDTO {
+  return {
+    id: p.id,
+    status: p.status,
+    title: p.title,
+    summary: p.summary ?? "",
+    request: p.request ?? "",
+    steps: p.steps.map((s) => ({ label: s.label || s.tool, tool: String(s.tool) })),
+    research: p.research.map((h) => ({ title: h.title, url: h.url, snippet: h.snippet })),
+    questions: p.questions,
+    result: p.result ?? "",
+    created_at: p.created_at,
+  };
 }
 
 // ——— Отображение ———

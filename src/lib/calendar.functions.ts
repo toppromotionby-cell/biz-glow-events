@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertPermission } from "@/lib/authz";
 import type { AssistantPrefs, CalDirection, CalItem } from "@/lib/calendar/model";
+import type { PlanDTO } from "@/lib/calendar/plan-dto";
 
 const iso = z.string().datetime({ offset: true }).nullable().optional();
 
@@ -423,27 +424,27 @@ export const plannerQuickAdd = createServerFn({ method: "POST" })
 
 export const listAssistantPlans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<{ plans: PlanDTO[] }> => {
     await assertPermission(context as never, "orders.manage");
     const { admin } = await import("@/lib/calendar/store.server");
-    const { listPlans } = await import("@/lib/calendar/plan.server");
-    return { plans: await listPlans(await admin(), 20) };
+    const { listPlans, toPlanDTO } = await import("@/lib/calendar/plan.server");
+    return { plans: (await listPlans(await admin(), 20)).map(toPlanDTO) };
   });
 
 export const createAssistantPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ request: z.string().min(3).max(1000) }).parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ plan: PlanDTO }> => {
     await assertPermission(context as never, "orders.manage");
     const { admin } = await import("@/lib/calendar/store.server");
-    const { buildPlan } = await import("@/lib/calendar/plan.server");
-    return { plan: await buildPlan(await admin(), { request: data.request, chatKey: "web" }) };
+    const { buildPlan, toPlanDTO } = await import("@/lib/calendar/plan.server");
+    return { plan: toPlanDTO(await buildPlan(await admin(), { request: data.request, chatKey: "web" })) };
   });
 
 export const decideAssistantPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), approve: z.boolean() }).parse(d))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ ok: number; failed: number; text: string }> => {
     await assertPermission(context as never, "orders.manage");
     const { admin } = await import("@/lib/calendar/store.server");
     const { approvePlan, rejectPlan } = await import("@/lib/calendar/plan.server");
