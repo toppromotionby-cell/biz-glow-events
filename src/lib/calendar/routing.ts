@@ -6,11 +6,12 @@ export type TaskRouting = "auto" | "calendar" | "tasks" | "both";
 export type RouteTarget = "calendar" | "tasks" | "both" | "none";
 
 export const ROUTING_LABEL: Record<TaskRouting, string> = {
-  auto: "Автоматически (встречи — в Календарь, задачи — в Задачи)",
-  calendar: "Всё в Google Календарь",
-  tasks: "Задачи всегда в Google Задачи",
+  auto: "Автоматически (встречи — в общий календарь, задачи — в календарь задач)",
+  calendar: "Всё в основной Google Календарь",
+  tasks: "Задачи всегда в календарь задач направления",
   both: "Задачи со временем — и туда, и туда",
 };
+
 
 /**
  * Правило маршрутизации:
