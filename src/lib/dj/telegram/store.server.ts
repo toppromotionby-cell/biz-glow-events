@@ -170,7 +170,7 @@ export async function enqueue(
 ): Promise<void> {
   try {
     const db = await admin();
-    await db.from("dj_tg_outbox").insert({ kind, payload, chat_id: chatId ?? null });
+    await db.from("dj_tg_outbox").insert({ kind, payload: payload as never, chat_id: chatId ?? null });
   } catch (e) {
     // Уведомление не должно ронять основную операцию.
     console.error("[dj-tg] enqueue failed", e instanceof Error ? e.message : e);
