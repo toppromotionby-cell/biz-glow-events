@@ -466,7 +466,7 @@ export interface SaveInput {
   recurrence?: string | null;
 }
 
-export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
+export async function saveItem(db: Admin, input: SaveInput): Promise<SyncedItem> {
   const prefs = await getPrefs(db);
   const payload = {
     kind: input.kind,
@@ -493,10 +493,9 @@ export async function saveItem(db: Admin, input: SaveInput): Promise<CalItem> {
     : db.from("calendar_items").insert(payload).select("*").single();
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  let item = data as unknown as CalItem;
-  await scheduleReminders(db, item, prefs);
-  item = await syncTargets(db, item, prefs);
-  return item;
+  const saved = data as unknown as CalItem;
+  await scheduleReminders(db, saved, prefs);
+  return await syncTargets(db, saved, prefs);
 }
 
 export async function setStatus(db: Admin, id: string, status: CalItem["status"]): Promise<CalItem | null> {
