@@ -6,6 +6,10 @@ import { Check, Loader2, Search, Trash2, X } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -97,14 +101,25 @@ function Page() {
                     <X className="mr-1 h-4 w-4" /> Скрыть
                   </Button>
                 )}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Удалить трек"
-                  onClick={() => { if (window.confirm("Удалить трек вместе с файлом?")) remove.mutate(t.id); }}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="icon" variant="ghost" aria-label="Удалить трек">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Удалить трек вместе с файлом?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Действие необратимо: аудио и обложка будут удалены из хранилища.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Отмена</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => remove.mutate(t.id)}>Удалить</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </li>
           ))}
