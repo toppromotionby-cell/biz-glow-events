@@ -66,6 +66,14 @@ export interface AssistantPrefs {
   alice_push_enabled: boolean;
   /** Дублировать действия из Алисы карточками в Telegram. */
   alice_mirror_tg: boolean;
+  /** Как обращаться к владельцу. */
+  owner_name: string | null;
+  /** Тон общения ассистента. */
+  tone: "dry" | "friendly" | "fun";
+  /** Отвечать голосом там, где это возможно. */
+  voice_reply: boolean;
+  /** Использовать AI-мозг с инструментами вместо простых команд. */
+  brain_enabled: boolean;
 }
 
 export const KIND_LABEL: Record<CalKind, string> = { task: "Задача", meeting: "Встреча" };

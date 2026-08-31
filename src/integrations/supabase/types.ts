@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_actions: {
+        Row: {
+          action: string
+          after_state: Json | null
+          before_state: Json | null
+          chat_key: string | null
+          created_at: string
+          id: string
+          item_id: string | null
+          undone_at: string | null
+        }
+        Insert: {
+          action: string
+          after_state?: Json | null
+          before_state?: Json | null
+          chat_key?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          undone_at?: string | null
+        }
+        Update: {
+          action?: string
+          after_state?: Json | null
+          before_state?: Json | null
+          chat_key?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          undone_at?: string | null
+        }
+        Relationships: []
+      }
+      assistant_dialog: {
+        Row: {
+          channel: string
+          chat_key: string
+          content: string
+          created_at: string
+          focus_item_id: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          channel?: string
+          chat_key: string
+          content: string
+          created_at?: string
+          focus_item_id?: string | null
+          id?: string
+          role: string
+        }
+        Update: {
+          channel?: string
+          chat_key?: string
+          content?: string
+          created_at?: string
+          focus_item_id?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_dialog_focus_item_id_fkey"
+            columns: ["focus_item_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_memory: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          key: string
+          kind: string
+          last_used_at: string | null
+          source: string
+          updated_at: string
+          value: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key: string
+          kind?: string
+          last_used_at?: string | null
+          source?: string
+          updated_at?: string
+          value: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key?: string
+          kind?: string
+          last_used_at?: string | null
+          source?: string
+          updated_at?: string
+          value?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       assistant_prefs: {
         Row: {
           alice_link_code: string | null
@@ -21,6 +131,7 @@ export type Database = {
           alice_push_enabled: boolean
           alice_skill_id: string | null
           alice_user_ids: string[]
+          brain_enabled: boolean
           created_at: string
           evening_time: string
           followup_minutes: number
@@ -28,6 +139,7 @@ export type Database = {
           id: number
           last_device_tz: string | null
           morning_time: string
+          owner_name: string | null
           quiet_end: string
           quiet_start: string
           reminder_minutes: number[]
@@ -35,8 +147,10 @@ export type Database = {
           tg_allowed_chat_ids: number[]
           tg_bot_username: string | null
           tg_chat_id: number | null
+          tone: string
           tz: string
           updated_at: string
+          voice_reply: boolean
         }
         Insert: {
           alice_link_code?: string | null
@@ -44,6 +158,7 @@ export type Database = {
           alice_push_enabled?: boolean
           alice_skill_id?: string | null
           alice_user_ids?: string[]
+          brain_enabled?: boolean
           created_at?: string
           evening_time?: string
           followup_minutes?: number
@@ -51,6 +166,7 @@ export type Database = {
           id?: number
           last_device_tz?: string | null
           morning_time?: string
+          owner_name?: string | null
           quiet_end?: string
           quiet_start?: string
           reminder_minutes?: number[]
@@ -58,8 +174,10 @@ export type Database = {
           tg_allowed_chat_ids?: number[]
           tg_bot_username?: string | null
           tg_chat_id?: number | null
+          tone?: string
           tz?: string
           updated_at?: string
+          voice_reply?: boolean
         }
         Update: {
           alice_link_code?: string | null
@@ -67,6 +185,7 @@ export type Database = {
           alice_push_enabled?: boolean
           alice_skill_id?: string | null
           alice_user_ids?: string[]
+          brain_enabled?: boolean
           created_at?: string
           evening_time?: string
           followup_minutes?: number
@@ -74,6 +193,7 @@ export type Database = {
           id?: number
           last_device_tz?: string | null
           morning_time?: string
+          owner_name?: string | null
           quiet_end?: string
           quiet_start?: string
           reminder_minutes?: number[]
@@ -81,8 +201,10 @@ export type Database = {
           tg_allowed_chat_ids?: number[]
           tg_bot_username?: string | null
           tg_chat_id?: number | null
+          tone?: string
           tz?: string
           updated_at?: string
+          voice_reply?: boolean
         }
         Relationships: []
       }
