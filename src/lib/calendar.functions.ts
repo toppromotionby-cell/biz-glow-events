@@ -286,3 +286,59 @@ export const plannerBotRegisterWebhook = createServerFn({ method: "POST" })
     const ok = await tgSetWebhook(url, secret);
     return { ok, url };
   });
+
+/** Настройки голосового навыка Алисы: код привязки, привязанные аккаунты, push. */
+export const alicePrefs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{
+    skillId: string | null;
+    linkCode: string | null;
+    linkedCount: number;
+    pushEnabled: boolean;
+    pushConfigured: boolean;
+    mirrorTg: boolean;
+    webhookPath: string;
+  }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, getPrefs } = await import("@/lib/calendar/store.server");
+    const { alicePushConfigured } = await import("@/lib/calendar/alice.server");
+    const prefs = await getPrefs(await admin());
+    return {
+      skillId: prefs.alice_skill_id,
+      linkCode: prefs.alice_link_code,
+      linkedCount: prefs.alice_user_ids.length,
+      pushEnabled: prefs.alice_push_enabled,
+      pushConfigured: alicePushConfigured(),
+      mirrorTg: prefs.alice_mirror_tg,
+      webhookPath: "/api/public/planner/alice",
+    };
+  });
+
+/** Сохранение настроек Алисы; при generateCode выдаётся новый код привязки. */
+export const saveAlicePrefs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        skillId: z.string().max(120).nullable().optional(),
+        pushEnabled: z.boolean().optional(),
+        mirrorTg: z.boolean().optional(),
+        generateCode: z.boolean().optional(),
+        unlinkAll: z.boolean().optional(),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<{ linkCode: string | null; linkedCount: number }> => {
+    await assertPermission(context as never, "orders.manage");
+    const { admin, getPrefs } = await import("@/lib/calendar/store.server");
+    const db = await admin();
+    const patch: Record<string, unknown> = {};
+    if (data.skillId !== undefined) patch.alice_skill_id = data.skillId || null;
+    if (data.pushEnabled !== undefined) patch.alice_push_enabled = data.pushEnabled;
+    if (data.mirrorTg !== undefined) patch.alice_mirror_tg = data.mirrorTg;
+    if (data.generateCode) patch.alice_link_code = String(Math.floor(1000 + Math.random() * 9000));
+    if (data.unlinkAll) patch.alice_user_ids = [];
+    if (Object.keys(patch).length) await db.from("assistant_prefs").update(patch as never).eq("id", 1);
+    const prefs = await getPrefs(db);
+    return { linkCode: prefs.alice_link_code, linkedCount: prefs.alice_user_ids.length };
+  });
